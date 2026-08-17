@@ -1,0 +1,110 @@
+name: Doke UX-CSS-DEBT-059 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-059-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 025ee39a521d8297dd68db58749b2f46a42bcdbe
+      PARENT_PARENT_SHA: d6daeaa876111dbfa3ed27cc5307936084292962
+      TARGET_FILE: assets/css/components/media-lightbox.css
+      PARENT_TARGET_BLOB: c33b7b81f4e548f3206f889633f946c4daa5e5ec
+      EXPECTED_SHA256: 1fa9362a0562af0523f258a3c05f7bd1e52bac8964889b8c2512a957a5f399d1
+      EXPECTED_BYTES: 14301
+      PERMANENT_BRANCH: ux/ux-css-debt-059-media-lightbox-compaction
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test -n "$remote_sha"
+          test "$remote_sha" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$remote_sha|targetBlob=$PARENT_TARGET_BLOB"
+
+      - name: Rebuild exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const file=process.env.TARGET_FILE;
+          const src=fs.readFileSync(file,'utf8');
+          const strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,m=>m.replace(/[^\n]/g,' '));
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){
+            const lines=strip(src).split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            const last=new Map(),dead=[];
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d);}
+            return {declarations:ds,dead};
+          }
+          const p=parse(src);
+          if(p.declarations.length!==359||p.dead.length!==79)throw new Error(`parent drift ${p.declarations.length}/${p.dead.length}`);
+          if(new Set(p.dead.map(x=>x.selector)).size!==12)throw new Error('family drift');
+          const identical=p.dead.filter(x=>x.value===x.winner.value&&x.important===x.winner.important).length;
+          if(identical!==45)throw new Error(`identical drift ${identical}`);
+          if(p.dead.some(x=>x.important||x.winner.important))throw new Error('unexpected important');
+          if(p.dead.some(x=>x.context!=='@media (max-width: 760px)'))throw new Error('context drift');
+          if(p.dead.some(x=>!x.selector.includes('body[data-page="detalhe-anuncio"]')))throw new Error('scope drift');
+          const remove=new Set(p.dead.map(x=>x.line));
+          const candidate=src.split(/\r?\n/).filter((_,i)=>!remove.has(i+1)).join('\n');
+          fs.writeFileSync(file,candidate);
+          const q=parse(candidate);
+          if(q.declarations.length!==280||q.dead.length!==0)throw new Error(`candidate drift ${q.declarations.length}/${q.dead.length}`);
+          console.log('DETERMINISTIC REBUILD PASS|parent=359/79|candidate=280/0|families=12|identical=45|changed=34|context=max760|commentNormalized=1');
+          NODE
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t79\t'"$TARGET_FILE"
+          git diff --check
+          echo "CANDIDATE IDENTITY PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=79"
+
+      - name: Commit and atomically fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add -- "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-059: compact superseded detail media lightbox declarations"
+          commit_sha="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" HEAD -- "$TARGET_FILE")" = $'0\t79\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          after="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$after" = "$commit_sha"
+          echo "PROMOTION PASS|permanent=$after|parent=$PARENT_SHA|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=79"
