@@ -1,0 +1,263 @@
+name: Doke UX-CSS-DEBT-060 Financial Modal Proof
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-060-financial-modal-proof
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5a93b7fdf0b61e91d6dcd3867ae98d97f94d7eb9
+      PARENT_SHA: 025ee39a521d8297dd68db58749b2f46a42bcdbe
+      TARGET_FILE: assets/css/components/overlays/financial-modal-system.css
+      TARGET_BLOB: 291af9edb634992955e324128ed5d661970d1aa5
+      WALLET_IMPORTER: assets/css/pages/carteira-runtime-finance.css
+      WALLET_IMPORTER_BLOB: 1e5213ac54d6830066ba965139bda731ef78cbc1
+      MESSAGES_IMPORTER: assets/css/pages/messaging-runtime-chat.css
+      MESSAGES_IMPORTER_BLOB: 225939d37e493d4f7d3ae3349e75866a5196a94b
+      WALLET_HTML_BLOB: 6482a94c5e1386ce30634f4e6b453875c4af8645
+      MESSAGES_HTML_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      WALLET_JS: assets/js/pages/carteira.js
+      WALLET_JS_BLOB: b37c74485ef3cd289f83dad5a98093583beff3ff
+      MESSAGES_JS: assets/js/pages/mensagens.js
+      MESSAGES_JS_BLOB: 432aca27165cf282a7bfc337f773666e52076e5d
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-059 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and runtime authority inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$WALLET_IMPORTER")" = "$WALLET_IMPORTER_BLOB"
+          test "$(git hash-object "$MESSAGES_IMPORTER")" = "$MESSAGES_IMPORTER_BLOB"
+          test "$(git hash-object carteira.html)" = "$WALLET_HTML_BLOB"
+          test "$(git hash-object mensagens.html)" = "$MESSAGES_HTML_BLOB"
+          test "$(git hash-object "$WALLET_JS")" = "$WALLET_JS_BLOB"
+          test "$(git hash-object "$MESSAGES_JS")" = "$MESSAGES_JS_BLOB"
+          grep -q 'components/overlays/financial-modal-system.css' "$WALLET_IMPORTER"
+          grep -q 'components/overlays/financial-modal-system.css' "$MESSAGES_IMPORTER"
+          grep -q 'data-wallet-withdraw-modal' carteira.html
+          grep -q 'data-wallet-open-withdraw' carteira.html
+          grep -q 'data-charge-modal' mensagens.html
+          grep -q 'walletAccessAllowed' "$WALLET_JS"
+          grep -q 'openWithdrawModal' "$WALLET_JS"
+          grep -q 'openChargeModal' "$MESSAGES_JS"
+          grep -q 'showModal' "$MESSAGES_JS"
+          test -z "$(git status --porcelain)"
+          echo "INPUT GUARD PASS|sha=$TARGET_SHA|target=$TARGET_BLOB|walletImporter=$WALLET_IMPORTER_BLOB|messagesImporter=$MESSAGES_IMPORTER_BLOB|walletHtml=$WALLET_HTML_BLOB|messagesHtml=$MESSAGES_HTML_BLOB|walletJs=$WALLET_JS_BLOB|messagesJs=$MESSAGES_JS_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          python3 -m http.server 4174 >/tmp/ux060-http.log 2>&1 &
+          echo $! >/tmp/ux060-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4174/carteira.html >/dev/null
+          curl -fsS http://127.0.0.1:4174/mensagens.html >/dev/null
+          echo 'BROWSER RUNTIME PASS|http=4174'
+
+      - name: Cascade reconstruction and real DOM browser A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/ux060-proof.js <<'NODE'
+          const fs=require('fs');
+          const crypto=require('crypto');
+          const {chromium}=require(process.cwd() + '/node_modules/@playwright/test');
+          const file=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(file,'utf8');
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){
+            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            const last=new Map(),dead=[];
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d);}
+            return {declarations:ds,dead};
+          }
+          const p=parse(parent);
+          if(p.declarations.length!==852||p.dead.length!==207)throw new Error(`parent parse drift ${p.declarations.length}/${p.dead.length}`);
+          const families=[...new Set(p.dead.map(x=>x.selector))];
+          if(families.length!==31)throw new Error(`family drift ${families.length}`);
+          const contexts=[...new Set(p.dead.map(x=>x.context))].sort();
+          if(JSON.stringify(contexts)!==JSON.stringify(['','@media (max-width: 760px)']))throw new Error(`context drift ${JSON.stringify(contexts)}`);
+          if(p.dead.some(x=>x.important||x.winner.important))throw new Error('unexpected !important in removable chain');
+          const identical=p.dead.filter(x=>x.value===x.winner.value&&x.important===x.winner.important).length;
+          if(identical!==118)throw new Error(`identical drift ${identical}`);
+          console.log('STATIC CASCADE PASS|decl=852|dead=207|families=31|identical=118|changed=89|contexts=global+max760|important=0');
+          const remove=new Set(p.dead.map(x=>x.line));
+          const candidate=parent.split(/\r?\n/).filter((_,i)=>!remove.has(i+1)).join('\n');
+          const q=parse(candidate);
+          if(q.declarations.length!==645||q.dead.length!==0)throw new Error(`candidate parse drift ${q.declarations.length}/${q.dead.length}`);
+          const hash=crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes=Buffer.byteLength(candidate);
+          fs.writeFileSync('/tmp/ux060-candidate.css',candidate);
+          fs.writeFileSync('/tmp/ux060-candidate-sha256',hash+'\n');
+          fs.writeFileSync('/tmp/ux060-candidate-bytes',String(bytes)+'\n');
+          console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|decl=852->645|dead=207->0|files=1|additions=0|deletions=207`);
+
+          const familyProps=Object.fromEntries(families.map(sel=>[sel,[...new Set(p.dead.filter(x=>x.selector===sel).map(x=>x.property))].sort()]));
+          const widths=[359,430,759,760,761,1024,1280];
+          const pageSpecs=[
+            {name:'carteira',url:'carteira.html',modal:'.wallet-dialog--withdraw',money:'.wallet-dialog-money-field input',close:'.wallet-dialog__close',primary:'.wallet-dialog-btn--primary',select:null,menu:null},
+            {name:'mensagens',url:'mensagens.html',modal:'.charge-modal',money:'.charge-modal__money-field input',close:'.charge-modal__close',primary:'.charge-modal__button:not(.charge-modal__button--ghost)',select:'.charge-modal__field select',menu:'.doke-financial-modal__select-menu'}
+          ];
+          const round=n=>Math.round(n*1000)/1000;
+          function stableRect(r){return{x:round(r.x),y:round(r.y),width:round(r.width),height:round(r.height),right:round(r.right),bottom:round(r.bottom)};}
+          async function configure(page,spec){
+            await page.evaluate((spec)=>{
+              document.documentElement.removeAttribute('data-auth-guard');
+              document.documentElement.classList.remove('doke-mobile-shell-pending');
+              document.querySelectorAll('[data-doke-document-preloader], [data-messages-document-preloader], [data-wallet-hydration-skeleton], [data-messages-hydration-skeleton]').forEach(el=>{el.hidden=true;el.style.display='none';});
+              document.body.style.visibility='visible';document.body.style.opacity='1';
+              if(spec.name==='carteira'){
+                const shell=document.querySelector('[data-wallet-withdraw-modal]');if(!shell)throw new Error('wallet shell missing');
+                shell.hidden=false;shell.classList.add('is-active');shell.setAttribute('aria-hidden','false');document.body.classList.add('is-wallet-modal-open');
+              }else{
+                const dialog=document.querySelector('[data-charge-modal]');if(!dialog)throw new Error('charge dialog missing');
+                if(typeof dialog.showModal==='function'&&!dialog.open)dialog.showModal();else dialog.setAttribute('open','');
+                dialog.dataset.financialAction='charge';
+              }
+            },spec);
+            await page.waitForTimeout(80);
+          }
+          async function setScenario(page,spec,scenario){
+            await page.evaluate(({spec,scenario})=>{
+              const active=document.activeElement;if(active&&typeof active.blur==='function')active.blur();
+              if(spec.menu){const menu=document.querySelector(spec.menu);if(menu){menu.hidden=scenario!=='menu';menu.style.display=scenario==='menu'?'grid':'';}}
+              let selector=null;
+              if(scenario==='money')selector=spec.money;
+              else if(scenario==='close')selector=spec.close;
+              else if(scenario==='primary')selector=spec.primary;
+              else if(scenario==='select')selector=spec.select;
+              else if(scenario==='menu'&&spec.menu)selector=spec.menu+' button';
+              if(selector){const el=document.querySelector(selector);if(el&&typeof el.focus==='function')el.focus();}
+            },{spec,scenario});
+            await page.waitForTimeout(20);
+          }
+          async function snapshot(page,spec,width,scenario){
+            return page.evaluate(({familyProps,spec,width,scenario})=>{
+              const round=n=>Math.round(n*1000)/1000;
+              const rect=r=>({x:round(r.x),y:round(r.y),width:round(r.width),height:round(r.height),right:round(r.right),bottom:round(r.bottom)});
+              const families={};
+              for(const [selector,props] of Object.entries(familyProps)){
+                let nodes=[];try{nodes=[...document.querySelectorAll(selector)];}catch(e){throw new Error(`invalid selector ${selector}: ${e.message}`);}
+                if(!nodes.length)continue;
+                families[selector]=nodes.map((el,index)=>{const cs=getComputedStyle(el);return{index,tag:el.tagName,classes:el.className||'',props:Object.fromEntries(props.map(prop=>[prop,cs.getPropertyValue(prop)])),rect:rect(el.getBoundingClientRect())};});
+              }
+              const modal=document.querySelector(spec.modal);if(!modal)throw new Error(`modal missing ${spec.modal}`);
+              return {page:spec.name,width,scenario,max760:matchMedia('(max-width: 760px)').matches,modalOpen:spec.name==='mensagens'?modal.open:!document.querySelector('[data-wallet-withdraw-modal]').hidden,modalRect:rect(modal.getBoundingClientRect()),families,overflow:document.documentElement.scrollWidth>innerWidth+1||document.body.scrollWidth>innerWidth+1};
+            },{familyProps,spec,width,scenario});
+          }
+          async function collect(css,label){
+            fs.writeFileSync(file,css);
+            const browser=await chromium.launch({headless:true});
+            const coverage=new Set();
+            const out={};
+            try{
+              for(const spec of pageSpecs){
+                out[spec.name]={};
+                for(const width of widths){
+                  const context=await browser.newContext({viewport:{width,height:900}});
+                  const page=await context.newPage();
+                  await page.route('**/*',route=>{
+                    const req=route.request(),url=req.url();
+                    if(req.resourceType()==='script'||req.resourceType()==='font'||req.resourceType()==='image'||url.startsWith('https://fonts.'))return route.abort();
+                    return route.continue();
+                  });
+                  await page.goto(`http://127.0.0.1:4174/${spec.url}`,{waitUntil:'domcontentloaded'});
+                  await configure(page,spec);
+                  out[spec.name][width]={};
+                  const scenarios=['base','money','close','primary'].concat(spec.select?['select']:[]).concat(spec.menu?['menu']:[]);
+                  for(const scenario of scenarios){
+                    await setScenario(page,spec,scenario);
+                    const snap=await snapshot(page,spec,width,scenario);
+                    if(snap.overflow)throw new Error(`${label} ${spec.name} ${width} ${scenario} horizontal overflow`);
+                    if(!snap.modalOpen)throw new Error(`${label} ${spec.name} ${width} ${scenario} modal not open`);
+                    Object.keys(snap.families).forEach(x=>coverage.add(x));
+                    out[spec.name][width][scenario]=snap;
+                  }
+                  await context.close();
+                }
+              }
+            }finally{await browser.close();}
+            console.log(`COVERAGE|label=${label}|families=${coverage.size}/31|pages=2|viewports=${widths.length}|boundary=759/760/761`);
+            if(coverage.size!==31){const missing=families.filter(x=>!coverage.has(x));throw new Error(`${label} family coverage ${coverage.size}/31 missing=${missing.join(' || ')}`);}
+            return out;
+          }
+          (async()=>{
+            const before=await collect(parent,'parent');
+            const after=await collect(candidate,'candidate');
+            const a=JSON.stringify(before),b=JSON.stringify(after);
+            if(a!==b){
+              fs.writeFileSync('/tmp/ux060-before.json',JSON.stringify(before,null,2));
+              fs.writeFileSync('/tmp/ux060-after.json',JSON.stringify(after,null,2));
+              const pages=Object.keys(before);let hint='unknown';
+              outer:for(const pg of pages)for(const w of Object.keys(before[pg]))for(const s of Object.keys(before[pg][w])){const x=JSON.stringify(before[pg][w][s]),y=JSON.stringify(after[pg][w][s]);if(x!==y){hint=`${pg}/${w}/${s}`;break outer;}}
+              throw new Error(`browser parity mismatch at ${hint}`);
+            }
+            const captures=pageSpecs.reduce((n,s)=>n+widths.length*(4+(s.select?1:0)+(s.menu?1:0)),0);
+            console.log(`BROWSER PARITY PASS|pages=carteira.html,mensagens.html|families=31/31|viewports=${widths.join(',')}|capturesParent=${captures}|capturesCandidate=${captures}|computedLayoutDiffs=0|overflow=0|states=base,money,close,primary,select,menu|realDom=1|syntheticDom=0`);
+          })().catch(e=>{console.error(e);process.exit(1);});
+          NODE
+          node /tmp/ux060-proof.js | tee /tmp/ux060-proof.log
+          grep -q 'STATIC CASCADE PASS|decl=852|dead=207|families=31|identical=118|changed=89|contexts=global+max760|important=0' /tmp/ux060-proof.log
+          grep -q 'COVERAGE|label=parent|families=31/31' /tmp/ux060-proof.log
+          grep -q 'COVERAGE|label=candidate|families=31/31' /tmp/ux060-proof.log
+          grep -q 'BROWSER PARITY PASS|pages=carteira.html,mensagens.html|families=31/31' /tmp/ux060-proof.log
+          hash="$(cat /tmp/ux060-candidate-sha256)"
+          bytes="$(cat /tmp/ux060-candidate-bytes)"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$hash"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$bytes"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t207\t'"$TARGET_FILE"
+          git diff --check
+          echo "PROOF PASS|sha256=$hash|bytes=$bytes|files=1|additions=0|deletions=207|browserRequired=1|runtimeAuthorityBlobsFixed=1"
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux060-http.pid; then kill "$(cat /tmp/ux060-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$WALLET_IMPORTER")" = "$WALLET_IMPORTER_BLOB"
+          test "$(git hash-object "$MESSAGES_IMPORTER")" = "$MESSAGES_IMPORTER_BLOB"
+          test "$(git hash-object "$WALLET_JS")" = "$WALLET_JS_BLOB"
+          test "$(git hash-object "$MESSAGES_JS")" = "$MESSAGES_JS_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0|issueCreated=0|prCreated=0"
