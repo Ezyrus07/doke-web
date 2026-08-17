@@ -1,0 +1,115 @@
+name: Doke UX-CSS-DEBT-068 List Page Toolbar Proof R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-068-list-page-toolbar-proof-r1
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r1:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c7f8397821698f4445dad3b20e5aea2ff3d57cf3
+      PARENT_SHA: 460120dbda36a407a143cfeb1471d46859be62ed
+      TARGET_FILE: assets/css/components/internal/list-page-toolbar.css
+      TARGET_BLOB: 0ca5d370759420fe74690784c73a686da687bf16
+      PEDIDOS_HTML_BLOB: bc97ee8dc0f08cc6f3f894aad2654c95323f9274
+      NOTIFICACOES_HTML_BLOB: 84e692aff4835572259219dc175c3572bca1b973
+      CARTEIRA_HTML_BLOB: 6482a94c5e1386ce30634f4e6b453875c4af8645
+      SOURCE_RUN: 32042539736
+      SOURCE_JOB: 95424312423
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-067 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object pedidos.html)" = "$PEDIDOS_HTML_BLOB"
+          test "$(git hash-object notificacoes.html)" = "$NOTIFICACOES_HTML_BLOB"
+          test "$(git hash-object carteira.html)" = "$CARTEIRA_HTML_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R1 INPUT PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|sourceProof=$SOURCE_RUN/$SOURCE_JOB|pages=3|realProductDOM=1|syntheticDOM=0|criteriaRelaxed=0"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4176 >/tmp/ux068-r1-http.log 2>&1 &
+          echo $! >/tmp/ux068-r1-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4176/pedidos.html >/dev/null
+          curl -fsS http://127.0.0.1:4176/notificacoes.html >/dev/null
+          curl -fsS http://127.0.0.1:4176/carteira.html >/dev/null
+
+      - name: Browser parity on real internal list page toolbar DOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux068-r1.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const target=process.env.TARGET_FILE,original=fs.readFileSync(target,'utf8'),lines=original.split('\n');
+          const remove=[137,139,145,146,445,451,457];
+          const expected=new Map([
+            [137,'    gap: 14px;'],[139,'    flex: 1 1 auto;'],[145,'    gap: var(--toolbar-gap-compact);'],[146,'    flex: 0 0 auto;'],
+            [445,'    gap: var(--toolbar-gap);'],[451,'    gap: var(--toolbar-gap-compact);'],[457,'    gap: var(--toolbar-gap);']
+          ]);
+          for(const [i,row] of expected){if((lines[i]||'').replace(/\r$/,'')!==row)throw new Error(`candidate row drift line=${i+1} got=${JSON.stringify(lines[i])}`)}
+          const candidate=lines.filter((_,i)=>!remove.includes(i)).join('\n');
+          const hash=crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex'),bytes=Buffer.byteLength(candidate);
+
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function count(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d)}return{decl:ds.length,dead}}
+          const parentMetric=count(original),candidateMetric=count(candidate);if(parentMetric.decl!==276||parentMetric.dead!==7||candidateMetric.decl!==269||candidateMetric.dead!==0)throw new Error(`metric drift ${JSON.stringify({parentMetric,candidateMetric})}`);
+
+          const pages=['pedidos.html','notificacoes.html','carteira.html'];
+          const widths=[359,760,761,1024,1025,1280,1440];
+          const selectors={primary:'.home-side-meta__group--primary',secondary:'.home-side-meta__group--secondary',context:'.page-header-context'};
+          const props=['display','gap','column-gap','row-gap','flex','flex-grow','flex-shrink','flex-basis','width','max-width','min-width','margin-left','margin-right','justify-content','align-items','position','left','right','box-sizing'];
+          async function capture(tag){const browser=await chromium.launch({headless:true});const out=[];const coverage=new Map(Object.keys(selectors).map(k=>[k,0])),visible=new Map(Object.keys(selectors).map(k=>[k,0]));try{for(const pageName of pages){for(const width of widths){const ctx=await browser.newContext({viewport:{width,height:900},javaScriptEnabled:false});const page=await ctx.newPage();await page.route('**/*',r=>{const u=new URL(r.request().url());if(!['127.0.0.1','localhost'].includes(u.hostname)||u.pathname.endsWith('.js'))return r.abort();return r.continue()});await page.goto(`http://127.0.0.1:4176/${pageName}?ux068=${tag}-${width}`,{waitUntil:'domcontentloaded'});await page.evaluate(()=>{document.documentElement.setAttribute('data-auth-guard','ready');document.documentElement.classList.remove('doke-mobile-shell-pending');for(const el of document.querySelectorAll('[data-doke-document-preloader],.doke-document-preloader,.orders-document-preloader')){el.setAttribute('hidden','');el.setAttribute('aria-hidden','true')}});await page.waitForTimeout(100);const snap=await page.evaluate(({selectors,props})=>{const result={};for(const [k,s] of Object.entries(selectors)){result[k]=[...document.querySelectorAll(s)].map((el,i)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{i,id:el.id||'',cls:typeof el.className==='string'?el.className:'',props:Object.fromEntries(props.map(p=>[p,cs.getPropertyValue(p)])),rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000),visible:r.width>0&&r.height>0&&cs.display!=='none'}})}return{result,overflow:Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth),bodyClass:document.body.className}},{selectors,props});for(const [k,v] of Object.entries(snap.result)){coverage.set(k,coverage.get(k)+v.length);visible.set(k,visible.get(k)+v.filter(x=>x.visible).length)}out.push({page:pageName,width,snap});await ctx.close()}}}finally{await browser.close()}for(const k of Object.keys(selectors)){if(!coverage.get(k))throw new Error(`missing family ${k}`);if(!visible.get(k))throw new Error(`no visible real DOM state ${k}`)}console.log(`COVERAGE|${tag}|families=3/3|pages=3|viewports=7|samples=${[...coverage.values()].reduce((a,b)=>a+b,0)}|visibleSamples=${[...visible.values()].reduce((a,b)=>a+b,0)}|primary=${coverage.get('primary')}/${visible.get('primary')}|secondary=${coverage.get('secondary')}/${visible.get('secondary')}|context=${coverage.get('context')}/${visible.get('context')}|boundaries=760/761,1024/1025`);return out}
+          (async()=>{try{fs.writeFileSync(target,original);const parent=await capture('parent');fs.writeFileSync(target,candidate);const cand=await capture('candidate');const a=JSON.stringify(parent),b=JSON.stringify(cand);if(a!==b){let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;throw new Error(`runtime drift idx=${i} parent=${a.slice(i,i+1200)} candidate=${b.slice(i,i+1200)}`)}const maxOverflow=Math.max(...parent.map(x=>x.snap.overflow));console.log(`BROWSER PARITY PASS|pages=3|families=3/3|viewports=7|snapshots=${parent.length}|computedStyleDiffs=0|geometryDiffs=0|runtimeDiffs=0|maxOverflow=${maxOverflow}|boundaries=760/761,1024/1025|realProductDOM=1|syntheticDOM=0|criteriaRelaxed=0`);console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=269|superseded=0|files=1|additions=0|deletions=7`);fs.writeFileSync(target,candidate)}catch(e){fs.writeFileSync(target,original);throw e}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node --check /tmp/ux068-r1.js
+          node /tmp/ux068-r1.js | tee /tmp/ux068-r1.log
+          grep -q 'COVERAGE|parent|families=3/3|pages=3|viewports=7' /tmp/ux068-r1.log
+          grep -q 'COVERAGE|candidate|families=3/3|pages=3|viewports=7' /tmp/ux068-r1.log
+          grep -q 'BROWSER PARITY PASS|pages=3|families=3/3|viewports=7|snapshots=21|computedStyleDiffs=0|geometryDiffs=0|runtimeDiffs=0' /tmp/ux068-r1.log
+          grep -q 'boundaries=760/761,1024/1025|realProductDOM=1|syntheticDOM=0|criteriaRelaxed=0' /tmp/ux068-r1.log
+          grep -q 'CANDIDATE IDENTITY' /tmp/ux068-r1.log
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t7\t'"$TARGET_FILE"
+          git diff --check
+          echo 'R1 PROOF PASS|browserRequired=1|realProductDOM=1|syntheticDOM=0|criteriaRelaxed=0|candidateLeftForDiff=1'
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux068-r1-http.pid; then kill "$(cat /tmp/ux068-r1-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R1 RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
