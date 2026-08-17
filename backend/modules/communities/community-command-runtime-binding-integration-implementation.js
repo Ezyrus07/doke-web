@@ -69,13 +69,16 @@ function resolveOperationBinding(nextOperation) {
       repositoryOperation: nextOperation.repositoryOperation
     });
   }
-  if (bridge.repositoryContractId !== nextOperation.repositoryContractId ||
-      bridge.rpc !== nextOperation.rpc) {
+
+  const adapterRpc = nextOperation.rpc === undefined ? null : nextOperation.rpc;
+  const repositoryAuthorityMismatch = bridge.repositoryContractId !== nextOperation.repositoryContractId;
+  const explicitRpcMismatch = adapterRpc !== null && bridge.rpc !== adapterRpc;
+  if (repositoryAuthorityMismatch || explicitRpcMismatch) {
     return blocked('B02O_B02M_OPERATION_AUTHORITY_MISMATCH', {
       repositoryOperation: nextOperation.repositoryOperation,
       adapterRepositoryContractId: nextOperation.repositoryContractId,
       bridgeRepositoryContractId: bridge.repositoryContractId,
-      adapterRpc: nextOperation.rpc || null,
+      adapterRpc,
       bridgeRpc: bridge.rpc || null
     });
   }
@@ -87,6 +90,7 @@ function resolveOperationBinding(nextOperation) {
     repositoryOperation: nextOperation.repositoryOperation,
     repositoryContractId: bridge.repositoryContractId,
     rpc: bridge.rpc,
+    rpcAuthoritySource: adapterRpc === null ? 'b02o_operation_bridge' : 'b02m_explicit_descriptor_verified_by_b02o',
     repositoryInput: clone(nextOperation.repositoryInput),
     credentialProviderClass: bridge.credentialProviderClass,
     sqlPrerequisite: clone(bridge.sqlPrerequisite),
@@ -269,6 +273,7 @@ function inspectIntegrationImplementation() {
     routeHandlerIntegrationMaterialized: true,
     operationAuthorityDispatchMaterialized: true,
     stepwiseResumptionMaterialized: true,
+    writeRpcAuthorityEnrichmentMaterialized: true,
     activeRuntimeHandlersChanged: false,
     moduleRouteLoaderChanged: false,
     repositoryExecutorBound: false,
