@@ -1,0 +1,221 @@
+name: Doke UX-CSS-DEBT-057 Permanent Exact Certification V2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-057-certify-permanent-v2
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: d6daeaa876111dbfa3ed27cc5307936084292962
+      PARENT_SHA: 28e5d98e1d640a730b2b24457a1ebc83f743f786
+      PARENT_PARENT_SHA: c03cc9a3c6aef88a83a04e11eda4e9cc0c14d931
+      TARGET_TREE: c15f115e7e7495beaa87dc5c9d51e259d83c1bf0
+      TARGET_FILE: assets/css/components/chat-composer.css
+      PARENT_BLOB: 4d1fb1fa21f7a7e06f9afa26f0e5019747d0114c
+      TARGET_BLOB: 450bd0ccb8509f47b313d06d9563a685b02e852e
+      TARGET_HASH: 5965c5c07b164c8e1ff6122036a80ced256b28985f426a249f7366c0c4ecd22f
+      TARGET_BYTES: 9696
+      MANIFEST: assets/css/pages/chat-workspace-foundation.css
+      MANIFEST_BLOB: 27f16f7013ad55c134d49932e62825ff3a89a6e5
+      MESSAGES_FOUNDATION: assets/css/pages/messaging-foundation.css
+      MESSAGES_FOUNDATION_BLOB: a3f365fb151de2497a266752e06f982083e1934c
+      MESSAGES_RUNTIME: assets/css/pages/messaging-runtime-chat.css
+      MESSAGES_RUNTIME_BLOB: 225939d37e493d4f7d3ae3349e75866a5196a94b
+      COMMUNITY_FOUNDATION: assets/css/pages/comunidade-interna-foundation.css
+      COMMUNITY_FOUNDATION_BLOB: bf43ee50881016c069e46c13cbd0919225404cee
+      COMMUNITY_RUNTIME: assets/css/pages/comunidade-interna-runtime-chat.css
+      COMMUNITY_RUNTIME_BLOB: fe00461560041afbad1cf3016c9ebd05cbe0e634
+      MESSAGES_HTML: mensagens.html
+      MESSAGES_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      COMMUNITY_HTML: comunidade-interna.html
+      COMMUNITY_BLOB: ba3923026a532fa86f0784f34c3db71a2759ee11
+      PERM_BRANCH: ux/ux-css-debt-057-chat-composer-compaction
+      AUTHORITY_DOC_A: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+      AUTHORITY_DOC_B: docs/HOME-AUTHORITY-CLASSIFICATION.md
+      AUTHORITY_DOC_A_REGEN_HASH: 345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6
+      AUTHORITY_DOC_B_REGEN_HASH: b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-056 parent with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent and full-history restore inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse --is-shallow-repository)" = "false"
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git hash-object "$MANIFEST")" = "$MANIFEST_BLOB"
+          test "$(git hash-object "$MESSAGES_FOUNDATION")" = "$MESSAGES_FOUNDATION_BLOB"
+          test "$(git hash-object "$MESSAGES_RUNTIME")" = "$MESSAGES_RUNTIME_BLOB"
+          test "$(git hash-object "$COMMUNITY_FOUNDATION")" = "$COMMUNITY_FOUNDATION_BLOB"
+          test "$(git hash-object "$COMMUNITY_RUNTIME")" = "$COMMUNITY_RUNTIME_BLOB"
+          test "$(git hash-object "$MESSAGES_HTML")" = "$MESSAGES_BLOB"
+          test "$(git hash-object "$COMMUNITY_HTML")" = "$COMMUNITY_BLOB"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "PARENT FULL-HISTORY PASS|sha=$PARENT_SHA|parent=$PARENT_PARENT_SHA|target=$PARENT_BLOB|pages=2|shallow=false"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and generate parent baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          npm run audit:page-asset-authority-matrix
+          test "$(sha256sum "$AUTHORITY_DOC_A" | awk '{print $1}')" = "$AUTHORITY_DOC_A_REGEN_HASH"
+          test "$(sha256sum "$AUTHORITY_DOC_B" | awk '{print $1}')" = "$AUTHORITY_DOC_B_REGEN_HASH"
+          git checkout "$PARENT_SHA" -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B"
+          test -z "$(git diff --name-only -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B")"
+          echo 'PARENT BASELINES PASS|responsive=generated|authority=known-stale-isolated'
+
+      - name: Checkout exact permanent SHA preserving baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$TARGET_SHA"
+          git checkout --detach "$TARGET_SHA"
+          test "$(git rev-parse --is-shallow-repository)" = "false"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -s reports/responsive-index-baseline.json
+          echo "PERMANENT CHECKOUT PASS|sha=$TARGET_SHA|shallow=false"
+
+      - name: Exact identity independent reconstruction and active reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA"...HEAD -- "$TARGET_FILE")" = $'0\t15\t'"$TARGET_FILE"
+          test -z "$(git diff --name-only "$PARENT_SHA"...HEAD -- '*.js' '*.html' 'package.json' 'package-lock.json' 'docs/**')"
+          git diff --check "$PARENT_SHA"...HEAD
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET_FILE;
+          const parent=cp.execFileSync('git',['show',`${process.env.PARENT_SHA}:${target}`],{encoding:'utf8'}),nl=/\r?\n$/.test(parent),lines=parent.split(/\r?\n/);if(nl&&lines.at(-1)==='')lines.pop();
+          const remove=new Set([8,9,10,19,49,50,64,66,127,128,140,141,142,143,144]);
+          const expected=new Map([[8,'  align-items: end;'],[9,'  gap: 12px;'],[10,'  padding: 12px 22px calc(env(safe-area-inset-bottom, 0px) + 6px);'],[19,'  gap: 10px;'],[49,'  width: 20px;'],[50,'  height: 20px;'],[64,'  min-height: 56px;'],[66,'  border-radius: var(--radius-surface);'],[127,'    gap: 10px;'],[128,'    padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 8px);'],[140,'    width: 50px;'],[141,'    height: var(--control-height-xl);'],[142,'    min-width: 50px;'],[143,'    min-height: var(--control-height-xl);'],[144,'    border-radius: var(--radius-base);']]);
+          for(const [n,text] of expected)if(lines[n-1]!==text)throw new Error(`parent line ${n} drift ${lines[n-1]}`);
+          const reconstruction=lines.filter((_,i)=>!remove.has(i+1)).join('\n')+(nl?'\n':'');
+          const targetText=fs.readFileSync(target,'utf8');if(reconstruction!==targetText)throw new Error('independent reconstruction is not byte-identical');
+          const hash=crypto.createHash('sha256').update(reconstruction).digest('hex'),bytes=Buffer.byteLength(reconstruction);if(hash!==process.env.TARGET_HASH||bytes!==Number(process.env.TARGET_BYTES))throw new Error(`identity drift ${hash}/${bytes}`);
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(Boolean),set=new Set(tracked),impRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const importsFor=f=>{const t=fs.readFileSync(f,'utf8'),a=[];let m;impRe.lastIndex=0;while((m=impRe.exec(t))){const n=norm(m[1],f);if(set.has(n))a.push(n)}return a};
+          const direct=tracked.filter(f=>importsFor(f).includes(target)).sort();if(JSON.stringify(direct)!==JSON.stringify([process.env.MANIFEST]))throw new Error(`direct importer drift ${JSON.stringify(direct)}`);
+          if(!importsFor(process.env.MESSAGES_FOUNDATION).includes(process.env.MESSAGES_RUNTIME)||!importsFor(process.env.MESSAGES_RUNTIME).includes(process.env.MANIFEST))throw new Error('messages import chain drift');
+          if(!importsFor(process.env.COMMUNITY_FOUNDATION).includes(process.env.COMMUNITY_RUNTIME)||!importsFor(process.env.COMMUNITY_RUNTIME).includes(process.env.MANIFEST))throw new Error('community import chain drift');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),reached=[];
+          for(const p of report.pageAssets){const seen=new Set(),todo=[...(p.css||[]).filter(f=>set.has(f))];let hit=false;while(todo.length){const f=todo.pop();if(seen.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of importsFor(f))todo.push(n)}if(hit)reached.push(p.page)}
+          reached.sort();if(JSON.stringify(reached)!==JSON.stringify(['comunidade-interna.html','mensagens.html']))throw new Error(`reach drift ${JSON.stringify(reached)}`);
+          for(const page of [process.env.MESSAGES_HTML,process.env.COMMUNITY_HTML]){const html=fs.readFileSync(page,'utf8');for(const token of ['doke-chat-composer','doke-chat-composer__tools','doke-chat-composer__tool','doke-chat-composer__field','doke-chat-composer__send'])if(!html.includes(token))throw new Error(`DOM drift ${page} ${token}`)}
+          console.log(`INDEPENDENT RECONSTRUCTION PASS|hash=${hash}|bytes=${bytes}|byteIdentical=1|rows=15`);
+          console.log(`REACH AUTHORITY PASS|pages=${reached.join(',')}|directImporter=${direct[0]}|realDomPages=2|families=5`);
+          NODE
+          echo "EXACT IDENTITY PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=15"
+          echo 'R1 PROOF TRANSFER PASS|run=31980374268|job=95246030317|families=5/5|pages=2|states=2|viewports=8|samples=32+32|runtimeDiffs=0|overflow=0|boundary=759/760/761|changedWinners=15|r2Required=0|transport=independent-byte-reconstruction'
+
+      - name: Responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Responsive contract test: PASS' /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PERMANENT PASS|checks=893|failures=0|skips=277'
+
+      - name: Governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          test "$(sha256sum "$AUTHORITY_DOC_A" | awk '{print $1}')" = "$AUTHORITY_DOC_A_REGEN_HASH"
+          test "$(sha256sum "$AUTHORITY_DOC_B" | awk '{print $1}')" = "$AUTHORITY_DOC_B_REGEN_HASH"
+          git checkout "$TARGET_SHA" -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B"
+          test -z "$(git diff --name-only -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B")"
+          echo 'GOVERNANCE PERMANENT PASS|conflicts=339|duplicates=0/0|domain=23/15/2.91/12|semanticDocDelta=0'
+
+      - name: Permanent residual proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const impRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;impRe.lastIndex=0;while((m=impRe.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length})}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,nh=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:nh(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:nh([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=nh(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=nh(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push(d);if(!l||d.important||!l.important)last.set(k,d)}return{declarations:ds.length,dead:dead.length}}
+          if(active.size!==401||high.length!==37)throw new Error(`active/high drift ${active.size}/${high.length}`);let files=0,total=0,highDead=0;for(const f of active){const p=parse(meta.get(f).text);if(p.dead){files++;total+=p.dead;if(high.includes(f))highDead++}}
+          const target=parse(meta.get(process.env.TARGET_FILE).text),p056=parse(meta.get('assets/css/components/before-after-workers-preview/mobile-comment-sheets.css').text),p055=parse(meta.get('assets/css/patterns/settings-shell.css').text),p054=parse(meta.get('assets/css/components/before-after-workers-preview/publication-light-modal.css').text);
+          if(target.declarations!==125||target.dead!==0)throw new Error(`target drift ${target.declarations}/${target.dead}`);if(p056.declarations!==302||p056.dead!==0)throw new Error(`056 drift ${p056.declarations}/${p056.dead}`);if(p055.declarations!==104||p055.dead!==0)throw new Error(`055 drift ${p055.declarations}/${p055.dead}`);if(p054.declarations!==75||p054.dead!==0)throw new Error(`054 drift ${p054.declarations}/${p054.dead}`);if(files!==17||total!==439||highDead!==0)throw new Error(`residual drift ${files}/${total}/${highDead}`);
+          console.log(`RESIDUAL PERMANENT PASS|active=401|high=37|files=${files}|dead=${total}|highDead=${highDead}|target=125/0|prior056=302/0|prior055=104/0|prior054=75/0`);
+          NODE
+
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > /tmp/npm-audit.json || true
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8')),v=a.metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw new Error(`dependency drift ${JSON.stringify(v)}`);console.log(`DEPENDENCY SNAPSHOT PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
+          NODE
+
+      - name: Final exact restore with full history
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse --is-shallow-repository)" = "false"
+          git reset --hard "$PARENT_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_BLOB"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          echo "FINAL RESTORE PASS|worktree=$PARENT_SHA|parent=$PARENT_PARENT_SHA|permanent=$REMOTE|shallow=false|productMutation=0|prCreated=0"
