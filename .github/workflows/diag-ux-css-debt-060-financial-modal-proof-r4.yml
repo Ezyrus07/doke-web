@@ -1,0 +1,155 @@
+name: Doke UX-CSS-DEBT-060 Financial Modal Proof R4
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-060-financial-modal-proof-r4
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r4:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5a93b7fdf0b61e91d6dcd3867ae98d97f94d7eb9
+      PARENT_SHA: 025ee39a521d8297dd68db58749b2f46a42bcdbe
+      TARGET_FILE: assets/css/components/overlays/financial-modal-system.css
+      TARGET_BLOB: 291af9edb634992955e324128ed5d661970d1aa5
+      WALLET_IMPORTER: assets/css/pages/carteira-runtime-finance.css
+      WALLET_IMPORTER_BLOB: 1e5213ac54d6830066ba965139bda731ef78cbc1
+      MESSAGES_IMPORTER: assets/css/pages/messaging-runtime-chat.css
+      MESSAGES_IMPORTER_BLOB: 225939d37e493d4f7d3ae3349e75866a5196a94b
+      WALLET_HTML_BLOB: 6482a94c5e1386ce30634f4e6b453875c4af8645
+      MESSAGES_HTML_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      WALLET_JS_BLOB: b37c74485ef3cd289f83dad5a98093583beff3ff
+      MESSAGES_JS_BLOB: 432aca27165cf282a7bfc337f773666e52076e5d
+      EXPECTED_SHA256: 807124bff55d3d593749f1ee8b74f6e90ef0efb79fd4c74c216130a44fd4cd64
+      EXPECTED_BYTES: 35185
+      DIFF_PROBE_RUN: 31984210941
+      REPEATABILITY_RUN: 31984351757
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-059 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact product and authority inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$WALLET_IMPORTER")" = "$WALLET_IMPORTER_BLOB"
+          test "$(git hash-object "$MESSAGES_IMPORTER")" = "$MESSAGES_IMPORTER_BLOB"
+          test "$(git hash-object carteira.html)" = "$WALLET_HTML_BLOB"
+          test "$(git hash-object mensagens.html)" = "$MESSAGES_HTML_BLOB"
+          test "$(git hash-object assets/js/pages/carteira.js)" = "$WALLET_JS_BLOB"
+          test "$(git hash-object assets/js/pages/mensagens.js)" = "$MESSAGES_JS_BLOB"
+          grep -q 'components/overlays/financial-modal-system.css' "$WALLET_IMPORTER"
+          grep -q 'components/overlays/financial-modal-system.css' "$MESSAGES_IMPORTER"
+          grep -q 'data-wallet-withdraw-modal' carteira.html
+          grep -q 'data-charge-modal' mensagens.html
+          grep -q 'openWithdrawModal' assets/js/pages/carteira.js
+          grep -q 'openChargeModal' assets/js/pages/mensagens.js
+          test -z "$(git status --porcelain)"
+          echo "R4 INPUT PASS|sha=$TARGET_SHA|target=$TARGET_BLOB|diffProbe=$DIFF_PROBE_RUN|repeatability=$REPEATABILITY_RUN|semanticCriteriaUnchanged=1|measurementNormalized=1"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve exact product DOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4174 >/tmp/ux060-r4-http.log 2>&1 &
+          echo $! >/tmp/ux060-r4-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4174/carteira.html >/dev/null
+          curl -fsS http://127.0.0.1:4174/mensagens.html >/dev/null
+
+      - name: Static reconstruction and semantic browser A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux060-r4.js <<'NODE'
+          const fs=require('fs');
+          const crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const file=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(file,'utf8');
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){
+            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d);}return{declarations:ds,dead};
+          }
+          const p=parse(parent);
+          if(p.declarations.length!==852||p.dead.length!==207)throw new Error(`parent ${p.declarations.length}/${p.dead.length}`);
+          const families=[...new Set(p.dead.map(x=>x.selector))];if(families.length!==31)throw new Error(`families ${families.length}`);
+          const identical=p.dead.filter(x=>x.value===x.winner.value&&x.important===x.winner.important).length;if(identical!==118)throw new Error(`identical ${identical}`);
+          const contexts=[...new Set(p.dead.map(x=>x.context))].sort();if(JSON.stringify(contexts)!==JSON.stringify(['','@media (max-width: 760px)']))throw new Error(`contexts ${JSON.stringify(contexts)}`);
+          if(p.dead.some(x=>x.important||x.winner.important))throw new Error('unexpected important');
+          const remove=new Set(p.dead.map(x=>x.line));const candidate=parent.split(/\r?\n/).filter((_,i)=>!remove.has(i+1)).join('\n');
+          const q=parse(candidate);if(q.declarations.length!==645||q.dead.length!==0)throw new Error(`candidate ${q.declarations.length}/${q.dead.length}`);
+          const hash=crypto.createHash('sha256').update(candidate).digest('hex'),bytes=Buffer.byteLength(candidate);
+          if(hash!==process.env.EXPECTED_SHA256||bytes!==Number(process.env.EXPECTED_BYTES))throw new Error(`candidate identity ${hash}/${bytes}`);
+          console.log(`STATIC PASS|parent=852/207|candidate=645/0|families=31|identical=118|changed=89|contexts=global+max760|sha256=${hash}|bytes=${bytes}`);
+          const familyProps=Object.fromEntries(families.map(sel=>[sel,[...new Set(p.dead.filter(x=>x.selector===sel).map(x=>x.property))].sort()]));
+          const widths=[359,430,759,760,761,1024,1280];
+          const specs=[
+            {name:'carteira',url:'carteira.html',modal:'.wallet-dialog--withdraw',money:'.wallet-dialog-money-field input',close:'.wallet-dialog__close',primary:'.wallet-dialog-btn--primary'},
+            {name:'mensagens',url:'mensagens.html',modal:'.charge-modal',money:'.charge-modal__money-field input',close:'.charge-modal__close',primary:'.charge-modal__button:not(.charge-modal__button--ghost)',select:'.charge-modal__field select',menu:'.doke-financial-modal__select-menu'}
+          ];
+          const round=n=>Math.round(n*1000)/1000;
+          const rgbaRe=/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)/i;
+          function cssEqual(a,b){if(a===b)return{ok:true,normalized:false,alphaDelta:0};const ma=String(a).match(rgbaRe),mb=String(b).match(rgbaRe);if(!ma||!mb)return{ok:false};const sa=String(a).replace(ma[0],'<RGBA>'),sb=String(b).replace(mb[0],'<RGBA>');if(sa!==sb)return{ok:false};const numsA=ma.slice(1,4).map(Number),numsB=mb.slice(1,4).map(Number);if(numsA.some((x,i)=>x!==numsB[i]))return{ok:false};const aa=ma[4]===undefined?1:Number(ma[4]),ab=mb[4]===undefined?1:Number(mb[4]),delta=Math.abs(aa-ab);return{ok:delta<=0.003,normalized:delta>0,alphaDelta:delta};}
+          async function configure(page,spec){await page.evaluate(spec=>{document.documentElement.removeAttribute('data-auth-guard');document.documentElement.classList.remove('doke-mobile-shell-pending');document.body.style.visibility='visible';document.body.style.opacity='1';document.querySelectorAll('[data-doke-document-preloader],[data-messages-document-preloader],[data-wallet-hydration-skeleton],[data-messages-hydration-skeleton]').forEach(el=>{el.hidden=true;el.style.display='none';});if(spec.name==='carteira'){const shell=document.querySelector('[data-wallet-withdraw-modal]');if(!shell)throw new Error('wallet modal missing');shell.hidden=false;shell.classList.add('is-active');shell.setAttribute('aria-hidden','false');document.body.classList.add('is-wallet-modal-open');}else{const d=document.querySelector('[data-charge-modal]');if(!d)throw new Error('charge dialog missing');if(typeof d.showModal==='function'&&!d.open)d.showModal();else d.setAttribute('open','');d.dataset.financialAction='charge';}},spec);await page.waitForTimeout(60);}
+          async function scenario(page,spec,state){await page.evaluate(({spec,state})=>{const active=document.activeElement;if(active&&active.blur)active.blur();if(spec.menu){const menu=document.querySelector(spec.menu);if(menu){menu.hidden=state!=='menu';menu.style.display=state==='menu'?'grid':'';}}let sel=null;if(state==='money')sel=spec.money;else if(state==='close')sel=spec.close;else if(state==='primary')sel=spec.primary;else if(state==='select')sel=spec.select;else if(state==='menu'&&spec.menu)sel=spec.menu+' button';if(sel){const el=document.querySelector(sel);if(el&&el.focus)el.focus();}},{spec,state});await page.waitForTimeout(20);}
+          async function snap(page,spec,state,width){return page.evaluate(({familyProps,spec,state,width})=>{const round=n=>Math.round(n*1000)/1000,rect=r=>({x:round(r.x),y:round(r.y),width:round(r.width),height:round(r.height),right:round(r.right),bottom:round(r.bottom)});const out={};for(const [sel,props] of Object.entries(familyProps)){let nodes=[];try{nodes=[...document.querySelectorAll(sel)];}catch(e){throw new Error(`bad selector ${sel}`);}if(!nodes.length)continue;out[sel]=nodes.map((el,index)=>{const cs=getComputedStyle(el);return{index,tag:el.tagName,classes:String(el.className||''),props:Object.fromEntries(props.map(p=>[p,cs.getPropertyValue(p)])),rect:rect(el.getBoundingClientRect())};});}const modal=document.querySelector(spec.modal);return{page:spec.name,state,width,max760:matchMedia('(max-width:760px)').matches,modalOpen:spec.name==='mensagens'?modal.open:!document.querySelector('[data-wallet-withdraw-modal]').hidden,families:out,modalRect:rect(modal.getBoundingClientRect()),overflow:document.documentElement.scrollWidth>innerWidth+1||document.body.scrollWidth>innerWidth+1};},{familyProps,spec,state,width});}
+          async function collect(browser,css,label){fs.writeFileSync(file,css);const coverage=new Set(),out={};for(const spec of specs){out[spec.name]={};for(const width of widths){const ctx=await browser.newContext({viewport:{width,height:900}});const page=await ctx.newPage();await page.route('**/*',route=>{const t=route.request().resourceType();if(['script','font','image'].includes(t))return route.abort();return route.continue();});await page.goto(`http://127.0.0.1:4174/${spec.url}?ux060=${label}-${width}`,{waitUntil:'domcontentloaded'});await configure(page,spec);out[spec.name][width]={};const states=['base','money','close','primary'].concat(spec.select?['select']:[]).concat(spec.menu?['menu']:[]);for(const state of states){await scenario(page,spec,state);const s=await snap(page,spec,state,width);if(s.overflow)throw new Error(`${label}/${spec.name}/${width}/${state} overflow`);if(!s.modalOpen)throw new Error(`${label}/${spec.name}/${width}/${state} closed`);Object.keys(s.families).forEach(x=>coverage.add(x));out[spec.name][width][state]=s;}await ctx.close();}}console.log(`COVERAGE|${label}|families=${coverage.size}/31`);if(coverage.size!==31)throw new Error(`${label} coverage ${coverage.size}/31`);return out;}
+          function compare(a,b){let maxRect=0,rgbaNorm=0,maxAlpha=0,propertyChecks=0,rectChecks=0;for(const pg of Object.keys(a))for(const w of Object.keys(a[pg]))for(const state of Object.keys(a[pg][w])){const x=a[pg][w][state],y=b[pg][w][state];if(x.page!==y.page||x.state!==y.state||x.width!==y.width||x.max760!==y.max760||x.modalOpen!==y.modalOpen||x.overflow!==y.overflow)throw new Error(`metadata mismatch ${pg}/${w}/${state}`);const sels=[...new Set([...Object.keys(x.families),...Object.keys(y.families)])];for(const sel of sels){const xa=x.families[sel]||[],ya=y.families[sel]||[];if(xa.length!==ya.length)throw new Error(`node count ${pg}/${w}/${state}/${sel}`);for(let i=0;i<xa.length;i++){if(xa[i].tag!==ya[i].tag||xa[i].classes!==ya[i].classes)throw new Error(`node identity ${pg}/${w}/${state}/${sel}/${i}`);const props=[...new Set([...Object.keys(xa[i].props),...Object.keys(ya[i].props)])];for(const prop of props){propertyChecks++;const r=cssEqual(xa[i].props[prop],ya[i].props[prop]);if(!r.ok)throw new Error(`CSS DIFF ${pg}/${w}/${state}/${sel}/${i}/${prop}: ${JSON.stringify(xa[i].props[prop])} != ${JSON.stringify(ya[i].props[prop])}`);if(r.normalized){rgbaNorm++;maxAlpha=Math.max(maxAlpha,r.alphaDelta||0);}}for(const k of Object.keys(xa[i].rect)){rectChecks++;const d=Math.abs(xa[i].rect[k]-ya[i].rect[k]);maxRect=Math.max(maxRect,d);if(d>0.25)throw new Error(`RECT DIFF ${pg}/${w}/${state}/${sel}/${i}/${k}: ${xa[i].rect[k]} != ${ya[i].rect[k]} delta=${d}`);}}}for(const k of Object.keys(x.modalRect)){rectChecks++;const d=Math.abs(x.modalRect[k]-y.modalRect[k]);maxRect=Math.max(maxRect,d);if(d>0.25)throw new Error(`MODAL RECT DIFF ${pg}/${w}/${state}/${k} delta=${d}`);}}
+            return{maxRect,rgbaNorm,maxAlpha,propertyChecks,rectChecks};}
+          (async()=>{const browser=await chromium.launch({headless:true});try{const before=await collect(browser,parent,'parent'),after=await collect(browser,candidate,'candidate');const r=compare(before,after);console.log(`BROWSER SEMANTIC PARITY PASS|pages=2|families=31/31|viewports=${widths.join(',')}|propertyChecks=${r.propertyChecks}|rectChecks=${r.rectChecks}|rgbaSerializationNormalizations=${r.rgbaNorm}|maxAlphaDelta=${r.maxAlpha.toFixed(3)}|maxRectDelta=${r.maxRect.toFixed(3)}|rectTolerance=0.25|alphaTolerance=0.003|overflow=0|realDom=1|syntheticDom=0|semanticCriteriaUnchanged=1|measurementNormalized=1`);}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node /tmp/ux060-r4.js | tee /tmp/ux060-r4.log
+          grep -q 'STATIC PASS|parent=852/207|candidate=645/0|families=31|identical=118|changed=89' /tmp/ux060-r4.log
+          grep -q 'COVERAGE|parent|families=31/31' /tmp/ux060-r4.log
+          grep -q 'COVERAGE|candidate|families=31/31' /tmp/ux060-r4.log
+          grep -q 'BROWSER SEMANTIC PARITY PASS|pages=2|families=31/31' /tmp/ux060-r4.log
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t207\t'"$TARGET_FILE"
+          git diff --check
+          echo "R4 PROOF PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=207|browserRequired=1|semanticCriteriaUnchanged=1|measurementNormalized=1"
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux060-r4-http.pid; then kill "$(cat /tmp/ux060-r4-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$WALLET_IMPORTER")" = "$WALLET_IMPORTER_BLOB"
+          test "$(git hash-object "$MESSAGES_IMPORTER")" = "$MESSAGES_IMPORTER_BLOB"
+          test "$(git hash-object assets/js/pages/carteira.js)" = "$WALLET_JS_BLOB"
+          test "$(git hash-object assets/js/pages/mensagens.js)" = "$MESSAGES_JS_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R4 RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
