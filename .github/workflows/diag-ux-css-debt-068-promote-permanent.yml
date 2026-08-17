@@ -1,0 +1,84 @@
+name: Doke UX-CSS-DEBT-068 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-068-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: c7f8397821698f4445dad3b20e5aea2ff3d57cf3
+      PARENT_PARENT_SHA: 460120dbda36a407a143cfeb1471d46859be62ed
+      PARENT_TREE: f66b3a49361a8632d8ff3191e75085fe921d7256
+      TARGET_FILE: assets/css/components/internal/list-page-toolbar.css
+      PARENT_TARGET_BLOB: 0ca5d370759420fe74690784c73a686da687bf16
+      EXPECTED_SHA256: 865361f62d18b3635b558d4b7637e44ac21258322631f3981417e79040248531
+      EXPECTED_BYTES: 23971
+      PERMANENT_BRANCH: ux/ux-css-debt-068-list-page-toolbar-compaction
+      SOURCE_RUN: 32042539736
+      SOURCE_JOB: 95424312423
+      R1_RUN: 32042626659
+      R1_JOB: 95424545245
+      CANDIDATE_RUN: 32042775262
+      CANDIDATE_JOB: 95424931432
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-067 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and permanent seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$remote_sha|source=$SOURCE_RUN/$SOURCE_JOB|r1=$R1_RUN/$R1_JOB|candidate=$CANDIDATE_RUN/$CANDIDATE_JOB"
+
+      - name: Rebuild exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n');
+          const expected=new Map([[137,'    gap: 14px;'],[139,'    flex: 1 1 auto;'],[145,'    gap: var(--toolbar-gap-compact);'],[146,'    flex: 0 0 auto;'],[445,'    gap: var(--toolbar-gap);'],[451,'    gap: var(--toolbar-gap-compact);'],[457,'    gap: var(--toolbar-gap);']]);
+          for(const [i,row] of expected)if((ls[i]||'').replace(/\r$/,'')!==row)throw new Error(`source row drift ${i+1}`);
+          const remove=[137,139,145,146,445,451,457];
+          const out=ls.filter((_,i)=>!remove.includes(i)).join('\n');fs.writeFileSync(f,out);
+          const b=fs.readFileSync(f),hash=crypto.createHash('sha256').update(b).digest('hex');
+          if(hash!==process.env.EXPECTED_SHA256||b.length!==Number(process.env.EXPECTED_BYTES))throw new Error(`candidate identity ${hash}/${b.length}`);
+          console.log(`PROMOTION CANDIDATE PASS|sha256=${hash}|bytes=${b.length}|parent=276/7|candidate=269/0|files=1|additions=0|deletions=7`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t7\t'"$TARGET_FILE"
+          git diff --quiet "$PARENT_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          git diff --check
+
+      - name: Commit and atomically promote permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-068: compact superseded shared internal list page toolbar declarations"
+          new_sha="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA" "$new_sha")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$new_sha" -- "$TARGET_FILE")" = $'0\t7\t'"$TARGET_FILE"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$new_sha"
+          echo "PROMOTION PASS|permanent=$PERMANENT_BRANCH|sha=$new_sha|parent=$PARENT_SHA|files=1|additions=0|deletions=7"
