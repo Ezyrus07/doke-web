@@ -40,10 +40,14 @@ jobs:
           set -euo pipefail
           BASE=4a80324287dcc1b41096a675bd90d561ba5e79eb
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
-          test "$(git rev-parse HEAD^)" = "$BASE"
+          git merge-base --is-ancestor "$BASE" HEAD
           test "$(git rev-parse HEAD:backend/modules/communities/community-server-authority-runtime-composition-readiness.js)" = "772875cfe9b6076f2393d6d8ce826973ce7d8011"
           test "$(git rev-parse HEAD:config/com-b02g-server-authority-runtime-composition-readiness.json)" = "54732dc9eca329565e4067ebf96675fb13c11275"
           test "$(git rev-parse HEAD:.github/workflows/com-b02g-server-authority-runtime-composition-readiness.yml)" = "30a07521271b3907a3ddf6649fd4c5c9dbb54fb3"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-context-projection-composition-contract.js)" = "37b2628138bfff972c20f3a2ee1faa1d342d7bdd"
+          test "$(git rev-parse HEAD:config/com-b02h-canonical-command-context-projection-composition.json)" = "caac558722e68033cd1859a282a74938ff1b8d8d"
+          test "$(git rev-parse HEAD:scripts/test-com-b02h-canonical-command-context-projection-composition.js)" = "3729812445d119a8c7fe23e42e5b22c31ec5909a"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
           test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
           test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
           test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "332da22f604806ba06a0687c69d3d89903c4222c"
@@ -53,6 +57,8 @@ jobs:
             .github/workflows/com-b02h-canonical-command-context-projection-composition.yml \
             backend/modules/communities/community-command-context-projection-composition-contract.js \
             config/com-b02h-canonical-command-context-projection-composition.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
             scripts/test-com-b02h-canonical-command-context-projection-composition.js | sort)"
           actual="$(git diff --name-only "$BASE" HEAD | sort)"
           test "$actual" = "$expected"
