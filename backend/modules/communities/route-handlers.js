@@ -1,6 +1,7 @@
 'use strict';
 
 const { findRouteByName } = require('../../shared/http/route-registry');
+const commandHandlerComposition = require('./community-command-handler-composition');
 
 const ROUTE_NAME = 'communities.moderation.command';
 const FAILURE_CODE = 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED';
@@ -51,6 +52,30 @@ async function executeGovernanceCommand() {
 
 async function executeContentCommand() {
   throw createB02FBlockedRouteError('communities.content.command');
+}
+
+function composeMembershipCommandRepositoryOnly(packet, options) {
+  return commandHandlerComposition.composeRepositoryOnlyHandlerPlan(
+    'communities.membership.command',
+    packet,
+    options
+  );
+}
+
+function composeGovernanceCommandRepositoryOnly(packet, options) {
+  return commandHandlerComposition.composeRepositoryOnlyHandlerPlan(
+    'communities.governance.command',
+    packet,
+    options
+  );
+}
+
+function composeContentCommandRepositoryOnly(packet, options) {
+  return commandHandlerComposition.composeRepositoryOnlyHandlerPlan(
+    'communities.content.command',
+    packet,
+    options
+  );
 }
 
 function createStagingCanaryModerationCommandHandler(options) {
@@ -104,6 +129,9 @@ module.exports = Object.freeze({
   executeMembershipCommand,
   executeGovernanceCommand,
   executeContentCommand,
+  composeMembershipCommandRepositoryOnly,
+  composeGovernanceCommandRepositoryOnly,
+  composeContentCommandRepositoryOnly,
   createBlockedRouteError,
   createB02FBlockedRouteError,
   createStagingCanaryModerationCommandHandler,
