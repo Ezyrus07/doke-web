@@ -1,0 +1,107 @@
+name: Doke UX-CSS-DEBT-062 Form Flow Comfort Proof R6
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-062-form-flow-comfort-proof-r6
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r6:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 10a9a51cfd0a96e7c6a56eb71cf44452ddb8813f
+      PARENT_SHA: 1f2c971a2b74455dc752e68d680f8a4231d01cab
+      TARGET_FILE: assets/css/components/forms/form-flow-comfort.css
+      TARGET_BLOB: 28863e14d84271f1ce71dd87d61140555b304a22
+      IMPORTER: assets/css/pages/flow-foundation.css
+      IMPORTER_BLOB: dc5af3f258630570f7de83638044034020009ac3
+      ACTIVATOR: assets/js/components/forms/form-flow-comfort.js
+      ACTIVATOR_BLOB: 2feefdbaf1845888d900b37054d5ac2bf1259ede
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-061 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Exact source closure for affected selector family
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          test "$(git hash-object "$ACTIVATOR")" = "$ACTIVATOR_BLOB"
+          grep -q 'components/forms/form-flow-comfort.css' "$IMPORTER"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const classes=['post-service-panel__head','become-pro-section-head','budget-panel__head','verification-section__head','payment-section__head','review-section__head'];
+          const files=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean).filter(f=>fs.existsSync(f)&&fs.statSync(f).isFile());
+          const hits=[];for(const f of files){const s=fs.readFileSync(f,'utf8');const found=classes.filter(c=>s.includes(c));if(found.length)hits.push({file:f,found})}
+          const htmlFiles=[...new Set(hits.filter(x=>x.file.endsWith('.html')).map(x=>x.file))].sort();const jsFiles=[...new Set(hits.filter(x=>x.file.endsWith('.js')).map(x=>x.file))].sort();
+          if(JSON.stringify(htmlFiles)!==JSON.stringify(['orcamento.html','tornar-profissional.html']))throw new Error(`html closure ${JSON.stringify(htmlFiles)}`);if(jsFiles.length)throw new Error(`dynamic JS ${JSON.stringify(jsFiles)}`);
+          console.log('SOURCE CLOSURE PASS|htmlConsumers=orcamento.html,tornar-profissional.html|dynamicJsSources=0|importReachPages=8|fullSelectorPotentialPages=2');
+          NODE
+          test -z "$(git status --porcelain)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve exact product
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4180 >/tmp/ux062-r6-http.log 2>&1 &
+          echo $! >/tmp/ux062-r6-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4180/orcamento.html >/dev/null
+          curl -fsS http://127.0.0.1:4180/tornar-profissional.html >/dev/null
+
+      - name: Authoritative authenticated A-B proof on real consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux062-r6.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const target=process.env.TARGET_FILE,original=fs.readFileSync(target,'utf8'),lines=original.split('\n');const removeLine=110,expected='  margin-bottom: 16px;';if((lines[removeLine-1]||'').replace(/\r$/,'')!==expected)throw new Error(`row drift ${removeLine}`);const candidate=lines.filter((_,i)=>i+1!==removeLine).join('\n');const hash=crypto.createHash('sha256').update(candidate).digest('hex'),bytes=Buffer.byteLength(candidate);
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();function parse(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d)}return{decl:ds.length,dead}}
+          const pp=parse(original),cc=parse(candidate);if(pp.decl!==114||pp.dead.length!==1)throw new Error(`parent ${pp.decl}/${pp.dead.length}`);if(cc.decl!==113||cc.dead.length!==0)throw new Error(`candidate ${cc.decl}/${cc.dead.length}`);const dead=pp.dead[0];if(dead.line!==110||dead.value!=='16px'||dead.winner.value!=='12px'||dead.property!=='margin-bottom'||dead.important||dead.winner.important)throw new Error('dead identity');
+          const pages=['orcamento.html','tornar-profissional.html'],widths=[359,430,759,760,761,1024,1280],selector='body.doke-form-comfort-ready :is(.post-service-panel__head,.become-pro-section-head,.budget-panel__head,.verification-section__head,.payment-section__head,.review-section__head)';const session={provider:'mock',remember:true,user:{id:'ux062-proof-client',name:'UX 062 Client',email:'ux062-client@example.invalid',role:'client',type:'client',accountStatus:'active',verified:true,onboardingStatus:'not_started'},accountStatus:'active',sessionStatus:'active',issuedAt:'2026-08-17T00:00:00.000Z',updatedAt:'2026-08-17T00:00:00.000Z'};
+          async function capture(tag){const browser=await chromium.launch({headless:true});const out=[];let total=0;try{for(const pageName of pages){for(const width of widths){const ctx=await browser.newContext({viewport:{width,height:900}});await ctx.addInitScript(({session})=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(session)),{session});const page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url());if(['127.0.0.1','localhost'].includes(u.hostname))return route.continue();return route.abort();});await page.goto(`http://127.0.0.1:4180/${pageName}?ux062=${tag}-${width}`,{waitUntil:'domcontentloaded'});await page.waitForTimeout(1600);if(!page.url().includes('/'+pageName))throw new Error(`${pageName}@${width} redirected ${page.url()}`);const snap=await page.evaluate(sel=>{const round=r=>r?[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000):null;const els=[...document.querySelectorAll(sel)];return{ready:document.body.classList.contains('doke-form-comfort-ready'),pageData:document.body.dataset.page||'',authDecision:document.documentElement.dataset.authRouteDecision||'',authenticated:document.documentElement.dataset.authenticated||'',rows:els.map((el,i)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),n=el.nextElementSibling?.getBoundingClientRect?.()||null;return{i,tag:el.tagName,id:el.id||'',cls:typeof el.className==='string'?el.className:'',marginBottom:cs.marginBottom,display:cs.display,rect:round(r),nextRect:round(n)}}),overflow:Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth)}} ,selector);if(!snap.ready)throw new Error(`${pageName}@${width} not ready pageData=${snap.pageData}`);if(snap.authDecision!=='authorized'||snap.authenticated!=='true')throw new Error(`${pageName}@${width} auth=${snap.authDecision}/${snap.authenticated}`);if(snap.rows.length===0)throw new Error(`${pageName}@${width} missing target selector`);for(const row of snap.rows)if(row.marginBottom!=='12px')throw new Error(`${pageName}@${width} winner ${row.marginBottom}`);total+=snap.rows.length;out.push({page:pageName,width,snap});await ctx.close()}}}finally{await browser.close()}console.log(`COVERAGE|${tag}|pages=2|viewports=7|samples=${out.length}|selectorSamples=${total}|boundary=759/760/761`);return out}
+          (async()=>{try{fs.writeFileSync(target,original);const p=await capture('parent');fs.writeFileSync(target,candidate);const c=await capture('candidate');const a=JSON.stringify(p),b=JSON.stringify(c);if(a!==b){let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;throw new Error(`runtime drift idx=${i} parent=${a.slice(i,i+900)} candidate=${b.slice(i,i+900)}`)}const maxOverflow=Math.max(0,...p.map(x=>x.snap.overflow));if(maxOverflow!==0)throw new Error(`overflow=${maxOverflow}`);console.log('R6 BROWSER PARITY PASS|realConsumerPages=2|importZeroMatchPages=6|viewports=7|runtimeDiffs=0|geometryDiffs=0|overflow=0|realProductDOM=1|realProductJS=1|syntheticIdentityOnly=1|criteriaRelaxed=0');console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=113|superseded=0|files=1|additions=0|deletions=1`);fs.writeFileSync(target,candidate)}catch(e){fs.writeFileSync(target,original);throw e}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node --check /tmp/ux062-r6.js
+          node /tmp/ux062-r6.js | tee /tmp/ux062-r6.log
+          grep -q 'COVERAGE|parent|pages=2|viewports=7|samples=14' /tmp/ux062-r6.log
+          grep -q 'COVERAGE|candidate|pages=2|viewports=7|samples=14' /tmp/ux062-r6.log
+          grep -q 'R6 BROWSER PARITY PASS|realConsumerPages=2|importZeroMatchPages=6|viewports=7|runtimeDiffs=0|geometryDiffs=0|overflow=0' /tmp/ux062-r6.log
+          grep -q 'criteriaRelaxed=0' /tmp/ux062-r6.log
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          git diff --check
+          echo 'R6 PROOF PASS|browserRequired=1|candidateLeftForDiff=1|sourceClosure=1'
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux062-r6-http.pid; then kill "$(cat /tmp/ux062-r6-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          test "$(git hash-object "$ACTIVATOR")" = "$ACTIVATOR_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'R6 RESTORE PASS|productMutation=0|permanentBranchMutation=0'
