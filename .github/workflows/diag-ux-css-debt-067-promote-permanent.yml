@@ -1,0 +1,78 @@
+name: Doke UX-CSS-DEBT-067 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-067-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 460120dbda36a407a143cfeb1471d46859be62ed
+      PARENT_PARENT_SHA: 2937218b2ecfa9b59586d4fd1c2f6361c103e786
+      TARGET_FILE: assets/css/components/overlays/modal-visual-contract.css
+      PARENT_TARGET_BLOB: 2fd0b2fc22c9437052e00442848c0ed93966021a
+      EXPECTED_SHA256: cdfa41223fc6dc8fe743137e162a9e5174d35073e7ae24a6492881d8de2347b2
+      EXPECTED_BYTES: 38428
+      PERMANENT_BRANCH: ux/ux-css-debt-067-modal-visual-compaction
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$remote_sha|targetBlob=$PARENT_TARGET_BLOB"
+
+      - name: Rebuild exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n');
+          if((ls[81]||'').replace(/\r$/,'')!=='  display: grid;')throw new Error('target row drift 82');
+          const out=ls.filter((_,i)=>i!==81).join('\n');fs.writeFileSync(f,out);
+          const b=fs.readFileSync(f),hash=crypto.createHash('sha256').update(b).digest('hex');
+          if(hash!==process.env.EXPECTED_SHA256||b.length!==Number(process.env.EXPECTED_BYTES))throw new Error(`candidate identity ${hash}/${b.length}`);
+          console.log('DETERMINISTIC REBUILD PASS|parent=476/1|candidate=475/0|families=1|identical=0|changed=1');
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          git diff --check
+          echo "CANDIDATE IDENTITY PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=1"
+
+      - name: Commit and atomically fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add -- "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-067: compact superseded shared modal visual display declaration"
+          commit_sha="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" HEAD -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          after="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$after" = "$commit_sha"
+          echo "PROMOTION PASS|permanent=$after|parent=$PARENT_SHA|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=1"
