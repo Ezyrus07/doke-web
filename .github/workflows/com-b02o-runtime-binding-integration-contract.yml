@@ -29,11 +29,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
+
       - name: Frozen B02N predecessor and exact repository-only scope
         shell: bash
         run: |
@@ -41,19 +43,25 @@ jobs:
           BASE=d38823ec701714c52513920b0f6933422fad33db
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
           git merge-base --is-ancestor "$BASE" HEAD
+
           test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-readiness.js)" = "6b424886266249eff93c47d814d3c2abc5564537"
           test "$(git rev-parse HEAD:config/com-b02n-runtime-binding-integration-readiness.json)" = "ae417df251707a34d368cf772b9503d13ebc963c"
           test "$(git rev-parse HEAD:scripts/test-com-b02n-runtime-binding-integration-readiness.js)" = "01ba77dd1ba1f8d2f50cac082c9ed47d33fba956"
           test "$(git rev-parse HEAD:.github/workflows/com-b02n-runtime-binding-integration-readiness.yml)" = "ca5d54abdb0a9ca1f1d1c45a1065c22143ac5e9a"
+
           test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-adapter-implementation.js)" = "233e241fa9da0494d0d350c9ac686168e508d2e2"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-adapter-contract.js)" = "c48eabab7bb5b37b6a1663a051b3a8a6223cd0c9"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
           test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "990ee5c8895446f44cdcd5819101f0b3d5370e63"
           test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
           test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = "38cd77fd6d3cf0c9f13d4c35ed000b9831481840"
           test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = "1ff7621973be5ef38aa5e033b91f5b75216b9ec1"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
-          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-contract.js)" = "7ba8deb41fa601abf1e57204000b4aa37551987d"
-          test "$(git rev-parse HEAD:config/com-b02o-runtime-binding-integration-contract.json)" = "c5022adc785b7efe8aea96824d063eb892d5417f"
-          test "$(git rev-parse HEAD:scripts/test-com-b02o-runtime-binding-integration-contract.js)" = "1e632385fdaeee452cf2d201ee2843b37a68a3dc"
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-contract.js)" = "ed1536920e281bd3fda3c35f6b4d71a2fbf6107f"
+          test "$(git rev-parse HEAD:config/com-b02o-runtime-binding-integration-contract.json)" = "e221b62821eb801f90ac37ec5534d7cc7c5524a4"
+          test "$(git rev-parse HEAD:scripts/test-com-b02o-runtime-binding-integration-contract.js)" = "d221aad0156bc373e5493690fd33ee469c19775b"
+
           expected="$(printf '%s\n' \
             .github/workflows/com-b02o-runtime-binding-integration-contract.yml \
             backend/modules/communities/community-command-runtime-binding-integration-contract.js \
@@ -63,37 +71,80 @@ jobs:
             scripts/test-com-b02o-runtime-binding-integration-contract.js | sort)"
           actual="$(git diff --name-only "$BASE" HEAD | sort)"
           test "$actual" = "$expected"
+
       - name: Syntax and semantic integration-contract conformance
         run: |
           node --check backend/modules/communities/community-command-runtime-binding-integration-contract.js
           node --check scripts/test-com-b02o-runtime-binding-integration-contract.js
           node scripts/test-com-b02o-runtime-binding-integration-contract.js
-      - name: Integration contract remains descriptive and unbound
+
+      - name: Operation-specific repository authority remains explicit and unbound
         shell: bash
         run: |
           set -euo pipefail
           TARGET=backend/modules/communities/community-command-runtime-binding-integration-contract.js
+
           ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
-          ! grep -E 'createCommandSourceRepository\(|beginRuntimeBindingAdapter\(|resumeWithCanonicalState\(|resumeWithIdempotencyClaim\(|resumeWithRepositoryWrite\(' "$TARGET"
+          ! grep -E 'createCommunitySupabaseRepository\(|createCommandSourceRepository\(|beginRuntimeBindingAdapter\(|resumeWithCanonicalState\(|resumeWithIdempotencyClaim\(|resumeWithRepositoryWrite\(' "$TARGET"
+
           grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+
           node - <<'NODE'
-          const handlers=require('./backend/modules/communities/route-handlers');
-          const loader=require('./backend/shared/http/module-route-loader');
-          const c=require('./backend/modules/communities/community-command-runtime-binding-integration-contract');
-          for(const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand'])if(loader.getHandler('communities',name)!==handlers[name])throw new Error(`B02O_HANDLER_DRIFT:${name}`);
-          for(const name of ['describeFutureHandlerBridge','describeFutureRepositoryExecutorBridge'])if(loader.getHandler('communities',name)!==null)throw new Error(`B02O_RUNTIME_EXPOSED:${name}`);
-          const d=c.describeRuntimeBindingIntegrationContract();
-          if(d.runtimeHandlerIntegrated!==false||d.repositoryExecutorBound!==false||d.serviceRoleProviderBound!==false||d.repositoryV2SqlApplied!==false||d.runtimeActivated!==false)throw new Error('B02O_SCOPE_DRIFT');
-          const b=require('./config/com-b02o-runtime-binding-integration-contract.json');
-          if(b.authorization.type!=='standing_repository_only'||b.authorization.genericNextAuthorized!==true||b.authorization.sensitiveBoundariesExcluded!==true)throw new Error('B02O_AUTHORIZATION_DRIFT');
-          for(const k of ['runtimeHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','repositoryExecutorBindingAuthority','runtimeActivationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','rpcExecutionAuthority','networkAuthority','realtimeActivationAuthority','credentialReadAuthority','identityLifecycleRemoteAuthority','realCommunityMutationAuthority','migrationApplicationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02O_FORBIDDEN_AUTHORITY:${k}`);
+          const c = require('./backend/modules/communities/community-command-runtime-binding-integration-contract');
+          const b02l = require('./backend/modules/communities/community-command-runtime-binding-adapter-contract');
+          const b02b = require('./backend/modules/communities/community-supabase-repository-adapter');
+          const b02i = require('./backend/modules/communities/community-command-source-repository-contract');
+          const handlers = require('./backend/modules/communities/route-handlers');
+          const loader = require('./backend/shared/http/module-route-loader');
+          const cfg = require('./config/com-b02o-runtime-binding-integration-contract.json');
+
+          if (c.CONTRACT_ID !== 'com-b02o-runtime-binding-integration-contract-v2') throw new Error('B02O_V2_REQUIRED');
+          if (c.REPOSITORY_EXECUTOR_BRIDGE_CONTRACT.authoritySourceContractId !== b02l.CONTRACT_ID) throw new Error('B02L_AUTHORITY_SOURCE_DRIFT');
+          if (c.CANONICAL_STATE_READ_BRIDGE_CONTRACT.repositoryContractId !== b02b.CONTRACT_ID) throw new Error('B02B_READ_AUTHORITY_DRIFT');
+          if (c.CANONICAL_STATE_READ_BRIDGE_CONTRACT.rpcByOperation.loadCanonicalState !== b02b.RPC.loadCanonicalState) throw new Error('B02B_READ_RPC_DRIFT');
+          if (c.COMMAND_SOURCE_REPOSITORY_BRIDGE_CONTRACT.repositoryContractId !== b02i.CONTRACT_ID) throw new Error('B02I_COMMAND_AUTHORITY_DRIFT');
+          if (Object.prototype.hasOwnProperty.call(b02i.RPC, 'loadCanonicalState')) throw new Error('B02I_MUST_NOT_OWN_CANONICAL_READ');
+
+          const read = c.describeFutureRepositoryExecutorBridge('loadCanonicalState');
+          if (read.repositoryContractId !== b02b.CONTRACT_ID || read.sqlPrerequisite !== null) throw new Error('B02O_READ_BRIDGE_DRIFT');
+
+          for (const op of ['claimIdempotencyKey','createCommunityProjectionOutcome','commitEventProjectionOutcome']) {
+            const bridge = c.describeFutureRepositoryExecutorBridge(op);
+            if (bridge.repositoryContractId !== b02i.CONTRACT_ID || !bridge.sqlPrerequisite) throw new Error(`B02O_COMMAND_BRIDGE_DRIFT:${op}`);
+          }
+
+          for (const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand']) {
+            if (loader.getHandler('communities', name) !== handlers[name]) throw new Error(`B02O_HANDLER_DRIFT:${name}`);
+          }
+          for (const name of ['describeFutureHandlerBridge','describeFutureRepositoryExecutorBridge']) {
+            if (loader.getHandler('communities', name) !== null) throw new Error(`B02O_RUNTIME_EXPOSED:${name}`);
+          }
+
+          const d = c.describeRuntimeBindingIntegrationContract();
+          for (const key of ['runtimeHandlerIntegrated','canonicalStateReadExecutorBound','commandSourceRepositoryExecutorBound','repositoryExecutorBound','serviceRoleProviderBound','repositoryV2SqlApplied','runtimeActivated']) {
+            if (d[key] !== false) throw new Error(`B02O_SCOPE_DRIFT:${key}`);
+          }
+
+          if (cfg.contractId !== c.CONTRACT_ID) throw new Error('B02O_CONFIG_CONTRACT_DRIFT');
+          if (cfg.contract.canonicalStateReadRepositoryContractId !== b02b.CONTRACT_ID) throw new Error('B02O_CONFIG_READ_AUTHORITY_DRIFT');
+          if (cfg.contract.commandSourceRepositoryContractId !== b02i.CONTRACT_ID) throw new Error('B02O_CONFIG_COMMAND_AUTHORITY_DRIFT');
+          if (cfg.authorization.type !== 'standing_repository_only' || cfg.authorization.genericNextAuthorized !== true || cfg.authorization.sensitiveBoundariesExcluded !== true) throw new Error('B02O_AUTHORIZATION_DRIFT');
+
+          for (const key of ['runtimeHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','repositoryExecutorBindingAuthority','runtimeActivationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','rpcExecutionAuthority','networkAuthority','realtimeActivationAuthority','credentialReadAuthority','identityLifecycleRemoteAuthority','realCommunityMutationAuthority','migrationApplicationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority']) {
+            if (cfg.authority[key] !== false) throw new Error(`B02O_FORBIDDEN_AUTHORITY:${key}`);
+          }
           NODE
+
           ! git diff --name-only d38823ec701714c52513920b0f6933422fad33db HEAD | grep '^supabase/migrations/'
+
       - name: Install dependencies
         run: npm ci --ignore-scripts
+
       - name: Domain Completion Matrix
         run: npm run audit:domain-completion-matrix
+
       - name: Agent Governance
         run: npm run audit:agent-governance
+
       - name: Diff hygiene
         run: git diff --check d38823ec701714c52513920b0f6933422fad33db HEAD
