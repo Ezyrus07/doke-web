@@ -1,0 +1,144 @@
+name: Doke UX-CSS-DEBT-060 Financial Modal Diff Probe
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-060-financial-modal-diff-probe
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5a93b7fdf0b61e91d6dcd3867ae98d97f94d7eb9
+      PARENT_SHA: 025ee39a521d8297dd68db58749b2f46a42bcdbe
+      TARGET_FILE: assets/css/components/overlays/financial-modal-system.css
+      TARGET_BLOB: 291af9edb634992955e324128ed5d661970d1aa5
+    steps:
+      - name: Checkout exact UX-CSS-DEBT-059
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard input
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'PROBE INPUT PASS'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4174 >/tmp/ux060-probe-http.log 2>&1 &
+          echo $! >/tmp/ux060-probe-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4174/carteira.html >/dev/null
+
+      - name: Probe exact wallet close-state diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux060-probe.js <<'NODE'
+          const fs=require('fs');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const file=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(file,'utf8');
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){
+            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            const last=new Map(),dead=[];
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d);}
+            return{declarations:ds,dead};
+          }
+          const p=parse(parent);if(p.declarations.length!==852||p.dead.length!==207)throw new Error('parse drift');
+          const remove=new Set(p.dead.map(x=>x.line));
+          const candidate=parent.split(/\r?\n/).filter((_,i)=>!remove.has(i+1)).join('\n');
+          const families=[...new Set(p.dead.map(x=>x.selector))];
+          const familyProps=Object.fromEntries(families.map(sel=>[sel,[...new Set(p.dead.filter(x=>x.selector===sel).map(x=>x.property))].sort()]));
+          const round=n=>Math.round(n*1000)/1000;
+          async function collect(css,label){
+            fs.writeFileSync(file,css);
+            const browser=await chromium.launch({headless:true});
+            const ctx=await browser.newContext({viewport:{width:359,height:900}});
+            const page=await ctx.newPage();
+            await page.route('**/*',route=>{const t=route.request().resourceType();if(['script','font','image'].includes(t))return route.abort();return route.continue();});
+            await page.goto('http://127.0.0.1:4174/carteira.html',{waitUntil:'domcontentloaded'});
+            await page.evaluate(()=>{
+              document.documentElement.removeAttribute('data-auth-guard');document.documentElement.classList.remove('doke-mobile-shell-pending');document.body.style.visibility='visible';document.body.style.opacity='1';
+              document.querySelectorAll('[data-doke-document-preloader],[data-wallet-hydration-skeleton]').forEach(el=>{el.hidden=true;el.style.display='none';});
+              const shell=document.querySelector('[data-wallet-withdraw-modal]');shell.hidden=false;shell.classList.add('is-active');shell.setAttribute('aria-hidden','false');document.body.classList.add('is-wallet-modal-open');
+              document.querySelector('.wallet-dialog__close')?.focus();
+            });
+            await page.waitForTimeout(80);
+            const snap=await page.evaluate((familyProps)=>{
+              const round=n=>Math.round(n*1000)/1000,rect=r=>({x:round(r.x),y:round(r.y),width:round(r.width),height:round(r.height),right:round(r.right),bottom:round(r.bottom)});
+              const out={};
+              for(const [sel,props] of Object.entries(familyProps)){
+                let nodes=[];try{nodes=[...document.querySelectorAll(sel)];}catch{}
+                if(!nodes.length)continue;
+                out[sel]=nodes.map((el,i)=>{const cs=getComputedStyle(el);return{index:i,tag:el.tagName,classes:String(el.className||''),props:Object.fromEntries(props.map(p=>[p,cs.getPropertyValue(p)])),rect:rect(el.getBoundingClientRect())};});
+              }
+              const modal=document.querySelector('.wallet-dialog--withdraw');
+              return{families:out,modalRect:rect(modal.getBoundingClientRect()),overflow:document.documentElement.scrollWidth>innerWidth+1||document.body.scrollWidth>innerWidth+1};
+            },familyProps);
+            await browser.close();
+            console.log(`COLLECT|${label}|families=${Object.keys(snap.families).length}|overflow=${snap.overflow}`);
+            return snap;
+          }
+          function diff(x,y,path='root',out=[]){
+            if(out.length>=100)return out;
+            if(typeof x!==typeof y){out.push([path,x,y]);return out;}
+            if(x===null||y===null||typeof x!=='object'){if(x!==y)out.push([path,x,y]);return out;}
+            for(const k of [...new Set([...Object.keys(x),...Object.keys(y)])].sort())diff(x[k],y[k],path+'.'+k,out);
+            return out;
+          }
+          (async()=>{
+            const a=await collect(parent,'parent');
+            const b=await collect(candidate,'candidate');
+            const ds=diff(a,b);
+            console.log(`DIFF COUNT|${ds.length}`);
+            for(const [path,x,y] of ds)console.log(`DIFF|path=${path}|parent=${JSON.stringify(x)}|candidate=${JSON.stringify(y)}`);
+            if(!ds.length)console.log('PROBE PARITY PASS|wallet=359|state=close');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node /tmp/ux060-probe.js
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux060-probe-http.pid; then kill "$(cat /tmp/ux060-probe-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'PROBE RESTORE PASS'
