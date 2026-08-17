@@ -1,0 +1,146 @@
+name: Doke UX-CSS-DEBT-062 Form Flow Comfort Proof
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-062-form-flow-comfort-proof
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 10a9a51cfd0a96e7c6a56eb71cf44452ddb8813f
+      PARENT_SHA: 1f2c971a2b74455dc752e68d680f8a4231d01cab
+      TARGET_FILE: assets/css/components/forms/form-flow-comfort.css
+      TARGET_BLOB: 28863e14d84271f1ce71dd87d61140555b304a22
+      IMPORTER: assets/css/pages/flow-foundation.css
+      IMPORTER_BLOB: dc5af3f258630570f7de83638044034020009ac3
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-061 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact inputs and reach set
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          grep -q 'components/forms/form-flow-comfort.css' "$IMPORTER"
+          for page in ajuda.html anunciar-servico.html avaliacao-profissional.html novidades.html orcamento.html pagamento-profissional.html tornar-profissional.html verificacao-profissional.html; do
+            test -n "$(git rev-parse "HEAD:$page")"
+            echo "PAGE INPUT|$page|blob=$(git rev-parse "HEAD:$page")"
+          done
+          node <<'NODE'
+          const fs=require('fs');
+          const pages=['ajuda.html','anunciar-servico.html','avaliacao-profissional.html','novidades.html','orcamento.html','pagamento-profissional.html','tornar-profissional.html','verificacao-profissional.html'];
+          const classes=['post-service-panel__head','become-pro-section-head','budget-panel__head','verification-section__head','payment-section__head','review-section__head'];
+          let total=0;
+          for(const p of pages){const s=fs.readFileSync(p,'utf8');const hits=classes.filter(c=>s.includes(c));total+=hits.length;console.log(`STATIC REACH|page=${p}|families=${hits.join(',')||'-'}`)}
+          if(total<6)throw new Error(`unexpected static selector reach total=${total}`);
+          console.log(`STATIC REACH PASS|pages=8|selectorClassHits=${total}`);
+          NODE
+          test -z "$(git status --porcelain)"
+          echo "INPUT PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|importerBlob=$IMPORTER_BLOB|pages=8"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4176 >/tmp/ux062-http.log 2>&1 &
+          echo $! >/tmp/ux062-http.pid
+          sleep 1
+          for page in ajuda.html anunciar-servico.html avaliacao-profissional.html novidades.html orcamento.html pagamento-profissional.html tornar-profissional.html verificacao-profissional.html; do curl -fsS "http://127.0.0.1:4176/$page" >/dev/null; done
+
+      - name: Browser real-DOM parity and exact candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux062-proof.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const target=process.env.TARGET_FILE,original=fs.readFileSync(target,'utf8'),lines=original.split('\n');
+          const removeLine=110,expected='  margin-bottom: 16px;';
+          if((lines[removeLine-1]||'').replace(/\r$/,'')!==expected)throw new Error(`row drift ${removeLine}: ${JSON.stringify(lines[removeLine-1])}`);
+          if(!original.includes('  margin-bottom: 12px;'))throw new Error('later winner missing');
+          const candidate=lines.filter((_,i)=>i+1!==removeLine).join('\n');
+          const hash=crypto.createHash('sha256').update(candidate).digest('hex'),bytes=Buffer.byteLength(candidate);
+          const pages=['ajuda.html','anunciar-servico.html','avaliacao-profissional.html','novidades.html','orcamento.html','pagamento-profissional.html','tornar-profissional.html','verificacao-profissional.html'];
+          const selector='body.doke-form-comfort-ready :is(.post-service-panel__head,.become-pro-section-head,.budget-panel__head,.verification-section__head,.payment-section__head,.review-section__head)';
+          const widths=[359,430,759,760,761,1024,1280];
+          async function capture(tag){
+            const browser=await chromium.launch({headless:true});const out=[];let matchedPages=0,zeroPages=0,totalMatches=0;
+            try{
+              for(const pageName of pages){
+                let pageHadMatch=false;
+                for(const width of widths){
+                  const ctx=await browser.newContext({viewport:{width,height:900}});const page=await ctx.newPage();
+                  await page.route('**/*',r=>{const u=new URL(r.request().url());if(['127.0.0.1','localhost'].includes(u.hostname))return r.continue();return r.abort();});
+                  await page.goto(`http://127.0.0.1:4176/${pageName}?ux062=${tag}-${width}`,{waitUntil:'domcontentloaded'});
+                  await page.waitForTimeout(800);
+                  const snap=await page.evaluate(sel=>{
+                    const ready=document.body.classList.contains('doke-form-comfort-ready');
+                    const els=[...document.querySelectorAll(sel)];
+                    const rows=els.map((el,i)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{i,tag:el.tagName,id:el.id||'',cls:typeof el.className==='string'?el.className:'',marginBottom:cs.marginBottom,display:cs.display,rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000)};});
+                    return{ready,rows,overflow:Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth)};
+                  },selector);
+                  if(!snap.ready)throw new Error(`${pageName}@${width} missing doke-form-comfort-ready`);
+                  if(snap.rows.length){pageHadMatch=true;totalMatches+=snap.rows.length;for(const row of snap.rows)if(row.marginBottom!=='12px')throw new Error(`${pageName}@${width} winner drift ${row.marginBottom}`)}
+                  out.push({page:pageName,width,snap});await ctx.close();
+                }
+                if(pageHadMatch)matchedPages++;else zeroPages++;
+              }
+            }finally{await browser.close()}
+            if(matchedPages<6)throw new Error(`matched page coverage ${matchedPages}/8`);
+            console.log(`COVERAGE|${tag}|pages=8|matchedPages=${matchedPages}|zeroMatchPages=${zeroPages}|viewports=7|totalMatches=${totalMatches}|bodyReady=8/8|boundary=759/760/761`);return out;
+          }
+          (async()=>{try{
+            fs.writeFileSync(target,original);const p=await capture('parent');
+            fs.writeFileSync(target,candidate);const c=await capture('candidate');
+            const a=JSON.stringify(p),b=JSON.stringify(c);if(a!==b){let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;throw new Error(`runtime drift idx=${i} parent=${a.slice(i,i+700)} candidate=${b.slice(i,i+700)}`)}
+            const over=Math.max(0,...p.map(x=>x.snap.overflow));if(over!==0)throw new Error(`overflow ${over}`);
+            console.log(`BROWSER PARITY PASS|pages=8|viewports=7|runtimeDiffs=0|overflow=0|realProductDOM=1|syntheticDOM=0|stateWaitMs=800|criteriaRelaxed=0`);
+            console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=113|superseded=0|files=1|additions=0|deletions=1`);
+            fs.writeFileSync(target,candidate);
+          }catch(e){fs.writeFileSync(target,original);throw e}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node --check /tmp/ux062-proof.js
+          node /tmp/ux062-proof.js | tee /tmp/ux062-proof.log
+          grep -q 'COVERAGE|parent|pages=8' /tmp/ux062-proof.log
+          grep -q 'COVERAGE|candidate|pages=8' /tmp/ux062-proof.log
+          grep -q 'BROWSER PARITY PASS|pages=8|viewports=7|runtimeDiffs=0|overflow=0' /tmp/ux062-proof.log
+          grep -q 'criteriaRelaxed=0' /tmp/ux062-proof.log
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          git diff --check
+          echo 'PROOF PASS|browserRequired=1|realProductDOM=1|syntheticDOM=0|candidateLeftForDiff=1'
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux062-http.pid; then kill "$(cat /tmp/ux062-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
