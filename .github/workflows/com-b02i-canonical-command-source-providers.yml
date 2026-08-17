@@ -1,0 +1,107 @@
+name: COM-B02I Canonical Command Source Providers
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-command-source-providers.js'
+      - 'backend/modules/communities/community-command-source-repository-contract.js'
+      - 'backend/modules/communities/sql/com-b02i-command-sources.sql'
+      - 'config/com-b02i-canonical-command-source-providers.json'
+      - 'scripts/test-com-b02i-canonical-command-source-providers.js'
+      - '.github/workflows/com-b02i-canonical-command-source-providers.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02i-command-source-providers-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02H predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=4ded7870d05427ee72f901c242fc133b182657b1
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-context-projection-composition-contract.js)" = "37b2628138bfff972c20f3a2ee1faa1d342d7bdd"
+          test "$(git rev-parse HEAD:config/com-b02h-canonical-command-context-projection-composition.json)" = "caac558722e68033cd1859a282a74938ff1b8d8d"
+          test "$(git rev-parse HEAD:scripts/test-com-b02h-canonical-command-context-projection-composition.js)" = "3729812445d119a8c7fe23e42e5b22c31ec5909a"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02h-canonical-command-context-projection-composition.yml)" = "8530ecaa4f1f50316396091e5981c53de8059b66"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-membership-command.js)" = "bd26ebf77038cdba5077a2e524a7d15f3055a96f"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-governance-discipline-contract.js)" = "c7935bb5881d64b6d3f1b3ea4cccfb88075549b1"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-content-realtime-contract.js)" = "ec2c4b01e38b1a9c771154c37ffc8d896d33ce5d"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "332da22f604806ba06a0687c69d3d89903c4222c"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+          test "$(git rev-parse HEAD:supabase/migrations/20260805121500_com_b02b_server_authority.sql)" = "fd74f6abc029023c4e0972b32b35daca975c3d57"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02i-canonical-command-source-providers.yml \
+            backend/modules/communities/community-command-source-providers.js \
+            backend/modules/communities/community-command-source-repository-contract.js \
+            backend/modules/communities/sql/com-b02i-command-sources.sql \
+            config/com-b02i-canonical-command-source-providers.json \
+            scripts/test-com-b02i-canonical-command-source-providers.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected"
+
+      - name: Syntax and semantic source-provider conformance
+        run: |
+          node --check backend/modules/communities/community-command-source-providers.js
+          node --check backend/modules/communities/community-command-source-repository-contract.js
+          node --check scripts/test-com-b02i-canonical-command-source-providers.js
+          node scripts/test-com-b02i-canonical-command-source-providers.js
+
+      - name: Fail-closed remote and migration hard blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-command-source-providers.js
+          ! grep -E 'createClient\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-command-source-repository-contract.js
+          grep -F "authority!=='server_service_role'" backend/modules/communities/community-command-source-repository-contract.js
+          grep -F 'intentionally outside supabase/migrations' backend/modules/communities/sql/com-b02i-command-sources.sql
+          grep -F "'claimState'" backend/modules/communities/sql/com-b02i-command-sources.sql
+          grep -F 'outcome jsonb' backend/modules/communities/sql/com-b02i-command-sources.sql
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          ! git diff --name-only 4ded7870d05427ee72f901c242fc133b182657b1 HEAD | grep '^supabase/migrations/'
+          node - <<'NODE'
+          const b=require('./config/com-b02i-canonical-command-source-providers.json');
+          if(b.authorization.received!==true||b.authorization.consumed!==true||b.authorization.consumedFromHead!=='4ded7870d05427ee72f901c242fc133b182657b1'||b.authorization.singleExecutionOnly!==true||b.authorization.workflowRerunAllowedAfterAttempt!==false)throw new Error('B02I_AUTHORIZATION_DRIFT');
+          if(b.repositoryEvolution.sqlDefinitionOutsideMigrationDirectory!==true||b.repositoryEvolution.migrationArtifactCreated!==false||b.repositoryEvolution.migrationApplied!==false||b.repositoryEvolution.rpcExecuted!==false||b.repositoryEvolution.networkExecuted!==false||b.repositoryEvolution.credentialReadExecuted!==false)throw new Error('B02I_REPOSITORY_EVOLUTION_DRIFT');
+          for(const k of ['handlerMutationAuthority','runtimeActivationAuthority','repositoryRemoteExecutionAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','rpcExecutionAuthority','networkAuthority','credentialReadAuthority','identityLifecycleRemoteAuthority','realCommunityMutationAuthority','migrationApplicationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02I_FORBIDDEN_AUTHORITY:${k}`);
+          for(const k of ['existingB02hArtifactsChanged','membershipEvaluatorChanged','governanceEvaluatorChanged','contentEvaluatorChanged','existingRouteRegistryChanged','existingModuleRouteLoaderChanged','existingCommunityRouteHandlersChanged','existingB02bRepositoryAdapterChanged','existingB02bMigrationChanged','runtimeActivated','stagingDeploymentExecuted','stagingTrafficEnabled','rpcExecuted','networkRequestExecuted','realtimeSubscriptionExecuted','credentialReadExecuted','remoteIdentityMutationExecuted','realCommunityMutationExecuted','migrationApplied','triggerCreated','receiptCreated','productionChanged','pullRequestMerged','readyForReviewChanged'])if(b.effects[k]!==false)throw new Error(`B02I_FORBIDDEN_EFFECT:${k}`);
+          if(b.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H'||b.functionalCheckpoint.exactRootCauseProven!==false||b.functionalCheckpoint.causalPromotionAllowed!==false||b.functionalCheckpoint.privatePresencePromotionAllowed!==false||b.functionalCheckpoint.r5iCreated!==false||b.functionalCheckpoint.r5iInferred!==false)throw new Error('B02I_FUNCTIONAL_CHECKPOINT_DRIFT');
+          NODE
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check 4ded7870d05427ee72f901c242fc133b182657b1 HEAD
