@@ -1,0 +1,270 @@
+name: Doke UX-CSS-DEBT-061 Action Modal Proof
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-061-action-modal-proof
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 1f2c971a2b74455dc752e68d680f8a4231d01cab
+      PARENT_SHA: 5a93b7fdf0b61e91d6dcd3867ae98d97f94d7eb9
+      TARGET_FILE: assets/css/components/overlays/action-modal-system.css
+      TARGET_BLOB: 94227b1313fa55a56cbea342e327553b7280c6d7
+      COMMUNITY_IMPORTER: assets/css/pages/comunidade/entry-create-modals.css
+      COMMUNITY_IMPORTER_BLOB: 3307a97e05474a9f4f3bfee769a21ea3b06848f0
+      MESSAGES_IMPORTER: assets/css/pages/messaging-runtime-chat.css
+      MESSAGES_IMPORTER_BLOB: 225939d37e493d4f7d3ae3349e75866a5196a94b
+      ORDERS_IMPORTER: assets/css/pages/pedidos-runtime-page.css
+      ORDERS_IMPORTER_BLOB: 26a650eaa1212aaff334bed383c630251659aac4
+      COMMUNITY_HTML_BLOB: aeb03acca897a4949e02699c55af5c24a9f8d6f5
+      MESSAGES_HTML_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      ORDERS_HTML_BLOB: bc97ee8dc0f08cc6f3f894aad2654c95323f9274
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-060 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact product inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$COMMUNITY_IMPORTER")" = "$COMMUNITY_IMPORTER_BLOB"
+          test "$(git hash-object "$MESSAGES_IMPORTER")" = "$MESSAGES_IMPORTER_BLOB"
+          test "$(git hash-object "$ORDERS_IMPORTER")" = "$ORDERS_IMPORTER_BLOB"
+          test "$(git hash-object comunidade.html)" = "$COMMUNITY_HTML_BLOB"
+          test "$(git hash-object mensagens.html)" = "$MESSAGES_HTML_BLOB"
+          test "$(git hash-object pedidos.html)" = "$ORDERS_HTML_BLOB"
+          grep -Fq '@import url("../../components/overlays/action-modal-system.css' "$COMMUNITY_IMPORTER"
+          grep -Fq '@import url("../components/overlays/action-modal-system.css' "$MESSAGES_IMPORTER"
+          grep -Fq '@import url("../components/overlays/action-modal-system.css' "$ORDERS_IMPORTER"
+          test -z "$(git status --porcelain)"
+          echo "INPUT PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|importers=3|pages=3"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4175 >/tmp/ux061-http.log 2>&1 &
+          echo $! >/tmp/ux061-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4175/comunidade.html >/dev/null
+          curl -fsS http://127.0.0.1:4175/mensagens.html >/dev/null
+          curl -fsS http://127.0.0.1:4175/pedidos.html >/dev/null
+
+      - name: Prove real-DOM browser equivalence and construct exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux061-proof.js <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const { chromium } = require('@playwright/test');
+
+          const target = process.env.TARGET_FILE;
+          const original = fs.readFileSync(target, 'utf8');
+
+          const expectedRows = new Map([
+            [182, '  gap: 16px;'],
+            [242, '  background: var(--doke-action-modal-soft);'],
+            [258, '  min-height: 88px;'],
+            [269, '  border-color: transparent;'],
+            [271, '  box-shadow: var(--doke-visual-focus-ring);'],
+            [307, '  background: var(--modal-surface-bg-soft);'],
+          ]);
+
+          const srcLines = original.split('\n');
+          for (const [lineNo, expected] of expectedRows) {
+            const actual = (srcLines[lineNo - 1] || '').replace(/\r$/, '');
+            if (actual !== expected) throw new Error(`row drift line=${lineNo} expected=${JSON.stringify(expected)} actual=${JSON.stringify(actual)}`);
+          }
+          const candidate = srcLines.filter((_, i) => !expectedRows.has(i + 1)).join('\n');
+
+          function parse(src) {
+            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            const last=new Map(),dead=[];
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d);}
+            return {declarations:ds.length, dead};
+          }
+
+          const p = parse(original), c = parse(candidate);
+          if (p.declarations !== 270 || p.dead.length !== 6) throw new Error(`parent parser drift ${p.declarations}/${p.dead.length}`);
+          if (c.declarations !== 264 || c.dead.length !== 0) throw new Error(`candidate parser drift ${c.declarations}/${c.dead.length}`);
+          const identical = p.dead.filter(d => d.value === d.winnerValue && d.important === d.winnerImportant).length;
+          if (identical !== 1 || p.dead.length - identical !== 5) throw new Error(`winner classification drift ${identical}/${p.dead.length-identical}`);
+
+          const hash = crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes = Buffer.byteLength(candidate);
+          console.log(`STATIC PASS|parent=270/6|candidate=264/0|families=5|identical=1|changed=5|sha256=${hash}|bytes=${bytes}`);
+
+          const viewports = [359,430,719,720,721,1024,1280];
+          const families = {
+            body: '.doke-action-modal__body',
+            control: '.doke-action-modal__field input, .doke-action-modal__field select, .doke-action-modal__field textarea, .doke-action-modal__money-field',
+            textarea: '.doke-action-modal__field textarea',
+            focus: '.doke-action-modal__field input, .doke-action-modal__field select, .doke-action-modal__field textarea, .doke-action-modal__money-field',
+            summary: '.doke-action-modal__summary-card',
+          };
+          const affectedProps = ['display','gap','background-color','min-height','height','border-top-color','border-right-color','border-bottom-color','border-left-color','box-shadow','padding-top','padding-right','padding-bottom','padding-left','overflow-x','overflow-y'];
+
+          async function capture(phase) {
+            const browser = await chromium.launch({headless:true});
+            const out = [];
+            let communityFamilyCoverage = new Set();
+            let communitySamples = 0;
+            try {
+              for (const width of viewports) {
+                const context = await browser.newContext({ viewport: { width, height: 900 }, javaScriptEnabled: false });
+                const page = await context.newPage();
+                await page.route('**/*', async route => {
+                  const u = new URL(route.request().url());
+                  if (u.hostname !== '127.0.0.1' && u.hostname !== 'localhost') return route.abort();
+                  if (u.pathname.endsWith('.js')) return route.abort();
+                  return route.continue();
+                });
+                await page.goto(`http://127.0.0.1:4175/comunidade.html?ux061=${phase}-${width}`, {waitUntil:'domcontentloaded'});
+                await page.evaluate(() => {
+                  for (const id of ['community-request-modal','community-code-modal']) {
+                    const el = document.getElementById(id);
+                    if (!el) throw new Error(`missing real modal ${id}`);
+                    el.hidden = false;
+                    el.removeAttribute('hidden');
+                    el.setAttribute('aria-hidden','false');
+                  }
+                });
+
+                const coverage = await page.evaluate(families => Object.fromEntries(Object.entries(families).map(([k,s]) => [k, document.querySelectorAll(s).length])), families);
+                for (const [k,n] of Object.entries(coverage)) { if (n > 0) communityFamilyCoverage.add(k); }
+                if (Object.values(coverage).some(n => n === 0)) throw new Error(`community family coverage gap width=${width} ${JSON.stringify(coverage)}`);
+
+                const states = [
+                  ['idle', null],
+                  ['focus-input', '#community-action-code-input'],
+                  ['focus-select', '[data-community-request-role]'],
+                  ['focus-textarea', '[data-community-request-message]'],
+                ];
+                for (const [state, focusSel] of states) {
+                  if (focusSel) await page.focus(focusSel); else await page.evaluate(() => document.activeElement && document.activeElement.blur && document.activeElement.blur());
+                  const snap = await page.evaluate(({families,affectedProps}) => {
+                    const result = {};
+                    for (const [family, sel] of Object.entries(families)) {
+                      result[family] = [...document.querySelectorAll(sel)].map((el, index) => {
+                        const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+                        const props = Object.fromEntries(affectedProps.map(p => [p, cs.getPropertyValue(p)]));
+                        return {
+                          index,
+                          tag: el.tagName,
+                          id: el.id || '',
+                          cls: el.className || '',
+                          props,
+                          rect: [r.x,r.y,r.width,r.height].map(v => Math.round(v * 1000) / 1000),
+                        };
+                      });
+                    }
+                    return {
+                      result,
+                      overflow: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+                    };
+                  }, {families, affectedProps});
+                  communitySamples += Object.values(snap.result).reduce((a,v)=>a+v.length,0);
+                  out.push({page:'comunidade.html',width,state,snap});
+                }
+                await context.close();
+              }
+
+              for (const pageName of ['mensagens.html','pedidos.html']) {
+                const context = await browser.newContext({ viewport: { width: 1024, height: 900 }, javaScriptEnabled: false });
+                const page = await context.newPage();
+                await page.route('**/*', async route => {
+                  const u = new URL(route.request().url());
+                  if (u.hostname !== '127.0.0.1' && u.hostname !== 'localhost') return route.abort();
+                  if (u.pathname.endsWith('.js')) return route.abort();
+                  return route.continue();
+                });
+                await page.goto(`http://127.0.0.1:4175/${pageName}?ux061=${phase}`, {waitUntil:'domcontentloaded'});
+                const counts = await page.evaluate(families => Object.fromEntries(Object.entries(families).map(([k,s]) => [k, document.querySelectorAll(s).length])), families);
+                if (Object.values(counts).some(Boolean)) throw new Error(`${pageName} expected zero-match, got ${JSON.stringify(counts)}`);
+                out.push({page:pageName,width:1024,state:'zero-match',counts});
+                await context.close();
+              }
+            } finally {
+              await browser.close();
+            }
+            if (communityFamilyCoverage.size !== 5) throw new Error(`family coverage ${communityFamilyCoverage.size}/5`);
+            console.log(`COVERAGE|${phase}|families=${communityFamilyCoverage.size}/5|viewports=${viewports.length}|states=4|communitySamples=${communitySamples}|zeroMatchConsumers=2/2|boundary=719/720/721`);
+            return out;
+          }
+
+          (async () => {
+            let parent, after;
+            try {
+              fs.writeFileSync(target, original);
+              parent = await capture('parent');
+              fs.writeFileSync(target, candidate);
+              after = await capture('candidate');
+              const a = JSON.stringify(parent), b = JSON.stringify(after);
+              if (a !== b) {
+                let idx = 0; while (idx < a.length && idx < b.length && a[idx] === b[idx]) idx++;
+                throw new Error(`browser semantic drift at jsonIndex=${idx} parent=${a.slice(idx,idx+500)} candidate=${b.slice(idx,idx+500)}`);
+              }
+              const overflowValues = parent.filter(x=>x.snap).map(x=>x.snap.overflow);
+              const maxOverflow = Math.max(0, ...overflowValues);
+              console.log(`BROWSER SEMANTIC PARITY PASS|pages=3|realDomPage=1|zeroMatchConsumers=2|families=5/5|viewports=${viewports.length}|states=4|snapshots=${parent.length}|runtimeDiffs=0|maxOverflow=${maxOverflow}|boundary=719/720/721`);
+              console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=264|superseded=0|files=1|additions=0|deletions=6`);
+            } finally {
+              fs.writeFileSync(target, original);
+            }
+          })().catch(err => { console.error(err && err.stack || err); process.exit(1); });
+          NODE
+          node --check /tmp/ux061-proof.js
+          node /tmp/ux061-proof.js | tee /tmp/ux061-proof.log
+          grep -q 'STATIC PASS|parent=270/6|candidate=264/0|families=5|identical=1|changed=5' /tmp/ux061-proof.log
+          grep -q 'COVERAGE|parent|families=5/5|viewports=7|states=4' /tmp/ux061-proof.log
+          grep -q 'COVERAGE|candidate|families=5/5|viewports=7|states=4' /tmp/ux061-proof.log
+          grep -q 'BROWSER SEMANTIC PARITY PASS|pages=3|realDomPage=1|zeroMatchConsumers=2|families=5/5|viewports=7|states=4' /tmp/ux061-proof.log
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'PROOF PASS|browserRequired=1|criteriaRelaxed=0|realProductDOM=1|syntheticDOM=0|productMutation=0'
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux061-http.pid; then kill "$(cat /tmp/ux061-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
