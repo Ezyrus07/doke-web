@@ -1,0 +1,160 @@
+name: TEMP COM-B02I Matrix Sync Materializer R3
+
+on:
+  push:
+    branches: ['tmp/com-b02i-matrix-sync-r3-20260816']
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout temporary branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/com-b02i-matrix-sync-r3-20260816
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze authorized repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH=4edf21b5374c54c1cf4995c7c44d7df0332c9bbe
+          test "$(git rev-parse HEAD^)" = "$AUTH"
+          test "$(git diff --name-only "$AUTH" HEAD)" = '.github/workflows/tmp-com-b02i-matrix-sync-materializer-r3.yml'
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-providers.js)" = b919a29337edf40d69109fb2f338616c75b3911b
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = 38cd77fd6d3cf0c9f13d4c35ed000b9831481840
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = 1ff7621973be5ef38aa5e033b91f5b75216b9ec1
+          test "$(git rev-parse HEAD:config/com-b02i-canonical-command-source-providers.json)" = 4817bf608943a435c999f77badde57c9aa9a1764
+          test "$(git rev-parse HEAD:scripts/test-com-b02i-canonical-command-source-providers.js)" = eee15fecfc12e231113922ca6eb337632160eddc
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = 04a039c1967ffb59502e05584d05831f7c9a1a41
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = 7b3c897c0bf20069b733632c0b424b8664eb8cf5
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = 332da22f604806ba06a0687c69d3d89903c4222c
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = 94bc05d9797bc2b5673e440d0b25f09485d8215d
+          test "$(git rev-parse HEAD:supabase/migrations/20260805121500_com_b02b_server_authority.sql)" = fd74f6abc029023c4e0972b32b35daca975c3d57
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Write Matrix derivatives only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git hash-object config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git status --porcelain --untracked-files=all | sed -E 's/^...//' | sort)"
+          test "$actual" = "$expected"
+
+      - name: Reconcile B02I certifier structurally
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/com-b02i-canonical-command-source-providers.yml')
+          lines=p.read_text().splitlines(); out=[]; parent=matrix=scope=0
+          frozen=[
+            ('backend/modules/communities/community-command-source-providers.js','b919a29337edf40d69109fb2f338616c75b3911b'),
+            ('backend/modules/communities/community-command-source-repository-contract.js','38cd77fd6d3cf0c9f13d4c35ed000b9831481840'),
+            ('backend/modules/communities/sql/com-b02i-command-sources.sql','1ff7621973be5ef38aa5e033b91f5b75216b9ec1'),
+            ('config/com-b02i-canonical-command-source-providers.json','4817bf608943a435c999f77badde57c9aa9a1764'),
+            ('scripts/test-com-b02i-canonical-command-source-providers.js','eee15fecfc12e231113922ca6eb337632160eddc')]
+          for line in lines:
+            s=line.strip(); indent=line[:len(line)-len(line.lstrip())]
+            if s=='test "$(git rev-parse HEAD^)" = "$BASE"':
+              parent+=1
+              out += [indent+'MATERIALIZED=4edf21b5374c54c1cf4995c7c44d7df0332c9bbe',
+                      indent+'test "$(git rev-parse "$MATERIALIZED^")" = "$BASE"',
+                      indent+'git merge-base --is-ancestor "$BASE" "$MATERIALIZED"',
+                      indent+'git merge-base --is-ancestor "$MATERIALIZED" HEAD']
+              continue
+            if s=='scripts/test-com-b02i-canonical-command-source-providers.js | sort)"':
+              scope+=1
+              out += [indent+'docs/DOMAIN-COMPLETION-MATRIX.md \\',
+                      indent+'reports/generated/domain-completion-matrix-report.json \\', line]
+              continue
+            out.append(line)
+            if s=='test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"':
+              matrix+=1
+              out += [indent+f'test "$(git rev-parse HEAD:{path})" = "{blob}"' for path,blob in frozen]
+          if (parent,matrix,scope)!=(1,1,1): raise SystemExit(f'B02I_STRUCTURAL_PATCH_HITS:{parent}:{matrix}:{scope}')
+          p.write_text('\n'.join(out)+'\n')
+          PY
+          ! grep -F 'test "$(git rev-parse HEAD^)" = "$BASE"' .github/workflows/com-b02i-canonical-command-source-providers.yml
+          grep -F 'git merge-base --is-ancestor "$MATERIALIZED" HEAD' .github/workflows/com-b02i-canonical-command-source-providers.yml
+          test "$(grep -c 'docs/DOMAIN-COMPLETION-MATRIX.md' .github/workflows/com-b02i-canonical-command-source-providers.yml)" = 1
+          test "$(grep -c 'reports/generated/domain-completion-matrix-report.json' .github/workflows/com-b02i-canonical-command-source-providers.yml)" = 1
+
+      - name: B02I semantic conformance
+        run: |
+          node --check backend/modules/communities/community-command-source-providers.js
+          node --check backend/modules/communities/community-command-source-repository-contract.js
+          node --check scripts/test-com-b02i-canonical-command-source-providers.js
+          node scripts/test-com-b02i-canonical-command-source-providers.js
+
+      - name: Fail-closed hard blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-command-source-providers.js
+          ! grep -E 'createClient\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-command-source-repository-contract.js
+          grep -F "authority!=='server_service_role'" backend/modules/communities/community-command-source-repository-contract.js
+          grep -F 'intentionally outside supabase/migrations' backend/modules/communities/sql/com-b02i-command-sources.sql
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          ! git diff --name-only 4edf21b5374c54c1cf4995c7c44d7df0332c9bbe HEAD -- supabase/migrations/ | grep .
+          for pair in \
+            backend/modules/communities/community-command-source-providers.js:b919a29337edf40d69109fb2f338616c75b3911b \
+            backend/modules/communities/community-command-source-repository-contract.js:38cd77fd6d3cf0c9f13d4c35ed000b9831481840 \
+            backend/modules/communities/sql/com-b02i-command-sources.sql:1ff7621973be5ef38aa5e033b91f5b75216b9ec1 \
+            config/com-b02i-canonical-command-source-providers.json:4817bf608943a435c999f77badde57c9aa9a1764 \
+            scripts/test-com-b02i-canonical-command-source-providers.js:eee15fecfc12e231113922ca6eb337632160eddc; do
+            file="${pair%:*}"; blob="${pair##*:}"; test "$(git hash-object "$file")" = "$blob"
+          done
+          test "$(git hash-object config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: |
+          git diff --check
+          git diff --check 4edf21b5374c54c1cf4995c7c44d7df0332c9bbe
+
+      - name: Commit self-removing successor
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH=4edf21b5374c54c1cf4995c7c44d7df0332c9bbe
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add .github/workflows/com-b02i-canonical-command-source-providers.yml docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git rm .github/workflows/tmp-com-b02i-matrix-sync-materializer-r3.yml
+          git diff --cached --check
+          git commit -m 'ci(com): synchronize B02I Matrix and certifier'
+          expected="$(printf '%s\n' .github/workflows/com-b02i-canonical-command-source-providers.yml docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only "$AUTH" HEAD | sort)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-providers.js)" = b919a29337edf40d69109fb2f338616c75b3911b
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = 38cd77fd6d3cf0c9f13d4c35ed000b9831481840
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = 1ff7621973be5ef38aa5e033b91f5b75216b9ec1
+          test "$(git rev-parse HEAD:config/com-b02i-canonical-command-source-providers.json)" = 4817bf608943a435c999f77badde57c9aa9a1764
+          test "$(git rev-parse HEAD:scripts/test-com-b02i-canonical-command-source-providers.js)" = eee15fecfc12e231113922ca6eb337632160eddc
+          test ! -e .github/workflows/tmp-com-b02i-matrix-sync-materializer-r3.yml
+          test -z "$(git status --porcelain)"
+          git push origin HEAD:refs/heads/tmp/com-b02i-matrix-sync-r3-20260816
