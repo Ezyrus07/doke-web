@@ -1,0 +1,97 @@
+name: Doke UX-CSS-DEBT-065 Buttons Close Source Closure V2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-065-buttons-close-source-closure-v2
+
+permissions:
+  contents: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 39780a7192b1b17e8b971372a52b689ad39ef67d
+      PARENT_SHA: 6756a335c3bd5ecedf7ba0b6bb40cfbb1cab6d54
+      TARGET_FILE: assets/css/components/ui-surface/buttons-close.css
+      TARGET_BLOB: d817fab2184459063dfab110131e5fffc768649b
+      IMPORTER_FILE: assets/css/components/ui-surface-system.css
+      IMPORTER_BLOB: 3edbba89e6b4a1c7c9198b106f2a6b6c9baae974
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-064 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact target and importer
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_FILE")" = "$IMPORTER_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "INPUT GUARD PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|importerBlob=$IMPORTER_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Prove cascade identity, import graph and source reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const target=process.env.TARGET_FILE, importer=process.env.IMPORTER_FILE;
+          const text=fs.readFileSync(target,'utf8');
+          const selector=':is(.doke-close-button, .modal-close, .ui-modal__close, .surface-modal__close, .detail-modal__close, .detail-lightbox__close, .profile-edit-modal__close, .profile-followers-modal__close, .community-action-modal__close, .community-request-modal__close, .home-address-modal__close, .address-modal__close, .payment-overlay__close, .charge-modal__close, .wallet-dialog__close, .wallet-modal__close, .payment-submit-state__close, .payment-finish-modal__close, .pro-review-success__close, .news-detail-modal__close, .doke-ai-panel__close, .doke-help-drawer__close, .doke-media-lightbox__close, .image-lightbox__close, .orders-sidepanel__close, .orders-chat-panel__close, .orders-detail-drawer__close, .community-room-panel__close, .home-location-popover__close, .before-after-preview__close, .worker-preview__close, .more-filters__dismiss, .doke-mobile-action-panel__close)';
+          const parse=src=>{const ls=src.split(/\r?\n/);let sel=null,buf=[],depth=0;const out=[];for(let i=0;i<ls.length;i++){const l=ls[i],t=l.trim(),o=(l.match(/\{/g)||[]).length,c=(l.match(/\}/g)||[]).length;if(!sel&&t&&!t.startsWith('/*')&&!t.startsWith('*')&&!t.startsWith('@')&&t!=='}'&&!l.includes(';')){buf.push(t);if(l.includes('{')){sel=buf.join(' ').replace(/\s+/g,' ').replace(/\{\s*$/,'').trim();buf=[]}}if(sel){const m=l.match(/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/);if(m)out.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:m[2].trim(),important:/!important\s*$/i.test(m[2])})}depth+=o-c;if(sel&&depth===0)sel=null}return out};
+          const ds=parse(text);const rows=ds.filter(d=>d.selector===selector&&(d.property==='border'||d.property==='box-shadow'));
+          const border=rows.filter(d=>d.property==='border'), shadow=rows.filter(d=>d.property==='box-shadow');
+          if(border.length!==2||shadow.length!==2)throw new Error(`unexpected close rows border=${border.length} shadow=${shadow.length}`);
+          const [earlierBorder,laterBorder]=border,[earlierShadow,laterBaseShadow]=shadow;
+          if(earlierBorder.line!==109||laterBorder.line!==168||earlierBorder.value!=='0'||laterBorder.value!=='0'||earlierBorder.important||laterBorder.important)throw new Error(`border identity drift ${JSON.stringify({earlierBorder,laterBorder})}`);
+          if(earlierShadow.line!==113||laterBaseShadow.line!==169||earlierShadow.value!=='none'||laterBaseShadow.value!=='none'||earlierShadow.important||laterBaseShadow.important)throw new Error(`shadow identity drift ${JSON.stringify({earlierShadow,laterBaseShadow})}`);
+          const trackedCss=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of trackedCss){const s=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(s)))imports.push(norm(m[1],f));meta.set(f,{imports});}
+          const direct=[...meta].filter(([,x])=>x.imports.includes(target)).map(([f])=>f).sort();if(JSON.stringify(direct)!==JSON.stringify([importer]))throw new Error(`direct importer drift ${direct}`);
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const pages=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];let hit=false;while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}if(hit)pages.push(p.page)}pages.sort();
+          const expected=['admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html'];if(JSON.stringify(pages)!==JSON.stringify(expected))throw new Error(`page reach drift ${pages}`);
+          const aliases=selector.match(/\.([A-Za-z0-9_-]+)/g).map(s=>s.slice(1));
+          const sources=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean).filter(f=>fs.existsSync(f)&&fs.statSync(f).isFile());
+          const hits=[];const aliasCounts=new Map(aliases.map(a=>[a,0]));for(const f of sources){const s=fs.readFileSync(f,'utf8'),matched=[];for(const a of aliases){const re=new RegExp(`(^|[^A-Za-z0-9_-])${a}([^A-Za-z0-9_-]|$)`,'g');const n=(s.match(re)||[]).length;if(n){aliasCounts.set(a,aliasCounts.get(a)+n);matched.push(`${a}:${n}`)}}if(matched.length)hits.push({file:f,matched})}
+          const total=[...aliasCounts.values()].reduce((a,b)=>a+b,0),activeAliases=[...aliasCounts].filter(([,n])=>n).map(([a,n])=>`${a}:${n}`);if(!hits.length||!total)throw new Error('no real HTML/JS close-button source reach');
+          console.log(`CASCADE PASS|selectorSame=1|context=global|importanceSame=1|border=109:0->168:0|boxShadow=113:none->169:none|identicalWinners=2|changedWinners=0`);
+          console.log(`IMPORT PASS|direct=${direct.join(',')}|pages=${pages.length}|pageList=${pages.join(',')}`);
+          console.log(`SOURCE REACH PASS|trackedSources=${sources.length}|hitFiles=${hits.length}|aliasOccurrences=${total}|activeAliases=${activeAliases.length}`);for(const h of hits)console.log(`SOURCE|file=${h.file}|aliases=${h.matched.join(',')}`);console.log(`ALIASES|${activeAliases.join(',')}`);
+          NODE
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_FILE")" = "$IMPORTER_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "RESTORE PASS|sha=$TARGET_SHA|productMutation=0"
