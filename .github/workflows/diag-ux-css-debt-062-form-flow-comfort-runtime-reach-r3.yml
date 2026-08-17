@@ -1,0 +1,131 @@
+name: Doke UX-CSS-DEBT-062 Form Flow Comfort Runtime Reach R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-062-form-flow-comfort-runtime-reach-r3
+
+permissions:
+  contents: read
+
+jobs:
+  reach-r3:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 10a9a51cfd0a96e7c6a56eb71cf44452ddb8813f
+      PARENT_SHA: 1f2c971a2b74455dc752e68d680f8a4231d01cab
+      TARGET_FILE: assets/css/components/forms/form-flow-comfort.css
+      TARGET_BLOB: 28863e14d84271f1ce71dd87d61140555b304a22
+      IMPORTER: assets/css/pages/flow-foundation.css
+      IMPORTER_BLOB: dc5af3f258630570f7de83638044034020009ac3
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-061 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact inputs and inspect activation authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          grep -q 'components/forms/form-flow-comfort.css' "$IMPORTER"
+          echo 'ACTIVATION SEARCH BEGIN'
+          git grep -n -F 'doke-form-comfort-ready' -- '*.html' 'assets/js/**/*.js' 'assets/js/*.js' ':!vendor' || true
+          echo 'ACTIVATION SEARCH END'
+          node <<'NODE'
+          const cp=require('child_process'),fs=require('fs');
+          const pages=['ajuda.html','anunciar-servico.html','avaliacao-profissional.html','novidades.html','orcamento.html','pagamento-profissional.html','tornar-profissional.html','verificacao-profissional.html'];
+          const scripts={};
+          for(const page of pages){
+            const s=fs.readFileSync(page,'utf8');
+            const srcs=[...s.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1].replace(/\?.*$/,''));
+            scripts[page]=srcs;
+            console.log(`PAGE SCRIPTS|${page}|${srcs.join(',')||'-'}`);
+          }
+          const files=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean);
+          const hits=[];
+          for(const f of files){if(!fs.existsSync(f)||fs.statSync(f).isDirectory())continue;const s=fs.readFileSync(f,'utf8');if(s.includes('doke-form-comfort-ready'))hits.push(f)}
+          console.log(`ACTIVATION FILES|count=${hits.length}|files=${hits.join(',')||'-'}`);
+          NODE
+          test -z "$(git status --porcelain)"
+          echo 'R3 STATIC AUTHORITY PASS'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve exact product
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4177 >/tmp/ux062-r3-http.log 2>&1 &
+          echo $! >/tmp/ux062-r3-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4177/orcamento.html >/dev/null
+
+      - name: Measure exact runtime reach without selector assumptions
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux062-r3.js <<'NODE'
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const pages=['ajuda.html','anunciar-servico.html','avaliacao-profissional.html','novidades.html','orcamento.html','pagamento-profissional.html','tornar-profissional.html','verificacao-profissional.html'];
+          const widths=[359,430,759,760,761,1024,1280];
+          const classes=['post-service-panel__head','become-pro-section-head','budget-panel__head','verification-section__head','payment-section__head','review-section__head'];
+          const full='body.doke-form-comfort-ready :is(.post-service-panel__head,.become-pro-section-head,.budget-panel__head,.verification-section__head,.payment-section__head,.review-section__head)';
+          (async()=>{
+            const browser=await chromium.launch({headless:true});let fullTotal=0,rawTotal=0,readyTotal=0;const records=[];
+            try{
+              for(const pageName of pages){
+                for(const width of widths){
+                  const ctx=await browser.newContext({viewport:{width,height:900}});const page=await ctx.newPage();
+                  const consoleErrors=[];page.on('pageerror',e=>consoleErrors.push(String(e.message||e)));
+                  await page.route('**/*',route=>{const u=new URL(route.request().url());if(['127.0.0.1','localhost'].includes(u.hostname))return route.continue();return route.abort();});
+                  await page.goto(`http://127.0.0.1:4177/${pageName}?ux062=r3-${width}`,{waitUntil:'domcontentloaded'});
+                  await page.waitForTimeout(1500);
+                  const rec=await page.evaluate(({classes,full})=>{
+                    const raw=Object.fromEntries(classes.map(c=>[c,document.querySelectorAll('.'+c).length]));
+                    const fullEls=[...document.querySelectorAll(full)];
+                    return{bodyClass:document.body.className,ready:document.body.classList.contains('doke-form-comfort-ready'),raw,fullCount:fullEls.length,fullRows:fullEls.map(el=>({tag:el.tagName,id:el.id||'',cls:el.className||'',marginBottom:getComputedStyle(el).marginBottom})),overflow:Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth)};
+                  },{classes,full});
+                  const rawCount=Object.values(rec.raw).reduce((a,b)=>a+b,0);rawTotal+=rawCount;fullTotal+=rec.fullCount;if(rec.ready)readyTotal++;
+                  records.push({page:pageName,width,...rec,rawCount,consoleErrors});
+                  console.log(`RUNTIME|page=${pageName}|width=${width}|ready=${rec.ready}|raw=${rawCount}|full=${rec.fullCount}|body=${JSON.stringify(rec.bodyClass)}|margins=${rec.fullRows.map(x=>x.marginBottom).join(',')||'-'}|errors=${consoleErrors.length}|overflow=${rec.overflow}`);
+                  await ctx.close();
+                }
+              }
+            }finally{await browser.close()}
+            const fullPages=[...new Set(records.filter(r=>r.fullCount).map(r=>r.page))].sort();
+            const readyPages=[...new Set(records.filter(r=>r.ready).map(r=>r.page))].sort();
+            const rawPages=[...new Set(records.filter(r=>r.rawCount).map(r=>r.page))].sort();
+            console.log(`R3 REACH SUMMARY|samples=${records.length}|rawTotal=${rawTotal}|fullTotal=${fullTotal}|readySamples=${readyTotal}|rawPages=${rawPages.join(',')||'-'}|readyPages=${readyPages.join(',')||'-'}|fullPages=${fullPages.join(',')||'-'}|boundary=759/760/761`);
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node --check /tmp/ux062-r3.js
+          node /tmp/ux062-r3.js | tee /tmp/ux062-r3.log
+          grep -q 'R3 REACH SUMMARY|samples=56' /tmp/ux062-r3.log
+          echo 'R3 RUNTIME REACH PROBE PASS'
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux062-r3-http.pid; then kill "$(cat /tmp/ux062-r3-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'R3 RESTORE PASS|productMutation=0|permanentBranchMutation=0'
