@@ -1,0 +1,80 @@
+name: Doke UX-CSS-DEBT-061 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-061-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 1f2c971a2b74455dc752e68d680f8a4231d01cab
+      PARENT_PARENT_SHA: 5a93b7fdf0b61e91d6dcd3867ae98d97f94d7eb9
+      TARGET_FILE: assets/css/components/overlays/action-modal-system.css
+      PARENT_TARGET_BLOB: 94227b1313fa55a56cbea342e327553b7280c6d7
+      EXPECTED_SHA256: a62b12a97be17c70c7d46a59c402227a2a130386202894ce96773b87e7b8f6db
+      EXPECTED_BYTES: 10917
+      PERMANENT_BRANCH: ux/ux-css-debt-061-action-modal-compaction
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test -n "$remote_sha"
+          test "$remote_sha" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$remote_sha|targetBlob=$PARENT_TARGET_BLOB"
+
+      - name: Rebuild exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const file=process.env.TARGET_FILE,src=fs.readFileSync(file,'utf8'),lines=src.split('\n');
+          const rows=new Map([[182,'  gap: 16px;'],[242,'  background: var(--doke-action-modal-soft);'],[258,'  min-height: 88px;'],[269,'  border-color: transparent;'],[271,'  box-shadow: var(--doke-visual-focus-ring);'],[307,'  background: var(--modal-surface-bg-soft);']]);
+          for(const [n,e] of rows){const a=(lines[n-1]||'').replace(/\r$/,'');if(a!==e)throw new Error(`row drift ${n}`)}
+          const candidate=lines.filter((_,i)=>!rows.has(i+1)).join('\n');fs.writeFileSync(file,candidate);
+          console.log('DETERMINISTIC REBUILD PASS|parent=270/6|candidate=264/0|families=5|identical=1|changed=5');
+          NODE
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t6\t'"$TARGET_FILE"
+          git diff --check
+          echo "CANDIDATE IDENTITY PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=6"
+
+      - name: Commit and atomically fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add -- "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-061: compact superseded shared action modal declarations"
+          commit_sha="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" HEAD -- "$TARGET_FILE")" = $'0\t6\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          after="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$after" = "$commit_sha"
+          echo "PROMOTION PASS|permanent=$after|parent=$PARENT_SHA|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=6"
