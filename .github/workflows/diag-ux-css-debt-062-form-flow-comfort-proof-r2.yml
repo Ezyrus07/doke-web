@@ -1,0 +1,162 @@
+name: Doke UX-CSS-DEBT-062 Form Flow Comfort Proof R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-062-form-flow-comfort-proof-r2
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r2:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 10a9a51cfd0a96e7c6a56eb71cf44452ddb8813f
+      PARENT_SHA: 1f2c971a2b74455dc752e68d680f8a4231d01cab
+      TARGET_FILE: assets/css/components/forms/form-flow-comfort.css
+      TARGET_BLOB: 28863e14d84271f1ce71dd87d61140555b304a22
+      IMPORTER: assets/css/pages/flow-foundation.css
+      IMPORTER_BLOB: dc5af3f258630570f7de83638044034020009ac3
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-061 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact inputs and classified reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          grep -q 'components/forms/form-flow-comfort.css' "$IMPORTER"
+          declare -A blobs=(
+            [ajuda.html]=8a4e5bb45f7630e0fb95f34977ebf679e05b2e9a
+            [anunciar-servico.html]=d55b3aacd3dcb951f8e8e5e2bfb0a9977390993b
+            [avaliacao-profissional.html]=1535543ec2c7ab0728b279d6375dc0ca3d7928b7
+            [novidades.html]=436a2207644906d1f137831c336193c09e92e9a3
+            [orcamento.html]=94a3008cc3b203d1b073a812385b29a004dbb323
+            [pagamento-profissional.html]=b9f9e504f9d521100b8bbc0c67a08bf361aacd91
+            [tornar-profissional.html]=130a7f4b97f47822e43d385eb89ab4f5ccabe98e
+            [verificacao-profissional.html]=ed9566f269e98b1e7f37399b72d34c788e17d1f9
+          )
+          for page in "${!blobs[@]}"; do test "$(git hash-object "$page")" = "${blobs[$page]}"; done
+          node <<'NODE'
+          const fs=require('fs');
+          const pages=['ajuda.html','anunciar-servico.html','avaliacao-profissional.html','novidades.html','orcamento.html','pagamento-profissional.html','tornar-profissional.html','verificacao-profissional.html'];
+          const classes=['post-service-panel__head','become-pro-section-head','budget-panel__head','verification-section__head','payment-section__head','review-section__head'];
+          const expected={
+            'ajuda.html':[],
+            'anunciar-servico.html':[],
+            'avaliacao-profissional.html':[],
+            'novidades.html':[],
+            'orcamento.html':['become-pro-section-head','budget-panel__head'],
+            'pagamento-profissional.html':[],
+            'tornar-profissional.html':['become-pro-section-head'],
+            'verificacao-profissional.html':[]
+          };
+          let total=0;
+          for(const p of pages){const s=fs.readFileSync(p,'utf8');const hits=classes.filter(c=>s.includes(c));if(JSON.stringify(hits)!==JSON.stringify(expected[p]))throw new Error(`static reach drift ${p}: ${JSON.stringify(hits)}`);total+=hits.length;console.log(`STATIC REACH|page=${p}|families=${hits.join(',')||'-'}`)}
+          if(total!==3)throw new Error(`static total ${total}`);
+          console.log('STATIC REACH PASS|importPages=8|realSelectorPages=2|zeroMatchPages=6|selectorClassHits=3');
+          NODE
+          test -z "$(git status --porcelain)"
+          echo "R2 INPUT PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|importerBlob=$IMPORTER_BLOB|importPages=8|realSelectorPages=2|zeroMatchPages=6|criteriaRelaxed=0"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4176 >/tmp/ux062-r2-http.log 2>&1 &
+          echo $! >/tmp/ux062-r2-http.pid
+          sleep 1
+          for page in ajuda.html anunciar-servico.html avaliacao-profissional.html novidades.html orcamento.html pagamento-profissional.html tornar-profissional.html verificacao-profissional.html; do curl -fsS "http://127.0.0.1:4176/$page" >/dev/null; done
+
+      - name: Browser proof over real runtime consumers and zero-match import consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux062-r2.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const target=process.env.TARGET_FILE,original=fs.readFileSync(target,'utf8'),lines=original.split('\n');
+          const removeLine=110,expected='  margin-bottom: 16px;';
+          if((lines[removeLine-1]||'').replace(/\r$/,'')!==expected)throw new Error(`row drift ${removeLine}`);
+          const candidate=lines.filter((_,i)=>i+1!==removeLine).join('\n');
+          const hash=crypto.createHash('sha256').update(candidate).digest('hex'),bytes=Buffer.byteLength(candidate);
+          const pages=['ajuda.html','anunciar-servico.html','avaliacao-profissional.html','novidades.html','orcamento.html','pagamento-profissional.html','tornar-profissional.html','verificacao-profissional.html'];
+          const realPages=new Set(['orcamento.html','tornar-profissional.html']);
+          const selector='body.doke-form-comfort-ready :is(.post-service-panel__head,.become-pro-section-head,.budget-panel__head,.verification-section__head,.payment-section__head,.review-section__head)';
+          const widths=[359,430,759,760,761,1024,1280];
+          async function capture(tag){
+            const browser=await chromium.launch({headless:true});const out=[];const matched=new Set();let totalMatches=0;
+            try{
+              for(const pageName of pages){
+                for(const width of widths){
+                  const ctx=await browser.newContext({viewport:{width,height:900}});const page=await ctx.newPage();
+                  await page.route('**/*',r=>{const u=new URL(r.request().url());if(['127.0.0.1','localhost'].includes(u.hostname))return r.continue();return r.abort();});
+                  await page.goto(`http://127.0.0.1:4176/${pageName}?ux062=${tag}-${width}`,{waitUntil:'domcontentloaded'});
+                  await page.waitForTimeout(800);
+                  const snap=await page.evaluate(sel=>{
+                    const rows=[...document.querySelectorAll(sel)].map((el,i)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{i,tag:el.tagName,id:el.id||'',cls:typeof el.className==='string'?el.className:'',marginBottom:cs.marginBottom,display:cs.display,rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000)};});
+                    return{bodyReady:document.body.classList.contains('doke-form-comfort-ready'),rows,overflow:Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth)};
+                  },selector);
+                  const shouldMatch=realPages.has(pageName);
+                  if(shouldMatch && snap.rows.length===0)throw new Error(`${pageName}@${width} expected runtime selector match`);
+                  if(!shouldMatch && snap.rows.length!==0)throw new Error(`${pageName}@${width} unexpected runtime selector match ${snap.rows.length}`);
+                  if(shouldMatch && !snap.bodyReady)throw new Error(`${pageName}@${width} selector consumer missing body readiness`);
+                  if(snap.rows.length){matched.add(pageName);totalMatches+=snap.rows.length;for(const row of snap.rows)if(row.marginBottom!=='12px')throw new Error(`${pageName}@${width} computed winner ${row.marginBottom}`)}
+                  out.push({page:pageName,width,snap});await ctx.close();
+                }
+              }
+            }finally{await browser.close()}
+            if(JSON.stringify([...matched].sort())!==JSON.stringify([...realPages].sort()))throw new Error(`matched page set ${JSON.stringify([...matched])}`);
+            console.log(`COVERAGE|${tag}|importPages=8|realSelectorPages=2|zeroMatchPages=6|viewports=7|totalMatches=${totalMatches}|boundary=759/760/761`);return out;
+          }
+          (async()=>{try{
+            fs.writeFileSync(target,original);const p=await capture('parent');
+            fs.writeFileSync(target,candidate);const c=await capture('candidate');
+            const a=JSON.stringify(p),b=JSON.stringify(c);if(a!==b){let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;throw new Error(`runtime drift idx=${i} parent=${a.slice(i,i+700)} candidate=${b.slice(i,i+700)}`)}
+            const over=Math.max(0,...p.map(x=>x.snap.overflow));if(over!==0)throw new Error(`overflow ${over}`);
+            console.log('BROWSER PARITY PASS|importPages=8|realSelectorPages=2|zeroMatchPages=6|viewports=7|runtimeDiffs=0|overflow=0|realProductDOM=1|syntheticDOM=0|stateWaitMs=800|criteriaRelaxed=0');
+            console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=113|superseded=0|files=1|additions=0|deletions=1`);
+            fs.writeFileSync(target,candidate);
+          }catch(e){fs.writeFileSync(target,original);throw e}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node --check /tmp/ux062-r2.js
+          node /tmp/ux062-r2.js | tee /tmp/ux062-r2.log
+          grep -q 'COVERAGE|parent|importPages=8|realSelectorPages=2|zeroMatchPages=6|viewports=7' /tmp/ux062-r2.log
+          grep -q 'COVERAGE|candidate|importPages=8|realSelectorPages=2|zeroMatchPages=6|viewports=7' /tmp/ux062-r2.log
+          grep -q 'BROWSER PARITY PASS|importPages=8|realSelectorPages=2|zeroMatchPages=6|viewports=7|runtimeDiffs=0|overflow=0' /tmp/ux062-r2.log
+          grep -q 'criteriaRelaxed=0' /tmp/ux062-r2.log
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          git diff --check
+          echo 'R2 PROOF PASS|browserRequired=1|criteriaRelaxed=0|realProductDOM=1|syntheticDOM=0|candidateLeftForDiff=1'
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux062-r2-http.pid; then kill "$(cat /tmp/ux062-r2-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R2 RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
