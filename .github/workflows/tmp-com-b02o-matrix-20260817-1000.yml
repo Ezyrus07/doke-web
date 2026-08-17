@@ -1,0 +1,50 @@
+name: TEMP COM-B02O Matrix Materializer
+on: push
+permissions:
+  contents: write
+jobs:
+  materialize:
+    if: github.ref == 'refs/heads/tmp/com-b02o-matrix-20260817-1000'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Freeze candidate and source
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 9dab42ec058369c4359ae4b8b81f3e82e7fefbef HEAD
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-contract.js)" = "7ba8deb41fa601abf1e57204000b4aa37551987d"
+          test "$(git rev-parse HEAD:config/com-b02o-runtime-binding-integration-contract.json)" = "c5022adc785b7efe8aea96824d063eb892d5417f"
+          test "$(git rev-parse HEAD:scripts/test-com-b02o-runtime-binding-integration-contract.js)" = "1e632385fdaeee452cf2d201ee2843b37a68a3dc"
+      - name: Install
+        run: npm ci --ignore-scripts
+      - name: Validate B02O
+        run: |
+          node --check backend/modules/communities/community-command-runtime-binding-integration-contract.js
+          node scripts/test-com-b02o-runtime-binding-integration-contract.js
+      - name: Generate Matrix derivatives
+        run: |
+          npm run write:domain-completion-matrix
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git status --short | awk '{print $2}' | sort)"
+          test "$actual" = "$expected"
+      - name: Audit
+        run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+      - name: Persist only Matrix derivatives
+        run: |
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -f docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git commit -m 'ci(com): materialize B02O Matrix derivatives'
+          git push origin HEAD:tmp/com-b02o-matrix-20260817-1000
