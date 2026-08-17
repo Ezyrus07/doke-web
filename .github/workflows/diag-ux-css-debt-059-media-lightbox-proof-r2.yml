@@ -1,0 +1,118 @@
+name: Doke UX-CSS-DEBT-059 Media Lightbox Proof R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-059-media-lightbox-proof-r2
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r2:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 025ee39a521d8297dd68db58749b2f46a42bcdbe
+      PARENT_SHA: d6daeaa876111dbfa3ed27cc5307936084292962
+      TARGET_FILE: assets/css/components/media-lightbox.css
+      TARGET_BLOB: c33b7b81f4e548f3206f889633f946c4daa5e5ec
+      R1_COMMIT: 38a4b4c4b88686e317b6deb5b5befc74cd37d197
+      R1_PATH: .github/workflows/diag-ux-css-debt-059-media-lightbox-proof.yml
+      EXPECTED_SHA256: 1fa9362a0562af0523f258a3c05f7bd1e52bac8964889b8c2512a957a5f399d1
+      EXPECTED_BYTES: 14301
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-058 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and R1 provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch origin "$R1_COMMIT" --depth=1
+          git cat-file -e "$R1_COMMIT^{commit}"
+          git cat-file -e "$R1_COMMIT:$R1_PATH"
+          test -z "$(git status --porcelain)"
+          echo "R2 INPUT GUARD PASS|sha=$TARGET_SHA|r1=$R1_COMMIT|productDrift=0"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          python3 -m http.server 4173 >/tmp/ux059-http.log 2>&1 &
+          echo $! >/tmp/ux059-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4173/detalhe-anuncio.html >/dev/null
+          echo 'R2 BROWSER RUNTIME PASS|http=4173'
+
+      - name: Extract R1 proof and patch only Playwright serialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$R1_COMMIT:$R1_PATH" >/tmp/ux059-r1.yml
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/ux059-r1.yml').read_text()
+          start="          cat > /tmp/ux059-proof.js <<'NODE'\n"
+          end="\n          NODE\n          node /tmp/ux059-proof.js"
+          a=src.find(start)
+          if a<0: raise SystemExit('R1 proof heredoc start missing')
+          a+=len(start)
+          b=src.find(end,a)
+          if b<0: raise SystemExit('R1 proof heredoc end missing')
+          body=src[a:b]
+          lines=[line[10:] if line.startswith('          ') else line for line in body.splitlines()]
+          script='\n'.join(lines)+'\n'
+          old1="const snap=await page.evaluate(({props,round})=>{"
+          new1="const snap=await page.evaluate(({props})=>{\n      const round=n=>Math.round(n*1000)/1000;"
+          old2="},{props,round:n=>Math.round(n*1000)/1000});"
+          new2="},{props});"
+          if script.count(old1)!=1: raise SystemExit(f'expected one evaluate signature, got {script.count(old1)}')
+          if script.count(old2)!=1: raise SystemExit(f'expected one evaluate args line, got {script.count(old2)}')
+          script=script.replace(old1,new1).replace(old2,new2)
+          Path('/tmp/ux059-proof-r2.js').write_text(script)
+          print(f'R1 HARNESS PATCH PASS|proofBytes={len(script.encode())}|changedSites=2|criteriaRelaxed=0|productLogicChanged=0')
+          PY
+          node --check /tmp/ux059-proof-r2.js
+
+      - name: Run unchanged static candidate and browser criteria
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/ux059-proof-r2.js | tee /tmp/ux059-r2.log
+          grep -q 'STATIC CASCADE PASS|decl=359|dead=79|families=12|identical=45|changed=34|context=max760|important=0|commentNormalized=1|messagesSelectorMatch=0' /tmp/ux059-r2.log
+          grep -q 'BROWSER PARITY PASS|page=detalhe-anuncio.html' /tmp/ux059-r2.log
+          grep -q 'runtimeDiffs=0|overflow=0' /tmp/ux059-r2.log
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t79\t'"$TARGET_FILE"
+          git diff --check
+          echo "R2 PROOF PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=79|criteriaRelaxed=0"
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux059-http.pid; then kill "$(cat /tmp/ux059-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R2 RESTORE PASS|sha=$TARGET_SHA|productMutation=0|issueCreated=0|prCreated=0"
