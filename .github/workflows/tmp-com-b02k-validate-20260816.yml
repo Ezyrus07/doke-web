@@ -32,7 +32,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
+          test "$(git diff --name-only "$CANDIDATE" HEAD)" = "$TEMP_WORKFLOW"
           expected="$(printf '%s\n' \
             .github/workflows/com-b02k-command-runtime-binding-readiness.yml \
             backend/modules/communities/community-command-runtime-binding-readiness.js \
@@ -80,8 +81,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git diff --check "$CANDIDATE"
-          changed="$(git diff --name-only "$CANDIDATE" | sort)"
+          git diff --check
+          changed="$(git diff --name-only | sort)"
           expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
           test "$changed" = "$expected"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
