@@ -1,4 +1,4 @@
-name: Doke UX-CSS-DEBT-060 Financial Modal Diff Probe
+name: Doke UX-CSS-DEBT-060 Financial Modal Fallback Repeatability Probe
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
           test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
           test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
           test -z "$(git status --porcelain)"
-          echo 'PROBE INPUT PASS'
+          echo 'FALLBACK PROBE INPUT PASS'
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -50,11 +50,11 @@ jobs:
           sleep 1
           curl -fsS http://127.0.0.1:4174/carteira.html >/dev/null
 
-      - name: Probe exact wallet close-state diff
+      - name: Prove custom-property fallback and measurement repeatability
         shell: bash
         run: |
           set -euo pipefail
-          cat >/tmp/ux060-probe.js <<'NODE'
+          cat >/tmp/ux060-fallback-probe.js <<'NODE'
           const fs=require('fs');
           const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
           const file=process.env.TARGET_FILE;
@@ -64,71 +64,52 @@ jobs:
             const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
             for(let i=0;i<lines.length;i++){
               const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
-              if(!sel){
-                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
-                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
-                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
-                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
-              }
+              if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}
               if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
               depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
             }
-            const last=new Map(),dead=[];
-            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d);}
-            return{declarations:ds,dead};
+            const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d);}return{declarations:ds,dead};
           }
-          const p=parse(parent);if(p.declarations.length!==852||p.dead.length!==207)throw new Error('parse drift');
-          const remove=new Set(p.dead.map(x=>x.line));
-          const candidate=parent.split(/\r?\n/).filter((_,i)=>!remove.has(i+1)).join('\n');
-          const families=[...new Set(p.dead.map(x=>x.selector))];
-          const familyProps=Object.fromEntries(families.map(sel=>[sel,[...new Set(p.dead.filter(x=>x.selector===sel).map(x=>x.property))].sort()]));
-          const round=n=>Math.round(n*1000)/1000;
-          async function collect(css,label){
+          const parsed=parse(parent);if(parsed.declarations.length!==852||parsed.dead.length!==207)throw new Error('parse drift');
+          const closeBg=parsed.dead.find(x=>x.line===140&&x.selector===':is(.charge-modal__close, .wallet-dialog__close)'&&x.property==='background');
+          if(!closeBg||closeBg.value!=='var(--doke-close-button-bg)'||closeBg.winner.line!==903||closeBg.winner.value!=='var(--modal-close-bg)')throw new Error('close background chain drift');
+          const allRemove=new Set(parsed.dead.map(x=>x.line));
+          const rawCandidate=parent.split(/\r?\n/).filter((_,i)=>!allRemove.has(i+1)).join('\n');
+          const fixedLines=parent.split(/\r?\n/).filter((_,i)=>!allRemove.has(i+1));
+          const winnerIndex=fixedLines.findIndex(line=>line.includes('background: var(--modal-close-bg);'));
+          if(winnerIndex<0)throw new Error('winner line not found after compaction');
+          fixedLines[winnerIndex]=fixedLines[winnerIndex].replace('var(--modal-close-bg)','var(--modal-close-bg, var(--doke-close-button-bg))');
+          const fixedCandidate=fixedLines.join('\n');
+          async function sample(css,label,count){
             fs.writeFileSync(file,css);
-            const browser=await chromium.launch({headless:true});
-            const ctx=await browser.newContext({viewport:{width:359,height:900}});
-            const page=await ctx.newPage();
-            await page.route('**/*',route=>{const t=route.request().resourceType();if(['script','font','image'].includes(t))return route.abort();return route.continue();});
-            await page.goto('http://127.0.0.1:4174/carteira.html',{waitUntil:'domcontentloaded'});
-            await page.evaluate(()=>{
-              document.documentElement.removeAttribute('data-auth-guard');document.documentElement.classList.remove('doke-mobile-shell-pending');document.body.style.visibility='visible';document.body.style.opacity='1';
-              document.querySelectorAll('[data-doke-document-preloader],[data-wallet-hydration-skeleton]').forEach(el=>{el.hidden=true;el.style.display='none';});
-              const shell=document.querySelector('[data-wallet-withdraw-modal]');shell.hidden=false;shell.classList.add('is-active');shell.setAttribute('aria-hidden','false');document.body.classList.add('is-wallet-modal-open');
-              document.querySelector('.wallet-dialog__close')?.focus();
-            });
-            await page.waitForTimeout(80);
-            const snap=await page.evaluate((familyProps)=>{
-              const round=n=>Math.round(n*1000)/1000,rect=r=>({x:round(r.x),y:round(r.y),width:round(r.width),height:round(r.height),right:round(r.right),bottom:round(r.bottom)});
-              const out={};
-              for(const [sel,props] of Object.entries(familyProps)){
-                let nodes=[];try{nodes=[...document.querySelectorAll(sel)];}catch{}
-                if(!nodes.length)continue;
-                out[sel]=nodes.map((el,i)=>{const cs=getComputedStyle(el);return{index:i,tag:el.tagName,classes:String(el.className||''),props:Object.fromEntries(props.map(p=>[p,cs.getPropertyValue(p)])),rect:rect(el.getBoundingClientRect())};});
-              }
-              const modal=document.querySelector('.wallet-dialog--withdraw');
-              return{families:out,modalRect:rect(modal.getBoundingClientRect()),overflow:document.documentElement.scrollWidth>innerWidth+1||document.body.scrollWidth>innerWidth+1};
-            },familyProps);
-            await browser.close();
-            console.log(`COLLECT|${label}|families=${Object.keys(snap.families).length}|overflow=${snap.overflow}`);
-            return snap;
-          }
-          function diff(x,y,path='root',out=[]){
-            if(out.length>=100)return out;
-            if(typeof x!==typeof y){out.push([path,x,y]);return out;}
-            if(x===null||y===null||typeof x!=='object'){if(x!==y)out.push([path,x,y]);return out;}
-            for(const k of [...new Set([...Object.keys(x),...Object.keys(y)])].sort())diff(x[k],y[k],path+'.'+k,out);
-            return out;
+            const vals=[];
+            for(let n=0;n<count;n++){
+              const browser=await chromium.launch({headless:true});
+              const ctx=await browser.newContext({viewport:{width:359,height:900}});
+              const page=await ctx.newPage();
+              await page.route('**/*',route=>{const t=route.request().resourceType();if(['script','font','image'].includes(t))return route.abort();return route.continue();});
+              await page.goto(`http://127.0.0.1:4174/carteira.html?sample=${label}-${n}`,{waitUntil:'domcontentloaded'});
+              await page.evaluate(()=>{document.documentElement.removeAttribute('data-auth-guard');document.documentElement.classList.remove('doke-mobile-shell-pending');document.body.style.visibility='visible';document.body.style.opacity='1';document.querySelectorAll('[data-doke-document-preloader],[data-wallet-hydration-skeleton]').forEach(el=>{el.hidden=true;el.style.display='none';});const shell=document.querySelector('[data-wallet-withdraw-modal]');shell.hidden=false;shell.classList.add('is-active');shell.setAttribute('aria-hidden','false');document.body.classList.add('is-wallet-modal-open');document.querySelector('.wallet-dialog__close')?.focus();});
+              await page.waitForTimeout(80);
+              const v=await page.evaluate(()=>{const el=document.querySelector('.wallet-dialog__close'),cs=getComputedStyle(el),r=el.getBoundingClientRect(),round=x=>Math.round(x*1000)/1000;return{modalCloseBg:cs.getPropertyValue('--modal-close-bg').trim(),dokeCloseBg:cs.getPropertyValue('--doke-close-button-bg').trim(),background:cs.background,y:round(r.y),bottom:round(r.bottom),top:cs.top,width:cs.width,height:cs.height,display:cs.display,borderRadius:cs.borderRadius};});
+              vals.push(v);await browser.close();
+            }
+            console.log(`SAMPLES|${label}|${JSON.stringify(vals)}`);return vals;
           }
           (async()=>{
-            const a=await collect(parent,'parent');
-            const b=await collect(candidate,'candidate');
-            const ds=diff(a,b);
-            console.log(`DIFF COUNT|${ds.length}`);
-            for(const [path,x,y] of ds)console.log(`DIFF|path=${path}|parent=${JSON.stringify(x)}|candidate=${JSON.stringify(y)}`);
-            if(!ds.length)console.log('PROBE PARITY PASS|wallet=359|state=close');
+            const p=await sample(parent,'parent',3);
+            const raw=await sample(rawCandidate,'rawCandidate',2);
+            const fixed=await sample(fixedCandidate,'fixedCandidate',3);
+            if(p.some(x=>x.modalCloseBg!==''))throw new Error(`expected --modal-close-bg undefined on wallet, got ${JSON.stringify(p.map(x=>x.modalCloseBg))}`);
+            if(p.some(x=>!x.dokeCloseBg))throw new Error('expected --doke-close-button-bg defined on wallet');
+            if(raw.every(x=>x.background===p[0].background))throw new Error('raw candidate unexpectedly preserved fallback background');
+            if(fixed.some(x=>x.background!==p[0].background))throw new Error(`fixed fallback does not preserve background: parent=${p[0].background} fixed=${JSON.stringify(fixed.map(x=>x.background))}`);
+            const all=[...p,...fixed], ys=all.map(x=>x.y), jitter=Math.max(...ys)-Math.min(...ys);
+            console.log(`FALLBACK PROOF PASS|modalCloseBgUndefined=1|dokeCloseBg=${JSON.stringify(p[0].dokeCloseBg)}|parentBackground=${JSON.stringify(p[0].background)}|rawBackground=${JSON.stringify(raw[0].background)}|fixedBackground=${JSON.stringify(fixed[0].background)}|parentFixedYEnvelope=${jitter.toFixed(3)}|samples=${all.length}`);
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
-          node /tmp/ux060-probe.js
+          node /tmp/ux060-fallback-probe.js | tee /tmp/ux060-fallback-probe.log
+          grep -q 'FALLBACK PROOF PASS|modalCloseBgUndefined=1' /tmp/ux060-fallback-probe.log
 
       - name: Restore exact checkpoint
         if: always()
@@ -139,6 +120,7 @@ jobs:
           git reset --hard "$TARGET_SHA"
           git clean -fdx
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
           test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
           test -z "$(git status --porcelain)"
-          echo 'PROBE RESTORE PASS'
+          echo 'FALLBACK PROBE RESTORE PASS'
