@@ -1,0 +1,100 @@
+name: Doke UX-CSS-DEBT-060 Financial Modal Proof R3 Diagnostic
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-060-financial-modal-proof-r3
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r3:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5a93b7fdf0b61e91d6dcd3867ae98d97f94d7eb9
+      PARENT_SHA: 025ee39a521d8297dd68db58749b2f46a42bcdbe
+      TARGET_FILE: assets/css/components/overlays/financial-modal-system.css
+      TARGET_BLOB: 291af9edb634992955e324128ed5d661970d1aa5
+      R1_COMMIT: cca1ccef340053b11cc99c95378ccb38514890a8
+      R1_PATH: .github/workflows/diag-ux-css-debt-060-financial-modal-proof.yml
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-059 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard R1 provenance and exact product input
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch origin "$R1_COMMIT" --depth=1
+          git cat-file -e "$R1_COMMIT:$R1_PATH"
+          test -z "$(git status --porcelain)"
+          echo "R3 INPUT GUARD PASS|r1=$R1_COMMIT|productDrift=0|criteriaRelaxed=0"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          python3 -m http.server 4174 >/tmp/ux060-http.log 2>&1 &
+          echo $! >/tmp/ux060-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4174/carteira.html >/dev/null
+
+      - name: Extract R1 and add diff observability only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$R1_COMMIT:$R1_PATH" >/tmp/ux060-r1.yml
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/ux060-r1.yml').read_text()
+          start="          cat > /tmp/ux060-proof.js <<'NODE'\n"
+          end="\n          NODE\n          node /tmp/ux060-proof.js"
+          a=src.find(start)
+          if a<0: raise SystemExit('R1 script start missing')
+          a+=len(start)
+          b=src.find(end,a)
+          if b<0: raise SystemExit('R1 script end missing')
+          script='\n'.join(line[10:] if line.startswith('          ') else line for line in src[a:b].splitlines())+'\n'
+          needle='throw new Error(`browser parity mismatch at ${hint}`);'
+          if script.count(needle)!=1: raise SystemExit(f'expected one mismatch throw, got {script.count(needle)}')
+          replacement='''const diffs=[];
+      const walk=(x,y,path='root')=>{if(diffs.length>=80)return;if(typeof x!==typeof y){diffs.push([path,x,y]);return;}if(x===null||y===null||typeof x!=='object'){if(x!==y)diffs.push([path,x,y]);return;}const keys=[...new Set([...Object.keys(x),...Object.keys(y)])].sort();for(const k of keys)walk(x[k],y[k],path+'.'+k);};
+      walk(before,after);
+      console.error(`DIFF DETAIL|count=${diffs.length}|firstScenario=${hint}`);
+      for(const [path,x,y] of diffs)console.error(`DIFF|path=${path}|parent=${JSON.stringify(x)}|candidate=${JSON.stringify(y)}`);
+      throw new Error(`browser parity mismatch at ${hint}`);'''
+          script=script.replace(needle,replacement)
+          Path('/tmp/ux060-proof-r3.js').write_text(script)
+          print(f'R3 OBSERVABILITY PATCH PASS|changedSites=1|criteriaRelaxed=0|productLogicChanged=0|bytes={len(script.encode())}')
+          PY
+          node --check /tmp/ux060-proof-r3.js
+          node /tmp/ux060-proof-r3.js |& tee /tmp/ux060-r3.log
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux060-http.pid; then kill "$(cat /tmp/ux060-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R3 RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
