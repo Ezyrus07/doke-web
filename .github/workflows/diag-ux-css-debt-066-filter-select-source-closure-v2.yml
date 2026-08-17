@@ -1,0 +1,108 @@
+name: Doke UX-CSS-DEBT-066 Filter Select Source Closure V2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-066-filter-select-source-closure-v2
+
+permissions:
+  contents: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 2937218b2ecfa9b59586d4fd1c2f6361c103e786
+      PARENT_SHA: 39780a7192b1b17e8b971372a52b689ad39ef67d
+      TARGET_FILE: assets/css/components/internal/filter-select-standard.css
+      TARGET_BLOB: 08bbd3a12d0a5590267d534aecdc69aa777a81d6
+      IMPORTER_HOME: assets/css/pages/home-runtime-components.css
+      IMPORTER_HOME_BLOB: e607b73722a205eae9934755b07618b5292247a6
+      IMPORTER_ACTION: assets/css/pages/internal-action-surfaces.css
+      IMPORTER_ACTION_BLOB: c7951bc33f3d870c3a175779191d1702d0413810
+      IMPORTER_INTERNAL: assets/css/pages/internal-foundation.css
+      IMPORTER_INTERNAL_BLOB: f35c6e8496849ef552d2c5b2752cf70269c53980
+      IMPORTER_RESULTS: assets/css/pages/search-results-runtime-components.css
+      IMPORTER_RESULTS_BLOB: 35c5bd8ec050f767b0f23caa4f21e9d0b7b84b61
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-065 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact target and direct importers
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_HOME")" = "$IMPORTER_HOME_BLOB"
+          test "$(git hash-object "$IMPORTER_ACTION")" = "$IMPORTER_ACTION_BLOB"
+          test "$(git hash-object "$IMPORTER_INTERNAL")" = "$IMPORTER_INTERNAL_BLOB"
+          test "$(git hash-object "$IMPORTER_RESULTS")" = "$IMPORTER_RESULTS_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const target=process.env.TARGET_FILE;
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(Boolean);
+          const direct=[];
+          for(const f of tracked){if(f===target||!fs.existsSync(f))continue;const s=fs.readFileSync(f,'utf8');if(s.includes('filter-select-standard.css'))direct.push(f)}
+          direct.sort();
+          const expected=[process.env.IMPORTER_HOME,process.env.IMPORTER_ACTION,process.env.IMPORTER_INTERNAL,process.env.IMPORTER_RESULTS].sort();
+          if(JSON.stringify(direct)!==JSON.stringify(expected))throw new Error(`direct importer drift ${JSON.stringify(direct)}`);
+          console.log(`IMPORTER CLOSURE PASS|direct=${direct.length}|list=${direct.join(',')}`);
+          NODE
+
+      - name: Verify rows and source reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const lines=fs.readFileSync(process.env.TARGET_FILE,'utf8').split(/\r?\n/);
+          const rows=[[81,'background','linear-gradient(135deg, #22a06b, #2ac59f)',533,'var(--doke-action-solid-bg)'],[82,'border-color','transparent',534,'transparent'],[83,'color','#fff',535,'#fff'],[84,'box-shadow','var(--shadow-action-secondary-strong)',536,'var(--doke-action-solid-shadow)'],[101,'margin-top','16px',542,'14px'],[119,'min-height','var(--chip-height)',553,'36px'],[123,'background','var(--color-primary-soft)',555,'var(--doke-action-chip-active-bg)'],[125,'color','var(--color-primary-strong)',556,'var(--color-primary-strong, #2f62c9)'],[138,'min-height','var(--chip-height)',564,'var(--control-height-sm)'],[142,'background','var(--color-surface)',566,'rgba(255, 255, 255, 0.92)'],[143,'color','var(--color-text-muted)',567,'#6983a3'],[147,'box-shadow','var(--shadow-control-soft)',568,'none']];
+          for(const [line,p,v,wline,wv] of rows){if(lines[line-1].trim()!==`${p}: ${v};`)throw new Error(`row ${line}`);if(lines[wline-1].trim()!==`${p}: ${wv};`)throw new Error(`winner ${wline}`)}
+          const identical=rows.filter(r=>r[2]===r[4]).length;if(identical!==2)throw new Error(`identical=${identical}`);
+          const files=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean).filter(f=>fs.existsSync(f));
+          const needles=['data-orders-agenda-toggle','orders-active-filter-chip','orders-active-filter-clear','orders-select-panel__heading','orders-page-header__controls','notifications-page-header__controls','messages-header-controls'];
+          for(const n of needles){const hit=files.filter(f=>fs.readFileSync(f,'utf8').includes(n));console.log(`SOURCE|needle=${n}|files=${hit.length}|list=${hit.join(',')||'-'}`)}
+          const shells=files.filter(f=>/orders-page-shell|notifications-page-shell|messages-page-shell/.test(fs.readFileSync(f,'utf8')));
+          console.log(`SOURCE SUMMARY|trackedHtmlJs=${files.length}|bodyShellSources=${shells.length}|bodyShellList=${shells.join(',')||'-'}|identical=2|changed=10|rows=12`);
+          NODE
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Recompute active reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const re=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const t=fs.readFileSync(f,'utf8'),a=[];let m;re.lastIndex=0;while((m=re.exec(t)))a.push(norm(m[1],f));meta.set(f,a)}
+          const pages=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);for(const n of meta.get(f))if(meta.has(n))stack.push(n)}if(seen.has(process.env.TARGET_FILE))pages.push(p.page)}pages.sort();
+          if(pages.length!==18)throw new Error(`reach=${pages.length}`);
+          console.log(`ACTIVE REACH PASS|pages=18|list=${pages.join(',')}`);
+          NODE
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'SOURCE CLOSURE V2 PASS|productMutation=0|permanentMutation=0'
