@@ -1,0 +1,67 @@
+name: Doke UX-CSS-DEBT-063 Mobile Panel Source Closure
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-063-mobile-panel-source-closure
+
+permissions:
+  contents: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: ffe9c5a19921422fac17e93e6208a58f2f829429
+      PARENT_SHA: 10a9a51cfd0a96e7c6a56eb71cf44452ddb8813f
+      TARGET_FILE: assets/css/components/panels/mobile-panel.css
+      TARGET_BLOB: aa29bd1a0484e8b6d2995b8afacfe9f30192cefa
+      IMPORTER_A: assets/css/pages/comunidade-foundation.css
+      IMPORTER_A_BLOB: fad24aba42d840a174328af28ae8c98700219cd4
+      IMPORTER_B: assets/css/pages/internal-foundation.css
+      IMPORTER_B_BLOB: f35c6e8496849ef552d2c5b2752cf70269c53980
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-062 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact inputs and source closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_A")" = "$IMPORTER_A_BLOB"
+          test "$(git hash-object "$IMPORTER_B")" = "$IMPORTER_B_BLOB"
+          grep -q 'components/panels/mobile-panel.css' "$IMPORTER_A"
+          grep -q 'components/panels/mobile-panel.css' "$IMPORTER_B"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const files=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean).filter(f=>fs.existsSync(f)&&fs.statSync(f).isFile());
+          const tokens=['doke-mobile-panel--filters','doke-mobile-panel--selection','doke-mobile-panel--menu','doke-mobile-panel--context','data-mobile-panel-type="filters"','data-mobile-panel-type="selection"','data-mobile-panel-type="menu"','data-mobile-panel-type="context"','data-mobile-panel'];
+          const hits=[];
+          for(const f of files){const s=fs.readFileSync(f,'utf8');const found=tokens.filter(t=>s.includes(t));if(found.length){hits.push({file:f,found});console.log(`SOURCE HIT|file=${f}|tokens=${found.join(',')}`)}}
+          const html=[...new Set(hits.filter(x=>x.file.endsWith('.html')).map(x=>x.file))].sort();
+          const js=[...new Set(hits.filter(x=>x.file.endsWith('.js')).map(x=>x.file))].sort();
+          console.log(`SOURCE CLOSURE|html=${html.join(',')||'-'}|js=${js.join(',')||'-'}|htmlCount=${html.length}|jsCount=${js.length}`);
+          const rankingReach=['admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','mensagens.html','meu-perfil.html','notificacoes.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html'];
+          const outside=html.filter(f=>!rankingReach.includes(f));if(outside.length)throw new Error(`target-family source outside ranking reach ${outside}`);
+          console.log(`REACH GUARD PASS|rankingPages=${rankingReach.length}|sourceHtmlInsideReach=1|outside=0`);
+          NODE
+          test -z "$(git status --porcelain)"
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'SOURCE CLOSURE RESTORE PASS|productMutation=0|permanentMutation=0'
