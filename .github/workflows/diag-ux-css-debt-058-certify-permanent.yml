@@ -1,0 +1,202 @@
+name: Doke UX-CSS-DEBT-058 Permanent Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-058-certify-permanent
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      PERMANENT_SHA: 025ee39a521d8297dd68db58749b2f46a42bcdbe
+      PARENT_SHA: d6daeaa876111dbfa3ed27cc5307936084292962
+      TREE_SHA: 45cf92a9d53b8f2fdb0a15802f21d790a921f2f1
+      TARGET_FILE: assets/css/components/before-after-workers-preview/workers-mobile-fullscreen-contract.css
+      PARENT_TARGET_BLOB: d5adb69cdad3a77bdb5138afc7555071075fd089
+      PERMANENT_TARGET_BLOB: 5cd6ce3965a87fcb1a420807f20c03eda90ba55b
+      EXPECTED_SHA256: c130076b51622b0b1d1712f36ba3df3d2656d01d1b0c3b12f9f85412f008d4eb
+      EXPECTED_BYTES: "11472"
+      IMPORTER: assets/css/components/before-after-workers-preview.css
+      IMPORTER_BLOB: d2065a1d52d82fd7e13a7eeaaf636c526c433f23
+      RUNTIME_JS: assets/js/pages/home/workers.js
+      RUNTIME_BLOB: 962e267d2591593f8346cb1b7f2b4ce846c098d4
+      R2_RUN: "31981908599"
+      R2_JOB: "95250083869"
+    steps:
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PERMANENT_SHA }}
+          fetch-depth: 2
+
+      - name: Exact permanent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PERMANENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TREE_SHA"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$PERMANENT_TARGET_BLOB"
+          test "$(git hash-object "$TARGET_FILE")" = "$PERMANENT_TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" HEAD -- "$TARGET_FILE")" = $'0\t78\t'"$TARGET_FILE"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = "1"
+          git diff --quiet "$PARENT_SHA" HEAD -- package.json package-lock.json
+          git diff --check "$PARENT_SHA" HEAD
+          echo "IDENTITY PASS|permanent=$PERMANENT_SHA|parent=$PARENT_SHA|tree=$TREE_SHA|parentBlob=$PARENT_TARGET_BLOB|targetBlob=$PERMANENT_TARGET_BLOB|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|commits=1|files=1|additions=0|deletions=78"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Independent parent reconstruction and runtime authority identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/ux058-parent.css
+          cp "$TARGET_FILE" /tmp/ux058-permanent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){
+            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            const last=new Map(),dead=[];
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d);}
+            return {declarations:ds,dead};
+          }
+          const parent=fs.readFileSync('/tmp/ux058-parent.css','utf8'), permanent=fs.readFileSync('/tmp/ux058-permanent.css','utf8');
+          const p=parse(parent), q=parse(permanent);
+          if(p.declarations.length!==294||p.dead.length!==78)throw new Error(`parent ${p.declarations.length}/${p.dead.length}`);
+          if(q.declarations.length!==216||q.dead.length!==0)throw new Error(`permanent ${q.declarations.length}/${q.dead.length}`);
+          const families=new Set(p.dead.map(x=>x.selector)); if(families.size!==17)throw new Error(`families ${families.size}`);
+          const contexts=[...new Set(p.dead.map(x=>x.context))].sort(); if(JSON.stringify(contexts)!==JSON.stringify(['@media (max-width: 380px)','@media (max-width: 760px)']))throw new Error(`contexts ${contexts}`);
+          const identical=p.dead.filter(x=>x.value===x.winner.value&&x.important===x.winner.important).length; if(identical!==26)throw new Error(`identical ${identical}`);
+          if(p.dead.some(x=>x.important||x.winner.important))throw new Error('important drift');
+          const remove=new Set(p.dead.map(x=>x.line));
+          const rebuilt=parent.split(/\r?\n/).filter((_,i)=>!remove.has(i+1)).join('\n');
+          if(rebuilt!==permanent)throw new Error('independent reconstruction differs from permanent');
+          const hash=crypto.createHash('sha256').update(rebuilt).digest('hex'); if(hash!==process.env.EXPECTED_SHA256)throw new Error(`hash ${hash}`);
+          console.log(`RECONSTRUCTION PASS|parent=294/78|permanent=216/0|families=17|identical=26|changed=52|contexts=380,760|byteIdentical=1|sha256=${hash}`);
+          NODE
+          test "$(git rev-parse "HEAD:$IMPORTER")" = "$IMPORTER_BLOB"
+          test "$(git rev-parse "HEAD:$RUNTIME_JS")" = "$RUNTIME_BLOB"
+          grep -q 'workers-mobile-fullscreen-contract.css' "$IMPORTER"
+          grep -q 'window.DokeHomeWorkers' "$RUNTIME_JS"
+          grep -q "classList.add('worker-preview-open')" "$RUNTIME_JS"
+          grep -q "classList.remove('worker-preview-open')" "$RUNTIME_JS"
+          grep -q 'data-worker-preview' index.html
+          grep -q 'data-worker-preview' resultados.html
+          echo "RUNTIME AUTHORITY PASS|pages=index.html,resultados.html|importer=$IMPORTER_BLOB|runtime=$RUNTIME_BLOB|r2Transfer=$R2_RUN/$R2_JOB|candidateSha256=$EXPECTED_SHA256"
+
+      - name: Generate responsive baseline from exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA"
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          git checkout --detach "$PERMANENT_SHA"
+          test "$(git rev-parse HEAD)" = "$PERMANENT_SHA"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          echo "PARENT BASELINE PASS|parent=$PARENT_SHA|permanent=$PERMANENT_SHA"
+
+      - name: Responsive contract on exact permanent SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-responsive-contract.js | tee /tmp/ux058-responsive.log
+          grep -q 'Checks: 893' /tmp/ux058-responsive.log
+          grep -q 'Failures: 0' /tmp/ux058-responsive.log
+          grep -q 'Skips: 277' /tmp/ux058-responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+
+      - name: Governance and permanent residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/ux058-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/ux058-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/ux058-dup.log
+          grep -q 'Duplicate groups: 0' /tmp/ux058-dup.log
+          grep -q 'Duplicated files: 0' /tmp/ux058-dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/ux058-domain.log
+          grep -q 'Domains: 23' /tmp/ux058-domain.log
+          grep -q 'Critical flows: 15' /tmp/ux058-domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/ux058-domain.log
+          grep -q 'Critical blockers: 12' /tmp/ux058-domain.log
+          test "$(sha256sum docs/PAGE-ASSET-AUTHORITY-MATRIX.md | awk '{print $1}')" = "345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6"
+          test "$(sha256sum docs/HOME-AUTHORITY-CLASSIFICATION.md | awk '{print $1}')" = "b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda"
+          git checkout "$PERMANENT_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}
+          const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});
+          function deadCount(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d)}return {decl:ds.length,dead}}
+          if(active.size!==401||high.length!==37)throw new Error(`active/high ${active.size}/${high.length}`);let files=0,total=0,highDead=0;for(const f of active){const p=deadCount(meta.get(f).text);if(p.dead){files++;total+=p.dead;if(high.includes(f))highDead++}}
+          const target=deadCount(meta.get(process.env.TARGET_FILE).text),p057=deadCount(meta.get('assets/css/components/chat-composer.css').text),p056=deadCount(meta.get('assets/css/components/before-after-workers-preview/mobile-comment-sheets.css').text),p055=deadCount(meta.get('assets/css/patterns/settings-shell.css').text),p054=deadCount(meta.get('assets/css/components/before-after-workers-preview/publication-light-modal.css').text);
+          if(files!==16||total!==361||highDead!==0)throw new Error(`residual ${files}/${total}/${highDead}`);if(target.decl!==216||target.dead!==0)throw new Error(`target ${target.decl}/${target.dead}`);if(p057.decl!==125||p057.dead||p056.decl!==302||p056.dead||p055.decl!==104||p055.dead||p054.decl!==75||p054.dead)throw new Error('prior guard drift');
+          console.log('PERMANENT RESIDUAL PASS|active=401|high=37|files=16|dead=361|highDead=0|target=216/0|057=125/0|056=302/0|055=104/0|054=75/0');
+          NODE
+          echo 'GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0|authorityDocSemanticDelta=0'
+
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          npm audit --json >/tmp/ux058-audit.json
+          code=$?
+          set -e
+          node <<'NODE'
+          const a=require('/tmp/ux058-audit.json');const v=a.metadata?.vulnerabilities||{};console.log(`DEPENDENCY SNAPSHOT|total=${v.total??0}|critical=${v.critical??0}|high=${v.high??0}|moderate=${v.moderate??0}|low=${v.low??0}`);if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)process.exit(2);
+          NODE
+          echo "npmAuditExit=$code"
+
+      - name: Final exact-SHA restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PERMANENT_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$PERMANENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TREE_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PERMANENT_TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test -z "$(git status --porcelain)"
+          echo "PERMANENT CERTIFICATION PASS|sha=$PERMANENT_SHA|parent=$PARENT_SHA|tree=$TREE_SHA|blob=$PERMANENT_TARGET_BLOB|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=78|r2Transfer=$R2_RUN/$R2_JOB"
