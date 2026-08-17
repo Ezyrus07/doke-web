@@ -1,0 +1,80 @@
+name: Doke UX-CSS-DEBT-066 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-066-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 2937218b2ecfa9b59586d4fd1c2f6361c103e786
+      PARENT_PARENT_SHA: 39780a7192b1b17e8b971372a52b689ad39ef67d
+      TARGET_FILE: assets/css/components/internal/filter-select-standard.css
+      PARENT_TARGET_BLOB: 08bbd3a12d0a5590267d534aecdc69aa777a81d6
+      EXPECTED_SHA256: 85fc3698f8ded0ce0e99745dcf0341ff7d1f0f9087c76740f0e49cadda154185
+      EXPECTED_BYTES: 31203
+      PERMANENT_BRANCH: ux/ux-css-debt-066-filter-select-compaction
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$remote_sha|targetBlob=$PARENT_TARGET_BLOB"
+
+      - name: Rebuild exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n');
+          const expected=new Map([[81,'  background: linear-gradient(135deg, #22a06b, #2ac59f);'],[82,'  border-color: transparent;'],[83,'  color: #fff;'],[84,'  box-shadow: var(--shadow-action-secondary-strong);'],[101,'  margin-top: 16px;'],[119,'  min-height: var(--chip-height);'],[123,'  background: var(--color-primary-soft);'],[125,'  color: var(--color-primary-strong);'],[138,'  min-height: var(--chip-height);'],[142,'  background: var(--color-surface);'],[143,'  color: var(--color-text-muted);'],[147,'  box-shadow: var(--shadow-control-soft);']]);
+          for(const [n,v] of expected){if((ls[n-1]||'').replace(/\r$/,'')!==v)throw new Error(`target row drift ${n}`)}
+          const remove=new Set(expected.keys());
+          fs.writeFileSync(f,ls.filter((_,i)=>!remove.has(i+1)).join('\n'));
+          console.log('DETERMINISTIC REBUILD PASS|parent=416/12|candidate=404/0|families=4|identical=2|changed=10');
+          NODE
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t12\t'"$TARGET_FILE"
+          git diff --check
+          echo "CANDIDATE IDENTITY PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=12"
+
+      - name: Commit and atomically fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add -- "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-066: compact superseded shared filter/select action declarations"
+          commit_sha="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" HEAD -- "$TARGET_FILE")" = $'0\t12\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          after="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$after" = "$commit_sha"
+          echo "PROMOTION PASS|permanent=$after|parent=$PARENT_SHA|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=12"
