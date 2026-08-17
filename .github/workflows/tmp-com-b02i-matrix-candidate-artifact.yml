@@ -1,0 +1,139 @@
+name: TEMP COM-B02I Validated Candidate Artifact
+
+on:
+  push:
+    branches: ['tmp/com-b02i-matrix-candidate-artifact-20260816']
+
+permissions:
+  contents: read
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate base
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/com-b02i-matrix-candidate-artifact-20260816
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze base and install scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=4edf21b5374c54c1cf4995c7c44d7df0332c9bbe
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          test "$(git diff --name-only "$BASE" HEAD)" = '.github/workflows/tmp-com-b02i-matrix-candidate-artifact.yml'
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-providers.js)" = b919a29337edf40d69109fb2f338616c75b3911b
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = 38cd77fd6d3cf0c9f13d4c35ed000b9831481840
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = 1ff7621973be5ef38aa5e033b91f5b75216b9ec1
+          test "$(git rev-parse HEAD:config/com-b02i-canonical-command-source-providers.json)" = 4817bf608943a435c999f77badde57c9aa9a1764
+          test "$(git rev-parse HEAD:scripts/test-com-b02i-canonical-command-source-providers.js)" = eee15fecfc12e231113922ca6eb337632160eddc
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = 332da22f604806ba06a0687c69d3d89903c4222c
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = 94bc05d9797bc2b5673e440d0b25f09485d8215d
+          test "$(git rev-parse HEAD:supabase/migrations/20260805121500_com_b02b_server_authority.sql)" = fd74f6abc029023c4e0972b32b35daca975c3d57
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Generate Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git hash-object config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git status --porcelain --untracked-files=all | sed -E 's/^...//' | sort)"
+          test "$actual" = "$expected"
+
+      - name: Patch B02I certifier structurally
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/com-b02i-canonical-command-source-providers.yml')
+          lines=p.read_text().splitlines(); out=[]; parent=matrix=scope=0
+          frozen=[
+            ('backend/modules/communities/community-command-source-providers.js','b919a29337edf40d69109fb2f338616c75b3911b'),
+            ('backend/modules/communities/community-command-source-repository-contract.js','38cd77fd6d3cf0c9f13d4c35ed000b9831481840'),
+            ('backend/modules/communities/sql/com-b02i-command-sources.sql','1ff7621973be5ef38aa5e033b91f5b75216b9ec1'),
+            ('config/com-b02i-canonical-command-source-providers.json','4817bf608943a435c999f77badde57c9aa9a1764'),
+            ('scripts/test-com-b02i-canonical-command-source-providers.js','eee15fecfc12e231113922ca6eb337632160eddc')]
+          for line in lines:
+            s=line.strip(); indent=line[:len(line)-len(line.lstrip())]
+            if s=='test "$(git rev-parse HEAD^)" = "$BASE"':
+              parent+=1
+              out += [indent+'MATERIALIZED=4edf21b5374c54c1cf4995c7c44d7df0332c9bbe',
+                      indent+'test "$(git rev-parse "$MATERIALIZED^")" = "$BASE"',
+                      indent+'git merge-base --is-ancestor "$BASE" "$MATERIALIZED"',
+                      indent+'git merge-base --is-ancestor "$MATERIALIZED" HEAD']
+              continue
+            if s=='scripts/test-com-b02i-canonical-command-source-providers.js | sort)"':
+              scope+=1
+              out += [indent+'docs/DOMAIN-COMPLETION-MATRIX.md \\',
+                      indent+'reports/generated/domain-completion-matrix-report.json \\', line]
+              continue
+            out.append(line)
+            if s=='test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"':
+              matrix+=1
+              out += [indent+f'test "$(git rev-parse HEAD:{path})" = "{blob}"' for path,blob in frozen]
+          if (parent,matrix,scope)!=(1,1,1): raise SystemExit(f'B02I_STRUCTURAL_PATCH_HITS:{parent}:{matrix}:{scope}')
+          p.write_text('\n'.join(out)+'\n')
+          PY
+          ! grep -F 'test "$(git rev-parse HEAD^)" = "$BASE"' .github/workflows/com-b02i-canonical-command-source-providers.yml
+          grep -F 'git merge-base --is-ancestor "$MATERIALIZED" HEAD' .github/workflows/com-b02i-canonical-command-source-providers.yml
+
+      - name: Semantic and fail-closed validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/modules/communities/community-command-source-providers.js
+          node --check backend/modules/communities/community-command-source-repository-contract.js
+          node --check scripts/test-com-b02i-canonical-command-source-providers.js
+          node scripts/test-com-b02i-canonical-command-source-providers.js
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-command-source-providers.js
+          ! grep -E 'createClient\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-command-source-repository-contract.js
+          grep -F "authority!=='server_service_role'" backend/modules/communities/community-command-source-repository-contract.js
+          grep -F 'intentionally outside supabase/migrations' backend/modules/communities/sql/com-b02i-command-sources.sql
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          test "$(git hash-object backend/modules/communities/community-command-source-providers.js)" = b919a29337edf40d69109fb2f338616c75b3911b
+          test "$(git hash-object backend/modules/communities/community-command-source-repository-contract.js)" = 38cd77fd6d3cf0c9f13d4c35ed000b9831481840
+          test "$(git hash-object backend/modules/communities/sql/com-b02i-command-sources.sql)" = 1ff7621973be5ef38aa5e033b91f5b75216b9ec1
+          test "$(git hash-object config/com-b02i-canonical-command-source-providers.json)" = 4817bf608943a435c999f77badde57c9aa9a1764
+          test "$(git hash-object scripts/test-com-b02i-canonical-command-source-providers.js)" = eee15fecfc12e231113922ca6eb337632160eddc
+          test "$(git hash-object config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Exact candidate diff and hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          expected="$(printf '%s\n' .github/workflows/com-b02i-canonical-command-source-providers.yml docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git status --porcelain --untracked-files=all | sed -E 's/^...//' | sort)"
+          test "$actual" = "$expected"
+
+      - name: Upload validated candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02i-validated-candidate
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            .github/workflows/com-b02i-canonical-command-source-providers.yml
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
