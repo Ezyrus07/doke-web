@@ -1,0 +1,50 @@
+name: Doke UX-CSS-DEBT-068 Seed Permanent Branch
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-068-seed-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  seed:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c7f8397821698f4445dad3b20e5aea2ff3d57cf3
+      PARENT_SHA: 460120dbda36a407a143cfeb1471d46859be62ed
+      TARGET_TREE: f66b3a49361a8632d8ff3191e75085fe921d7256
+      TARGET_FILE: assets/css/components/internal/list-page-toolbar.css
+      TARGET_BLOB: 0ca5d370759420fe74690784c73a686da687bf16
+      PERMANENT_BRANCH: ux/ux-css-debt-068-list-page-toolbar-compaction
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-067 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Exact parent and namespace guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          existing="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test -z "$existing"
+          test -z "$(git status --porcelain)"
+          echo "SEED GUARD PASS|target=$TARGET_SHA|permanentAbsent=1"
+
+      - name: Seed exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin "$TARGET_SHA:refs/heads/$PERMANENT_BRANCH"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          echo "SEED PASS|permanent=$PERMANENT_BRANCH|sha=$remote_sha|productMutation=0"
