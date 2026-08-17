@@ -1,0 +1,95 @@
+name: Doke UX-CSS-DEBT-067 Modal Visual Source Closure
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-067-modal-visual-source-closure
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 460120dbda36a407a143cfeb1471d46859be62ed
+      PARENT_SHA: 2937218b2ecfa9b59586d4fd1c2f6361c103e786
+      TARGET_FILE: assets/css/components/overlays/modal-visual-contract.css
+      TARGET_BLOB: 2fd0b2fc22c9437052e00442848c0ed93966021a
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-066 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "SOURCE GUARD PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|targetBlob=$TARGET_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Prove cascade identity, import closure, reach and real source usage
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const target=process.env.TARGET_FILE;
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}
+          if(active.size!==401)throw new Error(`active drift ${active.size}`);
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d)}return{declarations:ds,dead}}
+          const p=parse(meta.get(target).text);if(p.declarations.length!==476||p.dead.length!==1)throw new Error(`target parser drift ${p.declarations.length}/${p.dead.length}`);
+          const d=p.dead[0],selector='.doke-modal-surface.doke-overlay__surface, .doke-modal-surface.doke-modal__surface, .doke-modal-surface.doke-action-modal__surface, .doke-modal-surface.doke-financial-modal__surface';
+          if(d.line!==82||d.selector!==selector||d.property!=='display'||d.value!=='grid'||d.important||d.context!==''||d.winnerLine!==686||d.winnerValue!=='block'||d.winnerImportant)throw new Error(`cascade drift ${JSON.stringify(d)}`);
+          const importers=[...active].filter(f=>f!==target&&meta.get(f).imports.includes(target)).sort();
+          const expectedImporters=['assets/css/components/profile/profile-editor-form.css','assets/css/pages/admin-foundation.css','assets/css/pages/ajuda-foundation.css','assets/css/pages/anunciar-servico-foundation.css','assets/css/pages/avaliacao-profissional-foundation.css','assets/css/pages/carteira-runtime-finance.css','assets/css/pages/comunidade-foundation.css','assets/css/pages/comunidade-interna-runtime-settings.css','assets/css/pages/configuracoes-foundation.css','assets/css/pages/marketplace-detail-foundation.css','assets/css/pages/messaging-foundation.css','assets/css/pages/notificacoes-foundation.css','assets/css/pages/novidades-foundation.css','assets/css/pages/orcamento-foundation.css','assets/css/pages/pagamento-profissional-foundation.css','assets/css/pages/pedidos-runtime-page.css','assets/css/pages/tornar-profissional-foundation.css','assets/css/pages/verificacao-profissional-foundation.css'];
+          if(JSON.stringify(importers)!==JSON.stringify(expectedImporters))throw new Error(`importer drift ${importers.join(',')}`);
+          for(const f of importers)console.log(`IMPORTER|file=${f}|blob=${cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim()}`);
+          const pages=[];for(const pg of report.pageAssets){const seen=new Set(),stack=[...pg.css.filter(f=>meta.has(f))];let hit=false;while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}if(hit)pages.push(pg.page)}pages.sort();
+          const expectedPages=['admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','ajuda.html','anunciar-servico.html','avaliacao-profissional.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','detalhe-anuncio.html','mensagens.html','meu-perfil.html','notificacoes.html','novidades.html','orcamento.html','pagamento-profissional.html','pedidos.html','perfil-profissional.html','tornar-profissional.html','verificacao-profissional.html'];
+          if(JSON.stringify(pages)!==JSON.stringify(expectedPages))throw new Error(`reach drift ${pages.join(',')}`);
+          const src=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean).filter(f=>fs.existsSync(f));
+          const aliases=['doke-modal-surface','doke-overlay__surface','doke-modal__surface','doke-action-modal__surface','doke-financial-modal__surface'];let total=0;
+          for(const a of aliases){const hit=src.filter(f=>fs.readFileSync(f,'utf8').includes(a));const occurrences=hit.reduce((n,f)=>n+(fs.readFileSync(f,'utf8').split(a).length-1),0);if(!hit.length)throw new Error(`source alias missing ${a}`);total+=occurrences;console.log(`SOURCE|alias=${a}|files=${hit.length}|occurrences=${occurrences}|sample=${hit.slice(0,12).join(',')}`)}
+          const htmlHits=expectedPages.filter(f=>fs.existsSync(f)&&fs.readFileSync(f,'utf8').includes('doke-modal-surface'));if(!htmlHits.length)throw new Error('no real HTML modal surface hit');
+          console.log(`CASCADE PASS|decl=476|dead=1|selectorFamilies=1|line=82|removed=display:grid|winnerLine=686|winner=display:block|sameSelector=1|sameContext=1|sameImportance=1|changedWinner=1`);
+          console.log(`REACH PASS|directImporters=${importers.length}|pages=${pages.length}|trackedSources=${src.length}|sourceOccurrences=${total}|realHtmlHits=${htmlHits.length}|htmlHitList=${htmlHits.join(',')}`);
+          console.log('SOURCE CLOSURE PASS');
+          NODE
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "SOURCE RESTORE PASS|sha=$TARGET_SHA|productMutation=0"
