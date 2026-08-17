@@ -1,0 +1,76 @@
+name: TEMP COM-B02P Matrix Materializer
+
+on:
+  push:
+    branches:
+      - tmp/com-b02p-matrix-20260817-1145
+    paths:
+      - '.github/workflows/tmp-com-b02p-matrix-materializer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact temporary head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze canonical B02P inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=214052e0bf9f6dd428ead9a388140d17147504fa
+          git merge-base --is-ancestor "$BASE" HEAD
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-implementation.js)" = "19a5918f91df57ce991ff25e9fbd7eb15ecdfc2f"
+          test "$(git rev-parse HEAD:config/com-b02p-runtime-binding-integration-implementation.json)" = "686d9035e6510867fe8989ca60e91bc8be20106a"
+          test "$(git rev-parse HEAD:scripts/test-com-b02p-runtime-binding-integration-implementation.js)" = "d4ce1c90b2870ff64671366ab4fbf7626c960f86"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02p-runtime-binding-integration-implementation.yml)" = "1703cc9f1887ff5d5965930b5de782c20f8cf930"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Reprove B02P semantics before derivation
+        run: |
+          node --check backend/modules/communities/community-command-runtime-binding-integration-implementation.js
+          node --check scripts/test-com-b02p-runtime-binding-integration-implementation.js
+          node scripts/test-com-b02p-runtime-binding-integration-implementation.js
+
+      - name: Materialize Matrix derivatives only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git hash-object config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+
+      - name: Validate generated Matrix and governance
+        run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Commit only generated derivatives on temporary branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          test "$(git diff --cached --name-only | sort)" = "$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          git commit -m "ci(com): materialize B02P Matrix derivatives"
+          git push origin HEAD:tmp/com-b02p-matrix-20260817-1145
