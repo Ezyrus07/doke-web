@@ -1,0 +1,66 @@
+name: Doke UX CSS Important Post 008 Ranking R1
+on: [push]
+permissions:
+  contents: write
+jobs:
+  rank:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: ad132fc1c25f0d9e234810cae6993360d8baf2e6
+      DIAG_BRANCH: diag/ux-css-important-post-008-ranking-r1
+      RESULT_FILE: .diagnostics/ux-css-important-post-008-ranking-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: rank
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/rank.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          git checkout "$TARGET_SHA" -- .
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'');
+          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+          const css=tracked.filter(p=>p.startsWith('assets/css/')&&p.endsWith('.css'));
+          const html=tracked.filter(p=>p.endsWith('.html'));
+          const cssSet=new Set(css),imports=new Map(),importers=new Map();
+          for(const p of css){const txt=fs.readFileSync(p,'utf8'),deps=[];for(const m of txt.matchAll(/@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?\s*\)?/g)){const raw=m[1].split(/[?#]/)[0];if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw))continue;const d=norm(path.normalize(path.join(path.dirname(p),raw)));if(cssSet.has(d))deps.push(d);}imports.set(p,[...new Set(deps)]);for(const d of deps){if(!importers.has(d))importers.set(d,[]);importers.get(d).push(p)}}
+          const roots=new Map();for(const p of html){const txt=fs.readFileSync(p,'utf8'),r=[];for(const m of txt.matchAll(/<link\b[^>]*href=["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi)){const raw=m[1].split(/[?#]/)[0];if(/^(?:https?:|\/\/)/i.test(raw))continue;const f=norm(path.normalize(path.join(path.dirname(p),raw)));if(cssSet.has(f))r.push(f)}roots.set(p,[...new Set(r)])}
+          function closure(rs){const seen=new Set(),stack=[...rs];while(stack.length){const x=stack.pop();if(seen.has(x))continue;seen.add(x);for(const d of imports.get(x)||[])stack.push(d)}return seen}
+          const closures=new Map([...roots].map(([p,r])=>[p,closure(r)]));
+          const rows=[];for(const p of css){const txt=fs.readFileSync(p,'utf8'),n=(txt.match(/!important\b/g)||[]).length;if(!n||p.includes('service-card'))continue;let risk;if(p.includes('/core/')||p.includes('/layout/')||p.includes('shell')||p.includes('sidebar')||p.includes('header')||n>=25)risk='high-baseline-required';else if(n>=5)risk='medium-baseline-required';else risk='low-review-candidate';const pages=[...closures].filter(([,c])=>c.has(p)).map(([pg])=>pg).sort();rows.push({file:p,important:n,risk,pages,bytes:fs.statSync(p).size,importers:[...(importers.get(p)||[])].sort()})}
+          const protectedFile='assets/css/pages/home/mobile-composition.css',pf=rows.find(x=>x.file===protectedFile);if(!pf||pf.important!==6)throw Error('006 guard drift');console.log(`PROTECTED|file=${pf.file}|important=${pf.important}|risk=${pf.risk}|pages=${pf.pages.length}`);
+          const active=rows.filter(x=>x.pages.length&&x.file!==protectedFile),sort=(a,b)=>a.pages.length-b.pages.length||a.important-b.important||a.bytes-b.bytes||a.file.localeCompare(b.file);
+          const low=active.filter(x=>x.risk==='low-review-candidate').sort(sort),med=active.filter(x=>x.risk==='medium-baseline-required').sort(sort),high=active.filter(x=>x.risk==='high-baseline-required'&&!x.file.includes('/core/')&&!x.file.includes('/layout/')&&!x.file.includes('shell')&&!x.file.includes('sidebar')&&!x.file.includes('header')).sort(sort);
+          const total=rows.reduce((s,x)=>s+x.important,0),lowTokens=rows.filter(x=>x.risk==='low-review-candidate').reduce((s,x)=>s+x.important,0),mediumTokens=rows.filter(x=>x.risk==='medium-baseline-required').reduce((s,x)=>s+x.important,0),highTokens=rows.filter(x=>x.risk==='high-baseline-required').reduce((s,x)=>s+x.important,0);
+          console.log(`SUMMARY|files=${rows.length}|total=${total}|lowTokens=${lowTokens}|mediumTokens=${mediumTokens}|highTokens=${highTokens}`);console.log(`ELIGIBLE|low=${low.length}|medium=${med.length}|localizedHigh=${high.length}`);
+          low.slice(0,10).forEach((r,i)=>console.log(`LOW|rank=${i}|file=${r.file}|important=${r.important}|pages=${r.pages.length}|pageList=${r.pages.join(',')}|bytes=${r.bytes}|importers=${r.importers.join(',')}`));med.slice(0,10).forEach((r,i)=>console.log(`MEDIUM|rank=${i}|file=${r.file}|important=${r.important}|pages=${r.pages.length}|pageList=${r.pages.join(',')}|bytes=${r.bytes}|importers=${r.importers.join(',')}`));high.slice(0,10).forEach((r,i)=>console.log(`HIGH|rank=${i}|file=${r.file}|important=${r.important}|pages=${r.pages.length}|pageList=${r.pages.join(',')}|bytes=${r.bytes}|importers=${r.importers.join(',')}`));
+          const top=low[0]||med[0]||high[0]||null;if(top){console.log(`TOP0|file=${top.file}|important=${top.important}|risk=${top.risk}|pages=${top.pages.length}|pageList=${top.pages.join(',')}`);console.log('NEXT=CANDIDATE_EXISTS')}else console.log('NEXT=NO_ELIGIBLE_ACTIVE_CANDIDATE');
+          NODE
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.rank.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "RANKING=${{ steps.rank.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(PROTECTED|SUMMARY|ELIGIBLE|LOW|MEDIUM|HIGH|TOP0|NEXT=)' /tmp/rank.log || true; echo "RESULT=$result"; } >/tmp/out.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/out.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: publish post-008 ranking r1 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
