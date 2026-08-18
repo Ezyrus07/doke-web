@@ -1,0 +1,146 @@
+name: COM-B02S Command Handler Repository Binding Surface
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-command-handler-repository-binding-surface.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'config/com-b02s-command-handler-repository-binding-surface.json'
+      - 'scripts/test-com-b02s-command-handler-repository-binding-surface.js'
+      - '.github/workflows/com-b02s-command-handler-repository-binding-surface.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02s-command-handler-repository-binding-surface-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02R predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=abfd04593530ce945be0f8db2f3077bc6f2e8f12
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git merge-base --is-ancestor "$BASE" HEAD
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-repository-binding-composition.js)" = "cfc3bd8790d99b1ee61bf52fa93fd2bb2a6bf3bc"
+          test "$(git rev-parse HEAD:config/com-b02r-runtime-repository-binding-composition.json)" = "4a5f808ea433e26d3af9a6ccaa44a4c608dc5f6b"
+          test "$(git rev-parse HEAD:scripts/test-com-b02r-runtime-repository-binding-composition.js)" = "9ce6d59108004f603ea3a9a9b828220c5d57129d"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02r-runtime-repository-binding-composition.yml)" = "9a356e9d2dd7dee9ed9276e8ae957f27a6a5db64"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = "1ff7621973be5ef38aa5e033b91f5b75216b9ec1"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-repository-binding-surface.js)" = "0778690aaaf428247159a08eac83a38796888f41"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "698993afe91e5ec1486d89623fb864ff50488337"
+          test "$(git rev-parse HEAD:config/com-b02s-command-handler-repository-binding-surface.json)" = "9ce3b9e29d3e30b0e72567d856d96641e224cd67"
+          test "$(git rev-parse HEAD:scripts/test-com-b02s-command-handler-repository-binding-surface.js)" = "4daadbde0c00a828606fee472248d234a0e0b877"
+
+          required="$(printf '%s\n' \
+            .github/workflows/com-b02s-command-handler-repository-binding-surface.yml \
+            backend/modules/communities/community-command-handler-repository-binding-surface.js \
+            backend/modules/communities/route-handlers.js \
+            config/com-b02s-command-handler-repository-binding-surface.json \
+            scripts/test-com-b02s-command-handler-repository-binding-surface.js | sort)"
+          allowed="$(printf '%s\n' \
+            .github/workflows/com-b02s-command-handler-repository-binding-surface.yml \
+            backend/modules/communities/community-command-handler-repository-binding-surface.js \
+            backend/modules/communities/route-handlers.js \
+            config/com-b02s-command-handler-repository-binding-surface.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02s-command-handler-repository-binding-surface.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          while IFS= read -r path; do
+            grep -Fxq "$path" <<<"$actual"
+          done <<<"$required"
+          unexpected="$(comm -23 <(printf '%s\n' "$actual") <(printf '%s\n' "$allowed"))"
+          test -z "$unexpected"
+
+      - name: Syntax and semantic command-handler surface conformance
+        run: |
+          node --check backend/modules/communities/community-command-handler-repository-binding-surface.js
+          node --check backend/modules/communities/route-handlers.js
+          node --check scripts/test-com-b02s-command-handler-repository-binding-surface.js
+          node -e "JSON.parse(require('fs').readFileSync('config/com-b02s-command-handler-repository-binding-surface.json','utf8'))"
+          node scripts/test-com-b02s-command-handler-repository-binding-surface.js
+
+      - name: Active execute handlers remain blocked and remote-inert
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/modules/communities/community-command-handler-repository-binding-surface.js
+          ! grep -E 'process\.env|Deno\.env|Bun\.env|createClient\(|fetch\(|https?://|SUPABASE_SERVICE_ROLE_KEY|SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.rpc\(' "$TARGET"
+          grep -F "runtimeRepositoryComposition.beginComposition" "$TARGET"
+          grep -F "repositoryOperationInvoked: false" "$TARGET"
+          grep -F "runtimeActivated: false" "$TARGET"
+
+          git diff -U0 abfd04593530ce945be0f8db2f3077bc6f2e8f12 HEAD -- backend/modules/communities/route-handlers.js > /tmp/b02s-route-handlers.diff
+          ! grep -E '^[+-].*(B02F_FAILURE_CODE|createB02FBlockedRouteError|executeMembershipCommand|executeGovernanceCommand|executeContentCommand|stagingTrafficEnabled|realCommunityMutationEnabled|realtimeEnabled)' /tmp/b02s-route-handlers.diff
+
+          node - <<'NODE'
+          const surface = require('./backend/modules/communities/community-command-handler-repository-binding-surface');
+          const b02r = require('./backend/modules/communities/community-command-runtime-repository-binding-composition');
+          const handlers = require('./backend/modules/communities/route-handlers');
+          const loader = require('./backend/shared/http/module-route-loader');
+          const cfg = require('./config/com-b02s-command-handler-repository-binding-surface.json');
+
+          if (surface.CONTRACT_ID !== 'com-b02s-command-handler-repository-binding-surface-v1') throw new Error('B02S_CONTRACT_DRIFT');
+          if (surface.PREDECESSOR_CONTRACT_ID !== b02r.CONTRACT_ID) throw new Error('B02S_B02R_PREDECESSOR_DRIFT');
+          const inspection = surface.inspectHandlerRepositoryBindingSurface();
+          if (inspection.routeHandlerRepositoryOnlyComposersBound !== true || inspection.activeExecuteHandlersPreserved !== true) throw new Error('B02S_SURFACE_BINDING_MISSING');
+          for (const key of ['credentialSourceBound','credentialReadImplemented','repositoryOperationInvoked','rpcExecuted','networkExecuted','migrationApplied','runtimeActivated','productionChanged']) {
+            if (inspection[key] !== false) throw new Error(`B02S_REMOTE_EFFECT_DRIFT:${key}`);
+          }
+          for (const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand']) {
+            if (loader.getHandler('communities', name) !== handlers[name]) throw new Error(`B02S_ACTIVE_HANDLER_DRIFT:${name}`);
+          }
+          for (const name of ['beginRepositoryOnlyCommandHandlerSurface','resumeRepositoryOnlyCommandHandlerSurface','resumeCommandRepositoryOnlySurface']) {
+            if (loader.getHandler('communities', name) !== null) throw new Error(`B02S_RUNTIME_EXPOSED:${name}`);
+          }
+          if (cfg.authorization.type !== 'explicit_single_use_repository_only' || cfg.authorization.singleUse !== true || cfg.authorization.consumedByBoundary !== 'COM-B02S' || cfg.authorization.genericNextAuthorized !== false) throw new Error('B02S_AUTHORIZATION_DRIFT');
+          if (cfg.authority.handlerRepositorySurfaceBindingAuthority !== true) throw new Error('B02S_AUTHORITY_DRIFT');
+          for (const key of ['activeExecuteHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','credentialSourceBindingAuthority','credentialReadAuthority','repositoryOperationInvocationAuthority','rpcExecutionAuthority','networkAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','migrationApplicationAuthority','runtimeActivationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority']) {
+            if (cfg.authority[key] !== false) throw new Error(`B02S_FORBIDDEN_AUTHORITY:${key}`);
+          }
+          if (cfg.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || cfg.functionalCheckpoint.exactRootCauseProven !== false || cfg.functionalCheckpoint.r5iCreated !== false || cfg.functionalCheckpoint.r5iInferred !== false) throw new Error('B02S_FUNCTIONAL_CHECKPOINT_DRIFT');
+          if (cfg.nextActionAfterCertification !== 'stop_and_require_fresh_explicit_authorization_before_any_subsequent_boundary') throw new Error('B02S_NEXT_ACTION_DRIFT');
+          NODE
+
+          ! git diff --name-only abfd04593530ce945be0f8db2f3077bc6f2e8f12 HEAD | grep '^supabase/migrations/'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check abfd04593530ce945be0f8db2f3077bc6f2e8f12 HEAD

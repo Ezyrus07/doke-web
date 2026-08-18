@@ -1,7 +1,7 @@
 'use strict';
 
 const { findRouteByName } = require('../../shared/http/route-registry');
-const commandHandlerComposition = require('./community-command-handler-composition');
+const commandHandlerRepositoryBindingSurface = require('./community-command-handler-repository-binding-surface');
 
 const ROUTE_NAME = 'communities.moderation.command';
 const FAILURE_CODE = 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED';
@@ -55,7 +55,7 @@ async function executeContentCommand() {
 }
 
 function composeMembershipCommandRepositoryOnly(packet, options) {
-  return commandHandlerComposition.composeRepositoryOnlyHandlerPlan(
+  return commandHandlerRepositoryBindingSurface.beginRepositoryOnlyCommandHandlerSurface(
     'communities.membership.command',
     packet,
     options
@@ -63,7 +63,7 @@ function composeMembershipCommandRepositoryOnly(packet, options) {
 }
 
 function composeGovernanceCommandRepositoryOnly(packet, options) {
-  return commandHandlerComposition.composeRepositoryOnlyHandlerPlan(
+  return commandHandlerRepositoryBindingSurface.beginRepositoryOnlyCommandHandlerSurface(
     'communities.governance.command',
     packet,
     options
@@ -71,9 +71,17 @@ function composeGovernanceCommandRepositoryOnly(packet, options) {
 }
 
 function composeContentCommandRepositoryOnly(packet, options) {
-  return commandHandlerComposition.composeRepositoryOnlyHandlerPlan(
+  return commandHandlerRepositoryBindingSurface.beginRepositoryOnlyCommandHandlerSurface(
     'communities.content.command',
     packet,
+    options
+  );
+}
+
+function resumeCommandRepositoryOnlySurface(surface, repositoryResult, options) {
+  return commandHandlerRepositoryBindingSurface.resumeRepositoryOnlyCommandHandlerSurface(
+    surface,
+    repositoryResult,
     options
   );
 }
@@ -132,6 +140,7 @@ module.exports = Object.freeze({
   composeMembershipCommandRepositoryOnly,
   composeGovernanceCommandRepositoryOnly,
   composeContentCommandRepositoryOnly,
+  resumeCommandRepositoryOnlySurface,
   createBlockedRouteError,
   createB02FBlockedRouteError,
   createStagingCanaryModerationCommandHandler,
