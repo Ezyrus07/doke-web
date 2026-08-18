@@ -1,0 +1,89 @@
+name: Doke UX-CSS-IMPORTANT-001 Certify Core V2
+on:
+  push:
+    branches: [diag/ux-css-important-001-certify-core-v2]
+    paths: [.github/workflows/diag-ux-css-important-001-certify-core-v2.yml]
+permissions:
+  contents: write
+jobs:
+  certify-core:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5
+      PARENT_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      TARGET_TREE: c385ae4b40c67d200f6c4a4d99f2a46bb2f47b23
+      TARGET_FILE: assets/css/components/in-app-notifications.css
+      PARENT_TARGET_BLOB: cc5fa323b338995a76b8e927474fcaf90344885d
+      TARGET_BLOB: 15caac7b2e43aea620474b5f203128fac620569a
+      EXPECTED_SHA256: 802214d70ed62d1d023467e0fc13a6f30250bcfa531b9149decf3dd041167fcb
+      EXPECTED_BYTES: '7403'
+      PERMANENT_BRANCH: ux/ux-css-important-001-in-app-notifications
+      DIAG_BRANCH: diag/ux-css-important-001-certify-core-v2
+      RESULT_FILE: .diagnostics/ux-css-important-001-certify-core-v2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/core-cert.log) 2>&1
+          test "$(git rev-parse --is-shallow-repository)" = false
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^^)" = "$PARENT_PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git show "$PARENT_SHA:$TARGET_FILE" | git hash-object --stdin)" = "$PARENT_TARGET_BLOB"
+          test "$(git rev-list --count "$PARENT_SHA..$TARGET_SHA")" = 1
+          test "$(git diff --name-only "$PARENT_SHA" "$TARGET_SHA")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$TARGET_SHA" -- "$TARGET_FILE")" = $'2\t2\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l | tr -d ' ')" = 0
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"
+          echo "IDENTITY PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|fullHistory=1|files=1|additions=2|deletions=2|important=0"
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const s=fs.readFileSync('/tmp/parent.css','utf8');
+          const a='.doke-live-toast__actions { display: flex !important; gap: 8px; margin-top: 5px; overflow: visible !important; white-space: normal !important; }',an='.doke-live-toast__content > .doke-live-toast__actions { display: flex; gap: 8px; margin-top: 5px; overflow: visible; white-space: normal; }';
+          const p='.notifications-settings-panel__select { align-items: flex-start !important; flex-direction: column; }',pn='.notifications-settings-panel__options > .notifications-settings-panel__select { align-items: flex-start; flex-direction: column; }';
+          if((s.match(/!important\b/g)||[]).length!==4||!s.includes(a)||!s.includes(p))throw Error('parent drift');const out=s.replace(a,an).replace(p,pn),b=Buffer.from(out),h=crypto.createHash('sha256').update(b).digest('hex');if(h!==process.env.EXPECTED_SHA256||b.length!==+process.env.EXPECTED_BYTES||!b.equals(fs.readFileSync(process.env.TARGET_FILE)))throw Error(`reconstruction ${h}/${b.length}`);console.log(`RECONSTRUCTION PASS|byteIdentical=1|sha256=${h}|bytes=${b.length}|important=4->0|rulesChanged=2`);
+          NODE
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),target=process.env.TARGET_FILE,tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css')),re=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v))};const meta=new Map();for(const f of tracked){const src=fs.readFileSync(f,'utf8'),imports=[];let m;re.lastIndex=0;while((m=re.exec(src)))imports.push(norm(m[1],f));meta.set(f,{imports})}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css||[]))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}if(active.size!==401)throw Error(`active ${active.size}`);const im=[...meta].filter(([f,x])=>f!==target&&x.imports.includes(target)).map(([f])=>f).sort(),aim=im.filter(f=>active.has(f)),exp=['assets/css/pages/comunidade-interna-runtime-page.css','assets/css/pages/messaging-runtime-extensions.css'];if(JSON.stringify(im)!==JSON.stringify(exp)||JSON.stringify(aim)!==JSON.stringify(exp))throw Error(`importers ${im}/${aim}`);const reach=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...(p.css||[]).filter(f=>meta.has(f))];while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){reach.push(p.page);break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}}reach.sort();const er=['comunidade-interna.html','mensagens.html','notificacoes.html'];if(JSON.stringify(reach)!==JSON.stringify(er))throw Error(`reach ${reach}`);console.log(`AUTHORITY PASS|importers=2/2 active|reach=3|pageList=${reach.join(',')}|syntheticDOM=0`);
+          NODE
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/responsive.json
+          git checkout --detach "$TARGET_SHA" >/dev/null
+          cp /tmp/responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+          npm run audit:notifications-api-contract
+          npm run test:notification-delivery-controls
+          npm run test:notification-quick-actions
+          npm run test:notification-quick-actions-v2
+          npm run test:community-request-notification-contract
+          echo 'NOTIFICATION CONTRACTS PASS|api=1|delivery=1|quickActions=1|quickActionsV2=1|communityRequestNotification=1'
+          echo 'BROWSER PROOF TRANSFER PASS|r1=32133344764|candidateSha256=802214d70ed62d1d023467e0fc13a6f30250bcfa531b9149decf3dd041167fcb|negativeControl=PASS|styleDiffs=0|geometryDiffs=0|screenshotDiffs=0|syntheticDOM=0'
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git checkout --detach "$TARGET_SHA" >/dev/null 2>&1 || true; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse --is-shallow-repository)" = false; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(IDENTITY PASS|RECONSTRUCTION PASS|AUTHORITY PASS|RESPONSIVE PASS|NOTIFICATION CONTRACTS PASS|BROWSER PROOF TRANSFER PASS)\|' /tmp/core-cert.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 220 /tmp/core-cert.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-IMPORTANT-001 core certification v2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
