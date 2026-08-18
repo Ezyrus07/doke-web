@@ -1,4 +1,4 @@
-name: Doke UX-CSS-DEBT-071 Actions Smoke
+name: Doke UX-CSS-DEBT-071 Candidate Core Gate
 
 on:
   push:
@@ -11,25 +11,64 @@ permissions:
   contents: write
 
 jobs:
-  smoke:
+  candidate-core:
     runs-on: ubuntu-24.04
     env:
       TARGET_SHA: 149bfa8cdb931543aabd1afb0a5453379f565ae8
+      PARENT_SHA: 6e89d01531842722985c7b2abcd2723a3f383d26
       TARGET_TREE: 2c72e5e5ad700641a16630b6c5ba9535c222dee8
+      TARGET_FILE: assets/css/components/cards/ad-card.css
+      TARGET_BLOB: 1513c7b6d09fc037ff06ed0b7db209b11a60f280
+      EXPECTED_SHA256: 9d9a332a0c6a3343dced93716a9fe38fc6f5ff01b2957eaf752196b923a127ee
+      EXPECTED_BYTES: 48254
       DIAG_BRANCH: diag/ux-css-debt-071-actions-smoke
-      RESULT_FILE: .diagnostics/ux-css-debt-071-actions-smoke.txt
+      RESULT_FILE: .diagnostics/ux-css-debt-071-candidate-core.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ env.TARGET_SHA }}
           fetch-depth: 2
-      - name: Guard and publish
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate identity diff and responsive
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
           test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
-          printf 'RUN_ID=%s\nTARGET_SHA=%s\nRESULT=PASS\n' "$GITHUB_RUN_ID" "$TARGET_SHA" >/tmp/evidence.txt
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/baseline.json
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n');
+          const rows=new Map([[215,'  cursor: pointer;'],[945,'    display: flex;'],[946,'    flex-wrap: nowrap;'],[1479,'  overflow: hidden;'],[1485,'  white-space: nowrap;'],[1486,'  text-overflow: ellipsis;']]);
+          for(const [i,row] of rows)if((ls[i]||'').replace(/\r$/,'')!==row)throw new Error(`row drift ${i+1}`);
+          fs.writeFileSync(f,ls.filter((_,i)=>!rows.has(i)).join('\n'));
+          const b=fs.readFileSync(f),hash=crypto.createHash('sha256').update(b).digest('hex');
+          if(hash!==process.env.EXPECTED_SHA256||b.length!==Number(process.env.EXPECTED_BYTES))throw new Error(`identity ${hash}/${b.length}`);
+          console.log(`IDENTITY PASS|sha256=${hash}|bytes=${b.length}|parent=929/6|candidate=923/0|diff=+0/-6`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t6\t'"$TARGET_FILE"
+          git diff --quiet "$TARGET_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          git diff --check
+          cp /tmp/baseline.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|893/0/277'
+          printf 'RUN_ID=%s\nTARGET_SHA=%s\nSHA256=%s\nBYTES=%s\nDIFF=1 file +0/-6\nIDENTITY=929/6->923/0\nRESPONSIVE=893/0/277\nRESULT=PASS\n' "$GITHUB_RUN_ID" "$TARGET_SHA" "$EXPECTED_SHA256" "$EXPECTED_BYTES" >/tmp/evidence.txt
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
           git checkout -B diag-output "origin/$DIAG_BRANCH"
           mkdir -p "$(dirname "$RESULT_FILE")"
@@ -37,5 +76,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m "diag: record UX-CSS-DEBT-071 actions smoke [skip ci]"
+          git commit -m "diag: record UX-CSS-DEBT-071 candidate core [skip ci]"
           git push origin "HEAD:refs/heads/$DIAG_BRANCH"
