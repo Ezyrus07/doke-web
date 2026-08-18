@@ -1,0 +1,90 @@
+name: Doke UX-CSS-DEBT-071 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-071-promote-permanent
+    paths:
+      - .github/workflows/diag-ux-css-debt-071-promote-permanent.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 149bfa8cdb931543aabd1afb0a5453379f565ae8
+      PARENT_TREE: 2c72e5e5ad700641a16630b6c5ba9535c222dee8
+      TARGET_FILE: assets/css/components/cards/ad-card.css
+      TARGET_BLOB: 1513c7b6d09fc037ff06ed0b7db209b11a60f280
+      EXPECTED_SHA256: 9d9a332a0c6a3343dced93716a9fe38fc6f5ff01b2957eaf752196b923a127ee
+      EXPECTED_BYTES: 48254
+      PERMANENT_BRANCH: ux/ux-css-debt-071-ad-card-compaction
+      DIAG_BRANCH: diag/ux-css-debt-071-promote-permanent
+      RESULT_FILE: .diagnostics/ux-css-debt-071-promotion.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+      - name: Promote exact candidate with lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$PARENT_SHA"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n');
+          const rows=new Map([[215,'  cursor: pointer;'],[945,'    display: flex;'],[946,'    flex-wrap: nowrap;'],[1479,'  overflow: hidden;'],[1485,'  white-space: nowrap;'],[1486,'  text-overflow: ellipsis;']]);
+          for(const [i,row] of rows)if((ls[i]||'').replace(/\r$/,'')!==row)throw new Error(`row drift ${i+1}`);
+          fs.writeFileSync(f,ls.filter((_,i)=>!rows.has(i)).join('\n'));
+          const b=fs.readFileSync(f),hash=crypto.createHash('sha256').update(b).digest('hex');
+          if(hash!==process.env.EXPECTED_SHA256||b.length!==Number(process.env.EXPECTED_BYTES))throw new Error(`identity ${hash}/${b.length}`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t6\t'"$TARGET_FILE"
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$TARGET_FILE"
+          git commit -m 'UX-CSS-DEBT-071: compact superseded shared ad card declarations'
+          new_sha=$(git rev-parse HEAD)
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = 1
+          test "$(git diff --name-only "$PARENT_SHA"..HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA"..HEAD -- "$TARGET_FILE")" = $'0\t6\t'"$TARGET_FILE"
+          new_tree=$(git rev-parse HEAD^{tree})
+          new_blob=$(git rev-parse "HEAD:$TARGET_FILE")
+          hash=$(sha256sum "$TARGET_FILE" | awk '{print $1}')
+          bytes=$(wc -c < "$TARGET_FILE" | tr -d ' ')
+          test "$hash" = "$EXPECTED_SHA256"
+          test "$bytes" = "$EXPECTED_BYTES"
+          git push origin "HEAD:refs/heads/$PERMANENT_BRANCH" --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA"
+          git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | grep -q "^$new_sha"
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "PARENT_SHA=$PARENT_SHA"
+            echo "NEW_SHA=$new_sha"
+            echo "NEW_TREE=$new_tree"
+            echo "PARENT_TARGET_BLOB=$TARGET_BLOB"
+            echo "NEW_TARGET_BLOB=$new_blob"
+            echo "SHA256=$hash"
+            echo "BYTES=$bytes"
+            echo 'DIFF=1 file +0/-6'
+            echo 'CORE_RUN=32087461724'
+            echo 'GOVERNANCE_RUN=32087608963'
+            echo 'RESULT=PASS'
+          } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git add "$RESULT_FILE"
+          git commit -m 'diag: record UX-CSS-DEBT-071 promotion [skip ci]'
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
