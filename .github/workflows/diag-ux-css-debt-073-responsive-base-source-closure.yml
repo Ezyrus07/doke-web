@@ -1,0 +1,71 @@
+name: Doke UX-CSS-DEBT-073 Responsive Base Source Closure
+
+on:
+  push:
+    branches: [diag/ux-css-debt-073-responsive-base-source-closure]
+    paths: [.github/workflows/diag-ux-css-debt-073-responsive-base-source-closure.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+      PARENT_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      TARGET_TREE: 9a06ced3f3c11d900aeee04792bed4322c128f3e
+      TARGET_FILE: assets/css/core/layout/responsive-base.css
+      TARGET_BLOB: 0c53db9ef61f92688cbf34494a3b14821e3a6056
+      RANKING_RUN: 32089648071
+      DIAG_BRANCH: diag/ux-css-debt-073-responsive-base-source-closure
+      RESULT_FILE: .diagnostics/ux-css-debt-073-source-closure.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Exact source closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node <<'NODE' | tee /tmp/source.log
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,text=fs.readFileSync(f,'utf8');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(x=>x.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const x of tracked){const src=fs.readFileSync(x,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(src)))imports.push(normImport(m[1],x));meta.set(x,{src,imports});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(x=>meta.has(x));while(todo.length){const x=todo.pop();if(active.has(x)||!meta.has(x))continue;active.add(x);for(const n of meta.get(x).imports)if(meta.has(n))todo.push(n)}if(active.size!==401)throw Error(`active ${active.size}`);
+          const importers=[...meta].filter(([x,m])=>x!==f&&m.imports.includes(f)).map(([x])=>x).sort(),activeImporters=importers.filter(x=>active.has(x));if(JSON.stringify(importers)!==JSON.stringify(['assets/css/core/layout/index.css'])||JSON.stringify(activeImporters)!==JSON.stringify(importers))throw Error(`importers ${importers}/${activeImporters}`);
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();function parse(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d)}return{ds,dead}}
+          const p=parse(text);if(p.ds.length!==268||p.dead.length!==16)throw Error(`target ${p.ds.length}/${p.dead.length}`);const expLines=[107,108,109,129,133,150,151,155,157,158,163,266,621,628,629,630];const got=p.dead.sort((a,b)=>a.line-b.line).map(d=>d.line);if(JSON.stringify(got)!==JSON.stringify(expLines))throw Error(`lines ${got}`);const families=[...new Set(p.dead.map(d=>d.selector))];if(families.length!==9)throw Error(`families ${families.length}`);const identical=p.dead.filter(d=>d.value===d.winnerValue&&d.important===d.winnerImportant).length;if(identical!==2)throw Error(`identical ${identical}`);
+          const reach=[];for(const pg of report.pageAssets){const seen=new Set(),stack=[...pg.css.filter(x=>meta.has(x))];while(stack.length){const x=stack.pop();if(seen.has(x)||!meta.has(x))continue;seen.add(x);if(x===f){reach.push(pg.page);break}for(const n of meta.get(x).imports)if(meta.has(n))stack.push(n)}}reach.sort();if(reach.length!==26)throw Error(`reach ${reach.length}`);
+          const tokens=['topbar__right','topbar-action--notifications','topbar-profile','sidebar__group--footer','nav-link--icononly','nav-link__icon','brand-logo','topbar-search-wrap','topbar-search'];const markup=Object.fromEntries(tokens.map(t=>[t,0]));for(const pg of reach){const s=fs.readFileSync(pg,'utf8');for(const t of tokens)if(s.includes(t))markup[t]++;}const activeMarkupFamilies=Object.values(markup).filter(Boolean).length;
+          const rows=new Set(expLines.map(n=>n-1)),candidate=text.split('\n').filter((_,i)=>!rows.has(i)).join('\n'),c=parse(candidate);if(c.ds.length!==252||c.dead.length!==0)throw Error(`candidate ${c.ds.length}/${c.dead.length}`);const b=Buffer.from(candidate),hash=crypto.createHash('sha256').update(b).digest('hex');
+          console.log(`IMPORTER PASS|all=1|active=1|list=${activeImporters[0]}`);console.log(`CASCADE PASS|target=268/16|families=9|identical=2|changed=14|important=0|browserRequired=1`);console.log(`ACTIVE REACH|pages=26|pageList=${reach.join(',')}`);console.log(`HTML MARKUP|families=${activeMarkupFamilies}/9|${Object.entries(markup).map(([k,v])=>k+'='+v).join('|')}`);console.log(`CANDIDATE IDENTITY|candidate=252/0|sha256=${hash}|bytes=${b.length}|files=1|additions=0|deletions=16`);console.log(`SOURCE CLOSURE PASS|target=${f}|targetBlob=${process.env.TARGET_BLOB}|ranking=${process.env.RANKING_RUN}|browserRequired=1`);
+          NODE
+          git reset --hard "$TARGET_SHA" >/dev/null && git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: Publish evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; echo "TARGET_BLOB=$TARGET_BLOB"; grep '^IMPORTER PASS|' /tmp/source.log; grep '^CASCADE PASS|' /tmp/source.log; grep '^ACTIVE REACH|' /tmp/source.log; grep '^HTML MARKUP|' /tmp/source.log; grep '^CANDIDATE IDENTITY|' /tmp/source.log; grep '^SOURCE CLOSURE PASS|' /tmp/source.log; echo 'RESULT=PASS'; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-073 source closure [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
