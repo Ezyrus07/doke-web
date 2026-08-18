@@ -1,0 +1,52 @@
+name: Doke UX CSS Important 002 Candidate Visual R2
+on:
+  push:
+    branches: [diag/ux-css-important-002-candidate-visual-r2]
+    paths: [.github/workflows/diag-ux-css-important-002-candidate-visual-r2.yml]
+permissions:
+  contents: write
+jobs:
+  visual:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: bd00e9596d9db4c2ad68e34aeaccbdfc82cedbf0
+      DIAG_BRANCH: diag/ux-css-important-002-candidate-visual-r2
+      RESULT_FILE: .diagnostics/ux-css-important-002-candidate-visual-r2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: visual
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/visual.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,src=fs.readFileSync(f,'utf8');
+          const a='    grid-template-columns: minmax(0, 1fr) auto !important;',b='    grid-template-columns: minmax(0, 1fr) auto;';
+          const c='  body.home-index-shell .short-videos .content-rail {\n    display: block !important;\n    overflow: visible !important;\n  }',d='  body.home-index-shell .short-videos .content-rail {\n    display: block !important;\n    overflow: visible;\n  }';
+          if((src.match(/!important\b/g)||[]).length!==31||(src.split(a).length-1)!==1||(src.split(c).length-1)!==1)throw Error('parent drift');const out=src.replace(a,b).replace(c,d);fs.writeFileSync('/tmp/candidate.css',out);const z=Buffer.from(out),h=crypto.createHash('sha256').update(z).digest('hex');if((out.match(/!important\b/g)||[]).length!==29)throw Error('count');console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=31->29|files=1|additions=2|deletions=2`);
+          NODE
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require('@playwright/test');
+          (async()=>{const f=process.env.TARGET_FILE,parent=fs.readFileSync(f,'utf8'),candidate=fs.readFileSync('/tmp/candidate.css','utf8'),ws=[359,379,380,381,430,560,561],browser=await chromium.launch({headless:true}),hash=x=>crypto.createHash('sha256').update(x).digest('hex');async function cap(w,phase){const c=await browser.newContext({viewport:{width:w,height:1000}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));for(const u of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**'])await p.route(u,r=>r.fulfill({status:200,contentType:'text/css',body:''}));for(const u of ['https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(u,r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.goto(`http://127.0.0.1:4173/index.html?cssimp002=${phase}-${w}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(1000);await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});const vals=await p.evaluate(()=>['.home-mobile-hero__top','.short-videos .content-rail'].map(sel=>{const el=document.querySelector(sel);if(!el)return{sel,missing:true};const s=getComputedStyle(el),r=el.getBoundingClientRect();return{sel,missing:false,display:s.display,grid:s.gridTemplateColumns,overflow:s.overflow,rect:[r.x,r.y,r.width,r.height].map(x=>Math.round(x*100)/100)}}));const main=p.locator('main').first();const png=await main.count()?hash(await main.screenshot({animations:'disabled'})):hash(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{vals,png,errs}}const par={},can={};fs.writeFileSync(f,parent);for(const w of ws)par[w]=await cap(w,'parent');fs.writeFileSync(f,candidate);for(const w of ws)can[w]=await cap(w,'candidate');let sd=0,gd=0,pd=0,errs=0;for(const w of ws){errs+=par[w].errs.length+can[w].errs.length;for(let i=0;i<2;i++){const a=par[w].vals[i],b=can[w].vals[i];if(a.missing!==b.missing){sd++;continue}if(a.missing)continue;for(const k of ['display','grid','overflow'])if(a[k]!==b[k])sd++;for(let j=0;j<4;j++)if(a.rect[j]!==b.rect[j])gd++}if(par[w].png!==can[w].png)pd++}if(sd||gd||pd||errs)throw Error(`parity ${sd}/${gd}/${pd}/${errs}`);console.log(`VISUAL PASS|viewports=${ws.join(',')}|computedDiffs=0|geometryDiffs=0|screenshotDiffs=0|screenshots=7|syntheticDOM=0|criteriaRelaxed=0|sourceDominanceRun=32136032886|rawAnalysisRun=32135959438`);await browser.close();fs.writeFileSync(f,parent)})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.visual.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "VISUAL=${{ steps.visual.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|VISUAL PASS)\|' /tmp/visual.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 160 /tmp/visual.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 002 visual r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
