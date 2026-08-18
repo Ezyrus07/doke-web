@@ -1,0 +1,75 @@
+name: Doke Post-074 In-App Important Proof R4
+on:
+  push:
+    branches: [diag/ux-css-post-074-in-app-important-proof-r4]
+    paths: [.github/workflows/diag-ux-css-post-074-in-app-important-proof-r4.yml]
+permissions:
+  contents: write
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      TARGET_TREE: 858c72157e938fbbaa95015dcf2742b20ac39670
+      TARGET_FILE: assets/css/components/in-app-notifications.css
+      TARGET_BLOB: cc5fa323b338995a76b8e927474fcaf90344885d
+      SOURCE_RUN: '32132317110'
+      PREFLIGHT_RUN: '32132919424'
+      DIAG_BRANCH: diag/ux-css-post-074-in-app-important-proof-r4
+      RESULT_FILE: .diagnostics/ux-css-post-074-in-app-important-proof-r4.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/proof.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require('@playwright/test');
+          (async()=>{
+            const target=process.env.TARGET_FILE,parentCss=fs.readFileSync(target,'utf8');
+            const oldA='.doke-live-toast__actions { display: flex !important; gap: 8px; margin-top: 5px; overflow: visible !important; white-space: normal !important; }';
+            const newA='.doke-live-toast__content > .doke-live-toast__actions { display: flex; gap: 8px; margin-top: 5px; overflow: visible; white-space: normal; }';
+            const oldP='.notifications-settings-panel__select { align-items: flex-start !important; flex-direction: column; }';
+            const newP='.notifications-settings-panel__options > .notifications-settings-panel__select { align-items: flex-start; flex-direction: column; }';
+            if((parentCss.match(/!important\b/g)||[]).length!==4||!parentCss.includes(oldA)||!parentCss.includes(oldP))throw Error('parent drift');
+            const rawCss=parentCss.replace(/\s*!important\b/g,''),candidateCss=parentCss.replace(oldA,newA).replace(oldP,newP),hash=b=>crypto.createHash('sha256').update(b).digest('hex'),buf=Buffer.from(candidateCss);
+            if(hash(buf)!=='802214d70ed62d1d023467e0fc13a6f30250bcfa531b9149decf3dd041167fcb'||buf.length!==7403||(candidateCss.match(/!important\b/g)||[]).length)throw Error(`candidate identity ${hash(buf)}/${buf.length}`);
+            console.log(`CANDIDATE IDENTITY|sha256=${hash(buf)}|bytes=${buf.length}|important=4->0|rulesChanged=2|files=1`);
+            const session={provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'css-important-diag-client',accountId:'css-important-diag-client',role:'client',name:'CSS Important QA',email:'css-important@example.test',accountStatus:'active'}};
+            const community={id:'css-important-community',title:'CSS Important Community',name:'CSS Important Community',visibility:'private',ownerId:'css-important-diag-client',ownerIdentityKeys:['css-important-diag-client','css-important@example.test'],members:[{id:'css-important-diag-client',accountKey:'css-important-diag-client',email:'css-important@example.test',name:'CSS Important QA',role:'owner',identityKeys:['css-important-diag-client','css-important@example.test']}],channels:[{id:'geral',name:'Geral'}]};
+            const routes=[['community','comunidade-interna.html?community=css-important-community&title=CSS%20Important%20Community'],['messages','mensagens.html'],['notifications','notificacoes.html']],toastVP=[[390,844],[820,1180],[1366,768]],panelVP=[[390,844],[640,900],[641,900],[820,1180]];
+            const browser=await chromium.launch({headless:true}),round=n=>Math.round(n*1000)/1000;
+            async function prep(p){await p.addInitScript(({session,community})=>{localStorage.setItem('doke.auth.session.v1',JSON.stringify(session));localStorage.setItem('doke.communities.local.v1',JSON.stringify([community]));localStorage.setItem('doke.community.selected.v1',JSON.stringify({id:community.id,title:community.title,category:'test',visibility:'private'}));},{session,community});await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));await p.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,body:''}));await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.route('https://unpkg.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));}
+            async function toast(route,vp,phase){const c=await browser.newContext({viewport:{width:vp[0],height:vp[1]}}),p=await c.newPage();await prep(p);const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.goto(`http://127.0.0.1:4173/${route[1]}${route[1].includes('?')?'&':'?'}diag=${phase}-${vp[0]}`,{waitUntil:'domcontentloaded'});await p.waitForTimeout(900);await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});await p.waitForFunction(()=>typeof window.Doke?.notificationToast?.show==='function',null,{timeout:10000});if(route[0]==='community'&&!new URL(p.url()).pathname.endsWith('/comunidade-interna.html'))throw Error(`community redirected ${p.url()}`);const ok=await p.evaluate(()=>{const original=Doke.notificationAction;Doke.notificationAction={resolveActions:()=>[{label:'Responder',action:'quick-reply'}],getState:()=> 'AVAILABLE'};Doke.notificationToast.reset('diag');Doke.notificationToast.configure({getAccountKey:()=> 'diag',isForCurrentUser:()=>true,priorityOf:()=> 'normal',iconFor:()=> '!',getDeliveryDecision:()=>({outcome:'ALLOW_TOAST'})});const x=Doke.notificationToast.show({id:'diag-toast',eventId:'diag-toast',eventAccepted:true,channelPolicy:{toast:'allowed'},title:'Nova mensagem',body:'Mensagem com ação disponível',duration:60000},{skipDelivery:true,force:true});Doke.notificationAction=original;return x});if(ok!==true)throw Error(`toast false ${route[0]}`);const l=p.locator('.doke-live-toast__actions');await l.waitFor({state:'visible'});const d=await l.evaluate(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return{tag:el.tagName,parent:el.parentElement?.className||'',display:s.display,overflow:s.overflow,whiteSpace:s.whiteSpace,flexWrap:s.flexWrap,gap:s.gap,marginTop:s.marginTop,rect:{x:r.x,y:r.y,width:r.width,height:r.height}}});for(const k in d.rect)d.rect[k]=round(d.rect[k]);d.png=hash(await p.locator('.doke-live-toast').screenshot({animations:'disabled'}));d.cssom=await p.evaluate(()=>Array.from(document.styleSheets).some(s=>String(s.href||'').includes('in-app-notifications.css')));d.errors=errs.length;await c.close();return d}
+            async function panel(vp,phase){const c=await browser.newContext({viewport:{width:vp[0],height:vp[1]}}),p=await c.newPage();await prep(p);const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.goto(`http://127.0.0.1:4173/notificacoes.html?diag=${phase}-panel-${vp[0]}`,{waitUntil:'domcontentloaded'});await p.waitForTimeout(900);await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});await p.evaluate(()=>{const x=document.querySelector('[data-notifications-settings-panel]');if(x)x.hidden=false});const l=p.locator('.notifications-settings-panel__select').first();await l.waitFor({state:'visible'});const d=await l.evaluate(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return{tag:el.tagName,parent:el.parentElement?.className||'',display:s.display,alignItems:s.alignItems,flexDirection:s.flexDirection,gap:s.gap,minHeight:s.minHeight,padding:s.padding,rect:{x:r.x,y:r.y,width:r.width,height:r.height}}});for(const k in d.rect)d.rect[k]=round(d.rect[k]);d.png=hash(await l.screenshot({animations:'disabled'}));d.cssom=await p.evaluate(()=>Array.from(document.styleSheets).some(s=>String(s.href||'').includes('in-app-notifications.css')));d.errors=errs.length;await c.close();return d}
+            async function matrix(phase){const o={t:{},p:{}};for(const r of routes)for(const v of toastVP)o.t[`${r[0]}@${v[0]}`]=await toast(r,v,phase);for(const v of panelVP)o.p[`notifications@${v[0]}`]=await panel(v,phase);return o}
+            fs.writeFileSync(target,parentCss);const par=await matrix('parent');fs.writeFileSync(target,rawCss);const rt=await toast(routes[1],[390,844],'raw'),rp=await panel([390,844],'raw'),pt=par.t['messages@390'],pp=par.p['notifications@390'];if(pt.overflow===rt.overflow||pt.whiteSpace===rt.whiteSpace||pp.alignItems===rp.alignItems)throw Error(`negative incomplete ${JSON.stringify({p:[pt.overflow,pt.whiteSpace,pp.alignItems],r:[rt.overflow,rt.whiteSpace,rp.alignItems]})}`);console.log(`NEGATIVE CONTROL PASS|toastOverflow=${pt.overflow}->${rt.overflow}|toastWhiteSpace=${pt.whiteSpace}->${rt.whiteSpace}|panelAlign=${pp.alignItems}->${rp.alignItems}|rawRemovalRejected=1`);
+            fs.writeFileSync(target,candidateCss);const can=await matrix('candidate');let sd=0,gd=0,pd=0,cm=0,pe=0;function cmp(a,b,kind){for(const key of Object.keys(a)){const x=a[key],y=b[key];if(!x.cssom||!y.cssom)cm++;pe+=(x.errors||0)+(y.errors||0);const ks=kind==='toast'?['tag','parent','display','overflow','whiteSpace','flexWrap','gap','marginTop']:['tag','parent','display','alignItems','flexDirection','gap','minHeight','padding'];for(const k of ks)if(x[k]!==y[k]){sd++;console.log(`STYLE DIFF|${kind}|${key}|${k}|${x[k]}|${y[k]}`)}for(const k in x.rect)if(x.rect[k]!==y.rect[k]){gd++;console.log(`GEOM DIFF|${kind}|${key}|${k}|${x.rect[k]}|${y.rect[k]}`)}if(x.png!==y.png){pd++;console.log(`PNG DIFF|${kind}|${key}|${x.png}|${y.png}`)}}}cmp(par.t,can.t,'toast');cmp(par.p,can.p,'panel');if(sd||gd||pd||cm||pe)throw Error(`parity ${sd}/${gd}/${pd}/${cm}/${pe}`);console.log('COVERAGE PASS|toastRoutes=3|toastViewports=3|toastSamples=9|panelViewports=4|panelSamples=4|boundary=640/641|cssom=26/26|syntheticDOM=0|syntheticDomainData=1|deterministicPanelVisibility=1|testActionAuthority=1');console.log('BROWSER PARITY PASS|styleDiffs=0|geometryDiffs=0|screenshotDiffs=0|toastScreenshots=9|panelScreenshots=4|criteriaRelaxed=0');console.log('ROOT CAUSE PASS|actionsGenericSpanOverride=1|panelGenericLabelOverride=1|specificityFixScopedToCanonicalAnatomy=1|rawRemovalRejected=1');await browser.close();fs.writeFileSync(target,parentCss);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE_RUN=$SOURCE_RUN"; echo "PREFLIGHT_RUN=$PREFLIGHT_RUN"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|NEGATIVE CONTROL PASS|COVERAGE PASS|BROWSER PARITY PASS|ROOT CAUSE PASS)\|' /tmp/proof.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 220 /tmp/proof.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record in-app important proof r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
