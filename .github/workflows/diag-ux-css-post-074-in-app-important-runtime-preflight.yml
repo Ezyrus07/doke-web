@@ -1,0 +1,81 @@
+name: Doke Post-074 In-App Important Runtime Preflight
+on:
+  push:
+    branches: [diag/ux-css-post-074-in-app-important-runtime-preflight]
+    paths: [.github/workflows/diag-ux-css-post-074-in-app-important-runtime-preflight.yml]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      TARGET_FILE: assets/css/components/in-app-notifications.css
+      TARGET_BLOB: cc5fa323b338995a76b8e927474fcaf90344885d
+      DIAG_BRANCH: diag/ux-css-post-074-in-app-important-runtime-preflight
+      RESULT_FILE: .diagnostics/ux-css-post-074-in-app-important-runtime-preflight.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: probe
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/probe.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          node <<'NODE'
+          const {chromium}=require('@playwright/test');
+          (async()=>{
+            const pages=['comunidade-interna.html','mensagens.html','notificacoes.html'];
+            const session={provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'css-important-diag-client',role:'client',name:'CSS Important QA',email:'css-important@example.test',accountStatus:'active'}};
+            const browser=await chromium.launch({headless:true});
+            let cssom=0,script=0,api=0;
+            for(const pageName of pages){
+              const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
+              await page.addInitScript(s=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(s)),session);
+              await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));
+              await page.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,body:''}));
+              await page.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
+              await page.route('https://unpkg.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
+              const errors=[];page.on('pageerror',e=>errors.push(e.message));
+              await page.goto(`http://127.0.0.1:4173/${pageName}?diag=runtime`,{waitUntil:'domcontentloaded'});
+              await page.waitForTimeout(3000);
+              const d=await page.evaluate(()=>({
+                url:location.pathname,
+                page:document.body?.dataset?.page||'',
+                cssom:Array.from(document.styleSheets).some(s=>String(s.href||'').includes('in-app-notifications.css')),
+                script:Array.from(document.scripts).some(s=>String(s.src||'').includes('notification-toast.js')),
+                api:typeof window.Doke?.notificationToast?.show==='function',
+                doke:Boolean(window.Doke),
+                session:localStorage.getItem('doke.auth.session.v1')||'',
+                actions:document.querySelectorAll('.doke-live-toast__actions').length,
+                panel:document.querySelectorAll('.notifications-settings-panel__select').length
+              }));
+              if(d.cssom)cssom++;if(d.script)script++;if(d.api)api++;
+              console.log(`ROUTE|requested=${pageName}|url=${d.url}|page=${d.page||'-'}|cssom=${+d.cssom}|script=${+d.script}|api=${+d.api}|doke=${+d.doke}|actions=${d.actions}|panel=${d.panel}|errors=${errors.length}|errorHead=${errors.slice(0,2).join(' <> ')||'-'}`);
+              await context.close();
+            }
+            console.log(`SUMMARY|pages=3|cssom=${cssom}/3|script=${script}/3|api=${api}/3`);
+            if(cssom!==3||script!==3)throw Error(`static runtime reach drift cssom=${cssom} script=${script}`);
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; grep '^ROUTE|' /tmp/probe.log || true; grep '^SUMMARY|' /tmp/probe.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 120 /tmp/probe.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record in-app important runtime preflight [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
