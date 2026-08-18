@@ -1,0 +1,80 @@
+name: Doke UX-CSS-DEBT-074 Tracked Residual Ranking
+
+on:
+  push:
+    branches: [diag/ux-css-debt-074-tracked-residual-ranking]
+    paths: [.github/workflows/diag-ux-css-debt-074-tracked-residual-ranking.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  ranking:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      PARENT_SHA: c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+      TARGET_TREE: c847008cab6841b7291f8b1f1c03091e5e6cb8f9
+      PRIOR_FILE: assets/css/core/layout/responsive-base.css
+      PRIOR_BLOB: 2930095561d7fad9c55648848063219ee865aa54
+      DIAG_BRANCH: diag/ux-css-debt-074-tracked-residual-ranking
+      RESULT_FILE: .diagnostics/ux-css-debt-074-ranking.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard exact certified UX-CSS-DEBT-073
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$PRIOR_FILE")" = "$PRIOR_BLOB"
+          test -z "$(git status --porcelain)"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Rank exact active residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node <<'NODE' | tee /tmp/ranking.log
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}
+          const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d)}return{declarations:ds,dead}}
+          if(active.size!==401||high.length!==37)throw Error(`baseline drift ${active.size}/${high.length}`);
+          const guards=[['assets/css/core/layout/responsive-base.css',252,0,'073'],['assets/css/components/cards/service-card.css',279,0,'072'],['assets/css/components/cards/ad-card.css',923,0,'071'],['assets/css/components/cards/publication-card.css',369,0,'070'],['assets/css/core/mobile/ui-standard.css',76,0,'069']];for(const [f,d,dead,l] of guards){const p=parse(meta.get(f).text);if(p.declarations.length!==d||p.dead.length!==dead)throw Error(`${l} drift ${p.declarations.length}/${p.dead.length}`)}
+          const pagesFor=target=>{const out=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...(p.css||[]).filter(f=>meta.has(f))];while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){out.push(p.page);break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}}return out.sort()};
+          const parents=new Map([...active].map(f=>[f,[]]));for(const [p,x] of meta)if(active.has(p))for(const c of x.imports)if(parents.has(c))parents.get(c).push(p);
+          const candidates=[...active].map(file=>{const x=meta.get(file),p=parse(x.text),pages=pagesFor(file),sels=[...new Set(p.dead.map(d=>d.selector))],identical=p.dead.filter(d=>d.value===d.winnerValue&&d.important===d.winnerImportant).length;return{file,decl:p.declarations.length,dead:p.dead.length,selectors:sels.length,selectorList:sels,pages:pages.length,pageList:pages,important:x.important,bytes:x.size,parents:(parents.get(file)||[]).sort(),identical,changed:p.dead.length-identical,highRisk:high.includes(file),rows:p.dead.sort((a,b)=>a.line-b.line)}}).filter(r=>r.dead);
+          const total=candidates.reduce((a,r)=>a+r.dead,0),files=candidates.length,highDead=candidates.filter(r=>r.highRisk).length,pageResidual=candidates.filter(r=>r.file.includes('/pages/')).length;
+          if(files!==1||total!==5||highDead!==0||pageResidual!==0)throw Error(`residual drift ${files}/${total}/${highDead}/${pageResidual}`);
+          candidates.sort((a,b)=>(a.pages-b.pages)||(a.dead-b.dead)||(a.selectors-b.selectors)||(a.important-b.important)||(a.changed-b.changed)||(a.bytes-b.bytes)||a.file.localeCompare(b.file));
+          console.log('BASE|active=401|high=37|files=1|dead=5|highDead=0|pageResidual=0|eligibility=all-active-after-pages-exhausted');
+          candidates.forEach((r,i)=>console.log(`TOP${i}|file=${r.file}|decl=${r.decl}|dead=${r.dead}|selectors=${r.selectors}|pages=${r.pages}|important=${r.important}|bytes=${r.bytes}|highRisk=${r.highRisk}|parents=${r.parents.join(',')||'-'}|pageList=${r.pageList.join(',')||'-'}|selectorList=${r.selectorList.join(' <OR> ')}|identical=${r.identical}|changed=${r.changed}`));
+          const r=candidates[0];if(!r||r.highRisk)throw Error('invalid TOP0');for(const d of r.rows)console.log(`ROW|line=${d.line}|selector=${d.selector}|prop=${d.property}|value=${d.value}|imp=${d.important}|ctx=${d.context||'<global>'}|winnerLine=${d.winnerLine}|winnerValue=${d.winnerValue}|winnerImp=${d.winnerImportant}`);console.log(`RANKING PASS|top0=${r.file}|dead=${r.dead}|highRisk=${r.highRisk}|pageResidual=0|residual=1/5/0`);
+          NODE
+      - name: Restore and publish receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null && git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; grep '^BASE|' /tmp/ranking.log; grep '^TOP' /tmp/ranking.log; grep '^ROW|' /tmp/ranking.log; grep '^RANKING PASS|' /tmp/ranking.log; echo 'RESULT=PASS'; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-074 ranking [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
