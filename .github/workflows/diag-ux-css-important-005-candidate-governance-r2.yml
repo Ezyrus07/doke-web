@@ -1,0 +1,61 @@
+name: Doke UX CSS Important 005 Candidate Governance R2
+on:
+  push:
+    branches: [diag/ux-css-important-005-candidate-governance-r2]
+    paths: [.github/workflows/diag-ux-css-important-005-candidate-governance-r2.yml]
+permissions:
+  contents: write
+jobs:
+  governance:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 1c1f6c97a851fc73b7f81c07fe646d7d60e03843
+      TARGET_FILE: assets/css/pages/home/mobile-composition.css
+      TARGET_BLOB: 1e24479b2b9065659a5a11a18854131e4ef90187
+      DIAG_BRANCH: diag/ux-css-important-005-candidate-governance-r2
+      RESULT_FILE: .diagnostics/ux-css-important-005-candidate-governance-r2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: governance
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/gov.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          node scripts/generate-responsive-index-baseline.js
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8');if((s.match(/!important\b/g)||[]).length!==36)throw Error('parent drift');function strip(selector,props){const key=selector+' {';const hits=[];let at=0;while((at=s.indexOf(key,at))>=0){const b=s.indexOf('{',at),e=s.indexOf('}',b),block=s.slice(b+1,e);const ok=props.every(prop=>new RegExp(`(^|\\n)\\s*${prop.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\s*:[^;]+?\\s*!important;`,'m').test(block));if(ok)hits.push({b,e,block});at=e+1;}if(hits.length!==1)throw Error(`selector ${selector} matchingBlocks=${hits.length}`);let out=hits[0].block;for(const prop of props){const re=new RegExp(`(^|\\n)(\\s*${prop.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\s*:[^;]+?)\\s*!important;`,'m');out=out.replace(re,'$1$2;')}s=s.slice(0,hits[0].b+1)+out+s.slice(hits[0].e)}strip('body.home-index-shell #before-after-track > .comparison-card',['flex','width','min-width','max-width']);strip('body.home-index-shell #before-after-track > .comparison-card .comparison-card__visual',['aspect-ratio','min-height','max-height']);strip('body.home-index-shell .content-rail__arrow',['display']);strip('body.home-index-shell .home-mobile-hero__top',['grid-template-columns']);strip('body.home-index-shell .home-mobile-hero__quick-actions',['display','grid-template-columns']);strip('body.home-index-shell .home-mobile-hero__location-label',['display','overflow']);if((s.match(/!important\b/g)||[]).length!==23)throw Error('candidate count');fs.writeFileSync(f,s);const z=fs.readFileSync(f),h=crypto.createHash('sha256').update(z).digest('hex');console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=36->23|files=1|additions=13|deletions=13|priorityMarkersRemoved=13`);
+          NODE
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'13\t13\t'"$TARGET_FILE"; git diff --check
+          npm run test:responsive-contract | tee /tmp/responsive.log; grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log; echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          node <<'NODE'
+          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflict regression');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
+          NODE
+          npm run audit:shared-app-header-contract; npm run audit:mobile-shell-location-contract; npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log; grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log; grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures; npm run audit:important-reduction-plan; npm run audit:global-css-design-system
+          node <<'NODE'
+          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary;if(s.totalImportant!==11215||s.outsideServiceCardImportant!==11153||s.filesWithImportant!==34)throw Error(`important ${JSON.stringify(s)}`);if(p.summary.affectedFiles!==33||p.summary.totalImportantOutsideServiceCard!==11153||p.summary.lowRiskFileCount!==0||p.summary.byRisk?.['high-baseline-required']!==11130||p.summary.byRisk?.['medium-baseline-required']!==23)throw Error(`plan ${JSON.stringify(p.summary)}`);console.log('IMPORTANT BASELINE PASS|total=11215|outsideServiceCard=11153|files=34|delta=-13');console.log('QUEUE PASS|affectedFiles=33|lowRiskFiles=0|highBaselineRequired=11130|mediumBaselineRequired=23|targetImportant=23');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
+          node <<'NODE'
+          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
+          NODE
+          echo "AUDIT_EXIT=$code"; echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|rankingRun=32143884413|sourceRun=32144434761'
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.governance.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "GOVERNANCE=${{ steps.governance.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT BASELINE PASS|QUEUE PASS|DEPENDENCY PASS|GOVERNANCE PASS)\|' /tmp/gov.log || true; grep '^AUDIT_EXIT=' /tmp/gov.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 240 /tmp/gov.log || true; fi; } >/tmp/evidence.txt; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 005 governance r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
