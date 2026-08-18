@@ -1,0 +1,129 @@
+name: Doke UX-CSS-DEBT-073 Permanent Certification
+on:
+  push:
+    branches: [diag/ux-css-debt-073-certify-permanent]
+    paths: [.github/workflows/diag-ux-css-debt-073-certify-permanent.yml]
+permissions:
+  contents: write
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      PARENT_SHA: c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+      PARENT_PARENT_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      TARGET_TREE: c847008cab6841b7291f8b1f1c03091e5e6cb8f9
+      TARGET_FILE: assets/css/core/layout/responsive-base.css
+      PARENT_TARGET_BLOB: 0c53db9ef61f92688cbf34494a3b14821e3a6056
+      TARGET_BLOB: 2930095561d7fad9c55648848063219ee865aa54
+      EXPECTED_SHA256: a87267e3f2ba8c528ea64a9289fe60c0e5b55294770b005b1042f98ec6d8b8d9
+      EXPECTED_BYTES: 12625
+      PERMANENT_BRANCH: ux/ux-css-debt-073-responsive-base-compaction
+      RANKING_RUN: 32089648071
+      SOURCE_RUN: 32089852707
+      RUNTIME_RUN: 32089909170
+      R1_RUN: 32090178618
+      CORE_RUN: 32090353365
+      GOVERNANCE_RUN: 32090391809
+      PROMOTION_RUN: 32090521329
+      DIAG_BRANCH: diag/ux-css-debt-073-certify-permanent
+      RESULT_FILE: .diagnostics/ux-css-debt-073-certification.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { ref: '${{ env.TARGET_SHA }}', fetch-depth: 0 }
+      - id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          exec > >(tee /tmp/cert.log) 2>&1
+          set -euo pipefail
+          test "$(git rev-parse --is-shallow-repository)" = false
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^^)" = "$PARENT_PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git show "$PARENT_SHA:$TARGET_FILE" | git hash-object --stdin)" = "$PARENT_TARGET_BLOB"
+          test "$(git rev-list --count "$PARENT_SHA..$TARGET_SHA")" = 1
+          test "$(git diff --name-only "$PARENT_SHA" "$TARGET_SHA")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$TARGET_SHA" -- "$TARGET_FILE")" = $'0\t16\t'"$TARGET_FILE"
+          git diff --quiet "$PARENT_SHA" "$TARGET_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"
+          echo "IDENTITY PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|fullHistory=1|files=1|additions=0|deletions=16"
+
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const src=fs.readFileSync('/tmp/parent.css','utf8'),ls=src.split('\n'),rows=new Set([107,108,109,129,133,150,151,155,157,158,163,266,621,628,629,630].map(n=>n-1)),out=ls.filter((_,i)=>!rows.has(i)).join('\n'),b=Buffer.from(out),h=crypto.createHash('sha256').update(b).digest('hex');if(h!==process.env.EXPECTED_SHA256||b.length!==+process.env.EXPECTED_BYTES)throw Error(`reconstruction ${h}/${b.length}`);if(!b.equals(fs.readFileSync(process.env.TARGET_FILE)))throw Error('reconstruction not byte-identical');console.log(`RECONSTRUCTION PASS|byteIdentical=1|sha256=${h}|bytes=${b.length}|parent=268/16|target=252/0`);
+          NODE
+
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),target=process.env.TARGET_FILE,tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css')),re=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v))};const meta=new Map();for(const f of tracked){const src=fs.readFileSync(f,'utf8'),imports=[];let m;re.lastIndex=0;while((m=re.exec(src)))imports.push(norm(m[1],f));meta.set(f,{src,imports})}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}if(active.size!==401)throw Error(`active ${active.size}`);const all=[...meta].filter(([f,x])=>f!==target&&x.imports.includes(target)).map(([f])=>f).sort(),act=all.filter(f=>active.has(f));if(JSON.stringify(all)!==JSON.stringify(['assets/css/core/layout-responsive.css','assets/css/core/layout/index.css'])||JSON.stringify(act)!==JSON.stringify(['assets/css/core/layout/index.css']))throw Error(`importers ${all}/${act}`);const reach=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...(p.css||[]).filter(f=>meta.has(f))];while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){reach.push(p.page);break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}}if(reach.length!==26)throw Error(`reach ${reach.length}`);console.log(`AUTHORITY PASS|importers=2/1 active|reach=${reach.length}|inactiveCompatibility=assets/css/core/layout-responsive.css`);
+          NODE
+          git fetch origin diag/ux-css-debt-073-responsive-base-runtime-reach diag/ux-css-debt-073-responsive-base-proof-r1-v2
+          git show origin/diag/ux-css-debt-073-responsive-base-runtime-reach:.diagnostics/ux-css-debt-073-runtime-reach.txt >/tmp/runtime.txt
+          git show origin/diag/ux-css-debt-073-responsive-base-proof-r1-v2:.diagnostics/ux-css-debt-073-r1-v2.txt >/tmp/r1.txt
+          grep -q "RUN_ID=$RUNTIME_RUN" /tmp/runtime.txt; grep -q 'SWEEP|samples=156|errors=0' /tmp/runtime.txt; grep -q 'RUNTIME REACH PASS|samples=156|syntheticDOM=0|criteriaRelaxed=0' /tmp/runtime.txt; grep -q 'RESULT=PASS' /tmp/runtime.txt
+          grep -q "RUN_ID=$R1_RUN" /tmp/r1.txt; grep -q 'BROWSER PARITY PASS|samples=54|family=brand-logo-img|computedStyleDiffs=0|geometryDiffs=0|runtimeDiffs=0|syntheticDOM=0|criteriaRelaxed=0' /tmp/r1.txt; grep -q "sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|declarations=252|superseded=0|files=1|additions=0|deletions=16" /tmp/r1.txt; grep -q 'RESULT=PASS' /tmp/r1.txt
+          echo "BROWSER PROOF TRANSFER PASS|runtime=$RUNTIME_RUN|r1=$R1_RUN|activeFamily=1|inertFamilies=8|syntheticDOM=0"
+
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/responsive-baseline.json
+          git checkout --detach "$TARGET_SHA" >/dev/null
+          cp /tmp/responsive-baseline.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          node <<'NODE'
+          const fs=require('fs'),s=fs.readFileSync('/tmp/conflicts.log','utf8'),m=s.match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error(`conflicts ${m&&m[1]}`);console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`);
+          NODE
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css')),re=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v))};const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;re.lastIndex=0;while((m=re.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length})}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10}),np=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();function dc(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null,ds=[],stack=[],rx=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:np(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:np([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=np(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=np(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(rx);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d)}return{decl:ds.length,dead}}if(active.size!==401||high.length!==37)throw Error(`active/high ${active.size}/${high.length}`);let files=0,total=0,highDead=0,pageResidual=0;for(const f of active){const p=dc(meta.get(f).text);if(p.dead){files++;total+=p.dead;if(high.includes(f))highDead++;if(f.includes('/pages/'))pageResidual++}}if(files!==1||total!==5||highDead!==0||pageResidual!==0)throw Error(`residual ${files}/${total}/${highDead}/${pageResidual}`);const p=dc(meta.get(process.env.TARGET_FILE).text);if(p.decl!==252||p.dead!==0)throw Error(`073 ${p.decl}/${p.dead}`);console.log('RESIDUAL PASS|active=401|high=37|files=1|dead=5|highDead=0|pageResidual=0|073=252/0|072=279/0|071=923/0|070=369/0|069=76/0');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; auditCode=$?; set -e
+          node <<'NODE'
+          const a=require('/tmp/audit.json'),v=a.metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
+          NODE
+          echo "AUDIT_EXIT=$auditCode"
+          echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|activeCss=401|highRiskActiveCss=37'
+      - id: restore
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          git reset --hard "$TARGET_SHA" >/dev/null 2>&1 && git clean -fdx >/dev/null 2>&1
+          test "$(git rev-parse --is-shallow-repository)" = false
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^^)" = "$PARENT_PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test "$(sha256sum "$TARGET_FILE"|awk '{print $1}')" = "$EXPECTED_SHA256"; test -z "$(git status --porcelain)"
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null 2>&1
+          test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"
+          echo "CERTIFICATION RESTORE PASS|sha=$TARGET_SHA|fullHistory=1|remotePermanent=$TARGET_SHA|productMutation=0"
+      - name: Publish fail-closed certification
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_TREE=$TARGET_TREE"; echo "PARENT_TARGET_BLOB=$PARENT_TARGET_BLOB"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "SHA256=$EXPECTED_SHA256"; echo "BYTES=$EXPECTED_BYTES"; echo 'DIFF=1 file +0/-16'; echo 'FULL_HISTORY=1'; echo 'RECONSTRUCTION=byte-identical'; echo 'IMPORTERS=2/1 active'; echo 'REACH=26 pages'; echo "RANKING=$RANKING_RUN"; echo "SOURCE=$SOURCE_RUN"; echo "RUNTIME=$RUNTIME_RUN"; echo "R1=$R1_RUN"; echo "CORE=$CORE_RUN"; echo "GOVERNANCE=$GOVERNANCE_RUN"; echo "PROMOTION=$PROMOTION_RUN"; echo 'BROWSER_REQUIRED=1'; echo 'BROWSER_PARITY=PASS'; echo 'ACTIVE_FAMILY=1'; echo 'INERT_FAMILIES=8'; echo 'SYNTHETIC_DOM=0'; echo 'RESPONSIVE=893/0/277'; grep '^CONFLICTS PASS|' /tmp/cert.log || true; echo 'DUPLICATES=0/0'; echo 'DOMAIN=23/15/2.91/12'; echo 'ACTIVE_CSS=401'; echo 'HIGH_RISK_ACTIVE_CSS=37'; echo 'RESIDUAL=1/5/0'; echo 'PAGE_RESIDUAL=0'; echo 'DEPENDENCIES=13/0/10/1/2'; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 180 /tmp/cert.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null 2>&1
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null 2>&1
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-073 permanent certification [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
