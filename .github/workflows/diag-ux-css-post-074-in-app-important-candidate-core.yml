@@ -1,0 +1,77 @@
+name: Doke Post-074 In-App Important Candidate Core
+on:
+  push:
+    branches: [diag/ux-css-post-074-in-app-important-candidate-core]
+    paths: [.github/workflows/diag-ux-css-post-074-in-app-important-candidate-core.yml]
+permissions:
+  contents: write
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      TARGET_TREE: 858c72157e938fbbaa95015dcf2742b20ac39670
+      TARGET_FILE: assets/css/components/in-app-notifications.css
+      TARGET_BLOB: cc5fa323b338995a76b8e927474fcaf90344885d
+      EXPECTED_SHA256: 802214d70ed62d1d023467e0fc13a6f30250bcfa531b9149decf3dd041167fcb
+      EXPECTED_BYTES: '7403'
+      SOURCE_RUN: '32132317110'
+      R1_RUN: '32133344764'
+      DIAG_BRANCH: diag/ux-css-post-074-in-app-important-candidate-core
+      RESULT_FILE: .diagnostics/ux-css-post-074-in-app-important-candidate-core.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/core.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/responsive-parent.json
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const f=process.env.TARGET_FILE,src=fs.readFileSync(f,'utf8');
+          const oldA='.doke-live-toast__actions { display: flex !important; gap: 8px; margin-top: 5px; overflow: visible !important; white-space: normal !important; }';
+          const newA='.doke-live-toast__content > .doke-live-toast__actions { display: flex; gap: 8px; margin-top: 5px; overflow: visible; white-space: normal; }';
+          const oldP='.notifications-settings-panel__select { align-items: flex-start !important; flex-direction: column; }';
+          const newP='.notifications-settings-panel__options > .notifications-settings-panel__select { align-items: flex-start; flex-direction: column; }';
+          if((src.match(/!important\b/g)||[]).length!==4||!src.includes(oldA)||!src.includes(oldP))throw Error('parent drift');const out=src.replace(oldA,newA).replace(oldP,newP);fs.writeFileSync(f,out);const b=fs.readFileSync(f),h=crypto.createHash('sha256').update(b).digest('hex');if(h!==process.env.EXPECTED_SHA256||b.length!==+process.env.EXPECTED_BYTES||(out.match(/!important\b/g)||[]).length)throw Error(`candidate ${h}/${b.length}`);console.log(`IDENTITY PASS|sha256=${h}|bytes=${b.length}|important=4->0|files=1|rulesChanged=2`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'2\t2\t'"$TARGET_FILE"
+          git diff --quiet "$TARGET_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          git diff --check
+          cp /tmp/responsive-parent.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+          npm run audit:notifications-api-contract
+          npm run test:notification-delivery-controls
+          npm run test:notification-quick-actions
+          npm run test:notification-quick-actions-v2
+          npm run test:community-request-notification-contract
+          echo 'NOTIFICATION CONTRACTS PASS|api=1|delivery=1|quickActions=1|quickActionsV2=1|communityRequestNotification=1'
+          echo "PROOF TRANSFER PASS|source=$SOURCE_RUN|r1=$R1_RUN|browser=PASS|rawRemovalRejected=1|syntheticDOM=0"
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(IDENTITY PASS|RESPONSIVE PASS|NOTIFICATION CONTRACTS PASS|PROOF TRANSFER PASS)\|' /tmp/core.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 180 /tmp/core.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record in-app important candidate core [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
