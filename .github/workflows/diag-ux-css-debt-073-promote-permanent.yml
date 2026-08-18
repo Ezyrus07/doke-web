@@ -1,0 +1,77 @@
+name: Doke UX-CSS-DEBT-073 Promote Permanent
+on:
+  push:
+    branches: [diag/ux-css-debt-073-promote-permanent]
+    paths: [.github/workflows/diag-ux-css-debt-073-promote-permanent.yml]
+permissions:
+  contents: write
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+      PARENT_PARENT_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      TARGET_FILE: assets/css/core/layout/responsive-base.css
+      PARENT_TARGET_BLOB: 0c53db9ef61f92688cbf34494a3b14821e3a6056
+      EXPECTED_SHA256: a87267e3f2ba8c528ea64a9289fe60c0e5b55294770b005b1042f98ec6d8b8d9
+      EXPECTED_BYTES: 12625
+      PERMANENT_BRANCH: ux/ux-css-debt-073-responsive-base-compaction
+      CORE_RUN: 32090353365
+      GOVERNANCE_RUN: 32090391809
+      RUNTIME_RUN: 32089909170
+      R1_RUN: 32090178618
+      DIAG_BRANCH: diag/ux-css-debt-073-promote-permanent
+      RESULT_FILE: .diagnostics/ux-css-debt-073-promotion.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { ref: '${{ env.PARENT_SHA }}', fetch-depth: 2 }
+      - name: Guard exact parent and permanent lease seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$(git rev-parse origin/$PERMANENT_BRANCH)"
+      - name: Rebuild exact certified candidate and atomically promote
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n'),rows=new Set([107,108,109,129,133,150,151,155,157,158,163,266,621,628,629,630].map(n=>n-1));const out=ls.filter((_,i)=>!rows.has(i)).join('\n');fs.writeFileSync(f,out);const b=fs.readFileSync(f),h=crypto.createHash('sha256').update(b).digest('hex');if(h!==process.env.EXPECTED_SHA256||b.length!==+process.env.EXPECTED_BYTES)throw Error(`identity ${h}/${b.length}`);console.log(`PROMOTION CANDIDATE PASS|sha256=${h}|bytes=${b.length}|parent=268/16|candidate=252/0|files=1|additions=0|deletions=16`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t16\t'"$TARGET_FILE"
+          git diff --quiet "$PARENT_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$TARGET_FILE"
+          git commit -m 'UX-CSS-DEBT-073: compact superseded responsive base declarations'
+          NEW_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA" "$NEW_SHA")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$NEW_SHA" -- "$TARGET_FILE")" = $'0\t16\t'"$TARGET_FILE"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$NEW_SHA"
+          echo "NEW_SHA=$NEW_SHA" >> "$GITHUB_ENV"
+          echo "NEW_TREE=$(git rev-parse HEAD^{tree})" >> "$GITHUB_ENV"
+          echo "NEW_TARGET_BLOB=$(git hash-object "$TARGET_FILE")" >> "$GITHUB_ENV"
+          echo "PROMOTION PASS|permanent=$PERMANENT_BRANCH|sha=$NEW_SHA|parent=$PARENT_SHA|tree=$(git rev-parse HEAD^{tree})|blob=$(git hash-object "$TARGET_FILE")|files=1|additions=0|deletions=16"
+      - name: Restore product checkout and publish promotion evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PARENT_SHA" >/dev/null && git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "PARENT_SHA=$PARENT_SHA"; echo "NEW_SHA=$NEW_SHA"; echo "NEW_TREE=$NEW_TREE"; echo "PARENT_TARGET_BLOB=$PARENT_TARGET_BLOB"; echo "NEW_TARGET_BLOB=$NEW_TARGET_BLOB"; echo "SHA256=$EXPECTED_SHA256"; echo "BYTES=$EXPECTED_BYTES"; echo 'DIFF=1 file +0/-16'; echo "CORE_RUN=$CORE_RUN"; echo "GOVERNANCE_RUN=$GOVERNANCE_RUN"; echo "RUNTIME_RUN=$RUNTIME_RUN"; echo "R1_RUN=$R1_RUN"; echo 'RESULT=PASS'; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null 2>&1
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null 2>&1
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-073 promotion [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
