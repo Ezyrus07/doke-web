@@ -1,13 +1,14 @@
 name: COM-B02Q Repository Executor Service-Role Provider Binding Matrix Materialization TEMP
 
 on:
-  push:
-    branches: [com/com-001-baseline-audit]
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
     paths:
       - '.github/workflows/com-b02q-repository-executor-service-role-provider-binding-matrix-materialization-temp.yml'
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   prepare:
@@ -17,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -30,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          candidate=14923f97b7ccba542156921fcc6569313f34d378
+          candidate=33b34beb5f0a8f818b74d1dd8bf4b78a9455525f
           temp=.github/workflows/com-b02q-repository-executor-service-role-provider-binding-matrix-materialization-temp.yml
           test "$(git rev-parse HEAD^)" = "$candidate"
           test "$(git diff --name-only HEAD^ HEAD)" = "$temp"
