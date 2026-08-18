@@ -1,0 +1,23 @@
+RUN_ID=32149720569
+TARGET_SHA=24b49e5693f24621a1024b94c33c8ba6e18b12c0
+PROVE=failure
+RESTORE=success
+RESULT=FAIL
+error: Could not access '/tmp/parent.css'
+[stdin]:5
+if((s.match(/!important\b/g)||[]).length!==5)throw Error(`candidate count ${(s.match(/!important\b/g)||[]).length}`);fs.writeFileSync('/tmp/candidate.css',s);const z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex');let stat='';try{stat=cp.execFileSync('git',['diff','--no-index','--numstat','/tmp/parent.css','/tmp/candidate.css'],{encoding:'utf8'}).trim()}catch(e){stat=String(e.stdout||'').trim()}const [a,d]=stat.split(/\s+/).map(Number);if(a!==18||d!==18)throw Error(`diff ${stat}`);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=23->5|files=1|additions=${a}|deletions=${d}|priorityMarkersRemoved=18|searchMarkersPreserved=3|sectionOverflowPreserved=1|featuredOverflowGuardPreserved=1`);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+
+Error: diff 
+    at [stdin]:5:486
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+    at Socket.emit (node:events:531:35)
+
+Node.js v22.23.2
