@@ -1,0 +1,46 @@
+name: Doke UX-CSS-DEBT-070 Publication Card Runtime Reach Matrix
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-070-publication-card-runtime-reach
+    paths:
+      - .github/workflows/diag-ux-css-debt-070-publication-card-runtime-reach-matrix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  matrix:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6e89d01531842722985c7b2abcd2723a3f383d26
+      DIAG_BRANCH: diag/ux-css-debt-070-publication-card-runtime-reach
+      RESULT_FILE: .diagnostics/ux-css-debt-070-runtime-reach-matrix.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4183 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          sleep 1
+          cat >/tmp/matrix.js <<'NODE'
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          (async()=>{const browser=await chromium.launch({headless:true});try{for(const pageName of ['index.html','detalhe-anuncio.html','perfil.html'])for(const width of [359,760,761]){const ctx=await browser.newContext({viewport:{width,height:900},javaScriptEnabled:false});const page=await ctx.newPage();let req=0,ok=0;page.on('request',r=>{if(r.url().includes('/assets/css/components/cards/publication-card.css'))req++});page.on('response',r=>{if(r.url().includes('/assets/css/components/cards/publication-card.css')&&r.status()===200)ok++});await page.route('**/*',r=>{const u=new URL(r.request().url());if(!['127.0.0.1','localhost'].includes(u.hostname))return r.abort();return r.continue()});await page.goto(`http://127.0.0.1:4183/${pageName}?reach=${width}-${Date.now()}`,{waitUntil:'load'});await page.waitForTimeout(300);const data=await page.evaluate(()=>{const wanted='/assets/css/components/cards/publication-card.css',seen=new Set(),hrefs=[];function walk(s){if(!s||seen.has(s))return;seen.add(s);let rules=[];try{rules=[...(s.cssRules||[])]}catch{};let href='';try{href=s.href?new URL(s.href,location.href).pathname:''}catch{};if(href)hrefs.push(href);for(const r of rules)if(r.styleSheet)walk(r.styleSheet)}for(const s of document.styleSheets)walk(s);const m=document.querySelector('.publication-card__media'),c=document.querySelector('.publication-card__content');return{cssom:hrefs.includes(wanted),recursive:seen.size,media:m?{position:getComputedStyle(m).position,height:getComputedStyle(m).height,minHeight:getComputedStyle(m).minHeight}:null,content:c?{display:getComputedStyle(c).display,padding:getComputedStyle(c).padding}:null}});console.log(`ROW|page=${pageName}|width=${width}|request=${req}|response200=${ok}|cssom=${data.cssom?1:0}|recursive=${data.recursive}|media=${JSON.stringify(data.media)}|content=${JSON.stringify(data.content)}`);await ctx.close()}}finally{await browser.close()}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/matrix.js | tee /tmp/matrix.log
+          test "$(grep -c '^ROW|' /tmp/matrix.log)" = 9
+          test "$(grep -c 'request=1|response200=1|cssom=1' /tmp/matrix.log)" = 9
+          kill "$(cat /tmp/http.pid)" 2>/dev/null || true
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; cat /tmp/matrix.log; echo 'RESULT=PASS'; } >/tmp/evidence.txt
+          git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B out "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-070 runtime reach matrix [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
