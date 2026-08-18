@@ -1,0 +1,123 @@
+name: Doke UX-CSS-DEBT-070 Publication Card Proof R1 V3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-070-publication-card-proof-r1-v3
+    paths:
+      - .github/workflows/diag-ux-css-debt-070-publication-card-proof-r1-v3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  proof-r1-v3:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6e89d01531842722985c7b2abcd2723a3f383d26
+      PARENT_SHA: 23cc5c7496897f0d9b742039598574ffb2b93dfb
+      TARGET_TREE: a89565f5e64b7eba94a327f3b0153cadab7377b2
+      TARGET_FILE: assets/css/components/cards/publication-card.css
+      TARGET_BLOB: a4735b4ca0141e4db72abdfe7caac77ba01acebc
+      INDEX_BLOB: a3b2bffb4fd6bc4208b40930b621a9c54ce22cea
+      DETAIL_BLOB: 3735683f54ef18b805f97e3933db4f86c7e0ffe6
+      PROFILE_BLOB: bf2d5a8beaa17765d26f177e8961e4a5d8edac34
+      EXPECTED_SHA256: 82d79e7c616ea3c59f7f6c2b2516d1c6a27a86d6ae27e7397f0833a0565b5c97
+      EXPECTED_BYTES: 17333
+      SOURCE_RUN: 32084542860
+      DIAG_BRANCH: diag/ux-css-debt-070-publication-card-proof-r1-v3
+      RESULT_FILE: .diagnostics/ux-css-debt-070-r1-v3.txt
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-069 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Run stabilized fail-closed browser parity and publish receipt
+        shell: bash
+        run: |
+          exec > >(tee /tmp/ux070-r1-v3.log) 2>&1
+          publish_receipt() {
+            code=$?
+            trap - EXIT
+            set +e
+            if test -f /tmp/ux070-r1-http.pid; then kill "$(cat /tmp/ux070-r1-http.pid)" 2>/dev/null || true; fi
+            result=FAIL
+            if test "$code" = 0; then result=PASS; fi
+            {
+              echo "RUN_ID=$GITHUB_RUN_ID"
+              echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+              echo "TARGET_SHA=$TARGET_SHA"
+              echo "SOURCE_RUN=$SOURCE_RUN"
+              echo "EXIT_CODE=$code"
+              grep '^R1 INPUT PASS|' /tmp/ux070-r1-v3.log || true
+              grep '^STYLE READY|' /tmp/ux070-r1-v3.log || true
+              grep '^COVERAGE|' /tmp/ux070-r1-v3.log || true
+              grep '^BROWSER PARITY PASS|' /tmp/ux070-r1-v3.log || true
+              grep '^CANDIDATE IDENTITY|' /tmp/ux070-r1-v3.log || true
+              grep '^R1 PROOF PASS|' /tmp/ux070-r1-v3.log || true
+              echo "RESULT=$result"
+              if test "$result" = FAIL; then echo "--- FAILURE TAIL ---"; tail -n 100 /tmp/ux070-r1-v3.log || true; fi
+            } > /tmp/ux070-r1-v3-evidence.txt
+            git reset --hard "$TARGET_SHA" >/dev/null 2>&1 || true
+            git clean -fdx >/dev/null 2>&1 || true
+            git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null 2>&1
+            git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null 2>&1
+            mkdir -p "$(dirname "$RESULT_FILE")"
+            cp /tmp/ux070-r1-v3-evidence.txt "$RESULT_FILE"
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add "$RESULT_FILE"
+            if ! git diff --cached --quiet; then git commit -m "diag: record UX-CSS-DEBT-070 R1 v3 [skip ci]" >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; fi
+            exit "$code"
+          }
+          trap publish_receipt EXIT
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object index.html)" = "$INDEX_BLOB"
+          test "$(git hash-object detalhe-anuncio.html)" = "$DETAIL_BLOB"
+          test "$(git hash-object perfil.html)" = "$PROFILE_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R1 INPUT PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|sourceRun=$SOURCE_RUN|pages=3|realProductDOM=1|syntheticDOM=0|criteriaRelaxed=0"
+
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4179 >/tmp/ux070-r1-http.log 2>&1 &
+          echo $! >/tmp/ux070-r1-http.pid
+          sleep 1
+          for page in index.html detalhe-anuncio.html perfil.html; do curl -fsS "http://127.0.0.1:4179/$page" >/dev/null; done
+
+          cat >/tmp/ux070-r1-v3.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const target=process.env.TARGET_FILE,original=fs.readFileSync(target,'utf8'),lines=original.split('\n');
+          const remove=[272,276,402];
+          const expected=new Map([[272,'    min-height: 162px;'],[276,'    padding: 12px 13px 13px;'],[402,'    border-radius: var(--radius-md);']]);
+          for(const [i,row] of expected){if((lines[i]||'').replace(/\r$/,'')!==row)throw new Error(`candidate row drift line=${i+1}`)}
+          const candidate=lines.filter((_,i)=>!remove.includes(i)).join('\n');
+          const hash=crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex'),bytes=Buffer.byteLength(candidate);
+          if(hash!==process.env.EXPECTED_SHA256||bytes!==Number(process.env.EXPECTED_BYTES))throw new Error(`candidate identity drift ${hash}/${bytes}`);
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function count(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d)}return{decl:ds.length,dead}}
+          const pm=count(original),cm=count(candidate);if(pm.decl!==372||pm.dead!==3||cm.decl!==369||cm.dead!==0)throw new Error(`metric drift ${JSON.stringify({pm,cm})}`);
+          const pages=['index.html','detalhe-anuncio.html','perfil.html'],widths=[359,560,760,761,1024,1280];
+          const selectors={media:'.publication-card__media',content:'.publication-card__content'};
+          const props={media:['display','position','width','min-width','max-width','height','min-height','max-height','margin-top','margin-right','margin-bottom','margin-left','padding-top','padding-right','padding-bottom','padding-left','border-top-left-radius','border-top-right-radius','border-bottom-right-radius','border-bottom-left-radius','box-sizing','overflow'],content:['display','width','min-width','max-width','height','min-height','gap','row-gap','column-gap','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-right','margin-bottom','margin-left','box-sizing','overflow']};
+          async function capture(tag){const browser=await chromium.launch({headless:true});const out=[];const coverage=new Map(Object.keys(selectors).map(k=>[k,0])),visible=new Map(Object.keys(selectors).map(k=>[k,0]));try{for(const pageName of pages){for(const width of widths){const ctx=await browser.newContext({viewport:{width,height:900},javaScriptEnabled:false,reducedMotion:'reduce'});const page=await ctx.newPage();await page.route('**/*',r=>{const u=new URL(r.request().url());if(!['127.0.0.1','localhost'].includes(u.hostname)||u.pathname.endsWith('.js'))return r.abort();return r.continue()});await page.goto(`http://127.0.0.1:4179/${pageName}?ux070=${tag}-${width}-${Date.now()}`,{waitUntil:'domcontentloaded'});await page.evaluate(()=>{document.documentElement.setAttribute('data-auth-guard','ready');document.documentElement.classList.remove('doke-mobile-shell-pending');for(const el of document.querySelectorAll('[data-doke-document-preloader],.doke-document-preloader,.orders-document-preloader')){el.setAttribute('hidden','');el.setAttribute('aria-hidden','true')}for(const card of document.querySelectorAll('.publication-card')){let n=card;while(n&&n!==document.documentElement){if(n.hasAttribute&&n.hasAttribute('hidden'))n.removeAttribute('hidden');n=n.parentElement}}});await page.waitForFunction(()=>{const card=document.querySelector('.publication-card'),m=document.querySelector('.publication-card__media'),c=document.querySelector('.publication-card__content');if(!card||!m||!c)return false;const a=getComputedStyle(card),b=getComputedStyle(m),d=getComputedStyle(c);return a.position==='relative'&&a.display==='flex'&&b.position==='relative'&&d.display==='grid'&&d.paddingTop!=='0px';},{timeout:8000});await page.waitForTimeout(120);console.log(`STYLE READY|${tag}|page=${pageName}|width=${width}|card=${await page.locator('.publication-card').first().evaluate(el=>getComputedStyle(el).display)}|media=${await page.locator('.publication-card__media').first().evaluate(el=>getComputedStyle(el).position)}|content=${await page.locator('.publication-card__content').first().evaluate(el=>getComputedStyle(el).display)}`);const snap=await page.evaluate(({selectors,props})=>{const result={};for(const [k,s] of Object.entries(selectors)){result[k]=[...document.querySelectorAll(s)].map((el,i)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{i,id:el.id||'',cls:typeof el.className==='string'?el.className:'',props:Object.fromEntries(props[k].map(p=>[p,cs.getPropertyValue(p)])),rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000),visible:r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'}})}return{result,overflow:Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth),bodyClass:document.body.className}},{selectors,props});for(const [k,v] of Object.entries(snap.result)){coverage.set(k,coverage.get(k)+v.length);visible.set(k,visible.get(k)+v.filter(x=>x.visible).length)}out.push({page:pageName,width,snap});await ctx.close()}}}finally{await browser.close()}for(const k of Object.keys(selectors)){if(!coverage.get(k)||!visible.get(k))throw new Error(`coverage failure ${k} ${coverage.get(k)}/${visible.get(k)}`)}console.log(`COVERAGE|${tag}|families=2/2|pages=3|viewports=6|samples=${[...coverage.values()].reduce((a,b)=>a+b,0)}|visibleSamples=${[...visible.values()].reduce((a,b)=>a+b,0)}|media=${coverage.get('media')}/${visible.get('media')}|content=${coverage.get('content')}/${visible.get('content')}|boundary=760/761|realProductDOM=1|syntheticDOM=0`);return out}
+          (async()=>{try{fs.writeFileSync(target,original);const parent=await capture('parent');fs.writeFileSync(target,candidate);const cand=await capture('candidate');const a=JSON.stringify(parent),b=JSON.stringify(cand);if(a!==b){let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;throw new Error(`runtime drift idx=${i} parent=${a.slice(i,i+1600)} candidate=${b.slice(i,i+1600)}`)}const maxOverflow=Math.max(...parent.map(x=>x.snap.overflow));console.log(`BROWSER PARITY PASS|pages=3|families=2/2|viewports=6|snapshots=${parent.length}|computedStyleDiffs=0|geometryDiffs=0|runtimeDiffs=0|maxOverflow=${maxOverflow}|boundary=760/761|realProductDOM=1|syntheticDOM=0|criteriaRelaxed=0`);console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=369|superseded=0|files=1|additions=0|deletions=3`);fs.writeFileSync(target,candidate)}catch(e){fs.writeFileSync(target,original);throw e}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node --check /tmp/ux070-r1-v3.js
+          node /tmp/ux070-r1-v3.js
+          grep -q 'COVERAGE|parent|families=2/2|pages=3|viewports=6' /tmp/ux070-r1-v3.log
+          grep -q 'COVERAGE|candidate|families=2/2|pages=3|viewports=6' /tmp/ux070-r1-v3.log
+          grep -q 'BROWSER PARITY PASS|pages=3|families=2/2|viewports=6|snapshots=18|computedStyleDiffs=0|geometryDiffs=0|runtimeDiffs=0' /tmp/ux070-r1-v3.log
+          grep -q "CANDIDATE IDENTITY|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|declarations=369|superseded=0|files=1|additions=0|deletions=3" /tmp/ux070-r1-v3.log
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t3\t'"$TARGET_FILE"
+          git diff --check
+          echo 'R1 PROOF PASS|browserRequired=1|realProductDOM=1|syntheticDOM=0|criteriaRelaxed=0|candidateLeftForDiff=1'
