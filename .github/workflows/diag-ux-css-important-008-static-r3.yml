@@ -1,0 +1,61 @@
+name: Doke UX CSS Important 008 Static R3
+on: [push]
+permissions:
+  contents: write
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 8507947066f4d6957d88bbe022b03aece1ee8e58
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: 9f386f2a0f59c50c5c9ef1a95cad2af1e39432aa
+      DIAG_BRANCH: diag/ux-css-important-008-static-r3
+      RESULT_FILE: .diagnostics/ux-css-important-008-static-r3.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/proof.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(f,'utf8');if((parent.match(/!important\b/g)||[]).length!==43)throw Error('parent');let s=parent,removed=0;
+          function strip(selector,expected){const key=selector+' {';const i=s.indexOf(key);if(i<0||s.indexOf(key,i+1)>=0)throw Error('selector '+selector);const b=s.indexOf('{',i),e=s.indexOf('}',b);let block=s.slice(b+1,e);const before=(block.match(/!important\b/g)||[]).length;if(before!==expected)throw Error(`expected ${expected} got ${before}`);block=block.replace(/\s*!important\b/g,'');removed+=before;s=s.slice(0,b+1)+block+s.slice(e)}
+          strip(':is(.service-card, .service-card--feed, .service-card--result, .comparison-card, .pro-card)',1);strip(':is(.service-card, .service-card--feed, .service-card--result)',1);strip(':is(.service-card, .service-card--feed, .service-card--result) .service-card__media',4);strip(':is(.service-card, .service-card--feed, .service-card--result) .service-card__body',2);strip(':is(.service-card, .service-card--feed, .service-card--result) .service-card__footer',2);strip(':is(.service-card, .service-card--feed, .service-card--result) .service-card__cta',2);strip(':is(.service-card, .service-card--feed, .service-card--result) .service-card__tags span',2);strip(':is(.service-card, .service-card--feed, .service-card--result) .service-card__tags span:nth-child(n + 3)',1);strip(':is(.comparison-card__body, .profile-posts-stack .comparison-card__body)',1);strip('body.home-index-shell :is(.featured-services, .more-services) .service-card--feed .service-card__media,\n  body.search-results-body .results-layout :is(.results-grid, .results-empty__grid) .service-card--result .service-card__media,\n  body.profile-page-shell .profile-services-results .service-card--feed .service-card__media',3);strip('body.home-index-shell :is(.featured-services, .more-services) .service-card--feed,\n  body.search-results-body .results-layout :is(.results-grid, .results-empty__grid) .service-card--result,\n  body.profile-page-shell .profile-services-results .service-card--feed,\n  body.profile-page-shell .profile-services-results .service-card',1);strip('body.home-index-shell .comparison-grid > .comparison-card .comparison-card__visual,\n  body.search-results-body .results-layout :is(.results-grid, .results-before-after-grid) > .comparison-card .comparison-card__visual,\n  body.profile-page-shell .profile-posts-stack .comparison-grid > .comparison-card .comparison-card__visual',3);
+          const remain=(s.match(/!important\b/g)||[]).length,z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex');if(removed!==23||remain!==20||h!=='abe268c8cedca25abce012454961396b7aafb58f1c20d483a674f09e23102a18')throw Error('identity');fs.writeFileSync('/tmp/candidate.css',s);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=43->20|priorityMarkersRemoved=23|declarationsRemoved=0`);
+          const html=fs.readFileSync('index.html','utf8'),scripts=[...html.matchAll(/<script\b[^>]*src=["']([^"']+\.js(?:[?#][^"']*)?)["'][^>]*>/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(p=>fs.existsSync(p));let calls=0,producerFiles=[];for(const p of scripts){const t=fs.readFileSync(p,'utf8');if(/className\s*:\s*['"][^'"]*\bservice-card\b/.test(t)||/className\s*=\s*['"][^'"]*\bservice-card\b/.test(t))producerFiles.push(p);calls+=(t.match(/Doke\.renderers\.serviceCard\s*\(/g)||[]).length}const home=fs.readFileSync('assets/js/pages/home/public-services.js','utf8'),publicCalls=(home.match(/Doke\.publicServiceCard\.create\s*\(/g)||[]).length,staticLegacy=(html.match(/class=["'][^"']*\bservice-card\b/gi)||[]).length,staticComparison=(html.match(/class=["'][^"']*\bcomparison-card\b/gi)||[]).length,activeGrid=(html.match(/class=["'][^"']*\bservice-grid\b/gi)||[]).length,activeVideo=(html.match(/class=["'][^"']*\bvideo-card\b/gi)||[]).length;console.log(`SOURCE AUTHORITY|scripts=${scripts.length}|legacyProducerFiles=${producerFiles.join(',')}|legacyRendererCalls=${calls}|homePublicRendererCalls=${publicCalls}|staticLegacy=${staticLegacy}|staticComparison=${staticComparison}|activeServiceGrid=${activeGrid}|activeVideoCard=${activeVideo}`);if(producerFiles.length!==1||producerFiles[0]!=='assets/js/renderers/service-card-renderer.js'||calls!==0||publicCalls<2||staticLegacy||staticComparison||!activeGrid||!activeVideo)throw Error('authority');
+          NODE
+          test "$(git diff --no-index --numstat "$TARGET_FILE" /tmp/candidate.css | awk '{print $1" "$2}')" = '23 23'
+          echo 'STATIC BOUNDARY PASS|legacyRenderer=loaded-but-unused|homeRenderer=publicServiceCard|legacyDOM=absent|activeGridAndVideo=preserved'
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|SOURCE AUTHORITY|STATIC BOUNDARY PASS)\|' /tmp/proof.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 180 /tmp/proof.log || true; fi; } >/tmp/out.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/out.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: publish 008 static proof r3 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
