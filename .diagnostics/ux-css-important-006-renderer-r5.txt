@@ -1,0 +1,26 @@
+RUN_ID=32148643635
+TARGET_SHA=24b49e5693f24621a1024b94c33c8ba6e18b12c0
+PROOF=failure
+RESTORE=success
+RESULT=FAIL
+
+added 26 packages, and audited 27 packages in 6s
+
+found 0 vulnerabilities
+[stdin]:3
+function restore(selector,props){const re=new RegExp(esc(selector)+'\\s*\\{','g');const ms=[...s.matchAll(re)];if(ms.length!==1)throw Error(`selector ${selector} matches=${ms.length}`);const b=s.indexOf('{',ms[0].index),e=s.indexOf('}',b);let block=s.slice(b+1,e);for(const p of props){const pr=new RegExp(`(^|\\n)(\\s*${esc(p)}\\s*:[^;]+);`,'m');if(!pr.test(block))throw Error(`prop ${selector} ${p}`);block=block.replace(pr,'$1$2 !important;')}s=s.slice(0,b+1)+block+s.slice(e)}
+                                                                                                                                ^
+
+Error: selector body.home-index-shell .doke-search-panel__form matches=2
+    at restore ([stdin]:3:135)
+    at [stdin]:4:1
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+
+Node.js v22.23.2
