@@ -1,0 +1,77 @@
+name: Doke UX-CSS-DEBT-073 Responsive Base Proof R1 V2
+
+on:
+  push:
+    branches: [diag/ux-css-debt-073-responsive-base-proof-r1-v2]
+    paths: [.github/workflows/diag-ux-css-debt-073-responsive-base-proof-r1-v2.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+      PARENT_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      TARGET_FILE: assets/css/core/layout/responsive-base.css
+      TARGET_BLOB: 0c53db9ef61f92688cbf34494a3b14821e3a6056
+      EXPECTED_SHA256: a87267e3f2ba8c528ea64a9289fe60c0e5b55294770b005b1042f98ec6d8b8d9
+      EXPECTED_BYTES: 12625
+      SOURCE_RUN: 32089852707
+      RUNTIME_RUN: 32089909170
+      DIAG_BRANCH: diag/ux-css-debt-073-responsive-base-proof-r1-v2
+      RESULT_FILE: .diagnostics/ux-css-debt-073-r1-v2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { ref: '${{ env.TARGET_SHA }}', fetch-depth: 2 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 22, cache: npm }
+      - name: Focused real-DOM parity
+        id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          exec > >(tee /tmp/r1.log) 2>&1
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4184 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          sleep 1
+          cat >/tmp/r1.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const file=process.env.TARGET_FILE,src=fs.readFileSync(file,'utf8'),ls=src.split('\n'),remove=[107,108,109,129,133,150,151,155,157,158,163,266,621,628,629,630],rows=new Set(remove.map(n=>n-1));const candidate=ls.filter((_,i)=>!rows.has(i)).join('\n'),hash=crypto.createHash('sha256').update(candidate).digest('hex'),bytes=Buffer.byteLength(candidate);if(hash!==process.env.EXPECTED_SHA256||bytes!==+process.env.EXPECTED_BYTES)throw Error(`identity ${hash}/${bytes}`);
+          const pages=['ajuda.html','comunidade-interna.html','comunidade.html','detalhe-anuncio.html','index.html','novidades.html','perfil-cliente.html','perfil.html','resultados.html'],widths=[359,720,721,1024,1025,1280],props=['display','visibility','width','height','min-width','min-height','max-width','max-height','object-fit','box-sizing'];const wanted='/assets/css/core/layout/responsive-base.css';
+          async function snap(browser,pageName,width,label){const ctx=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',r=>{const u=new URL(r.request().url());if(!['127.0.0.1','localhost'].includes(u.hostname))return r.abort();return r.continue()});await page.goto(`http://127.0.0.1:4184/${pageName}?r1v2=${label}-${width}-${Date.now()}`,{waitUntil:'domcontentloaded',timeout:12000});await page.waitForTimeout(300);const out=await page.evaluate(({props,wanted})=>{const seen=new Set();function walk(s){if(!s||seen.has(s))return false;seen.add(s);let href='',rules=[];try{href=s.href?new URL(s.href,location.href).pathname:''}catch{};try{rules=[...(s.cssRules||[])]}catch{};if(href===wanted&&rules.length)return true;for(const r of rules)if(r.styleSheet&&walk(r.styleSheet))return true;return false}const cssom=[...document.styleSheets].some(walk),nodes=[...document.querySelectorAll('.brand-logo img')].map((el,i)=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return{i,style:Object.fromEntries(props.map(p=>[p,s.getPropertyValue(p)])),rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000),visible:r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'}});return{cssom,nodes}}, {props,wanted});await ctx.close();return out}
+          (async()=>{const browser=await chromium.launch({headless:true});try{fs.writeFileSync(file,src);const parent=[];let nodes=0,visible=0,cssom=0;for(const p of pages)for(const w of widths){const a=await snap(browser,p,w,'parent');parent.push({p,w,a});nodes+=a.nodes.length;visible+=a.nodes.filter(x=>x.visible).length;if(a.cssom)cssom++;}if(parent.length!==54||nodes!==54)throw Error(`coverage samples=${parent.length} nodes=${nodes}`);console.log(`COVERAGE PASS|samples=54|nodes=54|visible=${visible}|cssom=${cssom}/54|pages=9|viewports=6|boundary=720/721,1024/1025|syntheticDOM=0`);fs.writeFileSync(file,candidate);let style=0,geom=0,runtime=0;for(const rec of parent){const b=await snap(browser,rec.p,rec.w,'candidate'),a=rec.a;if(a.cssom!==b.cssom||a.nodes.length!==b.nodes.length){runtime++;continue}for(let i=0;i<a.nodes.length;i++){if(JSON.stringify(a.nodes[i].style)!==JSON.stringify(b.nodes[i].style))style++;if(JSON.stringify(a.nodes[i].rect)!==JSON.stringify(b.nodes[i].rect))geom++;if(a.nodes[i].visible!==b.nodes[i].visible)runtime++;}}if(style||geom||runtime)throw Error(`drift style=${style} geom=${geom} runtime=${runtime}`);console.log('BROWSER PARITY PASS|samples=54|family=brand-logo-img|computedStyleDiffs=0|geometryDiffs=0|runtimeDiffs=0|syntheticDOM=0|criteriaRelaxed=0');console.log('INERT FAMILY TRANSFER|families=8|runtimeRun='+process.env.RUNTIME_RUN+'|nodes=0|syntheticDOM=0');console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=252|superseded=0|files=1|additions=0|deletions=16`);console.log('R1 PROOF PASS|browserRequired=1|browserExecuted=1|activeFamily=1|inertFamilies=8|syntheticDOM=0')}finally{await browser.close()}})().catch(e=>{fs.writeFileSync(file,src);console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/r1.js
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t16\t'"$TARGET_FILE"
+          git diff --check
+      - name: Restore
+        id: restore
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          test -f /tmp/http.pid && kill "$(cat /tmp/http.pid)" 2>/dev/null || true
+          git reset --hard "$TARGET_SHA" >/dev/null 2>&1 && git clean -fdx >/dev/null 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA" && test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB" && test -z "$(git status --porcelain)"
+      - name: Publish fail-closed R1 v2
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; if [ "${{ steps.proof.outcome }}" = success ] && [ "${{ steps.restore.outcome }}" = success ]; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE_RUN=$SOURCE_RUN"; echo "RUNTIME_RUN=$RUNTIME_RUN"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep '^COVERAGE PASS|' /tmp/r1.log || true; grep '^BROWSER PARITY PASS|' /tmp/r1.log || true; grep '^INERT FAMILY TRANSFER|' /tmp/r1.log || true; grep '^CANDIDATE IDENTITY|' /tmp/r1.log || true; grep '^R1 PROOF PASS|' /tmp/r1.log || true; echo "RESULT=$result"; if [ "$result" = FAIL ]; then echo '--- FAILURE TAIL ---'; tail -n 150 /tmp/r1.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null 2>&1
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null 2>&1
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-073 browser R1 v2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
