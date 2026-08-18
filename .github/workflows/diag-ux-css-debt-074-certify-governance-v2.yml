@@ -1,0 +1,57 @@
+name: Doke UX-CSS-DEBT-074 Certification Governance V2
+on:
+  push:
+    branches: [diag/ux-css-debt-074-certify-governance-v2]
+    paths: [.github/workflows/diag-ux-css-debt-074-certify-governance-v2.yml]
+permissions: {contents: write}
+jobs:
+  governance:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      TARGET_TREE: 858c72157e938fbbaa95015dcf2742b20ac39670
+      TARGET_FILE: assets/css/core/tokens.css
+      TARGET_BLOB: e62808598640fcda4518339c8d87fba4558a8a8e
+      PERMANENT_BRANCH: ux/ux-css-debt-074-global-tokens-compaction
+      DIAG_BRANCH: diag/ux-css-debt-074-certify-governance-v2
+      RESULT_FILE: .diagnostics/ux-css-debt-074-certify-governance-v2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/gov.log) 2>&1
+          test "$(git rev-parse --is-shallow-repository)" = false; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test "$(git rev-list --count "$PARENT_SHA..$TARGET_SHA")" = 1; test "$(git diff --name-only "$PARENT_SHA" "$TARGET_SHA")" = "$TARGET_FILE"; test "$(git diff --numstat "$PARENT_SHA" "$TARGET_SHA" -- "$TARGET_FILE")" = $'0\t5\t'"$TARGET_FILE"; git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null; test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"; echo 'IDENTITY PASS|fullHistory=1|files=1|additions=0|deletions=5'
+          npm ci --ignore-scripts; npm run audit:active-legacy-structures; npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          node <<'NODE'
+          const fs=require('fs'),s=fs.readFileSync('/tmp/conflicts.log','utf8'),m=s.match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`);
+          NODE
+          npm run audit:shared-app-header-contract; npm run audit:mobile-shell-location-contract; npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log; grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log; grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css')),r=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,n=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v))},m=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),im=[];let x;r.lastIndex=0;while((x=r.exec(text)))im.push(n(x[1],f));m.set(f,{text,im,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length})}const active=new Set(),q=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>m.has(f));while(q.length){const f=q.pop();if(active.has(f)||!m.has(f))continue;active.add(f);for(const x of m.get(f).im)if(m.has(x))q.push(x)}const high=[...active].filter(f=>{const x=m.get(f);return x.size>=50000||x.important>=100||x.im.length>=10});const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();function dc(src){const ls=src.split(/\r?\n/);let d=0,sp=[],ap=[],sel=null;const ds=[],st=[],rx=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(const line of ls){const t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){st.push({type:'at',header:norm(ap),depth:d});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))st.push({type:'at',header:norm([t]),depth:d});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];st.push({type:'rule',selector:sel,depth:d})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];st.push({type:'rule',selector:sel,depth:d})}}}if(sel){const z=line.match(rx);if(z){const raw=z[2].trim(),important=/\s*!important\s*$/i.test(raw),context=st.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:z[1].toLowerCase(),important,context})}}d+=o-c;while(st.length&&d<=st[st.length-1].depth){const p=st.pop();if(p.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const x=ds[i],k=`${x.context} >>> ${x.selector} >>> ${x.property}`,l=last.get(k);if(l&&(!x.important||l.important))dead++;if(!l||x.important||!l.important)last.set(k,x)}return{decl:ds.length,dead}}
+          if(active.size!==401||high.length!==37)throw Error(`active/high ${active.size}/${high.length}`);let files=0,total=0,hd=0,pr=0;for(const f of active){const x=dc(m.get(f).text);if(x.dead){files++;total+=x.dead;if(high.includes(f))hd++;if(f.includes('/pages/'))pr++}}if(files||total||hd||pr)throw Error(`residual ${files}/${total}/${hd}/${pr}`);const t=dc(m.get('assets/css/core/tokens.css').text);if(t.decl!==850||t.dead!==0)throw Error(`tokens ${t.decl}/${t.dead}`);console.log('RESIDUAL PASS|active=401|high=37|files=0|dead=0|highDead=0|pageResidual=0|074=850/0');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
+          node <<'NODE'
+          const a=require('/tmp/audit.json'),v=a.metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error('deps');console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
+          NODE
+          echo "AUDIT_EXIT=$code"; echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|activeCss=401|highRiskActiveCss=37|residual=0/0/0'
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse --is-shallow-repository)" = false; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null; test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"; test -z "$(git status --porcelain)"
+      - name: Publish receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep '^IDENTITY PASS|' /tmp/gov.log || true; grep '^CONFLICTS PASS|' /tmp/gov.log || true; grep '^RESIDUAL PASS|' /tmp/gov.log || true; grep '^DEPENDENCY PASS|' /tmp/gov.log || true; grep '^GOVERNANCE PASS|' /tmp/gov.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 140 /tmp/gov.log; fi; } >/tmp/evidence.txt; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-074 certify governance v2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
