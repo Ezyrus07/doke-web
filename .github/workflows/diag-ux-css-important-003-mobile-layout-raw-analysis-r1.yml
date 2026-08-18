@@ -1,0 +1,77 @@
+name: Doke UX CSS Important 003 Mobile Layout Raw Analysis R1
+on:
+  push:
+    branches: [diag/ux-css-important-003-mobile-layout-raw-analysis-r1]
+    paths: [.github/workflows/diag-ux-css-important-003-mobile-layout-raw-analysis-r1.yml]
+permissions:
+  contents: write
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b44fe12f2e81cbe155f154527aed78b90144c552
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: 576d351eb5e1447cd6e1e188e005b8153573fb3f
+      DIAG_BRANCH: diag/ux-css-important-003-mobile-layout-raw-analysis-r1
+      RESULT_FILE: .diagnostics/ux-css-important-003-mobile-layout-raw-analysis-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: analysis
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/analysis.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require('@playwright/test');
+          function parseImportantRows(source){
+            const clean=source.replace(/\/\*[\s\S]*?\*\//g,m=>' '.repeat(m.length));
+            const rows=[]; let seq=0;
+            function closeBrace(open,end){let depth=1;for(let i=open+1;i<end;i++){if(clean[i]==='{')depth++;else if(clean[i]==='}'&&--depth===0)return i;}throw Error('unclosed css block');}
+            function skip(i,end){while(i<end&&/\s/.test(clean[i]))i++;return i;}
+            function block(start,end,media){let i=start;while((i=skip(i,end))<end){const open=clean.indexOf('{',i);if(open<0||open>=end)break;const header=clean.slice(i,open).trim();const close=closeBrace(open,end);if(header.startsWith('@media')){block(open+1,close,header.replace(/^@media\s*/,'').trim());}else if(!header.startsWith('@')){const body=clean.slice(open+1,close);let off=0;for(const part of body.split(';')){const idx=body.indexOf(part,off);off=idx+part.length+1;const colon=part.indexOf(':');if(colon<0)continue;const prop=part.slice(0,colon).trim(),raw=part.slice(colon+1).trim();if(!/!important\b/.test(raw))continue;const value=raw.replace(/\s*!important\b/,'').trim();const abs=open+1+idx;const line=1+clean.slice(0,abs).split('\n').length-1;rows.push({rowId:seq++,selector:header,prop,value,media:media||'all',line});}}i=close+1;}}
+            block(0,clean.length,'all');return rows;
+          }
+          (async()=>{
+            const target=process.env.TARGET_FILE,parentCss=fs.readFileSync(target,'utf8'),defs=parseImportantRows(parentCss);
+            if(defs.length!==29)throw Error(`source rows ${defs.length}`);
+            const rawCss=parentCss.replace(/\s*!important\b/g,''),hash=x=>crypto.createHash('sha256').update(x).digest('hex');
+            console.log(`SOURCE ROWS|count=${defs.length}|baseMedia=${defs.filter(x=>x.media.includes('560')).length}|narrowMedia=${defs.filter(x=>x.media.includes('380')).length}`);
+            console.log(`RAW IDENTITY|important=29->0|parentBytes=${Buffer.byteLength(parentCss)}|rawBytes=${Buffer.byteLength(rawCss)}|rawSha256=${hash(rawCss)}`);
+            const widths=[359,379,380,381,430,560,561],browser=await chromium.launch({headless:true});
+            async function prep(page){for(const u of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**'])await page.route(u,r=>r.fulfill({status:200,contentType:'text/css',body:''}));for(const u of ['https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await page.route(u,r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));}
+            async function capture(width,phase){const ctx=await browser.newContext({viewport:{width,height:1000}}),page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await prep(page);await page.goto(`http://127.0.0.1:4173/index.html?important003=${phase}-${width}`,{waitUntil:'domcontentloaded'});await page.waitForLoadState('networkidle').catch(()=>{});await page.waitForTimeout(900);await page.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});const data=await page.evaluate(({defs})=>{const rows=[];for(const d of defs){if(d.media!=='all'&&!matchMedia(d.media).matches){rows.push({...d,active:false,matchCount:0,samples:[]});continue}let els=[];try{els=[...document.querySelectorAll(d.selector)]}catch{}const samples=els.slice(0,6).map((el,index)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{index,computed:cs.getPropertyValue(d.prop).trim(),visible:r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden',rect:[Math.round(r.x*100)/100,Math.round(r.y*100)/100,Math.round(r.width*100)/100,Math.round(r.height*100)/100]}});rows.push({...d,active:true,matchCount:els.length,samples})}let cssom=false;function walk(s){if(String(s.href||'').includes('mobile-layout.css'))cssom=true;let rs;try{rs=s.cssRules}catch{return}for(const r of rs)if(r.type===CSSRule.IMPORT_RULE&&r.styleSheet)walk(r.styleSheet)}for(const s of document.styleSheets)walk(s);return{rows,cssom};},{defs});data.errors=errors;await ctx.close();return data;}
+            fs.writeFileSync(target,parentCss);const parent={};for(const w of widths)parent[w]=await capture(w,'parent');fs.writeFileSync(target,rawCss);const raw={};for(const w of widths)raw[w]=await capture(w,'raw');
+            const agg=new Map(defs.map(d=>[d.rowId,{...d,activeWidths:new Set(),matchWidths:new Set(),observed:0,changes:0}]));let cssomMiss=0,pageErrors=0,samples=0;
+            for(const w of widths){if(!parent[w].cssom||!raw[w].cssom)cssomMiss++;pageErrors+=parent[w].errors.length+raw[w].errors.length;for(let i=0;i<defs.length;i++){const p=parent[w].rows[i],r=raw[w].rows[i],a=agg.get(defs[i].rowId);if(p.active)a.activeWidths.add(w);if(p.matchCount)a.matchWidths.add(w);const n=Math.min(p.samples.length,r.samples.length);for(let j=0;j<n;j++){a.observed++;samples++;if(p.samples[j].computed!==r.samples[j].computed)a.changes++;}}}
+            const rows=[...agg.values()],changed=rows.filter(x=>x.changes),stable=rows.filter(x=>x.observed&&!x.changes),inert=rows.filter(x=>!x.observed&&x.activeWidths.size);
+            console.log(`COVERAGE|sourceRows=29|viewports=${widths.join(',')}|cssomMiss=${cssomMiss}|pageErrors=${pageErrors}|samples=${samples}|matchedRows=${rows.filter(x=>x.observed).length}|changedRows=${changed.length}|stableRows=${stable.length}|runtimeInertRows=${inert.length}`);
+            changed.forEach((x,i)=>console.log(`CHANGED|rank=${i}|row=${x.rowId}|line=${x.line}|media=${x.media}|selector=${x.selector}|prop=${x.prop}|value=${x.value}|observed=${x.observed}|changes=${x.changes}`));
+            stable.forEach((x,i)=>console.log(`STABLE|rank=${i}|row=${x.rowId}|line=${x.line}|media=${x.media}|selector=${x.selector}|prop=${x.prop}|value=${x.value}|observed=${x.observed}|matchWidths=${[...x.matchWidths].join(',')}`));
+            inert.forEach((x,i)=>console.log(`INERT|rank=${i}|row=${x.rowId}|line=${x.line}|media=${x.media}|selector=${x.selector}|prop=${x.prop}|value=${x.value}|activeWidths=${[...x.activeWidths].join(',')}`));
+            console.log(`DECISION|rawRemovalSafe=${changed.length===0&&inert.length===0?1:0}|stableObservedRows=${stable.length}|runtimeInertRows=${inert.length}|changedRows=${changed.length}`);
+            if(cssomMiss||pageErrors||samples===0||rows.length!==29)throw Error(`fail-closed coverage ${cssomMiss}/${pageErrors}/${samples}/${rows.length}`);
+            await browser.close();fs.writeFileSync(target,parentCss);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.analysis.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "ANALYSIS=${{ steps.analysis.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(SOURCE ROWS|RAW IDENTITY|COVERAGE|CHANGED|STABLE|INERT|DECISION)\|' /tmp/analysis.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 180 /tmp/analysis.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record important003 mobile layout raw analysis [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
