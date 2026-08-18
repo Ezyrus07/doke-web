@@ -1,0 +1,58 @@
+name: Doke UX-CSS-DEBT-070 Publication Card Runtime Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-070-publication-card-runtime-reach
+    paths:
+      - .github/workflows/diag-ux-css-debt-070-publication-card-runtime-reach.yml
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6e89d01531842722985c7b2abcd2723a3f383d26
+      TARGET_FILE: assets/css/components/cards/publication-card.css
+      TARGET_BLOB: a4735b4ca0141e4db72abdfe7caac77ba01acebc
+      DIAG_BRANCH: diag/ux-css-debt-070-publication-card-runtime-reach
+      RESULT_FILE: .diagnostics/ux-css-debt-070-runtime-reach.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4182 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          sleep 1
+          cat >/tmp/probe.js <<'NODE'
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          (async()=>{const browser=await chromium.launch({headless:true});try{const ctx=await browser.newContext({viewport:{width:359,height:900},javaScriptEnabled:false});const page=await ctx.newPage();const cssReq=[],cssResp=[];page.on('request',r=>{if(r.url().includes('.css'))cssReq.push(r.url())});page.on('response',r=>{if(r.url().includes('.css'))cssResp.push(`${r.status()} ${r.url()}`)});await page.route('**/*',r=>{const u=new URL(r.request().url());if(!['127.0.0.1','localhost'].includes(u.hostname))return r.abort();return r.continue()});await page.goto('http://127.0.0.1:4182/index.html?ux070-runtime-reach=1',{waitUntil:'load'});await page.waitForTimeout(500);const data=await page.evaluate(()=>{const out=[];const seen=new Set();function walk(sheet,depth){if(!sheet||seen.has(sheet))return;seen.add(sheet);let href=sheet.href||'<inline>',count=-1,error='';let rules=[];try{rules=[...(sheet.cssRules||[])];count=rules.length}catch(e){error=String(e)}out.push({depth,href,count,error});for(const r of rules)if(r.styleSheet)walk(r.styleSheet,depth+1)}for(const s of document.styleSheets)walk(s,0);const card=document.querySelector('.publication-card'),media=document.querySelector('.publication-card__media'),content=document.querySelector('.publication-card__content');const style=el=>el?{display:getComputedStyle(el).display,position:getComputedStyle(el).position,width:getComputedStyle(el).width,height:getComputedStyle(el).height,minHeight:getComputedStyle(el).minHeight,padding:getComputedStyle(el).padding,borderRadius:getComputedStyle(el).borderRadius}:null;return{sheetCount:document.styleSheets.length,sheets:out,card:style(card),media:style(media),content:style(content)}});console.log(`REQUESTS=${cssReq.length}`);for(const x of cssReq)console.log(`REQ|${x}`);console.log(`RESPONSES=${cssResp.length}`);for(const x of cssResp)console.log(`RESP|${x}`);console.log(`CSSOM_ROOTS=${data.sheetCount}`);for(const x of data.sheets)console.log(`SHEET|depth=${x.depth}|href=${x.href}|rules=${x.count}|error=${x.error}`);console.log(`COMPUTED|card=${JSON.stringify(data.card)}|media=${JSON.stringify(data.media)}|content=${JSON.stringify(data.content)}`);const reqHit=cssReq.some(x=>x.includes('/assets/css/components/cards/publication-card.css'));const respHit=cssResp.some(x=>x.includes('/assets/css/components/cards/publication-card.css')&&x.startsWith('200 '));const cssomHit=data.sheets.some(x=>x.href.includes('/assets/css/components/cards/publication-card.css'));console.log(`RUNTIME REACH|request=${reqHit?1:0}|response200=${respHit?1:0}|cssom=${cssomHit?1:0}|roots=${data.sheetCount}|recursiveSheets=${data.sheets.length}`);await ctx.close()}finally{await browser.close()}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/probe.js | tee /tmp/probe.log
+          kill "$(cat /tmp/http.pid)" 2>/dev/null || true
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "TARGET_SHA=$TARGET_SHA"
+            grep '^RUNTIME REACH|' /tmp/probe.log
+            grep '^COMPUTED|' /tmp/probe.log
+            grep '^REQ|.*publication-card.css' /tmp/probe.log || true
+            grep '^RESP|.*publication-card.css' /tmp/probe.log || true
+            grep '^SHEET|.*publication-card.css' /tmp/probe.log || true
+            echo "RESULT=PASS"
+          } >/tmp/evidence.txt
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-070 runtime reach [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
