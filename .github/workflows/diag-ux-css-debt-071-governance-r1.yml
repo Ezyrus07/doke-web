@@ -1,0 +1,144 @@
+name: Doke UX-CSS-DEBT-071 Governance R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-071-governance-r1
+    paths:
+      - .github/workflows/diag-ux-css-debt-071-governance-r1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  governance:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 149bfa8cdb931543aabd1afb0a5453379f565ae8
+      PARENT_SHA: 6e89d01531842722985c7b2abcd2723a3f383d26
+      TARGET_TREE: 2c72e5e5ad700641a16630b6c5ba9535c222dee8
+      TARGET_FILE: assets/css/components/cards/ad-card.css
+      TARGET_BLOB: 1513c7b6d09fc037ff06ed0b7db209b11a60f280
+      EXPECTED_SHA256: 9d9a332a0c6a3343dced93716a9fe38fc6f5ff01b2957eaf752196b923a127ee
+      EXPECTED_BYTES: 48254
+      DIAG_BRANCH: diag/ux-css-debt-071-governance-r1
+      RESULT_FILE: .diagnostics/ux-css-debt-071-governance-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Governance residual and dependencies
+        id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'GUARD PASS' | tee /tmp/gov.log
+          npm ci --ignore-scripts >>/tmp/gov.log 2>&1
+          npm run audit:active-legacy-structures >>/tmp/gov.log 2>&1
+          node <<'NODE' | tee -a /tmp/gov.log
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n');
+          const rows=new Map([[215,'  cursor: pointer;'],[945,'    display: flex;'],[946,'    flex-wrap: nowrap;'],[1479,'  overflow: hidden;'],[1485,'  white-space: nowrap;'],[1486,'  text-overflow: ellipsis;']]);
+          for(const [i,row] of rows)if((ls[i]||'').replace(/\r$/,'')!==row)throw new Error(`row drift ${i+1}`);
+          fs.writeFileSync(f,ls.filter((_,i)=>!rows.has(i)).join('\n'));
+          const b=fs.readFileSync(f),hash=crypto.createHash('sha256').update(b).digest('hex');
+          if(hash!==process.env.EXPECTED_SHA256||b.length!==Number(process.env.EXPECTED_BYTES))throw new Error(`identity ${hash}/${b.length}`);
+          console.log(`IDENTITY PASS|sha256=${hash}|bytes=${b.length}|parent=929/6|candidate=923/0`);
+          NODE
+          git diff --check
+          npm run audit:agent-governance | tee -a /tmp/gov.log
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          cat /tmp/conflicts.log >>/tmp/gov.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:shared-app-header-contract | tee -a /tmp/gov.log
+          npm run audit:mobile-shell-location-contract | tee -a /tmp/gov.log
+          npm run audit:responsive-boundaries | tee -a /tmp/gov.log
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          cat /tmp/dup.log >>/tmp/gov.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          cat /tmp/domain.log >>/tmp/gov.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          test "$(sha256sum docs/PAGE-ASSET-AUTHORITY-MATRIX.md | awk '{print $1}')" = '345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6'
+          test "$(sha256sum docs/HOME-AUTHORITY-CLASSIFICATION.md | awk '{print $1}')" = 'b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda'
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md
+          node <<'NODE' | tee -a /tmp/gov.log
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length})}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}
+          const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function dc(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d)}return{decl:ds.length,dead}}
+          if(active.size!==401||high.length!==37)throw new Error(`active/high ${active.size}/${high.length}`);
+          let files=0,total=0,highDead=0,pageResidual=0;for(const f of active){const p=dc(meta.get(f).text);if(p.dead){files++;total+=p.dead;if(high.includes(f))highDead++;if(f.includes('/pages/'))pageResidual++}}
+          const guards=[['assets/css/components/cards/ad-card.css',923,0,'071'],['assets/css/components/cards/publication-card.css',369,0,'070'],['assets/css/core/mobile/ui-standard.css',76,0,'069'],['assets/css/components/internal/list-page-toolbar.css',269,0,'068'],['assets/css/components/overlays/modal-visual-contract.css',475,0,'067'],['assets/css/components/internal/filter-select-standard.css',404,0,'066'],['assets/css/components/ui-surface/buttons-close.css',110,0,'065'],['assets/css/components/layout/doke-layout-system.css',108,0,'064'],['assets/css/components/panels/mobile-panel.css',94,0,'063'],['assets/css/components/forms/form-flow-comfort.css',113,0,'062'],['assets/css/components/overlays/action-modal-system.css',264,0,'061'],['assets/css/components/overlays/financial-modal-system.css',645,0,'060'],['assets/css/components/media-lightbox.css',280,0,'059'],['assets/css/components/before-after-workers-preview/workers-mobile-fullscreen-contract.css',216,0,'058'],['assets/css/components/chat-composer.css',125,0,'057'],['assets/css/components/before-after-workers-preview/mobile-comment-sheets.css',302,0,'056'],['assets/css/patterns/settings-shell.css',104,0,'055'],['assets/css/components/before-after-workers-preview/publication-light-modal.css',75,0,'054']];
+          if(files!==3||total!==31||highDead!==0||pageResidual!==0)throw new Error(`residual ${files}/${total}/${highDead}/${pageResidual}`);for(const [f,d,dead,label] of guards){const p=dc(meta.get(f).text);if(p.decl!==d||p.dead!==dead)throw new Error(`${label} ${p.decl}/${p.dead}`)}
+          console.log('RESIDUAL PASS|active=401|high=37|files=3|dead=31|highDead=0|pageResidual=0');
+          NODE
+          set +e
+          npm audit --json >/tmp/audit.json
+          audit_code=$?
+          set -e
+          node <<'NODE' | tee -a /tmp/gov.log
+          const a=require('/tmp/audit.json'),v=a.metadata?.vulnerabilities||{};console.log(`DEPENDENCY PASS|total=${v.total??0}|critical=${v.critical??0}|high=${v.high??0}|moderate=${v.moderate??0}|low=${v.low??0}`);if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)process.exit(2);
+          NODE
+          echo "AUDIT_EXIT=$audit_code" | tee -a /tmp/gov.log
+          echo 'GOVERNANCE PASS|conflicts=339|duplicates=0/0|domain=23/15/2.91/12' | tee -a /tmp/gov.log
+      - name: Restore exact parent
+        id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish governance receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "TARGET_SHA=$TARGET_SHA"
+            echo "VALIDATE=${{ steps.validate.outcome }}"
+            echo "RESTORE=${{ steps.restore.outcome }}"
+            grep -E '^(GUARD PASS|IDENTITY PASS|RESIDUAL PASS|DEPENDENCY PASS|AUDIT_EXIT=|GOVERNANCE PASS)' /tmp/gov.log 2>/dev/null || true
+            echo "RESULT=$result"
+            if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -120 /tmp/gov.log 2>/dev/null || true; fi
+          } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m "diag: record UX-CSS-DEBT-071 governance R1 [skip ci]"
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
+          test "$result" = PASS
