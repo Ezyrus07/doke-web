@@ -1,0 +1,114 @@
+name: Doke Post-074 CSS Design-System Gate
+
+on:
+  push:
+    branches: [diag/ux-css-post-074-design-system-gate]
+    paths: [.github/workflows/diag-ux-css-post-074-design-system-gate.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      TARGET_TREE: 858c72157e938fbbaa95015dcf2742b20ac39670
+      TARGET_FILE: assets/css/core/tokens.css
+      TARGET_BLOB: e62808598640fcda4518339c8d87fba4558a8a8e
+      DIAG_BRANCH: diag/ux-css-post-074-design-system-gate
+      RESULT_FILE: .diagnostics/ux-css-post-074-design-system-gate.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard certified UX-CSS-DEBT-074
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - id: inspect
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/design-system.log) 2>&1
+          npm ci --ignore-scripts
+          npm run audit:global-css-design-system
+          node <<'NODE'
+          const fs=require('fs');
+          const read=p=>JSON.parse(fs.readFileSync(p,'utf8'));
+          const b=read('docs/validation/global-cycle-121-important-baseline-by-group-report.json');
+          const l=read('docs/validation/global-cycle-122-important-low-risk-groups-report.json');
+          const r=read('docs/validation/global-cycle-123-important-controlled-removal-gate-report.json');
+          const i=read('docs/validation/global-cycle-124-css-import-consolidation-candidates-report.json');
+          const g=read('docs/validation/global-cycle-125-css-design-system-entry-gate-report.json');
+          console.log(`BASELINE|cssFiles=${b.summary.cssFileCount}|important=${b.summary.totalImportant}|outsideServiceCard=${b.summary.outsideServiceCardImportant}|groups=${b.summary.groupsWithImportant}|files=${b.summary.filesWithImportant}`);
+          for(const [name,x] of Object.entries(b.groups||{}).filter(([,x])=>x.importantCount>0).sort((a,b)=>b[1].importantCount-a[1].importantCount)) console.log(`GROUP|name=${name}|important=${x.importantCount}|files=${x.filesWithImportant}|risk=${x.risk}`);
+          for(const x of (b.topFiles||[]).slice(0,25)) console.log(`TOPFILE|path=${x.path}|group=${x.group}|important=${x.importantCount}|risk=${x.risk}`);
+          console.log(`LOWRISK|reviewGroups=${l.summary.lowRiskReviewGroupCount}|blockedGroups=${l.summary.blockedGroupCount}|removalAllowedNow=${l.summary.removalAllowedNow}`);
+          for(const x of l.lowRiskReviewGroups||[]) console.log(`LOWRISK_GROUP|name=${x.group}|important=${x.importantCount}|files=${x.filesWithImportant}|risk=${x.risk}|action=${x.recommendedAction}|allowed=${x.removalAllowedNow}`);
+          for(const x of l.blockedGroups||[]) console.log(`BLOCKED_GROUP|name=${x.group}|important=${x.importantCount}|files=${x.filesWithImportant}|risk=${x.risk}|action=${x.recommendedAction}`);
+          console.log(`REMOVAL|decision=${r.decision}|candidateGroups=${r.summary.candidateGroupsReviewed}|applied=${r.summary.removalsApplied}|filesModified=${r.summary.filesModified}|next=${r.nextSafeMove}`);
+          console.log(`IMPORTS|pages=${i.summary.pageCount}|unique=${i.summary.uniqueCssImports}|repeated=${i.summary.repeatedImportCount}|candidates=${i.summary.consolidationCandidateCount}`);
+          for(const x of (i.consolidationCandidates||[]).slice(0,25)) console.log(`IMPORT_CANDIDATE|href=${x.href}|layer=${x.layer}|pages=${x.pages.length}|pageList=${x.pages.join(',')}|action=${x.recommendation}|moveNow=${x.moveNow}`);
+          console.log(`ENTRY|status=${g.status}|phaseDecision=${g.phaseDecision}|required=${g.summary.requiredReports}|missing=${g.summary.missingReports}|responsiveAllowed=${g.policy.responsivePhaseAllowed}|importantRemovalWithoutBaseline=${g.policy.importantRemovalAllowedWithoutBaseline}|importReorderWithoutBaseline=${g.policy.cssImportReorderAllowedWithoutBaseline}`);
+          console.log('DESIGN SYSTEM GATE PASS');
+          NODE
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish fail-closed evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.inspect.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+            echo "TARGET_SHA=$TARGET_SHA"
+            echo "INSPECT=${{ steps.inspect.outcome }}"
+            echo "RESTORE=${{ steps.restore.outcome }}"
+            grep '^BASELINE|' /tmp/design-system.log || true
+            grep '^GROUP|' /tmp/design-system.log || true
+            grep '^TOPFILE|' /tmp/design-system.log || true
+            grep '^LOWRISK|' /tmp/design-system.log || true
+            grep '^LOWRISK_GROUP|' /tmp/design-system.log || true
+            grep '^BLOCKED_GROUP|' /tmp/design-system.log || true
+            grep '^REMOVAL|' /tmp/design-system.log || true
+            grep '^IMPORTS|' /tmp/design-system.log || true
+            grep '^IMPORT_CANDIDATE|' /tmp/design-system.log || true
+            grep '^ENTRY|' /tmp/design-system.log || true
+            echo "RESULT=$result"
+            if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 140 /tmp/design-system.log || true; fi
+          } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")" && cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: record post-074 CSS design-system gate [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
