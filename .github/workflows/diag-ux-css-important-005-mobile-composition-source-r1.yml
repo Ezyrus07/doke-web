@@ -1,0 +1,52 @@
+name: Doke UX CSS Important 005 Mobile Composition Source R1
+on:
+  push:
+    branches: [diag/ux-css-important-005-mobile-composition-source-r1]
+    paths: [.github/workflows/diag-ux-css-important-005-mobile-composition-source-r1.yml]
+permissions:
+  contents: write
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 1c1f6c97a851fc73b7f81c07fe646d7d60e03843
+      TARGET_FILE: assets/css/pages/home/mobile-composition.css
+      TARGET_BLOB: 1e24479b2b9065659a5a11a18854131e4ef90187
+      DIAG_BRANCH: diag/ux-css-important-005-mobile-composition-source-r1
+      RESULT_FILE: .diagnostics/ux-css-important-005-mobile-composition-source-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: source
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/source.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+          const product=tracked.filter(p=>p.endsWith('.html')||p.startsWith('assets/js/')&&p.endsWith('.js'));
+          const anchors=['featured-services','before-after','short-videos','home-mobile-hero__top','home-mobile-hero__quick-actions','home-mobile-hero__location-label','doke-search-panel__form','home-search-hero__field','content-rail__arrow','featured-services-track','before-after-track','short-videos-track','comparison-card','comparison-card__visual'];
+          for(const a of anchors){const hits=[];for(const p of product){const t=fs.readFileSync(p,'utf8');if(t.includes(a))hits.push(p)}console.log(`ANCHOR|name=${a}|files=${hits.length}|list=${hits.join(',')||'-'}`)}
+          const index=fs.readFileSync('index.html','utf8');
+          const classTokens=[...index.matchAll(/class=["']([^"']+)["']/g)].flatMap(m=>m[1].split(/\s+/).filter(Boolean));
+          const ids=[...index.matchAll(/id=["']([^"']+)["']/g)].map(m=>m[1]);
+          for(const a of anchors){const c=classTokens.filter(x=>x===a).length+ids.filter(x=>x===a).length;console.log(`INDEX EXACT|name=${a}|count=${c}`)}
+          const css=fs.readFileSync(process.env.TARGET_FILE,'utf8');if((css.match(/!important\b/g)||[]).length!==36)throw Error('target important drift');
+          console.log(`SOURCE SUMMARY|important=36|targetBlob=${process.env.TARGET_BLOB}|productFiles=${product.length}`);
+          console.log('RESULT=PASS');
+          NODE
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.source.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE=${{ steps.source.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(ANCHOR|INDEX EXACT|SOURCE SUMMARY|RESULT=)' /tmp/source.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 180 /tmp/source.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 005 source closure [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
