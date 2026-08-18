@@ -1,0 +1,138 @@
+name: Doke UX-CSS-DEBT-070 Publication Card Source Closure
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-070-publication-card-source-closure
+    paths:
+      - .github/workflows/diag-ux-css-debt-070-publication-card-source-closure.yml
+
+permissions:
+  contents: write
+
+jobs:
+  source-closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6e89d01531842722985c7b2abcd2723a3f383d26
+      PARENT_SHA: 23cc5c7496897f0d9b742039598574ffb2b93dfb
+      TARGET_TREE: a89565f5e64b7eba94a327f3b0153cadab7377b2
+      TARGET_FILE: assets/css/components/cards/publication-card.css
+      TARGET_BLOB: a4735b4ca0141e4db72abdfe7caac77ba01acebc
+      DIAG_BRANCH: diag/ux-css-debt-070-publication-card-source-closure
+      RESULT_FILE: .diagnostics/ux-css-debt-070-source-closure.txt
+      RANKING_RUN: 32084413898
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-069 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact checkpoint and source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "SOURCE INPUT PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|ranking=$RANKING_RUN"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Prove cascade importers reach DOM authority and candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' | tee /tmp/ux070-source.log
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,text=fs.readFileSync(f,'utf8'),lines=text.split('\n');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(x=>x.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const x of tracked){const src=fs.readFileSync(x,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(src)))imports.push(normImport(m[1],x));meta.set(x,{src,imports});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(x=>meta.has(x));while(todo.length){const x=todo.pop();if(active.has(x)||!meta.has(x))continue;active.add(x);for(const n of meta.get(x).imports)if(meta.has(n))todo.push(n)}
+          if(active.size!==401)throw new Error(`active graph drift ${active.size}`);
+          const allImporters=[...meta].filter(([x,m])=>x!==f&&m.imports.includes(f)).map(([x])=>x).sort();
+          const activeImporters=allImporters.filter(x=>active.has(x));
+          const expected=['assets/css/core/components.css','assets/css/pages/home-runtime-feed.css','assets/css/pages/marketplace-detail-foundation.css','assets/css/pages/profile-runtime-components.css','assets/css/pages/search-results-runtime-display.css'];
+          if(JSON.stringify(allImporters)!==JSON.stringify(expected)||JSON.stringify(activeImporters)!==JSON.stringify(expected))throw new Error(`importer drift all=${JSON.stringify(allImporters)} active=${JSON.stringify(activeImporters)}`);
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d)}return{ds,dead}}
+          const p=parse(text);if(p.ds.length!==372||p.dead.length!==3)throw new Error(`target metric drift ${p.ds.length}/${p.dead.length}`);
+          const got=p.dead.sort((a,b)=>a.line-b.line).map(d=>[d.line,d.selector,d.property,d.value,d.context,d.winnerLine,d.winnerValue,d.important,d.winnerImportant]);
+          const exp=[
+            [273,'.publication-card__media','min-height','162px','@media (max-width: 760px)',421,'168px',false,false],
+            [277,'.publication-card__content','padding','12px 13px 13px','@media (max-width: 760px)',432,'12px 14px 14px',false,false],
+            [403,'.publication-card__media','border-radius','var(--radius-md)','@media (max-width: 760px)',422,'var(--radius-surface) var(--radius-surface) 0 0',false,false]
+          ];
+          if(JSON.stringify(got)!==JSON.stringify(exp))throw new Error(`cascade identity drift ${JSON.stringify(got)}`);
+          const reach=[];for(const page of report.pageAssets){const seen=new Set(),stack=[...page.css.filter(x=>meta.has(x))];while(stack.length){const x=stack.pop();if(seen.has(x)||!meta.has(x))continue;seen.add(x);if(x===f){reach.push(page.page);break}for(const n of meta.get(x).imports)if(meta.has(n))stack.push(n)}}reach.sort();if(reach.length!==26)throw new Error(`reach drift ${reach.length}`);
+          const staticPages=['index.html','detalhe-anuncio.html','perfil.html'];for(const page of staticPages){const src=fs.readFileSync(page,'utf8');for(const n of ['publication-card','publication-card__media','publication-card__content'])if(!src.includes(n))throw new Error(`${page} missing ${n}`)}
+          const renderer='assets/js/renderers/publication-card-renderer.js',rendererSrc=fs.readFileSync(renderer,'utf8');for(const n of ['publication-card','publication-card__media','publication-card__content'])if(!rendererSrc.includes(n))throw new Error(`renderer missing ${n}`);
+          const remove=[272,276,402],expectedRows=new Map([[272,'    min-height: 162px;'],[276,'    padding: 12px 13px 13px;'],[402,'    border-radius: var(--radius-md);']]);for(const [i,row] of expectedRows)if((lines[i]||'').replace(/\r$/,'')!==row)throw new Error(`candidate row drift ${i+1}`);
+          const candidate=lines.filter((_,i)=>!remove.includes(i)).join('\n'),cpMetric=parse(candidate);if(cpMetric.ds.length!==369||cpMetric.dead.length!==0)throw new Error(`candidate metric drift ${cpMetric.ds.length}/${cpMetric.dead.length}`);
+          const hash=crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex'),bytes=Buffer.byteLength(candidate);
+          fs.writeFileSync('/tmp/ux070-candidate.css',candidate);
+          console.log(`IMPORTERS PASS|all=5|active=5|list=${activeImporters.join(',')}`);
+          console.log(`CASCADE PASS|target=372/3|families=2|identical=0|changed=3|context=@media(max-width:760px)|important=0`);
+          console.log(`ACTIVE REACH|pages=26|pageList=${reach.join(',')}`);
+          console.log(`REAL DOM AUTHORITY|staticPages=3|index=1|detalhe=1|perfil=1|renderer=1|families=2/2`);
+          console.log(`CANDIDATE IDENTITY|candidate=369/0|sha256=${hash}|bytes=${bytes}|files=1|additions=0|deletions=3`);
+          console.log(`SOURCE CLOSURE PASS|target=${f}|targetBlob=${process.env.TARGET_BLOB}|browserRequired=1|ranking=${process.env.RANKING_RUN}`);
+          NODE
+          test -s /tmp/ux070-candidate.css
+
+      - name: Exact restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "SOURCE RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
+
+      - name: Publish source closure evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+            echo "TARGET_SHA=$TARGET_SHA"
+            echo "TARGET_BLOB=$TARGET_BLOB"
+            grep '^IMPORTERS PASS|' /tmp/ux070-source.log
+            grep '^CASCADE PASS|' /tmp/ux070-source.log
+            grep '^ACTIVE REACH|' /tmp/ux070-source.log
+            grep '^REAL DOM AUTHORITY|' /tmp/ux070-source.log
+            grep '^CANDIDATE IDENTITY|' /tmp/ux070-source.log
+            grep '^SOURCE CLOSURE PASS|' /tmp/ux070-source.log
+            echo "RESULT=PASS"
+          } > /tmp/ux070-source-evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/ux070-source-evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m "diag: record UX-CSS-DEBT-070 source closure [skip ci]"
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
