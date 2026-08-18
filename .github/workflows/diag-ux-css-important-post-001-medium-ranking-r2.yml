@@ -1,0 +1,119 @@
+name: diag ux css important post 001 medium ranking r2
+on:
+  push:
+    branches:
+      - diag/ux-css-important-post-001-medium-ranking-r2
+permissions:
+  contents: write
+jobs:
+  rank:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard diagnostic parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_SHA='5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5'
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          test "$(git diff --name-only "$TARGET_SHA"..HEAD)" = '.github/workflows/diag-ux-css-important-post-001-medium-ranking-r2.yml'
+      - name: Rank medium candidates
+        id: ranking
+        shell: bash
+        continue-on-error: true
+        run: |
+          set +e
+          node <<'NODE' > /tmp/ranking.out 2> /tmp/ranking.err
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const ROOT=process.cwd(), norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'');
+          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+          const css=tracked.filter(p=>p.startsWith('assets/css/')&&p.endsWith('.css'));
+          const html=tracked.filter(p=>p.endsWith('.html'));
+          const js=tracked.filter(p=>p.startsWith('assets/js/')&&p.endsWith('.js'));
+          const cssSet=new Set(css);
+          const countImp=p=>(fs.readFileSync(p,'utf8').match(/!important\b/g)||[]).length;
+          function risk(p,n){
+            if(p.includes('service-card')) return 'excluded-service-card';
+            if(p.includes('/core/')||p.includes('/layout/')||p.includes('shell')||p.includes('sidebar')||p.includes('header')) return 'high-baseline-required';
+            if(n>=25) return 'high-baseline-required';
+            if(n>=5) return 'medium-baseline-required';
+            return 'low-review-candidate';
+          }
+          const imports=new Map(),importers=new Map();
+          for(const p of css){
+            const txt=fs.readFileSync(p,'utf8'),deps=[];
+            const re=/@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?\s*\)?/g; let m;
+            while((m=re.exec(txt))){
+              const raw=m[1].split(/[?#]/)[0];
+              if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw)) continue;
+              const d=norm(path.normalize(path.join(path.dirname(p),raw)));
+              if(cssSet.has(d)) deps.push(d);
+            }
+            imports.set(p,[...new Set(deps)]);
+            for(const d of deps){ if(!importers.has(d)) importers.set(d,[]); importers.get(d).push(p); }
+          }
+          const pageRoots=new Map();
+          for(const p of html){
+            const txt=fs.readFileSync(p,'utf8'),roots=[];
+            const re=/<link\b[^>]*href=["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi; let m;
+            while((m=re.exec(txt))){
+              const raw=m[1].split(/[?#]/)[0]; if(/^(?:https?:|\/\/)/i.test(raw)) continue;
+              const r=norm(path.normalize(path.join(path.dirname(p),raw))); if(cssSet.has(r)) roots.push(r);
+            }
+            pageRoots.set(p,[...new Set(roots)]);
+          }
+          function closure(roots){const seen=new Set(),stack=[...roots]; while(stack.length){const x=stack.pop(); if(seen.has(x))continue; seen.add(x); for(const d of imports.get(x)||[])stack.push(d);} return seen;}
+          const pageClosure=new Map([...pageRoots].map(([p,r])=>[p,closure(r)]));
+          let total=0,low=0,medium=0,high=0,excluded=0; const rows=[];
+          for(const p of css){
+            const n=countImp(p); if(!n)continue; total+=n; const rk=risk(p,n);
+            if(rk==='low-review-candidate')low+=n; else if(rk==='medium-baseline-required')medium+=n; else if(rk==='high-baseline-required')high+=n; else excluded+=n;
+            if(rk!=='medium-baseline-required')continue;
+            const pages=[...pageClosure].filter(([,c])=>c.has(p)).map(([pg])=>pg).sort();
+            const direct=[...(importers.get(p)||[])].sort();
+            const activeParents=direct.filter(parent=>[...pageClosure.values()].some(c=>c.has(parent)));
+            const txt=fs.readFileSync(p,'utf8');
+            const classes=[...new Set([...txt.matchAll(/\.([A-Za-z_][A-Za-z0-9_-]*)/g)].map(m=>m[1]))];
+            let sourceFiles=0,sourceTokenHits=0;
+            for(const s of [...html,...js]){const st=fs.readFileSync(s,'utf8'); let hits=0; for(const c of classes)if(st.includes(c))hits++; if(hits){sourceFiles++;sourceTokenHits+=hits;}}
+            rows.push({file:p,important:n,pages,direct,activeParents,bytes:fs.statSync(p).size,classes:classes.length,sourceFiles,sourceTokenHits});
+          }
+          const active=rows.filter(r=>r.pages.length).sort((a,b)=>a.pages.length-b.pages.length||a.important-b.important||a.bytes-b.bytes||a.file.localeCompare(b.file));
+          const inactive=rows.filter(r=>!r.pages.length).sort((a,b)=>a.important-b.important||a.bytes-b.bytes||a.file.localeCompare(b.file));
+          console.log('TARGET_SHA=5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5');
+          console.log(`SUMMARY|totalImportant=${total}|lowTokens=${low}|mediumTokens=${medium}|highTokens=${high}|excludedServiceCard=${excluded}|mediumFiles=${rows.length}|activeMediumFiles=${active.length}|inactiveMediumFiles=${inactive.length}`);
+          active.slice(0,25).forEach((r,i)=>console.log(`CANDIDATE|rank=${i}|file=${r.file}|important=${r.important}|pages=${r.pages.length}|pageList=${r.pages.join(',')}|bytes=${r.bytes}|directImporters=${r.direct.join(',')}|activeParents=${r.activeParents.join(',')}|classes=${r.classes}|sourceFiles=${r.sourceFiles}|sourceTokenHits=${r.sourceTokenHits}`));
+          inactive.slice(0,10).forEach((r,i)=>console.log(`INACTIVE|rank=${i}|file=${r.file}|important=${r.important}|bytes=${r.bytes}`));
+          if(active.length){const t=active[0]; console.log(`TOP0|file=${t.file}|important=${t.important}|pages=${t.pages.length}|pageList=${t.pages.join(',')}|bytes=${t.bytes}|reason=smallest-active-page-reach-then-important-count-then-bytes`); console.log('NEXT=MEDIUM_BASELINE_CANDIDATE_EXISTS');}
+          else console.log('NEXT=NONE');
+          console.log('RESULT=PASS');
+          NODE
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            {
+              echo 'TARGET_SHA=5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5'
+              echo 'RESULT=FAIL'
+              echo '--- ERROR ---'
+              cat /tmp/ranking.err
+            } > /tmp/ux-css-important-post-001-medium-ranking-r2.txt
+            exit 0
+          fi
+          cp /tmp/ranking.out /tmp/ux-css-important-post-001-medium-ranking-r2.txt
+          cat /tmp/ux-css-important-post-001-medium-ranking-r2.txt
+      - name: Publish receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .diagnostics
+          if [ ! -f /tmp/ux-css-important-post-001-medium-ranking-r2.txt ]; then
+            printf '%s\n' 'TARGET_SHA=5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5' 'RESULT=FAIL' 'receipt-not-produced' > /tmp/ux-css-important-post-001-medium-ranking-r2.txt
+          fi
+          cp /tmp/ux-css-important-post-001-medium-ranking-r2.txt .diagnostics/ux-css-important-post-001-medium-ranking-r2.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .diagnostics/ux-css-important-post-001-medium-ranking-r2.txt
+          git commit -m 'chore(diag): publish post-001 medium ranking r2' || exit 0
+          git push origin HEAD:diag/ux-css-important-post-001-medium-ranking-r2
