@@ -1,0 +1,79 @@
+name: Doke UX CSS Important 004 Medium Source Closure
+on:
+  push:
+    branches: [diag/ux-css-important-004-medium-source-closure]
+    paths: [.github/workflows/diag-ux-css-important-004-medium-source-closure.yml]
+permissions:
+  contents: write
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 8b6aef68b21109309adfa35ef580888252fd318e
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: c85093c659ce3b6b2de2bd58a720f3ef013331d3
+      DIAG_BRANCH: diag/ux-css-important-004-medium-source-closure
+      RESULT_FILE: .diagnostics/ux-css-important-004-medium-source-closure.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - id: source
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/source.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const css=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const imp=(css.match(/!important\b/g)||[]).length;if(imp!==21)throw Error(`important=${imp}`);
+          const families=[
+            {name:'home-mobile-hero__top',selector:'body.home-index-shell .home-mobile-hero__top'},
+            {name:'before-after',selector:'body.home-index-shell .before-after .content-rail'},
+            {name:'comparison-grid',selector:'body.home-index-shell .comparison-grid'},
+            {name:'comparison-card',selector:'body.home-index-shell .comparison-grid > .comparison-card'},
+            {name:'comparison-card__visual',selector:'body.home-index-shell .comparison-grid > .comparison-card .comparison-card__visual'}
+          ];
+          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+          const producers=tracked.filter(p=>p.endsWith('.html')||p.endsWith('.js'));
+          function exactToken(a){return new RegExp(`(^|[^A-Za-z0-9_-])${a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Za-z0-9_-]|$)`,'g')}
+          const anchors=['home-mobile-hero__top','before-after','comparison-grid','comparison-card'];
+          let producerFiles=0;
+          for(const a of anchors){const hits=[];for(const p of producers){const t=fs.readFileSync(p,'utf8'),re=exactToken(a);if(re.test(t))hits.push(p)}producerFiles+=hits.length;console.log(`ANCHOR|name=${a}|producerFiles=${hits.length}|list=${hits.join(',')||'-'}`)}
+          const index=fs.readFileSync('index.html','utf8');
+          const indexCounts=families.map(f=>{let c=0;try{c=(index.match(exactToken(f.name))||[]).length}catch{}return `${f.name}:${c}`});
+          console.log(`INDEX MARKUP|counts=${indexCounts.join(',')}`);
+          const before=fs.readFileSync('assets/js/pages/home/before-after.js','utf8');
+          console.log(`BEFORE_AFTER AUTHORITY|comparisonGridToken=${(before.match(exactToken('comparison-grid'))||[]).length}|comparisonCardToken=${(before.match(exactToken('comparison-card'))||[]).length}|comparisonVisualToken=${(before.match(exactToken('comparison-card__visual'))||[]).length}|previewAuthority=${before.includes('before-after-preview')?1:0}`);
+          console.log(`SOURCE SUMMARY|important=21|families=5|producerAnchorFileHits=${producerFiles}|targetBlob=${process.env.TARGET_BLOB}`);
+          if(producerFiles!==0)throw Error(`active producer token hits=${producerFiles}`);
+          console.log('DECISION|activeProducer=0|activeMarkup=0|selectorFamilies=5|reason=legacy-home-selectors-have-no-html-js-producer');
+          NODE
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.source.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE=${{ steps.source.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(ANCHOR|INDEX MARKUP|BEFORE_AFTER AUTHORITY|SOURCE SUMMARY|DECISION)\|' /tmp/source.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 160 /tmp/source.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: publish medium source closure [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
