@@ -1,0 +1,114 @@
+name: Doke Post-074 Important Low-Risk Ranking
+
+on:
+  push:
+    branches: [diag/ux-css-post-074-important-low-risk-ranking]
+    paths: [.github/workflows/diag-ux-css-post-074-important-low-risk-ranking.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  rank:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      TARGET_TREE: 858c72157e938fbbaa95015dcf2742b20ac39670
+      TARGET_FILE: assets/css/core/tokens.css
+      TARGET_BLOB: e62808598640fcda4518339c8d87fba4558a8a8e
+      DIAG_BRANCH: diag/ux-css-post-074-important-low-risk-ranking
+      RESULT_FILE: .diagnostics/ux-css-post-074-important-low-risk-ranking.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard certified UX-CSS-DEBT-074
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - id: rank
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/rank.log) 2>&1
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          npm run audit:important-reduction-plan
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const plan=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();
+          for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports,bytes:Buffer.byteLength(text),important:(text.match(/!important\b/g)||[]).length});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css||[]))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}
+          if(active.size!==401)throw Error(`active CSS drift ${active.size}`);
+          const pagesFor=target=>{const out=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...(p.css||[]).filter(f=>meta.has(f))];while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){out.push(p.page);break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}}return out.sort()};
+          const parents=new Map([...meta.keys()].map(f=>[f,[]]));for(const [p,x] of meta)for(const c of x.imports)if(parents.has(c))parents.get(c).push(p);
+          const low=(plan.lowRiskFiles||[]).map(file=>{const m=meta.get(file);if(!m)return{file,missing:true};const pages=pagesFor(file);return{file,active:active.has(file),important:m.important,bytes:m.bytes,pages:pages.length,pageList:pages,activeParents:(parents.get(file)||[]).filter(p=>active.has(p)).sort()}});
+          const activeLow=low.filter(x=>x.active).sort((a,b)=>(a.pages-b.pages)||(a.important-b.important)||(a.bytes-b.bytes)||a.file.localeCompare(b.file));
+          console.log(`PLAN|affectedFiles=${plan.summary.affectedFiles}|outsideServiceCard=${plan.summary.totalImportantOutsideServiceCard}|lowRiskFiles=${plan.summary.lowRiskFileCount}|byRisk=${JSON.stringify(plan.summary.byRisk)}|byLayer=${JSON.stringify(plan.summary.byLayer)}`);
+          console.log(`ACTIVE LOWRISK|count=${activeLow.length}|inactive=${low.filter(x=>!x.active).length}|ranking=min-active-page-reach-then-important-count-then-bytes`);
+          for(const x of activeLow) console.log(`CANDIDATE|file=${x.file}|important=${x.important}|pages=${x.pages}|bytes=${x.bytes}|activeParents=${x.activeParents.join(',')||'-'}|pageList=${x.pageList.join(',')||'-'}`);
+          for(const x of low.filter(x=>!x.active)) console.log(`INACTIVE|file=${x.file}|important=${x.important||0}|bytes=${x.bytes||0}`);
+          if(activeLow.length) console.log(`TOP0|file=${activeLow[0].file}|important=${activeLow[0].important}|pages=${activeLow[0].pages}|bytes=${activeLow[0].bytes}|reason=smallest-active-surface-among-repository-low-review-candidates`);
+          else console.log('NO ACTIVE LOWRISK|next=component-specific-baseline-required-before-any-important-removal');
+          console.log('LOW-RISK RANKING PASS');
+          NODE
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish fail-closed evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.rank.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+            echo "TARGET_SHA=$TARGET_SHA"
+            echo "RANK=${{ steps.rank.outcome }}"
+            echo "RESTORE=${{ steps.restore.outcome }}"
+            grep '^PLAN|' /tmp/rank.log || true
+            grep '^ACTIVE LOWRISK|' /tmp/rank.log || true
+            grep '^CANDIDATE|' /tmp/rank.log || true
+            grep '^INACTIVE|' /tmp/rank.log || true
+            grep '^TOP0|' /tmp/rank.log || true
+            grep '^NO ACTIVE LOWRISK|' /tmp/rank.log || true
+            echo "RESULT=$result"
+            if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 140 /tmp/rank.log || true; fi
+          } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")" && cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: record post-074 low-risk important ranking [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
