@@ -109,11 +109,11 @@ async function main() {
   assertRemoteInert(afterRead);
 
   for (const routeName of orchestration.ROUTE_NAMES) {
-    const state = orchestration.beginRepositoryOnlyCommandHandlerOrchestration(routeName, {});
-    assert.equal(state.contractId, orchestration.CONTRACT_ID);
-    assert.equal(state.routeName, routeName);
-    assert.equal(state.repositoryOrchestrationMaterialized, true);
-    assertRemoteInert(state);
+    const blocked = orchestration.beginRepositoryOnlyCommandHandlerOrchestration(routeName, {});
+    assert.equal(blocked.contractId, orchestration.CONTRACT_ID);
+    assert.equal(blocked.decision, 'blocked_repository_only');
+    assert.equal(blocked.reason, 'B02R_COMPOSITION_BLOCKED');
+    assertRemoteInert(blocked);
   }
 
   for (const [handlerName, routeName] of [
@@ -144,6 +144,11 @@ async function main() {
 
   const inspection = orchestration.inspectCommandHandlerRepositoryOrchestration();
   assert.equal(inspection.decision, 'repository_only_command_handler_repository_orchestration_materialized');
+  assert.deepEqual(inspection.routeNames, [
+    'communities.membership.command',
+    'communities.governance.command',
+    'communities.content.command'
+  ]);
   assert.equal(inspection.b02sContractId, b02s.CONTRACT_ID);
   assert.equal(inspection.b02rContractId, b02r.CONTRACT_ID);
   assert.equal(inspection.b02qContractId, b02q.CONTRACT_ID);
