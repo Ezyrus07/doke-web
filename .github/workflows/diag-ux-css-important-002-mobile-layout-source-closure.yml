@@ -1,0 +1,88 @@
+name: Doke UX CSS Important 002 Mobile Layout Source Closure
+on:
+  push:
+    branches: [diag/ux-css-important-002-mobile-layout-source-closure]
+    paths: [.github/workflows/diag-ux-css-important-002-mobile-layout-source-closure.yml]
+permissions:
+  contents: write
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_SHA: 5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: bd00e9596d9db4c2ad68e34aeaccbdfc82cedbf0
+      DIAG_BRANCH: diag/ux-css-important-002-mobile-layout-source-closure
+      RESULT_FILE: .diagnostics/ux-css-important-002-mobile-layout-source-closure.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: source
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/source.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),postcss=require('postcss'),crypto=require('crypto');
+          const root=process.cwd(),target=process.env.TARGET_FILE;
+          const html=fs.readFileSync('index.html','utf8');
+          const roots=[...html.matchAll(/<link\b[^>]*href=["']([^"']+\.css(?:[?#][^"']*)?)["']/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(x=>!/^https?:|^\/\//i.test(x)).map(x=>path.normalize(x).replace(/\\/g,'/')).filter(x=>fs.existsSync(x));
+          const order=[];
+          function flatten(file,stack=[]){
+            const abs=path.resolve(file); if(stack.includes(abs))throw Error(`import cycle ${file}`);
+            const src=fs.readFileSync(file,'utf8'),dir=path.dirname(file); let cursor=0;
+            const imports=[...src.matchAll(/@import\s+(?:url\(\s*)?["']([^"']+\.css(?:\?[^"']*)?)["']/gi)];
+            for(const m of imports){const ref=m[1].split('?')[0]; if(/^https?:|^\/\//i.test(ref))continue; const child=path.normalize(path.join(dir,ref)).replace(/\\/g,'/'); if(fs.existsSync(child))flatten(child,[...stack,abs]);}
+            order.push(file);
+          }
+          for(const r of roots)flatten(r);
+          const targetPositions=order.map((f,i)=>f===target?i:-1).filter(i=>i>=0);
+          if(targetPositions.length!==1)throw Error(`target order occurrences ${targetPositions.length}`);
+          const targetPos=targetPositions[0];
+          function mediaOf(node){const out=[];let p=node.parent;while(p){if(p.type==='atrule'&&p.name==='media')out.unshift(p.params.trim());p=p.parent;}return out.join(' && ')||'all';}
+          function decls(file){const tree=postcss.parse(fs.readFileSync(file,'utf8'),{from:file}),out=[];tree.walkDecls(d=>{const r=d.parent;if(r.type!=='rule')return;out.push({file,selector:r.selector.trim(),prop:d.prop.trim(),value:d.value.trim(),important:d.important===true,media:mediaOf(d),line:d.source?.start?.line||0});});return out;}
+          const targetDecls=decls(target).filter(d=>d.important);
+          if(targetDecls.length!==31)throw Error(`important rows ${targetDecls.length}`);
+          const later=[];for(let i=targetPos;i<order.length;i++){const f=order[i];for(const d of decls(f))later.push({...d,fileOrder:i});}
+          let dominated=0,changedWinner=0,identicalWinner=0,noSameKey=0;
+          const rows=[];
+          for(const t of targetDecls){
+            const matches=later.filter(d=>!(d.file===target&&d.line===t.line)&&d.fileOrder>=targetPos&&d.selector===t.selector&&d.prop===t.prop&&d.media===t.media&&d.important);
+            const wins=matches.filter(d=>d.file!==target || d.line>t.line || d.fileOrder>targetPos);
+            const w=wins.length?wins[wins.length-1]:null;
+            if(w){dominated++;if(w.value===t.value)identicalWinner++;else changedWinner++;}
+            else noSameKey++;
+            rows.push({t,w});
+          }
+          console.log(`SOURCE IDENTITY|targetBlob=${process.env.TARGET_BLOB}|important=31|indexRoots=${roots.length}|flattenedCss=${order.length}|targetOrder=${targetPos}`);
+          console.log(`SAMEKEY SUMMARY|dominatedByLaterImportant=${dominated}|identicalWinner=${identicalWinner}|changedWinner=${changedWinner}|noLaterSameKeyImportant=${noSameKey}`);
+          rows.forEach((x,i)=>console.log(`ROW|rank=${i}|line=${x.t.line}|media=${x.t.media}|selector=${x.t.selector}|prop=${x.t.prop}|value=${x.t.value}|winner=${x.w?`${x.w.file}:${x.w.line}:${x.w.value}:important`:'-'}`));
+          const importers=[];for(const f of order){if(f===target)continue;const src=fs.readFileSync(f,'utf8');if(src.includes('home/mobile-layout.css')||src.includes('./mobile-layout.css'))importers.push(f)}
+          console.log(`REACH|pages=1|pageList=index.html|directImporters=${[...new Set(importers)].join(',')||'assets/css/pages/home-runtime-components.css'}|runtimeManifest=assets/css/pages/home-runtime.css`);
+          console.log('RESULT=PASS');
+          NODE
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail
+          result=FAIL; if test '${{ steps.source.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE=${{ steps.source.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(SOURCE IDENTITY|SAMEKEY SUMMARY|ROW|REACH)\|' /tmp/source.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 160 /tmp/source.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record mobile layout important source closure [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
