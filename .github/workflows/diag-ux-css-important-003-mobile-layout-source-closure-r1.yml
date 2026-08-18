@@ -1,0 +1,44 @@
+name: Doke UX CSS Important 003 Mobile Layout Source Closure R1
+on:
+  push:
+    branches: [diag/ux-css-important-003-mobile-layout-source-closure-r1]
+    paths: [.github/workflows/diag-ux-css-important-003-mobile-layout-source-closure-r1.yml]
+permissions:
+  contents: write
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b44fe12f2e81cbe155f154527aed78b90144c552
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: 576d351eb5e1447cd6e1e188e005b8153573fb3f
+      DIAG_BRANCH: diag/ux-css-important-003-mobile-layout-source-closure-r1
+      RESULT_FILE: .diagnostics/ux-css-important-003-mobile-layout-source-closure-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - id: source
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/source.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const target=process.env.TARGET_FILE;
+          const norm=p=>path.normalize(p).replace(/\\/g,'/').replace(/^\.\//,'');
+          function parse(source,file){let clean=source.replace(/\/\*[\s\S]*?\*\//g,m=>' '.repeat(m.length));clean=clean.replace(/@(import|charset)\b[^;]*;/gi,m=>' '.repeat(m.length));const out=[];let ordinal=0;function close(open,end){let d=1;for(let i=open+1;i<end;i++){if(clean[i]==='{')d++;else if(clean[i]==='}'&&--d===0)return i;}throw Error(`unclosed ${file}`)}function skip(i,end){while(i<end&&/\s/.test(clean[i]))i++;return i}function walk(start,end,ctx){let i=start;while((i=skip(i,end))<end){const open=clean.indexOf('{',i);if(open<0||open>=end)break;const header=clean.slice(i,open).trim();const c=close(open,end);if(header.startsWith('@')){const m=header.match(/^@media\s+([\s\S]+)$/i);const next=m?[...ctx,`media:${m[1].trim()}`]:[...ctx,header.replace(/\s+/g,' ')];walk(open+1,c,next);}else{const body=clean.slice(open+1,c);let base=0;for(const seg of body.split(';')){const local=body.indexOf(seg,base);base=local+seg.length+1;const colon=seg.indexOf(':');if(colon<0)continue;const prop=seg.slice(0,colon).trim();let value=seg.slice(colon+1).trim();if(!prop||!value)continue;const important=/\s*!important\b/i.test(value);value=value.replace(/\s*!important\b/i,'').trim();const abs=open+1+local;const line=1+clean.slice(0,abs).split('\n').length-1;out.push({file,selector:header.replace(/\s+/g,' ').trim(),prop,value,important,context:ctx.join(' && ')||'all',line,ordinal:ordinal++});}}i=c+1;}}walk(0,clean.length,[]);return out;}
+          const html=fs.readFileSync('index.html','utf8');const roots=[...html.matchAll(/<link\b[^>]*href=["']([^"']+\.css(?:[?#][^"']*)?)["']/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(x=>!/^https?:|^\/\//i.test(x)).map(norm).filter(fs.existsSync);const flattened=[];function flatten(file,stack=[]){const abs=path.resolve(file);if(stack.includes(abs))throw Error(`cycle ${file}`);const src=fs.readFileSync(file,'utf8'),dir=path.dirname(file);for(const m of src.matchAll(/@import\s+(?:url\(\s*)?["']([^"']+\.css(?:\?[^"']*)?)["']/gi)){const ref=m[1].split('?')[0];if(/^https?:|^\/\//i.test(ref))continue;const child=norm(path.join(dir,ref));if(fs.existsSync(child))flatten(child,[...stack,abs]);}flattened.push(file)}roots.forEach(r=>flatten(r));const targetOccurrences=flattened.filter(f=>f===target).length;if(targetOccurrences!==1)throw Error(`target occurrences ${targetOccurrences}`);const all=[];let seq=0;for(let fi=0;fi<flattened.length;fi++){for(const d of parse(fs.readFileSync(flattened[fi],'utf8'),flattened[fi]))all.push({...d,fileOrder:fi,seq:seq++})}const targetRows=all.filter(d=>d.file===target&&d.important);if(targetRows.length!==29)throw Error(`target important ${targetRows.length}`);let dominated=0,identical=0,changed=0,notDominated=0;const rows=[];for(const t of targetRows){const wins=all.filter(d=>d.seq>t.seq&&d.selector===t.selector&&d.prop===t.prop&&d.context===t.context&&d.important);const w=wins.length?wins[wins.length-1]:null;if(w){dominated++;if(w.value===t.value)identical++;else changed++;}else notDominated++;rows.push({t,w})}const importerFiles=[];for(const f of [...new Set(flattened)]){if(f===target)continue;const s=fs.readFileSync(f,'utf8');if(/@import[\s\S]*mobile-layout\.css/.test(s))importerFiles.push(f)}console.log(`SOURCE IDENTITY|important=29|targetBlob=${process.env.TARGET_BLOB}|indexRoots=${roots.length}|flattenedEntries=${flattened.length}|uniqueCss=${new Set(flattened).size}`);console.log(`SAMEKEY SUMMARY|dominatedByLaterImportant=${dominated}|identicalWinner=${identical}|changedWinner=${changed}|notDominated=${notDominated}`);rows.forEach((x,i)=>console.log(`ROW|rank=${i}|line=${x.t.line}|context=${x.t.context}|selector=${x.t.selector}|prop=${x.t.prop}|value=${x.t.value}|winner=${x.w?`${x.w.file}:${x.w.line}:${x.w.value}:important`:'-'}`));console.log(`REACH|pages=1|pageList=index.html|directImporters=${importerFiles.join(',')||'assets/css/pages/home-runtime-components.css'}|manifest=assets/css/pages/home-runtime.css`);console.log('RESULT=PASS');
+          NODE
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.source.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE=${{ steps.source.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(SOURCE IDENTITY|SAMEKEY SUMMARY|ROW|REACH)\|' /tmp/source.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 160 /tmp/source.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record important003 source closure [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
