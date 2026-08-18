@@ -1,0 +1,55 @@
+name: Doke UX-CSS-DEBT-074 Certification Core V2
+
+on:
+  push:
+    branches: [diag/ux-css-debt-074-certify-core-v2]
+    paths: [.github/workflows/diag-ux-css-debt-074-certify-core-v2.yml]
+
+permissions: {contents: write}
+
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      PARENT_PARENT_SHA: c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+      TARGET_TREE: 858c72157e938fbbaa95015dcf2742b20ac39670
+      TARGET_FILE: assets/css/core/tokens.css
+      PARENT_TARGET_BLOB: 3c2a22b31ad8a73740b1491398a3c6e82acc6a65
+      TARGET_BLOB: e62808598640fcda4518339c8d87fba4558a8a8e
+      EXPECTED_SHA256: ffd7ec44d056de5b777e1cbda9743936bae465ba9dfea6c0a587b4c19d1e20a8
+      EXPECTED_BYTES: 47667
+      PERMANENT_BRANCH: ux/ux-css-debt-074-global-tokens-compaction
+      DIAG_BRANCH: diag/ux-css-debt-074-certify-core-v2
+      RESULT_FILE: .diagnostics/ux-css-debt-074-certify-core-v2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/core.log) 2>&1
+          test "$(git rev-parse --is-shallow-repository)" = false; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^^)" = "$PARENT_PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test "$(git show "$PARENT_SHA:$TARGET_FILE" | git hash-object --stdin)" = "$PARENT_TARGET_BLOB"; test "$(git rev-list --count "$PARENT_SHA..$TARGET_SHA")" = 1; test "$(git diff --name-only "$PARENT_SHA" "$TARGET_SHA")" = "$TARGET_FILE"; test "$(git diff --numstat "$PARENT_SHA" "$TARGET_SHA" -- "$TARGET_FILE")" = $'0\t5\t'"$TARGET_FILE"; test "$(sha256sum "$TARGET_FILE"|awk '{print $1}')" = "$EXPECTED_SHA256"; test "$(wc -c < "$TARGET_FILE"|tr -d ' ')" = "$EXPECTED_BYTES"; git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null; test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"; echo 'IDENTITY PASS|fullHistory=1|files=1|additions=0|deletions=5'
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),ls=fs.readFileSync('/tmp/parent.css','utf8').split('\n'),rows=new Map([[40,'  --doke-type-tracking-display: -0.035em;'],[41,'  --doke-type-tracking-label: 0.08em;'],[261,'  --doke-overlay-border: 0;'],[262,'  --doke-overlay-shadow: 0 18px 48px rgba(20, 50, 80, 0.14);'],[434,'  --doke-close-button-size: var(--close-button-size);']]);for(const [i,v] of rows)if((ls[i]||'').replace(/\r$/,'')!==v)throw Error(`row ${i+1}`);const out=ls.filter((_,i)=>!rows.has(i)).join('\n'),b=Buffer.from(out),h=crypto.createHash('sha256').update(b).digest('hex');if(h!==process.env.EXPECTED_SHA256||b.length!==+process.env.EXPECTED_BYTES||!b.equals(fs.readFileSync(process.env.TARGET_FILE)))throw Error('reconstruction');const rs=ls.findIndex(x=>x.trim()===':root {'),re=ls.findIndex((x,i)=>i>rs&&x.trim()==='}'),pairs=[[40,957],[41,960],[261,420],[262,423],[434,945]];for(const [a,z] of pairs)if(!(rs<a&&a<z&&z<re))throw Error('cascade');console.log(`RECONSTRUCTION PASS|byteIdentical=1|sha256=${h}|bytes=${b.length}`);console.log('STATIC PROOF PASS|sameRootBlock=5/5|unconditional=5/5|browserRequired=0');
+          NODE
+          npm ci --ignore-scripts; npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),target=process.env.TARGET_FILE,tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css')),r=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,n=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v))},m=new Map();for(const f of tracked){const s=fs.readFileSync(f,'utf8'),im=[];let x;r.lastIndex=0;while((x=r.exec(s)))im.push(n(x[1],f));m.set(f,im)}const a=new Set(),q=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>m.has(f));while(q.length){const f=q.pop();if(a.has(f)||!m.has(f))continue;a.add(f);for(const x of m.get(f))if(m.has(x))q.push(x)}const im=[...m].filter(([f,x])=>f!==target&&x.includes(target)).map(([f])=>f).sort(),aim=im.filter(f=>a.has(f));if(a.size!==401||im.length!==2||aim.length!==1||aim[0]!=='assets/css/core/index.css')throw Error(`authority ${a.size}/${im}/${aim}`);let reach=0;for(const p of report.pageAssets){const seen=new Set(),s=[...(p.css||[]).filter(f=>m.has(f))];while(s.length){const f=s.pop();if(seen.has(f)||!m.has(f))continue;seen.add(f);if(f===target){reach++;break}for(const x of m.get(f))if(m.has(x))s.push(x)}}if(reach!==27)throw Error(`reach ${reach}`);console.log('AUTHORITY PASS|importers=2/1 active|reach=27');
+          NODE
+          git checkout --detach "$PARENT_SHA" >/dev/null; node scripts/generate-responsive-index-baseline.js; cp reports/responsive-index-baseline.json /tmp/base.json; git checkout --detach "$TARGET_SHA" >/dev/null; cp /tmp/base.json reports/responsive-index-baseline.json; node scripts/test-responsive-contract.js | tee /tmp/res.log; grep -q 'Checks: 893' /tmp/res.log; grep -q 'Failures: 0' /tmp/res.log; grep -q 'Skips: 277' /tmp/res.log; echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse --is-shallow-repository)" = false; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null; test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"; test -z "$(git status --porcelain)"
+      - name: Publish receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep '^IDENTITY PASS|' /tmp/core.log || true; grep '^RECONSTRUCTION PASS|' /tmp/core.log || true; grep '^STATIC PROOF PASS|' /tmp/core.log || true; grep '^AUTHORITY PASS|' /tmp/core.log || true; grep '^RESPONSIVE PASS|' /tmp/core.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 120 /tmp/core.log; fi; } >/tmp/evidence.txt; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-074 certify core v2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
