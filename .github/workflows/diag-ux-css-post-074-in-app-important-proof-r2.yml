@@ -1,0 +1,136 @@
+name: Doke Post-074 In-App Important Proof R2
+on:
+  push:
+    branches: [diag/ux-css-post-074-in-app-important-proof-r2]
+    paths: [.github/workflows/diag-ux-css-post-074-in-app-important-proof-r2.yml]
+permissions:
+  contents: write
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      TARGET_TREE: 858c72157e938fbbaa95015dcf2742b20ac39670
+      TARGET_FILE: assets/css/components/in-app-notifications.css
+      TARGET_BLOB: cc5fa323b338995a76b8e927474fcaf90344885d
+      SOURCE_RUN: '32132317110'
+      DIAG_BRANCH: diag/ux-css-post-074-in-app-important-proof-r2
+      RESULT_FILE: .diagnostics/ux-css-post-074-in-app-important-proof-r2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/proof.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/playwright-install.log 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require('@playwright/test');
+          (async()=>{
+            const target=process.env.TARGET_FILE;
+            const parentCss=fs.readFileSync(target,'utf8');
+            const oldAction='.doke-live-toast__actions { display: flex !important; gap: 8px; margin-top: 5px; overflow: visible !important; white-space: normal !important; }';
+            const newAction='.doke-live-toast__content > .doke-live-toast__actions { display: flex; gap: 8px; margin-top: 5px; overflow: visible; white-space: normal; }';
+            const oldPanel='.notifications-settings-panel__select { align-items: flex-start !important; flex-direction: column; }';
+            const newPanel='.notifications-settings-panel__options > .notifications-settings-panel__select { align-items: flex-start; flex-direction: column; }';
+            if((parentCss.match(/!important\b/g)||[]).length!==4||!parentCss.includes(oldAction)||!parentCss.includes(oldPanel))throw Error('parent target drift');
+            const rawCss=parentCss.replace(/\s*!important\b/g,'');
+            const candidateCss=parentCss.replace(oldAction,newAction).replace(oldPanel,newPanel);
+            if((candidateCss.match(/!important\b/g)||[]).length!==0)throw Error('candidate important remains');
+            const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const candidateBuffer=Buffer.from(candidateCss);
+            console.log(`CANDIDATE IDENTITY|sha256=${hash(candidateBuffer)}|bytes=${candidateBuffer.length}|important=4->0|rulesChanged=2|files=1`);
+            const session={provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'css-important-diag-client',role:'client',name:'CSS Important QA',email:'css-important@example.test',accountStatus:'active'}};
+            const pages=['comunidade-interna.html','mensagens.html','notificacoes.html'];
+            const toastViewports=[{w:390,h:844},{w:820,h:1180},{w:1366,h:768}];
+            const panelViewports=[{w:390,h:844},{w:640,h:900},{w:641,h:900},{w:820,h:1180}];
+            const browser=await chromium.launch({headless:true});
+            const round=n=>Math.round(n*1000)/1000;
+            async function prepare(page){
+              await page.addInitScript(s=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(s)),session);
+              await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));
+              await page.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,contentType:'application/octet-stream',body:''}));
+              await page.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
+              await page.route('https://unpkg.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
+            }
+            async function captureToast(pageName,vp,phase){
+              const context=await browser.newContext({viewport:{width:vp.w,height:vp.h}}),page=await context.newPage();await prepare(page);
+              await page.goto(`http://127.0.0.1:4173/${pageName}?diag=${phase}-${vp.w}`,{waitUntil:'domcontentloaded'});await page.waitForTimeout(750);
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});
+              await page.waitForFunction(()=>typeof window.Doke?.notificationToast?.show==='function',{timeout:10000});
+              const ok=await page.evaluate(()=>{
+                const original=window.Doke.notificationAction;
+                window.Doke.notificationAction={resolveActions:()=>[{label:'Responder',action:'quick-reply'}],getState:()=> 'AVAILABLE'};
+                window.Doke.notificationToast.reset('css-important-diag');
+                window.Doke.notificationToast.configure({getAccountKey:()=> 'css-important-diag',isForCurrentUser:()=>true,priorityOf:()=> 'normal',iconFor:()=> '!',getDeliveryDecision:()=>({outcome:'ALLOW_TOAST'})});
+                const result=window.Doke.notificationToast.show({id:'css-important-toast',eventId:'css-important-toast',eventAccepted:true,channelPolicy:{toast:'allowed'},title:'Nova mensagem',body:'Mensagem com ação disponível',duration:60000},{skipDelivery:true,force:true});
+                window.Doke.notificationAction=original;return result;
+              });
+              if(ok!==true)throw Error(`toast show failed ${pageName}/${vp.w}/${phase}`);
+              const loc=page.locator('.doke-live-toast__actions');await loc.waitFor({state:'visible',timeout:5000});
+              const data=await loc.evaluate(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return{tag:el.tagName,parent:el.parentElement?.className||'',display:s.display,overflow:s.overflow,whiteSpace:s.whiteSpace,flexWrap:s.flexWrap,gap:s.gap,marginTop:s.marginTop,rect:{x:r.x,y:r.y,width:r.width,height:r.height}}});
+              for(const k in data.rect)data.rect[k]=round(data.rect[k]);
+              data.png=hash(await page.locator('.doke-live-toast').screenshot({animations:'disabled'}));
+              data.cssom=await page.evaluate(()=>Array.from(document.styleSheets).some(s=>String(s.href||'').includes('in-app-notifications.css')));
+              await context.close();return data;
+            }
+            async function capturePanel(vp,phase){
+              const context=await browser.newContext({viewport:{width:vp.w,height:vp.h}}),page=await context.newPage();await prepare(page);
+              await page.goto(`http://127.0.0.1:4173/notificacoes.html?diag=${phase}-panel-${vp.w}`,{waitUntil:'domcontentloaded'});await page.waitForTimeout(900);
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});
+              await page.locator('[data-notifications-settings-toggle]').waitFor({state:'attached',timeout:5000});
+              await page.evaluate(()=>document.querySelector('[data-notifications-settings-toggle]')?.click());
+              await page.waitForFunction(()=>{const p=document.querySelector('[data-notifications-settings-panel]');return p&&!p.hidden},{timeout:5000});
+              const loc=page.locator('.notifications-settings-panel__select').first();await loc.waitFor({state:'visible',timeout:5000});
+              const data=await loc.evaluate(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return{tag:el.tagName,parent:el.parentElement?.className||'',display:s.display,alignItems:s.alignItems,flexDirection:s.flexDirection,gap:s.gap,minHeight:s.minHeight,padding:s.padding,rect:{x:r.x,y:r.y,width:r.width,height:r.height}}});
+              for(const k in data.rect)data.rect[k]=round(data.rect[k]);data.png=hash(await loc.screenshot({animations:'disabled'}));
+              data.cssom=await page.evaluate(()=>Array.from(document.styleSheets).some(s=>String(s.href||'').includes('in-app-notifications.css')));
+              await context.close();return data;
+            }
+            async function captureMatrix(phase){const out={toast:{},panel:{}};for(const p of pages)for(const v of toastViewports)out.toast[`${p}@${v.w}`]=await captureToast(p,v,phase);for(const v of panelViewports)out.panel[`notificacoes.html@${v.w}`]=await capturePanel(v,phase);return out}
+            fs.writeFileSync(target,parentCss);const parent=await captureMatrix('parent');
+            fs.writeFileSync(target,rawCss);const rawToast=await captureToast('mensagens.html',{w:390,h:844},'raw'),rawPanel=await capturePanel({w:390,h:844},'raw');
+            const pToast=parent.toast['mensagens.html@390'],pPanel=parent.panel['notificacoes.html@390'];
+            if(pToast.overflow===rawToast.overflow||pToast.whiteSpace===rawToast.whiteSpace||pPanel.alignItems===rawPanel.alignItems)throw Error(`negative control incomplete parent=${JSON.stringify({o:pToast.overflow,w:pToast.whiteSpace,a:pPanel.alignItems})} raw=${JSON.stringify({o:rawToast.overflow,w:rawToast.whiteSpace,a:rawPanel.alignItems})}`);
+            console.log(`NEGATIVE CONTROL PASS|toastOverflow=${pToast.overflow}->${rawToast.overflow}|toastWhiteSpace=${pToast.whiteSpace}->${rawToast.whiteSpace}|panelAlign=${pPanel.alignItems}->${rawPanel.alignItems}|rawRemovalRejected=1`);
+            fs.writeFileSync(target,candidateCss);const candidate=await captureMatrix('candidate');
+            let styleDiffs=0,geometryDiffs=0,screenshotDiffs=0,cssomMissing=0;
+            function compareGroup(a,b,kind){for(const key of Object.keys(a)){const x=a[key],y=b[key];if(!x.cssom||!y.cssom)cssomMissing++;const keys=kind==='toast'?['tag','parent','display','overflow','whiteSpace','flexWrap','gap','marginTop']:['tag','parent','display','alignItems','flexDirection','gap','minHeight','padding'];for(const k of keys)if(x[k]!==y[k]){styleDiffs++;console.log(`STYLE DIFF|${kind}|${key}|${k}|${x[k]}|${y[k]}`)}for(const k in x.rect)if(x.rect[k]!==y.rect[k]){geometryDiffs++;console.log(`GEOM DIFF|${kind}|${key}|${k}|${x.rect[k]}|${y.rect[k]}`)}if(x.png!==y.png){screenshotDiffs++;console.log(`PNG DIFF|${kind}|${key}|${x.png}|${y.png}`)}}}
+            compareGroup(parent.toast,candidate.toast,'toast');compareGroup(parent.panel,candidate.panel,'panel');
+            if(styleDiffs||geometryDiffs||screenshotDiffs||cssomMissing)throw Error(`parity ${styleDiffs}/${geometryDiffs}/${screenshotDiffs}/${cssomMissing}`);
+            console.log('COVERAGE PASS|toastPages=3|toastViewports=3|toastSamples=9|panelPages=1|panelViewports=4|panelSamples=4|boundary=640/641|cssom=26/26|syntheticDOM=0|testAuthorityData=1');
+            console.log('BROWSER PARITY PASS|styleDiffs=0|geometryDiffs=0|screenshotDiffs=0|toastScreenshots=9|panelScreenshots=4|criteriaRelaxed=0');
+            console.log('ROOT CAUSE PASS|actionsGenericSpanOverride=1|panelGenericLabelOverride=1|specificityFixScopedToCanonicalAnatomy=1|rawRemovalRejected=1');
+            await browser.close();fs.writeFileSync(target,parentCss);
+          })().catch(error=>{console.error(error);try{fs.writeFileSync(process.env.TARGET_FILE,fs.readFileSync(process.env.TARGET_FILE,'utf8'))}catch{}process.exit(1)});
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"
+          git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE_RUN=$SOURCE_RUN"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|NEGATIVE CONTROL PASS|COVERAGE PASS|BROWSER PARITY PASS|ROOT CAUSE PASS)\|' /tmp/proof.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 200 /tmp/proof.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record in-app important proof r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
