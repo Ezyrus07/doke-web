@@ -1,7 +1,6 @@
 'use strict';
 
 const { findRouteByName } = require('../../shared/http/route-registry');
-const commandHandlerRepositoryBindingSurface = require('./community-command-handler-repository-binding-surface');
 
 const ROUTE_NAME = 'communities.moderation.command';
 const FAILURE_CODE = 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED';
@@ -54,8 +53,12 @@ async function executeContentCommand() {
   throw createB02FBlockedRouteError('communities.content.command');
 }
 
+function getCommandHandlerRepositoryBindingSurface() {
+  return require('./community-command-handler-repository-binding-surface');
+}
+
 function composeMembershipCommandRepositoryOnly(packet, options) {
-  return commandHandlerRepositoryBindingSurface.beginRepositoryOnlyCommandHandlerSurface(
+  return getCommandHandlerRepositoryBindingSurface().beginRepositoryOnlyCommandHandlerSurface(
     'communities.membership.command',
     packet,
     options
@@ -63,7 +66,7 @@ function composeMembershipCommandRepositoryOnly(packet, options) {
 }
 
 function composeGovernanceCommandRepositoryOnly(packet, options) {
-  return commandHandlerRepositoryBindingSurface.beginRepositoryOnlyCommandHandlerSurface(
+  return getCommandHandlerRepositoryBindingSurface().beginRepositoryOnlyCommandHandlerSurface(
     'communities.governance.command',
     packet,
     options
@@ -71,7 +74,7 @@ function composeGovernanceCommandRepositoryOnly(packet, options) {
 }
 
 function composeContentCommandRepositoryOnly(packet, options) {
-  return commandHandlerRepositoryBindingSurface.beginRepositoryOnlyCommandHandlerSurface(
+  return getCommandHandlerRepositoryBindingSurface().beginRepositoryOnlyCommandHandlerSurface(
     'communities.content.command',
     packet,
     options
@@ -79,7 +82,7 @@ function composeContentCommandRepositoryOnly(packet, options) {
 }
 
 function resumeCommandRepositoryOnlySurface(surface, repositoryResult, options) {
-  return commandHandlerRepositoryBindingSurface.resumeRepositoryOnlyCommandHandlerSurface(
+  return getCommandHandlerRepositoryBindingSurface().resumeRepositoryOnlyCommandHandlerSurface(
     surface,
     repositoryResult,
     options
