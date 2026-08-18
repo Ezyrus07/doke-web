@@ -1,0 +1,86 @@
+name: Doke UX CSS Important 006 Greedy R13
+on:
+  push:
+    branches: [diag/ux-css-important-006-greedy-r13]
+    paths: [.github/workflows/diag-ux-css-important-006-greedy-r13.yml]
+permissions: {contents: write}
+jobs:
+  greedy:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 24b49e5693f24621a1024b94c33c8ba6e18b12c0
+      TARGET_FILE: assets/css/pages/home/mobile-composition.css
+      TARGET_BLOB: 896730319ae0852caca8a0f93cd1507608dd9894
+      DIAG_BRANCH: diag/ux-css-important-006-greedy-r13
+      RESULT_FILE: .diagnostics/ux-css-important-006-greedy-r13.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: greedy
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/greedy.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!
+          trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require('@playwright/test');
+          const f=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(f,'utf8');
+          const occ=[...parent.matchAll(/!important\b/g)].map((m,ord)=>{
+            const pos=m.index, open=parent.lastIndexOf('{',pos), sep=Math.max(parent.lastIndexOf('}',open-1),parent.lastIndexOf('{',open-1));
+            const selector=parent.slice(sep+1,open).trim().replace(/\s+/g,' ');
+            const before=parent.slice(open+1,pos), colon=before.lastIndexOf(':'), declStart=Math.max(before.lastIndexOf(';',colon),before.lastIndexOf('\n',colon));
+            const prop=before.slice(declStart+1,colon).trim();
+            const line=parent.slice(0,pos).split('\n').length;
+            const search=/doke-search-panel__form|home-search-hero__field::/.test(selector);
+            return{ord,pos,selector,prop,line,search};
+          });
+          if(occ.length!==23)throw Error(`occurrences=${occ.length}`);
+          console.log(`ROWS|total=${occ.length}|search=${occ.filter(x=>x.search).length}|materializable=${occ.filter(x=>!x.search).length}`);
+          for(const r of occ)console.log(`ROW|ord=${r.ord}|line=${r.line}|search=${r.search?1:0}|selector=${r.selector}|prop=${r.prop}`);
+          function build(set){let ord=-1;return parent.replace(/\s*!important\b/g,m=>{ord++;return set.has(ord)?'':''+m})}
+          const browser=await chromium.launch({headless:true});
+          const quickWidths=[359,380,560,561];
+          const fullWidths=[359,379,380,381,390,430,560,561];
+          const items=Array.from({length:6},(_,i)=>({id:`diag-${i}`,serviceId:`diag-${i}`,status:'active',title:`Serviço ${i}`,category:'Reformas',providerName:`Profissional ${i}`,providerHandle:`prof${i}`,rating:4.9,reviewsCount:20+i,price:120+i*10,location:'Salvador, BA',tags:['seguro','rapido']}));
+          const selectors=['.featured-services','.short-videos','.featured-services .content-rail','#featured-services-track','.short-videos .content-rail','#short-videos-track'];
+          const props=['display','visibility','position','overflow','overflow-x','overflow-y','width','max-width','min-width','height','max-height','min-height','flex-direction','flex-wrap','grid-template-columns','grid-auto-flow','grid-auto-columns','overscroll-behavior-x','scroll-snap-type','scroll-padding-left','padding-left','padding-right','margin-left','margin-right','box-sizing'];
+          const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+          async function initPage(source,label){fs.writeFileSync(f,source);const ctx=await browser.newContext({viewport:{width:380,height:1050}}),p=await ctx.newPage();
+            await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));await p.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,contentType:'font/woff2',body:''}));await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:tiny}));await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.route('https://unpkg.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
+            await p.goto(`http://127.0.0.1:4173/index.html?greedy=${encodeURIComponent(label)}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(700);await p.waitForFunction(()=>window.Doke?.homePublicServices?.render&&window.Doke?.publicServiceCard?.create,{timeout:6000});if(await p.evaluate(items=>window.Doke.homePublicServices.render(items),items)!==6)throw Error('renderer count');await p.waitForFunction(()=>document.querySelector('#featured-services-track')?.children.length===6,{timeout:3000});await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});return{ctx,p}}
+          async function snap(p,w,rail=false,shot=false){await p.setViewportSize({width:w,height:1050});await p.waitForTimeout(100);if(rail){const m=await p.evaluate(()=>{const e=document.querySelector('#featured-services-track'),max=e.scrollWidth-e.clientWidth;e.scrollLeft=max;return{max,left:e.scrollLeft}});await p.waitForTimeout(100);const left=await p.evaluate(()=>document.querySelector('#featured-services-track').scrollLeft);if(m.max<=0||left<=0)throw Error(`rail not materialized w=${w} ${JSON.stringify({...m,left})}`)}else await p.evaluate(()=>{const e=document.querySelector('#featured-services-track');if(e)e.scrollLeft=0});
+            const data=await p.evaluate(({selectors,props})=>{const R=n=>Math.round(n*1000)/1000,o={};for(const s of selectors){const e=document.querySelector(s);if(!e)throw Error('missing '+s);const c=getComputedStyle(e),r=e.getBoundingClientRect(),st={};for(const x of props)st[x]=c.getPropertyValue(x).trim();o[s]={style:st,rect:[R(r.x),R(r.y),R(r.width),R(r.height)],scroll:[e.clientWidth,e.clientHeight,e.scrollWidth,e.scrollHeight,R(e.scrollLeft),R(e.scrollTop)],children:e.children.length}}return o},{selectors,props});
+            let png=null;if(shot)png=crypto.createHash('sha256').update(await p.screenshot({fullPage:true,animations:'disabled'})).digest('hex');return{data,png}}
+          async function quick(source,label){const{ctx,p}=await initPage(source,label),o={};for(const w of quickWidths)o[w]=await snap(p,w,false,false);await ctx.close();return o}
+          const parentQuick=await quick(parent,'parent-quick');const keep=new Set(), blocked=[];
+          for(const r of occ.filter(x=>!x.search)){
+            const tentative=new Set(keep);tentative.add(r.ord);const src=build(tentative),q=await quick(src,`ord-${r.ord}`);const same=JSON.stringify(q)===JSON.stringify(parentQuick);console.log(`GREEDY|ord=${r.ord}|line=${r.line}|keep=${same?1:0}|selector=${r.selector}|prop=${r.prop}`);if(same)keep.add(r.ord);else blocked.push(r.ord);
+          }
+          const finalSource=build(keep),finalImportant=(finalSource.match(/!important\b/g)||[]).length,hash=crypto.createHash('sha256').update(Buffer.from(finalSource)).digest('hex');console.log(`GREEDY SUMMARY|removed=${keep.size}|remaining=${finalImportant}|blocked=${blocked.join(',')||'-'}|removedOrd=${[...keep].join(',')||'-'}|sha256=${hash}|bytes=${Buffer.byteLength(finalSource)}`);
+          if(keep.size===0)throw Error('no safe materializable priority');
+          async function full(source,label){const{ctx,p}=await initPage(source,label),o={};for(const w of fullWidths){o[`${w}-default`]=await snap(p,w,false,true);if([359,380,560].includes(w))o[`${w}-rail`]=await snap(p,w,true,true)}await ctx.close();return o}
+          const A=await full(parent,'parent-full'),B=await full(finalSource,'candidate-full');let dataDiffs=0,shotDiffs=0;const keys=[];for(const k of Object.keys(A)){if(JSON.stringify(A[k].data)!==JSON.stringify(B[k].data)){dataDiffs++;keys.push(k)}if(A[k].png!==B[k].png){shotDiffs++;if(!keys.includes(k))keys.push(k)}}console.log(`FINAL PARITY|states=${Object.keys(A).length}|dataDiffs=${dataDiffs}|screenshotDiffs=${shotDiffs}|diffKeys=${keys.join(',')||'-'}|productRenderer=1|syntheticDOM=0|criteriaRelaxed=0`);if(dataDiffs||shotDiffs)throw Error(`final parity ${keys.join(',')}`);
+          fs.writeFileSync('/tmp/final-candidate.css',finalSource);console.log(`DECISION|candidateSafe=1|removed=${keep.size}|remaining=${finalImportant}|sha256=${hash}|reason=greedy-real-renderer-four-width-plus-full-matrix-parity`);await browser.close();fs.writeFileSync(f,parent);
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.greedy.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "GREEDY_OUTCOME=${{ steps.greedy.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(ROWS|ROW\||GREEDY\||GREEDY SUMMARY|FINAL PARITY|DECISION)\|' /tmp/greedy.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 400 /tmp/greedy.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 006 greedy r13 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
