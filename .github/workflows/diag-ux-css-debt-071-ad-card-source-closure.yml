@@ -1,0 +1,154 @@
+name: Doke UX-CSS-DEBT-071 Ad Card Source Closure
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-071-ad-card-source-closure
+    paths:
+      - .github/workflows/diag-ux-css-debt-071-ad-card-source-closure.yml
+
+permissions:
+  contents: write
+
+jobs:
+  source-closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 149bfa8cdb931543aabd1afb0a5453379f565ae8
+      PARENT_SHA: 6e89d01531842722985c7b2abcd2723a3f383d26
+      TARGET_TREE: 2c72e5e5ad700641a16630b6c5ba9535c222dee8
+      TARGET_FILE: assets/css/components/cards/ad-card.css
+      TARGET_BLOB: 1513c7b6d09fc037ff06ed0b7db209b11a60f280
+      IMPORTER_CORE_BLOB: 34d4cb24886eb4ef28a5ffa3eeb385cd9de2c091
+      IMPORTER_HOME_BLOB: e607b73722a205eae9934755b07618b5292247a6
+      IMPORTER_PROFILE_BLOB: c050bf891d2aa0d1b7240d6137ef31e23ef04035
+      IMPORTER_RESULTS_BLOB: 35c5bd8ec050f767b0f23caa4f21e9d0b7b84b61
+      RENDERER_FILE: assets/js/components/public-service-card.js
+      RENDERER_BLOB: f8575282a436a10da632c137ca066476877bc039
+      RANKING_RUN: 32086187311
+      DIAG_BRANCH: diag/ux-css-debt-071-ad-card-source-closure
+      RESULT_FILE: .diagnostics/ux-css-debt-071-source-closure.txt
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-070 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact source inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object assets/css/core/components.css)" = "$IMPORTER_CORE_BLOB"
+          test "$(git hash-object assets/css/pages/home-runtime-components.css)" = "$IMPORTER_HOME_BLOB"
+          test "$(git hash-object assets/css/pages/profile-runtime-components.css)" = "$IMPORTER_PROFILE_BLOB"
+          test "$(git hash-object assets/css/pages/search-results-runtime-components.css)" = "$IMPORTER_RESULTS_BLOB"
+          test "$(git hash-object "$RENDERER_FILE")" = "$RENDERER_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "SOURCE INPUT PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|ranking=$RANKING_RUN"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Prove exact cascade importers reach DOM and candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' | tee /tmp/ux071-source.log
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,text=fs.readFileSync(f,'utf8'),lines=text.split(/\r?\n/);
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(x=>x.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const x of tracked){const src=fs.readFileSync(x,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(src)))imports.push(normImport(m[1],x));meta.set(x,{src,imports})}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(x=>meta.has(x));while(todo.length){const x=todo.pop();if(active.has(x)||!meta.has(x))continue;active.add(x);for(const n of meta.get(x).imports)if(meta.has(n))todo.push(n)}
+          if(active.size!==401)throw new Error(`active graph drift ${active.size}`);
+          const allImporters=[...meta].filter(([x,m])=>x!==f&&m.imports.includes(f)).map(([x])=>x).sort();
+          const activeImporters=allImporters.filter(x=>active.has(x));
+          const expectedImporters=['assets/css/core/components.css','assets/css/pages/home-runtime-components.css','assets/css/pages/profile-runtime-components.css','assets/css/pages/search-results-runtime-components.css'];
+          if(JSON.stringify(allImporters)!==JSON.stringify(expectedImporters)||JSON.stringify(activeImporters)!==JSON.stringify(expectedImporters))throw new Error(`importer drift all=${allImporters} active=${activeImporters}`);
+
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d)}return{ds,dead}}
+          const p=parse(text);if(p.ds.length!==929||p.dead.length!==6)throw new Error(`target metric drift ${p.ds.length}/${p.dead.length}`);
+          const got=p.dead.sort((a,b)=>a.line-b.line).map(d=>[d.line,d.selector,d.property,d.value,d.context,d.winnerLine,d.winnerValue,d.important,d.winnerImportant]);
+          const exp=[
+            [216,'.doke-ad-card__favorite','cursor','pointer','',517,'pointer',false,false],
+            [946,'.doke-ad-card .doke-ad-card__tags','display','flex','@media (min-width: 761px) and (max-width: 900px)',1242,'flex',false,false],
+            [947,'.doke-ad-card .doke-ad-card__tags','flex-wrap','nowrap','@media (min-width: 761px) and (max-width: 900px)',1243,'nowrap',false,false],
+            [1480,'.doke-ad-card__seller-name','overflow','hidden','',1645,'hidden',false,false],
+            [1486,'.doke-ad-card__seller-name','white-space','nowrap','',1646,'nowrap',false,false],
+            [1487,'.doke-ad-card__seller-name','text-overflow','ellipsis','',1647,'ellipsis',false,false]
+          ];
+          if(JSON.stringify(got)!==JSON.stringify(exp))throw new Error(`dead identity drift ${JSON.stringify(got)}`);
+          if(!p.dead.every(d=>d.value===d.winnerValue&&d.important===d.winnerImportant))throw new Error('non-identical winner');
+          const families=[...new Set(p.dead.map(d=>d.selector))];if(families.length!==3)throw new Error(`family drift ${families.length}`);
+
+          const reach=[];for(const page of report.pageAssets){const seen=new Set(),stack=[...page.css.filter(x=>meta.has(x))];while(stack.length){const x=stack.pop();if(seen.has(x)||!meta.has(x))continue;seen.add(x);if(x===f){reach.push(page.page);break}for(const n of meta.get(x).imports)if(meta.has(n))stack.push(n)}}reach.sort();if(reach.length!==26)throw new Error(`reach drift ${reach.length}`);
+          const renderer=fs.readFileSync(process.env.RENDERER_FILE,'utf8');for(const needle of ['doke-ad-card__favorite','doke-ad-card__tags','doke-ad-card__seller-name'])if(!renderer.includes(needle))throw new Error(`renderer missing ${needle}`);
+          for(const page of ['index.html','resultados.html','detalhe-anuncio.html']){const src=fs.readFileSync(page,'utf8');if(!src.includes('assets/js/components/public-service-card.js'))throw new Error(`${page} missing public-service-card.js`)}
+
+          const remove=new Set([215,945,946,1479,1485,1486]);const candidate=text.split('\n').filter((_,i)=>!remove.has(i)).join('\n');const cpMetrics=parse(candidate);if(cpMetrics.ds.length!==923||cpMetrics.dead.length!==0)throw new Error(`candidate metrics ${cpMetrics.ds.length}/${cpMetrics.dead.length}`);
+          const hash=crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex'),bytes=Buffer.byteLength(candidate);
+          console.log(`IMPORTER PASS|all=4|active=4|list=${activeImporters.join(',')}`);
+          console.log('CASCADE PASS|target=929/6|families=3|identical=6|changed=0|important=0|browserRequired=0');
+          console.log(`ACTIVE REACH|pages=${reach.length}|pageList=${reach.join(',')}`);
+          console.log('REAL DOM AUTHORITY|renderer=1|pages=3|index=1|resultados=1|detalhe=1|families=3/3');
+          console.log(`CANDIDATE IDENTITY|candidate=923/0|sha256=${hash}|bytes=${bytes}|files=1|additions=0|deletions=6`);
+          console.log(`SOURCE CLOSURE PASS|target=${f}|targetBlob=${process.env.TARGET_BLOB}|ranking=${process.env.RANKING_RUN}|browserRequired=0`);
+          NODE
+
+      - name: Restore exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "SOURCE RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
+
+      - name: Publish source closure evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+            echo "TARGET_SHA=$TARGET_SHA"
+            echo "TARGET_BLOB=$TARGET_BLOB"
+            grep '^IMPORTER PASS|' /tmp/ux071-source.log
+            grep '^CASCADE PASS|' /tmp/ux071-source.log
+            grep '^ACTIVE REACH|' /tmp/ux071-source.log
+            grep '^REAL DOM AUTHORITY|' /tmp/ux071-source.log
+            grep '^CANDIDATE IDENTITY|' /tmp/ux071-source.log
+            grep '^SOURCE CLOSURE PASS|' /tmp/ux071-source.log
+            echo "RESULT=PASS"
+          } > /tmp/ux071-source-evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/ux071-source-evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m "diag: record UX-CSS-DEBT-071 source closure [skip ci]"
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
