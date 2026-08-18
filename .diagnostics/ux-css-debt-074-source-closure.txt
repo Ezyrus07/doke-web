@@ -1,0 +1,50 @@
+RUN_ID=32130463919
+RUN_ATTEMPT=1
+TARGET_SHA=3a2f10f67fcf7452114959d9c3a217852a765c55
+VALIDATE=failure
+RESTORE=success
+CASCADE ROW|prop=--doke-type-tracking-display|earlyLine=41|early=-0.035em|winnerLine=958|winner=-0.04em|sameRootBlock=1|sameImportance=1|unconditional=1
+CASCADE ROW|prop=--doke-type-tracking-label|earlyLine=42|early=0.08em|winnerLine=961|winner=0.08em|sameRootBlock=1|sameImportance=1|unconditional=1
+CASCADE ROW|prop=--doke-overlay-border|earlyLine=262|early=0|winnerLine=421|winner=var(--modal-surface-border)|sameRootBlock=1|sameImportance=1|unconditional=1
+CASCADE ROW|prop=--doke-overlay-shadow|earlyLine=263|early=0 18px 48px rgba(20, 50, 80, 0.14)|winnerLine=424|winner=var(--modal-surface-shadow)|sameRootBlock=1|sameImportance=1|unconditional=1
+CASCADE ROW|prop=--doke-close-button-size|earlyLine=435|early=var(--close-button-size)|winnerLine=946|winner=var(--close-button-size)|sameRootBlock=1|sameImportance=1|unconditional=1
+RESULT=FAIL
+--- FAILURE TAIL ---
+
+added 26 packages, and audited 27 packages in 2s
+
+found 0 vulnerabilities
+
+> doke-frontend@0.1.0 audit:active-legacy-structures
+> node scripts/audit-active-legacy-structures.js
+
+[active-legacy-structures] inventory-with-structural-debt
+- pages: 33
+- css files: 533 (55 direct, 401 active/imported)
+- js files: 310 (220 direct)
+- active legacy/remediation css: 0
+- active legacy/remediation js: 0
+- high risk active css: 37
+- report: reports/generated/active-legacy-structures-report.json
+CASCADE ROW|prop=--doke-type-tracking-display|earlyLine=41|early=-0.035em|winnerLine=958|winner=-0.04em|sameRootBlock=1|sameImportance=1|unconditional=1
+CASCADE ROW|prop=--doke-type-tracking-label|earlyLine=42|early=0.08em|winnerLine=961|winner=0.08em|sameRootBlock=1|sameImportance=1|unconditional=1
+CASCADE ROW|prop=--doke-overlay-border|earlyLine=262|early=0|winnerLine=421|winner=var(--modal-surface-border)|sameRootBlock=1|sameImportance=1|unconditional=1
+CASCADE ROW|prop=--doke-overlay-shadow|earlyLine=263|early=0 18px 48px rgba(20, 50, 80, 0.14)|winnerLine=424|winner=var(--modal-surface-shadow)|sameRootBlock=1|sameImportance=1|unconditional=1
+CASCADE ROW|prop=--doke-close-button-size|earlyLine=435|early=var(--close-button-size)|winnerLine=946|winner=var(--close-button-size)|sameRootBlock=1|sameImportance=1|unconditional=1
+[stdin]:17
+const count=(src)=>{const m=src.match(/^\s*--[\w-]+\s*:/gm)||[];return m.length};if(count(text)!==855||count(candidate)!==850)throw Error(`declaration metrics ${count(text)}/${count(candidate)}`);
+                                                                                                                              ^
+
+Error: declaration metrics 856/851
+    at [stdin]:17:133
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+    at Socket.emit (node:events:531:35)
+
+Node.js v22.23.2
