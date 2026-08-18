@@ -1,0 +1,41 @@
+name: Doke UX-CSS-DEBT-071 Actions Smoke
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-071-actions-smoke
+    paths:
+      - .github/workflows/diag-ux-css-debt-071-actions-smoke.yml
+
+permissions:
+  contents: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 149bfa8cdb931543aabd1afb0a5453379f565ae8
+      TARGET_TREE: 2c72e5e5ad700641a16630b6c5ba9535c222dee8
+      DIAG_BRANCH: diag/ux-css-debt-071-actions-smoke
+      RESULT_FILE: .diagnostics/ux-css-debt-071-actions-smoke.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          printf 'RUN_ID=%s\nTARGET_SHA=%s\nRESULT=PASS\n' "$GITHUB_RUN_ID" "$TARGET_SHA" >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m "diag: record UX-CSS-DEBT-071 actions smoke [skip ci]"
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
