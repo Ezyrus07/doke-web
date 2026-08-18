@@ -1,0 +1,58 @@
+name: Doke UX CSS Important 007 Entrypoint Governance R1
+on:
+  push:
+    branches: [diag/ux-css-important-007-entrypoint-governance-r1]
+    paths: [.github/workflows/diag-ux-css-important-007-entrypoint-governance-r1.yml]
+permissions: {contents: write}
+jobs:
+  governance:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c84dd3fcacae7db5c616d2eeab745a864f31ae6b
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: fab02ea9f4b469d912d5f9c05b6091aad503b55f
+      DIAG_BRANCH: diag/ux-css-important-007-entrypoint-governance-r1
+      RESULT_FILE: .diagnostics/ux-css-important-007-entrypoint-governance-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: governance
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/gov.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; npm ci --ignore-scripts; node scripts/generate-responsive-index-baseline.js
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;const parent=fs.readFileSync(f,'utf8');if((parent.match(/!important\b/g)||[]).length!==79)throw Error('parent');let s=parent,removed=0;function strip(selector,expected){const key=selector+' {';const i=s.indexOf(key);if(i<0||s.indexOf(key,i+1)>=0)throw Error('selector '+selector);const b=s.indexOf('{',i),e=s.indexOf('}',b);let block=s.slice(b+1,e);const n=(block.match(/!important\b/g)||[]).length;if(n!==expected)throw Error(`expected ${expected} got ${n}`);block=block.replace(/\s*!important\b/g,'');removed+=n;s=s.slice(0,b+1)+block+s.slice(e)}
+          strip('body:not(.home-index-shell) :is(.video-card, .results-videos-grid .video-card, .profile-posts-stack .video-card)',5);strip('body.search-results-body :is(.results-grid, .results-videos-grid, .results-before-after-grid, .results-users-grid)',1);strip('body.profile-page-shell :is(.profile-posts-stack .short-videos__track, .profile-posts-stack .comparison-grid)',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__media',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__favorite',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__body',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__category--body',1);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__location',1);strip('body.profile-page-shell .profile-posts-stack .short-videos__track',5);strip('body.search-results-body .results-layout :is(.results-grid, .results-videos-grid) > .video-card,\n  body.profile-page-shell .profile-posts-stack .short-videos__track > .video-card',3);if(removed!==36||(s.match(/!important\b/g)||[]).length!==43)throw Error('candidate');fs.writeFileSync(f,s);const z=fs.readFileSync(f),h=crypto.createHash('sha256').update(z).digest('hex');console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=79->43|files=1|additions=36|deletions=36|priorityMarkersRemoved=36`);
+          NODE
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'36\t36\t'"$TARGET_FILE"; git diff --check
+          npm run test:responsive-contract | tee /tmp/responsive.log; grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log; echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
+          npm run audit:agent-governance; node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          node <<'NODE'
+          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
+          NODE
+          npm run audit:shared-app-header-contract; npm run audit:mobile-shell-location-contract; npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log; grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log; grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures; npm run audit:important-reduction-plan; npm run audit:global-css-design-system
+          node <<'NODE'
+          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary;if(s.totalImportant!==11162||s.outsideServiceCardImportant!==11100||s.filesWithImportant!==34)throw Error(`important ${JSON.stringify(s)}`);if(p.summary.affectedFiles!==33||p.summary.totalImportantOutsideServiceCard!==11100||p.summary.lowRiskFileCount!==0||p.summary.byRisk?.['high-baseline-required']!==11094||p.summary.byRisk?.['medium-baseline-required']!==6||(p.summary.byRisk?.['low-review-candidate']||0)!==0)throw Error(`plan ${JSON.stringify(p.summary)}`);console.log('IMPORTANT BASELINE PASS|total=11162|outsideServiceCard=11100|files=34|delta=-36');console.log('QUEUE PASS|affectedFiles=33|lowRiskFiles=0|highBaselineRequired=11094|mediumBaselineRequired=6|targetImportant=43');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
+          node <<'NODE'
+          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
+          NODE
+          echo "AUDIT_EXIT=$code"; echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|rankingRun=32161790286'
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.governance.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "GOVERNANCE=${{ steps.governance.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT BASELINE PASS|QUEUE PASS|DEPENDENCY PASS|GOVERNANCE PASS)\|' /tmp/gov.log || true; grep '^AUDIT_EXIT=' /tmp/gov.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 300 /tmp/gov.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 007 governance r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
