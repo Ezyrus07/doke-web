@@ -1,0 +1,52 @@
+name: Doke UX CSS Important 004 Promote Permanent
+on:
+  push:
+    branches: [diag/ux-css-important-004-promote-permanent]
+    paths: [.github/workflows/diag-ux-css-important-004-promote-permanent.yml]
+permissions:
+  contents: write
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 8b6aef68b21109309adfa35ef580888252fd318e
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: c85093c659ce3b6b2de2bd58a720f3ef013331d3
+      EXPECTED_SHA256: ccbefed21575963c669038053cb7d3e26913986d0a033dbdfe3d368bae1933b4
+      EXPECTED_BYTES: '5513'
+      PERMANENT_BRANCH: ux/ux-css-important-004-home-mobile-dormant-priority
+      DIAG_BRANCH: diag/ux-css-important-004-promote-permanent
+      RESULT_FILE: .diagnostics/ux-css-important-004-promotion.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.PARENT_SHA }}', fetch-depth: 0}
+      - id: promote
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/promote.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          remote_before=$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')
+          test "$remote_before" = "$PARENT_SHA"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,src=fs.readFileSync(f,'utf8');if((src.match(/!important\b/g)||[]).length!==21)throw Error('parent count');const out=src.replace(/\s*!important\b/g,'');fs.writeFileSync(f,out);const z=fs.readFileSync(f),h=crypto.createHash('sha256').update(z).digest('hex');if(h!==process.env.EXPECTED_SHA256||z.length!==+process.env.EXPECTED_BYTES||(out.match(/!important\b/g)||[]).length!==0)throw Error(`candidate ${h}/${z.length}`);console.log(`CANDIDATE PASS|sha256=${h}|bytes=${z.length}|important=21->0`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"; test "$(git diff --numstat -- "$TARGET_FILE")" = $'21\t21\t'"$TARGET_FILE"; git diff --check
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$TARGET_FILE"; git commit -m 'UX-CSS-IMPORTANT-004: remove dormant Home mobile priority markers' >/dev/null
+          NEW_SHA=$(git rev-parse HEAD); NEW_TREE=$(git rev-parse HEAD^{tree}); NEW_BLOB=$(git hash-object "$TARGET_FILE")
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH" >/dev/null
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')" = "$NEW_SHA"
+          echo "NEW_SHA=$NEW_SHA"; echo "NEW_TREE=$NEW_TREE"; echo "NEW_BLOB=$NEW_BLOB"; echo "PARENT_BLOB=$TARGET_BLOB"; echo "SHA256=$EXPECTED_SHA256"; echo "BYTES=$EXPECTED_BYTES"; echo 'DIFF=1 file +21/-21'; echo 'RANKING_RUN=32139007187'; echo 'INERTNESS_RUN=32139241281'; echo 'SOURCE_RUN=32139444192'; echo 'VISUAL_RUN=32139536090'; echo 'GOVERNANCE_RUN=32139596755'
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$PARENT_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$PARENT_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.promote.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "PROMOTE=${{ steps.promote.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE PASS|NEW_SHA=|NEW_TREE=|NEW_BLOB=|PARENT_BLOB=|SHA256=|BYTES=|DIFF=|RANKING_RUN=|INERTNESS_RUN=|SOURCE_RUN=|VISUAL_RUN=|GOVERNANCE_RUN=)' /tmp/promote.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 180 /tmp/promote.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish important 004 promotion [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
