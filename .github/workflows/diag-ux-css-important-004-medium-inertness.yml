@@ -1,0 +1,75 @@
+name: Doke UX CSS Important 004 Medium Inertness
+on:
+  push:
+    branches: [diag/ux-css-important-004-medium-inertness]
+    paths: [.github/workflows/diag-ux-css-important-004-medium-inertness.yml]
+permissions:
+  contents: write
+jobs:
+  prove:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 8b6aef68b21109309adfa35ef580888252fd318e
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: c85093c659ce3b6b2de2bd58a720f3ef013331d3
+      DIAG_BRANCH: diag/ux-css-important-004-medium-inertness
+      RESULT_FILE: .diagnostics/ux-css-important-004-medium-inertness.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: prove
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/proof.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const css=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const n=(css.match(/!important\b/g)||[]).length;if(n!==21)throw Error(`important ${n}`);
+          const anchors=['home-mobile-hero__top','before-after','comparison-grid','comparison-card'];
+          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean).filter(p=>p.endsWith('.html')||p.endsWith('.js'));
+          for(const a of anchors){const re=new RegExp(`(^|[^A-Za-z0-9_-])${a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Za-z0-9_-]|$)`,'g');const hits=[];for(const p of tracked){const t=fs.readFileSync(p,'utf8');if(re.test(t))hits.push(p);re.lastIndex=0}console.log(`PRODUCER|anchor=${a}|files=${hits.length}|list=${hits.join(',')||'-'}`)}
+          console.log('SOURCE|important=21|families=5|page=index.html|targetBlob='+process.env.TARGET_BLOB);
+          NODE
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          node <<'NODE'
+          const {chromium}=require('@playwright/test');
+          (async()=>{const browser=await chromium.launch({headless:true}),widths=[359,380,560],selectors=['body.home-index-shell .home-mobile-hero__top','body.home-index-shell .before-after .content-rail','body.home-index-shell .comparison-grid','body.home-index-shell .comparison-grid > .comparison-card','body.home-index-shell .comparison-grid > .comparison-card .comparison-card__visual'];let samples=0,nodes=0,modalOpened=0,errors=0;
+          for(const w of widths){const ctx=await browser.newContext({viewport:{width:w,height:1000}}),p=await ctx.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));for(const u of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**'])await p.route(u,r=>r.fulfill({status:200,contentType:'text/css',body:''}));for(const u of ['https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(u,r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.goto(`http://127.0.0.1:4173/index.html?important004=inert-${w}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(900);for(const state of ['default','modal']){if(state==='modal'){const trigger=p.locator('[data-before-after-id="case-bathroom"]').first();if(await trigger.count()){await trigger.click();await p.waitForTimeout(250);modalOpened++}}const counts=await p.evaluate(sels=>sels.map(s=>{try{return document.querySelectorAll(s).length}catch{return -1}}),selectors);samples++;nodes+=counts.reduce((a,b)=>a+Math.max(0,b),0);console.log(`RUNTIME|width=${w}|state=${state}|counts=${counts.join(',')}|href=${await p.evaluate(()=>location.pathname)}`)}errors+=errs.length;await ctx.close()}
+          await browser.close();console.log(`RUNTIME SUMMARY|samples=${samples}|nodes=${nodes}|modalOpened=${modalOpened}|pageErrors=${errors}`);if(samples!==6||nodes!==0||modalOpened!==3||errors!==0)throw Error(`runtime ${samples}/${nodes}/${modalOpened}/${errors}`)})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          echo 'DECISION|runtimeInert=1|browserParityApplicable=0|syntheticDOM=0|reason=no-active-selector-materialization-default-or-real-modal'
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.prove.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "PROVE=${{ steps.prove.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(PRODUCER|SOURCE|RUNTIME|RUNTIME SUMMARY|DECISION)\|' /tmp/proof.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 180 /tmp/proof.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: publish medium inertness proof [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
