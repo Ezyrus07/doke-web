@@ -1,0 +1,67 @@
+name: Doke UX CSS Important 004 Medium Source Closure V2
+on:
+  push:
+    branches: [diag/ux-css-important-004-medium-source-closure-v2]
+    paths: [.github/workflows/diag-ux-css-important-004-medium-source-closure-v2.yml]
+permissions:
+  contents: write
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 8b6aef68b21109309adfa35ef580888252fd318e
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: c85093c659ce3b6b2de2bd58a720f3ef013331d3
+      DIAG_BRANCH: diag/ux-css-important-004-medium-source-closure-v2
+      RESULT_FILE: .diagnostics/ux-css-important-004-medium-source-closure-v2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - id: source
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/source.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const css=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const imp=(css.match(/!important\b/g)||[]).length;if(imp!==21)throw Error(`important=${imp}`);
+          const anchors=['home-mobile-hero__top','before-after','comparison-grid','comparison-card'];
+          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean).filter(p=>p.endsWith('.html')||p.endsWith('.js'));
+          function collectClassTokens(text){const out=[];const patterns=[/\bclass\s*=\s*["'`]([^"'`]+)["'`]/g,/\.className\s*=\s*["'`]([^"'`]+)["'`]/g,/\.classList\.(?:add|remove|toggle|contains)\(\s*["'`]([^"'`]+)["'`]/g,/setAttribute\(\s*["']class["']\s*,\s*["'`]([^"'`]+)["'`]/g];for(const re of patterns){for(const m of text.matchAll(re))for(const t of m[1].split(/\s+/).filter(Boolean))out.push(t)}return out}
+          let total=0;for(const a of anchors){const hits=[];for(const p of tracked){const tokens=collectClassTokens(fs.readFileSync(p,'utf8'));if(tokens.includes(a))hits.push(p)}total+=hits.length;console.log(`CLASS PRODUCER|anchor=${a}|files=${hits.length}|list=${hits.join(',')||'-'}`)}
+          const indexTokens=collectClassTokens(fs.readFileSync('index.html','utf8'));for(const a of anchors)console.log(`INDEX CLASS|anchor=${a}|count=${indexTokens.filter(x=>x===a).length}`);
+          const before=fs.readFileSync('assets/js/pages/home/before-after.js','utf8'),bt=collectClassTokens(before);console.log(`BEFORE_AFTER CLASS AUTHORITY|beforeAfter=${bt.filter(x=>x==='before-after').length}|comparisonGrid=${bt.filter(x=>x==='comparison-grid').length}|comparisonCard=${bt.filter(x=>x==='comparison-card').length}|comparisonVisual=${bt.filter(x=>x==='comparison-card__visual').length}|preview=${bt.filter(x=>x.startsWith('before-after-preview')).length}`);
+          console.log(`SOURCE SUMMARY|important=21|families=5|classProducerFileHits=${total}|targetBlob=${process.env.TARGET_BLOB}`);
+          if(total!==0)throw Error(`class producer file hits=${total}`);
+          console.log('DECISION|activeClassProducer=0|activeMarkup=0|selectorFamilies=5|reason=no-exact-class-producer-in-tracked-html-js');
+          NODE
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.source.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE=${{ steps.source.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CLASS PRODUCER|INDEX CLASS|BEFORE_AFTER CLASS AUTHORITY|SOURCE SUMMARY|DECISION)\|' /tmp/source.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 160 /tmp/source.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: publish medium source closure v2 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
