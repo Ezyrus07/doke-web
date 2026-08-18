@@ -1,0 +1,128 @@
+name: diag ux css important post 001 medium ranking
+on:
+  push:
+    branches:
+      - diag/ux-css-important-post-001-medium-ranking
+permissions:
+  contents: write
+jobs:
+  rank:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard diagnostic parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_SHA='5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5'
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          test "$(git diff --name-only "$TARGET_SHA"..HEAD)" = '.github/workflows/diag-ux-css-important-post-001-medium-ranking.yml'
+      - name: Rank medium baseline candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/ux-css-important-post-001-medium-ranking.txt
+          const fs=require('fs'),path=require('path');
+          const ROOT=process.cwd();
+          const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'');
+          function walk(dir,pred){
+            if(!fs.existsSync(dir)) return [];
+            return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>{
+              const f=path.join(dir,e.name);
+              if(e.isDirectory()) return walk(f,pred);
+              return pred(f)?[f]:[];
+            });
+          }
+          const cssFiles=walk(path.join(ROOT,'assets','css'),f=>f.endsWith('.css'));
+          const htmlFiles=walk(ROOT,f=>f.endsWith('.html')&&!norm(path.relative(ROOT,f)).startsWith('node_modules/'));
+          const jsFiles=walk(path.join(ROOT,'assets','js'),f=>f.endsWith('.js'));
+          function rel(f){return norm(path.relative(ROOT,f));}
+          function importantCount(file){return (fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length;}
+          function risk(file,count){
+            const r=rel(file);
+            if(r.includes('service-card')) return 'excluded-service-card';
+            if(r.includes('/core/')||r.includes('/layout/')||r.includes('shell')||r.includes('sidebar')||r.includes('header')) return 'high-baseline-required';
+            if(count>=25) return 'high-baseline-required';
+            if(count>=5) return 'medium-baseline-required';
+            return 'low-review-candidate';
+          }
+          const cssSet=new Set(cssFiles.map(rel));
+          const importers=new Map();
+          const imports=new Map();
+          for(const file of cssFiles){
+            const r=rel(file),text=fs.readFileSync(file,'utf8'),deps=[];
+            const re=/@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?\s*\)?/g;
+            let m; while((m=re.exec(text))){
+              const raw=m[1].split(/[?#]/)[0];
+              if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw)) continue;
+              let resolved=norm(path.normalize(path.join(path.dirname(r),raw)));
+              if(cssSet.has(resolved)) deps.push(resolved);
+            }
+            imports.set(r,[...new Set(deps)]);
+            for(const d of deps){if(!importers.has(d))importers.set(d,[]); importers.get(d).push(r);}
+          }
+          const pageRoots=new Map();
+          for(const file of htmlFiles){
+            const page=rel(file),text=fs.readFileSync(file,'utf8'),roots=[];
+            const re=/<link\b[^>]*href=["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi;
+            let m; while((m=re.exec(text))){
+              const raw=m[1].split(/[?#]/)[0];
+              if(/^(?:https?:|\/\/)/i.test(raw)) continue;
+              const resolved=norm(path.normalize(path.join(path.dirname(page),raw)));
+              if(cssSet.has(resolved)) roots.push(resolved);
+            }
+            pageRoots.set(page,[...new Set(roots)]);
+          }
+          function closure(roots){
+            const seen=new Set(),stack=[...roots];
+            while(stack.length){const cur=stack.pop(); if(seen.has(cur))continue; seen.add(cur); for(const d of imports.get(cur)||[]) stack.push(d);}
+            return seen;
+          }
+          const pageClosure=new Map([...pageRoots].map(([p,r])=>[p,closure(r)]));
+          const rows=[]; let total=0, low=0, medium=0, high=0;
+          for(const file of cssFiles){
+            const count=importantCount(file); if(!count) continue; total+=count;
+            const rk=risk(file,count); if(rk==='low-review-candidate')low+=count; if(rk==='medium-baseline-required')medium+=count; if(rk==='high-baseline-required')high+=count;
+            if(rk!=='medium-baseline-required') continue;
+            const r=rel(file),pages=[...pageClosure].filter(([,c])=>c.has(r)).map(([p])=>p).sort();
+            const direct=(importers.get(r)||[]).sort();
+            const activeParents=direct.filter(parent=>[...pageClosure.values()].some(c=>c.has(parent)));
+            const text=fs.readFileSync(file,'utf8');
+            const selectors=[...text.matchAll(/(?:^|})\s*([^@{}][^{}]*)\{/gm)].map(m=>m[1].trim()).filter(Boolean);
+            const selectorTokens=[...new Set(selectors.flatMap(s=>[...s.matchAll(/\.([A-Za-z0-9_-]+)/g)].map(m=>m[1)))];
+            let sourceFiles=0,sourceOccurrences=0;
+            for(const sf of [...htmlFiles,...jsFiles]){
+              const st=fs.readFileSync(sf,'utf8'); let hits=0;
+              for(const token of selectorTokens){if(st.includes(token)) hits++;}
+              if(hits){sourceFiles++;sourceOccurrences+=hits;}
+            }
+            rows.push({file:r,important:count,pages,activeParents,directImporters:direct,bytes:fs.statSync(file).size,selectorTokens:selectorTokens.length,sourceFiles,sourceOccurrences});
+          }
+          const active=rows.filter(r=>r.pages.length>0).sort((a,b)=>a.pages.length-b.pages.length||a.important-b.important||a.bytes-b.bytes||a.file.localeCompare(b.file));
+          const inactive=rows.filter(r=>r.pages.length===0).sort((a,b)=>a.important-b.important||a.bytes-b.bytes||a.file.localeCompare(b.file));
+          console.log('TARGET_SHA=5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5');
+          console.log(`SUMMARY|totalImportant=${total}|lowTokens=${low}|mediumTokens=${medium}|highTokens=${high}|mediumFiles=${rows.length}|activeMediumFiles=${active.length}|inactiveMediumFiles=${inactive.length}`);
+          active.slice(0,20).forEach((r,i)=>console.log(`CANDIDATE|rank=${i}|file=${r.file}|important=${r.important}|pages=${r.pages.length}|pageList=${r.pages.join(',')}|bytes=${r.bytes}|directImporters=${r.directImporters.join(',')}|activeParents=${r.activeParents.join(',')}|selectorTokens=${r.selectorTokens}|sourceFiles=${r.sourceFiles}|sourceOccurrences=${r.sourceOccurrences}`));
+          inactive.slice(0,10).forEach((r,i)=>console.log(`INACTIVE|rank=${i}|file=${r.file}|important=${r.important}|bytes=${r.bytes}`));
+          if(active.length){
+            const t=active[0];
+            console.log(`TOP0|file=${t.file}|important=${t.important}|pages=${t.pages.length}|pageList=${t.pages.join(',')}|bytes=${t.bytes}|reason=smallest-active-page-reach-then-important-count-then-bytes`);
+            console.log('NEXT=MEDIUM_BASELINE_CANDIDATE_EXISTS');
+          } else console.log('NEXT=NONE');
+          console.log('RESULT=PASS');
+          NODE
+          cat /tmp/ux-css-important-post-001-medium-ranking.txt
+      - name: Publish receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .diagnostics
+          cp /tmp/ux-css-important-post-001-medium-ranking.txt .diagnostics/ux-css-important-post-001-medium-ranking.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .diagnostics/ux-css-important-post-001-medium-ranking.txt
+          git commit -m 'chore(diag): publish post-001 medium ranking' || exit 0
+          git push origin HEAD:diag/ux-css-important-post-001-medium-ranking
