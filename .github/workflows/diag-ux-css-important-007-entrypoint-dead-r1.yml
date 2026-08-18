@@ -1,0 +1,76 @@
+name: Doke UX CSS Important 007 Entrypoint Dead R1
+on:
+  push:
+    branches: [diag/ux-css-important-007-entrypoint-dead-r1]
+    paths: [.github/workflows/diag-ux-css-important-007-entrypoint-dead-r1.yml]
+permissions: {contents: write}
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c84dd3fcacae7db5c616d2eeab745a864f31ae6b
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: fab02ea9f4b469d912d5f9c05b6091aad503b55f
+      DIAG_BRANCH: diag/ux-css-important-007-entrypoint-dead-r1
+      RESULT_FILE: .diagnostics/ux-css-important-007-entrypoint-dead-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/proof.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          cp "$TARGET_FILE" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(f,'utf8'); if((parent.match(/!important\b/g)||[]).length!==79) throw Error('parent important count');
+          let s=parent,removed=0;
+          function strip(selector,expected){
+            const key=selector+' {'; const i=s.indexOf(key); if(i<0||s.indexOf(key,i+1)>=0) throw Error('selector '+selector);
+            const b=s.indexOf('{',i),e=s.indexOf('}',b); let block=s.slice(b+1,e); const before=(block.match(/!important\b/g)||[]).length;
+            if(before!==expected) throw Error(`expected ${expected} got ${before} ${selector}`);
+            block=block.replace(/\s*!important\b/g,''); removed+=before; s=s.slice(0,b+1)+block+s.slice(e);
+          }
+          strip('body:not(.home-index-shell) :is(.video-card, .results-videos-grid .video-card, .profile-posts-stack .video-card)',5);
+          strip('body.search-results-body :is(.results-grid, .results-videos-grid, .results-before-after-grid, .results-users-grid)',1);
+          strip('body.profile-page-shell :is(.profile-posts-stack .short-videos__track, .profile-posts-stack .comparison-grid)',4);
+          strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result',4);
+          strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__media',4);
+          strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__favorite',4);
+          strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__body',4);
+          strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__category--body',1);
+          strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__location',1);
+          strip('body.profile-page-shell .profile-posts-stack .short-videos__track',5);
+          strip('body.search-results-body .results-layout :is(.results-grid, .results-videos-grid) > .video-card,\n  body.profile-page-shell .profile-posts-stack .short-videos__track > .video-card',3);
+          if(removed!==36||(s.match(/!important\b/g)||[]).length!==43) throw Error(`candidate removed=${removed} remain=${(s.match(/!important\b/g)||[]).length}`);
+          fs.writeFileSync('/tmp/candidate.css',s); const z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex');
+          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=79->43|priorityMarkersRemoved=36|declarationsRemoved=0`);
+          NODE
+          test "$(git diff --no-index --numstat /tmp/parent.css /tmp/candidate.css | awk '{print $1" "$2}')" = '36 36'
+          echo 'STATIC REACH PASS|rankingRun=32161790286|activePages=1|pageList=index.html|directImporter=assets/css/pages/home-runtime-components.css|excludedBodies=search-results-body,profile-page-shell,not-home-index-shell'
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'); const {chromium}=require('@playwright/test');
+          (async()=>{const f=process.env.TARGET_FILE,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/candidate.css','utf8'),browser=await chromium.launch({headless:true}),widths=[359,379,380,381,390,430,560,561],railWidths=new Set([359,380,560]),hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const items=Array.from({length:6},(_,i)=>({id:`diag-${i}`,serviceId:`diag-${i}`,status:'active',title:`Serviço ${i}`,category:'Reformas',providerName:`Profissional ${i}`,providerHandle:`prof${i}`,rating:4.9,reviewsCount:20+i,price:120+i*10,location:'Salvador, BA',tags:['seguro','rapido']}));
+          async function cap(w,state,phase){const c=await browser.newContext({viewport:{width:w,height:1050}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));await p.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,contentType:'font/woff2',body:''}));await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.route('https://unpkg.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.goto(`http://127.0.0.1:4173/index.html?i007=${phase}-${w}-${state}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(800);await p.waitForFunction(()=>window.Doke?.homePublicServices?.render&&window.Doke?.publicServiceCard?.create,{timeout:6000});await p.evaluate(items=>window.Doke.homePublicServices.render(items),items);await p.waitForFunction(()=>document.querySelector('#featured-services-track')?.children.length===6,{timeout:3000});if(state==='rail'){await p.evaluate(()=>{const e=document.querySelector('#featured-services-track');e.scrollLeft=e.scrollWidth-e.clientWidth});await p.waitForTimeout(200)}await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});const data=await p.evaluate(()=>{if(!document.body.classList.contains('home-index-shell'))throw Error('missing home body');if(document.body.classList.contains('search-results-body')||document.body.classList.contains('profile-page-shell'))throw Error('foreign body class');const q=s=>document.querySelector(s),track=q('#featured-services-track'),cards=document.querySelectorAll('.doke-ad-card');return{body:document.body.className,featured:[track.clientWidth,track.scrollWidth,Math.round(track.scrollLeft*1000)/1000,track.children.length],cards:cards.length,legacy:document.querySelectorAll('.service-card,.service-card--feed,.service-card--result').length,video:document.querySelectorAll('.video-card').length,comparison:document.querySelectorAll('.comparison-card').length}});const png=hash(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{data,png,errs}}
+          const states=[];for(const w of widths){states.push([w,'default']);if(railWidths.has(w))states.push([w,'rail'])}const A={},B={};fs.writeFileSync(f,P);for(const [w,s] of states)A[`${w}-${s}`]=await cap(w,s,'parent');fs.writeFileSync(f,C);for(const [w,s] of states)B[`${w}-${s}`]=await cap(w,s,'candidate');let dd=0,sd=0,pe=0;const keys=[];for(const k of Object.keys(A)){pe+=A[k].errs.length+B[k].errs.length;if(JSON.stringify(A[k].data)!==JSON.stringify(B[k].data)){dd++;keys.push(k)}if(A[k].png!==B[k].png){sd++;if(!keys.includes(k))keys.push(k)}}console.log(`RUNTIME PARITY|states=${states.length}|viewports=${widths.join(',')}|railStates=3|featuredCards=6|dataDiffs=${dd}|screenshotDiffs=${sd}|pageErrors=${pe}|diffKeys=${keys.join(',')||'-'}|productRenderer=1|syntheticDOM=0|criteriaRelaxed=0`);if(dd||sd||pe)throw Error('unsafe '+keys.join(','));await browser.close();fs.writeFileSync(f,P)})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|STATIC REACH PASS|RUNTIME PARITY)\|' /tmp/proof.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 320 /tmp/proof.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 007 entrypoint dead r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
