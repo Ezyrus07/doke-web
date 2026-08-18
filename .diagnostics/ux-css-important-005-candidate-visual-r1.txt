@@ -1,0 +1,26 @@
+RUN_ID=32144592301
+TARGET_SHA=1c1f6c97a851fc73b7f81c07fe646d7d60e03843
+VISUAL=failure
+RESTORE=success
+RESULT=FAIL
+
+added 26 packages, and audited 27 packages in 2s
+
+found 0 vulnerabilities
+[stdin]:2
+function strip(selector,props){const key=selector+' {';const a=s.indexOf(key);if(a<0||s.indexOf(key,a+1)>=0)throw Error('selector '+selector);const b=s.indexOf('{',a),e=s.indexOf('}',b),block=s.slice(b+1,e);let out=block;for(const prop of props){const re=new RegExp(`(^|\\n)(\\s*${prop.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\s*:[^;]+?)\\s*!important;`,'m');if(!re.test(out))throw Error(`prop ${selector} ${prop}`);out=out.replace(re,'$1$2;')}s=s.slice(0,b+1)+out+s.slice(e)}
+                                                                                                            ^
+
+Error: selector body.home-index-shell .home-mobile-hero__quick-actions
+    at strip ([stdin]:2:115)
+    at [stdin]:3:394
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+
+Node.js v22.23.2
