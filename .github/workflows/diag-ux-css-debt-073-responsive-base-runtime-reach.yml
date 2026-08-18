@@ -1,0 +1,70 @@
+name: Doke UX-CSS-DEBT-073 Responsive Base Runtime Reach
+
+on:
+  push:
+    branches: [diag/ux-css-debt-073-responsive-base-runtime-reach]
+    paths: [.github/workflows/diag-ux-css-debt-073-responsive-base-runtime-reach.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+      TARGET_FILE: assets/css/core/layout/responsive-base.css
+      TARGET_BLOB: 0c53db9ef61f92688cbf34494a3b14821e3a6056
+      SOURCE_RUN: 32089852707
+      DIAG_BRANCH: diag/ux-css-debt-073-responsive-base-runtime-reach
+      RESULT_FILE: .diagnostics/ux-css-debt-073-runtime-reach.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { ref: '${{ env.TARGET_SHA }}', fetch-depth: 2 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 22, cache: npm }
+      - name: Runtime reach sweep
+        id: sweep
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          exec > >(tee /tmp/reach.log) 2>&1
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4184 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          sleep 1
+          cat >/tmp/reach.js <<'NODE'
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const pages=['admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','ajuda.html','anunciar-servico.html','avaliacao-profissional.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','detalhe-anuncio.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','novidades.html','orcamento.html','pagamento-profissional.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html','tornar-profissional.html','verificacao-profissional.html'];
+          const widths=[359,720,721,1024,1025,1280];
+          const selectors=['.topbar__right','.topbar-action--notifications','.topbar-profile','.sidebar__group--footer','.sidebar__group--footer .nav-link--icononly','.sidebar__group--footer .nav-link--icononly .nav-link__icon','.brand-logo img','.topbar-search-wrap','.topbar-search'];
+          const sums=Object.fromEntries(selectors.map(s=>[s,{nodes:0,visible:0,pages:new Set(),samples:0}]));let cssom=0,total=0,errors=0;
+          (async()=>{const browser=await chromium.launch({headless:true});try{for(const pageName of pages){for(const width of widths){total++;const ctx=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});const page=await ctx.newPage();await page.route('**/*',r=>{const u=new URL(r.request().url());if(!['127.0.0.1','localhost'].includes(u.hostname))return r.abort();return r.continue()});try{await page.goto(`http://127.0.0.1:4184/${pageName}?reach=073-${width}`,{waitUntil:'load',timeout:15000});await page.waitForTimeout(500);const snap=await page.evaluate((selectors)=>{const wanted='/assets/css/core/layout/responsive-base.css',seen=new Set();function walk(s){if(!s||seen.has(s))return false;seen.add(s);let href='',rules=[];try{href=s.href?new URL(s.href,location.href).pathname:''}catch{};try{rules=[...(s.cssRules||[])]}catch{};if(href===wanted&&rules.length)return true;for(const r of rules)if(r.styleSheet&&walk(r.styleSheet))return true;return false}const target=[...document.styleSheets].some(walk);const out={target,selectors:{}};for(const sel of selectors){const nodes=[...document.querySelectorAll(sel)],visible=nodes.filter(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'}).length;out.selectors[sel]={nodes:nodes.length,visible};}return out},selectors);if(snap.target)cssom++;for(const sel of selectors){const v=snap.selectors[sel],a=sums[sel];a.nodes+=v.nodes;a.visible+=v.visible;if(v.nodes)a.pages.add(pageName);if(v.nodes||v.visible)a.samples++;}console.log(`ROUTE|page=${pageName}|width=${width}|cssom=${snap.target?1:0}|`+selectors.map(s=>`${s}=${snap.selectors[s].nodes}/${snap.selectors[s].visible}`).join('|'));}catch(e){errors++;console.log(`ROUTE_ERROR|page=${pageName}|width=${width}|${String(e.message).replace(/\n/g,' ')}`)}await ctx.close();}}}finally{await browser.close()}console.log(`SWEEP|samples=${total}|errors=${errors}|cssom=${cssom}/${total}`);for(const sel of selectors){const a=sums[sel];console.log(`SELECTOR|${sel}|nodes=${a.nodes}|visible=${a.visible}|pages=${a.pages.size}|samples=${a.samples}|pageList=${[...a.pages].sort().join(',')||'-'}`)}if(total!==156||errors!==0)throw Error(`sweep incomplete ${total}/${errors}`);console.log('RUNTIME REACH PASS|samples=156|syntheticDOM=0|criteriaRelaxed=0')})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/reach.js
+      - name: Restore
+        id: restore
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          test -f /tmp/http.pid && kill "$(cat /tmp/http.pid)" 2>/dev/null || true
+          git reset --hard "$TARGET_SHA" >/dev/null 2>&1 && git clean -fdx >/dev/null 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA" && test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB" && test -z "$(git status --porcelain)"
+      - name: Publish fail-closed receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; if [ "${{ steps.sweep.outcome }}" = success ] && [ "${{ steps.restore.outcome }}" = success ]; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE_RUN=$SOURCE_RUN"; echo "SWEEP=${{ steps.sweep.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep '^SWEEP|' /tmp/reach.log || true; grep '^SELECTOR|' /tmp/reach.log || true; grep '^RUNTIME REACH PASS|' /tmp/reach.log || true; echo "RESULT=$result"; if [ "$result" = FAIL ]; then echo '--- FAILURE TAIL ---'; tail -n 120 /tmp/reach.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null 2>&1
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null 2>&1
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-073 runtime reach [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
