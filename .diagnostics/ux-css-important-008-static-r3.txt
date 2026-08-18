@@ -1,0 +1,26 @@
+RUN_ID=32186832280
+TARGET_SHA=8507947066f4d6957d88bbe022b03aece1ee8e58
+PROOF=failure
+RESTORE=success
+CANDIDATE IDENTITY|sha256=abe268c8cedca25abce012454961396b7aafb58f1c20d483a674f09e23102a18|bytes=9740|important=43->20|priorityMarkersRemoved=23|declarationsRemoved=0
+SOURCE AUTHORITY|scripts=76|legacyProducerFiles=|legacyRendererCalls=0|homePublicRendererCalls=2|staticLegacy=0|staticComparison=0|activeServiceGrid=2|activeVideoCard=6
+RESULT=FAIL
+CANDIDATE IDENTITY|sha256=abe268c8cedca25abce012454961396b7aafb58f1c20d483a674f09e23102a18|bytes=9740|important=43->20|priorityMarkersRemoved=23|declarationsRemoved=0
+SOURCE AUTHORITY|scripts=76|legacyProducerFiles=|legacyRendererCalls=0|homePublicRendererCalls=2|staticLegacy=0|staticComparison=0|activeServiceGrid=2|activeVideoCard=6
+[stdin]:6
+const html=fs.readFileSync('index.html','utf8'),scripts=[...html.matchAll(/<script\b[^>]*src=["']([^"']+\.js(?:[?#][^"']*)?)["'][^>]*>/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(p=>fs.existsSync(p));let calls=0,producerFiles=[];for(const p of scripts){const t=fs.readFileSync(p,'utf8');if(/className\s*:\s*['"][^'"]*\bservice-card\b/.test(t)||/className\s*=\s*['"][^'"]*\bservice-card\b/.test(t))producerFiles.push(p);calls+=(t.match(/Doke\.renderers\.serviceCard\s*\(/g)||[]).length}const home=fs.readFileSync('assets/js/pages/home/public-services.js','utf8'),publicCalls=(home.match(/Doke\.publicServiceCard\.create\s*\(/g)||[]).length,staticLegacy=(html.match(/class=["'][^"']*\bservice-card\b/gi)||[]).length,staticComparison=(html.match(/class=["'][^"']*\bcomparison-card\b/gi)||[]).length,activeGrid=(html.match(/class=["'][^"']*\bservice-grid\b/gi)||[]).length,activeVideo=(html.match(/class=["'][^"']*\bvideo-card\b/gi)||[]).length;console.log(`SOURCE AUTHORITY|scripts=${scripts.length}|legacyProducerFiles=${producerFiles.join(',')}|legacyRendererCalls=${calls}|homePublicRendererCalls=${publicCalls}|staticLegacy=${staticLegacy}|staticComparison=${staticComparison}|activeServiceGrid=${activeGrid}|activeVideoCard=${activeVideo}`);if(producerFiles.length!==1||producerFiles[0]!=='assets/js/renderers/service-card-renderer.js'||calls!==0||publicCalls<2||staticLegacy||staticComparison||!activeGrid||!activeVideo)throw Error('authority');
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+Error: authority
+    at [stdin]:6:1428
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+    at Socket.emit (node:events:531:35)
+
+Node.js v22.23.2
