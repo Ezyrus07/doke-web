@@ -1,0 +1,27 @@
+RUN_ID=32148702409
+TARGET_SHA=24b49e5693f24621a1024b94c33c8ba6e18b12c0
+GOVERNANCE=failure
+RESTORE=success
+RESULT=FAIL
+
+added 26 packages, and audited 27 packages in 876ms
+
+found 0 vulnerabilities
+Responsive index baseline written to reports/responsive-index-baseline.json
+[stdin]:1
+const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;const parent=fs.readFileSync(f,'utf8');if((parent.match(/!important\b/g)||[]).length!==23)throw Error('parent drift');let s=parent.replace(/\s*!important\b/g,'');const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');function restore(selector,props){const re=new RegExp(esc(selector)+'\\s*\\{','g'),ms=[...s.matchAll(re)];if(ms.length!==1)throw Error(`selector ${selector} matches=${ms.length}`);const b=s.indexOf('{',ms[0].index),e=s.indexOf('}',b);let block=s.slice(b+1,e);for(const p of props){const pr=new RegExp(`(^|\\n)(\\s*${esc(p)}\\s*:[^;]+);`,'m');if(!pr.test(block))throw Error(`prop ${selector} ${p}`);block=block.replace(pr,'$1$2 !important;')}s=s.slice(0,b+1)+block+s.slice(e)}restore('body.home-index-shell .doke-search-panel__form',['position','overflow']);restore('body.home-index-shell .home-search-hero__field::before,\n  body.home-index-shell .home-search-hero__field::after',['display']);restore('body.home-index-shell .featured-services .content-rail',['overflow']);if((s.match(/!important\b/g)||[]).length!==4)throw Error('candidate count');fs.writeFileSync(f,s);const z=fs.readFileSync(f),h=crypto.createHash('sha256').update(z).digest('hex');console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=23->4|files=1|additions=19|deletions=19|priorityMarkersRemoved=19|searchMarkersPreserved=3|featuredOverflowGuardPreserved=1`);
+                                                                                                                                                                                                                                                                                                                                                                                                                           ^
+
+Error: selector body.home-index-shell .doke-search-panel__form matches=2
+    at restore ([stdin]:1:418)
+    at [stdin]:1:764
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+
+Node.js v22.23.2
