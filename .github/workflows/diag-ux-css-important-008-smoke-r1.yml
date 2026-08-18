@@ -1,0 +1,25 @@
+name: Doke UX CSS Important 008 Smoke R1
+on: [push]
+permissions:
+  contents: write
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "8507947066f4d6957d88bbe022b03aece1ee8e58"
+          echo 'SMOKE=PASS' >/tmp/out.txt
+      - run: |
+          set -euo pipefail
+          git fetch origin refs/heads/diag/ux-css-important-008-smoke-r1:refs/remotes/origin/diag/ux-css-important-008-smoke-r1 >/dev/null
+          git checkout -B diag-output origin/diag/ux-css-important-008-smoke-r1 >/dev/null
+          mkdir -p .diagnostics
+          cp /tmp/out.txt .diagnostics/ux-css-important-008-smoke-r1.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .diagnostics/ux-css-important-008-smoke-r1.txt
+          git commit -m 'diag: publish 008 smoke [skip ci]' >/dev/null
+          git push origin HEAD:refs/heads/diag/ux-css-important-008-smoke-r1 >/dev/null
