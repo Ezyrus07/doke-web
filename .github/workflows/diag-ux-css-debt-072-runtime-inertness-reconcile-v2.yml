@@ -1,0 +1,89 @@
+name: Doke UX-CSS-DEBT-072 Runtime Inertness Reconcile V2
+on:
+  push:
+    branches: [diag/ux-css-debt-072-runtime-inertness-reconcile-v2]
+    paths: [.github/workflows/diag-ux-css-debt-072-runtime-inertness-reconcile-v2.yml]
+permissions:
+  contents: write
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      TARGET_FILE: assets/css/components/cards/service-card.css
+      TARGET_BLOB: 0847b48ee62e3d09c737a35a46f6ce5271aac143
+      SOURCE_RUN: 32088490780
+      CANONICAL_RUNTIME_RUN: 32088555839
+      SWEEP_RUN: 32088753792
+      DIAG_BRANCH: diag/ux-css-debt-072-runtime-inertness-reconcile-v2
+      RESULT_FILE: .diagnostics/ux-css-debt-072-runtime-inertness-reconcile-v2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - id: validate
+        name: Validate evidence transfer and static recheck
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/reconcile.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          git fetch origin diag/ux-css-debt-072-service-card-runtime-reach diag/ux-css-debt-072-service-card-runtime-inertness
+          git show origin/diag/ux-css-debt-072-service-card-runtime-reach:.diagnostics/ux-css-debt-072-runtime-reach.txt >/tmp/runtime.txt
+          git show origin/diag/ux-css-debt-072-service-card-runtime-inertness:.diagnostics/ux-css-debt-072-runtime-inertness.txt >/tmp/sweep.txt
+          grep -q "RUN_ID=$CANONICAL_RUNTIME_RUN" /tmp/runtime.txt
+          test "$(grep -c '^ROUTE|' /tmp/runtime.txt)" = 12
+          test "$(grep -c '^ROUTE|.*cards=0|visible=0|cssom=1' /tmp/runtime.txt)" = 12
+          grep -q "RUN_ID=$SWEEP_RUN" /tmp/sweep.txt
+          grep -q '^STATIC PRODUCER|.*activeProducers=0|activeProducerRefs=0' /tmp/sweep.txt
+          grep -q '^HTML MARKUP|reachPages=26|serviceCardMarkup=0' /tmp/sweep.txt
+          grep -q 'sweep samples=104/104 cssom=36/104 cards=0 visible=0' /tmp/sweep.txt
+          node <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const activeJs=new Set(r.pageAssets.flatMap(p=>p.js||[]));
+          const producers=['assets/js/features/profile/profile-renderer.js','assets/js/renderers/service-card-renderer.js'];
+          if(producers.some(f=>activeJs.has(f))) throw Error('service-card producer became active');
+          const pages=r.pageAssets.map(p=>p.page).filter(fs.existsSync);
+          if(pages.some(f=>/class=["'][^"']*\bservice-card\b/.test(fs.readFileSync(f,'utf8')))) throw Error('active service-card markup');
+          const results=fs.readFileSync('assets/js/pages/search-results.js','utf8');
+          if(!results.includes('publicServiceCard')||!results.includes("article.className = 'doke-ad-card")) throw Error('results renderer drift');
+          if(!fs.readFileSync('index.html','utf8').includes('assets/js/components/public-service-card.js')) throw Error('index renderer drift');
+          if(fs.readFileSync('perfil.html','utf8').includes('profile-renderer.js')) throw Error('perfil legacy renderer active');
+          console.log('STATIC RECHECK PASS|activeProducers=0|activeMarkup=0|resultsRenderer=doke-ad-card|indexRenderer=public-service-card|perfilLegacyRenderer=0');
+          console.log('EVIDENCE TRANSFER PASS|canonicalRuntime=12/12 cssom with serviceCards=0|fullSweep=104/104 serviceCards=0|fullSweepCssom=36/104');
+          console.log('RUNTIME INERTNESS PASS|activeProducer=0|activeMarkup=0|runtimeServiceCards=0|browserRequired=0|browserParityNotApplicable=1|syntheticDOM=0|reason=selector-runtime-inert-on-active-surface');
+          NODE
+      - id: restore
+        name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish fail-closed evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE_RUN=$SOURCE_RUN"; echo "CANONICAL_RUNTIME_RUN=$CANONICAL_RUNTIME_RUN"; echo "SWEEP_RUN=$SWEEP_RUN"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep '^STATIC RECHECK PASS|' /tmp/reconcile.log || true; grep '^EVIDENCE TRANSFER PASS|' /tmp/reconcile.log || true; grep '^RUNTIME INERTNESS PASS|' /tmp/reconcile.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 120 /tmp/reconcile.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")" && cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: record UX-CSS-DEBT-072 inertness reconcile v2 [skip ci]'
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
+          test "$result" = PASS
