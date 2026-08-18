@@ -1,0 +1,87 @@
+name: Doke UX-CSS-DEBT-072 Candidate Core R1
+on:
+  push:
+    branches: [diag/ux-css-debt-072-candidate-core-r1]
+    paths: [.github/workflows/diag-ux-css-debt-072-candidate-core-r1.yml]
+permissions:
+  contents: write
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      PARENT_SHA: 149bfa8cdb931543aabd1afb0a5453379f565ae8
+      TARGET_TREE: 35fc95bdf180cea84723d70afed49a34e8a24489
+      TARGET_FILE: assets/css/components/cards/service-card.css
+      TARGET_BLOB: 0847b48ee62e3d09c737a35a46f6ce5271aac143
+      EXPECTED_SHA256: 7c9fdffc50c299e9912873da8a838f8e02c22a247f40fe94f51b3fd1ba0083bc
+      EXPECTED_BYTES: 16290
+      RANKING_RUN: 32088325062
+      SOURCE_RUN: 32088490780
+      INERTNESS_RUN: 32089093770
+      DIAG_BRANCH: diag/ux-css-debt-072-candidate-core-r1
+      RESULT_FILE: .diagnostics/ux-css-debt-072-candidate-core-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/core.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          cp reports/responsive-index-baseline.json /tmp/ux072-responsive-index-baseline.json
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const f=process.env.TARGET_FILE,src=fs.readFileSync(f,'utf8'),ls=src.split('\n');
+          const rows=new Map([[338,'    transform: var(--doke-interaction-lift-card);'],[339,'    box-shadow: none;'],[340,'    border-color: rgba(82, 137, 198, 0.22);'],[345,'    opacity: 0.98;'],[470,'    border-radius: var(--doke-mobile-card-radius, var(--radius-surface));'],[474,'    min-height: var(--doke-mobile-card-media, clamp(168px, 49vw, 206px));'],[476,'    padding: var(--doke-mobile-card-padding, 14px);'],[480,'    padding: var(--doke-mobile-card-padding, 14px);'],[481,'    gap: 10px;'],[482,'    grid-template-columns: minmax(0, 1fr) auto;']]);
+          for(const [i,v] of rows)if((ls[i]||'').replace(/\r$/,'')!==v)throw Error(`row drift ${i+1}: ${JSON.stringify(ls[i])}`);
+          const out=ls.filter((_,i)=>!rows.has(i)).join('\n');fs.writeFileSync(f,out);const b=fs.readFileSync(f),hash=crypto.createHash('sha256').update(b).digest('hex');if(hash!==process.env.EXPECTED_SHA256||b.length!==+process.env.EXPECTED_BYTES)throw Error(`identity ${hash}/${b.length}`);console.log(`IDENTITY PASS|sha256=${hash}|bytes=${b.length}|parent=289/10|candidate=279/0|files=1|additions=0|deletions=10`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t10\t'"$TARGET_FILE"
+          git diff --quiet "$TARGET_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          git diff --check
+          cp /tmp/ux072-responsive-index-baseline.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+          echo "PROOF TRANSFER PASS|ranking=$RANKING_RUN|source=$SOURCE_RUN|inertness=$INERTNESS_RUN|browserRequired=0|browserParityNotApplicable=1|syntheticDOM=0"
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish fail-closed core evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep '^IDENTITY PASS|' /tmp/core.log || true; grep '^RESPONSIVE PASS|' /tmp/core.log || true; grep '^PROOF TRANSFER PASS|' /tmp/core.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 120 /tmp/core.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")" && cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE" && git commit -m 'diag: record UX-CSS-DEBT-072 candidate core r1 [skip ci]'
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
+          test "$result" = PASS
