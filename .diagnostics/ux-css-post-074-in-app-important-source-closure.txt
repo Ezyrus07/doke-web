@@ -1,0 +1,40 @@
+RUN_ID=32132237137
+RUN_ATTEMPT=1
+TARGET_SHA=b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+CLOSURE=failure
+RESTORE=success
+RESULT=FAIL
+--- FAILURE TAIL ---
+
+added 26 packages, and audited 27 packages in 1s
+
+found 0 vulnerabilities
+
+> doke-frontend@0.1.0 audit:active-legacy-structures
+> node scripts/audit-active-legacy-structures.js
+
+[active-legacy-structures] inventory-with-structural-debt
+- pages: 33
+- css files: 533 (55 direct, 401 active/imported)
+- js files: 310 (220 direct)
+- active legacy/remediation css: 0
+- active legacy/remediation js: 0
+- high risk active css: 37
+- report: reports/generated/active-legacy-structures-report.json
+[stdin]:4
+if(important.length!==4) throw Error(`important drift ${important.length}`);
+                         ^
+
+Error: important drift 2
+    at [stdin]:4:32
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+    at Socket.emit (node:events:531:35)
+
+Node.js v22.23.2
