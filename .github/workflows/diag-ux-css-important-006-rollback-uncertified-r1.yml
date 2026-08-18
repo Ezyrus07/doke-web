@@ -1,0 +1,36 @@
+name: Doke UX CSS Important 006 Rollback Uncertified R1
+on:
+  push:
+    branches: [diag/ux-css-important-006-rollback-uncertified-r1]
+    paths: [.github/workflows/diag-ux-css-important-006-rollback-uncertified-r1.yml]
+permissions: {contents: write}
+jobs:
+  rollback:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 24b49e5693f24621a1024b94c33c8ba6e18b12c0
+      UNSAFE_SHA: 49a941e52fa400f2f130c12dab6e87a57a677ae6
+      PERMANENT: ux/ux-css-important-006-home-mobile-composition-cascade
+      DIAG_BRANCH: diag/ux-css-important-006-rollback-uncertified-r1
+      RESULT_FILE: .diagnostics/ux-css-important-006-rollback-uncertified-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: rollback
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/rollback.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          remote_before="$(git ls-remote origin "refs/heads/$PERMANENT" | awk '{print $1}')"
+          test "$remote_before" = "$UNSAFE_SHA"
+          git push --force-with-lease="refs/heads/$PERMANENT:$UNSAFE_SHA" origin "$PARENT_SHA:refs/heads/$PERMANENT"
+          remote_after="$(git ls-remote origin "refs/heads/$PERMANENT" | awk '{print $1}')"
+          test "$remote_after" = "$PARENT_SHA"
+          echo "REMOTE_BEFORE=$remote_before"; echo "REMOTE_AFTER=$remote_after"; echo 'RESULT=PASS'
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.rollback.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "ROLLBACK=${{ steps.rollback.outcome }}"; grep -E '^(REMOTE_BEFORE=|REMOTE_AFTER=|RESULT=)' /tmp/rollback.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 160 /tmp/rollback.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 006 rollback [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
