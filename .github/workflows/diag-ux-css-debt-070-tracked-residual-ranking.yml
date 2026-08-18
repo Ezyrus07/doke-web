@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - diag/ux-css-debt-070-tracked-residual-ranking
+    paths:
+      - .github/workflows/diag-ux-css-debt-070-tracked-residual-ranking.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   ranking:
@@ -17,6 +19,8 @@ jobs:
       TARGET_TREE: a89565f5e64b7eba94a327f3b0153cadab7377b2
       PRIOR_069_FILE: assets/css/core/mobile/ui-standard.css
       PRIOR_069_BLOB: 1eb32afacb12f1c967d0791c25cdf29accb6e9f4
+      DIAG_BRANCH: diag/ux-css-debt-070-tracked-residual-ranking
+      RESULT_FILE: .diagnostics/ux-css-debt-070-ranking.txt
     steps:
       - name: Checkout exact certified UX-CSS-DEBT-069 SHA
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -52,7 +56,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node <<'NODE'
+          node <<'NODE' | tee /tmp/ux070-ranking.log
           const fs=require('fs'),path=require('path'),cp=require('child_process');
           const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
           const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
@@ -66,24 +70,7 @@ jobs:
           const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
           function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d)}return{declarations:ds,dead}}
           if(active.size!==401||high.length!==37)throw new Error(`baseline drift ${active.size}/${high.length}`);
-          const guards=[
-            ['assets/css/components/before-after-workers-preview/publication-light-modal.css',75,0,'054'],
-            ['assets/css/patterns/settings-shell.css',104,0,'055'],
-            ['assets/css/components/before-after-workers-preview/mobile-comment-sheets.css',302,0,'056'],
-            ['assets/css/components/chat-composer.css',125,0,'057'],
-            ['assets/css/components/before-after-workers-preview/workers-mobile-fullscreen-contract.css',216,0,'058'],
-            ['assets/css/components/media-lightbox.css',280,0,'059'],
-            ['assets/css/components/overlays/financial-modal-system.css',645,0,'060'],
-            ['assets/css/components/overlays/action-modal-system.css',264,0,'061'],
-            ['assets/css/components/forms/form-flow-comfort.css',113,0,'062'],
-            ['assets/css/components/panels/mobile-panel.css',94,0,'063'],
-            ['assets/css/components/layout/doke-layout-system.css',108,0,'064'],
-            ['assets/css/components/ui-surface/buttons-close.css',110,0,'065'],
-            ['assets/css/components/internal/filter-select-standard.css',404,0,'066'],
-            ['assets/css/components/overlays/modal-visual-contract.css',475,0,'067'],
-            ['assets/css/components/internal/list-page-toolbar.css',269,0,'068'],
-            ['assets/css/core/mobile/ui-standard.css',76,0,'069']
-          ];
+          const guards=[['assets/css/components/before-after-workers-preview/publication-light-modal.css',75,0,'054'],['assets/css/patterns/settings-shell.css',104,0,'055'],['assets/css/components/before-after-workers-preview/mobile-comment-sheets.css',302,0,'056'],['assets/css/components/chat-composer.css',125,0,'057'],['assets/css/components/before-after-workers-preview/workers-mobile-fullscreen-contract.css',216,0,'058'],['assets/css/components/media-lightbox.css',280,0,'059'],['assets/css/components/overlays/financial-modal-system.css',645,0,'060'],['assets/css/components/overlays/action-modal-system.css',264,0,'061'],['assets/css/components/forms/form-flow-comfort.css',113,0,'062'],['assets/css/components/panels/mobile-panel.css',94,0,'063'],['assets/css/components/layout/doke-layout-system.css',108,0,'064'],['assets/css/components/ui-surface/buttons-close.css',110,0,'065'],['assets/css/components/internal/filter-select-standard.css',404,0,'066'],['assets/css/components/overlays/modal-visual-contract.css',475,0,'067'],['assets/css/components/internal/list-page-toolbar.css',269,0,'068'],['assets/css/core/mobile/ui-standard.css',76,0,'069']];
           for(const [f,d,dead,l] of guards){const x=meta.get(f);if(!x)throw new Error(`${l} missing`);const p=parse(x.text);if(p.declarations.length!==d||p.dead.length!==dead)throw new Error(`${l} drift ${p.declarations.length}/${p.dead.length}`)}
           const pagesFor=target=>{const out=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];let hit=false;while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}if(hit)out.push(p.page)}return out.sort()};
           const parents=new Map([...active].map(f=>[f,[]]));for(const [p,x] of meta)if(active.has(p))for(const c of x.imports)if(parents.has(c))parents.get(c).push(p);
@@ -101,7 +88,6 @@ jobs:
           NODE
 
       - name: Restore exact checkpoint
-        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -113,3 +99,27 @@ jobs:
           test "$(git hash-object "$PRIOR_069_FILE")" = "$PRIOR_069_BLOB"
           test -z "$(git status --porcelain)"
           echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|issueCreated=0|prCreated=0"
+
+      - name: Publish ranking evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+            echo "TARGET_SHA=$TARGET_SHA"
+            grep '^BASE|' /tmp/ux070-ranking.log
+            grep '^TOP' /tmp/ux070-ranking.log
+            grep '^ROW|' /tmp/ux070-ranking.log
+            grep '^RANKING PASS|' /tmp/ux070-ranking.log
+            echo "RESULT=PASS"
+          } > /tmp/ux070-evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/ux070-evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m "diag: record UX-CSS-DEBT-070 ranking [skip ci]"
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
