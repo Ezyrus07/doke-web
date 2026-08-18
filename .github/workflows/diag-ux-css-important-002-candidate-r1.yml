@@ -1,0 +1,100 @@
+name: Doke UX CSS Important 002 Candidate R1
+on:
+  push:
+    branches: [diag/ux-css-important-002-candidate-r1]
+    paths: [.github/workflows/diag-ux-css-important-002-candidate-r1.yml]
+permissions:
+  contents: write
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5
+      TARGET_FILE: assets/css/pages/home/mobile-layout.css
+      TARGET_BLOB: bd00e9596d9db4c2ad68e34aeaccbdfc82cedbf0
+      SOURCE_RUN: '32136032886'
+      DIAG_BRANCH: diag/ux-css-important-002-candidate-r1
+      RESULT_FILE: .diagnostics/ux-css-important-002-candidate-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/candidate.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,src=fs.readFileSync(f,'utf8');
+          const oldTop=`  body.home-index-shell .home-mobile-hero__top {\n    display: grid !important;\n    grid-template-columns: minmax(0, 1fr) auto !important;\n    gap: 8px;\n    align-items: center;\n  }`;
+          const newTop=`  body.home-index-shell .home-mobile-hero__top {\n    display: grid !important;\n    grid-template-columns: minmax(0, 1fr) auto;\n    gap: 8px;\n    align-items: center;\n  }`;
+          const oldRail=`  body.home-index-shell .short-videos .content-rail {\n    display: block !important;\n    overflow: visible !important;\n  }`;
+          const newRail=`  body.home-index-shell .short-videos .content-rail {\n    display: block !important;\n    overflow: visible;\n  }`;
+          if((src.match(/!important\b/g)||[]).length!==31||!src.includes(oldTop)||!src.includes(oldRail))throw Error('parent drift');
+          const out=src.replace(oldTop,newTop).replace(oldRail,newRail);if((out.match(/!important\b/g)||[]).length!==29)throw Error('candidate important count');fs.writeFileSync(f,out);const b=fs.readFileSync(f),h=crypto.createHash('sha256').update(b).digest('hex');console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=31->29|files=1|additions=2|deletions=2`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'2\t2\t'"$TARGET_FILE"
+          git diff --check
+          git diff --quiet "$TARGET_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          cp "$TARGET_FILE" /tmp/candidate.css
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require('@playwright/test');
+          (async()=>{const target=process.env.TARGET_FILE,parent=fs.readFileSync(target,'utf8'),candidate=fs.readFileSync('/tmp/candidate.css','utf8'),widths=[359,379,380,381,430,560,561],browser=await chromium.launch({headless:true}),hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          async function cap(width,phase){const c=await browser.newContext({viewport:{width,height:1000}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));for(const u of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**'])await p.route(u,r=>r.fulfill({status:200,contentType:'text/css',body:''}));for(const u of ['https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(u,r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.goto(`http://127.0.0.1:4173/index.html?important002=${phase}-${width}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(1000);await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});const d=await p.evaluate(()=>{const sels=['body.home-index-shell .home-mobile-hero__top','body.home-index-shell .short-videos .content-rail'];return sels.map(sel=>{const el=document.querySelector(sel);if(!el)return{sel,missing:true};const s=getComputedStyle(el),r=el.getBoundingClientRect();return{sel,missing:false,display:s.display,gridTemplateColumns:s.gridTemplateColumns,overflow:s.overflow,overflowX:s.overflowX,overflowY:s.overflowY,rect:[Math.round(r.x*100)/100,Math.round(r.y*100)/100,Math.round(r.width*100)/100,Math.round(r.height*100)/100]}})});const png=hash(await p.screenshot({fullPage:true,animations:'disabled'}));const cssom=await p.evaluate(()=>{let yes=false;function walk(s){if(String(s.href||'').includes('mobile-layout.css'))yes=true;let rs;try{rs=s.cssRules}catch{return}for(const r of rs)if(r.type===CSSRule.IMPORT_RULE&&r.styleSheet)walk(r.styleSheet)}for(const s of document.styleSheets)walk(s);return yes});await c.close();return{d,png,cssom,errs}};
+          const par={},can={};fs.writeFileSync(target,parent);for(const w of widths)par[w]=await cap(w,'parent');fs.writeFileSync(target,candidate);for(const w of widths)can[w]=await cap(w,'candidate');let sd=0,gd=0,pd=0,miss=0,errs=0;for(const w of widths){if(!par[w].cssom||!can[w].cssom)miss++;errs+=par[w].errs.length+can[w].errs.length;for(let i=0;i<2;i++){const a=par[w].d[i],b=can[w].d[i];if(a.missing||b.missing)throw Error(`selector missing ${w}/${i}`);for(const k of ['display','gridTemplateColumns','overflow','overflowX','overflowY'])if(a[k]!==b[k]){sd++;console.log(`STYLE DIFF|${w}|${a.sel}|${k}|${a[k]}|${b[k]}`)}for(let j=0;j<4;j++)if(a.rect[j]!==b.rect[j]){gd++;console.log(`GEOM DIFF|${w}|${a.sel}|${j}|${a.rect[j]}|${b.rect[j]}`)}}if(par[w].png!==can[w].png){pd++;console.log(`PNG DIFF|${w}|${par[w].png}|${can[w].png}`)}}if(sd||gd||pd||miss||errs)throw Error(`browser parity ${sd}/${gd}/${pd}/${miss}/${errs}`);console.log(`BROWSER PARITY PASS|viewports=${widths.join(',')}|selectors=2|samples=14|styleDiffs=0|geometryDiffs=0|screenshotDiffs=0|cssom=14/14|pageErrors=0|syntheticDOM=0|criteriaRelaxed=0`);await browser.close();fs.writeFileSync(target,parent)})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          cp /tmp/candidate.css "$TARGET_FILE"
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          node <<'NODE'
+          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflict regression');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
+          NODE
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures
+          npm run audit:important-reduction-plan
+          npm run audit:global-css-design-system
+          node <<'NODE'
+          const fs=require('fs');const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary;
+          if(s.totalImportant!==11257||s.outsideServiceCardImportant!==11195||s.filesWithImportant!==35)throw Error(`baseline ${JSON.stringify(s)}`);if(p.summary.affectedFiles!==34||p.summary.totalImportantOutsideServiceCard!==11195||p.summary.lowRiskFileCount!==0||p.summary.byRisk?.['high-baseline-required']!==11195)throw Error(`plan ${JSON.stringify(p.summary)}`);console.log(`IMPORTANT BASELINE PASS|total=11257|outsideServiceCard=11195|files=35|delta=-2`);console.log(`QUEUE PASS|affectedFiles=34|lowRiskFiles=0|highBaselineRequired=11195|targetImportant=29`);
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; auditCode=$?; set -e
+          node <<'NODE'
+          const a=require('/tmp/audit.json'),v=a.metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`dependency drift ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
+          NODE
+          echo "AUDIT_EXIT=$auditCode"
+          echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|sourceDominanceRun=32136032886'
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"
+          git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE_RUN=$SOURCE_RUN"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|BROWSER PARITY PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT BASELINE PASS|QUEUE PASS|DEPENDENCY PASS|GOVERNANCE PASS)\|' /tmp/candidate.log || true; grep '^AUDIT_EXIT=' /tmp/candidate.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 240 /tmp/candidate.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 002 candidate r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
