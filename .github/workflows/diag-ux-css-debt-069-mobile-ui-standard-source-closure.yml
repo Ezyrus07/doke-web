@@ -1,0 +1,124 @@
+name: Doke UX-CSS-DEBT-069 Mobile UI Standard Source Closure
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-069-mobile-ui-standard-source-closure
+
+permissions:
+  contents: write
+
+jobs:
+  source-closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 23cc5c7496897f0d9b742039598574ffb2b93dfb
+      PARENT_SHA: c7f8397821698f4445dad3b20e5aea2ff3d57cf3
+      TARGET_FILE: assets/css/core/mobile/ui-standard.css
+      TARGET_BLOB: 37f9675d63c11a81974f26cb6b931333f43d95e0
+      IMPORTER_FILE: assets/css/core/mobile-ui-standard.css
+      IMPORTER_BLOB: 613092a594e02fe1c50b5d12393a77edf2904d11
+      DIAG_BRANCH: diag/ux-css-debt-069-mobile-ui-standard-source-closure
+      RESULT_FILE: .diagnostics/ux-css-debt-069-source-closure.txt
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-068 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_FILE")" = "$IMPORTER_BLOB"
+          test -z "$(git status --porcelain)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate active graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Prove exact cascade dominance and build candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/source-proof.log
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET_FILE, importer=process.env.IMPORTER_FILE;
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}
+          if(active.size!==401)throw new Error(`active drift ${active.size}`);
+          const allImporters=[...meta].filter(([f,x])=>f!==target&&x.imports.includes(target)).map(([f])=>f).sort();
+          const activeImporters=allImporters.filter(f=>active.has(f));
+          if(JSON.stringify(activeImporters)!==JSON.stringify([importer]))throw new Error(`active importer drift ${JSON.stringify(activeImporters)}`);
+          const pages=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];let hit=false;while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}if(hit)pages.push(p.page)}pages.sort();
+          if(pages.length!==26)throw new Error(`reach drift ${pages.length}`);
+
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d)}return{declarations:ds,dead}}
+          const original=fs.readFileSync(target,'utf8'),p=parse(original);
+          if(p.declarations.length!==77||p.dead.length!==1)throw new Error(`target parse drift ${p.declarations.length}/${p.dead.length}`);
+          const d=p.dead[0];
+          const expected={line:4,selector:':root',property:'--doke-mobile-card-radius',value:'22px',important:false,context:'@media (max-width: 760px)',winnerLine:108,winnerValue:'22px',winnerImportant:false};
+          for(const [k,v] of Object.entries(expected))if(d[k]!==v)throw new Error(`dead row drift ${k}=${d[k]} expected=${v}`);
+          if(d.value!==d.winnerValue||d.important!==d.winnerImportant)throw new Error('winner not value-identical');
+          const lines=original.split('\n');if(lines[3].replace(/\r$/,'')!=='    --doke-mobile-card-radius: 22px;')throw new Error('line 4 drift');
+          const candidate=lines.filter((_,i)=>i!==3).join('\n');fs.writeFileSync(target,candidate);
+          const q=parse(candidate);if(q.declarations.length!==76||q.dead.length!==0)throw new Error(`candidate parse ${q.declarations.length}/${q.dead.length}`);
+          const b=fs.readFileSync(target),hash=crypto.createHash('sha256').update(b).digest('hex');
+          const numstat=cp.execFileSync('git',['diff','--numstat','--',target],{encoding:'utf8'}).trim();if(numstat!==`0\t1\t${target}`)throw new Error(`numstat ${numstat}`);
+          if(cp.execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim()!==target)throw new Error('non-target delta');
+          console.log(`SOURCE CLOSURE PASS|target=${target}|parent=77/1|candidate=76/0|deadLine=4|winnerLine=108|selector=:root|property=--doke-mobile-card-radius|value=22px|context=@media(max-width:760px)|identicalWinner=1|changedWinner=0|allImporters=${allImporters.length}|activeImporters=1|activeImporter=${importer}|reachPages=26|highRisk=0|important=0|browserRequired=0|reason=exact-same-cascade-key-and-identical-later-winner`);
+          console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${b.length}|files=1|additions=0|deletions=1`);
+          console.log(`PAGE LIST|${pages.join(',')}`);
+          console.log(`ALL IMPORTERS|${allImporters.join(',')||'-'}`);
+          NODE
+          cat /tmp/source-proof.log
+          git diff --check
+
+      - name: Restore exact parent and publish diagnostic evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+            echo "WORKFLOW_SHA=$GITHUB_SHA"
+            echo "TARGET_SHA=$TARGET_SHA"
+            if test -f /tmp/source-proof.log; then cat /tmp/source-proof.log; else echo 'SOURCE_PROOF_LOG_MISSING=1'; fi
+          } > /tmp/evidence.txt
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_FILE")" = "$IMPORTER_BLOB"
+          test -z "$(git status --porcelain)"
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m "diag: record UX-CSS-DEBT-069 source closure [skip ci]"
+            git push origin "HEAD:refs/heads/$DIAG_BRANCH"
+          fi
