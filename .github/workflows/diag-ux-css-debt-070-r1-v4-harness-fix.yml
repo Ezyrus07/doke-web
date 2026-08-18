@@ -1,0 +1,45 @@
+name: Patch UX-CSS-DEBT-070 R1 V4 Harness
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-070-publication-card-proof-r1-v4
+    paths:
+      - .github/workflows/diag-ux-css-debt-070-r1-v4-harness-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: diag/ux-css-debt-070-publication-card-proof-r1-v4
+          fetch-depth: 2
+      - shell: bash
+        run: |
+          set -euo pipefail
+          f=.github/workflows/diag-ux-css-debt-070-publication-card-proof-r1-v4.yml
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/diag-ux-css-debt-070-publication-card-proof-r1-v4.yml')
+          s=p.read_text()
+          old=s
+          s=s.replace("const cssomReady=()=>{", "const cssomReady=(targetPath)=>{")
+          s=s.replace("page.waitForFunction(cssomReady,null,{timeout:10000})", "page.waitForFunction(cssomReady,targetPath,{timeout:10000})")
+          s=s.replace("page.evaluate(cssomReady)", "page.evaluate(cssomReady,targetPath)")
+          if s==old: raise SystemExit('expected harness patterns not found')
+          if "const cssomReady=(targetPath)=>{" not in s: raise SystemExit('function patch missing')
+          if "page.waitForFunction(cssomReady,targetPath,{timeout:10000})" not in s: raise SystemExit('wait patch missing')
+          if "page.evaluate(cssomReady,targetPath)" not in s: raise SystemExit('evaluate patch missing')
+          p.write_text(s)
+          PY
+          git diff --check
+          git diff -- "$f"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$f"
+          git commit -m 'diag: fix UX-CSS-DEBT-070 R1 v4 CSSOM serialization [skip ci]'
+          git push origin HEAD:refs/heads/diag/ux-css-debt-070-publication-card-proof-r1-v4
