@@ -1,0 +1,67 @@
+name: diag ux css important post 001 high ranking
+on:
+  push:
+    branches:
+      - diag/ux-css-important-post-001-high-ranking
+permissions:
+  contents: write
+jobs:
+  rank:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard parent
+        run: |
+          set -euo pipefail
+          T='5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5'
+          test "$(git rev-parse HEAD^)" = "$T"
+          test "$(git diff --name-only "$T"..HEAD)" = '.github/workflows/diag-ux-css-important-post-001-high-ranking.yml'
+      - name: Rank high baseline candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/high-ranking.txt
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'');
+          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+          const css=tracked.filter(p=>p.startsWith('assets/css/')&&p.endsWith('.css'));
+          const html=tracked.filter(p=>p.endsWith('.html'));
+          const cssSet=new Set(css), imports=new Map(), importers=new Map();
+          for(const p of css){
+            const txt=fs.readFileSync(p,'utf8'),deps=[]; const re=/@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?\s*\)?/g; let m;
+            while((m=re.exec(txt))){const raw=m[1].split(/[?#]/)[0]; if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw))continue; const d=norm(path.normalize(path.join(path.dirname(p),raw))); if(cssSet.has(d))deps.push(d);}
+            imports.set(p,[...new Set(deps)]); for(const d of deps){if(!importers.has(d))importers.set(d,[]); importers.get(d).push(p);}
+          }
+          const pageRoots=new Map();
+          for(const p of html){const txt=fs.readFileSync(p,'utf8'),roots=[]; const re=/<link\b[^>]*href=["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi; let m; while((m=re.exec(txt))){const raw=m[1].split(/[?#]/)[0]; if(/^(?:https?:|\/\/)/i.test(raw))continue; const r=norm(path.normalize(path.join(path.dirname(p),raw))); if(cssSet.has(r))roots.push(r);} pageRoots.set(p,[...new Set(roots)]);}
+          function closure(roots){const seen=new Set(),stack=[...roots]; while(stack.length){const x=stack.pop(); if(seen.has(x))continue; seen.add(x); for(const d of imports.get(x)||[])stack.push(d);} return seen;}
+          const closures=new Map([...pageRoots].map(([p,r])=>[p,closure(r)]));
+          function reason(p,n){if(p.includes('service-card'))return 'excluded-service-card'; const structural=p.includes('/core/')||p.includes('/layout/')||p.includes('shell')||p.includes('sidebar')||p.includes('header'); if(structural)return 'structural-path'; if(n>=25)return 'count>=25'; if(n>=5)return 'medium'; return 'low';}
+          const rows=[];
+          for(const p of css){const n=(fs.readFileSync(p,'utf8').match(/!important\b/g)||[]).length; if(!n)continue; const why=reason(p,n); if(!['structural-path','count>=25'].includes(why))continue; const pages=[...closures].filter(([,c])=>c.has(p)).map(([pg])=>pg).sort(); const direct=[...(importers.get(p)||[])].sort(); rows.push({file:p,important:n,reason:why,pages,direct,bytes:fs.statSync(p).size});}
+          const localized=rows.filter(r=>r.reason==='count>=25'&&r.pages.length>0).sort((a,b)=>a.pages.length-b.pages.length||a.important-b.important||a.bytes-b.bytes||a.file.localeCompare(b.file));
+          const structural=rows.filter(r=>r.reason==='structural-path'&&r.pages.length>0).sort((a,b)=>a.pages.length-b.pages.length||a.important-b.important||a.bytes-b.bytes||a.file.localeCompare(b.file));
+          const inactive=rows.filter(r=>r.pages.length===0).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
+          console.log('TARGET_SHA=5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5');
+          console.log(`SUMMARY|highFiles=${rows.length}|localizedActive=${localized.length}|structuralActive=${structural.length}|inactiveHigh=${inactive.length}`);
+          localized.slice(0,20).forEach((r,i)=>console.log(`LOCALIZED|rank=${i}|file=${r.file}|important=${r.important}|pages=${r.pages.length}|pageList=${r.pages.join(',')}|bytes=${r.bytes}|importers=${r.direct.join(',')}`));
+          structural.slice(0,20).forEach((r,i)=>console.log(`STRUCTURAL|rank=${i}|file=${r.file}|important=${r.important}|pages=${r.pages.length}|pageList=${r.pages.join(',')}|bytes=${r.bytes}|importers=${r.direct.join(',')}`));
+          inactive.slice(0,10).forEach((r,i)=>console.log(`INACTIVE|rank=${i}|file=${r.file}|important=${r.important}|reason=${r.reason}|bytes=${r.bytes}`));
+          if(localized.length){const t=localized[0]; console.log(`TOP0|file=${t.file}|important=${t.important}|pages=${t.pages.length}|pageList=${t.pages.join(',')}|reason=localized-high-count-with-smallest-active-page-reach`); console.log('NEXT=HIGH_BASELINE_LOCALIZED_CANDIDATE_EXISTS');}
+          else console.log('NEXT=NO_LOCALIZED_HIGH_CANDIDATE');
+          console.log('RESULT=PASS');
+          NODE
+          cat /tmp/high-ranking.txt
+      - name: Publish receipt
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p .diagnostics
+          cp /tmp/high-ranking.txt .diagnostics/ux-css-important-post-001-high-ranking.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .diagnostics/ux-css-important-post-001-high-ranking.txt
+          git commit -m 'chore(diag): publish post-001 high ranking' || exit 0
+          git push origin HEAD:diag/ux-css-important-post-001-high-ranking
