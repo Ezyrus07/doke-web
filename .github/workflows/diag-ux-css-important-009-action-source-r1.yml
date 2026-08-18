@@ -1,0 +1,46 @@
+name: Doke UX CSS Important 009 Action Source R1
+on: [push]
+permissions:
+  contents: write
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: ad132fc1c25f0d9e234810cae6993360d8baf2e6
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: 0fef120997dacc4a1437ff4acb2f7db7b57c6408
+      DIAG_BRANCH: diag/ux-css-important-009-action-source-r1
+      RESULT_FILE: .diagnostics/ux-css-important-009-action-source-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/proof.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'); const f=process.env.TARGET_FILE; let s=fs.readFileSync(f,'utf8'),removed=0;
+          function strip(sel,n){const key=sel+' {',i=s.indexOf(key);if(i<0||s.indexOf(key,i+1)>=0)throw Error('selector '+sel);const b=s.indexOf('{',i),e=s.indexOf('}',b);let z=s.slice(b+1,e);const c=(z.match(/!important\b/g)||[]).length;if(c!==n)throw Error(`${sel} count ${c}`);z=z.replace(/\s*!important\b/g,'');removed+=c;s=s.slice(0,b+1)+z+s.slice(e)}
+          if((s.match(/!important\b/g)||[]).length!==20)throw Error('parent important');
+          strip(':is(.service-card__favorite, .favorite-button, .heart-button, .video-card__play)',10);
+          strip(':is(.service-card__favorite, .favorite-button, .heart-button, .video-card__play) svg',2);
+          strip('body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__play,\n  body.search-results-body .results-layout :is(.results-grid, .results-videos-grid) > .video-card .video-card__play,\n  body.profile-page-shell .profile-posts-stack .short-videos__track > .video-card .video-card__play',4);
+          const left=(s.match(/!important\b/g)||[]).length,z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex'); if(removed!==16||left!==4)throw Error(`candidate ${removed}/${left}`); fs.writeFileSync('/tmp/candidate.css',s); console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=20->4|priorityMarkersRemoved=16|declarationsRemoved=0`);
+          const html=fs.readFileSync('index.html','utf8'); const scripts=[...html.matchAll(/<script\b[^>]*src=["']([^"']+\.js(?:[?#][^"']*)?)["'][^>]*>/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(p=>fs.existsSync(p)); const corpus=html+'\n'+scripts.map(p=>fs.readFileSync(p,'utf8')).join('\n');
+          const tokens=['service-card__favorite','favorite-button','heart-button','video-card__play']; const hits=Object.fromEntries(tokens.map(t=>[t,(corpus.match(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length])); const serviceGrid=(html.match(/class=["'][^"']*\bservice-grid\b/gi)||[]).length,videoCards=(html.match(/class=["'][^"']*\bvideo-card\b/gi)||[]).length; const pub=fs.readFileSync('assets/js/components/public-service-card.js','utf8'),workers=fs.readFileSync('assets/js/pages/home/workers.js','utf8'); const currentFavorite=(pub.match(/doke-ad-card__favorite/g)||[]).length,currentPoster=(workers.match(/video-card__poster/g)||[]).length,currentPreview=(workers.match(/video-card__preview/g)||[]).length;
+          console.log(`SOURCE AUTHORITY|scripts=${scripts.length}|serviceCardFavorite=${hits['service-card__favorite']}|favoriteButton=${hits['favorite-button']}|heartButton=${hits['heart-button']}|videoCardPlay=${hits['video-card__play']}|serviceGrid=${serviceGrid}|videoCards=${videoCards}|currentFavorite=${currentFavorite}|currentPoster=${currentPoster}|currentPreview=${currentPreview}`);
+          if(Object.values(hits).some(Boolean)||serviceGrid<2||videoCards<6||!currentFavorite||!currentPoster||!currentPreview)throw Error('source authority');
+          const preserved=(s.match(/!important\b/g)||[]).length; if(preserved!==4)throw Error('preserved count'); console.log('SOURCE BOUNDARY PASS|removedActionFamiliesDormant=1|activeGridVideoFamiliesPreserved=1');
+          NODE
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|SOURCE AUTHORITY|SOURCE BOUNDARY PASS)\|' /tmp/proof.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 160 /tmp/proof.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 009 action source r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
