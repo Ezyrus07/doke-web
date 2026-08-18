@@ -1,0 +1,34 @@
+name: Doke UX CSS Important 007 Smoke R1
+on:
+  push:
+    branches: [diag/ux-css-important-007-smoke-r1]
+    paths: [.github/workflows/diag-ux-css-important-007-smoke-r1.yml]
+permissions:
+  contents: write
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c84dd3fcacae7db5c616d2eeab745a864f31ae6b
+      DIAG_BRANCH: diag/ux-css-important-007-smoke-r1
+      RESULT_FILE: .diagnostics/ux-css-important-007-smoke-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: smoke
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          echo 'SMOKE=PASS' >/tmp/evidence.txt
+      - name: Publish
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: record ux css important 007 smoke [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
