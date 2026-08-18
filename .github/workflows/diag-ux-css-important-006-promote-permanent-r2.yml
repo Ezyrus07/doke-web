@@ -1,0 +1,67 @@
+name: Doke UX CSS Important 006 Promote Permanent R2
+on:
+  push:
+    branches: [diag/ux-css-important-006-promote-permanent-r2]
+    paths: [.github/workflows/diag-ux-css-important-006-promote-permanent-r2.yml]
+permissions: {contents: write}
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 24b49e5693f24621a1024b94c33c8ba6e18b12c0
+      TARGET_FILE: assets/css/pages/home/mobile-composition.css
+      PARENT_BLOB: 896730319ae0852caca8a0f93cd1507608dd9894
+      EXPECTED_SHA256: 36ae6b9a99e438a28950b7f78ac616197b01785fedf11f4aeccd03d395e0351f
+      EXPECTED_BYTES: '9125'
+      PERMANENT: ux/ux-css-important-006-home-mobile-composition-cascade
+      DIAG_BRANCH: diag/ux-css-important-006-promote-permanent-r2
+      RESULT_FILE: .diagnostics/ux-css-important-006-promotion-r2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: promote
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/promote.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          git checkout "$PARENT_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_BLOB"
+          remote_before="$(git ls-remote origin "refs/heads/$PERMANENT" | awk '{print $1}')"
+          test "$remote_before" = "$PARENT_SHA"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+          const parent=fs.readFileSync(f,'utf8');if((parent.match(/!important\b/g)||[]).length!==23)throw Error('parent drift');let s=parent.replace(/\s*!important\b/g,'');
+          function restore(sel,ps){const re=new RegExp(esc(sel)+'\\s*\\{','g'),all=[...s.matchAll(re)].map(m=>{const b=s.indexOf('{',m.index),e=s.indexOf('}',b);return{b,e,block:s.slice(b+1,e)}}),hits=all.filter(x=>ps.every(p=>new RegExp(`(^|\\n)\\s*${esc(p)}\\s*:`,'m').test(x.block)));if(hits.length!==1)throw Error(`restore ${sel} ${hits.length}`);let block=hits[0].block;for(const p of ps)block=block.replace(new RegExp(`(^|\\n)(\\s*${esc(p)}\\s*:[^;]+);`,'m'),'$1$2 !important;');s=s.slice(0,hits[0].b+1)+block+s.slice(hits[0].e)}
+          restore('body.home-index-shell .featured-services,\n  body.home-index-shell .before-after,\n  body.home-index-shell .short-videos',['overflow']);
+          restore('body.home-index-shell .doke-search-panel__form',['position','overflow']);
+          restore('body.home-index-shell .home-search-hero__field::before,\n  body.home-index-shell .home-search-hero__field::after',['display']);
+          restore('body.home-index-shell .featured-services .content-rail',['overflow']);
+          const b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex');
+          if(h!==process.env.EXPECTED_SHA256||String(b.length)!==process.env.EXPECTED_BYTES||(s.match(/!important\b/g)||[]).length!==5)throw Error(`identity ${h}/${b.length}`);
+          fs.writeFileSync(f,s);console.log(`CANDIDATE PASS|sha256=${h}|bytes=${b.length}|important=23->5`);
+          NODE
+          read -r ADD DEL PATHNAME < <(git diff --numstat -- "$TARGET_FILE")
+          test "$ADD" = 18; test "$DEL" = 18; test "$PATHNAME" = "$TARGET_FILE"
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$TARGET_FILE"
+          git commit -m 'UX-CSS-IMPORTANT-006: reduce cascade-redundant Home mobile priorities' >/dev/null
+          NEW_SHA="$(git rev-parse HEAD)"; NEW_TREE="$(git rev-parse HEAD^{tree})"; NEW_BLOB="$(git hash-object "$TARGET_FILE")"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA"..HEAD)" = "$TARGET_FILE"
+          read -r ADD2 DEL2 PATH2 < <(git diff --numstat "$PARENT_SHA"..HEAD -- "$TARGET_FILE")
+          test "$ADD2" = 18; test "$DEL2" = 18; test "$PATH2" = "$TARGET_FILE"
+          git push --force-with-lease="refs/heads/$PERMANENT:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT"
+          remote_after="$(git ls-remote origin "refs/heads/$PERMANENT" | awk '{print $1}')"; test "$remote_after" = "$NEW_SHA"
+          echo "NEW_SHA=$NEW_SHA"; echo "NEW_TREE=$NEW_TREE"; echo "NEW_BLOB=$NEW_BLOB"; echo "PARENT_BLOB=$PARENT_BLOB"; echo "SHA256=$EXPECTED_SHA256"; echo "BYTES=$EXPECTED_BYTES"; echo 'DIFF=1 file +18/-18'; echo 'STATIC_RUN=32150191554'; echo 'GOVERNANCE_RUN=32149810297'; echo 'RESULT=PASS'
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$PARENT_SHA" >/dev/null; git clean -fdx >/dev/null
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.promote.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "PROMOTE=${{ steps.promote.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE PASS|NEW_SHA=|NEW_TREE=|NEW_BLOB=|PARENT_BLOB=|SHA256=|BYTES=|DIFF=|STATIC_RUN=|GOVERNANCE_RUN=|RESULT=)' /tmp/promote.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 280 /tmp/promote.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 006 promotion r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
