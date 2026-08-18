@@ -1,0 +1,59 @@
+name: Doke UX-CSS-DEBT-072 Service Card Runtime Inertness
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-072-service-card-runtime-inertness
+    paths:
+      - .github/workflows/diag-ux-css-debt-072-service-card-runtime-inertness.yml
+
+permissions:
+  contents: write
+
+jobs:
+  inertness:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      TARGET_FILE: assets/css/components/cards/service-card.css
+      TARGET_BLOB: 0847b48ee62e3d09c737a35a46f6ce5271aac143
+      SOURCE_RUN: 32088490780
+      PRIOR_RUNTIME_RUN: 32088555839
+      DIAG_BRANCH: diag/ux-css-debt-072-service-card-runtime-inertness
+      RESULT_FILE: .diagnostics/ux-css-debt-072-runtime-inertness.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Fail-closed static producer and full reach runtime proof
+        shell: bash
+        run: |
+          exec > >(tee /tmp/inert.log) 2>&1
+          publish(){ code=$?; trap - EXIT; set +e; test -f /tmp/http.pid && kill "$(cat /tmp/http.pid)" 2>/dev/null || true; result=FAIL; test "$code" = 0 && result=PASS; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE_RUN=$SOURCE_RUN"; echo "PRIOR_RUNTIME_RUN=$PRIOR_RUNTIME_RUN"; echo "EXIT_CODE=$code"; grep '^STATIC PRODUCER|' /tmp/inert.log || true; grep '^HTML MARKUP|' /tmp/inert.log || true; grep '^ACTIVE REACH|' /tmp/inert.log || true; grep '^RUNTIME SWEEP|' /tmp/inert.log || true; grep '^INERTNESS PASS|' /tmp/inert.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 120 /tmp/inert.log; fi; } >/tmp/evidence.txt; git reset --hard "$TARGET_SHA" >/dev/null 2>&1; git clean -fdx >/dev/null 2>&1; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null 2>&1; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null 2>&1; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; if ! git diff --cached --quiet; then git commit -m 'diag: record UX-CSS-DEBT-072 runtime inertness [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; fi; exit "$code"; }
+          trap publish EXIT
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const trackedCss=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};const meta=new Map();for(const f of trackedCss){const src=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(src)))imports.push(norm(m[1],f));meta.set(f,{imports})}
+          const target=process.env.TARGET_FILE,reach=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...(p.css||[]).filter(x=>meta.has(x))];while(stack.length){const x=stack.pop();if(seen.has(x)||!meta.has(x))continue;seen.add(x);if(x===target){reach.push(p.page);break}for(const n of meta.get(x).imports)if(meta.has(n))stack.push(n)}}reach.sort();if(reach.length!==26)throw Error(`reach ${reach.length}`);fs.writeFileSync('/tmp/reach-pages.json',JSON.stringify(reach));
+          const activeJs=new Set(report.pageAssets.flatMap(p=>p.js||[]));const js=cp.execFileSync('git',['ls-files','-z','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean);const producer=[];for(const f of js){const s=fs.readFileSync(f,'utf8');if(/<article class=["']service-card\b/.test(s)||/className\s*[:=]\s*["']service-card\b/.test(s))producer.push(f)}producer.sort();const expected=['assets/js/features/profile/profile-renderer.js','assets/js/renderers/service-card-renderer.js'];if(JSON.stringify(producer)!==JSON.stringify(expected))throw Error(`producer drift ${producer}`);const activeProducers=producer.filter(f=>activeJs.has(f));if(activeProducers.length)throw Error(`active producers ${activeProducers}`);
+          const activeRefs=[];for(const f of activeJs){if(!fs.existsSync(f))continue;const s=fs.readFileSync(f,'utf8');if(s.includes('service-card-renderer.js')||s.includes('profile-renderer.js'))activeRefs.push(f)}if(activeRefs.length)throw Error(`active producer refs ${activeRefs}`);
+          const htmlMarkup=reach.filter(f=>fs.readFileSync(f,'utf8').match(/class=["'][^"']*\bservice-card\b/));if(htmlMarkup.length)throw Error(`static markup ${htmlMarkup}`);
+          const searchResults=fs.readFileSync('assets/js/pages/search-results.js','utf8');if(!searchResults.includes('publicServiceCard')||!searchResults.includes("article.className = 'doke-ad-card"))throw Error('results current renderer drift');const index=fs.readFileSync('index.html','utf8'),perfil=fs.readFileSync('perfil.html','utf8');if(!index.includes('assets/js/components/public-service-card.js')||index.match(/class=["'][^"']*\bservice-card\b/))throw Error('index authority drift');if(perfil.includes('profile-renderer.js')||perfil.match(/class=["'][^"']*\bservice-card\b/))throw Error('perfil authority drift');
+          console.log(`STATIC PRODUCER|producers=${producer.join(',')}|activeProducers=0|activeProducerRefs=0|currentResults=doke-ad-card|indexPublicServiceCard=1|perfilLegacyRenderer=0`);console.log(`HTML MARKUP|reachPages=${reach.length}|serviceCardMarkup=0`);console.log(`ACTIVE REACH|pages=${reach.length}|pageList=${reach.join(',')}`);
+          NODE
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4184 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          sleep 1
+          cat >/tmp/sweep.js <<'NODE'
+          const fs=require('fs');const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');const pages=JSON.parse(fs.readFileSync('/tmp/reach-pages.json','utf8')),widths=[359,760,1025,1280];
+          (async()=>{const browser=await chromium.launch({headless:true});let samples=0,cssom=0,cards=0,visible=0;try{for(const pageName of pages)for(const width of widths){const ctx=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',r=>{const u=new URL(r.request().url());return ['127.0.0.1','localhost'].includes(u.hostname)?r.continue():r.abort()});await page.goto(`http://127.0.0.1:4184/${pageName}?ux072Inert=1`,{waitUntil:'load',timeout:20000});await page.waitForTimeout(250);const x=await page.evaluate(()=>{const nodes=[...document.querySelectorAll('.service-card')],v=nodes.filter(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0}).length,wanted='/assets/css/components/cards/service-card.css',seen=new Set();function walk(s){if(!s||seen.has(s))return false;seen.add(s);let h='',rules=[];try{h=s.href?new URL(s.href,location.href).pathname:''}catch{};try{rules=[...(s.cssRules||[])]}catch{};if(h===wanted&&rules.length>10)return true;for(const r of rules)if(r.styleSheet&&walk(r.styleSheet))return true;return false}return{n:nodes.length,v,cssom:[...document.styleSheets].some(walk)}});samples++;cssom+=x.cssom?1:0;cards+=x.n;visible+=x.v;if(x.n)console.log(`RUNTIME HIT|page=${pageName}|width=${width}|cards=${x.n}|visible=${x.v}`);await ctx.close()}}finally{await browser.close()}const expected=pages.length*widths.length;if(samples!==expected||cssom!==expected||cards!==0||visible!==0)throw Error(`sweep samples=${samples}/${expected} cssom=${cssom}/${expected} cards=${cards} visible=${visible}`);console.log(`RUNTIME SWEEP|pages=${pages.length}|viewports=${widths.length}|samples=${samples}|cssom=${cssom}/${expected}|serviceCards=0|visible=0|regimes=359,760,1025,1280|realProductDOM=1|syntheticDOM=0`);console.log('INERTNESS PASS|activeProducer=0|staticMarkup=0|runtimeServiceCards=0|browserParityNotApplicable=1|reason=selector-runtime-inert-on-active-surface');})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/sweep.js
