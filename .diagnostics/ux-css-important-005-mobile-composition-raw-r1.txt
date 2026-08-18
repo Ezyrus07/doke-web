@@ -1,0 +1,28 @@
+RUN_ID=32144121148
+TARGET_SHA=1c1f6c97a851fc73b7f81c07fe646d7d60e03843
+ANALYSIS=failure
+RESTORE=success
+RAW IDENTITY|important=36->0|parentBytes=9466|rawBytes=9070|rawSha256=54032352ef987b57aae084370453d33fc910f20d2f064e1f1e8f82bdee788163
+RESULT=FAIL
+--- FAILURE TAIL ---
+
+added 26 packages, and audited 27 packages in 994ms
+
+found 0 vulnerabilities
+RAW IDENTITY|important=36->0|parentBytes=9466|rawBytes=9070|rawSha256=54032352ef987b57aae084370453d33fc910f20d2f064e1f1e8f82bdee788163
+[stdin]:11
+async function parseRows(p){return await p.evaluate(async()=>{const txt=await fetch('assets/css/pages/home/mobile-composition.css').then(r=>r.text()),sheet=new CSSStyleSheet();sheet.replaceSync(txt);const out=[];function walk(rules,media=[]){for(const r of rules){if(r instanceof CSSMediaRule){walk(r.cssRules,[...media,r.conditionText]);continue}if(!(r instanceof CSSStyleRule))continue;for(const prop of r.style){if(r.style.getPropertyPriority(prop)==='important')out.push({selector:r.selectorText,prop,value:r.style.getPropertyValue(prop).trim(),media:[...media]})}}walk(sheet.cssRules);return out})}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+Expression expected
+
+SyntaxError: Unexpected token ')'
+    at makeContextifyScript (node:internal/vm:185:14)
+    at compileScript (node:internal/process/execution:383:10)
+    at evalTypeScript (node:internal/process/execution:256:22)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+    at Socket.emit (node:events:531:35)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+
+Node.js v22.23.2
