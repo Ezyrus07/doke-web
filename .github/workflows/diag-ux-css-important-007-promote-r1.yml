@@ -1,0 +1,91 @@
+name: Doke UX CSS Important 007 Promote R1
+on:
+  push:
+    branches: [diag/ux-css-important-007-promote-r1]
+    paths: [.github/workflows/diag-ux-css-important-007-promote-r1.yml]
+permissions:
+  contents: write
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c84dd3fcacae7db5c616d2eeab745a864f31ae6b
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: fab02ea9f4b469d912d5f9c05b6091aad503b55f
+      PERM_BRANCH: ux/ux-css-important-007-mobile-card-entrypoint-impossible
+      DIAG_BRANCH: diag/ux-css-important-007-promote-r1
+      RESULT_FILE: .diagnostics/ux-css-important-007-promotion-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - id: promote
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/promotion.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;const parent=fs.readFileSync(f,'utf8');let s=parent,removed=0;function strip(selector,expected){const key=selector+' {';const i=s.indexOf(key);if(i<0||s.indexOf(key,i+1)>=0)throw Error('selector '+selector);const b=s.indexOf('{',i),e=s.indexOf('}',b);let block=s.slice(b+1,e);const n=(block.match(/!important\b/g)||[]).length;if(n!==expected)throw Error(`expected ${expected} got ${n}`);block=block.replace(/\s*!important\b/g,'');removed+=n;s=s.slice(0,b+1)+block+s.slice(e)}
+          strip('body:not(.home-index-shell) :is(.video-card, .results-videos-grid .video-card, .profile-posts-stack .video-card)',5);strip('body.search-results-body :is(.results-grid, .results-videos-grid, .results-before-after-grid, .results-users-grid)',1);strip('body.profile-page-shell :is(.profile-posts-stack .short-videos__track, .profile-posts-stack .comparison-grid)',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__media',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__favorite',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__body',4);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__category--body',1);strip('body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result .service-card__location',1);strip('body.profile-page-shell .profile-posts-stack .short-videos__track',5);strip('body.search-results-body .results-layout :is(.results-grid, .results-videos-grid) > .video-card,\n  body.profile-page-shell .profile-posts-stack .short-videos__track > .video-card',3);if(removed!==36||(s.match(/!important\b/g)||[]).length!==43)throw Error('candidate');fs.writeFileSync(f,s);const z=fs.readFileSync(f),h=crypto.createHash('sha256').update(z).digest('hex');if(h!=='822a27e974703bb5b3cc55e23c26ae11c1954a8c81bbcd171451e8b0ab63df5c')throw Error('hash drift');console.log(`CANDIDATE PASS|sha256=${h}|bytes=${z.length}|important=79->43`);
+          NODE
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'36\t36\t'"$TARGET_FILE"
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$TARGET_FILE"
+          git commit -m 'UX-CSS-IMPORTANT-007: remove entrypoint-impossible mobile card priorities' >/dev/null
+          NEW_SHA=$(git rev-parse HEAD)
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          NEW_TREE=$(git rev-parse 'HEAD^{tree}')
+          NEW_BLOB=$(git hash-object "$TARGET_FILE")
+          SHA256=$(sha256sum "$TARGET_FILE" | awk '{print $1}')
+          BYTES=$(wc -c < "$TARGET_FILE" | tr -d ' ')
+          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
+          BEFORE=$(git rev-parse "refs/remotes/origin/$PERM_BRANCH")
+          test "$BEFORE" = "$TARGET_SHA"
+          git push origin "HEAD:refs/heads/$PERM_BRANCH" >/dev/null
+          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
+          AFTER=$(git rev-parse "refs/remotes/origin/$PERM_BRANCH")
+          test "$AFTER" = "$NEW_SHA"
+          echo "PARENT_SHA=$TARGET_SHA"
+          echo "REMOTE_BEFORE=$BEFORE"
+          echo "NEW_SHA=$NEW_SHA"
+          echo "NEW_TREE=$NEW_TREE"
+          echo "PARENT_BLOB=$TARGET_BLOB"
+          echo "NEW_BLOB=$NEW_BLOB"
+          echo "SHA256=$SHA256"
+          echo "BYTES=$BYTES"
+          echo 'DIFF=1 file +36/-36'
+          echo 'PROOF_RUNS=ranking:32161790286,static:32162750888,visual:32163171670,governance:32162155896'
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: Publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.promote.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PROMOTE=${{ steps.promote.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE PASS|PARENT_SHA=|REMOTE_BEFORE=|NEW_SHA=|NEW_TREE=|PARENT_BLOB=|NEW_BLOB=|SHA256=|BYTES=|DIFF=|PROOF_RUNS=)' /tmp/promotion.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 220 /tmp/promotion.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: record ux css important 007 promotion r1 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
