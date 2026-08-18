@@ -1,0 +1,83 @@
+name: Doke UX-CSS-DEBT-073 Responsive Base Source Closure V3
+
+on:
+  push:
+    branches: [diag/ux-css-debt-073-responsive-base-source-closure-v3]
+    paths: [.github/workflows/diag-ux-css-debt-073-responsive-base-source-closure-v3.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+      PARENT_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      TARGET_TREE: 9a06ced3f3c11d900aeee04792bed4322c128f3e
+      TARGET_FILE: assets/css/core/layout/responsive-base.css
+      TARGET_BLOB: 0c53db9ef61f92688cbf34494a3b14821e3a6056
+      COMPAT_FILE: assets/css/core/layout-responsive.css
+      COMPAT_BLOB: 8aed0b80bbf9d4ed64630286c8ace23b39e5e632
+      RANKING_RUN: 32089648071
+      DIAG_BRANCH: diag/ux-css-debt-073-responsive-base-source-closure-v3
+      RESULT_FILE: .diagnostics/ux-css-debt-073-source-closure-v3.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { ref: '${{ env.TARGET_SHA }}', fetch-depth: 2 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 22, cache: npm }
+      - name: Validate exact source closure
+        id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          exec > >(tee /tmp/source.log) 2>&1
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$COMPAT_FILE")" = "$COMPAT_BLOB"
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,text=fs.readFileSync(f,'utf8');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(x=>x.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const x of tracked){const src=fs.readFileSync(x,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(src)))imports.push(normImport(m[1],x));meta.set(x,{src,imports});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(x=>meta.has(x));while(todo.length){const x=todo.pop();if(active.has(x)||!meta.has(x))continue;active.add(x);for(const n of meta.get(x).imports)if(meta.has(n))todo.push(n)}if(active.size!==401)throw Error(`active=${active.size}`);
+          const importers=[...meta].filter(([x,m])=>x!==f&&m.imports.includes(f)).map(([x])=>x).sort(),activeImporters=importers.filter(x=>active.has(x));const expectedAll=['assets/css/core/layout-responsive.css','assets/css/core/layout/index.css'],expectedActive=['assets/css/core/layout/index.css'];if(JSON.stringify(importers)!==JSON.stringify(expectedAll)||JSON.stringify(activeImporters)!==JSON.stringify(expectedActive))throw Error(`importers=${importers}; active=${activeImporters}`);if(active.has('assets/css/core/layout-responsive.css'))throw Error('compat importer unexpectedly active');
+          const compat=fs.readFileSync(process.env.COMPAT_FILE,'utf8');if(!compat.includes('Compatibility entrypoint')||!compat.includes('Do not add new rules here.'))throw Error('compat authority drift');
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();function parse(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d)}return{ds,dead}}
+          const p=parse(text),expLines=[107,108,109,129,133,150,151,155,157,158,163,266,621,628,629,630];if(p.ds.length!==268||p.dead.length!==16)throw Error(`target=${p.ds.length}/${p.dead.length}`);if(JSON.stringify(p.dead.sort((a,b)=>a.line-b.line).map(d=>d.line))!==JSON.stringify(expLines))throw Error('dead-lines-drift');const families=[...new Set(p.dead.map(d=>d.selector))],identical=p.dead.filter(d=>d.value===d.winnerValue&&d.important===d.winnerImportant).length;if(families.length!==9||identical!==2)throw Error(`families=${families.length}; identical=${identical}`);
+          const reach=[];for(const pg of report.pageAssets){const seen=new Set(),stack=[...pg.css.filter(x=>meta.has(x))];while(stack.length){const x=stack.pop();if(seen.has(x)||!meta.has(x))continue;seen.add(x);if(x===f){reach.push(pg.page);break}for(const n of meta.get(x).imports)if(meta.has(n))stack.push(n)}}reach.sort();if(reach.length!==26)throw Error(`reach=${reach.length}`);
+          const tokens=['topbar__right','topbar-action--notifications','topbar-profile','sidebar__group--footer','nav-link--icononly','nav-link__icon','brand-logo','topbar-search-wrap','topbar-search'];const markup=Object.fromEntries(tokens.map(t=>[t,0]));for(const pg of reach){const s=fs.readFileSync(pg,'utf8');for(const t of tokens)if(s.includes(t))markup[t]++;}
+          const rows=new Set(expLines.map(n=>n-1)),candidate=text.split('\n').filter((_,i)=>!rows.has(i)).join('\n'),c=parse(candidate);if(c.ds.length!==252||c.dead.length!==0)throw Error(`candidate=${c.ds.length}/${c.dead.length}`);const b=Buffer.from(candidate),hash=crypto.createHash('sha256').update(b).digest('hex');
+          console.log(`IMPORTER PASS|all=2|active=1|activeList=${activeImporters.join(',')}|inactiveCompatibility=assets/css/core/layout-responsive.css`);console.log('CASCADE PASS|target=268/16|families=9|identical=2|changed=14|important=0|browserRequired=1');console.log(`ACTIVE REACH|pages=26|pageList=${reach.join(',')}`);console.log(`HTML MARKUP|${Object.entries(markup).map(([k,v])=>k+'='+v).join('|')}`);console.log(`CANDIDATE IDENTITY|candidate=252/0|sha256=${hash}|bytes=${b.length}|files=1|additions=0|deletions=16`);console.log(`SOURCE CLOSURE PASS|target=${f}|ranking=${process.env.RANKING_RUN}|browserRequired=1`);
+          NODE
+      - name: Restore exact checkpoint
+        id: restore
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          git reset --hard "$TARGET_SHA" >/dev/null 2>&1 && git clean -fdx >/dev/null 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA" && test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB" && test -z "$(git status --porcelain)"
+      - name: Publish fail-closed receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; if [ "${{ steps.validate.outcome }}" = success ] && [ "${{ steps.restore.outcome }}" = success ]; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"; echo "TARGET_SHA=$TARGET_SHA"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep '^IMPORTER PASS|' /tmp/source.log || true; grep '^CASCADE PASS|' /tmp/source.log || true; grep '^ACTIVE REACH|' /tmp/source.log || true; grep '^HTML MARKUP|' /tmp/source.log || true; grep '^CANDIDATE IDENTITY|' /tmp/source.log || true; grep '^SOURCE CLOSURE PASS|' /tmp/source.log || true; echo "RESULT=$result"; if [ "$result" = FAIL ]; then echo '--- FAILURE TAIL ---'; tail -n 120 /tmp/source.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null 2>&1
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null 2>&1
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-DEBT-073 source closure v3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
