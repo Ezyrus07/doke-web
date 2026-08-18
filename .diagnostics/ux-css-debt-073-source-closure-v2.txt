@@ -1,0 +1,40 @@
+RUN_ID=32089783411
+RUN_ATTEMPT=1
+TARGET_SHA=c79ccdced5ed83b77ef050a66cbc2284e6fc9ca8
+VALIDATE=failure
+RESTORE=success
+RESULT=FAIL
+--- FAILURE TAIL ---
+
+added 26 packages, and audited 27 packages in 877ms
+
+found 0 vulnerabilities
+
+> doke-frontend@0.1.0 audit:active-legacy-structures
+> node scripts/audit-active-legacy-structures.js
+
+[active-legacy-structures] inventory-with-structural-debt
+- pages: 33
+- css files: 533 (55 direct, 401 active/imported)
+- js files: 310 (220 direct)
+- active legacy/remediation css: 0
+- active legacy/remediation js: 0
+- high risk active css: 37
+- report: reports/generated/active-legacy-structures-report.json
+[stdin]:9
+const importers=[...meta].filter(([x,m])=>x!==f&&m.imports.includes(f)).map(([x])=>x).sort(),activeImporters=importers.filter(x=>active.has(x));if(JSON.stringify(importers)!==JSON.stringify(['assets/css/core/layout/index.css'])||JSON.stringify(activeImporters)!==JSON.stringify(importers))throw Error(`importers=${importers}; active=${activeImporters}`);
+                                                                                                                                                                                                                                                                                                 ^
+
+Error: importers=assets/css/core/layout-responsive.css,assets/css/core/layout/index.css; active=assets/css/core/layout/index.css
+    at [stdin]:9:296
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+    at Socket.emit (node:events:531:35)
+
+Node.js v22.23.2
