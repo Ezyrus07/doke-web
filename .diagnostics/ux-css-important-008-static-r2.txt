@@ -1,0 +1,26 @@
+RUN_ID=32186678266
+TARGET_SHA=8507947066f4d6957d88bbe022b03aece1ee8e58
+PROOF=failure
+RESTORE=success
+CANDIDATE IDENTITY|sha256=abe268c8cedca25abce012454961396b7aafb58f1c20d483a674f09e23102a18|bytes=9740|important=43->20|priorityMarkersRemoved=23|declarationsRemoved=0
+SOURCE PRODUCERS|scripts=76|serviceCard=1|serviceFeed=0|serviceResult=0|comparisonCard=0|comparisonBody=0|proCard=0|activeServiceGrid=2|activeVideoCard=6|comparisonVisual=1
+RESULT=FAIL
+CANDIDATE IDENTITY|sha256=abe268c8cedca25abce012454961396b7aafb58f1c20d483a674f09e23102a18|bytes=9740|important=43->20|priorityMarkersRemoved=23|declarationsRemoved=0
+SOURCE PRODUCERS|scripts=76|serviceCard=1|serviceFeed=0|serviceResult=0|comparisonCard=0|comparisonBody=0|proCard=0|activeServiceGrid=2|activeVideoCard=6|comparisonVisual=1
+[stdin]:20
+const activeGrid=(html.match(/class=["'][^"']*\bservice-grid\b/gi)||[]).length,activeVideo=(html.match(/class=["'][^"']*\bvideo-card\b/gi)||[]).length,comparisonVisual=exact('comparison-card__visual');console.log(`SOURCE PRODUCERS|scripts=${scripts.length}|serviceCard=${legacy.serviceCard}|serviceFeed=${legacy.serviceFeed}|serviceResult=${legacy.serviceResult}|comparisonCard=${legacy.comparisonCard}|comparisonBody=${legacy.comparisonBody}|proCard=${legacy.proCard}|activeServiceGrid=${activeGrid}|activeVideoCard=${activeVideo}|comparisonVisual=${comparisonVisual}`);if(Object.values(legacy).some(Boolean))throw Error('legacy producer found');if(!activeGrid||!activeVideo||!comparisonVisual)throw Error('preserved active family missing');
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ^
+
+Error: legacy producer found
+    at [stdin]:20:617
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+    at Socket.emit (node:events:531:35)
+
+Node.js v22.23.2
