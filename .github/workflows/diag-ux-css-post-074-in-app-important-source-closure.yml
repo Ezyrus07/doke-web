@@ -1,0 +1,118 @@
+name: Doke Post-074 In-App Important Source Closure
+
+on:
+  push:
+    branches: [diag/ux-css-post-074-in-app-important-source-closure]
+    paths: [.github/workflows/diag-ux-css-post-074-in-app-important-source-closure.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      PARENT_SHA: 3a2f10f67fcf7452114959d9c3a217852a765c55
+      TARGET_TREE: 858c72157e938fbbaa95015dcf2742b20ac39670
+      TARGET_FILE: assets/css/components/in-app-notifications.css
+      TARGET_BLOB: cc5fa323b338995a76b8e927474fcaf90344885d
+      DIAG_BRANCH: diag/ux-css-post-074-in-app-important-source-closure
+      RESULT_FILE: .diagnostics/ux-css-post-074-in-app-important-source-closure.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - id: closure
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/closure.log) 2>&1
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET_FILE,src=fs.readFileSync(target,'utf8');
+          const important=[];src.split(/\r?\n/).forEach((line,i)=>{if(/!important\b/.test(line)) important.push({line:i+1,text:line.trim()});});
+          if(important.length!==4) throw Error(`important drift ${important.length}`);
+          important.forEach(x=>console.log(`IMPORTANT ROW|line=${x.line}|text=${x.text}`));
+          const expected=[
+            '.doke-live-toast__actions { display: flex !important; gap: 8px; margin-top: 5px; overflow: visible !important; white-space: normal !important; }',
+            '.notifications-settings-panel__select { align-items: flex-start !important; flex-direction: column; }'
+          ];
+          if(!expected.every(x=>src.includes(x))) throw Error('expected important rules drift');
+          const candidate=src.replace(/\s*!important\b/g,'');
+          if((candidate.match(/!important\b/g)||[]).length!==0) throw Error('candidate still important');
+          const b=Buffer.from(candidate),hash=crypto.createHash('sha256').update(b).digest('hex');
+          console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${b.length}|important=4->0|files=1`);
+
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(x=>x.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css||[]))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}
+          if(active.size!==401) throw Error(`active drift ${active.size}`);
+          const importers=[...meta].filter(([f,x])=>f!==target&&x.imports.includes(target)).map(([f])=>f).sort();
+          const activeImporters=importers.filter(f=>active.has(f));
+          console.log(`IMPORTERS|all=${importers.length}|active=${activeImporters.length}|allList=${importers.join(',')||'-'}|activeList=${activeImporters.join(',')||'-'}`);
+          const reach=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...(p.css||[]).filter(f=>meta.has(f))];while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){reach.push(p.page);break}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n)}}reach.sort();
+          if(JSON.stringify(reach)!==JSON.stringify(['comunidade-interna.html','mensagens.html','notificacoes.html'])) throw Error(`reach ${reach}`);
+          console.log(`ACTIVE REACH|pages=${reach.length}|pageList=${reach.join(',')}`);
+
+          const files=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean);
+          const needles=['doke-live-toast__actions','notifications-settings-panel__select','notifications-settings-panel','notificationToast','inAppNotifications'];
+          for(const needle of needles){const hits=[];for(const f of files){let t='';try{t=fs.readFileSync(f,'utf8')}catch{};if(t.includes(needle))hits.push(f);}console.log(`SOURCE|needle=${needle}|count=${hits.length}|files=${hits.join(',')||'-'}`);}
+          for(const page of reach){const html=fs.readFileSync(page,'utf8');const scripts=[...html.matchAll(/<script\b[^>]*src=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1].split('?')[0]);console.log(`PAGE SCRIPTS|page=${page}|scripts=${scripts.filter(x=>/notif|in-app|toast|delivery/i.test(x)).join(',')||'-'}`);}
+          console.log('SOURCE CLOSURE PASS');
+          NODE
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Publish fail-closed evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.closure.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+            echo "TARGET_SHA=$TARGET_SHA"
+            echo "CLOSURE=${{ steps.closure.outcome }}"
+            echo "RESTORE=${{ steps.restore.outcome }}"
+            grep '^IMPORTANT ROW|' /tmp/closure.log || true
+            grep '^CANDIDATE IDENTITY|' /tmp/closure.log || true
+            grep '^IMPORTERS|' /tmp/closure.log || true
+            grep '^ACTIVE REACH|' /tmp/closure.log || true
+            grep '^SOURCE|' /tmp/closure.log || true
+            grep '^PAGE SCRIPTS|' /tmp/closure.log || true
+            echo "RESULT=$result"
+            if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 160 /tmp/closure.log || true; fi
+          } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")" && cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: record post-074 in-app important source closure [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
