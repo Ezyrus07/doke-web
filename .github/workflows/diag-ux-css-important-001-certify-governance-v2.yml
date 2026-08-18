@@ -1,0 +1,84 @@
+name: Doke UX-CSS-IMPORTANT-001 Certify Governance V2
+on:
+  push:
+    branches: [diag/ux-css-important-001-certify-governance-v2]
+    paths: [.github/workflows/diag-ux-css-important-001-certify-governance-v2.yml]
+permissions:
+  contents: write
+jobs:
+  certify-governance:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c9c3d2fad3b4e7e9cf74201f080cca9ddffe2e5
+      PARENT_SHA: b159cd296daef5a4ea9e38d419e8dc43670c9c1e
+      TARGET_TREE: c385ae4b40c67d200f6c4a4d99f2a46bb2f47b23
+      TARGET_FILE: assets/css/components/in-app-notifications.css
+      TARGET_BLOB: 15caac7b2e43aea620474b5f203128fac620569a
+      PERMANENT_BRANCH: ux/ux-css-important-001-in-app-notifications
+      DIAG_BRANCH: diag/ux-css-important-001-certify-governance-v2
+      RESULT_FILE: .diagnostics/ux-css-important-001-certify-governance-v2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/gov-cert.log) 2>&1
+          test "$(git rev-parse --is-shallow-repository)" = false
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l | tr -d ' ')" = 0
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"
+          npm ci --ignore-scripts
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          echo 'CONFLICTS PASS|count=339|maxBaseline=339|regression=0'
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures
+          npm run audit:important-reduction-plan
+          npm run audit:global-css-design-system
+          node <<'NODE'
+          const fs=require('fs');const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));const s=b.summary;if(s.totalImportant!==11259||s.outsideServiceCardImportant!==11197||s.filesWithImportant!==35||s.groupsWithImportant!==4)throw Error(`baseline ${JSON.stringify(s)}`);const c=b.groups?.components;if(!c||c.importantCount!==8039||c.filesWithImportant!==24)throw Error(`components ${JSON.stringify(c)}`);if(p.summary.affectedFiles!==34||p.summary.totalImportantOutsideServiceCard!==11197||p.summary.lowRiskFileCount!==0||p.summary.byRisk?.['high-baseline-required']!==11197)throw Error(`plan ${JSON.stringify(p.summary)}`);console.log('IMPORTANT BASELINE PASS|total=11259|outsideServiceCard=11197|files=35|components=8039/24|delta=-4');console.log('LOW-RISK QUEUE PASS|affectedFiles=34|lowRiskFiles=0|highBaselineRequired=11197|targetImportant=0');
+          NODE
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css')),re=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v))};const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;re.lastIndex=0;while((m=re.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length})}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css||[]))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});const ns=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();function dc(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],rx=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(const line of ls){const t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:ns(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:ns([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=ns(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=ns(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(rx);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const x=stack.pop();if(x.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d)}return dead}let files=0,total=0,highDead=0,pageResidual=0;for(const f of active){const d=dc(meta.get(f).text);if(d){files++;total+=d;if(high.includes(f))highDead++;if(f.includes('/pages/'))pageResidual++}}if(active.size!==401||high.length!==37||files!==0||total!==0||highDead!==0||pageResidual!==0)throw Error(`residual ${active.size}/${high.length}/${files}/${total}/${highDead}/${pageResidual}`);console.log('STRUCTURAL RESIDUAL PASS|active=401|high=37|files=0|dead=0|highDead=0|pageResidual=0');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; auditCode=$?; set -e
+          node <<'NODE'
+          const a=require('/tmp/audit.json'),v=a.metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`dependency ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
+          NODE
+          echo "AUDIT_EXIT=$auditCode"
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse origin/$PERMANENT_BRANCH)" = "$TARGET_SHA"
+          echo 'GOVERNANCE PASS|conflicts=339|duplicates=0/0|domain=23/15/2.91/12|activeCss=401|highRiskActiveCss=37'
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git checkout --detach "$TARGET_SHA" >/dev/null 2>&1 || true; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse --is-shallow-repository)" = false; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.validate.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "VALIDATE=${{ steps.validate.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CONFLICTS PASS|IMPORTANT BASELINE PASS|LOW-RISK QUEUE PASS|STRUCTURAL RESIDUAL PASS|DEPENDENCY PASS|GOVERNANCE PASS)\|' /tmp/gov-cert.log || true; grep '^AUDIT_EXIT=' /tmp/gov-cert.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 240 /tmp/gov-cert.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record UX-CSS-IMPORTANT-001 governance certification v2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
