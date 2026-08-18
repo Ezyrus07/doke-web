@@ -1,0 +1,60 @@
+name: Doke UX CSS Important 005 Mobile Composition Raw R2
+on:
+  push:
+    branches: [diag/ux-css-important-005-mobile-composition-raw-r2]
+    paths: [.github/workflows/diag-ux-css-important-005-mobile-composition-raw-r2.yml]
+permissions:
+  contents: write
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 1c1f6c97a851fc73b7f81c07fe646d7d60e03843
+      TARGET_FILE: assets/css/pages/home/mobile-composition.css
+      TARGET_BLOB: 1e24479b2b9065659a5a11a18854131e4ef90187
+      DIAG_BRANCH: diag/ux-css-important-005-mobile-composition-raw-r2
+      RESULT_FILE: .diagnostics/ux-css-important-005-mobile-composition-raw-r2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: analyze
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/raw.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          cp "$TARGET_FILE" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const f=process.env.TARGET_FILE,src=fs.readFileSync(f,'utf8');const n=(src.match(/!important\b/g)||[]).length;if(n!==36)throw Error(`parent important=${n}`);const raw=src.replace(/\s*!important\b/g,'');fs.writeFileSync('/tmp/raw.css',raw);console.log(`RAW IDENTITY|important=36->0|parentBytes=${Buffer.byteLength(src)}|rawBytes=${Buffer.byteLength(raw)}|rawSha256=${crypto.createHash('sha256').update(raw).digest('hex')}`);
+          NODE
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require('@playwright/test');
+          (async()=>{
+            const f=process.env.TARGET_FILE,parent=fs.readFileSync('/tmp/parent.css','utf8'),raw=fs.readFileSync('/tmp/raw.css','utf8'),ws=[359,379,380,381,390,430,560,561],browser=await chromium.launch({headless:true});const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+            async function prep(p){await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));await p.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,contentType:'font/woff2',body:''}));await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.route('https://unpkg.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}))}
+            async function parseRows(p){return await p.evaluate(async()=>{const txt=await fetch('assets/css/pages/home/mobile-composition.css').then(r=>r.text());const sheet=new CSSStyleSheet();sheet.replaceSync(txt);const out=[];const walk=(rules,media=[])=>{for(const r of rules){if(r instanceof CSSMediaRule){walk(r.cssRules,[...media,r.conditionText]);continue;}if(!(r instanceof CSSStyleRule))continue;for(const prop of r.style){if(r.style.getPropertyPriority(prop)==='important')out.push({selector:r.selectorText,prop,value:r.style.getPropertyValue(prop).trim(),media:[...media]});}}};walk(sheet.cssRules);return out;});}
+            async function cap(w,phase,rows){const c=await browser.newContext({viewport:{width:w,height:1000}}),p=await c.newPage(),errs=[];await prep(p);p.on('pageerror',e=>errs.push(e.message));await p.goto(`http://127.0.0.1:4173/index.html?cssimp005=${phase}-${w}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(900);await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});if(!rows)rows=await parseRows(p);const data=await p.evaluate(rows=>rows.map((r,i)=>{const active=r.media.every(m=>matchMedia(m).matches);if(!active)return{i,active:false,count:0,samples:[]};let els=[];try{els=[...document.querySelectorAll(r.selector)].slice(0,4)}catch(_){return{i,active:true,pseudo:true,count:0,samples:[]}}return{i,active:true,count:els.length,samples:els.map(el=>{const s=getComputedStyle(el),b=el.getBoundingClientRect();return{value:s.getPropertyValue(r.prop).trim(),rect:[b.x,b.y,b.width,b.height].map(x=>Math.round(x*100)/100)}})}}),rows);const png=hash(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{rows,data,png,errs};}
+            fs.writeFileSync(f,parent);let rows=null,par={},raws={};for(const w of ws){const x=await cap(w,'parent',rows);rows=x.rows;par[w]=x;}if(rows.length!==36)throw Error(`cssom rows=${rows.length}`);fs.writeFileSync(f,raw);for(const w of ws)raws[w]=await cap(w,'raw',rows);
+            let changed=new Set(),observed=new Set(),pseudo=new Set(),errs=0,screenDiffs=0,samples=0;for(const w of ws){errs+=par[w].errs.length+raws[w].errs.length;if(par[w].png!==raws[w].png)screenDiffs++;for(let i=0;i<rows.length;i++){const a=par[w].data[i],b=raws[w].data[i];if(!a.active)continue;if(a.pseudo||b.pseudo){pseudo.add(i);continue;}if(a.count||b.count)observed.add(i);samples+=a.samples.length+b.samples.length;if(a.count!==b.count){changed.add(i);continue;}for(let j=0;j<a.samples.length;j++){if(a.samples[j].value!==b.samples[j].value||JSON.stringify(a.samples[j].rect)!==JSON.stringify(b.samples[j].rect)){changed.add(i);break;}}}}
+            const stable=[...observed].filter(i=>!changed.has(i)),inert=rows.map((_,i)=>i).filter(i=>!observed.has(i)&&!pseudo.has(i));console.log(`COVERAGE|sourceRows=${rows.length}|viewports=${ws.join(',')}|observedRows=${observed.size}|stableRows=${stable.length}|changedRows=${changed.size}|runtimeInertRows=${inert.length}|pseudoRows=${pseudo.size}|samples=${samples}|screenshotDiffs=${screenDiffs}|pageErrors=${errs}`);for(const i of stable)console.log(`STABLE|row=${i}|selector=${rows[i].selector.replace(/\s+/g,' ')}|prop=${rows[i].prop}|value=${rows[i].value}|media=${rows[i].media.join('&&')||'all'}`);for(const i of changed)console.log(`CHANGED|row=${i}|selector=${rows[i].selector.replace(/\s+/g,' ')}|prop=${rows[i].prop}|value=${rows[i].value}|media=${rows[i].media.join('&&')||'all'}`);for(const i of inert)console.log(`INERT|row=${i}|selector=${rows[i].selector.replace(/\s+/g,' ')}|prop=${rows[i].prop}|value=${rows[i].value}|media=${rows[i].media.join('&&')||'all'}`);for(const i of pseudo)console.log(`PSEUDO|row=${i}|selector=${rows[i].selector.replace(/\s+/g,' ')}|prop=${rows[i].prop}|value=${rows[i].value}|media=${rows[i].media.join('&&')||'all'}`);console.log(`DECISION|rawRemovalSafe=${changed.size===0&&screenDiffs===0&&errs===0?1:0}|stableObservedRows=${stable.length}|changedRows=${changed.size}|runtimeInertRows=${inert.length}|pseudoRows=${pseudo.size}|screenshotDiffs=${screenDiffs}`);await browser.close();fs.writeFileSync(f,parent);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.analyze.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "ANALYSIS=${{ steps.analyze.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(RAW IDENTITY|COVERAGE|STABLE|CHANGED|INERT|PSEUDO|DECISION)\|' /tmp/raw.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then echo '--- FAILURE TAIL ---'; tail -n 220 /tmp/raw.log || true; fi; } >/tmp/evidence.txt
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 005 raw analysis r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
