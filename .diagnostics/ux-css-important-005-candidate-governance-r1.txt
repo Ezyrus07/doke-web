@@ -1,0 +1,27 @@
+RUN_ID=32144639173
+TARGET_SHA=1c1f6c97a851fc73b7f81c07fe646d7d60e03843
+GOVERNANCE=failure
+RESTORE=success
+RESULT=FAIL
+
+added 26 packages, and audited 27 packages in 923ms
+
+found 0 vulnerabilities
+Responsive index baseline written to reports/responsive-index-baseline.json
+[stdin]:1
+const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8');if((s.match(/!important\b/g)||[]).length!==36)throw Error('parent drift');function strip(selector,props){const key=selector+' {';const a=s.indexOf(key);if(a<0||s.indexOf(key,a+1)>=0)throw Error('selector '+selector);const b=s.indexOf('{',a),e=s.indexOf('}',b),block=s.slice(b+1,e);let out=block;for(const prop of props){const re=new RegExp(`(^|\\n)(\\s*${prop.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\s*:[^;]+?)\\s*!important;`,'m');if(!re.test(out))throw Error(`prop ${selector} ${prop}`);out=out.replace(re,'$1$2;')}s=s.slice(0,b+1)+out+s.slice(e)}strip('body.home-index-shell #before-after-track > .comparison-card',['flex','width','min-width','max-width']);strip('body.home-index-shell #before-after-track > .comparison-card .comparison-card__visual',['aspect-ratio','min-height','max-height']);strip('body.home-index-shell .content-rail__arrow',['display']);strip('body.home-index-shell .home-mobile-hero__top',['grid-template-columns']);strip('body.home-index-shell .home-mobile-hero__quick-actions',['display','grid-template-columns']);strip('body.home-index-shell .home-mobile-hero__location-label',['display','overflow']);if((s.match(/!important\b/g)||[]).length!==23)throw Error('candidate count');fs.writeFileSync(f,s);const z=fs.readFileSync(f),h=crypto.createHash('sha256').update(z).digest('hex');console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=36->23|files=1|additions=13|deletions=13|priorityMarkersRemoved=13`);
+                                                                                                                                                                                                                                                                                                ^
+
+Error: selector body.home-index-shell .home-mobile-hero__quick-actions
+    at strip ([stdin]:1:295)
+    at [stdin]:1:1054
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+
+Node.js v22.23.2
