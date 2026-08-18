@@ -1,0 +1,27 @@
+RUN_ID=32148292381
+TARGET_SHA=24b49e5693f24621a1024b94c33c8ba6e18b12c0
+RAILS=failure
+RESTORE=success
+RESULT=FAIL
+--- FAILURE TAIL ---
+
+added 26 packages, and audited 27 packages in 1s
+
+found 0 vulnerabilities
+[stdin]:2
+function restore(needle,props){const hits=[];let at=0;while((at=s.indexOf(needle,at))>=0){const b=s.indexOf('{',at),e=s.indexOf('}',b),block=s.slice(b+1,e);if(props.every(p=>new RegExp(`(^|\\n)\\s*${p.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\s*:`,`m`).test(block)))hits.push({b,e,block});at=e+1}if(hits.length!==1)throw Error(`restore ${needle} hits=${hits.length}`);let out=hits[0].block;for(const p of props){const re=new RegExp(`(^|\\n)(\\s*${p.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\s*:[^;]+);`,'m');if(!re.test(out))throw Error(`restore prop ${p}`);out=out.replace(re,'$1$2 !important;')}s=s.slice(0,hits[0].b+1)+out+s.slice(hits[0].e)}
+                                                                                                                                                                                                                                                                                                                              ^
+
+Error: restore body.home-index-shell .featured-services .content-rail hits=2
+    at restore ([stdin]:2:325)
+    at [stdin]:3:162
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+
+Node.js v22.23.2
