@@ -1,0 +1,106 @@
+name: Doke UX-CSS-DEBT-069 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-069-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 23cc5c7496897f0d9b742039598574ffb2b93dfb
+      PARENT_PARENT_SHA: c7f8397821698f4445dad3b20e5aea2ff3d57cf3
+      PARENT_TREE: e65769efff06273415f71640b5e764465046ccc5
+      TARGET_FILE: assets/css/core/mobile/ui-standard.css
+      PARENT_TARGET_BLOB: 37f9675d63c11a81974f26cb6b931333f43d95e0
+      IMPORTER_FILE: assets/css/core/mobile-ui-standard.css
+      IMPORTER_BLOB: 613092a594e02fe1c50b5d12393a77edf2904d11
+      EXPECTED_SHA256: a472a7ba05a72eb8823ddfdd88a651daad77dcb610d66714fc6796f6853795c6
+      EXPECTED_BYTES: 7358
+      PERMANENT_BRANCH: ux/ux-css-debt-069-mobile-ui-standard-compaction
+      DIAG_BRANCH: diag/ux-css-debt-069-promote-permanent
+      RESULT_FILE: .diagnostics/ux-css-debt-069-promotion.txt
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-068 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and permanent seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_FILE")" = "$IMPORTER_BLOB"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$remote_sha"
+
+      - name: Rebuild exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n');if((ls[3]||'').replace(/\r$/,'')!=='    --doke-mobile-card-radius: 22px;')throw new Error('source row drift');const out=ls.filter((_,i)=>i!==3).join('\n');fs.writeFileSync(f,out);const b=fs.readFileSync(f),h=crypto.createHash('sha256').update(b).digest('hex');if(h!==process.env.EXPECTED_SHA256||b.length!==Number(process.env.EXPECTED_BYTES))throw new Error(`${h}/${b.length}`);console.log(`PROMOTION CANDIDATE PASS|sha256=${h}|bytes=${b.length}|parent=77/1|candidate=76/0|files=1|additions=0|deletions=1`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          git diff --quiet "$PARENT_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          git diff --check
+
+      - name: Commit and atomically promote permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-069: compact superseded mobile UI card-radius token declaration"
+          new_sha="$(git rev-parse HEAD)"
+          new_tree="$(git rev-parse HEAD^{tree})"
+          new_blob="$(git hash-object "$TARGET_FILE")"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA" "$new_sha")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$new_sha" -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$new_sha"
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT"
+            echo "PARENT_SHA=$PARENT_SHA"
+            echo "NEW_SHA=$new_sha"
+            echo "NEW_TREE=$new_tree"
+            echo "PARENT_TARGET_BLOB=$PARENT_TARGET_BLOB"
+            echo "NEW_TARGET_BLOB=$new_blob"
+            echo "SHA256=$EXPECTED_SHA256"
+            echo "BYTES=$EXPECTED_BYTES"
+            echo "DIFF=1 file +0/-1"
+            echo "RESULT=PASS"
+          } > /tmp/evidence.txt
+          echo "PROMOTION PASS|permanent=$PERMANENT_BRANCH|sha=$new_sha|parent=$PARENT_SHA|tree=$new_tree|blob=$new_blob|files=1|additions=0|deletions=1"
+
+      - name: Publish promotion evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PARENT_SHA"
+          git clean -fdx
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH"
+          git checkout -B diag-output "origin/$DIAG_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/evidence.txt "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m "diag: record UX-CSS-DEBT-069 promotion [skip ci]"
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH"
