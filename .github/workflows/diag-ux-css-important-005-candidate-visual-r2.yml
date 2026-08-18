@@ -1,0 +1,48 @@
+name: Doke UX CSS Important 005 Candidate Visual R2
+on:
+  push:
+    branches: [diag/ux-css-important-005-candidate-visual-r2]
+    paths: [.github/workflows/diag-ux-css-important-005-candidate-visual-r2.yml]
+permissions:
+  contents: write
+jobs:
+  visual:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 1c1f6c97a851fc73b7f81c07fe646d7d60e03843
+      TARGET_FILE: assets/css/pages/home/mobile-composition.css
+      TARGET_BLOB: 1e24479b2b9065659a5a11a18854131e4ef90187
+      DIAG_BRANCH: diag/ux-css-important-005-candidate-visual-r2
+      RESULT_FILE: .diagnostics/ux-css-important-005-candidate-visual-r2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: visual
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/visual.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts; npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          cp "$TARGET_FILE" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8');if((s.match(/!important\b/g)||[]).length!==36)throw Error('parent drift');
+          function strip(selector,props){const key=selector+' {';const hits=[];let at=0;while((at=s.indexOf(key,at))>=0){const b=s.indexOf('{',at),e=s.indexOf('}',b),block=s.slice(b+1,e);const ok=props.every(prop=>new RegExp(`(^|\\n)\\s*${prop.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\s*:[^;]+?\\s*!important;`,'m').test(block));if(ok)hits.push({b,e,block});at=e+1;}if(hits.length!==1)throw Error(`selector ${selector} matchingBlocks=${hits.length}`);let out=hits[0].block;for(const prop of props){const re=new RegExp(`(^|\\n)(\\s*${prop.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\s*:[^;]+?)\\s*!important;`,'m');out=out.replace(re,'$1$2;')}s=s.slice(0,hits[0].b+1)+out+s.slice(hits[0].e)}
+          strip('body.home-index-shell #before-after-track > .comparison-card',['flex','width','min-width','max-width']);strip('body.home-index-shell #before-after-track > .comparison-card .comparison-card__visual',['aspect-ratio','min-height','max-height']);strip('body.home-index-shell .content-rail__arrow',['display']);strip('body.home-index-shell .home-mobile-hero__top',['grid-template-columns']);strip('body.home-index-shell .home-mobile-hero__quick-actions',['display','grid-template-columns']);strip('body.home-index-shell .home-mobile-hero__location-label',['display','overflow']);if((s.match(/!important\b/g)||[]).length!==23)throw Error('candidate count');fs.writeFileSync('/tmp/candidate.css',s);const z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex');console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${z.length}|important=36->23|files=1|additions=13|deletions=13|priorityMarkersRemoved=13`);
+          NODE
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & SERVER_PID=$!; trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require('@playwright/test');(async()=>{const f=process.env.TARGET_FILE,parent=fs.readFileSync('/tmp/parent.css','utf8'),candidate=fs.readFileSync('/tmp/candidate.css','utf8'),browser=await chromium.launch({headless:true}),ws=[359,379,380,381,390,430,560],modalWs=new Set([359,380,560]),sels=['.home-mobile-hero__top','.home-mobile-hero__quick-actions','.home-mobile-hero__location-label','.content-rail__arrow','#before-after-track','#before-after-track > .comparison-card'],hash=b=>crypto.createHash('sha256').update(b).digest('hex');async function cap(w,phase,modal){const c=await browser.newContext({viewport:{width:w,height:1000}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));await p.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,contentType:'font/woff2',body:''}));await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.route('https://unpkg.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));await p.goto(`http://127.0.0.1:4173/index.html?cssimp005=${phase}-${w}-${modal?'modal':'default'}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(900);if(modal){const t=p.locator('[data-before-after-id="case-bathroom"]').first();if(await t.count()!==1)throw Error('modal trigger');await t.click();await p.waitForTimeout(300);const root=p.locator('[data-before-after-preview]');if(await root.count()!==1||await root.getAttribute('aria-hidden')==='true')throw Error('modal not open')}await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});const counts=await p.evaluate(s=>s.map(x=>document.querySelectorAll(x).length),sels);const png=hash(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{counts,png,errs}}const par={},can={};fs.writeFileSync(f,parent);for(const w of ws){par[`d${w}`]=await cap(w,'parent',false);if(modalWs.has(w))par[`m${w}`]=await cap(w,'parent',true)}fs.writeFileSync(f,candidate);for(const w of ws){can[`d${w}`]=await cap(w,'candidate',false);if(modalWs.has(w))can[`m${w}`]=await cap(w,'candidate',true)}let nd=0,sd=0,errs=0,nodes=0;for(const k of Object.keys(par)){errs+=par[k].errs.length+can[k].errs.length;nodes+=par[k].counts.reduce((a,b)=>a+b,0)+can[k].counts.reduce((a,b)=>a+b,0);if(JSON.stringify(par[k].counts)!==JSON.stringify(can[k].counts))nd++;if(par[k].png!==can[k].png)sd++}if(nodes||nd||sd||errs)throw Error(`parity nodes=${nodes} nodeDiffs=${nd} screenshotDiffs=${sd} errs=${errs}`);console.log(`VISUAL PASS|viewports=${ws.join(',')}|states=default7+modal3|selectorNodes=0|nodeDiffs=0|screenshotDiffs=0|screenshots=10|pageErrors=0|syntheticDOM=0|criteriaRelaxed=0|sourceRun=32144434761`);await browser.close();fs.writeFileSync(f,parent)})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: |
+          set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git rev-parse HEAD)" = "$TARGET_SHA"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test -z "$(git status --porcelain)"
+      - name: Publish
+        if: always()
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.visual.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "VISUAL=${{ steps.visual.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|VISUAL PASS)\|' /tmp/visual.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 220 /tmp/visual.log || true; fi; } >/tmp/evidence.txt; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: record ux css important 005 visual r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
