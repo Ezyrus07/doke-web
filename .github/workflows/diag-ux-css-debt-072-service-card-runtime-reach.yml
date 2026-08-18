@@ -1,0 +1,45 @@
+name: Doke UX-CSS-DEBT-072 Service Card Runtime Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-072-service-card-runtime-reach
+    paths:
+      - .github/workflows/diag-ux-css-debt-072-service-card-runtime-reach.yml
+
+permissions:
+  contents: write
+
+jobs:
+  runtime-reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c888a5ec84329062fac2de6ccf7ff3061fd07fd
+      TARGET_FILE: assets/css/components/cards/service-card.css
+      TARGET_BLOB: 0847b48ee62e3d09c737a35a46f6ce5271aac143
+      SOURCE_RUN: 32088490780
+      DIAG_BRANCH: diag/ux-css-debt-072-service-card-runtime-reach
+      RESULT_FILE: .diagnostics/ux-css-debt-072-runtime-reach.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Probe real runtime reach
+        shell: bash
+        run: |
+          exec > >(tee /tmp/probe.log) 2>&1
+          publish(){ code=$?; trap - EXIT; set +e; test -f /tmp/http.pid && kill "$(cat /tmp/http.pid)" 2>/dev/null || true; result=FAIL; test "$code" = 0 && result=PASS; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "SOURCE_RUN=$SOURCE_RUN"; grep '^ROUTE|' /tmp/probe.log || true; grep '^RUNTIME REACH PASS|' /tmp/probe.log || true; echo "RESULT=$result"; test "$result" = FAIL && { echo '--- FAILURE TAIL ---'; tail -n 100 /tmp/probe.log; }; } >/tmp/evidence.txt; git reset --hard "$TARGET_SHA" >/dev/null 2>&1; git clean -fdx >/dev/null 2>&1; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null 2>&1; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null 2>&1; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/evidence.txt "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; if ! git diff --cached --quiet; then git commit -m 'diag: record UX-CSS-DEBT-072 runtime reach [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; fi; exit "$code"; }
+          trap publish EXIT
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4184 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          sleep 1
+          cat >/tmp/probe.js <<'NODE'
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          (async()=>{const browser=await chromium.launch({headless:true});let total=0,cssomTotal=0;try{for(const pageName of ['index.html','resultados.html','perfil.html'])for(const width of [359,760,1025,1280]){const ctx=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url());if(['127.0.0.1','localhost'].includes(u.hostname))return route.continue();return route.abort()});await page.goto(`http://127.0.0.1:4184/${pageName}?runtimeProbe=1`,{waitUntil:'load'});await page.waitForTimeout(700);await page.evaluate(()=>{document.documentElement.setAttribute('data-auth-guard','ready');document.documentElement.classList.remove('doke-mobile-shell-pending');for(const n of document.querySelectorAll('[data-doke-document-preloader],.doke-document-preloader'))n.hidden=true});const x=await page.evaluate(()=>{const cards=[...document.querySelectorAll('.service-card')],visible=cards.filter(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0}).length;const wanted='/assets/css/components/cards/service-card.css',seen=new Set();function walk(s){if(!s||seen.has(s))return false;seen.add(s);let href='',rules=[];try{href=s.href?new URL(s.href,location.href).pathname:''}catch{};try{rules=[...(s.cssRules||[])]}catch{};if(href===wanted&&rules.length>10)return true;for(const r of rules)if(r.styleSheet&&walk(r.styleSheet))return true;return false}return{cards:cards.length,visible,cssom:[...document.styleSheets].some(walk),bodyClass:document.body.className}});total+=x.cards;cssomTotal+=x.cssom?1:0;console.log(`ROUTE|page=${pageName}|width=${width}|cards=${x.cards}|visible=${x.visible}|cssom=${x.cssom?1:0}|homeShell=${x.bodyClass.includes('home-index-shell')?1:0}`);await ctx.close()}}finally{await browser.close()}if(!total)throw Error('no real service-card DOM on canonical pages');if(cssomTotal!==12)throw Error(`cssom coverage ${cssomTotal}/12`);console.log(`RUNTIME REACH PASS|routes=3|viewports=4|cssom=12/12|cardsTotal=${total}|realProductDOM=1|syntheticDOM=0`);})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/probe.js
