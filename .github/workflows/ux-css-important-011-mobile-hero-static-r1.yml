@@ -1,0 +1,187 @@
+name: UX CSS Important 011 Mobile Hero Static R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-011-mobile-hero-static-r1
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 58df6a9856874d541951430f9eab99e322da3c0f
+      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+      RESULT_FILE: .diagnostics/ux-css-important-011-mobile-hero-static-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Analyze strictly dominated priority markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const crypto = require('crypto');
+          const ROOT = process.cwd();
+          const file = process.env.TARGET_FILE;
+          const out = process.env.RESULT_FILE;
+          const src = fs.readFileSync(file, 'utf8');
+          const totalImportant = (src.match(/!important\b/g) || []).length;
+          if (totalImportant !== 179) throw new Error(`expected 179 !important, got ${totalImportant}`);
+
+          function sanitizeComments(s) {
+            return s.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '));
+          }
+          const text = sanitizeComments(src);
+          const lineOf = (pos) => 1 + src.slice(0, pos).split('\n').length - 1;
+          const normSelector = (s) => s.trim().replace(/\s+/g, ' ').replace(/\s*,\s*/g, ',').replace(/\s*>\s*/g, '>').replace(/\s*\+\s*/g, '+').replace(/\s*~\s*/g, '~');
+          const normAt = (s) => s.trim().replace(/\s+/g, ' ');
+          const decls = [];
+
+          function findClose(open, limit) {
+            let depth = 1, quote = null, esc = false;
+            for (let i = open + 1; i < limit; i++) {
+              const c = text[i];
+              if (quote) {
+                if (esc) { esc = false; continue; }
+                if (c === '\\') { esc = true; continue; }
+                if (c === quote) quote = null;
+                continue;
+              }
+              if (c === '"' || c === "'") { quote = c; continue; }
+              if (c === '{') depth++;
+              else if (c === '}') { depth--; if (depth === 0) return i; }
+            }
+            throw new Error(`unclosed block at ${open}`);
+          }
+
+          function parseRuleBody(start, end, selector, atStack) {
+            let segStart = start, quote = null, paren = 0, esc = false;
+            for (let i = start; i <= end; i++) {
+              const c = i < end ? text[i] : ';';
+              if (quote) {
+                if (esc) { esc = false; continue; }
+                if (c === '\\') { esc = true; continue; }
+                if (c === quote) quote = null;
+                continue;
+              }
+              if (c === '"' || c === "'") { quote = c; continue; }
+              if (c === '(') { paren++; continue; }
+              if (c === ')') { if (paren) paren--; continue; }
+              if (c === ';' && paren === 0) {
+                const raw = text.slice(segStart, i);
+                const colon = raw.indexOf(':');
+                if (colon > 0) {
+                  const prop = raw.slice(0, colon).trim().toLowerCase();
+                  let value = raw.slice(colon + 1).trim();
+                  if (/^--[-\w]+$/.test(prop) || /^[-a-z][\w-]*$/.test(prop)) {
+                    const important = /!important\s*$/i.test(value);
+                    value = value.replace(/\s*!important\s*$/i, '').trim();
+                    const leading = raw.search(/\S|$/);
+                    decls.push({
+                      selector,
+                      at: atStack.join(' || '),
+                      prop,
+                      value,
+                      important,
+                      pos: segStart + Math.max(0, leading),
+                      line: lineOf(segStart + Math.max(0, leading))
+                    });
+                  }
+                }
+                segStart = i + 1;
+              }
+            }
+          }
+
+          function parseBlock(start, end, atStack = []) {
+            let cursor = start;
+            while (cursor < end) {
+              while (cursor < end && /\s|;/.test(text[cursor])) cursor++;
+              if (cursor >= end) break;
+              let i = cursor, quote = null, esc = false;
+              for (; i < end; i++) {
+                const c = text[i];
+                if (quote) {
+                  if (esc) { esc = false; continue; }
+                  if (c === '\\') { esc = true; continue; }
+                  if (c === quote) quote = null;
+                  continue;
+                }
+                if (c === '"' || c === "'") { quote = c; continue; }
+                if (c === '{' || c === ';' || c === '}') break;
+              }
+              if (i >= end || text[i] === '}') break;
+              if (text[i] === ';') { cursor = i + 1; continue; }
+              const prelude = text.slice(cursor, i).trim();
+              const close = findClose(i, end);
+              if (prelude.startsWith('@')) {
+                parseBlock(i + 1, close, [...atStack, normAt(prelude)]);
+              } else {
+                parseRuleBody(i + 1, close, normSelector(prelude), atStack.map(normAt));
+              }
+              cursor = close + 1;
+            }
+          }
+          parseBlock(0, text.length, []);
+
+          const importantDecls = decls.filter(d => d.important);
+          if (importantDecls.length !== 179) throw new Error(`parser saw ${importantDecls.length} important declarations`);
+          const key = d => `${d.at}\n${d.selector}\n${d.prop}`;
+          const byKey = new Map();
+          for (const d of decls) {
+            const k = key(d);
+            if (!byKey.has(k)) byKey.set(k, []);
+            byKey.get(k).push(d);
+          }
+          const dominated = [];
+          for (const d of importantDecls) {
+            const later = (byKey.get(key(d)) || []).find(x => x.pos > d.pos && x.important);
+            if (later) dominated.push({...d, laterLine: later.line, laterValue: later.value});
+          }
+
+          const importerHits = [];
+          function walk(dir) {
+            for (const e of fs.readdirSync(dir, {withFileTypes:true})) {
+              const p = path.join(dir, e.name);
+              if (e.isDirectory()) walk(p);
+              else if (e.isFile() && e.name.endsWith('.css') && p !== path.join(ROOT, file)) {
+                const s = fs.readFileSync(p,'utf8');
+                if (s.includes('mobile-hero-feed.css')) importerHits.push(path.relative(ROOT,p).replace(/\\/g,'/'));
+              }
+            }
+          }
+          walk(path.join(ROOT,'assets/css'));
+
+          const sha256 = crypto.createHash('sha256').update(Buffer.from(src)).digest('hex');
+          const lines = [];
+          lines.push(`PARENT_SHA=${process.env.PARENT_SHA}`);
+          lines.push(`TARGET_FILE=${file}`);
+          lines.push(`BYTES=${Buffer.byteLength(src)}`);
+          lines.push(`SHA256=${sha256}`);
+          lines.push(`IMPORTANT_TOTAL=${totalImportant}`);
+          lines.push(`PARSED_DECLARATIONS=${decls.length}`);
+          lines.push(`STRICTLY_DOMINATED=${dominated.length}`);
+          lines.push(`IMPORTERS=${importerHits.join(',')}`);
+          dominated.forEach((d,i) => lines.push(`DOMINATED|rank=${i}|line=${d.line}|laterLine=${d.laterLine}|prop=${d.prop}|value=${JSON.stringify(d.value)}|laterValue=${JSON.stringify(d.laterValue)}|at=${JSON.stringify(d.at)}|selector=${JSON.stringify(d.selector)}`));
+          lines.push(`RESULT=PASS`);
+          fs.mkdirSync(path.dirname(out), {recursive:true});
+          fs.writeFileSync(out, lines.join('\n')+'\n');
+          console.log(lines.join('\n'));
+          NODE
+      - name: Publish receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: publish 011 mobile hero static r1 [skip ci]'
+          git push origin HEAD:refs/heads/diag/ux-css-important-011-mobile-hero-static-r1
