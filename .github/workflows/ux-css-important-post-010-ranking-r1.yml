@@ -1,10 +1,10 @@
-name: UX CSS Important 020 Mobile Base Stability Reach R3
+name: UX CSS Important 020 Mobile Base Stability Family Proof R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach020:
+  family020:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -12,40 +12,41 @@ jobs:
       TARGET_FILE: assets/css/components/shell/mobile-base-stability.css
       TARGET_BLOB: 85a7df3eaf36ae2cf5835794d7e27cdc6548dda2
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-020-mobile-base-stability-reach-r3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-020-mobile-base-stability-family-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: reach
+      - id: family
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/f.log) 2>&1
           git checkout --detach "$PARENT_SHA" >/dev/null
-          test "$(git rev-parse HEAD)" = "$PARENT_SHA"; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"; test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 31
-          git show diag/ux-css-important-post-010-ranking-r1:.diagnostics/ux-css-important-post-019-fresh-ranking-r1.txt >/tmp/rank.txt
-          grep -q '^RESULT=PASS$' /tmp/rank.txt; grep -Fq 'NEXT HIGH|important=31|file=assets/css/components/shell/mobile-base-stability.css' /tmp/rank.txt
-          echo 'PREFLIGHT PASS|parent=019|targetBlob=exact|targetImportant=31|productMutation=0|rankingR1=PASS|r2FalseNegative=activeHtmlHarnessBaselineOnly'
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show diag/ux-css-important-post-010-ranking-r1:.diagnostics/ux-css-important-020-mobile-base-stability-reach-r3.txt >/tmp/reach.txt
+          grep -Fq 'REACH GRAPH|activeHtml=33|directCss=51|reachableCss=407|targetReachable=1|jsRefs=0|runtimeTextRefs=0|importers=11' /tmp/reach.txt
+          echo 'PREFLIGHT PASS|parent=019|wholeFileReachable=1|importers=11|wholeFileCandidateBlocked=1|familyInvestigation=1'
           node <<'NODE'
-          const fs=require('fs'),path=require('path'),crypto=require('crypto');const target=process.env.TARGET_FILE.replaceAll('\\','/');
+          const fs=require('fs'),path=require('path'),crypto=require('crypto');const target=process.env.TARGET_FILE;
           const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const p=path.join(d,e.name);return e.isDirectory()?walk(p):[p]});
-          const active=walk('.').filter(f=>f.endsWith('.html')&&!f.includes('/node_modules/')&&!f.includes('/archive/')&&!f.includes('/.git/')&&!f.includes('/tests/')&&!f.includes('/fixtures/'));
-          const direct=new Set();for(const f of active){const s=fs.readFileSync(f,'utf8');for(const m of s.matchAll(/<link\b[^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi)){let u=m[1].split('?')[0];if(/^https?:|^\/\//.test(u))continue;u=u.replace(/^\.\//,'');let q=path.normalize(path.join(path.dirname(f),u)).replaceAll('\\','/').replace(/^\.\//,'');if(fs.existsSync(q))direct.add(q);}}
-          const reachable=new Set(direct),queue=[...direct];while(queue.length){const f=queue.shift(),s=fs.readFileSync(f,'utf8');for(const m of s.matchAll(/@import\s+(?:url\()?\s*["']([^"']+\.css(?:\?[^"']*)?)["']/gi)){let u=m[1].split('?')[0];if(/^https?:|^\/\//.test(u))continue;let q=path.normalize(path.join(path.dirname(f),u)).replaceAll('\\','/');if(fs.existsSync(q)&&!reachable.has(q)){reachable.add(q);queue.push(q);}}}
-          const css=walk('assets/css').filter(f=>f.endsWith('.css')).map(f=>f.replaceAll('\\','/'));let importers=0;for(const f of css){const s=fs.readFileSync(f,'utf8');for(const m of s.matchAll(/@import\s+(?:url\()?\s*["']([^"']+)["']/gi)){let q=path.normalize(path.join(path.dirname(f),m[1].split('?')[0])).replaceAll('\\','/');if(q===target)importers++;}}
-          const jsFiles=walk('assets').filter(f=>/\.(?:js|mjs|cjs)$/.test(f));let jsRefs=0;for(const f of jsFiles){const s=fs.readFileSync(f,'utf8');if(s.includes(target)||s.includes(path.basename(target)))jsRefs++;}
-          const strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');let runtimeTextRefs=0;for(const f of css){let s=strip(fs.readFileSync(f,'utf8')).replace(/@import[^;]+;/gi,'');if(s.includes(target)||s.includes(path.basename(target)))runtimeTextRefs++;}
-          const targetReachable=reachable.has(target)?1:0;if(active.length!==33||direct.size!==51||reachable.size!==407)throw Error(`graph ${active.length}/${direct.size}/${reachable.size}`);
-          console.log(`REACH GRAPH|activeHtml=${active.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${targetReachable}|jsRefs=${jsRefs}|runtimeTextRefs=${runtimeTextRefs}|importers=${importers}`);if(targetReachable||jsRefs||runtimeTextRefs||importers)throw Error('target reachable/referenced');
-          const original=fs.readFileSync(target,'utf8'),before=(original.match(/!important\b/g)||[]).length,candidate=original.replace(/\s*!important\b/g,''),after=(candidate.match(/!important\b/g)||[]).length,b=Buffer.from(candidate),h=crypto.createHash('sha256').update(b).digest('hex');if(before!==31||after!==0)throw Error(`important ${before}/${after}`);
-          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=31->0|priorityMarkersRemoved=31|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0`);console.log('DECISION PASS|wholeFileDormant=1|candidateEligible=1');
+          const tokens=['app-frame','page-shell','layout-shell','dashboard-layout'];
+          const runtimeFiles=walk('.').filter(f=>/\.(?:html|js|mjs|cjs)$/.test(f)&&!f.includes('/node_modules/')&&!f.includes('/archive/')&&!f.includes('/.git/'));
+          const refs=[];for(const f of runtimeFiles){const s=fs.readFileSync(f,'utf8');const hits=tokens.filter(t=>s.includes(t));if(hits.length)refs.push(`${f}:${hits.join(',')}`)}
+          const cssFiles=walk('assets/css').filter(f=>f.endsWith('.css')&&f.replaceAll('\\','/')!==target);const cssRefs=[];for(const f of cssFiles){const s=fs.readFileSync(f,'utf8');const hits=tokens.filter(t=>s.includes('.'+t));if(hits.length)cssRefs.push(`${f}:${hits.join(',')}`)}
+          console.log(`FAMILY REFS|runtimeFiles=${runtimeFiles.length}|runtimeRefs=${refs.length}|cssRefsOutsideTarget=${cssRefs.length}|tokens=${tokens.join(',')}`);for(const x of refs)console.log('RUNTIME REF|'+x);for(const x of cssRefs)console.log('CSS REF|'+x);
+          if(refs.length)throw Error('runtime family refs present');
+          const original=fs.readFileSync(target,'utf8');const block=/body\.doke-mobile-shell-mounted \.app-frame,\s*body\.doke-mobile-shell-mounted \.page-shell,\s*body\.doke-mobile-shell-mounted \.layout-shell,\s*body\.doke-mobile-shell-mounted \.dashboard-layout \{([\s\S]*?)\n  \}/m;const m=original.match(block);if(!m)throw Error('family block missing');
+          const before=(m[0].match(/!important\b/g)||[]).length;if(before!==3)throw Error(`family important ${before}`);const newBlock=m[0].replace(/\s*!important\b/g,'');const candidate=original.replace(m[0],newBlock);const totalBefore=(original.match(/!important\b/g)||[]).length,totalAfter=(candidate.match(/!important\b/g)||[]).length;if(totalBefore!==31||totalAfter!==28)throw Error(`total ${totalBefore}/${totalAfter}`);
+          const b=Buffer.from(candidate),h=crypto.createHash('sha256').update(b).digest('hex');fs.writeFileSync('/tmp/candidate.css',candidate);
+          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=31->28|priorityMarkersRemoved=3|familyImportant=3->0|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0`);
+          console.log('DECISION PASS|familyDormantStatic=1|wholeFileDormant=0|candidateEligibleForBrowser=1');
           NODE
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; echo 'R2_NOTE=harness-only activeHtml baseline mismatch; directCss/reachableCss unchanged; no target decision reached'; grep -E '^(PREFLIGHT PASS|REACH GRAPH|CANDIDATE IDENTITY|DECISION PASS)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/r.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 020 mobile base stability reach r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.family.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "FAMILY=${{ steps.family.outcome }}"; grep -E '^(PREFLIGHT PASS|FAMILY REFS|RUNTIME REF|CSS REF|CANDIDATE IDENTITY|DECISION PASS)\|' /tmp/f.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/f.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 020 mobile base stability family r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
