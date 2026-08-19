@@ -1,0 +1,38 @@
+name: Doke UX CSS Important 010 Comparison Runtime R3
+on: [push]
+permissions: {contents: write}
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 839d20efdaf28d99508397722fb61cedafcdb556
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: 46ede4f081a686155ab4035581cbd8a796a831c9
+      DIAG_BRANCH: diag/ux-css-important-010-comparison-runtime-r3
+      RESULT_FILE: .diagnostics/ux-css-important-010-comparison-runtime-r3.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/c.log) 2>&1; test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; npm ci --ignore-scripts; npx playwright install --with-deps chromium >/tmp/pw.log 2>&1; cp "$TARGET_FILE" /tmp/p.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,P=fs.readFileSync(f,'utf8');if((P.match(/!important\b/g)||[]).length!==4)throw Error('parent');const sel=':is(.comparison-card__visual, .profile-posts-stack .comparison-card__visual, body.home-index-shell .comparison-card__visual)';function make(props){let s=P,i=s.indexOf(sel+' {'),b=s.indexOf('{',i),e=s.indexOf('}',b),z=s.slice(b+1,e);if(i<0)throw Error('selector');for(const p of props){const re=new RegExp('('+p+'\\s*:[^;]+?)\\s*!important\\b');if(!re.test(z))throw Error(p);z=z.replace(re,'$1')}s=s.slice(0,b+1)+z+s.slice(e);return s}const v={both:make(['min-height','aspect-ratio']),min:make(['min-height']),aspect:make(['aspect-ratio'])},H=s=>crypto.createHash('sha256').update(Buffer.from(s)).digest('hex');for(const [k,s] of Object.entries(v)){fs.writeFileSync('/tmp/'+k+'.css',s);console.log(`VARIANT IDENTITY|name=${k}|sha256=${H(s)}|bytes=${Buffer.byteLength(s)}|important=${(s.match(/!important\b/g)||[]).length}`)}
+          NODE
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!; trap 'kill $PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');(async()=>{const f=process.env.TARGET_FILE,names=['parent','both','min','aspect'],css={parent:fs.readFileSync('/tmp/p.css','utf8')};for(const n of names.slice(1))css[n]=fs.readFileSync('/tmp/'+n+'.css','utf8');const browser=await chromium.launch({headless:true}),widths=[359,380,560],H=b=>crypto.createHash('sha256').update(b).digest('hex');async function cap(w,phase){const c=await browser.newContext({viewport:{width:w,height:1050}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));for(const h of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(h,r=>r.fulfill({status:200,body:''}));await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));await p.goto(`http://127.0.0.1:4173/index.html?cmp=${phase}-${w}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForFunction(()=>Boolean(window.DokeHomeBeforeAfter?.create),null,{timeout:7000});await p.evaluate(()=>window.DokeHomeBeforeAfter.create());await p.locator('[data-before-after-id="case-bathroom"]').click();await p.waitForFunction(()=>{const e=document.querySelector('[data-before-after-preview]');return Boolean(e&&!e.hidden&&e.getAttribute('aria-hidden')!=='true')},null,{timeout:3000});await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});const data=await p.evaluate(()=>{const e=document.querySelector('.comparison-card__visual');if(!e)return null;const c=getComputedStyle(e),r=e.getBoundingClientRect();return{display:c.display,minHeight:c.minHeight,aspect:c.aspectRatio,width:c.width,height:c.height,grid:c.gridTemplateColumns,rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000)}});if(!data)throw Error('visual missing');const png=H(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{data,png,errs}}const out={};for(const n of names){fs.writeFileSync(f,css[n]);out[n]={};for(const w of widths)out[n][w]=await cap(w,n)}function d(v){let md=0,sd=0,pe=0,details=[];for(const w of widths){pe+=out.parent[w].errs.length+out[v][w].errs.length;if(JSON.stringify(out.parent[w].data)!==JSON.stringify(out[v][w].data)){md++;details.push(`${w}:${JSON.stringify({p:out.parent[w].data,c:out[v][w].data})}`)}if(out.parent[w].png!==out[v][w].png)sd++}return{md,sd,pe,details}}for(const v of names.slice(1)){const x=d(v);console.log(`COMPARISON RESULT|name=${v}|states=3|metadataDiffs=${x.md}|screenshotDiffs=${x.sd}|pageErrors=${x.pe}`);x.details.forEach(q=>console.log(`COMPARISON DETAIL|name=${v}|${q}`))}await browser.close();fs.writeFileSync(f,css.parent)})().catch(e=>{console.error(e);process.exit(1)})
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(VARIANT IDENTITY|COMPARISON RESULT|COMPARISON DETAIL)\|' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 160 /tmp/c.log || true; fi; } >/tmp/out; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 010 comparison runtime r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
