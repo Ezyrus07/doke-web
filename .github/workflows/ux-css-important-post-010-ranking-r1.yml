@@ -1,59 +1,84 @@
-name: UX CSS Important 012 Recommendation R3
+name: UX CSS Important 012 Recommendation Governance R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  proof012:
+  governance012:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       TARGET_SHA: 57561ae5735f2a9a71c589cf6caea57c0db04488
       TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
       TARGET_BLOB: 880134c8303d87133a1b066e27ed9849abaa61ba
+      CANDIDATE_SHA256: a319f97dc53e3fc53d7ca569deaef239f074c2ca78a4e8dd908a3d99f208b791
+      BROWSER_RUN: 32206515836
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-012-home-recommendation-r3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-012-home-recommendation-governance-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: proof
+      - id: governance
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/p.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/g.log) 2>&1
           git cat-file -e "$TARGET_SHA^{commit}"
           test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show HEAD:.diagnostics/ux-css-important-012-home-recommendation-r3.txt >/tmp/browser.txt
+          grep -q '^RESULT=PASS$' /tmp/browser.txt
+          grep -q "^RUN_ID=$BROWSER_RUN$" /tmp/browser.txt
+          grep -q "sha256=$CANDIDATE_SHA256" /tmp/browser.txt
+          grep -q 'metadataDiffs=0|screenshotDiffs=0|pageErrors=0' /tmp/browser.txt
           git checkout "$TARGET_SHA" -- .
           test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
-          echo 'PREFLIGHT PASS|targetCommit=present|targetBlob=exact|executorAncestryRequired=0'
           npm ci --ignore-scripts
-          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
-          set +e
-          git grep -n -E 'recommendation-card(__media|__aside|__cta)?' "$TARGET_SHA" -- '*.html' '*.js' '*.mjs' '*.cjs' >/tmp/source_hits.txt
-          SRC=$?; set -e
-          if test "$SRC" -eq 0; then cat /tmp/source_hits.txt; exit 21; fi
-          echo 'SOURCE CLOSURE PASS|tokens=recommendation-card,recommendation-card__media,recommendation-card__aside,recommendation-card__cta|htmlJsHits=0|exactParent=1'
-          cp "$TARGET_FILE" /tmp/parent.css
+          node scripts/generate-responsive-index-baseline.js
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8'),removed=0,rules=0;
-          if((s.match(/!important\b/g)||[]).length!==162)throw Error('parent');
+          if((s.match(/!important\b/g)||[]).length!==162)throw Error('parent important count');
           const S=new Set(['html.home-index-root body.home-index-shell .recommendation-card','html.home-index-root body.home-index-shell .recommendation-card__media','html.home-index-root body.home-index-shell .recommendation-card__aside','html.home-index-root body.home-index-shell .recommendation-card__cta']);
           s=s.replace(/([^{}]+)\{([^{}]*)\}/g,(a,h,b)=>{if(!S.has(h.trim()))return a;const c=(b.match(/!important\b/g)||[]).length;if(!c)return a;removed+=c;rules++;return h+'{'+b.replace(/\s*!important\b/g,'')+'}'});
-          const count=(s.match(/!important\b/g)||[]).length,h=crypto.createHash('sha256').update(Buffer.from(s)).digest('hex');
-          if(removed!==9||rules!==6||count!==153)throw Error(`candidate ${removed}/${rules}/${count}`);
-          fs.writeFileSync('/tmp/candidate.css',s);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(s)}|important=162->153|priorityMarkersRemoved=9|rules=6|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|family=recommendation-card`);
+          const z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex'),count=(s.match(/!important\b/g)||[]).length;
+          if(removed!==9||rules!==6||count!==153||h!==process.env.CANDIDATE_SHA256)throw Error(`candidate ${removed}/${rules}/${count}/${h}`);
+          fs.writeFileSync(f,s);console.log(`STATIC PASS|sha256=${h}|bytes=${z.length}|important=162->153|priorityMarkersRemoved=9|rules=6|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|family=recommendation-card`);
           NODE
-          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!; trap 'kill $PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'9\t9\t'"$TARGET_FILE"
+          git diff --check
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
-          (async()=>{const f=process.env.TARGET_FILE,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/candidate.css','utf8'),browser=await chromium.launch({headless:true}),widths=[359,379,380,381,390,430,560,561],filters=new Set([359,380,390,560]),H=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const items=Array.from({length:8},(_,i)=>({id:'c12-'+i,serviceId:'c12-'+i,status:'active',title:'Servico '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
-          async function cap(w,state,phase){const c=await browser.newContext({viewport:{width:w,height:1050}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));for(const host of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(host,r=>r.fulfill({status:200,body:''}));await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));await p.goto(`http://127.0.0.1:4173/index.html?c12=${phase}-${w}-${state}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(!a||!b)throw Error('grids');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})))},items);if(state==='filters'){await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));await p.waitForFunction(()=>document.body.classList.contains('home-filter-sheet-open'),null,{timeout:4000})}await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});const data=await p.evaluate(()=>({recommendationCards:document.querySelectorAll('.recommendation-card').length,recommendationMedia:document.querySelectorAll('.recommendation-card__media').length,recommendationAside:document.querySelectorAll('.recommendation-card__aside').length,recommendationCta:document.querySelectorAll('.recommendation-card__cta').length,cards:document.querySelectorAll('.doke-ad-card').length,workers:document.querySelectorAll('.video-card').length,filterOpen:document.body.classList.contains('home-filter-sheet-open')}));if(data.recommendationCards||data.recommendationMedia||data.recommendationAside||data.recommendationCta)throw Error('materialized '+JSON.stringify(data));if(data.cards<8||data.workers<6)throw Error('anatomy '+JSON.stringify(data));if(state==='filters'&&!data.filterOpen)throw Error('filter');const png=H(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{data,png,errs}}
-          const states=[];for(const w of widths){states.push([w,'default']);if(filters.has(w))states.push([w,'filters'])}const A={},B={};fs.writeFileSync(f,P);for(const [w,s]of states)A[`${w}-${s}`]=await cap(w,s,'parent');fs.writeFileSync(f,C);for(const [w,s]of states)B[`${w}-${s}`]=await cap(w,s,'candidate');let md=0,sd=0,pe=0;const d=[];for(const k of Object.keys(A)){pe+=A[k].errs.length+B[k].errs.length;if(JSON.stringify(A[k].data)!==JSON.stringify(B[k].data)){md++;d.push('meta:'+k)}if(A[k].png!==B[k].png){sd++;d.push('png:'+k)}}console.log(`CANDIDATE PARITY|states=${states.length}|viewports=${widths.join(',')}|realFilterStates=${filters.size}|metadataDiffs=${md}|screenshotDiffs=${sd}|pageErrors=${pe}|recommendationNodesParent=0|recommendationNodesCandidate=0|productRenderer=1|syntheticDOM=0|criteriaRelaxed=0|diffKeys=${d.join(',')}`);if(md||sd||pe)throw Error('parity '+d.join(','));await browser.close();fs.writeFileSync(f,P)})().catch(e=>{console.error(e);process.exit(1)});
+          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
           NODE
-          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures
+          npm run audit:important-reduction-plan
+          npm run audit:global-css-design-system
+          node <<'NODE'
+          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary;
+          if(s.totalImportant!==11095||s.outsideServiceCardImportant!==11033||s.filesWithImportant!==34)throw Error(`important ${JSON.stringify(s)}`);
+          if(p.summary.affectedFiles!==33||p.summary.totalImportantOutsideServiceCard!==11033||p.summary.byRisk?.['high-baseline-required']!==11025||p.summary.byRisk?.['medium-baseline-required']!==6||p.summary.byRisk?.['low-review-candidate']!==2)throw Error(`plan ${JSON.stringify(p.summary)}`);
+          console.log('IMPORTANT PASS|total=11095|outsideServiceCard=11033|files=34|delta=-9');
+          console.log('QUEUE PASS|affectedFiles=33|highBaselineRequired=11025|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=153|protected006=6');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
+          node <<'NODE'
+          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
+          NODE
+          echo "AUDIT_EXIT=$code"
+          echo "GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|browserRun=$BROWSER_RUN|candidateHash=$CANDIDATE_SHA256"
       - id: restore
         if: always()
         run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
@@ -61,6 +86,6 @@ jobs:
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(PREFLIGHT PASS|SOURCE CLOSURE PASS|CANDIDATE IDENTITY|CANDIDATE PARITY)\|' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 220 /tmp/p.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 012 recommendation r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.governance.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "GOVERNANCE=${{ steps.governance.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(STATIC PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|GOVERNANCE PASS)\|' /tmp/g.log || true; grep '^AUDIT_EXIT=' /tmp/g.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 260 /tmp/g.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 012 recommendation governance r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
