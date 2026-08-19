@@ -1,10 +1,10 @@
-name: UX CSS Important 016 Header Rail Visual R3
+name: UX CSS Important 016 Header Rail Governance R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  visual016:
+  governance016:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -13,54 +13,57 @@ jobs:
       TARGET_BLOB: fe8979ee405aad0a93af61b52fe457d74d1a347d
       CANDIDATE_SHA256: 690c121eb14f6784eef33179085f99004ceda95712a3e72f3b5f7291fc1f3f71
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-016-header-rail-visual-r3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-016-header-rail-governance-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: proof
+      - id: governance
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/v.log) 2>&1
-          git cat-file -e "$TARGET_SHA^{commit}"; test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
-          git checkout "$TARGET_SHA" -- .
-          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 83
-          test "$(grep -c '^RESULT=PASS$' .diagnostics/ux-css-important-016-header-rail-reach-r2.txt)" -eq 1
-          grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0|importers=0' .diagnostics/ux-css-important-016-header-rail-reach-r2.txt
-          grep -Fq "sha256=$CANDIDATE_SHA256" .diagnostics/ux-css-important-016-header-rail-reach-r2.txt
-          echo 'PREFLIGHT PASS|parent=015|reach=pass|targetReachable=0|targetImportant=83'
+          set -euo pipefail; exec > >(tee /tmp/g.log) 2>&1
+          git cat-file -e "$TARGET_SHA^{commit}";test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB";git checkout "$TARGET_SHA" -- .;test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          grep -q '^RESULT=PASS$' .diagnostics/ux-css-important-016-header-rail-reach-r2.txt;grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0|importers=0' .diagnostics/ux-css-important-016-header-rail-reach-r2.txt;grep -Fq "sha256=$CANDIDATE_SHA256" .diagnostics/ux-css-important-016-header-rail-reach-r2.txt
+          grep -q '^RESULT=PASS$' .diagnostics/ux-css-important-016-header-rail-visual-r3.txt;grep -Fq "sha256=$CANDIDATE_SHA256" .diagnostics/ux-css-important-016-header-rail-visual-r3.txt;grep -Fq 'metadataDiffs=0|screenshotDiffs=0|pageErrors=0|targetStylesheetLoads=0' .diagnostics/ux-css-important-016-header-rail-visual-r3.txt
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync(process.env.TARGET_FILE,'utf8'),before=(s.match(/!important\b/g)||[]).length,db=(s.match(/:[^;{}]+;/g)||[]).length,sb=(s.match(/[^{}]+\{/g)||[]).length;s=s.replace(/\s*!important\b/g,'');const after=(s.match(/!important\b/g)||[]).length,da=(s.match(/:[^;{}]+;/g)||[]).length,sa=(s.match(/[^{}]+\{/g)||[]).length,b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex');if(before!==83||after!==0||db!==da||sb!==sa||h!==process.env.CANDIDATE_SHA256)throw Error(`${before}/${after}/${db}/${da}/${sb}/${sa}/${h}`);fs.writeFileSync(process.env.TARGET_FILE,s);console.log(`STATIC PASS|sha256=${h}|bytes=${b.length}|important=83->0|priorityMarkersRemoved=83|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
+          NODE
           npm ci --ignore-scripts
-          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
-          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!; trap 'kill $PID >/dev/null 2>&1 || true' EXIT; sleep 1
-          cat >/tmp/render.js <<'NODE'
-          const {chromium}=require('@playwright/test'),fs=require('fs'),crypto=require('crypto');
-          const phase=process.argv[2],out='/tmp/'+phase;fs.mkdirSync(out,{recursive:true});
-          const pages=[['generic','pedidos.html'],['profile','perfil.html'],['detail','detalhe-anuncio.html'],['results','resultados.html']],widths=[760,761,1024,1179,1180,1280];
-          const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
-          (async()=>{const browser=await chromium.launch({headless:true});let totalErrors=0,totalLoads=0,states=[];
-          for(const [label,file] of pages)for(const w of widths){const c=await browser.newContext({viewport:{width:w,height:1050}});await c.addInitScript(()=>{Date.now=()=>1760000000000;Math.random=()=>0.314159;});const p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));
-            for(const host of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(host,r=>r.fulfill({status:200,body:''}));
-            for(const host of ['https://images.pexels.com/**','https://images.unsplash.com/**'])await p.route(host,r=>r.fulfill({status:200,contentType:'image/png',body:tiny}));
-            await p.goto(`http://127.0.0.1:4173/${file}?i16=${phase}-${w}`,{waitUntil:'domcontentloaded'});await p.waitForTimeout(650);
-            const meta=await p.evaluate(()=>{const target='header-rail-alignment-contract.css',loads=performance.getEntriesByType('resource').filter(x=>x.name.includes(target)).length;const hdr=document.querySelector('header.app-header.home-side-meta, .app-header.home-side-meta, header.topbar.internal-page-topbar, .topbar.internal-page-topbar'),inner=hdr?.querySelector('.app-header__inner')||null;const pack=n=>{if(!n)return null;const r=n.getBoundingClientRect(),s=getComputedStyle(n);return {x:+r.x.toFixed(3),y:+r.y.toFixed(3),w:+r.width.toFixed(3),h:+r.height.toFixed(3),display:s.display,position:s.position,width:s.width,maxWidth:s.maxWidth,marginLeft:s.marginLeft,marginRight:s.marginRight,paddingLeft:s.paddingLeft,paddingRight:s.paddingRight,transform:s.transform};};return {page:document.body.dataset.page||'',bodyClass:document.body.className,hasGlobal:document.body.classList.contains('has-global-header'),headerCount:document.querySelectorAll('header.app-header.home-side-meta, .app-header.home-side-meta').length,resultsTopbarCount:document.querySelectorAll('header.topbar.internal-page-topbar, .topbar.internal-page-topbar').length,targetLoads:loads,header:pack(hdr),inner:pack(inner)};});
-            const shot=await p.screenshot({fullPage:true});const sh=crypto.createHash('sha256').update(shot).digest('hex');fs.writeFileSync(`${out}/${label}-${w}.png`,shot);fs.writeFileSync(`${out}/${label}-${w}.json`,JSON.stringify(meta));console.log(`STATE|phase=${phase}|page=${label}|width=${w}|headerCount=${meta.headerCount}|resultsTopbarCount=${meta.resultsTopbarCount}|targetLoads=${meta.targetLoads}|pageErrors=${errs.length}|shot=${sh}`);totalErrors+=errs.length;totalLoads+=meta.targetLoads;states.push({label,w,meta,sh,errs});await c.close();}
-          fs.writeFileSync(`${out}/summary.json`,JSON.stringify({states,totalErrors,totalLoads}));console.log(`PHASE|label=${phase}|states=${states.length}|pageErrors=${totalErrors}|targetStylesheetLoads=${totalLoads}`);if(totalErrors||totalLoads)process.exit(2);await browser.close();})().catch(e=>{console.error(e);process.exit(1)});
-          NODE
-          NODE_PATH="$PWD/node_modules" node /tmp/render.js parent
+          node scripts/generate-responsive-index-baseline.js
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log;grep -q 'Failures: 0' /tmp/responsive.log;grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync(process.env.TARGET_FILE,'utf8'),before=(s.match(/!important\b/g)||[]).length;s=s.replace(/\s*!important\b/g,'');const b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex'),after=(s.match(/!important\b/g)||[]).length;if(before!==83||after!==0||h!==process.env.CANDIDATE_SHA256)throw Error(`${before}/${after}/${h}`);fs.writeFileSync(process.env.TARGET_FILE,s);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=83->0|priorityMarkersRemoved=83|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
+          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
           NODE
-          NODE_PATH="$PWD/node_modules" node /tmp/render.js candidate
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log;grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log;grep -q 'Critical flows: 15' /tmp/domain.log;grep -q 'Average maturity: 2.91/6' /tmp/domain.log;grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures
+          npm run audit:important-reduction-plan
+          npm run audit:global-css-design-system
           node <<'NODE'
-          const fs=require('fs'),pages=['generic','profile','detail','results'],widths=[760,761,1024,1179,1180,1280];let md=0,sd=0;for(const p of pages)for(const w of widths){const a=fs.readFileSync(`/tmp/parent/${p}-${w}.json`,'utf8'),b=fs.readFileSync(`/tmp/candidate/${p}-${w}.json`,'utf8');if(a!==b)md++;const x=fs.readFileSync(`/tmp/parent/${p}-${w}.png`),y=fs.readFileSync(`/tmp/candidate/${p}-${w}.png`);if(!x.equals(y))sd++;}const ps=JSON.parse(fs.readFileSync('/tmp/parent/summary.json')),cs=JSON.parse(fs.readFileSync('/tmp/candidate/summary.json'));console.log(`CANDIDATE PARITY|sha256=${process.env.CANDIDATE_SHA256}|important=83->0|priorityMarkersRemoved=83|states=24|pages=generic,profile,detail,results|viewports=760,761,1024,1179,1180,1280|metadataDiffs=${md}|screenshotDiffs=${sd}|pageErrors=${ps.totalErrors+cs.totalErrors}|targetStylesheetLoads=${ps.totalLoads+cs.totalLoads}|syntheticDOM=0|criteriaRelaxed=0`);if(md||sd||ps.totalErrors||cs.totalErrors||ps.totalLoads||cs.totalLoads)process.exit(3);
+          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary,ps=p.summary;if(s.totalImportant!==10787||s.outsideServiceCardImportant!==10725||s.filesWithImportant!==31)throw Error(`important ${JSON.stringify(s)}`);if(ps.affectedFiles!==30||ps.totalImportantOutsideServiceCard!==10725||ps.byRisk?.['high-baseline-required']!==10717||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error(`plan ${JSON.stringify(ps)}`);console.log('IMPORTANT PASS|total=10787|outsideServiceCard=10725|files=31|delta=-83');console.log('QUEUE PASS|affectedFiles=30|highBaselineRequired=10717|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6');
           NODE
+          set +e;npm audit --json >/tmp/audit.json;code=$?;set -e
+          node <<'NODE'
+          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
+          NODE
+          echo "AUDIT_EXIT=$code";echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|browserProof=hash-identical|reach=whole-file-dormant|candidateHash='"$CANDIDATE_SHA256"
           git checkout "$TARGET_SHA" -- "$TARGET_FILE";test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB";echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail;result=FAIL;if test '${{ steps.proof.outcome }}' = success;then result=PASS;fi
-          { echo "RUN_ID=$GITHUB_RUN_ID";echo "PARENT_SHA=$TARGET_SHA";echo "TARGET_FILE=$TARGET_FILE";echo "TARGET_BLOB=$TARGET_BLOB";echo "PROOF=${{ steps.proof.outcome }}";grep -E '^(PREFLIGHT PASS|CANDIDATE IDENTITY|PHASE|CANDIDATE PARITY|RESTORE PASS)\|' /tmp/v.log || true;echo "RESULT=$result";if test "$result" = FAIL;then tail -n 420 /tmp/v.log || true;fi;} >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null;git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null;mkdir -p "$(dirname "$RESULT_FILE")";cp /tmp/out "$RESULT_FILE";git config user.name github-actions[bot];git config user.email 41898282+github-actions[bot]@users.noreply.github.com;git add "$RESULT_FILE";git commit -m 'diag: publish 016 header rail visual r3 [skip ci]' >/dev/null;git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null;test "$result" = PASS
+          set -euo pipefail;result=FAIL;if test '${{ steps.governance.outcome }}' = success;then result=PASS;fi
+          { echo "RUN_ID=$GITHUB_RUN_ID";echo "PARENT_SHA=$TARGET_SHA";echo "TARGET_FILE=$TARGET_FILE";echo "TARGET_BLOB=$TARGET_BLOB";echo "GOVERNANCE=${{ steps.governance.outcome }}";grep -E '^(STATIC PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|GOVERNANCE PASS|RESTORE PASS)\|' /tmp/g.log || true;grep '^AUDIT_EXIT=' /tmp/g.log || true;echo "RESULT=$result";if test "$result" = FAIL;then tail -n 420 /tmp/g.log || true;fi;} >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null;git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null;mkdir -p "$(dirname "$RESULT_FILE")";cp /tmp/out "$RESULT_FILE";git config user.name github-actions[bot];git config user.email 41898282+github-actions[bot]@users.noreply.github.com;git add "$RESULT_FILE";git commit -m 'diag: publish 016 header rail governance r4 [skip ci]' >/dev/null;git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null;test "$result" = PASS
