@@ -1,59 +1,66 @@
-name: UX CSS Important 017 Shell Normalize Reach R3
+name: UX CSS Important 017 Shell Normalize Visual R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach017r3:
+  visual017:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       TARGET_SHA: 5eb97ae50f021639f4b850dabfc5359b883c4879
       TARGET_FILE: assets/css/pages/shell-normalize.css
       TARGET_BLOB: e534ac19a51556476be907b05cc6674702e5e752
+      CANDIDATE_SHA256: 2ed9b884091f1c33e77cd828e3970ef66e2b975f511d0811e989f256285a1d32
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-017-shell-normalize-reach-r3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-017-shell-normalize-visual-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: 5eb97ae50f021639f4b850dabfc5359b883c4879
-          fetch-depth: 0
-      - id: reach
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: proof
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
-          exec > >(tee /tmp/reach.log) 2>&1
-          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
-          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
-          test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 80
-          echo 'PREFLIGHT PASS|parent=016|targetBlob=exact|targetImportant=80|productMutation=0|r2FalseNegative=cssCommentOnly'
-          node <<'NODE'
-          const fs=require('fs'),path=require('path'),crypto=require('crypto');
-          const target=process.env.TARGET_FILE, excluded=/^(archive|reports|tools|test-results|node_modules)\//;
-          function walk(d){return fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const p=path.posix.join(d,e.name);return e.isDirectory()?walk(p):[p]})}
-          const all=walk('.').map(x=>x.replace(/^\.\//,'')),set=new Set(all);
-          const activeHtml=all.filter(f=>f.endsWith('.html')&&!excluded.test(f));
-          function norm(base,href){href=href.split(/[?#]/)[0].trim();if(!href||/^(?:https?:)?\/\//.test(href)||href.startsWith('data:'))return null;return path.posix.normalize(path.posix.join(path.posix.dirname(base),href)).replace(/^\/+/, '');}
-          const direct=new Set();
-          for(const h of activeHtml){const s=fs.readFileSync(h,'utf8');let m;const re=/<link\b[^>]*\bhref=["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi;while((m=re.exec(s))){const r=norm(h,m[1]);if(r&&set.has(r))direct.add(r);}}
-          const reachable=new Set(),stack=[...direct],importers=[];
-          while(stack.length){const f=stack.pop();if(reachable.has(f))continue;reachable.add(f);const s=fs.readFileSync(f,'utf8');let m;const re=/@import\s+(?:url\(\s*)?["']([^"']+\.css(?:[?#][^"']*)?)["']/gi;while((m=re.exec(s))){const r=norm(f,m[1]);if(r===target)importers.push(f);if(r&&set.has(r)&&!reachable.has(r))stack.push(r);}}
-          const stripCss=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');
-          const jsRefs=all.filter(f=>f.startsWith('assets/js/')&&/\.(js|mjs|cjs)$/.test(f)&&fs.readFileSync(f,'utf8').includes('shell-normalize.css'));
-          const runtimeTextRefs=[];
-          for(const f of all.filter(f=>(f.endsWith('.html')||f.startsWith('assets/css/')||f.startsWith('assets/js/'))&&f!==target)){
-            let s=fs.readFileSync(f,'utf8'); if(f.endsWith('.css'))s=stripCss(s); if(s.includes('shell-normalize.css'))runtimeTextRefs.push(f);
-          }
-          console.log(`REACH GRAPH|activeHtml=${activeHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(target)?1:0}|jsRefs=${jsRefs.length}|runtimeTextRefs=${runtimeTextRefs.length}|importers=${importers.length}`);
-          if(importers.length)console.log('IMPORTERS|files='+[...new Set(importers)].join(',')); if(jsRefs.length)console.log('JS REFS|files='+jsRefs.join(',')); if(runtimeTextRefs.length)console.log('TEXT REFS|files='+runtimeTextRefs.join(','));
-          if(reachable.has(target)||jsRefs.length||runtimeTextRefs.length||importers.length)throw Error('target reachable');
-          let css=fs.readFileSync(target,'utf8');const before=(css.match(/!important\b/g)||[]).length,db=(css.match(/:[^;{}]+;/g)||[]).length,sb=(css.match(/[^{}]+\{/g)||[]).length;css=css.replace(/\s*!important\b/g,'');const after=(css.match(/!important\b/g)||[]).length,da=(css.match(/:[^;{}]+;/g)||[]).length,sa=(css.match(/[^{}]+\{/g)||[]).length,b=Buffer.from(css),h=crypto.createHash('sha256').update(b).digest('hex');if(before!==80||after!==0||db!==da||sb!==sa)throw Error(`identity ${before}/${after}`);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=80->0|priorityMarkersRemoved=80|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0`);console.log('DECISION PASS|wholeFileDormant=1|candidateEligible=1|cssCommentRefsIgnored=1');
+          set -euo pipefail; exec > >(tee /tmp/v.log) 2>&1
+          git cat-file -e "$TARGET_SHA^{commit}"; test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(grep -c '^RESULT=PASS$' .diagnostics/ux-css-important-017-shell-normalize-reach-r3.txt)" -eq 1
+          grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0|importers=0' .diagnostics/ux-css-important-017-shell-normalize-reach-r3.txt
+          grep -Fq "sha256=$CANDIDATE_SHA256" .diagnostics/ux-css-important-017-shell-normalize-reach-r3.txt
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 80
+          echo 'PREFLIGHT PASS|parent=016|reach=pass|targetReachable=0|targetImportant=80|r2FalseNegative=cssCommentOnly'
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!; trap 'kill $PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          cat >/tmp/render.js <<'NODE'
+          const {chromium}=require('@playwright/test'),fs=require('fs'),crypto=require('crypto');
+          const phase=process.argv[2],out='/tmp/'+phase;fs.mkdirSync(out,{recursive:true});
+          const pages=[['home','index.html'],['generic','pedidos.html'],['messages','mensagens.html'],['results','resultados.html']],widths=[560,760,1024,1025,1280];
+          const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+          (async()=>{const browser=await chromium.launch({headless:true});let totalErrors=0,totalLoads=0,states=[];
+          for(const [label,file] of pages)for(const w of widths){const c=await browser.newContext({viewport:{width:w,height:1050}});await c.addInitScript(()=>{Date.now=()=>1760000000000;Math.random=()=>0.271828;});const p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));
+            for(const host of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(host,r=>r.fulfill({status:200,body:''}));
+            for(const host of ['https://images.pexels.com/**','https://images.unsplash.com/**'])await p.route(host,r=>r.fulfill({status:200,contentType:'image/png',body:tiny}));
+            await p.goto(`http://127.0.0.1:4173/${file}?i17=${phase}-${w}`,{waitUntil:'domcontentloaded'});await p.waitForTimeout(650);
+            const meta=await p.evaluate(()=>{const target='shell-normalize.css',loads=performance.getEntriesByType('resource').filter(x=>x.name.includes(target)).length;const q=s=>document.querySelector(s),pack=n=>{if(!n)return null;const r=n.getBoundingClientRect(),s=getComputedStyle(n);return {x:+r.x.toFixed(3),y:+r.y.toFixed(3),w:+r.width.toFixed(3),h:+r.height.toFixed(3),display:s.display,position:s.position,width:s.width,maxWidth:s.maxWidth,minWidth:s.minWidth,overflow:s.overflow,marginLeft:s.marginLeft,paddingLeft:s.paddingLeft,paddingRight:s.paddingRight};};return {page:document.body.dataset.page||'',bodyClass:document.body.className,targetLoads:loads,sidebar:pack(q('.sidebar')),pageNode:pack(q('.page')),topbar:pack(q('.topbar,.app-header')),content:pack(q('.page__content')),brand:pack(q('.brand-logo img')),mobileLogo:pack(q('.mobile-header-logo'))};});
+            const shot=await p.screenshot({fullPage:true});const sh=crypto.createHash('sha256').update(shot).digest('hex');fs.writeFileSync(`${out}/${label}-${w}.png`,shot);fs.writeFileSync(`${out}/${label}-${w}.json`,JSON.stringify(meta));console.log(`STATE|phase=${phase}|page=${label}|width=${w}|targetLoads=${meta.targetLoads}|pageErrors=${errs.length}|shot=${sh}`);totalErrors+=errs.length;totalLoads+=meta.targetLoads;states.push({label,w,meta,sh,errs});await c.close();}
+          fs.writeFileSync(`${out}/summary.json`,JSON.stringify({states,totalErrors,totalLoads}));console.log(`PHASE|label=${phase}|states=${states.length}|pageErrors=${totalErrors}|targetStylesheetLoads=${totalLoads}`);if(totalErrors||totalLoads)process.exit(2);await browser.close();})().catch(e=>{console.error(e);process.exit(1)});
           NODE
+          NODE_PATH="$PWD/node_modules" node /tmp/render.js parent
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync(process.env.TARGET_FILE,'utf8'),before=(s.match(/!important\b/g)||[]).length;s=s.replace(/\s*!important\b/g,'');const b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex'),after=(s.match(/!important\b/g)||[]).length;if(before!==80||after!==0||h!==process.env.CANDIDATE_SHA256)throw Error(`${before}/${after}/${h}`);fs.writeFileSync(process.env.TARGET_FILE,s);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=80->0|priorityMarkersRemoved=80|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
+          NODE
+          NODE_PATH="$PWD/node_modules" node /tmp/render.js candidate
+          node <<'NODE'
+          const fs=require('fs'),pages=['home','generic','messages','results'],widths=[560,760,1024,1025,1280];let md=0,sd=0;for(const p of pages)for(const w of widths){const a=fs.readFileSync(`/tmp/parent/${p}-${w}.json`,'utf8'),b=fs.readFileSync(`/tmp/candidate/${p}-${w}.json`,'utf8');if(a!==b)md++;const x=fs.readFileSync(`/tmp/parent/${p}-${w}.png`),y=fs.readFileSync(`/tmp/candidate/${p}-${w}.png`);if(!x.equals(y))sd++;}const ps=JSON.parse(fs.readFileSync('/tmp/parent/summary.json')),cs=JSON.parse(fs.readFileSync('/tmp/candidate/summary.json'));console.log(`CANDIDATE PARITY|sha256=${process.env.CANDIDATE_SHA256}|important=80->0|priorityMarkersRemoved=80|states=20|pages=home,generic,messages,results|viewports=560,760,1024,1025,1280|metadataDiffs=${md}|screenshotDiffs=${sd}|pageErrors=${ps.totalErrors+cs.totalErrors}|targetStylesheetLoads=${ps.totalLoads+cs.totalLoads}|syntheticDOM=0|criteriaRelaxed=0`);if(md||sd||ps.totalErrors||cs.totalErrors||ps.totalLoads||cs.totalLoads)process.exit(3);
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(PREFLIGHT PASS|REACH GRAPH|IMPORTERS|JS REFS|TEXT REFS|CANDIDATE IDENTITY|DECISION PASS)\|' /tmp/reach.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 280 /tmp/reach.log || true; fi; } >/tmp/out
-          git fetch origin "$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 017 shell normalize reach r3 [skip ci]' >/dev/null; git push origin "HEAD:$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; grep -E '^(PREFLIGHT PASS|CANDIDATE IDENTITY|PHASE|CANDIDATE PARITY|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/v.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 017 shell normalize visual r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
