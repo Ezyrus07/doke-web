@@ -1,0 +1,47 @@
+name: COM-B02V Domain Completion Matrix Materialization TEMP
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b02v-domain-completion-matrix-materialization-temp.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02v-domain-completion-matrix-materialization-temp-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Materialize deterministic Matrix derivatives
+        run: node scripts/audit-domain-completion-matrix.js --write
+
+      - name: Verify source Matrix unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          git diff --exit-code -- config/domain-completion-matrix.json
+
+      - name: Upload exact Matrix derivatives
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02v-domain-completion-matrix-derivatives
+          path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
+          if-no-files-found: error
+          retention-days: 1
