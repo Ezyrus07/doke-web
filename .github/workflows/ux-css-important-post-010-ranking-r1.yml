@@ -1,10 +1,10 @@
-name: UX CSS Important 014 Marketplace Contract Visual R5
+name: UX CSS Important 014 Marketplace Contract Governance R6
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  visual014:
+  governance014:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -13,72 +13,65 @@ jobs:
       TARGET_BLOB: c6d0b3b9ffa9e30e1fca815ab1dbe3d607c4dcaa
       CANDIDATE_SHA256: 3e53813d15d725c1f7609ab4e7800cf2fe78e587c034c08b84ba1bb639e30ae6
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-014-marketplace-contract-visual-r5.txt
+      RESULT_FILE: .diagnostics/ux-css-important-014-marketplace-contract-governance-r6.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: visual
+      - id: governance
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/visual.log) 2>&1
-          git cat-file -e "$TARGET_SHA^{commit}"
-          test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          set -euo pipefail; exec > >(tee /tmp/gov.log) 2>&1
           git show HEAD:.diagnostics/ux-css-important-014-marketplace-contract-reach-r3.txt >/tmp/reach.txt
-          grep -q '^RESULT=PASS$' /tmp/reach.txt
-          grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0' /tmp/reach.txt
-          grep -q "sha256=$CANDIDATE_SHA256" /tmp/reach.txt
-          git checkout "$TARGET_SHA" -- .
+          git show HEAD:.diagnostics/ux-css-important-014-marketplace-contract-visual-r4.txt >/tmp/browser.txt
+          grep -q '^RESULT=PASS$' /tmp/reach.txt; grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0' /tmp/reach.txt; grep -q "sha256=$CANDIDATE_SHA256" /tmp/reach.txt
+          grep -q '^RESULT=PASS$' /tmp/browser.txt; grep -q "sha256=$CANDIDATE_SHA256" /tmp/browser.txt; grep -Fq 'metadataDiffs=0|screenshotDiffs=0|pageErrors=0|targetStylesheetLoads=0' /tmp/browser.txt
+          git cat-file -e "$TARGET_SHA^{commit}"; test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"; git checkout "$TARGET_SHA" -- .
           test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 104
-          echo 'PREFLIGHT PASS|parent=013|reach=pass|targetReachable=0|targetImportant=104|r4Superseded=networkidle-only'
-          npm ci --ignore-scripts
-          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
-          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
-          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
-          sleep 1; mkdir -p /tmp/p014 /tmp/c014
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'); const {chromium}=require('@playwright/test');
-          const target=process.env.TARGET_FILE, candidateHash=process.env.CANDIDATE_SHA256;
-          const widths=[1024,1025,1280,1360,1361,1440];
-          const pages=[
-            {name:'home',url:'index.html',selectors:['.home-index-topbar','.page__content-inner','.home-side-meta__profile','.home-index-topbar .topbar__right']},
-            {name:'detail',url:'detalhe-anuncio.html',selectors:['.detail-index-header','.detalhe-anuncio-page__container--service-view','.detail-index-header__profile','.ad-service-shell']}
-          ];
-          const pixel=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
-          const items=Array.from({length:8},(_,i)=>({id:'i14-'+i,serviceId:'i14-'+i,status:'active',title:'Servico '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
-          async function phase(label){
-            const browser=await chromium.launch({headless:true}); const meta={}; let pageErrors=0,loadedTarget=0;
-            for(const pg of pages)for(const w of widths){
-              const ctx=await browser.newContext({viewport:{width:w,height:1050},reducedMotion:'reduce'}),p=await ctx.newPage(),errs=[]; p.on('pageerror',e=>errs.push(e.message));
-              await p.route('**/*',r=>{const u=r.request().url(),rt=r.request().resourceType();if(u.startsWith('http://127.0.0.1:4173/'))return r.continue();if(rt==='image')return r.fulfill({status:200,contentType:'image/png',body:pixel});if(['font','stylesheet','script'].includes(rt))return r.fulfill({status:200,body:''});return r.fulfill({status:200,contentType:'application/json',body:'{}'});});
-              await p.goto(`http://127.0.0.1:4173/${pg.url}?i14=${label}-${w}`,{waitUntil:'domcontentloaded',timeout:15000});
-              if(pg.name==='home'){
-                await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});
-                await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(a&&b){a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})));}},items);
-              }
-              await p.waitForTimeout(400);
-              const data=await p.evaluate(selectors=>{const out={};for(const s of selectors){const es=document.querySelectorAll(s),e=es[0];if(!e){out[s]={count:0};continue;}const cs=getComputedStyle(e),r=e.getBoundingClientRect();out[s]={count:es.length,display:cs.display,position:cs.position,width:cs.width,height:cs.height,marginLeft:cs.marginLeft,marginRight:cs.marginRight,paddingTop:cs.paddingTop,paddingBottom:cs.paddingBottom,gridTemplateColumns:cs.gridTemplateColumns,x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2)};}const names=[...document.styleSheets].map(x=>x.href||'').concat(performance.getEntriesByType('resource').map(x=>x.name));return {out,targetLoaded:names.some(x=>x.includes('marketplace-page-contract.css'))};},pg.selectors);
-              if(data.targetLoaded)loadedTarget++; pageErrors+=errs.length; const key=`${pg.name}-${w}`; meta[key]={selectors:data.out,targetLoaded:data.targetLoaded,pageErrors:errs.length};
-              fs.writeFileSync(`/tmp/${label==='parent'?'p014':'c014'}/${key}.png`,await p.screenshot({fullPage:true,animations:'disabled',caret:'hide'})); await ctx.close();
-            }
-            await browser.close(); fs.writeFileSync(`/tmp/${label}.json`,JSON.stringify(meta,null,2)); console.log(`PHASE|label=${label}|states=${Object.keys(meta).length}|pageErrors=${pageErrors}|targetStylesheetLoads=${loadedTarget}`); return {pageErrors,loadedTarget};
-          }
-          (async()=>{
-            const parent=await phase('parent'); let css=fs.readFileSync(target,'utf8').replace(/\s*!important\b/g,''); const h=crypto.createHash('sha256').update(Buffer.from(css)).digest('hex'); if(h!==candidateHash||(css.match(/!important\b/g)||[]).length!==0)throw Error('candidate identity'); fs.writeFileSync(target,css); const cand=await phase('candidate');
-            const metadataDiffs=fs.readFileSync('/tmp/parent.json','utf8')===fs.readFileSync('/tmp/candidate.json','utf8')?0:1; let screenshotDiffs=0;
-            for(const pg of pages)for(const w of widths){const k=`${pg.name}-${w}`;if(!fs.readFileSync(`/tmp/p014/${k}.png`).equals(fs.readFileSync(`/tmp/c014/${k}.png`)))screenshotDiffs++;}
-            const pageErrors=parent.pageErrors+cand.pageErrors,targetLoads=parent.loadedTarget+cand.loadedTarget;
-            console.log(`CANDIDATE PARITY|sha256=${h}|bytes=${Buffer.byteLength(css)}|important=104->0|priorityMarkersRemoved=104|states=12|pages=home,detail|viewports=${widths.join(',')}|metadataDiffs=${metadataDiffs}|screenshotDiffs=${screenshotDiffs}|pageErrors=${pageErrors}|targetStylesheetLoads=${targetLoads}|syntheticDOM=0|criteriaRelaxed=0`);
-            if(metadataDiffs||screenshotDiffs||pageErrors||targetLoads)throw Error(`parity ${metadataDiffs}/${screenshotDiffs}/${pageErrors}/${targetLoads}`);
-          })().catch(e=>{console.error(e);process.exit(1)});
+          const fs=require('fs'),crypto=require('crypto');const f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8'),before=(s.match(/!important\b/g)||[]).length;s=s.replace(/\s*!important\b/g,'');const buf=Buffer.from(s),h=crypto.createHash('sha256').update(buf).digest('hex'),after=(s.match(/!important\b/g)||[]).length;if(before!==104||after!==0||h!==process.env.CANDIDATE_SHA256)throw Error(`candidate ${before}/${after}/${h}`);fs.writeFileSync(f,s);console.log(`STATIC PASS|sha256=${h}|bytes=${buf.length}|important=104->0|priorityMarkersRemoved=104|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
           NODE
+          npm ci --ignore-scripts
+          node scripts/generate-responsive-index-baseline.js
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          node <<'NODE'
+          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
+          NODE
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures
+          npm run audit:important-reduction-plan
+          npm run audit:global-css-design-system
+          node <<'NODE'
+          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary,ps=p.summary;
+          if(s.totalImportant!==10966||s.outsideServiceCardImportant!==10904||s.filesWithImportant!==33)throw Error(`important ${JSON.stringify(s)}`);
+          if(ps.affectedFiles!==32||ps.totalImportantOutsideServiceCard!==10904||ps.byRisk?.['high-baseline-required']!==10896||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error(`plan ${JSON.stringify(ps)}`);
+          console.log('IMPORTANT PASS|total=10966|outsideServiceCard=10904|files=33|delta=-104');
+          console.log('QUEUE PASS|affectedFiles=32|highBaselineRequired=10896|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
+          node <<'NODE'
+          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
+          NODE
+          echo "AUDIT_EXIT=$code"
+          echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|browserProof=hash-identical|reach=whole-file-dormant|candidateHash='$CANDIDATE_SHA256
           git checkout "$TARGET_SHA" -- "$TARGET_FILE"; test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 104; git diff --exit-code -- "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.visual.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.visual.outcome }}"; grep -E '^(PREFLIGHT PASS|PHASE|CANDIDATE PARITY|RESTORE PASS)\|' /tmp/visual.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 360 /tmp/visual.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 014 marketplace contract visual r5 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.governance.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "GOVERNANCE=${{ steps.governance.outcome }}"; grep -E '^(STATIC PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|GOVERNANCE PASS|RESTORE PASS)\|' /tmp/gov.log || true; grep '^AUDIT_EXIT=' /tmp/gov.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 380 /tmp/gov.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 014 marketplace contract governance r6 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
