@@ -1,70 +1,54 @@
-name: UX CSS Important 017 Shell Normalize Governance R5
+name: UX CSS Important 017 Shell Normalize Promotion R6
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  governance017:
+  promote017:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
-      TARGET_SHA: 5eb97ae50f021639f4b850dabfc5359b883c4879
+      PARENT_SHA: 5eb97ae50f021639f4b850dabfc5359b883c4879
       TARGET_FILE: assets/css/pages/shell-normalize.css
-      TARGET_BLOB: e534ac19a51556476be907b05cc6674702e5e752
+      PARENT_BLOB: e534ac19a51556476be907b05cc6674702e5e752
       CANDIDATE_SHA256: 2ed9b884091f1c33e77cd828e3970ef66e2b975f511d0811e989f256285a1d32
+      PERM_BRANCH: ux/ux-css-important-017-shell-normalize-dormant-priority
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-017-shell-normalize-governance-r5.txt
+      RESULT_FILE: .diagnostics/ux-css-important-017-shell-normalize-promotion-r6.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: governance
+      - id: promote
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/g.log) 2>&1
-          git cat-file -e "$TARGET_SHA^{commit}"; test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
-          grep -q '^RESULT=PASS$' .diagnostics/ux-css-important-017-shell-normalize-reach-r3.txt; grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0|importers=0' .diagnostics/ux-css-important-017-shell-normalize-reach-r3.txt; grep -Fq "sha256=$CANDIDATE_SHA256" .diagnostics/ux-css-important-017-shell-normalize-reach-r3.txt
-          grep -q '^RESULT=PASS$' .diagnostics/ux-css-important-017-shell-normalize-visual-r4.txt; grep -Fq "sha256=$CANDIDATE_SHA256" .diagnostics/ux-css-important-017-shell-normalize-visual-r4.txt; grep -Fq 'metadataDiffs=0|screenshotDiffs=0|pageErrors=0|targetStylesheetLoads=0' .diagnostics/ux-css-important-017-shell-normalize-visual-r4.txt
-          git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          set -euo pipefail; exec > >(tee /tmp/p.log) 2>&1
+          git show HEAD:.diagnostics/ux-css-important-017-shell-normalize-reach-r3.txt >/tmp/reach.txt
+          git show HEAD:.diagnostics/ux-css-important-017-shell-normalize-visual-r4.txt >/tmp/browser.txt
+          git show HEAD:.diagnostics/ux-css-important-017-shell-normalize-governance-r5.txt >/tmp/gov.txt
+          grep -q '^RESULT=PASS$' /tmp/reach.txt; grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0|importers=0' /tmp/reach.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/reach.txt
+          grep -q '^RESULT=PASS$' /tmp/browser.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/browser.txt; grep -Fq 'metadataDiffs=0|screenshotDiffs=0|pageErrors=0|targetStylesheetLoads=0' /tmp/browser.txt
+          grep -q '^RESULT=PASS$' /tmp/gov.txt; grep -Fq "candidateHash=$CANDIDATE_SHA256" /tmp/gov.txt; grep -Fq 'IMPORTANT PASS|total=10707|outsideServiceCard=10645|files=30|delta=-80' /tmp/gov.txt
+          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
+          test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$PARENT_SHA"
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync(process.env.TARGET_FILE,'utf8'),before=(s.match(/!important\b/g)||[]).length,db=(s.match(/:[^;{}]+;/g)||[]).length,sb=(s.match(/[^{}]+\{/g)||[]).length;s=s.replace(/\s*!important\b/g,'');const after=(s.match(/!important\b/g)||[]).length,da=(s.match(/:[^;{}]+;/g)||[]).length,sa=(s.match(/[^{}]+\{/g)||[]).length,b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex');if(before!==80||after!==0||db!==da||sb!==sa||h!==process.env.CANDIDATE_SHA256)throw Error(`${before}/${after}/${db}/${da}/${sb}/${sa}/${h}`);fs.writeFileSync(process.env.TARGET_FILE,s);console.log(`STATIC PASS|sha256=${h}|bytes=${b.length}|important=80->0|priorityMarkersRemoved=80|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
+          const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync(process.env.TARGET_FILE,'utf8'),before=(s.match(/!important\b/g)||[]).length;s=s.replace(/\s*!important\b/g,'');const b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex'),after=(s.match(/!important\b/g)||[]).length;if(before!==80||after!==0||h!==process.env.CANDIDATE_SHA256)throw Error(`${before}/${after}/${h}`);fs.writeFileSync(process.env.TARGET_FILE,s);console.log(`CANDIDATE|sha256=${h}|bytes=${b.length}|important=80->0|removed=80|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
           NODE
-          npm ci --ignore-scripts
-          node scripts/generate-responsive-index-baseline.js
-          npm run test:responsive-contract | tee /tmp/responsive.log
-          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
-          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
-          npm run audit:agent-governance
-          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
-          node <<'NODE'
-          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
-          NODE
-          npm run audit:shared-app-header-contract
-          npm run audit:mobile-shell-location-contract
-          npm run audit:responsive-boundaries
-          npm run audit:duplicate-assets | tee /tmp/dup.log
-          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
-          npm run audit:domain-completion-matrix | tee /tmp/domain.log
-          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
-          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
-          npm run audit:active-legacy-structures
-          npm run audit:important-reduction-plan
-          npm run audit:global-css-design-system
-          node <<'NODE'
-          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary,ps=p.summary;if(s.totalImportant!==10707||s.outsideServiceCardImportant!==10645||s.filesWithImportant!==30)throw Error(`important ${JSON.stringify(s)}`);if(ps.affectedFiles!==29||ps.totalImportantOutsideServiceCard!==10645||ps.byRisk?.['high-baseline-required']!==10637||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error(`plan ${JSON.stringify(ps)}`);console.log('IMPORTANT PASS|total=10707|outsideServiceCard=10645|files=30|delta=-80');console.log('QUEUE PASS|affectedFiles=29|highBaselineRequired=10637|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6');
-          NODE
-          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
-          node <<'NODE'
-          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
-          NODE
-          echo "AUDIT_EXIT=$code"; echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|browserProof=hash-identical|reach=whole-file-dormant|candidateHash='"$CANDIDATE_SHA256"'|r2FalseNegative=cssCommentOnly'
-          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; echo 'RESTORE PASS|target=parent-exact'
+          git config user.name 'Doke CSS Debt Bot'; git config user.email '41898282+github-actions[bot]@users.noreply.github.com'; git add "$TARGET_FILE"
+          test "$(git diff --cached --name-only | wc -l)" -eq 1; test "$(git diff --cached --name-only)" = "$TARGET_FILE"
+          git commit -m 'UX-CSS-IMPORTANT-017 remove dormant shell normalize priorities' >/dev/null
+          NEW_SHA=$(git rev-parse HEAD); test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git diff --name-only "$PARENT_SHA" HEAD | wc -l)" -eq 1; test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$TARGET_FILE"
+          NUM=$(git diff --numstat "$PARENT_SHA" HEAD -- "$TARGET_FILE"); echo "NUMSTAT|$NUM"; test "$NUM" = $'80\t80\t'"$TARGET_FILE"
+          git push --force-with-lease="refs/heads/$PERM_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERM_BRANCH" >/dev/null
+          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null; test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$NEW_SHA"
+          TREE=$(git rev-parse HEAD^{tree}); BLOB=$(git rev-parse "HEAD:$TARGET_FILE"); HASH=$(sha256sum "$TARGET_FILE"|awk '{print $1}'); test "$HASH" = "$CANDIDATE_SHA256"
+          echo "PROMOTION PASS|head=$NEW_SHA|parent=$PARENT_SHA|tree=$TREE|blob=$BLOB|files=1|numstat=80/80/$TARGET_FILE|leaseParent=$PARENT_SHA"
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.governance.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "GOVERNANCE=${{ steps.governance.outcome }}"; grep -E '^(STATIC PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|GOVERNANCE PASS|RESTORE PASS)\|' /tmp/g.log || true; grep '^AUDIT_EXIT=' /tmp/g.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 440 /tmp/g.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 017 shell normalize governance r5 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.promote.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "PERM_BRANCH=$PERM_BRANCH"; echo "PROMOTE=${{ steps.promote.outcome }}"; grep -E '^(CANDIDATE|NUMSTAT|PROMOTION PASS)\|' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 360 /tmp/p.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 017 shell normalize promotion r6 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
