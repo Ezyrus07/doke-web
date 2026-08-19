@@ -1,4 +1,4 @@
-name: UX CSS Important 011 Governance R5
+name: UX CSS Important 011 Promotion R6
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  governance011:
+  promote011:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -17,33 +17,29 @@ jobs:
       TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
       TARGET_BLOB: ae438520da448cf6f8e39c1a18eb9e3d41633cc7
       CANDIDATE_SHA256: ecd2250c3c8957f8b0c6c83ec0530fbaa8675ba72b27c54f91be50582c887f48
+      PERM_BRANCH: ux/ux-css-important-011-home-featured-pro-dormant-priority
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-011-governance-r5.txt
+      RESULT_FILE: .diagnostics/ux-css-important-011-promotion-r6.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 22
-          cache: npm
-      - id: governance
+      - id: promote
         continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
-          exec > >(tee /tmp/g.log) 2>&1
-          git merge-base --is-ancestor "$TARGET_SHA" HEAD
+          exec > >(tee /tmp/promo.log) 2>&1
+          git fetch origin "$PERM_BRANCH" >/dev/null
+          remote_sha="$(git rev-parse "origin/$PERM_BRANCH")"
+          test "$remote_sha" = "$TARGET_SHA"
           test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
-          git checkout "$TARGET_SHA" -- .
+          git checkout -B promote "$TARGET_SHA" >/dev/null
           test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
-          npm ci --ignore-scripts
-          node scripts/generate-responsive-index-baseline.js
 
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;
-          const parent=fs.readFileSync(f,'utf8');
-          let s=parent,removed=0;
+          let s=fs.readFileSync(f,'utf8'),removed=0;
           if((s.match(/!important\b/g)||[]).length!==179) throw Error('parent important count');
           function strip(sel,n){
             const needle=sel+'{';
@@ -63,94 +59,46 @@ jobs:
           strip('html.home-index-root body.home-index-shell .featured-pros__grid .pro-card__identity',3);
           strip('html.home-index-root body.home-index-shell .featured-pros__grid .pro-card__score',3);
           const h=crypto.createHash('sha256').update(Buffer.from(s)).digest('hex');
-          const count=(s.match(/!important\b/g)||[]).length;
-          if(removed!==17||count!==162||h!==process.env.CANDIDATE_SHA256||Buffer.byteLength(s)!==37582) throw Error('candidate identity');
-          const expected=parent.replace(/\s*!important\b/g,(m,off)=>m);
+          if(removed!==17||(s.match(/!important\b/g)||[]).length!==162||Buffer.byteLength(s)!==37582||h!==process.env.CANDIDATE_SHA256) throw Error('candidate identity');
           fs.writeFileSync(f,s);
-          console.log(`STATIC PASS|sha256=${h}|bytes=${Buffer.byteLength(s)}|important=179->162|priorityMarkersRemoved=17|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|family=featured-pros-pro-card`);
+          console.log(`CANDIDATE|sha256=${h}|bytes=${Buffer.byteLength(s)}|important=179->162|removed=17|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0`);
           NODE
 
           test "$(git diff --numstat -- "$TARGET_FILE")" = $'17\t17\t'"$TARGET_FILE"
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = "$TARGET_FILE"
           git diff --check
-
-          npm run test:responsive-contract | tee /tmp/responsive.log
-          grep -q 'Checks: 893' /tmp/responsive.log
-          grep -q 'Failures: 0' /tmp/responsive.log
-          grep -q 'Skips: 277' /tmp/responsive.log
-          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
-
-          npm run audit:agent-governance
-          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
-          node <<'NODE'
-          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);
-          if(!m||+m[1]>339) throw Error('conflicts');
-          console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`);
-          NODE
-
-          npm run audit:shared-app-header-contract
-          npm run audit:mobile-shell-location-contract
-          npm run audit:responsive-boundaries
-          npm run audit:duplicate-assets | tee /tmp/dup.log
-          grep -q 'Duplicate groups: 0' /tmp/dup.log
-          grep -q 'Duplicated files: 0' /tmp/dup.log
-          npm run audit:domain-completion-matrix | tee /tmp/domain.log
-          grep -q 'Domains: 23' /tmp/domain.log
-          grep -q 'Critical flows: 15' /tmp/domain.log
-          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
-          grep -q 'Critical blockers: 12' /tmp/domain.log
-          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
-
-          npm run audit:active-legacy-structures
-          npm run audit:important-reduction-plan
-          npm run audit:global-css-design-system
-          node <<'NODE'
-          const fs=require('fs');
-          const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));
-          const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
-          const s=b.summary,q=p.summary.byRisk||{};
-          if(s.totalImportant!==11104||s.outsideServiceCardImportant!==11042||s.filesWithImportant!==34) throw Error(`important ${JSON.stringify(s)}`);
-          if(p.summary.affectedFiles!==33||p.summary.totalImportantOutsideServiceCard!==11042||q['medium-baseline-required']!==6||q['low-review-candidate']!==2||q['high-baseline-required']!==11034) throw Error(`plan ${JSON.stringify(p.summary)}`);
-          console.log('IMPORTANT PASS|total=11104|outsideServiceCard=11042|files=34|delta=-17');
-          console.log('QUEUE PASS|affectedFiles=33|highBaselineRequired=11034|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=162|protected006=6');
-          NODE
-
-          set +e
-          npm audit --json >/tmp/audit.json
-          code=$?
-          set -e
-          node <<'NODE'
-          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};
-          if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2) throw Error(`deps ${JSON.stringify(v)}`);
-          console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
-          NODE
-          echo "AUDIT_EXIT=$code"
-          echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|sourceReceipt=PASS|browserRun=32204484094|candidateHash=ecd2250c3c8957f8b0c6c83ec0530fbaa8675ba72b27c54f91be50582c887f48'
-      - id: restore
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          git reset --hard "$TARGET_SHA" >/dev/null
-          git clean -fdx >/dev/null
-          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$TARGET_FILE"
+          test "$(git diff --cached --name-only | wc -l)" -eq 1
+          test "$(git diff --cached --name-only)" = "$TARGET_FILE"
+          git commit -m 'UX-CSS-IMPORTANT-011: remove dormant Home featured-pro priorities' >/dev/null
+          head_sha="$(git rev-parse HEAD)"
+          parent_sha="$(git rev-parse HEAD^)"
+          tree_sha="$(git rev-parse HEAD^{tree})"
+          blob_sha="$(git rev-parse "HEAD:$TARGET_FILE")"
+          test "$parent_sha" = "$TARGET_SHA"
+          test "$(git rev-list --count "$TARGET_SHA"..HEAD)" -eq 1
+          test "$(git diff --name-only "$TARGET_SHA"..HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$TARGET_SHA"..HEAD -- "$TARGET_FILE")" = $'17\t17\t'"$TARGET_FILE"
+          git push --force-with-lease="refs/heads/$PERM_BRANCH:$TARGET_SHA" origin "HEAD:refs/heads/$PERM_BRANCH"
+          echo "PROMOTION PASS|head=$head_sha|parent=$parent_sha|tree=$tree_sha|blob=$blob_sha|files=1|additions=17|deletions=17|leaseParent=$TARGET_SHA"
       - name: Publish receipt
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           result=FAIL
-          if test '${{ steps.governance.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          if test '${{ steps.promote.outcome }}' = success; then result=PASS; fi
           {
             echo "RUN_ID=$GITHUB_RUN_ID"
             echo "PARENT_SHA=$TARGET_SHA"
-            echo "TARGET_FILE=$TARGET_FILE"
-            echo "TARGET_BLOB=$TARGET_BLOB"
-            echo "GOVERNANCE=${{ steps.governance.outcome }}"
-            echo "RESTORE=${{ steps.restore.outcome }}"
-            grep -E '^(STATIC PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|GOVERNANCE PASS)\|' /tmp/g.log || true
-            grep '^AUDIT_EXIT=' /tmp/g.log || true
+            echo "PERM_BRANCH=$PERM_BRANCH"
+            echo "PROMOTE=${{ steps.promote.outcome }}"
+            grep -E '^(CANDIDATE|PROMOTION PASS)\|' /tmp/promo.log || true
             echo "RESULT=$result"
-            if test "$result" = FAIL; then tail -n 280 /tmp/g.log || true; fi
+            if test "$result" = FAIL; then tail -n 220 /tmp/promo.log || true; fi
           } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
@@ -159,6 +107,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 011 governance r5 [skip ci]' >/dev/null
+          git commit -m 'diag: publish 011 promotion r6 [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
