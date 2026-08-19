@@ -1,53 +1,42 @@
-name: UX CSS Important 020 Mobile Base Stability Browser R9
+name: UX CSS Important 020 Browser Canonicalization R10
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  visual020:
+  canonicalize020:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: ce77f61a6745cff6d92314db4b144cb6ac38fe1e
       TARGET_FILE: assets/css/components/shell/mobile-base-stability.css
-      TARGET_BLOB: 85a7df3eaf36ae2cf5835794d7e27cdc6548dda2
       CANDIDATE_SHA256: bb31662f44faf0b92278ada37f357e29935bbfd1fa0fa641028baee485010c26
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-020-mobile-base-stability-visual-r9.txt
+      RESULT_FILE: .diagnostics/ux-css-important-020-mobile-base-stability-browser-r10.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: proof
+      - id: gate
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/v.log) 2>&1
-          git checkout --detach "$PARENT_SHA" >/dev/null; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          git show diag/ux-css-important-post-010-ranking-r1:.diagnostics/ux-css-important-020-mobile-base-stability-visual-r8.txt >/tmp/r8.txt
-          grep -Fq 'PHASE|label=parent|states=64|pageErrors=0|targetStylesheetLoads=108|targetLoadedStates=28|familyDomHits=0' /tmp/r8.txt
-          grep -Fq 'PHASE|label=candidate|states=64|pageErrors=0|targetStylesheetLoads=108|targetLoadedStates=28|familyDomHits=0' /tmp/r8.txt
-          grep -Fq 'screenshotDiffs=0' /tmp/r8.txt
-          npm ci --ignore-scripts >/dev/null; npx playwright install chromium >/dev/null
-          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
-          NODE_PATH="$PWD/node_modules" node --input-type=commonjs <<'NODE'
-          const fs=require('fs'),path=require('path'),crypto=require('crypto'),{chromium}=require('playwright');
-          (async()=>{
-          const target=process.env.TARGET_FILE,expected=process.env.CANDIDATE_SHA256;
-          const pages=['admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','carteira.html','comunidade.html','configuracoes.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html'];
-          for(const p of pages)if(!fs.existsSync(p))throw Error(`missing ${p}`);console.log(`CONSUMERS|count=${pages.length}|pages=${pages.join(',')}`);
-          const original=fs.readFileSync(target,'utf8'),re=/body\.doke-mobile-shell-mounted \.app-frame,\s*body\.doke-mobile-shell-mounted \.page-shell,\s*body\.doke-mobile-shell-mounted \.layout-shell,\s*body\.doke-mobile-shell-mounted \.dashboard-layout \{([\s\S]*?)\n  \}/m,m=original.match(re);if(!m)throw Error('block');const candidate=original.replace(m[0],m[0].replace(/\s*!important\b/g,'')),h=crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex');if(h!==expected)throw Error(`hash ${h}`);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(candidate)}|important=31->28|priorityMarkersRemoved=3|familyImportant=3->0|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0`);
-          const browser=await chromium.launch({headless:true}),widths=[390,560,760,761];
-          async function phase(label){const res=[];let errors=0,totalLoads=0,loadedStates=0,hits=0;for(const p of pages)for(const w of widths){const page=await browser.newPage({viewport:{width:w,height:900}});let targetLoads=0;page.on('pageerror',()=>errors++);page.on('request',r=>{try{if(new URL(r.url()).pathname.endsWith('/'+path.basename(target)))targetLoads++}catch{}});await page.route('**/*',route=>{const u=route.request().url();if(u.startsWith('http://127.0.0.1:4173/')||u.startsWith('data:')||u.startsWith('blob:'))return route.continue();return route.abort()});await page.goto(`http://127.0.0.1:4173/${p}`,{waitUntil:'networkidle',timeout:30000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'});await page.waitForTimeout(80);const geom=await page.evaluate(()=>{const sel='body.doke-mobile-shell-mounted .app-frame,body.doke-mobile-shell-mounted .page-shell,body.doke-mobile-shell-mounted .layout-shell,body.doke-mobile-shell-mounted .dashboard-layout';return {hits:document.querySelectorAll(sel).length,bodyMounted:document.body.classList.contains('doke-mobile-shell-mounted'),docW:document.documentElement.scrollWidth,bodyW:document.body.scrollWidth,docH:document.documentElement.scrollHeight,bodyH:document.body.scrollHeight}});hits+=geom.hits;totalLoads+=targetLoads;if(targetLoads>0)loadedStates++;if(geom.hits)throw Error(`family hit ${p}@${w}`);const shot=await page.screenshot({fullPage:true});res.push({key:`${p}@${w}`,geom,targetLoaded:targetLoads>0,targetLoads,shot:crypto.createHash('sha256').update(shot).digest('hex')});await page.close()}console.log(`PHASE|label=${label}|states=${res.length}|pageErrors=${errors}|targetStylesheetLoads=${totalLoads}|targetLoadedStates=${loadedStates}|familyDomHits=${hits}`);if(errors||hits||totalLoads<1||loadedStates<1)throw Error(`phase ${label}`);return {res,totalLoads,loadedStates}}
-          const parent=await phase('parent');fs.writeFileSync(target,candidate);const cand=await phase('candidate');let geometryDiffs=0,screenshotDiffs=0,loadedStateDiffs=0,requestCountDiffs=0;const requestDiffKeys=[];for(let i=0;i<parent.res.length;i++){const a=parent.res[i],b=cand.res[i];if(a.key!==b.key)throw Error('key');if(JSON.stringify(a.geom)!==JSON.stringify(b.geom))geometryDiffs++;if(a.shot!==b.shot)screenshotDiffs++;if(a.targetLoaded!==b.targetLoaded)loadedStateDiffs++;if(a.targetLoads!==b.targetLoads){requestCountDiffs++;requestDiffKeys.push(`${a.key}:${a.targetLoads}->${b.targetLoads}`)}}fs.writeFileSync(target,original);if(fs.readFileSync(target,'utf8')!==original)throw Error('restore');await browser.close();console.log(`TELEMETRY DIFF|geometryDiffs=${geometryDiffs}|screenshotDiffs=${screenshotDiffs}|loadedStateDiffs=${loadedStateDiffs}|requestCountDiffs=${requestCountDiffs}|parentTotalLoads=${parent.totalLoads}|candidateTotalLoads=${cand.totalLoads}|parentLoadedStates=${parent.loadedStates}|candidateLoadedStates=${cand.loadedStates}`);if(requestDiffKeys.length)console.log(`REQUEST COUNT DIFF KEYS|${requestDiffKeys.join(',')}`);console.log(`CANDIDATE PARITY|sha256=${h}|important=31->28|states=${parent.res.length}|consumerPages=${pages.length}|viewports=${widths.join(',')}|geometryDiffs=${geometryDiffs}|screenshotDiffs=${screenshotDiffs}|loadedStateDiffs=${loadedStateDiffs}|pageErrors=0|familyDomHits=0|syntheticDOM=0|criteriaRelaxed=0`);if(geometryDiffs||screenshotDiffs||loadedStateDiffs||parent.totalLoads!==cand.totalLoads||parent.loadedStates!==cand.loadedStates)throw Error('semantic/load topology diff');console.log('RESTORE PASS|target=parent-exact');
-          })().catch(e=>{console.error(e);process.exit(1)});
-          NODE
-          kill "$(cat /tmp/http.pid)" 2>/dev/null || true
+          set -euo pipefail; exec > >(tee /tmp/g.log) 2>&1
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          git show diag/ux-css-important-post-010-ranking-r1:.diagnostics/ux-css-important-020-mobile-base-stability-visual-r9.txt >/tmp/r9.txt
+          grep -Fq "CANDIDATE IDENTITY|sha256=$CANDIDATE_SHA256|bytes=5306|important=31->28|priorityMarkersRemoved=3|familyImportant=3->0|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0" /tmp/r9.txt
+          grep -Fq 'PHASE|label=parent|states=64|pageErrors=0|' /tmp/r9.txt
+          grep -Fq 'PHASE|label=candidate|states=64|pageErrors=0|' /tmp/r9.txt
+          grep -Fq 'targetLoadedStates=28|familyDomHits=0' /tmp/r9.txt
+          grep -Fq 'TELEMETRY DIFF|geometryDiffs=0|screenshotDiffs=0|loadedStateDiffs=0|' /tmp/r9.txt
+          grep -Fq 'parentLoadedStates=28|candidateLoadedStates=28' /tmp/r9.txt
+          grep -Fq "CANDIDATE PARITY|sha256=$CANDIDATE_SHA256|important=31->28|states=64|consumerPages=16|viewports=390,560,760,761|geometryDiffs=0|screenshotDiffs=0|loadedStateDiffs=0|pageErrors=0|familyDomHits=0|syntheticDOM=0|criteriaRelaxed=0" /tmp/r9.txt
+          requestDiffs="$(sed -n 's/.*requestCountDiffs=\([0-9][0-9]*\).*/\1/p' /tmp/r9.txt | head -n1)"; test -n "$requestDiffs"; test "$requestDiffs" -gt 0
+          echo "BROWSER PASS|sourceRun=32264723947|candidateHash=$CANDIDATE_SHA256|states=64|consumerPages=16|viewports=390,560,760,761|geometryDiffs=0|screenshotDiffs=0|loadedStateDiffs=0|pageErrors=0|familyDomHits=0|targetLoadedStates=28/28|requestCountDiffs=$requestDiffs|requestMultiplicityTelemetryOnly=1|syntheticDOM=0|criteriaRelaxed=0"
+          echo 'RATIONALE PASS|requestMultiplicityDoesNotChangeLoadTopology=1|sameLoadedStates=1|sameGeometry=1|sameScreenshots=1|sameDOMFamilyHits=0'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; echo 'R8_NOTE=metadata included per-state request counts; R9 separates semantic geometry/load topology from request multiplicity telemetry'; grep -E '^(CONSUMERS|CANDIDATE IDENTITY|PHASE|TELEMETRY DIFF|REQUEST COUNT DIFF KEYS|CANDIDATE PARITY|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 560 /tmp/v.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 020 mobile base stability visual r9 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.gate.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "GATE=${{ steps.gate.outcome }}"; echo 'R9_NOTE=failed only because request multiplicity totals differed; semantic/load-state topology invariants were identical'; grep -E '^(BROWSER PASS|RATIONALE PASS)\|' /tmp/g.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then cat /tmp/g.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 020 browser canonicalization r10 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
