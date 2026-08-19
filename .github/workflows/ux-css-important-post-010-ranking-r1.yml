@@ -1,4 +1,4 @@
-name: UX CSS Important Post-010 Ranking R1
+name: UX CSS Important 011 Featured Pros Visual R4
 
 on:
   push:
@@ -9,60 +9,192 @@ permissions:
   contents: write
 
 jobs:
-  source011:
+  proof011:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
-      PARENT_SHA: 58df6a9856874d541951430f9eab99e322da3c0f
+      TARGET_SHA: 58df6a9856874d541951430f9eab99e322da3c0f
       TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
-      RESULT_FILE: .diagnostics/ux-css-important-011-mobile-hero-source-r3.txt
+      TARGET_BLOB: ae438520da448cf6f8e39c1a18eb9e3d41633cc7
+      DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
+      RESULT_FILE: .diagnostics/ux-css-important-011-featured-pros-visual-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
-      - name: Conservative global source closure for 011
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - id: proof
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
-          git merge-base --is-ancestor "$PARENT_SHA" HEAD
-          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$(git rev-parse "HEAD:$TARGET_FILE")"
-          set +e
-          node <<'NODE' >/tmp/source.log 2>&1
-          const fs=require('fs'),path=require('path'),crypto=require('crypto');
-          const root=process.cwd(),target=process.env.TARGET_FILE,result=process.env.RESULT_FILE;
-          const src=fs.readFileSync(target,'utf8');
-          const clean=src.replace(/\/\*[\s\S]*?\*\//g,m=>m.replace(/[^\n]/g,' '));
-          const lineOf=p=>1+src.slice(0,p).split('\n').length-1;
-          const norm=s=>s.trim().replace(/\s+/g,' ');
-          const rules=[];
-          function closeBrace(open,limit){let d=1,q=null,e=false;for(let i=open+1;i<limit;i++){const c=clean[i];if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}if(c==='"'||c==="'"){q=c;continue}if(c==='{')d++;else if(c==='}'){d--;if(d===0)return i}}throw Error('unclosed block')}
-          function walkBlock(start,end,at=[]){let cur=start;while(cur<end){while(cur<end&&/[\s;]/.test(clean[cur]))cur++;if(cur>=end)break;let i=cur,q=null,e=false;for(;i<end;i++){const c=clean[i];if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}if(c==='"'||c==="'"){q=c;continue}if(c==='{'||c===';'||c==='}')break}if(i>=end||clean[i]==='}')break;if(clean[i]===';'){cur=i+1;continue}const pre=clean.slice(cur,i).trim(),endb=closeBrace(i,end);if(pre.startsWith('@'))walkBlock(i+1,endb,[...at,norm(pre)]);else{const body=clean.slice(i+1,endb),imps=[...body.matchAll(/([\w-]+)\s*:\s*([^;{}]*?)\s*!important\b/gi)].map(m=>({prop:m[1].toLowerCase(),value:m[2].trim()}));if(imps.length)rules.push({selector:norm(pre),at:at.join(' || '),line:lineOf(cur),important:imps})}cur=endb+1}}
-          walkBlock(0,clean.length,[]);
-          const parsed=rules.reduce((n,r)=>n+r.important.length,0);if(parsed!==179)throw Error(`parsed important ${parsed}`);
-          const files=[];function tree(dir,pred){if(!fs.existsSync(dir))return;for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())tree(p,pred);else if(e.isFile()&&pred(p))files.push(p)}}
-          tree(root,p=>path.dirname(p)===root&&p.endsWith('.html'));
-          tree(path.join(root,'assets/js'),p=>p.endsWith('.js'));
-          const corpus=files.map(f=>fs.readFileSync(f,'utf8')).join('\n');
-          const index=fs.readFileSync('index.html','utf8');
-          const directScripts=[...index.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(x=>!/^https?:\/\//i.test(x));
-          const zero=[];let eligible=0,ambiguous=0;
-          for(const r of rules){if(r.selector.includes(',')||/:is\(|:where\(|:has\(/i.test(r.selector)){ambiguous++;continue}const toks=[...new Set([...r.selector.matchAll(/\.([A-Za-z_][\w-]*)/g)].map(m=>m[1]).concat([...r.selector.matchAll(/#([A-Za-z_][\w-]*)/g)].map(m=>m[1])))];if(!toks.length){ambiguous++;continue}eligible++;const missing=toks.filter(t=>!corpus.includes(t));if(missing.length)zero.push({...r,toks,missing})}
-          const markers=zero.reduce((n,r)=>n+r.important.length,0),hash=crypto.createHash('sha256').update(Buffer.from(src)).digest('hex');
-          const lines=[`PARENT_SHA=${process.env.PARENT_SHA}`,`TARGET_FILE=${target}`,`TARGET_SHA256=${hash}`,`TARGET_BYTES=${Buffer.byteLength(src)}`,'TARGET_IMPORTANT=179',`GLOBAL_SOURCE_FILES=${files.length}`,`DIRECT_HOME_SCRIPTS=${directScripts.length}`,`IMPORTANT_RULES=${rules.length}`,`ELIGIBLE_SIMPLE_RULES=${eligible}`,`AMBIGUOUS_EXCLUDED_RULES=${ambiguous}`,`ZERO_TOKEN_RULES=${zero.length}`,`ZERO_TOKEN_MARKERS=${markers}`];
-          zero.forEach((r,i)=>lines.push(`ZERO|rank=${i}|line=${r.line}|markers=${r.important.length}|missing=${r.missing.join(',')}|tokens=${r.toks.join(',')}|at=${JSON.stringify(r.at)}|selector=${JSON.stringify(r.selector)}|props=${r.important.map(x=>x.prop).join(',')}`));
-          lines.push('INTERPRETATION=conservative global source absence only; runtime proof required before candidate promotion','RESULT=PASS');
-          fs.mkdirSync(path.dirname(result),{recursive:true});fs.writeFileSync(result,lines.join('\n')+'\n');console.log(lines.join('\n'));
+          exec > >(tee /tmp/p.log) 2>&1
+          git merge-base --is-ancestor "$TARGET_SHA" HEAD
+          test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          cp "$TARGET_FILE" /tmp/parent.css
+
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;
+          let s=fs.readFileSync(f,'utf8'),removed=0;
+          if((s.match(/!important\b/g)||[]).length!==179) throw Error('parent important count');
+          function strip(sel,n){
+            const needle=sel+'{';
+            const i=s.indexOf(needle);
+            if(i<0 || s.indexOf(needle,i+1)>=0) throw Error('selector '+sel);
+            const b=s.indexOf('{',i),e=s.indexOf('}',b);
+            let z=s.slice(b+1,e);
+            const c=(z.match(/!important\b/g)||[]).length;
+            if(c!==n) throw Error(sel+' markers='+c+' expected='+n);
+            z=z.replace(/\s*!important\b/g,'');
+            removed+=c;
+            s=s.slice(0,b+1)+z+s.slice(e);
+          }
+          strip('html.home-index-root body.home-index-shell .featured-pros__grid .pro-card',2);
+          strip('html.home-index-root body.home-index-shell .featured-pros__grid .pro-card__header',2);
+          strip('html.home-index-root body.home-index-shell .featured-pros__grid .pro-card__avatar',7);
+          strip('html.home-index-root body.home-index-shell .featured-pros__grid .pro-card__identity',3);
+          strip('html.home-index-root body.home-index-shell .featured-pros__grid .pro-card__score',3);
+          const count=(s.match(/!important\b/g)||[]).length;
+          if(removed!==17 || count!==162) throw Error(`candidate markers removed=${removed} count=${count}`);
+          const h=crypto.createHash('sha256').update(Buffer.from(s)).digest('hex');
+          fs.writeFileSync('/tmp/candidate.css',s);
+          fs.writeFileSync('/tmp/candidate.sha256',h+'\n');
+          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(s)}|important=179->162|priorityMarkersRemoved=17|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|family=featured-pros-pro-card`);
           NODE
-          code=$?
-          set -e
-          if [ "$code" -ne 0 ]; then mkdir -p "$(dirname "$RESULT_FILE")"; { echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "SOURCE_EXIT=$code"; echo "RESULT=FAIL"; tail -n 160 /tmp/source.log || true; } > "$RESULT_FILE"; fi
-          cat "$RESULT_FILE"
-      - name: Publish receipt
+
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
+          PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const f=process.env.TARGET_FILE;
+            const P=fs.readFileSync('/tmp/parent.css','utf8');
+            const C=fs.readFileSync('/tmp/candidate.css','utf8');
+            const browser=await chromium.launch({headless:true});
+            const widths=[359,379,380,381,390,430,560,561];
+            const filterWidths=new Set([359,380,390,560]);
+            const H=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const items=Array.from({length:8},(_,i)=>({id:'c11-'+i,serviceId:'c11-'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
+
+            async function cap(w,state,phase){
+              const c=await browser.newContext({viewport:{width:w,height:1050}});
+              const p=await c.newPage();
+              const errs=[];
+              p.on('pageerror',e=>errs.push(e.message));
+              for(const host of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**']){
+                await p.route(host,r=>r.fulfill({status:200,body:''}));
+              }
+              await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));
+              await p.goto(`http://127.0.0.1:4173/index.html?c11=${phase}-${w}-${state}`,{waitUntil:'domcontentloaded'});
+              await p.waitForLoadState('networkidle').catch(()=>{});
+              await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});
+              await p.evaluate(items=>{
+                const a=document.querySelector('#featured-services-track');
+                const b=document.querySelector('[data-more-services-grid]');
+                if(!a||!b) throw Error('service grids missing');
+                a.textContent=''; b.textContent='';
+                items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));
+                items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})));
+              },items);
+              if(state==='filters'){
+                await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});
+                await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));
+                await p.waitForFunction(()=>{
+                  const panel=document.querySelector('[data-more-filters-panel]');
+                  return document.body.classList.contains('home-filter-sheet-open') && Boolean(panel && !panel.hidden && panel.getAttribute('aria-hidden')!=='true');
+                },null,{timeout:4000});
+              }
+              await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});
+              const data=await p.evaluate(()=>{
+                const g=s=>{const e=document.querySelector(s);if(!e)return null;const c=getComputedStyle(e),r=e.getBoundingClientRect();return{display:c.display,position:c.position,overflow:c.overflow,width:c.width,height:c.height,gap:c.gap,grid:c.gridTemplateColumns,rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000)}};
+                const panel=document.querySelector('[data-more-filters-panel]');
+                return {
+                  proCards:document.querySelectorAll('.pro-card').length,
+                  featuredProsGrids:document.querySelectorAll('.featured-pros__grid').length,
+                  exactDormantNodes:document.querySelectorAll('.featured-pros__grid .pro-card,.featured-pros__grid .pro-card__header,.featured-pros__grid .pro-card__avatar,.featured-pros__grid .pro-card__identity,.featured-pros__grid .pro-card__score').length,
+                  cards:document.querySelectorAll('.doke-ad-card').length,
+                  workers:document.querySelectorAll('.video-card').length,
+                  featured:g('#featured-services-track'),
+                  more:g('[data-more-services-grid]'),
+                  hero:g('.home-search-hero'),
+                  filterPanel:g('[data-more-filters-panel]'),
+                  filterOpen:document.body.classList.contains('home-filter-sheet-open'),
+                  filterVisible:Boolean(panel && !panel.hidden && panel.getAttribute('aria-hidden')!=='true')
+                };
+              });
+              if(data.proCards!==0||data.featuredProsGrids!==0||data.exactDormantNodes!==0) throw Error('dormant family materialized '+JSON.stringify(data));
+              if(data.cards<8||data.workers<6) throw Error('product anatomy '+JSON.stringify(data));
+              if(state==='filters'&&(!data.filterOpen||!data.filterVisible)) throw Error('real filter state missing');
+              const png=H(await p.screenshot({fullPage:true,animations:'disabled'}));
+              await c.close();
+              return {data,png,errs};
+            }
+
+            const states=[];
+            for(const w of widths){states.push([w,'default']);if(filterWidths.has(w))states.push([w,'filters']);}
+            const A={},B={};
+            fs.writeFileSync(f,P);
+            for(const [w,s] of states) A[`${w}-${s}`]=await cap(w,s,'parent');
+            fs.writeFileSync(f,C);
+            for(const [w,s] of states) B[`${w}-${s}`]=await cap(w,s,'candidate');
+            let md=0,sd=0,pe=0;const details=[];
+            for(const k of Object.keys(A)){
+              pe+=A[k].errs.length+B[k].errs.length;
+              if(JSON.stringify(A[k].data)!==JSON.stringify(B[k].data)){md++;details.push('meta:'+k);}
+              if(A[k].png!==B[k].png){sd++;details.push('png:'+k);}
+            }
+            console.log(`CANDIDATE PARITY|states=${states.length}|viewports=${widths.join(',')}|realFilterStates=${filterWidths.size}|metadataDiffs=${md}|screenshotDiffs=${sd}|pageErrors=${pe}|proCardsParent=0|proCardsCandidate=0|featuredProsGridsParent=0|featuredProsGridsCandidate=0|productRenderer=1|syntheticDOM=0|criteriaRelaxed=0|diffKeys=${details.join(',')}`);
+            if(md||sd||pe) throw Error('candidate parity failed '+details.join(','));
+            await browser.close();
+            fs.writeFileSync(f,P);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"
+          git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: Publish receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "PARENT_SHA=$TARGET_SHA"
+            echo "TARGET_FILE=$TARGET_FILE"
+            echo "TARGET_BLOB=$TARGET_BLOB"
+            echo "PROOF=${{ steps.proof.outcome }}"
+            echo "RESTORE=${{ steps.restore.outcome }}"
+            grep -E '^(CANDIDATE IDENTITY|CANDIDATE PARITY)\|' /tmp/p.log || true
+            echo "RESULT=$result"
+            if test "$result" = FAIL; then tail -n 220 /tmp/p.log || true; fi
+          } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/out "$RESULT_FILE"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 011 mobile hero source r3 [skip ci]'
-          git push origin HEAD:refs/heads/diag/ux-css-important-post-010-ranking-r1
+          git commit -m 'diag: publish 011 featured pros visual r4 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
