@@ -53,12 +53,12 @@ async function executeContentCommand() {
   throw createB02FBlockedRouteError('communities.content.command');
 }
 
-function getCommandHandlerRepositoryBindingSurface() {
-  return require('./community-command-handler-repository-binding-surface');
+function getCommandHandlerRepositoryOrchestration() {
+  return require('./community-command-handler-repository-orchestration');
 }
 
 function composeMembershipCommandRepositoryOnly(packet, options) {
-  return getCommandHandlerRepositoryBindingSurface().beginRepositoryOnlyCommandHandlerSurface(
+  return getCommandHandlerRepositoryOrchestration().beginRepositoryOnlyCommandHandlerOrchestration(
     'communities.membership.command',
     packet,
     options
@@ -66,7 +66,7 @@ function composeMembershipCommandRepositoryOnly(packet, options) {
 }
 
 function composeGovernanceCommandRepositoryOnly(packet, options) {
-  return getCommandHandlerRepositoryBindingSurface().beginRepositoryOnlyCommandHandlerSurface(
+  return getCommandHandlerRepositoryOrchestration().beginRepositoryOnlyCommandHandlerOrchestration(
     'communities.governance.command',
     packet,
     options
@@ -74,7 +74,7 @@ function composeGovernanceCommandRepositoryOnly(packet, options) {
 }
 
 function composeContentCommandRepositoryOnly(packet, options) {
-  return getCommandHandlerRepositoryBindingSurface().beginRepositoryOnlyCommandHandlerSurface(
+  return getCommandHandlerRepositoryOrchestration().beginRepositoryOnlyCommandHandlerOrchestration(
     'communities.content.command',
     packet,
     options
@@ -82,7 +82,7 @@ function composeContentCommandRepositoryOnly(packet, options) {
 }
 
 function resumeCommandRepositoryOnlySurface(surface, repositoryResult, options) {
-  return getCommandHandlerRepositoryBindingSurface().resumeRepositoryOnlyCommandHandlerSurface(
+  return getCommandHandlerRepositoryOrchestration().resumeRepositoryOnlyCommandHandlerOrchestration(
     surface,
     repositoryResult,
     options
