@@ -1,0 +1,136 @@
+name: UX CSS Important 012 Home Recommendation R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-012-home-recommendation-r1
+
+permissions:
+  contents: write
+
+jobs:
+  proof012:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 57561ae5735f2a9a71c589cf6caea57c0db04488
+      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+      TARGET_BLOB: 880134c8303d87133a1b066e27ed9849abaa61ba
+      DIAG_BRANCH: diag/ux-css-important-012-home-recommendation-r1
+      RESULT_FILE: .diagnostics/ux-css-important-012-home-recommendation-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/p.log) 2>&1
+          git merge-base --is-ancestor "$TARGET_SHA" HEAD
+          test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+
+          set +e
+          git grep -n -E 'recommendation-card(__media|__aside|__cta)?' "$TARGET_SHA" -- '*.html' '*.js' '*.mjs' '*.cjs' > /tmp/source_hits.txt
+          SRC=$?
+          set -e
+          if test "$SRC" -eq 0; then cat /tmp/source_hits.txt; exit 21; fi
+          echo 'SOURCE CLOSURE PASS|tokens=recommendation-card,recommendation-card__media,recommendation-card__aside,recommendation-card__cta|htmlJsHits=0|exactParent=1'
+
+          cp "$TARGET_FILE" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;
+          let s=fs.readFileSync(f,'utf8'), removed=0, rules=0;
+          if((s.match(/!important\b/g)||[]).length!==162) throw Error('parent important count');
+          const selectors=new Set([
+            'html.home-index-root body.home-index-shell .recommendation-card',
+            'html.home-index-root body.home-index-shell .recommendation-card__media',
+            'html.home-index-root body.home-index-shell .recommendation-card__aside',
+            'html.home-index-root body.home-index-shell .recommendation-card__cta'
+          ]);
+          s=s.replace(/([^{}]+)\{([^{}]*)\}/g,(all,head,body)=>{
+            const sel=head.trim();
+            if(!selectors.has(sel)) return all;
+            const c=(body.match(/!important\b/g)||[]).length;
+            if(!c) return all;
+            removed+=c; rules++;
+            return head+'{'+body.replace(/\s*!important\b/g,'')+'}';
+          });
+          const count=(s.match(/!important\b/g)||[]).length;
+          if(removed!==9 || count!==153 || rules!==6) throw Error(`candidate removed=${removed} count=${count} rules=${rules}`);
+          const h=crypto.createHash('sha256').update(Buffer.from(s)).digest('hex');
+          fs.writeFileSync('/tmp/candidate.css',s);
+          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(s)}|important=162->153|priorityMarkersRemoved=9|rules=6|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|family=recommendation-card`);
+          NODE
+
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
+          PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const f=process.env.TARGET_FILE;
+            const P=fs.readFileSync('/tmp/parent.css','utf8');
+            const C=fs.readFileSync('/tmp/candidate.css','utf8');
+            const browser=await chromium.launch({headless:true});
+            const widths=[359,379,380,381,390,430,560,561];
+            const filterWidths=new Set([359,380,390,560]);
+            const H=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const items=Array.from({length:8},(_,i)=>({id:'c12-'+i,serviceId:'c12-'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
+            async function cap(w,state,phase){
+              const c=await browser.newContext({viewport:{width:w,height:1050}}); const p=await c.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+              for(const host of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**']) await p.route(host,r=>r.fulfill({status:200,body:''}));
+              await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));
+              await p.goto(`http://127.0.0.1:4173/index.html?c12=${phase}-${w}-${state}`,{waitUntil:'domcontentloaded'}); await p.waitForLoadState('networkidle').catch(()=>{});
+              await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});
+              await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(!a||!b)throw Error('service grids missing');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})));},items);
+              if(state==='filters'){await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));await p.waitForFunction(()=>document.body.classList.contains('home-filter-sheet-open'),null,{timeout:4000});}
+              await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});
+              const data=await p.evaluate(()=>({recommendationCards:document.querySelectorAll('.recommendation-card').length,recommendationMedia:document.querySelectorAll('.recommendation-card__media').length,recommendationAside:document.querySelectorAll('.recommendation-card__aside').length,recommendationCta:document.querySelectorAll('.recommendation-card__cta').length,cards:document.querySelectorAll('.doke-ad-card').length,workers:document.querySelectorAll('.video-card').length,filterOpen:document.body.classList.contains('home-filter-sheet-open')}));
+              if(data.recommendationCards||data.recommendationMedia||data.recommendationAside||data.recommendationCta) throw Error('recommendation family materialized '+JSON.stringify(data));
+              if(data.cards<8||data.workers<6) throw Error('product anatomy '+JSON.stringify(data)); if(state==='filters'&&!data.filterOpen) throw Error('filter state missing');
+              const png=H(await p.screenshot({fullPage:true,animations:'disabled'})); await c.close(); return {data,png,errs};
+            }
+            const states=[];for(const w of widths){states.push([w,'default']);if(filterWidths.has(w))states.push([w,'filters']);}
+            const A={},B={}; fs.writeFileSync(f,P); for(const [w,s] of states)A[`${w}-${s}`]=await cap(w,s,'parent'); fs.writeFileSync(f,C); for(const [w,s] of states)B[`${w}-${s}`]=await cap(w,s,'candidate');
+            let md=0,sd=0,pe=0;const details=[];for(const k of Object.keys(A)){pe+=A[k].errs.length+B[k].errs.length;if(JSON.stringify(A[k].data)!==JSON.stringify(B[k].data)){md++;details.push('meta:'+k)}if(A[k].png!==B[k].png){sd++;details.push('png:'+k)}}
+            console.log(`CANDIDATE PARITY|states=${states.length}|viewports=${widths.join(',')}|realFilterStates=${filterWidths.size}|metadataDiffs=${md}|screenshotDiffs=${sd}|pageErrors=${pe}|recommendationNodesParent=0|recommendationNodesCandidate=0|productRenderer=1|syntheticDOM=0|criteriaRelaxed=0|diffKeys=${details.join(',')}`);
+            if(md||sd||pe) throw Error('candidate parity failed '+details.join(',')); await browser.close(); fs.writeFileSync(f,P);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"
+          git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA" >/dev/null
+          git clean -fdx >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: Publish receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(SOURCE CLOSURE PASS|CANDIDATE IDENTITY|CANDIDATE PARITY)\|' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 220 /tmp/p.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: publish 012 Home recommendation r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
