@@ -1,0 +1,38 @@
+name: Doke UX CSS Important 010 Grid Runtime R3
+on: [push]
+permissions: {contents: write}
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 839d20efdaf28d99508397722fb61cedafcdb556
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: 46ede4f081a686155ab4035581cbd8a796a831c9
+      DIAG_BRANCH: diag/ux-css-important-010-grid-runtime-r3
+      RESULT_FILE: .diagnostics/ux-css-important-010-grid-runtime-r3.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/g.log) 2>&1; test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; npm ci --ignore-scripts; npx playwright install --with-deps chromium >/tmp/pw.log 2>&1; cp "$TARGET_FILE" /tmp/p.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8');if((s.match(/!important\b/g)||[]).length!==4)throw Error('parent');const sel=':is(.service-grid, .service-grid--compact, .service-cards-grid, .profile-services-results):not([data-more-services-grid])';const i=s.indexOf(sel+' {'),b=s.indexOf('{',i),e=s.indexOf('}',b);let z=s.slice(b+1,e),re=/(grid-template-columns\s*:[^;]+?)\s*!important\b/;if(i<0||!re.test(z))throw Error('grid marker');z=z.replace(re,'$1');s=s.slice(0,b+1)+z+s.slice(e);const h=crypto.createHash('sha256').update(Buffer.from(s)).digest('hex');if((s.match(/!important\b/g)||[]).length!==3)throw Error('candidate');fs.writeFileSync('/tmp/c.css',s);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(s)}|important=4->3|removed=1|marker=grid-template-columns`)
+          NODE
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!; trap 'kill $PID >/dev/null 2>&1 || true' EXIT; sleep 1
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');(async()=>{const f=process.env.TARGET_FILE,P=fs.readFileSync('/tmp/p.css','utf8'),C=fs.readFileSync('/tmp/c.css','utf8'),browser=await chromium.launch({headless:true}),widths=[359,379,380,381,430,560,561],H=b=>crypto.createHash('sha256').update(b).digest('hex'),items=Array.from({length:8},(_,i)=>({id:'g'+i,serviceId:'g'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));async function cap(w,phase){const c=await browser.newContext({viewport:{width:w,height:1050}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));for(const h of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(h,r=>r.fulfill({status:200,body:''}));await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));await p.goto(`http://127.0.0.1:4173/index.html?g=${phase}-${w}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForFunction(()=>Boolean(Doke?.publicServiceCard?.create),null,{timeout:7000});await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(Doke.publicServiceCard.create(x,{results:true})))},items);await p.addStyleTag({content:'*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important;}'});const data=await p.evaluate(()=>{const g=s=>{const e=document.querySelector(s),c=getComputedStyle(e),r=e.getBoundingClientRect();return{display:c.display,gap:c.gap,grid:c.gridTemplateColumns,width:c.width,rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000)}};return{featured:g('#featured-services-track'),more:g('[data-more-services-grid]'),cards:document.querySelectorAll('.doke-ad-card').length}});if(data.cards<8)throw Error('cards');const png=H(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{data,png,errs}}const A={},B={};fs.writeFileSync(f,P);for(const w of widths)A[w]=await cap(w,'p');fs.writeFileSync(f,C);for(const w of widths)B[w]=await cap(w,'c');let md=0,sd=0,pe=0,details=[];for(const w of widths){pe+=A[w].errs.length+B[w].errs.length;if(JSON.stringify(A[w].data)!==JSON.stringify(B[w].data)){md++;details.push(`${w}:${JSON.stringify({p:A[w].data,c:B[w].data})}`)}if(A[w].png!==B[w].png)sd++}console.log(`GRID PARITY|states=7|metadataDiffs=${md}|screenshotDiffs=${sd}|pageErrors=${pe}|gap380Parent=${A[380].data.featured.gap}|gap380Candidate=${B[380].data.featured.gap}|grid380Parent=${A[380].data.featured.grid}|grid380Candidate=${B[380].data.featured.grid}`);details.forEach(x=>console.log('GRID DETAIL|'+x));if(md||sd||pe)throw Error('grid parity');await browser.close();fs.writeFileSync(f,P)})().catch(e=>{console.error(e);process.exit(1)})
+          NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; git diff --exit-code -- "$TARGET_FILE"
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "PROOF=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|GRID PARITY|GRID DETAIL)\|' /tmp/g.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 160 /tmp/g.log || true; fi; } >/tmp/out; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 010 grid runtime r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
