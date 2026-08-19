@@ -1,16 +1,16 @@
-name: UX CSS Important Post 021 Fresh Ranking R1
+name: UX CSS Important Post 021 Fresh Ranking R2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  rank022:
+  rank022r2:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: f611a1e80e96488ef9841200356253efd4172b63
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-post-021-fresh-ranking-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-post-021-fresh-ranking-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -21,6 +21,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
+          git show HEAD:.diagnostics/ux-css-important-021-home-remaining-inventory-r5.txt >/tmp/021-r5.txt
+          grep -q '^RESULT=PASS$' /tmp/021-r5.txt
+          grep -Fq 'INVENTORY SUMMARY|important=128|rules=53|staticDormantRules=1|staticDormantImportant=1|targetReachable=1' /tmp/021-r5.txt
           git checkout --detach "$PARENT_SHA" >/dev/null
           npm ci --ignore-scripts >/dev/null
           npm run audit:important-reduction-plan >/dev/null
@@ -44,8 +47,6 @@ jobs:
           const mobileBase='assets/css/components/shell/mobile-base-stability.css',home='assets/css/pages/home/mobile-hero-feed.css';
           if(inv.find(x=>x.file===mobileBase)?.important!==28)throw Error('protected020 drift');
           if(inv.find(x=>x.file===home)?.important!==127)throw Error('home021 residual drift');
-          const r5=fs.readFileSync('.diagnostics/ux-css-important-021-home-remaining-inventory-r5.txt','utf8');
-          if(!r5.includes('INVENTORY SUMMARY|important=128|rules=53|staticDormantRules=1|staticDormantImportant=1|targetReachable=1')||!r5.includes('RESULT=PASS'))throw Error('missing 021 residual proof');
           console.log(`BLOCKED HIGH|important=28|file=${mobileBase}|reason=remaining-28-protected-by-certified-020`);
           console.log(`BLOCKED HIGH|important=127|file=${home}|reason=certified-021-exhausted-only-static-dormant-rule;current-residual-unchanged-except-certified-removal`);
           const eligible=ranked.find(x=>x.file!==mobileBase&&x.file!==home);if(!eligible)throw Error('no eligible high');
@@ -56,5 +57,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.rank.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "RANK=${{ steps.rank.outcome }}"; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|BLOCKED HIGH|NEXT ELIGIBLE HIGH)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/r.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish post-021 fresh important ranking r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "RANK=${{ steps.rank.outcome }}"; echo 'R1_NOTE=harness-only-diagnostic-receipt-read-after-product-checkout'; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|BLOCKED HIGH|NEXT ELIGIBLE HIGH)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/r.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish post-021 fresh important ranking r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
