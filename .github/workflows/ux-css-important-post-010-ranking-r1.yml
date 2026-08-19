@@ -1,10 +1,10 @@
-name: UX CSS Important 022 Index Compact Reach R3
+name: UX CSS Important 022 Index Compact Dormancy R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach022:
+  dormancy022:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -12,35 +12,33 @@ jobs:
       TARGET_FILE: assets/css/components/layout/index-compact-card-contract.css
       TARGET_BLOB: 47d3c3a08b9dd081d978483cc863949d7468e525
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-022-index-compact-reach-r3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-022-index-compact-dormancy-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: reach
+      - id: proof
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/p.log) 2>&1
           git show HEAD:.diagnostics/ux-css-important-post-021-fresh-ranking-r2.txt >/tmp/rank.txt
-          grep -q '^RESULT=PASS$' /tmp/rank.txt
-          grep -Fq 'NEXT ELIGIBLE HIGH|important=130|file=assets/css/components/layout/index-compact-card-contract.css' /tmp/rank.txt
-          git checkout --detach "$PARENT_SHA" >/dev/null
-          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 130
-          echo 'TARGET PASS|important=130|blob=exact'
-          echo 'TARGET REFERENCES BEGIN'
-          git grep -n -F 'index-compact-card-contract.css' -- '*.html' 'assets/css/**/*.css' 'assets/js/**/*.js' || true
-          echo 'TARGET REFERENCES END'
-          echo 'IMPORTER CHAIN BEGIN'
-          git grep -n -F 'marketplace-responsive-stack.css' -- '*.html' 'assets/css/**/*.css' 'assets/js/**/*.js' || true
-          echo 'IMPORTER CHAIN END'
-          refs="$(git grep -l -F 'index-compact-card-contract.css' -- '*.html' 'assets/css/**/*.css' 'assets/js/**/*.js' 2>/dev/null | wc -l)"
-          imports="$(git grep -l -E '@import[^;]*index-compact-card-contract\.css' -- 'assets/css/**/*.css' 2>/dev/null | wc -l)"
-          echo "REACH SUMMARY|textRefFiles=$refs|actualImporters=$imports"
+          grep -q '^RESULT=PASS$' /tmp/rank.txt; grep -Fq 'NEXT ELIGIBLE HIGH|important=130|file=assets/css/components/layout/index-compact-card-contract.css' /tmp/rank.txt
+          git show HEAD:.diagnostics/ux-css-important-022-index-compact-reach-r3.txt >/tmp/r3.txt
+          grep -Fq 'TARGET PASS|important=130|blob=exact' /tmp/r3.txt; grep -Fq 'assets/css/patterns/marketplace-responsive-stack.css:1405:/* === Source: assets/css/components/layout/index-compact-card-contract.css === */' /tmp/r3.txt
+          git checkout --detach "$PARENT_SHA" >/dev/null; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),crypto=require('crypto');const T=process.env.TARGET_FILE,bn=path.basename(T),strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');
+          const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]});
+          const files=[...fs.readdirSync('.').filter(f=>f.endsWith('.html')),...walk('assets/css').filter(f=>f.endsWith('.css')),...walk('assets/js').filter(f=>f.endsWith('.js'))];let refs=[],imports=[];
+          for(const f of files){if(f===T)continue;const t=strip(fs.readFileSync(f,'utf8'));if(t.includes(bn))refs.push(f);if(f.endsWith('.css')&&new RegExp('@import\\s+(?:url\\()?\\s*["\\'][^"\\']*'+bn.replaceAll('.','\\.')+'(?:\\?[^"\\']*)?["\\']','i').test(t))imports.push(f);}
+          const o=fs.readFileSync(T,'utf8'),n=(o.match(/!important\b/g)||[]).length;if(n!==130)throw Error(`important ${n}`);const c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
+          console.log(`CLEAN REACH|runtimeAndCssRefs=${refs.length}|actualImporters=${imports.length}|wholeFileDormant=${refs.length===0&&imports.length===0?1:0}`);for(const f of refs)console.log(`CLEAN REF|file=${f}`);for(const f of imports)console.log(`IMPORTER|file=${f}`);
+          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(c)}|important=130->0|priorityMarkersRemoved=130|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=${refs.length===0&&imports.length===0?1:0}`);if(refs.length||imports.length)throw Error('reachable/reference');
+          NODE
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; cat /tmp/r.log; echo "RESULT=$result"; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 022 index compact reach r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; echo 'R3_NOTE=harness-only-zero-importer-grep-pipefail; only raw ref was CSS source-trace comment'; grep -E '^(CLEAN REACH|CLEAN REF|IMPORTER|CANDIDATE IDENTITY)\|' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/p.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 022 index compact dormancy r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
