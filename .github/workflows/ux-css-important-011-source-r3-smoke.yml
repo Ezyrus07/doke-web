@@ -1,0 +1,30 @@
+name: UX CSS Important 011 Source R3 Smoke
+on:
+  push:
+    branches:
+      - diag/ux-css-important-011-mobile-hero-source-r3
+permissions:
+  contents: write
+jobs:
+  smoke:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 58df6a9856874d541951430f9eab99e322da3c0f HEAD
+          test "$(git rev-parse 58df6a9856874d541951430f9eab99e322da3c0f:assets/css/pages/home/mobile-hero-feed.css)" = "$(git rev-parse HEAD:assets/css/pages/home/mobile-hero-feed.css)"
+          mkdir -p .diagnostics
+          printf 'PARENT_SHA=58df6a9856874d541951430f9eab99e322da3c0f\nTARGET_UNCHANGED=1\nRESULT=PASS\n' > .diagnostics/ux-css-important-011-source-r3-smoke.txt
+      - shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .diagnostics/ux-css-important-011-source-r3-smoke.txt
+          git commit -m 'diag: publish 011 source r3 smoke [skip ci]'
+          git push origin HEAD:refs/heads/diag/ux-css-important-011-mobile-hero-source-r3
