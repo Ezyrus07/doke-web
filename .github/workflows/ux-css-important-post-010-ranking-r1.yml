@@ -1,10 +1,10 @@
-name: UX CSS Important 023 App Mobile Search Token Inventory R5
+name: UX CSS Important 023 App Mobile Search Visual R6
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  tokens023:
+  visual023r6:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -13,28 +13,33 @@ jobs:
       TARGET_BLOB: de0178f27e9ad535acf1b00eae0e59382d14061e
       CANDIDATE_SHA256: 2431b9916decc1845f7d837bdb05b64a8f863e3b113aa32471a22571a8d48f85
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-023-app-mobile-search-token-inventory-r5.txt
+      RESULT_FILE: .diagnostics/ux-css-important-023-app-mobile-search-visual-r6.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: tokens
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: visual
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/t.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/v.log) 2>&1
           git checkout --detach "$PARENT_SHA" >/dev/null; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts >/dev/null; npx playwright install chromium >/dev/null
           node <<'NODE'
-          const fs=require('fs'),cp=require('child_process'),path=require('path'),crypto=require('crypto');const T=process.env.TARGET_FILE,o=fs.readFileSync(T,'utf8');
-          const tokens=[...new Set([...o.matchAll(/\.([A-Za-z0-9_-]*app-mobile-search[A-Za-z0-9_-]*)/g)].map(m=>m[1]))].sort();if(!tokens.length)throw Error('no tokens');
-          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);const hits=[];
-          for(const f of tracked){if(f===T)continue;if(!(f.endsWith('.html')||f.startsWith('assets/js/')))continue;let s;try{s=fs.readFileSync(f,'utf8')}catch{continue}for(const tok of tokens){const re=new RegExp(`(?:class(?:Name)?\\s*=\\s*["'][^"']*\\b${tok}\\b|classList\\.(?:add|remove|toggle|contains)\\([^)]*["']${tok}["']|["']${tok}["'])`);if(re.test(s))hits.push([f,tok]);}}
-          console.log(`TOKEN INVENTORY|tokens=${tokens.length}|runtimeHtmlJsHits=${hits.length}`);for(const t of tokens)console.log(`TOKEN|name=${t}`);for(const [f,t] of hits)console.log(`RUNTIME TOKEN HIT|file=${f}|token=${t}`);if(hits.length)throw Error('runtime token hits');
-          const c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');if(h!==process.env.CANDIDATE_SHA256)throw Error(h);console.log(`CANDIDATE PASS|sha256=${h}|important=146->0|runtimeTokenHits=0|wholeFileDormant=1`);
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,o=fs.readFileSync(f,'utf8'),c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');if(h!==process.env.CANDIDATE_SHA256)throw Error(h);fs.writeFileSync('/tmp/candidate.css',c);fs.writeFileSync('/tmp/parent.css',o);
           NODE
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/server.log 2>&1 & echo $! >/tmp/server.pid; sleep 1
+          cat >/tmp/render023r6.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require('@playwright/test');const pages=['index.html','resultados.html'],widths=[359,390,430,560,600,760,761],modes=['base','focus'];const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          async function phase(label){const browser=await chromium.launch({headless:true});const out=[];let loads=0,errors=0,searchStates=0;for(const pageName of pages)for(const width of widths)for(const mode of modes){const page=await browser.newPage({viewport:{width,height:900}});let tl=0;page.on('pageerror',()=>errors++);page.on('request',r=>{if(r.url().includes('app-mobile-search.css')){tl++;loads++;}});await page.addInitScript(()=>{let x=0x12345678;const next=()=>((x=(1664525*x+1013904223)>>>0)/4294967296);Math.random=next;try{crypto.getRandomValues=(a)=>{for(let i=0;i<a.length;i++)a[i]=Math.floor(next()*256);return a};crypto.randomUUID=()=>{const h=()=>Math.floor(next()*16).toString(16);return `${h()}${h()}${h()}${h()}${h()}${h()}${h()}${h()}-${h()}${h()}${h()}${h()}-4${h()}${h()}${h()}-${(8+Math.floor(next()*4)).toString(16)}${h()}${h()}${h()}-${Array.from({length:12},h).join('')}`}}catch{}});await page.route('**/*',async route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.fulfill({status:204,body:''});});await page.goto(`http://127.0.0.1:4173/${pageName}`,{waitUntil:'domcontentloaded',timeout:30000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}html{scroll-behavior:auto!important}::-webkit-scrollbar{width:0!important;height:0!important}'});await page.evaluate(async()=>{if(document.fonts?.ready)await document.fonts.ready;});await page.waitForTimeout(150);const input=page.locator('.app-mobile-search__input'),exists=await input.count()>0;if(mode==='focus'&&exists){await input.first().focus();await page.waitForTimeout(50);}if(exists)searchStates++;const meta=await page.evaluate(({pageName,width,mode})=>({pageName,width,mode,scroll:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],body:[document.body.scrollWidth,document.body.scrollHeight],targetDom:document.querySelectorAll('[class*="app-mobile-search"]').length,active:document.activeElement?.className||''}),{pageName,width,mode});const shot=hash(await page.screenshot({fullPage:true}));out.push({key:`${pageName}@${width}:${mode}`,meta,shot,targetLoads:tl});await page.close();}await browser.close();console.log(`PHASE|label=${label}|states=${out.length}|pageErrors=${errors}|targetStylesheetLoads=${loads}|searchStates=${searchStates}`);return{out,loads,errors,searchStates};}
+          (async()=>{const p=await phase('parent');fs.writeFileSync(process.env.TARGET_FILE,fs.readFileSync('/tmp/candidate.css'));const c=await phase('candidate');const pm=new Map(p.out.map(x=>[x.key,x])),cm=new Map(c.out.map(x=>[x.key,x]));let md=0,sd=0,ld=0;const diffs=[];for(const[k,a]of pm){const b=cm.get(k);if(JSON.stringify(a.meta)!==JSON.stringify(b.meta)){md++;diffs.push(`META:${k}`)}if(a.shot!==b.shot){sd++;diffs.push(`SHOT:${k}`)}if(a.targetLoads!==b.targetLoads){ld++;diffs.push(`LOAD:${k}`)}}fs.writeFileSync(process.env.TARGET_FILE,fs.readFileSync('/tmp/parent.css'));for(const d of diffs)console.log(`DIFF STATE|key=${d}`);console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|states=${p.out.length}|pages=2|viewports=${widths.join(',')}|modes=${modes.join(',')}|metadataDiffs=${md}|screenshotDiffs=${sd}|loadedStateDiffs=${ld}|pageErrors=${p.errors+c.errors}|targetStylesheetLoads=${p.loads}/${c.loads}|searchStates=${p.searchStates}/${c.searchStates}|syntheticDOM=0|criteriaRelaxed=0|deterministicRandom=1|deterministicCrypto=1`);if(md||sd||ld||p.errors||c.errors||p.loads||c.loads)process.exit(2);})().catch(e=>{console.error(e);process.exit(3)});
+          NODE
+          NODE_PATH="$PWD/node_modules" node /tmp/render023r6.js
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.tokens.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "TOKENS=${{ steps.tokens.outcome }}"; grep -E '^(TOKEN INVENTORY|TOKEN|RUNTIME TOKEN HIT|CANDIDATE PASS)\|' /tmp/t.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/t.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 023 app mobile search token inventory r5 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; test -f /tmp/parent.css && cp /tmp/parent.css "$TARGET_FILE" || true; test -f /tmp/server.pid && kill "$(cat /tmp/server.pid)" 2>/dev/null || true; result=FAIL; if test '${{ steps.visual.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.visual.outcome }}"; echo 'R4_NOTE=three-screenshot-only-nondeterministic-diffs-with-target-unloaded-and-zero-target-dom'; grep -E '^(PHASE|DIFF STATE|BROWSER PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 600 /tmp/v.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 023 app mobile search visual r6 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
