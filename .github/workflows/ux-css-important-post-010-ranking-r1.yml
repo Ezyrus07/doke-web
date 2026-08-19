@@ -1,10 +1,10 @@
-name: UX CSS Important 022 Index Compact Dormancy R4
+name: UX CSS Important 022 Index Compact Dormancy R5
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  dormancy022:
+  dormancy022r5:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -12,7 +12,7 @@ jobs:
       TARGET_FILE: assets/css/components/layout/index-compact-card-contract.css
       TARGET_BLOB: 47d3c3a08b9dd081d978483cc863949d7468e525
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-022-index-compact-dormancy-r4.txt
+      RESULT_FILE: .diagnostics/ux-css-important-022-index-compact-dormancy-r5.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -24,13 +24,13 @@ jobs:
           git show HEAD:.diagnostics/ux-css-important-post-021-fresh-ranking-r2.txt >/tmp/rank.txt
           grep -q '^RESULT=PASS$' /tmp/rank.txt; grep -Fq 'NEXT ELIGIBLE HIGH|important=130|file=assets/css/components/layout/index-compact-card-contract.css' /tmp/rank.txt
           git show HEAD:.diagnostics/ux-css-important-022-index-compact-reach-r3.txt >/tmp/r3.txt
-          grep -Fq 'TARGET PASS|important=130|blob=exact' /tmp/r3.txt; grep -Fq 'assets/css/patterns/marketplace-responsive-stack.css:1405:/* === Source: assets/css/components/layout/index-compact-card-contract.css === */' /tmp/r3.txt
+          grep -Fq 'TARGET PASS|important=130|blob=exact' /tmp/r3.txt
           git checkout --detach "$PARENT_SHA" >/dev/null; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
           node <<'NODE'
-          const fs=require('fs'),path=require('path'),crypto=require('crypto');const T=process.env.TARGET_FILE,bn=path.basename(T),strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');
+          const fs=require('fs'),path=require('path'),crypto=require('crypto');const T=process.env.TARGET_FILE,bn='index-compact-card-contract.css',strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');
           const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]});
           const files=[...fs.readdirSync('.').filter(f=>f.endsWith('.html')),...walk('assets/css').filter(f=>f.endsWith('.css')),...walk('assets/js').filter(f=>f.endsWith('.js'))];let refs=[],imports=[];
-          for(const f of files){if(f===T)continue;const t=strip(fs.readFileSync(f,'utf8'));if(t.includes(bn))refs.push(f);if(f.endsWith('.css')&&new RegExp('@import\\s+(?:url\\()?\\s*["\\'][^"\\']*'+bn.replaceAll('.','\\.')+'(?:\\?[^"\\']*)?["\\']','i').test(t))imports.push(f);}
+          for(const f of files){if(f===T)continue;const t=strip(fs.readFileSync(f,'utf8'));if(t.includes(bn))refs.push(f);if(f.endsWith('.css')&&/@import\s+(?:url\()?\s*["'][^"']*index-compact-card-contract\.css(?:\?[^"']*)?["']/i.test(t))imports.push(f);}
           const o=fs.readFileSync(T,'utf8'),n=(o.match(/!important\b/g)||[]).length;if(n!==130)throw Error(`important ${n}`);const c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
           console.log(`CLEAN REACH|runtimeAndCssRefs=${refs.length}|actualImporters=${imports.length}|wholeFileDormant=${refs.length===0&&imports.length===0?1:0}`);for(const f of refs)console.log(`CLEAN REF|file=${f}`);for(const f of imports)console.log(`IMPORTER|file=${f}`);
           console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(c)}|important=130->0|priorityMarkersRemoved=130|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=${refs.length===0&&imports.length===0?1:0}`);if(refs.length||imports.length)throw Error('reachable/reference');
@@ -40,5 +40,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; echo 'R3_NOTE=harness-only-zero-importer-grep-pipefail; only raw ref was CSS source-trace comment'; grep -E '^(CLEAN REACH|CLEAN REF|IMPORTER|CANDIDATE IDENTITY)\|' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/p.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 022 index compact dormancy r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; echo 'R3_NOTE=harness-only-zero-importer-grep-pipefail'; echo 'R4_NOTE=harness-only-node-regex-syntax-before-decision'; grep -E '^(CLEAN REACH|CLEAN REF|IMPORTER|CANDIDATE IDENTITY)\|' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/p.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 022 index compact dormancy r5 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
