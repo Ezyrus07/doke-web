@@ -1,0 +1,101 @@
+name: UX CSS Important 011 Mobile Hero Source R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-011-mobile-hero-source-r3
+
+permissions:
+  contents: write
+
+jobs:
+  source:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 58df6a9856874d541951430f9eab99e322da3c0f
+      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+      RESULT_FILE: .diagnostics/ux-css-important-011-mobile-hero-source-r3.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Conservative source closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$PARENT_SHA" HEAD
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$(git rev-parse "HEAD:$TARGET_FILE")"
+          set +e
+          node <<'NODE' >/tmp/source.log 2>&1
+          const fs=require('fs'), path=require('path'), crypto=require('crypto');
+          const root=process.cwd(), target=process.env.TARGET_FILE, result=process.env.RESULT_FILE;
+          const src=fs.readFileSync(target,'utf8');
+          const clean=src.replace(/\/\*[\s\S]*?\*\//g,m=>m.replace(/[^\n]/g,' '));
+          const lineOf=p=>1+src.slice(0,p).split('\n').length-1;
+          const norm=s=>s.trim().replace(/\s+/g,' ');
+          const rules=[];
+
+          function closeBrace(open,limit){let d=1,q=null,e=false;for(let i=open+1;i<limit;i++){const c=clean[i];if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}if(c==='"'||c==="'"){q=c;continue}if(c==='{')d++;else if(c==='}'&&!--d)return i}throw Error('unclosed block')}
+          function walkBlock(start,end,at=[]){let cur=start;while(cur<end){while(cur<end&&/[\s;]/.test(clean[cur]))cur++;if(cur>=end)break;let i=cur,q=null,e=false;for(;i<end;i++){const c=clean[i];if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}if(c==='"'||c==="'"){q=c;continue}if(c==='{'||c===';'||c==='}')break}if(i>=end||clean[i]==='}')break;if(clean[i]===';'){cur=i+1;continue}const pre=clean.slice(cur,i).trim(), endb=closeBrace(i,end);if(pre.startsWith('@'))walkBlock(i+1,endb,[...at,norm(pre)]);else{const body=clean.slice(i+1,endb), imps=[...body.matchAll(/([\w-]+)\s*:\s*([^;{}]*?)\s*!important\b/gi)].map(m=>({prop:m[1].toLowerCase(),value:m[2].trim()}));if(imps.length)rules.push({selector:norm(pre),at:at.join(' || '),line:lineOf(cur),important:imps})}cur=endb+1}}
+          walkBlock(0,clean.length,[]);
+          const parsedImportant=rules.reduce((n,r)=>n+r.important.length,0);
+          if(parsedImportant!==179)throw Error(`parsed important ${parsedImportant}`);
+
+          const sourceFiles=[];
+          function tree(dir,pred){if(!fs.existsSync(dir))return;for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())tree(p,pred);else if(e.isFile()&&pred(p))sourceFiles.push(p)}}
+          tree(root,p=>p.endsWith('.html'));
+          tree(path.join(root,'assets/js'),p=>p.endsWith('.js'));
+          const corpus=sourceFiles.map(f=>fs.readFileSync(f,'utf8')).join('\n');
+          const index=fs.readFileSync('index.html','utf8');
+          const directScripts=[...index.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(x=>!/^https?:\/\//i.test(x));
+
+          const candidates=[];
+          let eligibleRules=0, ambiguousRules=0;
+          for(const r of rules){
+            if(r.selector.includes(',')||/:is\(|:where\(|:has\(/i.test(r.selector)){ambiguousRules++;continue}
+            const classes=[...r.selector.matchAll(/\.([A-Za-z_][\w-]*)/g)].map(m=>m[1]);
+            const ids=[...r.selector.matchAll(/#([A-Za-z_][\w-]*)/g)].map(m=>m[1]);
+            const toks=[...new Set([...classes,...ids])];
+            if(!toks.length){ambiguousRules++;continue}
+            eligibleRules++;
+            const missing=toks.filter(t=>!corpus.includes(t));
+            if(missing.length)candidates.push({...r,tokens:toks,missing});
+          }
+          const markerCount=candidates.reduce((n,r)=>n+r.important.length,0);
+          const hash=crypto.createHash('sha256').update(Buffer.from(src)).digest('hex');
+          const lines=[];
+          lines.push(`PARENT_SHA=${process.env.PARENT_SHA}`);
+          lines.push(`TARGET_FILE=${target}`);
+          lines.push(`TARGET_SHA256=${hash}`);
+          lines.push(`TARGET_BYTES=${Buffer.byteLength(src)}`);
+          lines.push('TARGET_IMPORTANT=179');
+          lines.push(`ROOT_SOURCE_FILES=${sourceFiles.length}`);
+          lines.push(`DIRECT_HOME_SCRIPTS=${directScripts.length}`);
+          lines.push(`DIRECT_HOME_SCRIPT_LIST=${directScripts.join(',')}`);
+          lines.push(`IMPORTANT_RULES=${rules.length}`);
+          lines.push(`ELIGIBLE_SIMPLE_RULES=${eligibleRules}`);
+          lines.push(`AMBIGUOUS_EXCLUDED_RULES=${ambiguousRules}`);
+          lines.push(`ZERO_TOKEN_RULES=${candidates.length}`);
+          lines.push(`ZERO_TOKEN_MARKERS=${markerCount}`);
+          candidates.forEach((r,i)=>lines.push(`ZERO|rank=${i}|line=${r.line}|markers=${r.important.length}|missing=${r.missing.join(',')}|tokens=${r.tokens.join(',')}|at=${JSON.stringify(r.at)}|selector=${JSON.stringify(r.selector)}|props=${r.important.map(x=>x.prop).join(',')}`));
+          lines.push('INTERPRETATION=zero-token is conservative static dormancy signal only; runtime proof still required');
+          lines.push('RESULT=PASS');
+          fs.mkdirSync(path.dirname(result),{recursive:true});fs.writeFileSync(result,lines.join('\n')+'\n');console.log(lines.join('\n'));
+          NODE
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ]; then
+            mkdir -p "$(dirname "$RESULT_FILE")"
+            { echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "SOURCE_EXIT=$code"; echo "RESULT=FAIL"; tail -n 160 /tmp/source.log || true; } > "$RESULT_FILE"
+          fi
+          cat "$RESULT_FILE"
+      - name: Publish receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: publish 011 mobile hero source r3 [skip ci]'
+          git push origin HEAD:refs/heads/diag/ux-css-important-011-mobile-hero-source-r3
