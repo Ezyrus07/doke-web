@@ -1,4 +1,4 @@
-name: UX CSS Important 021 Home Remaining Priority Reach Inventory R3
+name: UX CSS Important 021 Home Remaining Priority Reach Inventory R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -12,12 +12,10 @@ jobs:
       TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
       TARGET_BLOB: fea7bdfea3f78f77a38385c155e442ca47911bfe
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-021-home-remaining-reach-inventory-r3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-021-home-remaining-reach-inventory-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
       - id: inspect
         continue-on-error: true
         shell: bash
@@ -27,39 +25,30 @@ jobs:
           test "$(git rev-parse HEAD)" = "$PARENT_SHA"
           actual_blob="$(git rev-parse "HEAD:$TARGET_FILE")"; echo "ACTUAL_BLOB=$actual_blob"; test "$actual_blob" = "$TARGET_BLOB"
           test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 128
-          npm ci --ignore-scripts >/dev/null
           node <<'NODE'
-          const fs=require('fs'),path=require('path'),postcss=require('postcss');
+          const fs=require('fs'),path=require('path');
           const TARGET=process.env.TARGET_FILE;
           const strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');
           const rootHtml=fs.readdirSync('.').filter(f=>f.endsWith('.html')&&!f.startsWith('archive-')&&!f.startsWith('backup-')).sort();
-          const direct=new Set(), imports=new Map();
-          const hrefRe=/<link\b[^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi;
+          const direct=new Set(),imports=new Map();const hrefRe=/<link\b[^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi;
           for(const f of rootHtml){const s=fs.readFileSync(f,'utf8');let m;while((m=hrefRe.exec(s))){let q=m[1].split('?')[0].replace(/^\.\//,'');if(q.startsWith('/'))q=q.slice(1);if(q.startsWith('assets/css/'))direct.add(q)}}
           const walk=d=>fs.existsSync(d)?fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]}):[];
           const css=walk('assets/css').filter(f=>f.endsWith('.css')).map(f=>f.replaceAll('\\','/'));
           for(const f of css){const s=strip(fs.readFileSync(f,'utf8')),a=[];for(const m of s.matchAll(/@import\s+(?:url\()?\s*["']([^"']+\.css(?:\?[^"']*)?)["']/g)){let rel=m[1].split('?')[0];if(rel.startsWith('.'))rel=path.posix.normalize(path.posix.join(path.posix.dirname(f),rel));else if(rel.startsWith('/'))rel=rel.slice(1);if(rel.startsWith('assets/css/'))a.push(rel)}imports.set(f,a)}
           const reachable=new Set(direct),q=[...direct];while(q.length){const f=q.shift();for(const x of imports.get(f)||[])if(!reachable.has(x)){reachable.add(x);q.push(x)}}
-          const importers=[...imports].filter(([,a])=>a.includes(TARGET)).map(([f])=>f).sort();
-          const js=walk('assets/js').filter(f=>f.endsWith('.js'));
-          const runtimeFiles=[...rootHtml,...js];
-          const cleanRuntime=runtimeFiles.map(f=>[f,strip(fs.readFileSync(f,'utf8'))]);
-          const filename=path.posix.basename(TARGET);
-          const jsRefs=cleanRuntime.filter(([f,s])=>f.endsWith('.js')&&s.includes(filename)).map(([f])=>f);
-          const runtimeTextRefs=cleanRuntime.filter(([f,s])=>s.includes(TARGET)||s.includes(filename)).map(([f])=>f);
-          console.log(`REACH GRAPH|activeHtml=${rootHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(TARGET)?1:0}|jsRefs=${jsRefs.length}|runtimeTextRefs=${runtimeTextRefs.length}|importers=${importers.length}`);
-          for(const f of importers)console.log(`IMPORTER|file=${f}`);
-          if(rootHtml.length!==33||direct.size!==51||reachable.size!==407)throw Error(`graph baseline ${rootHtml.length}/${direct.size}/${reachable.size}`);
-          const cssText=fs.readFileSync(TARGET,'utf8'),ast=postcss.parse(cssText,{from:TARGET});let total=0,rules=0,dormantRules=0,dormantImportant=0;
-          const sourceText=cleanRuntime.map(([,s])=>s).join('\n');
-          const esc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const tokenPresent=t=>new RegExp(`(^|[^A-Za-z0-9_-])${esc(t)}([^A-Za-z0-9_-]|$)`).test(sourceText);
-          ast.walkRules(rule=>{const imps=rule.nodes.filter(n=>n.type==='decl'&&n.important);if(!imps.length)return;rules++;total+=imps.length;const branches=postcss.list.comma(rule.selector);const branchData=branches.map(sel=>{const tokens=[...sel.matchAll(/\.([A-Za-z_-][A-Za-z0-9_-]*)/g)].map(m=>m[1]);const uniq=[...new Set(tokens)];const missing=uniq.filter(t=>!tokenPresent(t));return {sel,tokens:uniq,missing}});const staticDormant=branchData.length>0&&branchData.every(b=>b.tokens.length>0&&b.missing.length>0);if(staticDormant){dormantRules++;dormantImportant+=imps.length}const at=[];for(let p=rule.parent;p&&p.type!=='root';p=p.parent)if(p.type==='atrule')at.unshift(`@${p.name} ${p.params}`);console.log(`RULE|important=${imps.length}|staticDormant=${staticDormant?1:0}|media=${at.join(' > ').replaceAll('|','/')}|selector=${rule.selector.replaceAll('\n',' ').replaceAll('|','/')}|missing=${branchData.map(b=>b.missing.join(',')).join(';')}`)});
-          if(total!==128)throw Error(`important parsed ${total}`);console.log(`INVENTORY SUMMARY|important=${total}|rules=${rules}|staticDormantRules=${dormantRules}|staticDormantImportant=${dormantImportant}|targetReachable=${reachable.has(TARGET)?1:0}`);
+          const importers=[...imports].filter(([,a])=>a.includes(TARGET)).map(([f])=>f).sort();const js=walk('assets/js').filter(f=>f.endsWith('.js'));const runtimeFiles=[...rootHtml,...js];const cleanRuntime=runtimeFiles.map(f=>[f,strip(fs.readFileSync(f,'utf8'))]);const filename=path.posix.basename(TARGET);const jsRefs=cleanRuntime.filter(([f,s])=>f.endsWith('.js')&&s.includes(filename)).map(([f])=>f);const runtimeTextRefs=cleanRuntime.filter(([f,s])=>s.includes(TARGET)||s.includes(filename)).map(([f])=>f);
+          console.log(`REACH GRAPH|activeHtml=${rootHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(TARGET)?1:0}|jsRefs=${jsRefs.length}|runtimeTextRefs=${runtimeTextRefs.length}|importers=${importers.length}`);for(const f of importers)console.log(`IMPORTER|file=${f}`);if(rootHtml.length!==33||direct.size!==51||reachable.size!==407)throw Error(`graph baseline ${rootHtml.length}/${direct.size}/${reachable.size}`);
+          const sourceText=cleanRuntime.map(([,s])=>s).join('\n');const esc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const tokenPresent=t=>new RegExp(`(^|[^A-Za-z0-9_-])${esc(t)}([^A-Za-z0-9_-]|$)`).test(sourceText);
+          const text=strip(fs.readFileSync(TARGET,'utf8'));let total=0,rules=0,dormantRules=0,dormantImportant=0;
+          function splitComma(s){let out=[],cur='',p=0,b=0;for(const c of s){if(c==='(')p++;else if(c===')')p--;else if(c==='[')b++;else if(c===']')b--;if(c===','&&p===0&&b===0){out.push(cur.trim());cur=''}else cur+=c}if(cur.trim())out.push(cur.trim());return out}
+          function matching(s,open){let d=1,quote=null;for(let i=open+1;i<s.length;i++){const c=s[i],prev=s[i-1];if(quote){if(c===quote&&prev!=='\\')quote=null;continue}if(c==='"'||c==="'"){quote=c;continue}if(c==='{')d++;else if(c==='}'&&--d===0)return i}throw Error('unmatched brace')}
+          function parseRegion(s,ctx=[]){let i=0;while(i<s.length){while(i<s.length&&/\s/.test(s[i]))i++;if(i>=s.length)break;let semi=s.indexOf(';',i),brace=s.indexOf('{',i);if(brace<0)break;if(semi>=0&&semi<brace){i=semi+1;continue}const head=s.slice(i,brace).trim(),end=matching(s,brace),body=s.slice(brace+1,end);if(head.startsWith('@')){if(/^@(media|supports|layer|container|document)\b/i.test(head))parseRegion(body,[...ctx,head]);}else{const n=(body.match(/!important\b/g)||[]).length;if(n){rules++;total+=n;const branches=splitComma(head),bd=branches.map(sel=>{const tokens=[...new Set([...sel.matchAll(/\.([A-Za-z_-][A-Za-z0-9_-]*)/g)].map(m=>m[1]))],missing=tokens.filter(t=>!tokenPresent(t));return {tokens,missing}});const dormant=bd.length>0&&bd.every(x=>x.tokens.length>0&&x.missing.length>0);if(dormant){dormantRules++;dormantImportant+=n}console.log(`RULE|important=${n}|staticDormant=${dormant?1:0}|media=${ctx.join(' > ').replaceAll('|','/')}|selector=${head.replaceAll('\n',' ').replaceAll('|','/')}|missing=${bd.map(x=>x.missing.join(',')).join(';')}`)} }i=end+1}}
+          parseRegion(text);if(total!==128)throw Error(`important parsed ${total}`);console.log(`INVENTORY SUMMARY|important=${total}|rules=${rules}|staticDormantRules=${dormantRules}|staticDormantImportant=${dormantImportant}|targetReachable=${reachable.has(TARGET)?1:0}`);
           NODE
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.inspect.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$(grep '^ACTUAL_BLOB=' /tmp/i.log | tail -1 | cut -d= -f2)"; echo "INSPECT=${{ steps.inspect.outcome }}"; echo 'R2_NOTE=discarded-harness-only-wrong-target-blob-guard'; grep -E '^(REACH GRAPH|IMPORTER|RULE|INVENTORY SUMMARY)\|' /tmp/i.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/i.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home remaining reach inventory r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$(grep '^ACTUAL_BLOB=' /tmp/i.log | tail -1 | cut -d= -f2)"; echo "INSPECT=${{ steps.inspect.outcome }}"; echo 'R2_NOTE=discarded-harness-only-wrong-target-blob-guard'; echo 'R3_NOTE=harness-only-postcss-module-unavailable'; grep -E '^(REACH GRAPH|IMPORTER|RULE|INVENTORY SUMMARY)\|' /tmp/i.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/i.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home remaining reach inventory r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
