@@ -1,62 +1,62 @@
-name: UX CSS Important Post 014 Fresh Ranking R2
+name: UX CSS Important 015 Shared Index Card Reach R3
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  rank015:
+  reach015:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       TARGET_SHA: d0d423a974001e9ffca6bcbe61f70549a0ade6ea
+      TARGET_FILE: assets/css/components/cards/shared-index-card-contract.css
+      TARGET_BLOB: 174004e53db7679d3ce2cbe4190bb56d56a0c160
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-post-014-fresh-ranking-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-015-shared-index-card-reach-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: rank
+      - id: reach
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/rank.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/reach.log) 2>&1
           git cat-file -e "$TARGET_SHA^{commit}"
-          git checkout --detach "$TARGET_SHA" >/dev/null
-          npm ci --ignore-scripts
-          npm run audit:important-reduction-plan
-          npm run audit:global-css-design-system
+          test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git checkout "$TARGET_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 96
+          echo 'PREFLIGHT PASS|parent=014|targetBlob=exact|targetImportant=96|productMutation=0'
           node <<'NODE'
-          const fs=require('fs'),cp=require('child_process');
-          const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
-          const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));
-          const ps=p.summary||{}, bs=b.summary||{};
-          if(bs.totalImportant!==10966||bs.outsideServiceCardImportant!==10904||bs.filesWithImportant!==33) throw Error('baseline '+JSON.stringify(bs));
-          if(ps.affectedFiles!==32||ps.byRisk?.['high-baseline-required']!==10896||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2) throw Error('plan '+JSON.stringify(ps));
-          console.log(`PLAN SUMMARY|affectedFiles=${ps.affectedFiles}|outside=${ps.totalImportantOutsideServiceCard}|high=${ps.byRisk?.['high-baseline-required']}|medium=${ps.byRisk?.['medium-baseline-required']}|low=${ps.byRisk?.['low-review-candidate']}`);
-          console.log(`BASELINE SUMMARY|total=${bs.totalImportant}|outside=${bs.outsideServiceCardImportant}|files=${bs.filesWithImportant}`);
-          const files=cp.execFileSync('git',['ls-tree','-r','--name-only',process.env.TARGET_SHA],{encoding:'utf8'}).trim().split(/\n/).filter(f=>f.startsWith('assets/css/')&&f.endsWith('.css'));
-          let total=0, inv=[], count=new Map();
-          for(const f of files){const s=cp.execFileSync('git',['show',`${process.env.TARGET_SHA}:${f}`],{encoding:'utf8',maxBuffer:20*1024*1024});const n=(s.match(/!important\b/g)||[]).length;if(n){inv.push({f,n});count.set(f,n);total+=n}}
-          inv.sort((a,b)=>a.n-b.n||a.f.localeCompare(b.f));
-          console.log(`COUNT INVENTORY|files=${inv.length}|total=${total}`);
-          for(const x of inv) console.log(`COUNT FILE|important=${x.n}|file=${x.f}`);
-          if(total!==10966||inv.length!==33) throw Error(`inventory ${total}/${inv.length}`);
-          const rows=(p.topFiles||[]).map(x=>({file:x.file||x.path,risk:x.risk||x.classification||x.riskClass||'unknown'})).filter(x=>x.file).map(x=>({...x,important:count.get(x.file)||0}));
-          rows.sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
-          for(const x of rows) console.log(`PLAN FILE|important=${x.important}|risk=${x.risk}|file=${x.file}`);
-          const high=rows.filter(x=>x.risk==='high-baseline-required'&&x.important>0);
-          if(!high.length) throw Error('no high rows');
-          console.log(`NEXT HIGH|important=${high[0].important}|file=${high[0].file}`);
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET_FILE.replace(/\\/g,'/');
+          const all=cp.execFileSync('git',['ls-tree','-r','--name-only',process.env.TARGET_SHA],{encoding:'utf8'}).trim().split(/\n/).filter(Boolean);
+          const activeHtml=all.filter(f=>f.endsWith('.html')&&!/^(archive|reports|tools|test-results|node_modules)\//.test(f));
+          const fileSet=new Set(all);
+          function text(f){return cp.execFileSync('git',['show',`${process.env.TARGET_SHA}:${f}`],{encoding:'utf8',maxBuffer:20*1024*1024});}
+          function norm(base,href){href=href.split(/[?#]/)[0].trim();if(!href||/^(?:https?:)?\/\//.test(href)||href.startsWith('data:'))return null;href=href.replace(/^\.\//,'');return path.posix.normalize(path.posix.join(path.posix.dirname(base),href)).replace(/^\/+/, '');}
+          const direct=new Set();
+          for(const html of activeHtml){const s=text(html);let m;const re=/<link\b[^>]*\bhref=["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi;while((m=re.exec(s))){const r=norm(html,m[1]);if(r&&fileSet.has(r))direct.add(r);}}
+          const reachable=new Set(), stack=[...direct];
+          while(stack.length){const f=stack.pop();if(reachable.has(f))continue;reachable.add(f);const s=text(f);let m;const re=/@import\s+(?:url\(\s*)?["']([^"']+\.css(?:[?#][^"']*)?)["']/gi;while((m=re.exec(s))){const r=norm(f,m[1]);if(r&&fileSet.has(r)&&!reachable.has(r))stack.push(r);}}
+          const jsRefs=[];for(const f of all.filter(x=>x.startsWith('assets/js/')&&/\.(?:js|mjs|cjs)$/.test(x))){const s=text(f);if(s.includes('shared-index-card-contract')||s.includes(target))jsRefs.push(f);}
+          const runtimeTextRefs=[];for(const f of all.filter(x=>(x.endsWith('.html')||x.startsWith('assets/css/')||x.startsWith('assets/js/'))&&x!==target)){const s=text(f);if(s.includes('shared-index-card-contract'))runtimeTextRefs.push(f);}
+          const importers=[];for(const f of all.filter(x=>x.startsWith('assets/css/')&&x.endsWith('.css')&&x!==target)){const s=text(f);if(s.includes('shared-index-card-contract.css'))importers.push(f);}
+          console.log(`REACH GRAPH|activeHtml=${activeHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(target)?1:0}|jsRefs=${jsRefs.length}|runtimeTextRefs=${runtimeTextRefs.length}|importers=${importers.length}`);
+          if(importers.length)console.log('IMPORTERS|files='+importers.join(','));if(jsRefs.length)console.log('JS REFS|files='+jsRefs.join(','));if(runtimeTextRefs.length)console.log('TEXT REFS|files='+runtimeTextRefs.join(','));
+          let css=fs.readFileSync(target,'utf8'),before=(css.match(/!important\b/g)||[]).length,db=(css.match(/:[^;{}]+;/g)||[]).length,sb=(css.match(/[^{}]+\{/g)||[]).length;css=css.replace(/\s*!important\b/g,'');const after=(css.match(/!important\b/g)||[]).length,da=(css.match(/:[^;{}]+;/g)||[]).length,sa=(css.match(/[^{}]+\{/g)||[]).length,buf=Buffer.from(css),sha=crypto.createHash('sha256').update(buf).digest('hex');
+          console.log(`CANDIDATE IDENTITY|sha256=${sha}|bytes=${buf.length}|important=${before}->${after}|priorityMarkersRemoved=${before-after}|declarationsRemoved=${db-da}|selectorsRemoved=${sb-sa}|valuesChanged=0`);
+          if(reachable.has(target)||jsRefs.length||runtimeTextRefs.length||importers.length){console.log('DECISION BLOCK|reason=target-active-or-referenced|wholeFileDormant=0');process.exit(23);}
+          if(before!==96||after!==0||db!==da||sb!==sa)throw Error('identity');
+          console.log('DECISION PASS|wholeFileDormant=1|candidateEligible=1');
           NODE
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.rank.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "RANK=${{ steps.rank.outcome }}"; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|NEXT HIGH)\|' /tmp/rank.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 300 /tmp/rank.log || true; fi; } >/tmp/out
+          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(PREFLIGHT PASS|REACH GRAPH|IMPORTERS|JS REFS|TEXT REFS|CANDIDATE IDENTITY|DECISION BLOCK|DECISION PASS)\|' /tmp/reach.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 260 /tmp/reach.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
-          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add "$RESULT_FILE"; git commit -m 'diag: publish post-014 fresh ranking r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          git add "$RESULT_FILE"; git commit -m 'diag: publish 015 shared index card reach r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
