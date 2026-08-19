@@ -1,10 +1,10 @@
-name: UX CSS Important 023 App Mobile Search Governance R9
+name: UX CSS Important 023 App Mobile Search Promotion R10
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  governance023r9:
+  promote023:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -12,65 +12,45 @@ jobs:
       TARGET_FILE: assets/css/components/navigation/app-mobile-search.css
       TARGET_BLOB: de0178f27e9ad535acf1b00eae0e59382d14061e
       CANDIDATE_SHA256: 2431b9916decc1845f7d837bdb05b64a8f863e3b113aa32471a22571a8d48f85
+      PERM_BRANCH: ux/ux-css-important-023-app-mobile-search-dormant-priority
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-023-app-mobile-search-governance-r9.txt
+      RESULT_FILE: .diagnostics/ux-css-important-023-app-mobile-search-promotion-r10.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: gov
+      - id: promote
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/g.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/p.log) 2>&1
           git show HEAD:.diagnostics/ux-css-important-023-app-mobile-search-runtime-reach-r3.txt >/tmp/reach.txt
           git show HEAD:.diagnostics/ux-css-important-023-app-mobile-search-token-inventory-r5.txt >/tmp/tokens.txt
           git show HEAD:.diagnostics/ux-css-important-023-app-mobile-search-visual-r7.txt >/tmp/browser.txt
-          grep -q '^RESULT=PASS$' /tmp/reach.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/reach.txt
-          grep -q '^RESULT=PASS$' /tmp/tokens.txt; grep -Fq 'runtimeHtmlJsHits=0' /tmp/tokens.txt
-          grep -q '^RESULT=PASS$' /tmp/browser.txt; grep -Fq 'metadataDiffs=0|screenshotDiffs=0|loadedStateDiffs=0|pageErrors=0|targetStylesheetLoads=0/0' /tmp/browser.txt
-          git checkout --detach "$PARENT_SHA" >/dev/null; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show HEAD:.diagnostics/ux-css-important-023-app-mobile-search-governance-r9.txt >/tmp/gov.txt
+          grep -q '^RESULT=PASS$' /tmp/reach.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/reach.txt; grep -Fq 'runtimeRefs=0|actualImporters=0|htmlLinks=0|runtimeJsRefs=0' /tmp/reach.txt
+          grep -q '^RESULT=PASS$' /tmp/tokens.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/tokens.txt; grep -Fq 'runtimeHtmlJsHits=0' /tmp/tokens.txt
+          grep -q '^RESULT=PASS$' /tmp/browser.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/browser.txt; grep -Fq 'metadataDiffs=0|screenshotDiffs=0|loadedStateDiffs=0|pageErrors=0|targetStylesheetLoads=0/0' /tmp/browser.txt
+          grep -q '^RESULT=PASS$' /tmp/gov.txt; grep -Fq "candidateHash=$CANDIDATE_SHA256" /tmp/gov.txt; grep -Fq 'PRODUCT DIFF PASS|files=1|additions=142|deletions=142' /tmp/gov.txt
+          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
+          test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$PARENT_SHA"
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,o=fs.readFileSync(f,'utf8'),c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');if((o.match(/!important\b/g)||[]).length!==146||(c.match(/!important\b/g)||[]).length!==0||h!==process.env.CANDIDATE_SHA256)throw Error(h);fs.writeFileSync('/tmp/candidate.css',c);fs.writeFileSync(f,c);console.log(`STATIC PASS|sha256=${h}|bytes=${Buffer.byteLength(c)}|important=146->0|priorityMarkersRemoved=146|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,o=fs.readFileSync(f,'utf8'),c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');if((o.match(/!important\b/g)||[]).length!==146||(c.match(/!important\b/g)||[]).length!==0||h!==process.env.CANDIDATE_SHA256)throw Error(h);fs.writeFileSync(f,c);console.log(`CANDIDATE|sha256=${h}|bytes=${Buffer.byteLength(c)}|important=146->0|removed=146|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
           NODE
-          npm ci --ignore-scripts >/dev/null
-          node scripts/generate-responsive-index-baseline.js >/dev/null
-          npm run test:responsive-contract | tee /tmp/responsive.log
-          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
-          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
-          npm run audit:agent-governance >/dev/null
-          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
-          node <<'NODE'
-          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
-          NODE
-          npm run audit:shared-app-header-contract >/dev/null
-          npm run audit:mobile-shell-location-contract >/dev/null
-          npm run audit:responsive-boundaries >/dev/null
-          npm run audit:duplicate-assets | tee /tmp/dup.log
-          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
-          npm run audit:domain-completion-matrix | tee /tmp/domain.log
-          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
-          git checkout "$PARENT_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
-          npm run audit:active-legacy-structures >/dev/null; npm run audit:important-reduction-plan >/dev/null; npm run audit:global-css-design-system >/dev/null
-          node <<'NODE'
-          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary,ps=p.summary;if(s.totalImportant!==10295||s.outsideServiceCardImportant!==10233||s.filesWithImportant!==26)throw Error(`important ${JSON.stringify(s)}`);if(ps.affectedFiles!==25||ps.totalImportantOutsideServiceCard!==10233||ps.byRisk?.['high-baseline-required']!==10225||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error(`plan ${JSON.stringify(ps)}`);console.log('IMPORTANT PASS|total=10295|outsideServiceCard=10233|files=26|delta=-146');console.log('QUEUE PASS|affectedFiles=25|highBaselineRequired=10225|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127')
-          NODE
-          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
-          node <<'NODE'
-          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
-          NODE
-          git reset --hard "$PARENT_SHA" >/dev/null; cp /tmp/candidate.css "$TARGET_FILE"; test "$(git diff --name-only | wc -l)" -eq 1; test "$(git diff --name-only)" = "$TARGET_FILE"
-          num="$(git diff --numstat -- "$TARGET_FILE")"; add="$(printf '%s' "$num" | cut -f1)"; del="$(printf '%s' "$num" | cut -f2)"; file="$(printf '%s' "$num" | cut -f3-)"; test "$file" = "$TARGET_FILE"; test "$add" -gt 0; test "$add" = "$del"
-          node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,b=fs.readFileSync(f),h=crypto.createHash('sha256').update(b).digest('hex');if(h!==process.env.CANDIDATE_SHA256)throw Error(h);console.log(`PRODUCT HASH PASS|files=1|candidateHash=${h}|targetImportant=0`)
-          NODE
-          echo "PRODUCT DIFF PASS|files=1|additions=$add|deletions=$del|file=$TARGET_FILE|markerDelta=146"
-          echo "AUDIT_EXIT=$code"; echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|browserProof=hash-identical|wholeFileDormant=1|runtimeTokens=0|candidateHash=exact|numstatGuard=line-based-not-marker-based'
+          test "$(git diff --name-only | wc -l)" -eq 1; test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'142\t142\t'"$TARGET_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$TARGET_FILE"; git commit -m 'UX-CSS-IMPORTANT-023 remove dormant app mobile search priorities' >/dev/null
+          head="$(git rev-parse HEAD)"; parent="$(git rev-parse HEAD^)"; tree="$(git rev-parse HEAD^{tree})"; blob="$(git rev-parse "HEAD:$TARGET_FILE")"
+          test "$parent" = "$PARENT_SHA"; test "$(git rev-list --count "$PARENT_SHA..$head")" -eq 1; test "$(git diff --name-only "$PARENT_SHA" "$head" | wc -l)" -eq 1; test "$(git diff --name-only "$PARENT_SHA" "$head")" = "$TARGET_FILE"; test "$(git diff --numstat "$PARENT_SHA" "$head" -- "$TARGET_FILE")" = $'142\t142\t'"$TARGET_FILE"
+          git push --force-with-lease="refs/heads/$PERM_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERM_BRANCH" >/dev/null
+          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null; test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$head"
+          echo "PROMOTION PASS|head=$head|parent=$parent|tree=$tree|blob=$blob|files=1|numstat=142/142/$TARGET_FILE|leaseParent=$PARENT_SHA|targetImportant=0"
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.gov.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "GOVERNANCE=${{ steps.gov.outcome }}"; echo 'R8_NOTE=all-material-audits-pass; harness-only-numstat-equals-marker-count-guard'; grep -E '^(STATIC PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|PRODUCT HASH PASS|PRODUCT DIFF PASS|GOVERNANCE PASS)\|' /tmp/g.log || true; grep '^AUDIT_EXIT=' /tmp/g.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 700 /tmp/g.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 023 app mobile search governance r9 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.promote.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "PERM_BRANCH=$PERM_BRANCH"; echo "PROMOTE=${{ steps.promote.outcome }}"; grep -E '^(CANDIDATE|PROMOTION PASS)\|' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/p.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 023 app mobile search promotion r10 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
