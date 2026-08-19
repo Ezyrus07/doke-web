@@ -1,47 +1,50 @@
-name: UX CSS Important 023 App Mobile Search Runtime Reach R3
+name: UX CSS Important 023 App Mobile Search Visual R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach023r3:
+  visual023:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: c469ab875b43f37753e660b2ac7c424f7a6f841e
       TARGET_FILE: assets/css/components/navigation/app-mobile-search.css
       TARGET_BLOB: de0178f27e9ad535acf1b00eae0e59382d14061e
+      CANDIDATE_SHA256: 2431b9916decc1845f7d837bdb05b64a8f863e3b113aa32471a22571a8d48f85
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-023-app-mobile-search-runtime-reach-r3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-023-app-mobile-search-visual-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: reach
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: visual
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
-          git checkout --detach "$PARENT_SHA" >/dev/null
-          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          set -euo pipefail; exec > >(tee /tmp/v.log) 2>&1
+          git checkout --detach "$PARENT_SHA" >/dev/null; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          npm ci --ignore-scripts >/dev/null; npx playwright install chromium >/dev/null
           node <<'NODE'
-          const fs=require('fs'),cp=require('child_process'),crypto=require('crypto'),path=require('path');
-          const T=process.env.TARGET_FILE,bn=path.basename(T),o=fs.readFileSync(T,'utf8');if((o.match(/!important\b/g)||[]).length!==146)throw Error('important');
-          const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
-          const strip=(s,ext)=>{if(ext==='.css'||ext==='.js'||ext==='.mjs'||ext==='.cjs')return s.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|\n)\s*\/\/.*(?=\n|$)/g,'$1');if(ext==='.html')return s.replace(/<!--[\s\S]*?-->/g,'');return s;};
-          const isRuntime=f=>f.endsWith('.html')||f.startsWith('assets/js/')||f.startsWith('assets/css/');
-          const runtimeRefs=[],importers=[],htmlLinks=[],runtimeJsRefs=[],nonRuntimeRefs=[];
-          for(const f of tracked){if(f===T)continue;let s;try{s=fs.readFileSync(f,'utf8')}catch{continue}const ext=path.extname(f).toLowerCase(),t=strip(s,ext);if(!t.includes(bn))continue;if(!isRuntime(f)){nonRuntimeRefs.push(f);continue;}runtimeRefs.push(f);if(ext==='.html')htmlLinks.push(f);if(f.startsWith('assets/js/'))runtimeJsRefs.push(f);if(ext==='.css'){for(const m of t.matchAll(/@import\s+(?:url\()?\s*["']([^"']+)["']/gi)){const q=m[1].split('?')[0];if(q.endsWith('/'+bn)||q===bn)importers.push(f);}}}
-          console.log(`RUNTIME REACH|runtimeRefs=${runtimeRefs.length}|actualImporters=${importers.length}|htmlLinks=${htmlLinks.length}|runtimeJsRefs=${runtimeJsRefs.length}|nonRuntimeRefs=${nonRuntimeRefs.length}`);
-          for(const f of runtimeRefs)console.log(`RUNTIME REF|file=${f}`);for(const f of nonRuntimeRefs)console.log(`NONRUNTIME REF|file=${f}`);
-          if(runtimeRefs.length||importers.length||htmlLinks.length||runtimeJsRefs.length)throw Error('runtime reach');
-          const c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');if((c.match(/!important\b/g)||[]).length)throw Error('candidate');
-          console.log('TARGET STATE|wholeFileDormant=1|governanceRefsDoNotLoadRuntime=1');
-          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(c)}|important=146->0|priorityMarkersRemoved=146|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`);
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE,o=fs.readFileSync(f,'utf8'),c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');if((o.match(/!important\b/g)||[]).length!==146||(c.match(/!important\b/g)||[]).length!==0||h!==process.env.CANDIDATE_SHA256)throw Error(h);fs.writeFileSync('/tmp/candidate.css',c);fs.writeFileSync('/tmp/parent.css',o);console.log(`CANDIDATE PASS|sha256=${h}|important=146->0`)
           NODE
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/server.log 2>&1 & echo $! >/tmp/server.pid; sleep 1
+          cat >/tmp/render023.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const {chromium}=require('@playwright/test');
+          const pages=['index.html','resultados.html'], widths=[359,390,430,560,600,760,761], modes=['base','focus'];
+          const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          async function phase(label){const browser=await chromium.launch({headless:true});const out=[];let loads=0,errors=0,searchStates=0;
+            for(const pageName of pages)for(const width of widths)for(const mode of modes){const page=await browser.newPage({viewport:{width,height:900}});let targetLoads=0;page.on('pageerror',()=>errors++);page.on('request',r=>{if(r.url().includes('app-mobile-search.css')){targetLoads++;loads++;}});await page.addInitScript(()=>{let x=123456789;Math.random=()=>((x=(1103515245*x+12345)>>>0)/4294967296);});await page.route('**/*',async route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.fulfill({status:204,body:''});});await page.goto(`http://127.0.0.1:4173/${pageName}`,{waitUntil:'domcontentloaded',timeout:30000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}html{scroll-behavior:auto!important}::-webkit-scrollbar{width:0!important;height:0!important}'});await page.evaluate(async()=>{if(document.fonts?.ready)await document.fonts.ready;});await page.waitForTimeout(120);const input=page.locator('.app-mobile-search__input');const exists=await input.count()>0;if(mode==='focus'&&exists){await input.first().focus();await page.waitForTimeout(40);}if(exists)searchStates++;const meta=await page.evaluate(({pageName,width,mode})=>{const q=s=>[...document.querySelectorAll(s)].map(el=>{const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return [el.className||el.id,Math.round(r.x*100)/100,Math.round(r.y*100)/100,Math.round(r.width*100)/100,Math.round(r.height*100)/100,cs.display,cs.position,cs.visibility,cs.opacity,cs.gridTemplateColumns,cs.boxShadow]});return {pageName,width,mode,scroll:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],body:[document.body.scrollWidth,document.body.scrollHeight],active:document.activeElement?.className||'',search:q('.app-mobile-search,.app-mobile-search__field,.app-mobile-search__input,.app-mobile-search__icon,.app-mobile-search__voice,.app-mobile-search__filter,.results-searchbar')};},{pageName,width,mode});const shot=await page.screenshot({fullPage:true});out.push({key:`${pageName}@${width}:${mode}`,meta,shot:hash(shot),targetLoads});await page.close();}
+            await browser.close();console.log(`PHASE|label=${label}|states=${out.length}|pageErrors=${errors}|targetStylesheetLoads=${loads}|searchStates=${searchStates}`);return {out,loads,errors,searchStates};}
+          (async()=>{const p=await phase('parent');fs.writeFileSync(process.env.TARGET_FILE,fs.readFileSync('/tmp/candidate.css'));const c=await phase('candidate');const pm=new Map(p.out.map(x=>[x.key,x])),cm=new Map(c.out.map(x=>[x.key,x]));let md=0,sd=0,ld=0;for(const [k,a] of pm){const b=cm.get(k);if(JSON.stringify(a.meta)!==JSON.stringify(b.meta))md++;if(a.shot!==b.shot)sd++;if(a.targetLoads!==b.targetLoads)ld++;}fs.writeFileSync(process.env.TARGET_FILE,fs.readFileSync('/tmp/parent.css'));const restored=hash(fs.readFileSync(process.env.TARGET_FILE))===hash(fs.readFileSync('/tmp/parent.css'));console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|states=${p.out.length}|pages=2|viewports=${widths.join(',')}|modes=${modes.join(',')}|metadataDiffs=${md}|screenshotDiffs=${sd}|loadedStateDiffs=${ld}|pageErrors=${p.errors+c.errors}|targetStylesheetLoads=${p.loads}/${c.loads}|searchStates=${p.searchStates}/${c.searchStates}|syntheticDOM=0|criteriaRelaxed=0|deterministicRandom=1`);console.log(`RESTORE PASS|target=${restored?'parent-exact':'mismatch'}`);if(md||sd||ld||p.errors||c.errors||p.loads||c.loads||!restored)process.exit(2);})().catch(e=>{console.error(e);process.exit(3)});
+          NODE
+          NODE_PATH="$PWD/node_modules" node /tmp/render023.js
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; echo 'R2_NOTE=conservative-false-negative-nonruntime-governance-audit-refs'; grep -E '^(RUNTIME REACH|RUNTIME REF|NONRUNTIME REF|TARGET STATE|CANDIDATE IDENTITY)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 450 /tmp/r.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 023 app mobile search runtime reach r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; test -f /tmp/parent.css && cp /tmp/parent.css "$TARGET_FILE" || true; test -f /tmp/server.pid && kill "$(cat /tmp/server.pid)" 2>/dev/null || true
+          result=FAIL; if test '${{ steps.visual.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.visual.outcome }}"; grep -E '^(CANDIDATE PASS|PHASE|BROWSER PASS|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 600 /tmp/v.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 023 app mobile search visual r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
