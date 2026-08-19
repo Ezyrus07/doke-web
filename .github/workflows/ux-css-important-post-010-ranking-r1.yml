@@ -1,4 +1,4 @@
-name: UX CSS Important 015 Shared Index Card Visual R4
+name: UX CSS Important 015 Shared Index Card Visual R5
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -13,7 +13,7 @@ jobs:
       TARGET_BLOB: 174004e53db7679d3ce2cbe4190bb56d56a0c160
       CANDIDATE_SHA256: c50e9f0e6360b3ec0ea5350696d2cf7501d40f8b2cf060de9aec3cf941171122
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-015-shared-index-card-visual-r4.txt
+      RESULT_FILE: .diagnostics/ux-css-important-015-shared-index-card-visual-r5.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -48,25 +48,22 @@ jobs:
             for(const [label,file] of pages)for(const w of widths){const c=await browser.newContext({viewport:{width:w,height:1050}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));
               for(const host of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**']) await p.route(host,r=>r.fulfill({status:200,body:''}));
               for(const host of ['https://images.pexels.com/**','https://images.unsplash.com/**']) await p.route(host,r=>r.fulfill({status:200,contentType:'image/png',body:tiny}));
-              await p.goto(`http://127.0.0.1:4173/${file}?i15=${phase}-${w}`,{waitUntil:'domcontentloaded'});
-              await p.waitForTimeout(500);
+              await p.goto(`http://127.0.0.1:4173/${file}?i15=${phase}-${w}`,{waitUntil:'domcontentloaded'});await p.waitForTimeout(500);
               const renderer=await p.evaluate(()=>Boolean(window.Doke?.publicServiceCard?.create));
               if(renderer){await p.evaluate(items=>{const targets=['#featured-services-track','[data-more-services-grid]','[data-similar-ads-grid]','.results-grid'];for(const sel of targets){const el=document.querySelector(sel);if(!el)continue;el.textContent='';for(const x of items.slice(0,6))el.appendChild(window.Doke.publicServiceCard.create(x,{results:sel.includes('results')}));}},items);await p.waitForTimeout(150);}
-              const meta=await p.evaluate(()=>{const q=s=>document.querySelectorAll(s).length,first=document.querySelector('.doke-ad-card, .publication-card, .service-card, .video-card.doke-worker-card[data-worker-trigger]'),media=document.querySelector('.doke-ad-card__media'),body=document.querySelector('.doke-ad-card__body');const cs=n=>n?getComputedStyle(n):null;const a=cs(first),m=cs(media),b=cs(body);const loads=performance.getEntriesByType('resource').filter(x=>x.name.includes('shared-index-card-contract.css')).length;return {page:document.body.dataset.page||'',bodyClass:document.body.className,cards:q('.doke-ad-card'),publications:q('.publication-card'),workers:q('.video-card.doke-worker-card[data-worker-trigger]'),services:q('.service-card'),resultsGrids:q('.results-grid'),publicationGrids:q('.publication-grid'),targetLoads:loads,first:a?{display:a.display,width:a.width,minWidth:a.minWidth,maxWidth:a.maxWidth,borderRadius:a.borderRadius,overflow:a.overflow}:null,media:m?{height:m.height,minHeight:m.minHeight}:null,body:b?{padding:b.padding}:null};});
+              const meta=await p.evaluate(()=>{const q=s=>document.querySelectorAll(s).length,first=document.querySelector('.doke-ad-card, .publication-card, .service-card, .video-card.doke-worker-card[data-worker-trigger]'),media=document.querySelector('.doke-ad-card__media'),body=document.querySelector('.doke-ad-card__body');const cs=n=>n?getComputedStyle(n):null,a=cs(first),m=cs(media),b=cs(body);const loads=performance.getEntriesByType('resource').filter(x=>x.name.includes('shared-index-card-contract.css')).length;return {page:document.body.dataset.page||'',bodyClass:document.body.className,cards:q('.doke-ad-card'),publications:q('.publication-card'),workers:q('.video-card.doke-worker-card[data-worker-trigger]'),services:q('.service-card'),resultsGrids:q('.results-grid'),publicationGrids:q('.publication-grid'),targetLoads:loads,first:a?{display:a.display,width:a.width,minWidth:a.minWidth,maxWidth:a.maxWidth,borderRadius:a.borderRadius,overflow:a.overflow}:null,media:m?{height:m.height,minHeight:m.minHeight}:null,body:b?{padding:b.padding}:null};});
               const shot=await p.screenshot({fullPage:true});const sh=crypto.createHash('sha256').update(shot).digest('hex');fs.writeFileSync(`${out}/${label}-${w}.png`,shot);fs.writeFileSync(`${out}/${label}-${w}.json`,JSON.stringify(meta));console.log(`STATE|phase=${phase}|page=${label}|width=${w}|cards=${meta.cards}|targetLoads=${meta.targetLoads}|pageErrors=${errs.length}|shot=${sh}`);totalErrors+=errs.length;totalLoads+=meta.targetLoads;states.push({label,w,meta,sh,errs});await c.close();}
             fs.writeFileSync(`${out}/summary.json`,JSON.stringify({states,totalErrors,totalLoads}));console.log(`PHASE|label=${phase}|states=${states.length}|pageErrors=${totalErrors}|targetStylesheetLoads=${totalLoads}`);if(totalErrors||totalLoads)process.exit(2);await browser.close();})().catch(e=>{console.error(e);process.exit(1)});
           NODE
-          node /tmp/render.js parent
+          NODE_PATH="$PWD/node_modules" node /tmp/render.js parent
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync(process.env.TARGET_FILE,'utf8'),before=(s.match(/!important\b/g)||[]).length;s=s.replace(/\s*!important\b/g,'');const b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex'),after=(s.match(/!important\b/g)||[]).length;if(before!==96||after!==0||h!==process.env.CANDIDATE_SHA256)throw Error(`${before}/${after}/${h}`);fs.writeFileSync(process.env.TARGET_FILE,s);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=96->0|priorityMarkersRemoved=96|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`)
           NODE
-          node /tmp/render.js candidate
+          NODE_PATH="$PWD/node_modules" node /tmp/render.js candidate
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto');const pages=['home','detail','results'],widths=[359,560,561,1024,1025,1280];let md=0,sd=0;for(const p of pages)for(const w of widths){const a=fs.readFileSync(`/tmp/parent/${p}-${w}.json`,'utf8'),b=fs.readFileSync(`/tmp/candidate/${p}-${w}.json`,'utf8');if(a!==b)md++;const x=fs.readFileSync(`/tmp/parent/${p}-${w}.png`),y=fs.readFileSync(`/tmp/candidate/${p}-${w}.png`);if(!x.equals(y))sd++;}const ps=JSON.parse(fs.readFileSync('/tmp/parent/summary.json')),cs=JSON.parse(fs.readFileSync('/tmp/candidate/summary.json'));console.log(`CANDIDATE PARITY|sha256=${process.env.CANDIDATE_SHA256}|important=96->0|priorityMarkersRemoved=96|states=18|pages=home,detail,results|viewports=359,560,561,1024,1025,1280|metadataDiffs=${md}|screenshotDiffs=${sd}|pageErrors=${ps.totalErrors+cs.totalErrors}|targetStylesheetLoads=${ps.totalLoads+cs.totalLoads}|productRenderer=1|syntheticDOM=0|criteriaRelaxed=0`);if(md||sd||ps.totalErrors||cs.totalErrors||ps.totalLoads||cs.totalLoads)process.exit(3);
+          const fs=require('fs');const pages=['home','detail','results'],widths=[359,560,561,1024,1025,1280];let md=0,sd=0;for(const p of pages)for(const w of widths){const a=fs.readFileSync(`/tmp/parent/${p}-${w}.json`,'utf8'),b=fs.readFileSync(`/tmp/candidate/${p}-${w}.json`,'utf8');if(a!==b)md++;const x=fs.readFileSync(`/tmp/parent/${p}-${w}.png`),y=fs.readFileSync(`/tmp/candidate/${p}-${w}.png`);if(!x.equals(y))sd++;}const ps=JSON.parse(fs.readFileSync('/tmp/parent/summary.json')),cs=JSON.parse(fs.readFileSync('/tmp/candidate/summary.json'));console.log(`CANDIDATE PARITY|sha256=${process.env.CANDIDATE_SHA256}|important=96->0|priorityMarkersRemoved=96|states=18|pages=home,detail,results|viewports=359,560,561,1024,1025,1280|metadataDiffs=${md}|screenshotDiffs=${sd}|pageErrors=${ps.totalErrors+cs.totalErrors}|targetStylesheetLoads=${ps.totalLoads+cs.totalLoads}|productRenderer=1|syntheticDOM=0|criteriaRelaxed=0`);if(md||sd||ps.totalErrors||cs.totalErrors||ps.totalLoads||cs.totalLoads)process.exit(3);
           NODE
-          git checkout "$TARGET_SHA" -- "$TARGET_FILE"
-          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
-          echo 'RESTORE PASS|target=parent-exact'
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
@@ -74,4 +71,4 @@ jobs:
           set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success; then result=PASS; fi
           { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; grep -E '^(PREFLIGHT PASS|CANDIDATE IDENTITY|PHASE|CANDIDATE PARITY|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 360 /tmp/v.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
-          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 015 shared index card visual r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 015 shared index card visual r5 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
