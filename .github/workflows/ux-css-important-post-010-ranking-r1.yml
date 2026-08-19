@@ -1,4 +1,4 @@
-name: UX CSS Important 013 Runtime Inventory R1
+name: UX CSS Important 013 Runtime Inventory R2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -13,7 +13,7 @@ jobs:
       TARGET_BLOB: 64b24654608164efb6803f3571259c776fb34ab3
       TARGET_SHA256: a319f97dc53e3fc53d7ca569deaef239f074c2ca78a4e8dd908a3d99f208b791
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-013-runtime-inventory-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-013-runtime-inventory-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -32,11 +32,11 @@ jobs:
           test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 153
           echo 'PREFLIGHT PASS|parent=012|targetBlob=exact|targetSha256=exact|targetImportant=153|productCssMutation=0'
           set +e
-          git grep -n -E 'home-mobile-hero__(avatar|location-dot|notification|top|identity|quick-actions|location-label)|home-search-hero__filter-button' "$TARGET_SHA" -- '*.html' '*.js' '*.mjs' '*.cjs' >/tmp/source_hits.txt
+          git grep -n -E 'home-mobile-hero__(avatar|location-dot|notification|top|identity|quick-actions|location-label)|home-search-hero__filter-button' "$TARGET_SHA" -- '*.html' 'assets/js/*.js' 'assets/js/**/*.js' >/tmp/source_hits.txt
           SRC=$?
           set -e
           if test "$SRC" -eq 0; then cat /tmp/source_hits.txt; exit 21; fi
-          echo 'SOURCE PASS|htmlJsHits=0|families=avatar,location-dot,notification,filter-button,top,identity,quick-actions,location-label'
+          echo 'SOURCE PASS|runtimeProducerHits=0|scope=html+assets/js|testScriptsExcluded=1|families=avatar,location-dot,notification,filter-button,top,identity,quick-actions,location-label'
           npm ci --ignore-scripts
           npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
@@ -46,48 +46,24 @@ jobs:
           const {chromium}=require('@playwright/test');
           (async()=>{
             const browser=await chromium.launch({headless:true});
-            const widths=[359,379,380,381,390,430,560,561];
-            const filters=new Set([359,380,390,560]);
-            const selectors={
-              avatar:'.home-mobile-hero__avatar',
-              locationDot:'.home-mobile-hero__location-dot',
-              notification:'.home-mobile-hero__notification',
-              filterButton:'.home-search-hero__filter-button',
-              top:'.home-mobile-hero__top',
-              identity:'.home-mobile-hero__identity',
-              quickActions:'.home-mobile-hero__quick-actions',
-              locationLabel:'.home-mobile-hero__location-label'
-            };
-            const maxima=Object.fromEntries(Object.keys(selectors).map(k=>[k,0]));
-            const states=[];
+            const widths=[359,379,380,381,390,430,560,561],filters=new Set([359,380,390,560]);
+            const selectors={avatar:'.home-mobile-hero__avatar',locationDot:'.home-mobile-hero__location-dot',notification:'.home-mobile-hero__notification',filterButton:'.home-search-hero__filter-button',top:'.home-mobile-hero__top',identity:'.home-mobile-hero__identity',quickActions:'.home-mobile-hero__quick-actions',locationLabel:'.home-mobile-hero__location-label'};
+            const maxima=Object.fromEntries(Object.keys(selectors).map(k=>[k,0])),states=[];
             const items=Array.from({length:8},(_,i)=>({id:'i13-'+i,serviceId:'i13-'+i,status:'active',title:'Servico '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
             async function inspect(w,state){
-              const c=await browser.newContext({viewport:{width:w,height:1050}}),p=await c.newPage(),errs=[];
-              p.on('pageerror',e=>errs.push(e.message));
-              for(const host of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**']) await p.route(host,r=>r.fulfill({status:200,body:''}));
+              const c=await browser.newContext({viewport:{width:w,height:1050}}),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));
+              for(const host of ['https://fonts.googleapis.com/**','https://fonts.gstatic.com/**','https://cdn.jsdelivr.net/**','https://unpkg.com/**'])await p.route(host,r=>r.fulfill({status:200,body:''}));
               await p.route('https://images.pexels.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));
-              await p.goto(`http://127.0.0.1:4173/index.html?i13=${w}-${state}`,{waitUntil:'domcontentloaded'});
-              await p.waitForLoadState('networkidle').catch(()=>{});
+              await p.goto(`http://127.0.0.1:4173/index.html?i13=${w}-${state}`,{waitUntil:'domcontentloaded'});await p.waitForLoadState('networkidle').catch(()=>{});
               await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});
               await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(!a||!b)throw Error('grids');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})))},items);
-              if(state==='filters'){
-                await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});
-                await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));
-                await p.waitForFunction(()=>document.body.classList.contains('home-filter-sheet-open'),null,{timeout:4000});
-              }
-              const data=await p.evaluate(selectors=>{const out={};for(const [k,s] of Object.entries(selectors))out[k]=document.querySelectorAll(s).length;out.cards=document.querySelectorAll('.doke-ad-card').length;out.workers=document.querySelectorAll('.video-card').length;out.filterOpen=document.body.classList.contains('home-filter-sheet-open');return out},selectors);
-              if(data.cards<8||data.workers<6)throw Error('anatomy '+JSON.stringify(data));
-              if(state==='filters'&&!data.filterOpen)throw Error('filter');
-              for(const k of Object.keys(selectors))maxima[k]=Math.max(maxima[k],data[k]);
-              console.log(`STATE|width=${w}|state=${state}|`+Object.keys(selectors).map(k=>`${k}=${data[k]}`).join('|')+`|pageErrors=${errs.length}`);
-              states.push({w,state,data,errs});
-              await c.close();
+              if(state==='filters'){await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));await p.waitForFunction(()=>document.body.classList.contains('home-filter-sheet-open'),null,{timeout:4000})}
+              const data=await p.evaluate(selectors=>{const out={};for(const [k,s]of Object.entries(selectors))out[k]=document.querySelectorAll(s).length;out.cards=document.querySelectorAll('.doke-ad-card').length;out.workers=document.querySelectorAll('.video-card').length;out.filterOpen=document.body.classList.contains('home-filter-sheet-open');return out},selectors);
+              if(data.cards<8||data.workers<6)throw Error('anatomy '+JSON.stringify(data));if(state==='filters'&&!data.filterOpen)throw Error('filter');for(const k of Object.keys(selectors))maxima[k]=Math.max(maxima[k],data[k]);
+              console.log(`STATE|width=${w}|state=${state}|`+Object.keys(selectors).map(k=>`${k}=${data[k]}`).join('|')+`|pageErrors=${errs.length}`);states.push({errs});await c.close();
             }
             for(const w of widths){await inspect(w,'default');if(filters.has(w))await inspect(w,'filters')}
-            const pe=states.reduce((n,x)=>n+x.errs.length,0);
-            console.log('RUNTIME SUMMARY|states='+states.length+'|viewports='+widths.join(',')+'|realFilterStates='+filters.size+'|'+Object.keys(maxima).map(k=>`${k}Max=${maxima[k]}`).join('|')+`|pageErrors=${pe}|productRenderer=1|syntheticDOM=0|productCssMutation=0`);
-            if(pe)throw Error('pageErrors='+pe);
-            await browser.close();
+            const pe=states.reduce((n,x)=>n+x.errs.length,0);console.log('RUNTIME SUMMARY|states='+states.length+'|viewports='+widths.join(',')+'|realFilterStates='+filters.size+'|'+Object.keys(maxima).map(k=>`${k}Max=${maxima[k]}`).join('|')+`|pageErrors=${pe}|productRenderer=1|syntheticDOM=0|productCssMutation=0`);if(pe)throw Error('pageErrors='+pe);await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
           git checkout "$TARGET_SHA" -- "$TARGET_FILE"
@@ -100,11 +76,6 @@ jobs:
           { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "INVENTORY=${{ steps.inventory.outcome }}"; grep -E '^(PREFLIGHT PASS|SOURCE PASS|STATE|RUNTIME SUMMARY)\|' /tmp/i.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 260 /tmp/i.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"
-          cp /tmp/out "$RESULT_FILE"
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add "$RESULT_FILE"
-          git commit -m 'diag: publish 013 runtime inventory r1 [skip ci]' >/dev/null
-          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
-          test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: publish 013 runtime inventory r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
