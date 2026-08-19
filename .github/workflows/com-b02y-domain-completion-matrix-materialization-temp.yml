@@ -1,0 +1,66 @@
+name: COM-B02Y Domain Completion Matrix Materialization TEMP
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b02y-domain-completion-matrix-materialization-temp.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  EXPECTED_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+  EXPECTED_B02Y_HELPER_BLOB: 00d8d8e62dfb7c30b70753f83fa172f3953aad83
+  EXPECTED_B02Y_CONFIG_BLOB: bfc98f91d0aa0d87ab002b8a5826ec76201efaeb
+  EXPECTED_B02Y_TEST_BLOB: b793ba0ac8feaf5179712686bcedb119cebac793
+  EXPECTED_B02Y_CERTIFIER_BLOB: b6cd243d922a8b9bc2cc993aa6f7eabbaee42a1e
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Materialize deterministic B02Y Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$EXPECTED_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-begin-dispatcher.js)" = "$EXPECTED_B02Y_HELPER_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02y-repository-only-route-begin-dispatch-integration.json)" = "$EXPECTED_B02Y_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:scripts/test-com-b02y-repository-only-route-begin-dispatch-integration.js)" = "$EXPECTED_B02Y_TEST_BLOB"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02y-repository-only-route-begin-dispatch-integration.yml)" = "$EXPECTED_B02Y_CERTIFIER_BLOB"
+          rm .github/workflows/com-b02y-domain-completion-matrix-materialization-temp.yml
+          node scripts/audit-domain-completion-matrix.js --write
+          git diff --exit-code -- config/domain-completion-matrix.json
+          node scripts/test-com-b02y-repository-only-route-begin-dispatch-integration.js
+          printf 'MARKDOWN_BLOB=%s\n' "$(git hash-object docs/DOMAIN-COMPLETION-MATRIX.md)"
+          printf 'REPORT_BLOB=%s\n' "$(git hash-object reports/generated/domain-completion-matrix-report.json)"
+          npm ci --ignore-scripts
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Upload exact derivatives
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02y-domain-completion-matrix-derivatives
+          path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
+          if-no-files-found: error
+          retention-days: 1
