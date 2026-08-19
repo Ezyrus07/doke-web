@@ -24,7 +24,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          git merge-base --is-ancestor "$PARENT_SHA" HEAD
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$(git rev-parse "HEAD:$TARGET_FILE")"
           set +e
           node <<'NODE' >/tmp/analyze.log 2>&1
           const fs = require('fs');
@@ -132,7 +133,6 @@ jobs:
           }
 
           let candidate=src;
-          const removals=[];
           for (const d of [...dominated].sort((a,b)=>b.pos-a.pos)) {
             const semi=src.indexOf(';',d.pos);
             const end=semi>=0?semi:src.indexOf('}',d.pos);
@@ -142,7 +142,6 @@ jobs:
             if (matches.length!==1) throw new Error(`expected one important at line ${d.line}, got ${matches.length}`);
             const absolute=d.pos+matches[0].index;
             candidate=candidate.slice(0,absolute)+candidate.slice(absolute+matches[0][0].length);
-            removals.push({line:d.line,prop:d.prop});
           }
 
           const candidateImportant=(candidate.match(/!important\b/g)||[]).length;
