@@ -1,4 +1,4 @@
-name: UX CSS Important Post 014 Fresh Ranking R1
+name: UX CSS Important Post 014 Fresh Ranking R2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -10,7 +10,7 @@ jobs:
     env:
       TARGET_SHA: d0d423a974001e9ffca6bcbe61f70549a0ade6ea
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-post-014-fresh-ranking-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-post-014-fresh-ranking-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -35,25 +35,28 @@ jobs:
           if(ps.affectedFiles!==32||ps.byRisk?.['high-baseline-required']!==10896||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2) throw Error('plan '+JSON.stringify(ps));
           console.log(`PLAN SUMMARY|affectedFiles=${ps.affectedFiles}|outside=${ps.totalImportantOutsideServiceCard}|high=${ps.byRisk?.['high-baseline-required']}|medium=${ps.byRisk?.['medium-baseline-required']}|low=${ps.byRisk?.['low-review-candidate']}`);
           console.log(`BASELINE SUMMARY|total=${bs.totalImportant}|outside=${bs.outsideServiceCardImportant}|files=${bs.filesWithImportant}`);
-          const rows=(p.topFiles||[]).map(x=>({file:x.file||x.path,important:x.important||x.count||x.totalImportant||0,risk:x.risk||x.classification||'unknown'})).filter(x=>x.file);
-          rows.sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
-          for(const x of rows) console.log(`PLAN FILE|important=${x.important}|risk=${x.risk}|file=${x.file}`);
-          const files=cp.execFileSync('git',['ls-tree','-r','--name-only',process.env.TARGET_SHA],{encoding:'utf8'}).trim().split(/\n/).filter(f=>f.endsWith('.css'));
-          let total=0, inv=[];
-          for(const f of files){const s=cp.execFileSync('git',['show',`${process.env.TARGET_SHA}:${f}`],{encoding:'utf8',maxBuffer:20*1024*1024});const n=(s.match(/!important\b/g)||[]).length;if(n){inv.push({f,n});total+=n}}
+          const files=cp.execFileSync('git',['ls-tree','-r','--name-only',process.env.TARGET_SHA],{encoding:'utf8'}).trim().split(/\n/).filter(f=>f.startsWith('assets/css/')&&f.endsWith('.css'));
+          let total=0, inv=[], count=new Map();
+          for(const f of files){const s=cp.execFileSync('git',['show',`${process.env.TARGET_SHA}:${f}`],{encoding:'utf8',maxBuffer:20*1024*1024});const n=(s.match(/!important\b/g)||[]).length;if(n){inv.push({f,n});count.set(f,n);total+=n}}
           inv.sort((a,b)=>a.n-b.n||a.f.localeCompare(b.f));
           console.log(`COUNT INVENTORY|files=${inv.length}|total=${total}`);
           for(const x of inv) console.log(`COUNT FILE|important=${x.n}|file=${x.f}`);
           if(total!==10966||inv.length!==33) throw Error(`inventory ${total}/${inv.length}`);
+          const rows=(p.topFiles||[]).map(x=>({file:x.file||x.path,risk:x.risk||x.classification||x.riskClass||'unknown'})).filter(x=>x.file).map(x=>({...x,important:count.get(x.file)||0}));
+          rows.sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
+          for(const x of rows) console.log(`PLAN FILE|important=${x.important}|risk=${x.risk}|file=${x.file}`);
+          const high=rows.filter(x=>x.risk==='high-baseline-required'&&x.important>0);
+          if(!high.length) throw Error('no high rows');
+          console.log(`NEXT HIGH|important=${high[0].important}|file=${high[0].file}`);
           NODE
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.rank.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "RANK=${{ steps.rank.outcome }}"; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|PLAN FILE|COUNT INVENTORY|COUNT FILE)\|' /tmp/rank.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 300 /tmp/rank.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "RANK=${{ steps.rank.outcome }}"; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|NEXT HIGH)\|' /tmp/rank.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 300 /tmp/rank.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add "$RESULT_FILE"; git commit -m 'diag: publish post-014 fresh ranking r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          git add "$RESULT_FILE"; git commit -m 'diag: publish post-014 fresh ranking r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
