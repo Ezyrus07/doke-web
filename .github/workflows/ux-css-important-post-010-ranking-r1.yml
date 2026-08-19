@@ -1,10 +1,10 @@
-name: UX CSS Important 021 Home Remaining Priority Inventory R5
+name: UX CSS Important 021 Home Mobile Hero Dormant Family Candidate R6
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  inspect021:
+  candidate021:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -12,36 +12,29 @@ jobs:
       TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
       TARGET_BLOB: fea7bdfea3f78f77a38385c155e442ca47911bfe
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-021-home-remaining-inventory-r5.txt
+      RESULT_FILE: .diagnostics/ux-css-important-021-home-mobile-hero-candidate-r6.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: inspect
+      - id: candidate
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/i.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/c.log) 2>&1
           git checkout --detach "$PARENT_SHA" >/dev/null
-          actual_blob="$(git rev-parse "HEAD:$TARGET_FILE")"; echo "ACTUAL_BLOB=$actual_blob"; test "$actual_blob" = "$TARGET_BLOB"; test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 128
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show HEAD:.diagnostics/ux-css-important-021-home-remaining-inventory-r5.txt >/tmp/r5.txt 2>/dev/null || git show origin/$DIAG_BRANCH:.diagnostics/ux-css-important-021-home-remaining-inventory-r5.txt >/tmp/r5.txt
+          grep -q '^RESULT=PASS$' /tmp/r5.txt; grep -Fq 'INVENTORY SUMMARY|important=128|rules=53|staticDormantRules=1|staticDormantImportant=1|targetReachable=1' /tmp/r5.txt
           node <<'NODE'
-          const fs=require('fs'),path=require('path');const TARGET=process.env.TARGET_FILE;const strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');
-          const rootHtml=fs.readdirSync('.').filter(f=>f.endsWith('.html')&&!f.startsWith('archive-')&&!f.startsWith('backup-')).sort();const direct=new Set(),imports=new Map(),hrefRe=/<link\b[^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi;
-          for(const f of rootHtml){const s=fs.readFileSync(f,'utf8');let m;while((m=hrefRe.exec(s))){let q=m[1].split('?')[0].replace(/^\.\//,'');if(q.startsWith('/'))q=q.slice(1);if(q.startsWith('assets/css/'))direct.add(q)}}
-          const walk=d=>fs.existsSync(d)?fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]}):[];const css=walk('assets/css').filter(f=>f.endsWith('.css')).map(f=>f.replaceAll('\\','/'));
-          for(const f of css){const s=strip(fs.readFileSync(f,'utf8')),a=[];for(const m of s.matchAll(/@import\s+(?:url\()?\s*["']([^"']+\.css(?:\?[^"']*)?)["']/g)){let rel=m[1].split('?')[0];if(rel.startsWith('.'))rel=path.posix.normalize(path.posix.join(path.posix.dirname(f),rel));else if(rel.startsWith('/'))rel=rel.slice(1);if(rel.startsWith('assets/css/'))a.push(rel)}imports.set(f,a)}
-          const reachable=new Set(direct),q=[...direct];while(q.length){const f=q.shift();for(const x of imports.get(f)||[])if(!reachable.has(x)){reachable.add(x);q.push(x)}}const importers=[...imports].filter(([,a])=>a.includes(TARGET)).map(([f])=>f).sort();
-          console.log(`REACH GRAPH|activeHtml=${rootHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(TARGET)?1:0}|importers=${importers.length}`);for(const f of importers)console.log(`IMPORTER|file=${f}`);if(!reachable.has(TARGET)||importers.length!==1||importers[0]!=='assets/css/pages/home-runtime-feed.css')throw Error('target reach changed');
-          const js=walk('assets/js').filter(f=>f.endsWith('.js')),runtimeFiles=[...rootHtml,...js],cleanRuntime=runtimeFiles.map(f=>[f,strip(fs.readFileSync(f,'utf8'))]),sourceText=cleanRuntime.map(([,s])=>s).join('\n');const esc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),tokenPresent=t=>new RegExp(`(^|[^A-Za-z0-9_-])${esc(t)}([^A-Za-z0-9_-]|$)`).test(sourceText);
-          const text=strip(fs.readFileSync(TARGET,'utf8'));let total=0,rules=0,dormantRules=0,dormantImportant=0;
-          function splitComma(s){let out=[],cur='',p=0,b=0;for(const c of s){if(c==='(')p++;else if(c===')')p--;else if(c==='[')b++;else if(c===']')b--;if(c===','&&p===0&&b===0){out.push(cur.trim());cur=''}else cur+=c}if(cur.trim())out.push(cur.trim());return out}
-          function matching(s,open){let d=1,quote=null;for(let i=open+1;i<s.length;i++){const c=s[i],prev=s[i-1];if(quote){if(c===quote&&prev!=='\\')quote=null;continue}if(c==='"'||c==="'"){quote=c;continue}if(c==='{')d++;else if(c==='}'&&--d===0)return i}throw Error('unmatched brace')}
-          function parseRegion(s,ctx=[]){let i=0;while(i<s.length){while(i<s.length&&/\s/.test(s[i]))i++;if(i>=s.length)break;let semi=s.indexOf(';',i),brace=s.indexOf('{',i);if(brace<0)break;if(semi>=0&&semi<brace){i=semi+1;continue}const head=s.slice(i,brace).trim(),end=matching(s,brace),body=s.slice(brace+1,end);if(head.startsWith('@')){if(/^@(media|supports|layer|container|document)\b/i.test(head))parseRegion(body,[...ctx,head])}else{const n=(body.match(/!important\b/g)||[]).length;if(n){rules++;total+=n;const branches=splitComma(head),bd=branches.map(sel=>{const tokens=[...new Set([...sel.matchAll(/\.([A-Za-z_-][A-Za-z0-9_-]*)/g)].map(m=>m[1]))],missing=tokens.filter(t=>!tokenPresent(t));return {tokens,missing}}),dormant=bd.length>0&&bd.every(x=>x.tokens.length>0&&x.missing.length>0);if(dormant){dormantRules++;dormantImportant+=n}console.log(`RULE|important=${n}|staticDormant=${dormant?1:0}|media=${ctx.join(' > ').replaceAll('|','/')}|selector=${head.replaceAll('\n',' ').replaceAll('|','/')}|missing=${bd.map(x=>x.missing.join(',')).join(';')}`)}}i=end+1}}
-          parseRegion(text);if(total!==128)throw Error(`important parsed ${total}`);console.log(`INVENTORY SUMMARY|important=${total}|rules=${rules}|staticDormantRules=${dormantRules}|staticDormantImportant=${dormantImportant}|targetReachable=1`);
+          const fs=require('fs'),path=require('path'),crypto=require('crypto');const target=process.env.TARGET_FILE,token='home-mobile-hero';
+          const walk=d=>fs.existsSync(d)?fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]}):[];
+          const files=[...fs.readdirSync('.').filter(f=>f.endsWith('.html')),...walk('assets/js').filter(f=>f.endsWith('.js'))];const esc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),re=new RegExp(`(^|[^A-Za-z0-9_-])${esc(token)}([^A-Za-z0-9_-]|$)`);const refs=files.filter(f=>re.test(fs.readFileSync(f,'utf8').replace(/\/\*[\s\S]*?\*\//g,'')));if(refs.length)throw Error('runtime refs '+refs.join(','));
+          let s=fs.readFileSync(target,'utf8');const before=(s.match(/!important\b/g)||[]).length;const rule=/html\.home-index-root body\.home-index-shell \.home-mobile-hero\s*\{\s*display:\s*block\s*!important;\s*padding:\s*0;\s*\}/m;const m=s.match(rule);if(!m)throw Error('exact rule not found');const hits=[...s.matchAll(/\.home-mobile-hero\s*\{\s*display:\s*block\s*!important;/g)].length;if(hits!==1)throw Error('target hits '+hits);const repl=m[0].replace('display: block !important;','display: block;');s=s.replace(rule,repl);const after=(s.match(/!important\b/g)||[]).length,b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex');if(before!==128||after!==127)throw Error(`${before}->${after}`);fs.writeFileSync('/tmp/candidate.css',s);console.log(`FAMILY PASS|token=${token}|runtimeRefs=0|ruleHits=1|wholeFileReachable=1|familyDormantStatic=1`);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=128->127|priorityMarkersRemoved=1|familyImportant=1->0|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=0|familyDormant=1`)
           NODE
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.inspect.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$(grep '^ACTUAL_BLOB=' /tmp/i.log|tail -1|cut -d= -f2)"; echo "INSPECT=${{ steps.inspect.outcome }}"; echo 'R2_NOTE=harness-only-wrong-blob'; echo 'R3_NOTE=harness-only-postcss-unavailable'; echo 'R4_NOTE=harness-only-graph-size-guard; material reach targetReachable=1/importer=home-runtime-feed'; grep -E '^(REACH GRAPH|IMPORTER|RULE|INVENTORY SUMMARY)\|' /tmp/i.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 520 /tmp/i.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home remaining inventory r5 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.candidate.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "CANDIDATE=${{ steps.candidate.outcome }}"; grep -E '^(FAMILY PASS|CANDIDATE IDENTITY)\|' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 400 /tmp/c.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home mobile hero candidate r6 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
