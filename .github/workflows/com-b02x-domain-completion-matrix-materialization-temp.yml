@@ -1,4 +1,4 @@
-name: COM-B02X Domain Completion Matrix Materialization TEMP
+name: COM-B02X Domain Completion Matrix Finalization TEMP
 
 on:
   pull_request:
@@ -7,15 +7,15 @@ on:
       - '.github/workflows/com-b02x-domain-completion-matrix-materialization-temp.yml'
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: read
 
 concurrency:
-  group: com-b02x-domain-completion-matrix-materialization-temp-${{ github.ref }}
+  group: com-b02x-domain-completion-matrix-finalization-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  materialize:
+  finalize:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -24,29 +24,45 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
-      - name: Generate B02X Matrix derivatives without TEMP in final scan
+      - name: Regenerate exact B02X derivatives and fast-forward final snapshot
         shell: bash
         run: |
           set -euo pipefail
+          BRANCH='com/com-001-baseline-audit'
           EVENT_HEAD='${{ github.event.pull_request.head.sha }}'
+
           test "$(git rev-parse HEAD)" = "$EVENT_HEAD"
+          test "$(git rev-parse HEAD^)" = '5cbc29137f1faed3e3f7a6be7a160f2a1ea66caa'
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = 'b9b2abbee1aed1033c122bf7f2802c7e80844623'
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-surface-resolver.js)" = '00df5c48a9ac4a72fefde4aa31486fe8ed46ea8c'
+          test "$(git rev-parse HEAD:config/com-b02x-repository-only-route-surface-resolver-integration.json)" = '70fe6e5986ce6c480a25751b4247a4196131c0ca'
+          test "$(git rev-parse HEAD:scripts/test-com-b02x-repository-only-route-surface-resolver-integration.js)" = '86fcc162b873677fa6d360c726acbf00cfd90d45'
+          test "$(git rev-parse HEAD:.github/workflows/com-b02x-repository-only-route-surface-resolver-integration.yml)" = 'f5b72ed3551b617154924407cecfbb030378d7eb'
+
           rm .github/workflows/com-b02x-domain-completion-matrix-materialization-temp.yml
           node scripts/audit-domain-completion-matrix.js --write
           git diff --exit-code -- config/domain-completion-matrix.json
-          test -f docs/DOMAIN-COMPLETION-MATRIX.md
-          test -f reports/generated/domain-completion-matrix-report.json
-          git hash-object docs/DOMAIN-COMPLETION-MATRIX.md
-          git hash-object reports/generated/domain-completion-matrix-report.json
 
-      - name: Upload deterministic B02X Matrix derivatives
-        uses: actions/upload-artifact@v4
-        with:
-          name: com-b02x-domain-completion-matrix-derivatives
-          path: |
-            docs/DOMAIN-COMPLETION-MATRIX.md
-            reports/generated/domain-completion-matrix-report.json
-          if-no-files-found: error
-          retention-days: 1
+          test "$(git hash-object docs/DOMAIN-COMPLETION-MATRIX.md)" = 'da34da09d30ffea5de028a884f02566c3ddd25d7'
+          test "$(git hash-object reports/generated/domain-completion-matrix-report.json)" = '07846f2ca4d40c13882f9c495f2b70dc40bd0b0e'
+
+          actual="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02x-domain-completion-matrix-materialization-temp.yml \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json | sort)"
+          test "$actual" = "$expected"
+          git diff --check
+
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git add -u .github/workflows/com-b02x-domain-completion-matrix-materialization-temp.yml
+          git commit -m 'docs(com): reconcile B02X Domain Completion Matrix derivatives'
+
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$EVENT_HEAD"
+          git push origin HEAD:"refs/heads/$BRANCH"
