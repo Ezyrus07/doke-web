@@ -1,10 +1,10 @@
-name: UX CSS Important 023 App Mobile Search Reach R2
+name: UX CSS Important 023 App Mobile Search Runtime Reach R3
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach023:
+  reach023r3:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -12,7 +12,7 @@ jobs:
       TARGET_FILE: assets/css/components/navigation/app-mobile-search.css
       TARGET_BLOB: de0178f27e9ad535acf1b00eae0e59382d14061e
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-023-app-mobile-search-reach-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-023-app-mobile-search-runtime-reach-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -25,23 +25,23 @@ jobs:
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
           node <<'NODE'
           const fs=require('fs'),cp=require('child_process'),crypto=require('crypto'),path=require('path');
-          const T=process.env.TARGET_FILE,bn=path.basename(T),o=fs.readFileSync(T,'utf8');
-          const n=(o.match(/!important\b/g)||[]).length;if(n!==146)throw Error(`important ${n}`);
+          const T=process.env.TARGET_FILE,bn=path.basename(T),o=fs.readFileSync(T,'utf8');if((o.match(/!important\b/g)||[]).length!==146)throw Error('important');
           const tracked=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
           const strip=(s,ext)=>{if(ext==='.css'||ext==='.js'||ext==='.mjs'||ext==='.cjs')return s.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|\n)\s*\/\/.*(?=\n|$)/g,'$1');if(ext==='.html')return s.replace(/<!--[\s\S]*?-->/g,'');return s;};
-          const refs=[],imports=[],htmlLinks=[],jsRefs=[],rawRefs=[];
-          for(const f of tracked){if(f===T)continue;let s;try{s=fs.readFileSync(f,'utf8')}catch{continue}if(s.includes(bn))rawRefs.push(f);const ext=path.extname(f).toLowerCase();const t=strip(s,ext);if(t.includes(bn))refs.push(f);if(ext==='.css'){for(const m of t.matchAll(/@import\s+(?:url\()?\s*["']([^"']+)["']/gi)){if(m[1].split('?')[0].endsWith('/'+bn)||m[1].split('?')[0]===bn)imports.push(f);}}if(ext==='.html'&&t.includes(bn))htmlLinks.push(f);if(['.js','.mjs','.cjs'].includes(ext)&&t.includes(bn))jsRefs.push(f);}
-          console.log(`REACH PASS|important=146|cleanRefs=${refs.length}|actualImporters=${imports.length}|htmlLinks=${htmlLinks.length}|jsRefs=${jsRefs.length}|rawRefs=${rawRefs.length}`);
-          for(const f of rawRefs)console.log(`RAW REF|file=${f}`);for(const f of refs)console.log(`CLEAN REF|file=${f}`);for(const f of imports)console.log(`IMPORTER|file=${f}`);for(const f of htmlLinks)console.log(`HTML LINK|file=${f}`);for(const f of jsRefs)console.log(`JS REF|file=${f}`);
-          const dormant=refs.length===0&&imports.length===0&&htmlLinks.length===0&&jsRefs.length===0;
-          if(!dormant){console.log('TARGET STATE|wholeFileDormant=0');process.exit(2)}
-          const c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');if((c.match(/!important\b/g)||[]).length!==0)throw Error('candidate count');fs.writeFileSync('/tmp/candidate.css',c);
-          console.log(`TARGET STATE|wholeFileDormant=1`);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(c)}|important=146->0|priorityMarkersRemoved=146|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`);
+          const isRuntime=f=>f.endsWith('.html')||f.startsWith('assets/js/')||f.startsWith('assets/css/');
+          const runtimeRefs=[],importers=[],htmlLinks=[],runtimeJsRefs=[],nonRuntimeRefs=[];
+          for(const f of tracked){if(f===T)continue;let s;try{s=fs.readFileSync(f,'utf8')}catch{continue}const ext=path.extname(f).toLowerCase(),t=strip(s,ext);if(!t.includes(bn))continue;if(!isRuntime(f)){nonRuntimeRefs.push(f);continue;}runtimeRefs.push(f);if(ext==='.html')htmlLinks.push(f);if(f.startsWith('assets/js/'))runtimeJsRefs.push(f);if(ext==='.css'){for(const m of t.matchAll(/@import\s+(?:url\()?\s*["']([^"']+)["']/gi)){const q=m[1].split('?')[0];if(q.endsWith('/'+bn)||q===bn)importers.push(f);}}}
+          console.log(`RUNTIME REACH|runtimeRefs=${runtimeRefs.length}|actualImporters=${importers.length}|htmlLinks=${htmlLinks.length}|runtimeJsRefs=${runtimeJsRefs.length}|nonRuntimeRefs=${nonRuntimeRefs.length}`);
+          for(const f of runtimeRefs)console.log(`RUNTIME REF|file=${f}`);for(const f of nonRuntimeRefs)console.log(`NONRUNTIME REF|file=${f}`);
+          if(runtimeRefs.length||importers.length||htmlLinks.length||runtimeJsRefs.length)throw Error('runtime reach');
+          const c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');if((c.match(/!important\b/g)||[]).length)throw Error('candidate');
+          console.log('TARGET STATE|wholeFileDormant=1|governanceRefsDoNotLoadRuntime=1');
+          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(c)}|important=146->0|priorityMarkersRemoved=146|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`);
           NODE
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(REACH PASS|RAW REF|CLEAN REF|IMPORTER|HTML LINK|JS REF|TARGET STATE|CANDIDATE IDENTITY)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 450 /tmp/r.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 023 app mobile search reach r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; echo 'R2_NOTE=conservative-false-negative-nonruntime-governance-audit-refs'; grep -E '^(RUNTIME REACH|RUNTIME REF|NONRUNTIME REF|TARGET STATE|CANDIDATE IDENTITY)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 450 /tmp/r.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 023 app mobile search runtime reach r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
