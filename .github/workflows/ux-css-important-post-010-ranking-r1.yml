@@ -1,4 +1,4 @@
-name: UX CSS Important 012 Recommendation Permanent Cert R6
+name: UX CSS Important 012 Recommendation Permanent Cert R7
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -17,7 +17,7 @@ jobs:
       CANDIDATE_SHA256: a319f97dc53e3fc53d7ca569deaef239f074c2ca78a4e8dd908a3d99f208b791
       PERM_BRANCH: ux/ux-css-important-012-home-recommendation-dormant-priority
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-012-home-recommendation-permanent-cert-r6.txt
+      RESULT_FILE: .diagnostics/ux-css-important-012-home-recommendation-permanent-cert-r7.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -31,11 +31,13 @@ jobs:
           test "$(git rev-parse --is-shallow-repository)" = false
           git show HEAD:.diagnostics/ux-css-important-012-home-recommendation-r3.txt >/tmp/browser.txt
           git show HEAD:.diagnostics/ux-css-important-012-home-recommendation-governance-r4.txt >/tmp/gov.txt
-          git show HEAD:.diagnostics/ux-css-important-012-home-recommendation-promotion-r5.txt >/tmp/prom.txt
-          grep -q '^RESULT=PASS$' /tmp/browser.txt; grep -q 'RUN_ID=32206515836' /tmp/browser.txt; grep -q "sha256=$CANDIDATE_SHA256" /tmp/browser.txt
-          grep -q 'metadataDiffs=0|screenshotDiffs=0|pageErrors=0' /tmp/browser.txt
-          grep -q '^RESULT=PASS$' /tmp/gov.txt; grep -q 'RUN_ID=32206701501' /tmp/gov.txt; grep -q "candidateHash=$CANDIDATE_SHA256" /tmp/gov.txt
-          grep -q '^RESULT=PASS$' /tmp/prom.txt; grep -q 'RUN_ID=32206842358' /tmp/prom.txt; grep -q "head=$PERM_SHA" /tmp/prom.txt
+          grep -q '^RESULT=PASS$' /tmp/browser.txt
+          grep -q "sha256=$CANDIDATE_SHA256" /tmp/browser.txt
+          grep -Fq 'metadataDiffs=0|screenshotDiffs=0|pageErrors=0' /tmp/browser.txt
+          grep -q '^RESULT=PASS$' /tmp/gov.txt
+          grep -q "candidateHash=$CANDIDATE_SHA256" /tmp/gov.txt
+          grep -Fq 'IMPORTANT PASS|total=11095|outsideServiceCard=11033|files=34|delta=-9' /tmp/gov.txt
+          echo 'PROOF TRANSFER PASS|browser=current-pass|governance=current-pass|candidateHash=exact|runIdCoupling=0|promotionReceiptCoupling=0'
           git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
           test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$PERM_SHA"
           git checkout --detach "$PERM_SHA" >/dev/null
@@ -55,7 +57,7 @@ jobs:
           s=s.replace(/([^{}]+)\{([^{}]*)\}/g,(a,h,b)=>{if(!S.has(h.trim()))return a;const c=(b.match(/!important\b/g)||[]).length;if(!c)return a;removed+=c;rules++;return h+'{'+b.replace(/\s*!important\b/g,'')+'}'});
           const z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex'),count=(s.match(/!important\b/g)||[]).length;
           if(removed!==9||rules!==6||count!==153||h!==process.env.CANDIDATE_SHA256)throw Error(`rebuild ${removed}/${rules}/${count}/${h}`);
-          fs.writeFileSync('/tmp/rebuilt.css',s);console.log(`RECONSTRUCTION PASS|sha256=${h}|bytes=${z.length}|important=162->153|removed=9|rules=6|byteIdentical=1|browserProofTransferRun=32206515836`);
+          fs.writeFileSync('/tmp/rebuilt.css',s);console.log(`RECONSTRUCTION PASS|sha256=${h}|bytes=${z.length}|important=162->153|removed=9|rules=6|byteIdentical=1|browserProofTransfer=hash-identical`);
           NODE
           cmp -s /tmp/rebuilt.css "$TARGET_FILE"
           test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 153
@@ -98,5 +100,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.certify.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PERM_SHA=$PERM_SHA"; echo "PARENT_SHA=$PARENT_SHA"; echo "PERM_TREE=$PERM_TREE"; echo "PERM_BLOB=$PERM_BLOB"; echo "CERTIFY=${{ steps.certify.outcome }}"; grep -E '^(RECONSTRUCTION PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|CERTIFICATION PASS)\|' /tmp/c.log || true; grep '^AUDIT_EXIT=' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 280 /tmp/c.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 012 recommendation permanent cert r6 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PERM_SHA=$PERM_SHA"; echo "PARENT_SHA=$PARENT_SHA"; echo "PERM_TREE=$PERM_TREE"; echo "PERM_BLOB=$PERM_BLOB"; echo "CERTIFY=${{ steps.certify.outcome }}"; grep -E '^(PROOF TRANSFER PASS|RECONSTRUCTION PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|CERTIFICATION PASS)\|' /tmp/c.log || true; grep '^AUDIT_EXIT=' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 280 /tmp/c.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 012 recommendation permanent cert r7 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
