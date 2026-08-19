@@ -1,54 +1,65 @@
-name: UX CSS Important Post 020 Fresh Ranking R1
+name: UX CSS Important 021 Home Remaining Priority Reach Inventory R2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  rank021:
+  inspect021:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: 6aa5b028eb6ec7398ae35315bfffc79396955abd
+      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+      TARGET_BLOB: 8a4f9d25f4711220ff1c509886a5d26ca48e2f16
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-post-020-fresh-ranking-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-021-home-remaining-reach-inventory-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: rank
+      - id: inspect
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/i.log) 2>&1
           git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          actual_blob="$(git rev-parse "HEAD:$TARGET_FILE")"; echo "ACTUAL_BLOB=$actual_blob"; test "$actual_blob" = "$TARGET_BLOB"
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 128
           npm ci --ignore-scripts >/dev/null
-          npm run audit:important-reduction-plan >/dev/null
-          npm run audit:global-css-design-system >/dev/null
           node <<'NODE'
-          const fs=require('fs'),path=require('path');
-          const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));
-          const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
-          const s=b.summary,ps=p.summary;
-          if(s.totalImportant!==10572||s.outsideServiceCardImportant!==10510||s.filesWithImportant!==28)throw Error('baseline '+JSON.stringify(s));
-          if(ps.affectedFiles!==27||ps.totalImportantOutsideServiceCard!==10510||ps.byRisk?.['high-baseline-required']!==10502||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error('plan '+JSON.stringify(ps));
-          console.log(`PLAN SUMMARY|affectedFiles=${ps.affectedFiles}|outside=${ps.totalImportantOutsideServiceCard}|high=${ps.byRisk['high-baseline-required']}|medium=${ps.byRisk['medium-baseline-required']}|low=${ps.byRisk['low-review-candidate']}`);
-          console.log(`BASELINE SUMMARY|total=${s.totalImportant}|outside=${s.outsideServiceCardImportant}|files=${s.filesWithImportant}`);
-          const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]});
-          const inv=walk('assets/css').filter(f=>f.endsWith('.css')).map(file=>({file:file.replaceAll('\\','/'),important:(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length})).filter(x=>x.important).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
-          const total=inv.reduce((a,x)=>a+x.important,0);if(total!==10572||inv.length!==28)throw Error(`inventory ${total}/${inv.length}`);
-          console.log(`COUNT INVENTORY|files=${inv.length}|total=${total}`);for(const x of inv)console.log(`COUNT FILE|important=${x.important}|file=${x.file}`);
-          const highs=new Set();
-          const scan=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){for(const x of o)scan(x);return;}const vals=Object.values(o);if(vals.some(v=>v==='high-baseline-required'))for(const v of vals)if(typeof v==='string'&&v.startsWith('assets/css/')&&v.endsWith('.css'))highs.add(v);for(const v of vals)scan(v)};scan(p);
-          const ranked=[...highs].map(file=>({file,important:inv.find(x=>x.file===file)?.important||0})).filter(x=>x.important>0).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
-          if(!ranked.length)throw Error('no ranked high');for(const x of ranked)console.log(`PLAN FILE|important=${x.important}|risk=high-baseline-required|file=${x.file}`);console.log(`NEXT HIGH|important=${ranked[0].important}|file=${ranked[0].file}`);
-          const protected020='assets/css/components/shell/mobile-base-stability.css';
-          if(ranked[0].file===protected020){console.log(`BLOCKED HIGH|important=${ranked[0].important}|file=${ranked[0].file}|reason=remaining-28-protected-by-certified-020`);const next=ranked.find(x=>x.file!==protected020);if(!next)throw Error('no eligible high after protected020');console.log(`NEXT ELIGIBLE HIGH|important=${next.important}|file=${next.file}`)}
+          const fs=require('fs'),path=require('path'),postcss=require('postcss');
+          const TARGET=process.env.TARGET_FILE;
+          const strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');
+          const rootHtml=fs.readdirSync('.').filter(f=>f.endsWith('.html')&&!f.startsWith('archive-')&&!f.startsWith('backup-')).sort();
+          const direct=new Set(), imports=new Map();
+          const hrefRe=/<link\b[^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi;
+          for(const f of rootHtml){const s=fs.readFileSync(f,'utf8');let m;while((m=hrefRe.exec(s))){let q=m[1].split('?')[0].replace(/^\.\//,'');if(q.startsWith('/'))q=q.slice(1);if(q.startsWith('assets/css/'))direct.add(q)}}
+          const walk=d=>fs.existsSync(d)?fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]}):[];
+          const css=walk('assets/css').filter(f=>f.endsWith('.css')).map(f=>f.replaceAll('\\','/'));
+          for(const f of css){const s=strip(fs.readFileSync(f,'utf8')),a=[];for(const m of s.matchAll(/@import\s+(?:url\()?\s*["']([^"']+\.css(?:\?[^"']*)?)["']/g)){let rel=m[1].split('?')[0];if(rel.startsWith('.'))rel=path.posix.normalize(path.posix.join(path.posix.dirname(f),rel));else if(rel.startsWith('/'))rel=rel.slice(1);if(rel.startsWith('assets/css/'))a.push(rel)}imports.set(f,a)}
+          const reachable=new Set(direct),q=[...direct];while(q.length){const f=q.shift();for(const x of imports.get(f)||[])if(!reachable.has(x)){reachable.add(x);q.push(x)}}
+          const importers=[...imports].filter(([,a])=>a.includes(TARGET)).map(([f])=>f).sort();
+          const js=walk('assets/js').filter(f=>f.endsWith('.js'));
+          const runtimeFiles=[...rootHtml,...js];
+          const cleanRuntime=runtimeFiles.map(f=>[f,strip(fs.readFileSync(f,'utf8'))]);
+          const filename=path.posix.basename(TARGET);
+          const jsRefs=cleanRuntime.filter(([f,s])=>f.endsWith('.js')&&s.includes(filename)).map(([f])=>f);
+          const runtimeTextRefs=cleanRuntime.filter(([f,s])=>s.includes(TARGET)||s.includes(filename)).map(([f])=>f);
+          console.log(`REACH GRAPH|activeHtml=${rootHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(TARGET)?1:0}|jsRefs=${jsRefs.length}|runtimeTextRefs=${runtimeTextRefs.length}|importers=${importers.length}`);
+          for(const f of importers)console.log(`IMPORTER|file=${f}`);
+          if(rootHtml.length!==33||direct.size!==51||reachable.size!==407)throw Error(`graph baseline ${rootHtml.length}/${direct.size}/${reachable.size}`);
+          const cssText=fs.readFileSync(TARGET,'utf8'),ast=postcss.parse(cssText,{from:TARGET});let total=0,rules=0,dormantRules=0,dormantImportant=0;
+          const sourceText=cleanRuntime.map(([,s])=>s).join('\n');
+          const tokenPresent=t=>new RegExp(`(^|[^A-Za-z0-9_-])${t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Za-z0-9_-]|$)`).test(sourceText);
+          ast.walkRules(rule=>{const imps=rule.nodes.filter(n=>n.type==='decl'&&n.important);if(!imps.length)return;rules++;total+=imps.length;const branches=postcss.list.comma(rule.selector);const branchData=branches.map(sel=>{const tokens=[...sel.matchAll(/\.([A-Za-z_-][A-Za-z0-9_-]*)/g)].map(m=>m[1]);const uniq=[...new Set(tokens)];const missing=uniq.filter(t=>!tokenPresent(t));return {sel,tokens:uniq,missing}});const staticDormant=branchData.length>0&&branchData.every(b=>b.tokens.length>0&&b.missing.length>0);if(staticDormant){dormantRules++;dormantImportant+=imps.length}const at=[];for(let p=rule.parent;p&&p.type!=='root';p=p.parent)if(p.type==='atrule')at.unshift(`@${p.name} ${p.params}`);console.log(`RULE|important=${imps.length}|staticDormant=${staticDormant?1:0}|media=${at.join(' > ').replaceAll('|','/')}|selector=${rule.selector.replaceAll('\n',' ').replaceAll('|','/')}|missing=${branchData.map(b=>b.missing.join(',')).join(';')}`)});
+          if(total!==128)throw Error(`important parsed ${total}`);console.log(`INVENTORY SUMMARY|important=${total}|rules=${rules}|staticDormantRules=${dormantRules}|staticDormantImportant=${dormantImportant}|targetReachable=${reachable.has(TARGET)?1:0}`);
           NODE
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.rank.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "RANK=${{ steps.rank.outcome }}"; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|NEXT HIGH|BLOCKED HIGH|NEXT ELIGIBLE HIGH)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 380 /tmp/r.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish post-020 fresh important ranking r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.inspect.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$(grep '^ACTUAL_BLOB=' /tmp/i.log | tail -1 | cut -d= -f2)"; echo "INSPECT=${{ steps.inspect.outcome }}"; grep -E '^(REACH GRAPH|IMPORTER|RULE|INVENTORY SUMMARY)\|' /tmp/i.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/i.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home remaining reach inventory r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
