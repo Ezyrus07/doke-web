@@ -22,6 +22,13 @@ function freeze(value) {
   return Object.freeze(value);
 }
 
+function containsFunction(value, seen = new Set()) {
+  if (typeof value === 'function') return true;
+  if (!value || typeof value !== 'object' || seen.has(value)) return false;
+  seen.add(value);
+  return Object.values(value).some((child) => containsFunction(child, seen));
+}
+
 function inertEffects() {
   return {
     activeExecuteHandlersPreserved: true,
@@ -46,6 +53,7 @@ function inertEffects() {
 }
 
 function blocked(reason, details = {}, beginSurfaceInvoked = false) {
+  const safeDetails = containsFunction(details) ? { detailProjectionBlocked: true } : clone(details);
   return freeze({
     contractId: CONTRACT_ID,
     boundaryId: BOUNDARY_ID,
@@ -53,7 +61,7 @@ function blocked(reason, details = {}, beginSurfaceInvoked = false) {
     predecessorHead: PREDECESSOR_HEAD,
     decision: 'blocked_repository_only_route_begin_dispatch',
     reason,
-    details: clone(details),
+    details: safeDetails,
     repositoryOnlyBeginSurfaceInvocationAuthority: true,
     resumeSurfaceInvocationAuthority: false,
     activeExecuteHandlerInvocationAuthority: false,
@@ -92,6 +100,7 @@ function assertInertBeginState(state, routeName) {
     if (state.routeName !== routeName ||
         state.awaitingExternalRepositoryResult !== true ||
         !isObject(state.nextRepositoryOperation) ||
+        containsFunction(state.nextRepositoryOperation) ||
         state.nextRepositoryOperation.executionAuthorized !== false ||
         state.nextRepositoryOperation.credentialSourceBound !== false ||
         state.nextRepositoryOperation.credentialReadImplemented !== false ||
@@ -105,6 +114,37 @@ function assertInertBeginState(state, routeName) {
   }
 
   return true;
+}
+
+function projectOrchestrationState(state) {
+  const projection = {
+    contractId: state.contractId,
+    boundaryId: state.boundaryId,
+    decision: state.decision,
+    reason: state.reason || null,
+    routeName: state.routeName || null,
+    b02sContractId: state.b02sContractId || null,
+    b02rContractId: state.b02rContractId || null,
+    b02qContractId: state.b02qContractId || null,
+    awaitingExternalRepositoryResult: state.awaitingExternalRepositoryResult === true,
+    repositoryOrchestrationMaterialized: state.repositoryOrchestrationMaterialized === true,
+    nextRepositoryOperation: state.nextRepositoryOperation ? clone(state.nextRepositoryOperation) : null,
+    activeExecuteHandlersPreserved: state.activeExecuteHandlersPreserved === true,
+    moduleRouteLoaderPreserved: state.moduleRouteLoaderPreserved === true,
+    credentialSourceBound: state.credentialSourceBound === true,
+    credentialReadImplemented: state.credentialReadImplemented === true,
+    repositoryOperationInvoked: state.repositoryOperationInvoked === true,
+    rpcExecuted: state.rpcExecuted === true,
+    networkExecuted: state.networkExecuted === true,
+    stagingReadExecuted: state.stagingReadExecuted === true,
+    stagingMutationExecuted: state.stagingMutationExecuted === true,
+    migrationApplied: state.migrationApplied === true,
+    runtimeActivated: state.runtimeActivated === true,
+    productionChanged: state.productionChanged === true
+  };
+
+  if (containsFunction(projection)) return null;
+  return freeze(projection);
 }
 
 function dispatchRepositoryOnlyRouteBegin(routeName, packet, options = {}) {
@@ -135,6 +175,15 @@ function dispatchRepositoryOnlyRouteBegin(routeName, packet, options = {}) {
     );
   }
 
+  const stateProjection = projectOrchestrationState(state);
+  if (!stateProjection) {
+    return blocked(
+      'B02T_NON_EXECUTABLE_STATE_PROJECTION_REQUIRED',
+      { routeName, decision: state.decision },
+      true
+    );
+  }
+
   const awaitingExternalResult =
     state.decision === 'repository_only_command_handler_repository_orchestration_awaiting_external_result';
 
@@ -155,10 +204,12 @@ function dispatchRepositoryOnlyRouteBegin(routeName, packet, options = {}) {
     resumeSurfaceInvoked: false,
     executableReferenceReturned: false,
     orchestrationStateReturned: true,
-    orchestrationState: state,
+    orchestrationState: stateProjection,
     awaitingExternalRepositoryResult: awaitingExternalResult,
     repositoryOperationDescriptorMaterialized: awaitingExternalResult,
-    repositoryOperationDescriptor: awaitingExternalResult ? state.nextRepositoryOperation : null,
+    repositoryOperationDescriptor: awaitingExternalResult
+      ? stateProjection.nextRepositoryOperation
+      : null,
     repositoryOnlyBeginSurfaceInvocationAuthority: true,
     resumeSurfaceInvocationAuthority: false,
     activeExecuteHandlerInvocationAuthority: false,
@@ -183,6 +234,8 @@ function inspectRepositoryOnlyRouteBeginDispatcher() {
     dispatchableRouteCount: resolutions.length,
     repositoryOnlyBeginSurfaceInvocationAuthority: true,
     beginSurfaceInvocationImplemented: true,
+    rawOrchestrationStateReturned: false,
+    nonExecutableStateProjectionImplemented: true,
     resumeSurfaceInvocationImplemented: false,
     activeExecuteHandlerInvocationImplemented: false,
     repositoryOperationInvocationImplemented: false,
