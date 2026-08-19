@@ -1,0 +1,52 @@
+name: COM-B02X Domain Completion Matrix Materialization TEMP
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b02x-domain-completion-matrix-materialization-temp.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02x-domain-completion-matrix-materialization-temp-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Generate B02X Matrix derivatives without TEMP in final scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVENT_HEAD='${{ github.event.pull_request.head.sha }}'
+          test "$(git rev-parse HEAD)" = "$EVENT_HEAD"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = 'b9b2abbee1aed1033c122bf7f2802c7e80844623'
+          rm .github/workflows/com-b02x-domain-completion-matrix-materialization-temp.yml
+          node scripts/audit-domain-completion-matrix.js --write
+          git diff --exit-code -- config/domain-completion-matrix.json
+          test -f docs/DOMAIN-COMPLETION-MATRIX.md
+          test -f reports/generated/domain-completion-matrix-report.json
+          git hash-object docs/DOMAIN-COMPLETION-MATRIX.md
+          git hash-object reports/generated/domain-completion-matrix-report.json
+
+      - name: Upload deterministic B02X Matrix derivatives
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02x-domain-completion-matrix-derivatives
+          path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
+          if-no-files-found: error
+          retention-days: 1
