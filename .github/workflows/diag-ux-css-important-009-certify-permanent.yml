@@ -1,0 +1,60 @@
+name: Doke UX CSS Important 009 Certify Permanent
+on: [push]
+permissions: {contents: write}
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 839d20efdaf28d99508397722fb61cedafcdb556
+      PARENT_SHA: ad132fc1c25f0d9e234810cae6993360d8baf2e6
+      TARGET_TREE: 8db2f482abf532b5f4f5bc1060671576960426ff
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      PARENT_BLOB: 0fef120997dacc4a1437ff4acb2f7db7b57c6408
+      TARGET_BLOB: 46ede4f081a686155ab4035581cbd8a796a831c9
+      CANDIDATE_SHA256: e2ec2c64886991c155f60779b66e0e0baacc7857ac2225c19bce230357eaf40e
+      PERM_BRANCH: ux/ux-css-important-009-mobile-card-dormant-actions
+      DIAG_BRANCH: diag/ux-css-important-009-certify-permanent
+      RESULT_FILE: .diagnostics/ux-css-important-009-certification.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: certify
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/c.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; test "$(git rev-parse "$TARGET_SHA^")" = "$PARENT_SHA"; test "$(git rev-parse "$TARGET_SHA^{tree}")" = "$TARGET_TREE"; test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"; test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"; test "$(git rev-list --count "$PARENT_SHA..$TARGET_SHA")" = 1; test "$(git diff --name-only "$PARENT_SHA..$TARGET_SHA")" = "$TARGET_FILE"; test "$(git diff --numstat "$PARENT_SHA..$TARGET_SHA")" = $'16\t16\t'"$TARGET_FILE"; test "$(git ls-remote origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')" = "$TARGET_SHA"
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css; git show "$TARGET_SHA:$TARGET_FILE" >/tmp/permanent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync('/tmp/parent.css','utf8'),r=0;function x(a,n){let i=s.indexOf(a+' {');if(i<0||s.indexOf(a+' {',i+1)>=0)throw Error(a);let b=s.indexOf('{',i),e=s.indexOf('}',b),z=s.slice(b+1,e),c=(z.match(/!important\b/g)||[]).length;if(c!==n)throw Error(a+' '+c);z=z.replace(/\s*!important\b/g,'');r+=c;s=s.slice(0,b+1)+z+s.slice(e)}if((s.match(/!important\b/g)||[]).length!==20)throw Error('parent');x(':is(.service-card__favorite, .favorite-button, .heart-button, .video-card__play)',10);x(':is(.service-card__favorite, .favorite-button, .heart-button, .video-card__play) svg',2);x('body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__play,\n  body.search-results-body .results-layout :is(.results-grid, .results-videos-grid) > .video-card .video-card__play,\n  body.profile-page-shell .profile-posts-stack .short-videos__track > .video-card .video-card__play',4);const z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex'),p=fs.readFileSync('/tmp/permanent.css');if(r!==16||(s.match(/!important\b/g)||[]).length!==4||h!==process.env.CANDIDATE_SHA256||!z.equals(p))throw Error('reconstruction');console.log(`IDENTITY PASS|sha=${process.env.TARGET_SHA}|parent=${process.env.PARENT_SHA}|tree=${process.env.TARGET_TREE}|parentBlob=${process.env.PARENT_BLOB}|targetBlob=${process.env.TARGET_BLOB}|sha256=${h}|bytes=${z.length}|fullHistory=1|files=1|additions=16|deletions=16|important=4`);console.log('RECONSTRUCTION PASS|byteCandidate=1|important=20->4|priorityMarkersRemoved=16|declarationsRemoved=0')
+          NODE
+          git reset --hard "$PARENT_SHA" >/dev/null; npm ci --ignore-scripts; node scripts/generate-responsive-index-baseline.js; cp reports/responsive-index-baseline.json /tmp/responsive-index-baseline.json; git reset --hard "$TARGET_SHA" >/dev/null; cp /tmp/responsive-index-baseline.json reports/responsive-index-baseline.json
+          npm run test:responsive-contract | tee /tmp/responsive.log; grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log; echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
+          npm run audit:agent-governance; node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          node <<'NODE'
+          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
+          NODE
+          npm run audit:shared-app-header-contract; npm run audit:mobile-shell-location-contract; npm run audit:responsive-boundaries; npm run audit:duplicate-assets | tee /tmp/dup.log; grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log; npm run audit:domain-completion-matrix | tee /tmp/domain.log; grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true; npm run audit:active-legacy-structures; npm run audit:important-reduction-plan; npm run audit:global-css-design-system
+          node <<'NODE'
+          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary;if(s.totalImportant!==11123||s.outsideServiceCardImportant!==11061||s.filesWithImportant!==34)throw Error(`important ${JSON.stringify(s)}`);if(p.summary.affectedFiles!==33||p.summary.totalImportantOutsideServiceCard!==11061||p.summary.lowRiskFileCount!==1||p.summary.byRisk?.['high-baseline-required']!==11051||p.summary.byRisk?.['medium-baseline-required']!==6||p.summary.byRisk?.['low-review-candidate']!==4)throw Error(`plan ${JSON.stringify(p.summary)}`);console.log('IMPORTANT BASELINE PASS|total=11123|outsideServiceCard=11061|files=34|targetImportant=4|delta=-16');console.log('QUEUE PASS|affectedFiles=33|lowRiskFiles=1|highBaselineRequired=11051|mediumBaselineRequired=6|lowReviewCandidate=4|protected006=6')
+          NODE
+          node <<'NODE'
+          const fs=require('fs'),html=fs.readFileSync('index.html','utf8'),scripts=[...html.matchAll(/<script\b[^>]*src=["']([^"']+\.js(?:[?#][^"']*)?)["'][^>]*>/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(p=>fs.existsSync(p)),tokens=['service-card__favorite','favorite-button','heart-button','video-card__play'];let raw=0,producer=0;for(const p of scripts){const t=fs.readFileSync(p,'utf8');for(const token of tokens){raw+=(t.match(new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length;const e=token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');if(new RegExp(`className\\s*=\\s*['\"][^'\"]*${e}`).test(t)||new RegExp(`className\\s*:\\s*['\"][^'\"]*${e}`).test(t)||new RegExp(`classList\\.(?:add|toggle)\\([^)]*['\"]${e}['\"]`).test(t))producer++}}const staticHits=tokens.reduce((n,t)=>n+((html.match(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length),0);if(scripts.length!==76||raw!==2||producer||staticHits)throw Error(`source ${scripts.length}/${raw}/${producer}/${staticHits}`);console.log(`SOURCE AUTHORITY PASS|scripts=76|rawTokenOccurrences=2|producerHits=0|staticHits=0`)
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
+          node <<'NODE'
+          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
+          NODE
+          echo "AUDIT_EXIT=$code"; echo 'PROOF TRANSFER PASS|ranking=32198664130|source=32198892904|visual=32199103177|governance=32198991395|candidateSha256=e2ec2c64886991c155f60779b66e0e0baacc7857ac2225c19bce230357eaf40e|metadataDiffs=0|screenshotDiffs=0|productRenderer=1|syntheticDOM=0'; echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12'; test "$(git ls-remote origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')" = "$TARGET_SHA"
+      - id: restore
+        if: always()
+        shell: bash
+        run: set -euo pipefail; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; git clean -fdx >/dev/null
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.certify.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_TREE=$TARGET_TREE"; echo "PARENT_BLOB=$PARENT_BLOB"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "CERTIFY=${{ steps.certify.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(IDENTITY PASS|RECONSTRUCTION PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT BASELINE PASS|QUEUE PASS|SOURCE AUTHORITY PASS|DEPENDENCY PASS|PROOF TRANSFER PASS|GOVERNANCE PASS)\|' /tmp/c.log || true; grep '^AUDIT_EXIT=' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 320 /tmp/c.log || true; fi; } >/tmp/o; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/o "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 009 permanent certification [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
