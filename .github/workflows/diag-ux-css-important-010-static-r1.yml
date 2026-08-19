@@ -1,0 +1,36 @@
+name: Doke UX CSS Important 010 Static R1
+on: [push]
+permissions: {contents: write}
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 839d20efdaf28d99508397722fb61cedafcdb556
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: 46ede4f081a686155ab4035581cbd8a796a831c9
+      DIAG_BRANCH: diag/ux-css-important-010-static-r1
+      RESULT_FILE: .diagnostics/ux-css-important-010-static-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/s.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const f=process.env.TARGET_FILE,P=fs.readFileSync(f,'utf8');if((P.match(/!important\b/g)||[]).length!==4)throw Error('parent');
+          function strip(src,selector,props){const i=src.indexOf(selector+' {');if(i<0||src.indexOf(selector+' {',i+1)>=0)throw Error(selector);const b=src.indexOf('{',i),e=src.indexOf('}',b);let z=src.slice(b+1,e);for(const p of props){const re=new RegExp('('+p+'\\s*:[^;]+?)\\s*!important\\b');if(!re.test(z))throw Error(p);z=z.replace(re,'$1')}return src.slice(0,b+1)+z+src.slice(e)}
+          const sCols=':is(.service-grid, .service-grid--compact, .service-cards-grid, .profile-services-results):not([data-more-services-grid])';const sCmp=':is(.comparison-card__visual, .profile-posts-stack .comparison-card__visual, body.home-index-shell .comparison-card__visual)';let C=strip(P,sCols,['grid-template-columns']);C=strip(C,sCmp,['min-height','aspect-ratio']);const h=crypto.createHash('sha256').update(Buffer.from(C)).digest('hex');if((C.match(/!important\b/g)||[]).length!==1)throw Error('candidate');fs.writeFileSync('/tmp/candidate.css',C);
+          const manifest=fs.readFileSync('assets/css/pages/home-runtime-components.css','utf8'),a=manifest.indexOf('../components/cards/mobile-card-contract.css'),b=manifest.indexOf('./home/mobile-composition.css');if(a<0||b<0||a>=b)throw Error('import order');const comp=fs.readFileSync('assets/css/pages/home/mobile-composition.css','utf8');if(!/body\.home-index-shell #featured-services-track,[\s\S]*?grid-template-columns:\s*none\s*!important/.test(comp))throw Error('featured columns authority');if(!/gap:\s*12px/.test(comp))throw Error('gap downstream evidence');
+          console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(C)}|important=4->1|priorityMarkersRemoved=3|declarationsRemoved=0|preserved=gap`);console.log('CASCADE PASS|targetBeforeMobileComposition=1|featuredGridColumnsAuthority=none!important|downstreamGap12=1|gapPreserved=1');
+          NODE
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "STATIC=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|CASCADE PASS)\|' /tmp/s.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 160 /tmp/s.log || true; fi; } >/tmp/out; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 010 static r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
