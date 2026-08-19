@@ -1,4 +1,4 @@
-name: UX CSS Important Post 017 Fresh Ranking R1
+name: UX CSS Important Post 017 Fresh Ranking R2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -10,7 +10,7 @@ jobs:
     env:
       PARENT_SHA: c07f4b62e12dd7e01ede6ade20234ea01180730a
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-post-017-fresh-ranking-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-post-017-fresh-ranking-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -26,7 +26,7 @@ jobs:
           npm run audit:important-reduction-plan >/dev/null
           npm run audit:global-css-design-system >/dev/null
           node <<'NODE'
-          const fs=require('fs'),cp=require('child_process');
+          const fs=require('fs'),path=require('path');
           const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));
           const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
           const s=b.summary,ps=p.summary;
@@ -34,19 +34,19 @@ jobs:
           if(ps.affectedFiles!==29||ps.totalImportantOutsideServiceCard!==10645||ps.byRisk?.['high-baseline-required']!==10637||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error('plan '+JSON.stringify(ps));
           console.log(`PLAN SUMMARY|affectedFiles=${ps.affectedFiles}|outside=${ps.totalImportantOutsideServiceCard}|high=${ps.byRisk['high-baseline-required']}|medium=${ps.byRisk['medium-baseline-required']}|low=${ps.byRisk['low-review-candidate']}`);
           console.log(`BASELINE SUMMARY|total=${s.totalImportant}|outside=${s.outsideServiceCardImportant}|files=${s.filesWithImportant}`);
-          const files=cp.execFileSync('git',['ls-files','assets/css/**/*.css','assets/css/*.css'],{encoding:'utf8'}).trim().split(/\n/).filter(Boolean);
-          const counts=[];let total=0;for(const f of files){const txt=fs.readFileSync(f,'utf8'),n=(txt.match(/!important\b/g)||[]).length;if(n){counts.push([n,f]);total+=n;}}
-          counts.sort((a,b)=>a[0]-b[0]||a[1].localeCompare(b[1]));
-          console.log(`COUNT INVENTORY|files=${counts.length}|total=${total}`);if(counts.length!==30||total!==10707)throw Error(`inventory ${counts.length}/${total}`);
-          for(const [n,f] of counts)console.log(`COUNT FILE|important=${n}|file=${f}`);
-          const arr=p.files||p.items||p.entries||[];const highs=[];
-          for(const x of arr){const f=x.file||x.path||x.filePath||x.filename;const risk=x.risk||x.riskClass||x.classification||x.bucket;const n=x.importantCount??x.important??x.count??x.totalImportant;if(f&&risk==='high-baseline-required'){highs.push([Number(n),f]);console.log(`PLAN FILE|important=${n}|risk=${risk}|file=${f}`);}}
-          highs.sort((a,b)=>a[0]-b[0]||a[1].localeCompare(b[1]));if(!highs.length)throw Error('no high files');console.log(`NEXT HIGH|important=${highs[0][0]}|file=${highs[0][1]}`);
+          const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]});
+          const inv=walk('assets/css').filter(f=>f.endsWith('.css')).map(file=>({file:file.replaceAll('\\','/'),important:(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length})).filter(x=>x.important).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
+          const total=inv.reduce((a,x)=>a+x.important,0);if(total!==10707||inv.length!==30)throw Error(`inventory ${total}/${inv.length}`);
+          console.log(`COUNT INVENTORY|files=${inv.length}|total=${total}`);for(const x of inv)console.log(`COUNT FILE|important=${x.important}|file=${x.file}`);
+          const highs=new Set();const scan=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){for(const x of o)scan(x);return;}const vals=Object.values(o);if(vals.some(v=>v==='high-baseline-required'))for(const v of vals)if(typeof v==='string'&&v.startsWith('assets/css/')&&v.endsWith('.css'))highs.add(v);for(const v of vals)scan(v)};scan(p);
+          if(!highs.size)throw Error('no high file mapping');
+          const ranked=[...highs].map(file=>({file,important:inv.find(x=>x.file===file)?.important||0})).filter(x=>x.important>0).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
+          for(const x of ranked)console.log(`PLAN FILE|important=${x.important}|risk=high-baseline-required|file=${x.file}`);if(!ranked.length)throw Error('empty ranked high');console.log(`NEXT HIGH|important=${ranked[0].important}|file=${ranked[0].file}`);
           NODE
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.rank.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "RANK=${{ steps.rank.outcome }}"; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|NEXT HIGH)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 360 /tmp/r.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish post-017 important ranking r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "RANK=${{ steps.rank.outcome }}"; echo 'R1_NOTE=harness-only schema parser false negative; official audits/inventory passed'; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|NEXT HIGH)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 360 /tmp/r.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish post-017 important ranking r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
