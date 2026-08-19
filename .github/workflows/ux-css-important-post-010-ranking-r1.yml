@@ -1,40 +1,47 @@
-name: UX CSS Important 021 Home Mobile Hero Dormant Family Candidate R6
+name: UX CSS Important 021 Home Mobile Hero Browser R7
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  candidate021:
+  browser021:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: 6aa5b028eb6ec7398ae35315bfffc79396955abd
       TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
       TARGET_BLOB: fea7bdfea3f78f77a38385c155e442ca47911bfe
+      CANDIDATE_SHA256: c7d6e0c12894c81c4350798a5691e2384036f19864b45b407b5c2eb34c869f55
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-021-home-mobile-hero-candidate-r6.txt
+      RESULT_FILE: .diagnostics/ux-css-important-021-home-mobile-hero-browser-r7.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: candidate
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: browser
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/c.log) 2>&1
-          git checkout --detach "$PARENT_SHA" >/dev/null
-          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          git show HEAD:.diagnostics/ux-css-important-021-home-remaining-inventory-r5.txt >/tmp/r5.txt 2>/dev/null || git show origin/$DIAG_BRANCH:.diagnostics/ux-css-important-021-home-remaining-inventory-r5.txt >/tmp/r5.txt
-          grep -q '^RESULT=PASS$' /tmp/r5.txt; grep -Fq 'INVENTORY SUMMARY|important=128|rules=53|staticDormantRules=1|staticDormantImportant=1|targetReachable=1' /tmp/r5.txt
+          set -euo pipefail; exec > >(tee /tmp/b.log) 2>&1
+          git checkout --detach "$PARENT_SHA" >/dev/null; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show origin/$DIAG_BRANCH:.diagnostics/ux-css-important-021-home-mobile-hero-candidate-r6.txt >/tmp/r6.txt; grep -q '^RESULT=PASS$' /tmp/r6.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/r6.txt
+          npm ci --ignore-scripts >/dev/null; npx playwright install chromium >/dev/null
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
           node <<'NODE'
-          const fs=require('fs'),path=require('path'),crypto=require('crypto');const target=process.env.TARGET_FILE,token='home-mobile-hero';
-          const walk=d=>fs.existsSync(d)?fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]}):[];
-          const files=[...fs.readdirSync('.').filter(f=>f.endsWith('.html')),...walk('assets/js').filter(f=>f.endsWith('.js'))];const esc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),re=new RegExp(`(^|[^A-Za-z0-9_-])${esc(token)}([^A-Za-z0-9_-]|$)`);const refs=files.filter(f=>re.test(fs.readFileSync(f,'utf8').replace(/\/\*[\s\S]*?\*\//g,'')));if(refs.length)throw Error('runtime refs '+refs.join(','));
-          let s=fs.readFileSync(target,'utf8');const before=(s.match(/!important\b/g)||[]).length;const rule=/html\.home-index-root body\.home-index-shell \.home-mobile-hero\s*\{\s*display:\s*block\s*!important;\s*padding:\s*0;\s*\}/m;const m=s.match(rule);if(!m)throw Error('exact rule not found');const hits=[...s.matchAll(/\.home-mobile-hero\s*\{\s*display:\s*block\s*!important;/g)].length;if(hits!==1)throw Error('target hits '+hits);const repl=m[0].replace('display: block !important;','display: block;');s=s.replace(rule,repl);const after=(s.match(/!important\b/g)||[]).length,b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex');if(before!==128||after!==127)throw Error(`${before}->${after}`);fs.writeFileSync('/tmp/candidate.css',s);console.log(`FAMILY PASS|token=${token}|runtimeRefs=0|ruleHits=1|wholeFileReachable=1|familyDormantStatic=1`);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${b.length}|important=128->127|priorityMarkersRemoved=1|familyImportant=1->0|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=0|familyDormant=1`)
+          const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync('/tmp/parent.css','utf8');const re=/html\.home-index-root body\.home-index-shell \.home-mobile-hero\s*\{\s*display:\s*block\s*!important;\s*padding:\s*0;\s*\}/m,m=s.match(re);if(!m)throw Error('rule');s=s.replace(re,m[0].replace('display: block !important;','display: block;'));const h=crypto.createHash('sha256').update(Buffer.from(s)).digest('hex');if(h!==process.env.CANDIDATE_SHA256)throw Error(h);fs.writeFileSync('/tmp/candidate.css',s)
           NODE
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/server.log 2>&1 & srv=$!; trap 'kill $srv 2>/dev/null || true; git checkout "$PARENT_SHA" -- "$TARGET_FILE" 2>/dev/null || true' EXIT; sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          (async()=>{const fs=require('fs'),crypto=require('crypto'),{chromium}=require('playwright');const widths=[359,379,380,381,390,430,560,561],target='/assets/css/pages/home/mobile-hero-feed.css',base='http://127.0.0.1:4173/index.html';
+          async function phase(label){const out=[];for(const w of widths){const browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:w,height:900},reducedMotion:'reduce'});const page=await context.newPage();let errors=0,loaded=false;page.on('pageerror',()=>errors++);page.on('request',r=>{try{if(new URL(r.url()).pathname===target)loaded=true}catch{}});await page.route('**/*',route=>{const u=route.request().url();if(u.startsWith('http://127.0.0.1:4173/'))route.continue();else route.abort()});await page.goto(base,{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});await page.waitForTimeout(120);const meta=await page.evaluate(()=>({heroHits:document.querySelectorAll('.home-mobile-hero').length,docW:document.documentElement.scrollWidth,docH:document.documentElement.scrollHeight,bodyW:Math.round(document.body.getBoundingClientRect().width),bodyH:Math.round(document.body.getBoundingClientRect().height),root:document.documentElement.className,body:document.body.className,renderer:typeof window.Doke?.publicServiceCard?.create==='function'?1:0}));const buf=await page.screenshot({fullPage:true});const shot=crypto.createHash('sha256').update(buf).digest('hex');out.push({w,errors,loaded,meta,shot});await browser.close()}console.log(`PHASE|label=${label}|states=${out.length}|pageErrors=${out.reduce((a,x)=>a+x.errors,0)}|targetLoadedStates=${out.filter(x=>x.loaded).length}|heroDomHits=${out.reduce((a,x)=>a+x.meta.heroHits,0)}|productRendererStates=${out.reduce((a,x)=>a+x.meta.renderer,0)}`);return out}
+          fs.copyFileSync('/tmp/parent.css',process.env.TARGET_FILE);const p=await phase('parent');fs.copyFileSync('/tmp/candidate.css',process.env.TARGET_FILE);const c=await phase('candidate');let metaDiffs=0,shotDiffs=0,loadDiffs=0,pageErrors=0,heroHits=0;for(let i=0;i<p.length;i++){pageErrors+=p[i].errors+c[i].errors;heroHits+=p[i].meta.heroHits+c[i].meta.heroHits;if(JSON.stringify(p[i].meta)!==JSON.stringify(c[i].meta))metaDiffs++;if(p[i].shot!==c[i].shot)shotDiffs++;if(p[i].loaded!==c[i].loaded)loadDiffs++}if(heroHits||metaDiffs||shotDiffs||loadDiffs||pageErrors)throw Error(`diff hero=${heroHits} meta=${metaDiffs} shot=${shotDiffs} load=${loadDiffs} err=${pageErrors}`);console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|states=${p.length}|page=index.html|viewports=${widths.join(',')}|heroDomHits=0|metadataDiffs=0|screenshotDiffs=0|loadedStateDiffs=0|pageErrors=0|targetLoadedStates=${p.filter(x=>x.loaded).length}/${c.filter(x=>x.loaded).length}|syntheticDOM=0|criteriaRelaxed=0`);fs.copyFileSync('/tmp/parent.css',process.env.TARGET_FILE)})().catch(e=>{console.error(e);process.exit(1)})
+          NODE
+          cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.candidate.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "CANDIDATE=${{ steps.candidate.outcome }}"; grep -E '^(FAMILY PASS|CANDIDATE IDENTITY)\|' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 400 /tmp/c.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home mobile hero candidate r6 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.browser.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(PHASE|BROWSER PASS|RESTORE PASS)\|' /tmp/b.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/b.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home mobile hero browser r7 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
