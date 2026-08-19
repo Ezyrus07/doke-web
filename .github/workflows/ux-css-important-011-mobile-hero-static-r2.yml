@@ -1,0 +1,200 @@
+name: UX CSS Important 011 Mobile Hero Static R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-011-mobile-hero-static-r2
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 58df6a9856874d541951430f9eab99e322da3c0f
+      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+      RESULT_FILE: .diagnostics/ux-css-important-011-mobile-hero-static-r2.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Analyze and materialize receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          set +e
+          node <<'NODE' >/tmp/analyze.log 2>&1
+          const fs = require('fs');
+          const path = require('path');
+          const crypto = require('crypto');
+          const file = process.env.TARGET_FILE;
+          const out = process.env.RESULT_FILE;
+          const src = fs.readFileSync(file, 'utf8');
+          const clean = src.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '));
+          const rawImportant = (src.match(/!important\b/g) || []).length;
+          const codeImportant = (clean.match(/!important\b/g) || []).length;
+          const lineOf = pos => 1 + src.slice(0,pos).split('\n').length - 1;
+          const normSel = s => s.trim().replace(/\s+/g,' ').replace(/\s*,\s*/g,',').replace(/\s*>\s*/g,'>').replace(/\s*\+\s*/g,'+').replace(/\s*~\s*/g,'~');
+          const normAt = s => s.trim().replace(/\s+/g,' ');
+          const decls = [];
+
+          function findClose(open, limit) {
+            let depth=1, quote=null, esc=false;
+            for (let i=open+1;i<limit;i++) {
+              const c=clean[i];
+              if (quote) {
+                if (esc) { esc=false; continue; }
+                if (c==='\\') { esc=true; continue; }
+                if (c===quote) quote=null;
+                continue;
+              }
+              if (c==='"' || c==="'") { quote=c; continue; }
+              if (c==='{') depth++;
+              else if (c==='}') { depth--; if (!depth) return i; }
+            }
+            throw new Error(`unclosed block ${open}`);
+          }
+
+          function parseRule(start,end,selector,atStack) {
+            let seg=start, quote=null, esc=false, paren=0, bracket=0;
+            for (let i=start;i<=end;i++) {
+              const c=i<end?clean[i]:';';
+              if (quote) {
+                if (esc) { esc=false; continue; }
+                if (c==='\\') { esc=true; continue; }
+                if (c===quote) quote=null;
+                continue;
+              }
+              if (c==='"' || c==="'") { quote=c; continue; }
+              if (c==='(') { paren++; continue; }
+              if (c===')') { if(paren) paren--; continue; }
+              if (c==='[') { bracket++; continue; }
+              if (c===']') { if(bracket) bracket--; continue; }
+              if (c===';' && !paren && !bracket) {
+                const raw=clean.slice(seg,i);
+                const colon=raw.indexOf(':');
+                if (colon>0) {
+                  const prop=raw.slice(0,colon).trim().toLowerCase();
+                  let value=raw.slice(colon+1).trim();
+                  if (/^(?:--[-\w]+|[-a-z][\w-]*)$/.test(prop)) {
+                    const important=/!important\s*$/i.test(value);
+                    value=value.replace(/\s*!important\s*$/i,'').trim();
+                    const leading=raw.search(/\S|$/);
+                    decls.push({selector,at:atStack.join(' || '),prop,value,important,pos:seg+Math.max(0,leading),line:lineOf(seg+Math.max(0,leading)),end:i});
+                  }
+                }
+                seg=i+1;
+              }
+            }
+          }
+
+          function parseBlock(start,end,atStack=[]) {
+            let cur=start;
+            while (cur<end) {
+              while (cur<end && /\s|;/.test(clean[cur])) cur++;
+              if (cur>=end) break;
+              let i=cur, quote=null, esc=false;
+              for (;i<end;i++) {
+                const c=clean[i];
+                if (quote) {
+                  if (esc) { esc=false; continue; }
+                  if (c==='\\') { esc=true; continue; }
+                  if (c===quote) quote=null;
+                  continue;
+                }
+                if (c==='"' || c==="'") { quote=c; continue; }
+                if (c==='{' || c===';' || c==='}') break;
+              }
+              if (i>=end || clean[i]==='}') break;
+              if (clean[i]===';') { cur=i+1; continue; }
+              const prelude=clean.slice(cur,i).trim();
+              const close=findClose(i,end);
+              if (prelude.startsWith('@')) parseBlock(i+1,close,[...atStack,normAt(prelude)]);
+              else parseRule(i+1,close,normSel(prelude),atStack.map(normAt));
+              cur=close+1;
+            }
+          }
+          parseBlock(0,clean.length,[]);
+
+          const importantDecls=decls.filter(d=>d.important);
+          const key=d=>`${d.at}\n${d.selector}\n${d.prop}`;
+          const groups=new Map();
+          for (const d of decls) {
+            const k=key(d); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(d);
+          }
+          const dominated=[];
+          for (const d of importantDecls) {
+            const later=(groups.get(key(d))||[]).find(x=>x.pos>d.pos && x.important);
+            if (later) dominated.push({...d,laterLine:later.line,laterValue:later.value});
+          }
+
+          let candidate=src;
+          const removals=[];
+          for (const d of [...dominated].sort((a,b)=>b.pos-a.pos)) {
+            const semi=src.indexOf(';',d.pos);
+            const end=semi>=0?semi:src.indexOf('}',d.pos);
+            if (end<0) throw new Error(`cannot locate declaration end at ${d.line}`);
+            const chunk=candidate.slice(d.pos,end);
+            const matches=[...chunk.matchAll(/!important\b/gi)];
+            if (matches.length!==1) throw new Error(`expected one important at line ${d.line}, got ${matches.length}`);
+            const absolute=d.pos+matches[0].index;
+            candidate=candidate.slice(0,absolute)+candidate.slice(absolute+matches[0][0].length);
+            removals.push({line:d.line,prop:d.prop});
+          }
+
+          const candidateImportant=(candidate.match(/!important\b/g)||[]).length;
+          if (candidateImportant!==rawImportant-dominated.length) throw new Error(`candidate count ${candidateImportant} expected ${rawImportant-dominated.length}`);
+          const parentHash=crypto.createHash('sha256').update(Buffer.from(src)).digest('hex');
+          const candidateHash=crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex');
+          const importers=[];
+          function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())walk(p);else if(e.isFile()&&e.name.endsWith('.css')&&p!==path.resolve(file)){const s=fs.readFileSync(p,'utf8');if(s.includes('mobile-hero-feed.css'))importers.push(path.relative(process.cwd(),p).replace(/\\/g,'/'));}}}
+          walk(path.resolve('assets/css'));
+
+          const lines=[];
+          lines.push(`PARENT_SHA=${process.env.PARENT_SHA}`);
+          lines.push(`TARGET_FILE=${file}`);
+          lines.push(`PARENT_SHA256=${parentHash}`);
+          lines.push(`PARENT_BYTES=${Buffer.byteLength(src)}`);
+          lines.push(`RAW_IMPORTANT=${rawImportant}`);
+          lines.push(`CODE_IMPORTANT=${codeImportant}`);
+          lines.push(`PARSED_DECLARATIONS=${decls.length}`);
+          lines.push(`PARSED_IMPORTANT=${importantDecls.length}`);
+          lines.push(`STRICTLY_DOMINATED=${dominated.length}`);
+          lines.push(`CANDIDATE_SHA256=${candidateHash}`);
+          lines.push(`CANDIDATE_BYTES=${Buffer.byteLength(candidate)}`);
+          lines.push(`CANDIDATE_IMPORTANT=${candidateImportant}`);
+          lines.push(`IMPORTERS=${importers.join(',')}`);
+          dominated.forEach((d,i)=>lines.push(`DOMINATED|rank=${i}|line=${d.line}|laterLine=${d.laterLine}|prop=${d.prop}|value=${JSON.stringify(d.value)}|laterValue=${JSON.stringify(d.laterValue)}|at=${JSON.stringify(d.at)}|selector=${JSON.stringify(d.selector)}`));
+          lines.push('DECLARATIONS_REMOVED=0');
+          lines.push('SELECTORS_REMOVED=0');
+          lines.push('VALUES_CHANGED=0');
+          lines.push('RESULT=PASS');
+          fs.mkdirSync(path.dirname(out),{recursive:true});
+          fs.writeFileSync(out,lines.join('\n')+'\n');
+          console.log(lines.join('\n'));
+          NODE
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ]; then
+            mkdir -p "$(dirname "$RESULT_FILE")"
+            {
+              echo "PARENT_SHA=$PARENT_SHA"
+              echo "TARGET_FILE=$TARGET_FILE"
+              echo "ANALYZE_EXIT=$code"
+              echo "RESULT=FAIL"
+              tail -n 120 /tmp/analyze.log || true
+            } > "$RESULT_FILE"
+          fi
+          cat "$RESULT_FILE"
+      - name: Publish receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          git commit -m 'diag: publish 011 mobile hero static r2 [skip ci]'
+          git push origin HEAD:refs/heads/diag/ux-css-important-011-mobile-hero-static-r2
