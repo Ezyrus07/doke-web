@@ -1,4 +1,4 @@
-name: UX CSS Important 014 Marketplace Contract Reach R2
+name: UX CSS Important 014 Marketplace Contract Reach R3
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -12,7 +12,7 @@ jobs:
       TARGET_FILE: assets/css/components/shell/marketplace-page-contract.css
       TARGET_BLOB: c6d0b3b9ffa9e30e1fca815ab1dbe3d607c4dcaa
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-014-marketplace-contract-reach-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-014-marketplace-contract-reach-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -54,12 +54,12 @@ jobs:
             const re=/@import\s+(?:url\(\s*)?["']([^"']+\.css(?:[?#][^"']*)?)["']/gi;
             while((m=re.exec(s))){const r=norm(f,m[1]); if(r&&fileSet.has(r)&&!reachable.has(r))stack.push(r);}
           }
-          let jsRefs=[];
+          const jsRefs=[];
           for(const f of all.filter(x=>x.startsWith('assets/js/')&&/\.(?:js|mjs|cjs)$/.test(x))){
             const s=text(f); if(s.includes('marketplace-page-contract')||s.includes(target))jsRefs.push(f);
           }
-          let runtimeTextRefs=[];
-          for(const f of all.filter(x=>(x.endsWith('.html')||x.startsWith('assets/css/')||x.startsWith('assets/js/'))&&f!==target)){
+          const runtimeTextRefs=[];
+          for(const f of all.filter(x=>(x.endsWith('.html')||x.startsWith('assets/css/')||x.startsWith('assets/js/'))&&x!==target)){
             const s=text(f); if(s.includes('marketplace-page-contract'))runtimeTextRefs.push(f);
           }
           console.log(`REACH GRAPH|activeHtml=${activeHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(target)?1:0}|jsRefs=${jsRefs.length}|runtimeTextRefs=${runtimeTextRefs.length}`);
@@ -76,7 +76,6 @@ jobs:
           const buf=Buffer.from(css),sha=crypto.createHash('sha256').update(buf).digest('hex');
           if(before!==104||after!==0||declarationsBefore!==declarationsAfter||selectorsBefore!==selectorsAfter)throw Error(`identity ${before}/${after}/${declarationsBefore}/${declarationsAfter}/${selectorsBefore}/${selectorsAfter}`);
           console.log(`CANDIDATE IDENTITY|sha256=${sha}|bytes=${buf.length}|important=104->0|priorityMarkersRemoved=104|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`);
-          console.log('RESULT=PASS');
           NODE
       - name: publish
         if: always()
@@ -88,4 +87,4 @@ jobs:
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add "$RESULT_FILE"; git commit -m 'diag: publish 014 marketplace contract reach r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          git add "$RESULT_FILE"; git commit -m 'diag: publish 014 marketplace contract reach r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
