@@ -1,0 +1,31 @@
+name: Doke UX CSS Important 010 Static R4
+on: [push]
+permissions: {contents: write}
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 839d20efdaf28d99508397722fb61cedafcdb556
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: 46ede4f081a686155ab4035581cbd8a796a831c9
+      DIAG_BRANCH: diag/ux-css-important-010-static-r4
+      RESULT_FILE: .diagnostics/ux-css-important-010-static-r4.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/s.log) 2>&1; test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; git checkout "$TARGET_SHA" -- .; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8');if((s.match(/!important\b/g)||[]).length!==4)throw Error('parent');function strip(sel,prop){const i=s.indexOf(sel+' {'),b=s.indexOf('{',i),e=s.indexOf('}',b);if(i<0)throw Error(sel);let z=s.slice(b+1,e),re=new RegExp('('+prop+'\\s*:[^;]+?)\\s*!important\\b');if(!re.test(z))throw Error(prop);z=z.replace(re,'$1');s=s.slice(0,b+1)+z+s.slice(e)}strip(':is(.service-grid, .service-grid--compact, .service-cards-grid, .profile-services-results):not([data-more-services-grid])','grid-template-columns');strip(':is(.comparison-card__visual, .profile-posts-stack .comparison-card__visual, body.home-index-shell .comparison-card__visual)','aspect-ratio');const h=crypto.createHash('sha256').update(Buffer.from(s)).digest('hex');if((s.match(/!important\b/g)||[]).length!==2)throw Error('candidate');const gap=/gap:\s*14px\s*!important/.test(s),min=/min-height:\s*var\(--doke-mobile-card-media-height\)\s*!important/.test(s);if(!gap||!min)throw Error('preserved markers');fs.writeFileSync('/tmp/candidate.css',s);console.log(`CANDIDATE IDENTITY|sha256=${h}|bytes=${Buffer.byteLength(s)}|important=4->2|priorityMarkersRemoved=2|declarationsRemoved=0|preserved=gap,min-height`);console.log('PROOF TRANSFER INPUT|ranking=32199969997|grid=32200522375|comparison=32200550447|negative=32200131408')
+          NODE
+      - id: restore
+        if: always()
+        run: set -euo pipefail; git reset --hard "$TARGET_SHA" >/dev/null; git clean -fdx >/dev/null; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "TARGET_SHA=$TARGET_SHA"; echo "STATIC=${{ steps.proof.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE IDENTITY|PROOF TRANSFER INPUT)\|' /tmp/s.log || true; echo "RESULT=$result"; } >/tmp/out; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 010 static r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
