@@ -1,4 +1,4 @@
-name: UX CSS Important 021 Home Remaining Priority Reach Inventory R2
+name: UX CSS Important 021 Home Remaining Priority Reach Inventory R3
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -10,9 +10,9 @@ jobs:
     env:
       PARENT_SHA: 6aa5b028eb6ec7398ae35315bfffc79396955abd
       TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
-      TARGET_BLOB: 8a4f9d25f4711220ff1c509886a5d26ca48e2f16
+      TARGET_BLOB: fea7bdfea3f78f77a38385c155e442ca47911bfe
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-021-home-remaining-reach-inventory-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-021-home-remaining-reach-inventory-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -52,7 +52,7 @@ jobs:
           if(rootHtml.length!==33||direct.size!==51||reachable.size!==407)throw Error(`graph baseline ${rootHtml.length}/${direct.size}/${reachable.size}`);
           const cssText=fs.readFileSync(TARGET,'utf8'),ast=postcss.parse(cssText,{from:TARGET});let total=0,rules=0,dormantRules=0,dormantImportant=0;
           const sourceText=cleanRuntime.map(([,s])=>s).join('\n');
-          const tokenPresent=t=>new RegExp(`(^|[^A-Za-z0-9_-])${t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Za-z0-9_-]|$)`).test(sourceText);
+          const esc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const tokenPresent=t=>new RegExp(`(^|[^A-Za-z0-9_-])${esc(t)}([^A-Za-z0-9_-]|$)`).test(sourceText);
           ast.walkRules(rule=>{const imps=rule.nodes.filter(n=>n.type==='decl'&&n.important);if(!imps.length)return;rules++;total+=imps.length;const branches=postcss.list.comma(rule.selector);const branchData=branches.map(sel=>{const tokens=[...sel.matchAll(/\.([A-Za-z_-][A-Za-z0-9_-]*)/g)].map(m=>m[1]);const uniq=[...new Set(tokens)];const missing=uniq.filter(t=>!tokenPresent(t));return {sel,tokens:uniq,missing}});const staticDormant=branchData.length>0&&branchData.every(b=>b.tokens.length>0&&b.missing.length>0);if(staticDormant){dormantRules++;dormantImportant+=imps.length}const at=[];for(let p=rule.parent;p&&p.type!=='root';p=p.parent)if(p.type==='atrule')at.unshift(`@${p.name} ${p.params}`);console.log(`RULE|important=${imps.length}|staticDormant=${staticDormant?1:0}|media=${at.join(' > ').replaceAll('|','/')}|selector=${rule.selector.replaceAll('\n',' ').replaceAll('|','/')}|missing=${branchData.map(b=>b.missing.join(',')).join(';')}`)});
           if(total!==128)throw Error(`important parsed ${total}`);console.log(`INVENTORY SUMMARY|important=${total}|rules=${rules}|staticDormantRules=${dormantRules}|staticDormantImportant=${dormantImportant}|targetReachable=${reachable.has(TARGET)?1:0}`);
           NODE
@@ -61,5 +61,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.inspect.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$(grep '^ACTUAL_BLOB=' /tmp/i.log | tail -1 | cut -d= -f2)"; echo "INSPECT=${{ steps.inspect.outcome }}"; grep -E '^(REACH GRAPH|IMPORTER|RULE|INVENTORY SUMMARY)\|' /tmp/i.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/i.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home remaining reach inventory r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$(grep '^ACTUAL_BLOB=' /tmp/i.log | tail -1 | cut -d= -f2)"; echo "INSPECT=${{ steps.inspect.outcome }}"; echo 'R2_NOTE=discarded-harness-only-wrong-target-blob-guard'; grep -E '^(REACH GRAPH|IMPORTER|RULE|INVENTORY SUMMARY)\|' /tmp/i.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/i.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 021 home remaining reach inventory r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
