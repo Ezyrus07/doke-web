@@ -1,0 +1,47 @@
+name: Doke UX CSS Important 010 Promote R1
+on: [push]
+permissions: {contents: write}
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 839d20efdaf28d99508397722fb61cedafcdb556
+      TARGET_FILE: assets/css/components/cards/mobile-card-contract.css
+      TARGET_BLOB: 46ede4f081a686155ab4035581cbd8a796a831c9
+      CANDIDATE_SHA256: 9945b453b4326a9617bc2b1ec1aec757ef4d720f76bfa1a7bde9e868c2a804dc
+      PERM_BRANCH: ux/ux-css-important-010-mobile-card-grid-aspect-priority
+      DIAG_BRANCH: diag/ux-css-important-010-promote-r1
+      RESULT_FILE: .diagnostics/ux-css-important-010-promotion-r1.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - id: promote
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail; exec > >(tee /tmp/p.log) 2>&1
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          remote_before="$(git ls-remote origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"; test "$remote_before" = "$TARGET_SHA"
+          git reset --hard "$TARGET_SHA" >/dev/null; test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8');if((s.match(/!important\b/g)||[]).length!==4)throw Error('parent');function strip(sel,prop){const i=s.indexOf(sel+' {'),b=s.indexOf('{',i),e=s.indexOf('}',b);if(i<0)throw Error(sel);let z=s.slice(b+1,e),re=new RegExp('('+prop+'\\s*:[^;]+?)\\s*!important\\b');if(!re.test(z))throw Error(prop);z=z.replace(re,'$1');s=s.slice(0,b+1)+z+s.slice(e)}strip(':is(.service-grid, .service-grid--compact, .service-cards-grid, .profile-services-results):not([data-more-services-grid])','grid-template-columns');strip(':is(.comparison-card__visual, .profile-posts-stack .comparison-card__visual, body.home-index-shell .comparison-card__visual)','aspect-ratio');const z=Buffer.from(s),h=crypto.createHash('sha256').update(z).digest('hex');if((s.match(/!important\b/g)||[]).length!==2||h!==process.env.CANDIDATE_SHA256)throw Error('candidate');if(!/gap:\s*14px\s*!important/.test(s)||!/min-height:\s*var\(--doke-mobile-card-media-height\)\s*!important/.test(s))throw Error('preserved');fs.writeFileSync(f,s);console.log(`CANDIDATE PASS|sha256=${h}|bytes=${z.length}|important=4->2|removed=2|preserved=gap,min-height`)
+          NODE
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'2\t2\t'"$TARGET_FILE"; git diff --check
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$TARGET_FILE"; git commit -m 'UX-CSS-IMPORTANT-010: remove redundant mobile-card grid and aspect priorities' >/dev/null
+          new_sha="$(git rev-parse HEAD)"; new_tree="$(git rev-parse HEAD^{tree})"; new_blob="$(git rev-parse HEAD:$TARGET_FILE)"
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"; test "$(git diff --name-only "$TARGET_SHA"..HEAD)" = "$TARGET_FILE"; test "$(git diff --numstat "$TARGET_SHA"..HEAD)" = $'2\t2\t'"$TARGET_FILE"
+          remote_check="$(git ls-remote origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"; test "$remote_check" = "$TARGET_SHA"
+          git push origin "HEAD:refs/heads/$PERM_BRANCH" >/dev/null
+          remote_after="$(git ls-remote origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"; test "$remote_after" = "$new_sha"
+          echo "PARENT_SHA=$TARGET_SHA"; echo "REMOTE_BEFORE=$remote_before"; echo "NEW_SHA=$new_sha"; echo "NEW_TREE=$new_tree"; echo "PARENT_BLOB=$TARGET_BLOB"; echo "NEW_BLOB=$new_blob"; echo "SHA256=$CANDIDATE_SHA256"; echo 'BYTES=9542'; echo 'DIFF=1 file +2/-2'; echo 'PROOF_RUNS=ranking:32199969997,negative:32200131408,grid:32200522375,comparison:32200550447,static:32200806972,visual:32200705638,governance:32200869603'
+      - id: restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; git clean -fdx >/dev/null
+      - name: publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail; result=FAIL; if test '${{ steps.promote.outcome }}' = success && test '${{ steps.restore.outcome }}' = success; then result=PASS; fi; { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PROMOTE=${{ steps.promote.outcome }}"; echo "RESTORE=${{ steps.restore.outcome }}"; grep -E '^(CANDIDATE PASS|PARENT_SHA=|REMOTE_BEFORE=|NEW_SHA=|NEW_TREE=|PARENT_BLOB=|NEW_BLOB=|SHA256=|BYTES=|DIFF=|PROOF_RUNS=)' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 180 /tmp/p.log || true; fi; } >/tmp/out; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 010 promotion r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
