@@ -4,135 +4,13 @@ on:
   pull_request:
     branches: [rep/rep-001-baseline-audit]
     paths:
-      - 'backend/modules/communities/route-handlers.js'
-      - 'config/com-b02u-command-handler-route-handler-orchestration-surface-integration.json'
-      - 'scripts/test-com-b02u-command-handler-route-handler-orchestration-surface-integration.js'
       - '.github/workflows/com-b02u-command-handler-route-handler-orchestration-surface-integration.yml'
-      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
-      - 'reports/generated/domain-completion-matrix-report.json'
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: read
 
-concurrency:
-  group: com-b02u-command-handler-route-handler-orchestration-surface-integration-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
-  certify:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - name: Checkout exact PR head
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-
-      - name: Frozen B02T predecessor and exact repository-only scope
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE=9d5e8bf18910a771d3d64923266713c76c7ff8d4
-          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
-          git merge-base --is-ancestor "$BASE" HEAD
-
-          test "$(git rev-parse "$BASE":backend/modules/communities/route-handlers.js)" = "de55f9f2782aefacbef4c60fb5ac3d3f4c7293aa"
-          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-repository-orchestration.js)" = "f094ddc01a3f05975794bafb925d64f146a51ea2"
-          test "$(git rev-parse HEAD:config/com-b02t-command-handler-repository-orchestration.json)" = "fffa465c28b8a289ee8d0fdd6fcf529467d3df1e"
-          test "$(git rev-parse HEAD:scripts/test-com-b02t-command-handler-repository-orchestration.js)" = "27a2135a51af05a6737a10c256e81fad147285a3"
-          test "$(git rev-parse HEAD:.github/workflows/com-b02t-command-handler-repository-orchestration.yml)" = "d349159dd8137db3292dbae651800aa09fa7d761"
-          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-repository-binding-surface.js)" = "0778690aaaf428247159a08eac83a38796888f41"
-          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
-          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
-          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
-
-          required="$(printf '%s\n' \
-            .github/workflows/com-b02u-command-handler-route-handler-orchestration-surface-integration.yml \
-            backend/modules/communities/route-handlers.js \
-            config/com-b02u-command-handler-route-handler-orchestration-surface-integration.json \
-            scripts/test-com-b02u-command-handler-route-handler-orchestration-surface-integration.js | sort)"
-          allowed="$(printf '%s\n' \
-            .github/workflows/com-b02u-command-handler-route-handler-orchestration-surface-integration.yml \
-            backend/modules/communities/route-handlers.js \
-            config/com-b02u-command-handler-route-handler-orchestration-surface-integration.json \
-            docs/DOMAIN-COMPLETION-MATRIX.md \
-            reports/generated/domain-completion-matrix-report.json \
-            scripts/test-com-b02u-command-handler-route-handler-orchestration-surface-integration.js | sort)"
-          actual="$(git diff --name-only "$BASE" HEAD | sort)"
-          while IFS= read -r path; do
-            grep -Fxq "$path" <<<"$actual"
-          done <<<"$required"
-          unexpected="$(comm -23 <(printf '%s\n' "$actual") <(printf '%s\n' "$allowed"))"
-          test -z "$unexpected"
-
-      - name: Syntax and semantic route-handler orchestration integration conformance
-        run: |
-          node --check backend/modules/communities/route-handlers.js
-          node --check scripts/test-com-b02u-command-handler-route-handler-orchestration-surface-integration.js
-          node -e "JSON.parse(require('fs').readFileSync('config/com-b02u-command-handler-route-handler-orchestration-surface-integration.json','utf8'))"
-          node scripts/test-com-b02u-command-handler-route-handler-orchestration-surface-integration.js
-
-      - name: Active execute handlers remain blocked and repository-only helpers use B02T
-        shell: bash
-        run: |
-          set -euo pipefail
-          TARGET=backend/modules/communities/route-handlers.js
-          grep -F "require('./community-command-handler-repository-orchestration')" "$TARGET"
-          ! grep -F "require('./community-command-handler-repository-binding-surface')" "$TARGET"
-          grep -F ".beginRepositoryOnlyCommandHandlerOrchestration(" "$TARGET"
-          grep -F ".resumeRepositoryOnlyCommandHandlerOrchestration(" "$TARGET"
-
-          node - <<'NODE'
-          const handlers = require('./backend/modules/communities/route-handlers');
-          const orchestration = require('./backend/modules/communities/community-command-handler-repository-orchestration');
-          const loader = require('./backend/shared/http/module-route-loader');
-          const cfg = require('./config/com-b02u-command-handler-route-handler-orchestration-surface-integration.json');
-
-          for (const name of ['composeMembershipCommandRepositoryOnly','composeGovernanceCommandRepositoryOnly','composeContentCommandRepositoryOnly']) {
-            const result = handlers[name]({});
-            if (result.contractId !== orchestration.CONTRACT_ID || result.boundaryId !== orchestration.BOUNDARY_ID) throw new Error(`B02U_B02T_DELEGATION_DRIFT:${name}`);
-            if (result.repositoryOperationInvocationAuthority !== false || result.repositoryOperationInvoked !== false || result.rpcExecuted !== false || result.networkExecuted !== false || result.runtimeActivated !== false) throw new Error(`B02U_REMOTE_EFFECT_DRIFT:${name}`);
-          }
-          for (const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand']) {
-            if (loader.getHandler('communities', name) !== handlers[name]) throw new Error(`B02U_ACTIVE_HANDLER_DRIFT:${name}`);
-          }
-          for (const name of ['beginRepositoryOnlyCommandHandlerOrchestration','resumeRepositoryOnlyCommandHandlerOrchestration']) {
-            if (loader.getHandler('communities', name) !== null) throw new Error(`B02U_RUNTIME_EXPOSED:${name}`);
-          }
-          if (cfg.authorization.type !== 'explicit_single_use_repository_only' || cfg.authorization.singleUse !== true || cfg.authorization.consumedByBoundary !== 'COM-B02U' || cfg.authorization.genericNextAuthorized !== false) throw new Error('B02U_AUTHORIZATION_DRIFT');
-          if (cfg.authority.routeHandlerRepositoryOnlyOrchestrationBindingAuthority !== true) throw new Error('B02U_AUTHORITY_DRIFT');
-          for (const key of ['activeExecuteHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','routeRegistryMutationAuthority','credentialSourceBindingAuthority','credentialReadAuthority','repositoryOperationInvocationAuthority','rpcExecutionAuthority','networkAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','migrationApplicationAuthority','runtimeActivationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority']) {
-            if (cfg.authority[key] !== false) throw new Error(`B02U_FORBIDDEN_AUTHORITY:${key}`);
-          }
-          if (cfg.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || cfg.functionalCheckpoint.exactRootCauseProven !== false || cfg.functionalCheckpoint.r5iCreated !== false || cfg.functionalCheckpoint.r5iInferred !== false) throw new Error('B02U_FUNCTIONAL_CHECKPOINT_DRIFT');
-          if (cfg.nextActionAfterCertification !== 'stop_and_require_fresh_explicit_authorization_before_any_subsequent_boundary') throw new Error('B02U_NEXT_ACTION_DRIFT');
-          NODE
-
-          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-repository-orchestration.js)" = "f094ddc01a3f05975794bafb925d64f146a51ea2"
-          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
-          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
-          ! git diff --name-only 9d5e8bf18910a771d3d64923266713c76c7ff8d4 HEAD | grep '^supabase/migrations/'
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Domain Completion Matrix
-        run: npm run audit:domain-completion-matrix
-
-      - name: Agent Governance
-        run: npm run audit:agent-governance
-
-      - name: Diff hygiene
-        run: git diff --check 9d5e8bf18910a771d3d64923266713c76c7ff8d4 HEAD
-
   materialize:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -155,12 +33,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          CARRIER_PARENT=e77ee6dce17cbbafdc88fd1392a7fd7d0f1856c8
+          CARRIER_PARENT=3cebcfe97a3cff95edb54d86ea30f85e304ae4e8
           CANDIDATE=071899787035ad45b0733127423ea327af50bda9
           WORKFLOW=.github/workflows/com-b02u-command-handler-route-handler-orchestration-surface-integration.yml
           TEMP=.github/workflows/com-b02u-command-handler-route-handler-orchestration-surface-integration-matrix-materialization-temp.yml
           test "$(git rev-parse HEAD^)" = "$CARRIER_PARENT"
-          test "$(git rev-parse HEAD^^^)" = "$CANDIDATE"
+          test "$(git rev-parse HEAD^^^^)" = "$CANDIDATE"
           test "$(git diff --name-only HEAD^ HEAD)" = "$WORKFLOW"
           test -f "$TEMP"
           test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
@@ -180,15 +58,16 @@ jobs:
           TEMP=.github/workflows/com-b02u-command-handler-route-handler-orchestration-surface-integration-matrix-materialization-temp.yml
           git show "$CANDIDATE:$WORKFLOW" > "$WORKFLOW"
           rm "$TEMP"
-          npm run write:domain-completion-matrix
+          npm run write:domain-completion-matrix >/tmp/matrix-write.log
           git diff --exit-code -- config/domain-completion-matrix.json
           expected="$(printf '%s\n' "$WORKFLOW" "$TEMP" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
           actual="$(git diff --name-only | sort)"
           test "$actual" = "$expected"
           test "$(git hash-object "$WORKFLOW")" = "96bbfd7d93cdb423e2d6fcdb7b070f1c38e73ec5"
-          npm run audit:domain-completion-matrix
-          npm run audit:agent-governance
+          npm run audit:domain-completion-matrix >/tmp/matrix-audit.log
+          npm run audit:agent-governance >/tmp/agent-governance.log
           git diff --check
+          echo 'B02U_MATRIX_AND_GOVERNANCE_AUDITS=PASS'
 
       - name: Fail-closed B02U assertions
         shell: bash
@@ -207,23 +86,17 @@ jobs:
           grep -F "executableReferencesExposed: false" "$ORCHESTRATION"
           grep -F "runtimeActivated: false" "$ORCHESTRATION"
           ! git diff --name-only 9d5e8bf18910a771d3d64923266713c76c7ff8d4 HEAD | grep '^supabase/migrations/'
+          echo 'B02U_FAIL_CLOSED_ASSERTIONS=PASS'
 
-      - name: Prepare immutable final commit without moving branch
+      - name: Emit deterministic derivatives for external finalization
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          WORKFLOW=.github/workflows/com-b02u-command-handler-route-handler-orchestration-surface-integration.yml
-          TEMP=.github/workflows/com-b02u-command-handler-route-handler-orchestration-surface-integration-matrix-materialization-temp.yml
-          parent="$(git rev-parse HEAD)"
-          base_tree="$(git rev-parse HEAD^{tree})"
-          md_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' docs/DOMAIN-COMPLETION-MATRIX.md | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
-          report_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' reports/generated/domain-completion-matrix-report.json | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
-          tree="$(jq -n --arg base "$base_tree" --arg workflow "$WORKFLOW" --arg workflowSha "96bbfd7d93cdb423e2d6fcdb7b070f1c38e73ec5" --arg temp "$TEMP" --arg md "$md_blob" --arg report "$report_blob" '{base_tree:$base,tree:[{path:$workflow,mode:"100644",type:"blob",sha:$workflowSha},{path:$temp,mode:"100644",type:"blob",sha:null},{path:"docs/DOMAIN-COMPLETION-MATRIX.md",mode:"100644",type:"blob",sha:$md},{path:"reports/generated/domain-completion-matrix-report.json",mode:"100644",type:"blob",sha:$report}]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/trees" --input - --jq .sha)"
-          commit="$(jq -n --arg message "docs(com): synchronize Matrix derivatives for B02U route-handler orchestration integration" --arg tree "$tree" --arg parent "$parent" '{message:$message,tree:$tree,parents:[$parent]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/commits" --input - --jq .sha)"
-          test "$(git rev-parse HEAD)" = "$parent"
-          printf 'PREPARED_COMMIT_SHA=%s\n' "$commit"
-          printf 'PREPARED_TREE_SHA=%s\n' "$tree"
-          printf 'MARKDOWN_BLOB_SHA=%s\n' "$md_blob"
-          printf 'REPORT_BLOB_SHA=%s\n' "$report_blob"
+          echo "MARKDOWN_SHA256=$(sha256sum docs/DOMAIN-COMPLETION-MATRIX.md | cut -d' ' -f1)"
+          echo "REPORT_SHA256=$(sha256sum reports/generated/domain-completion-matrix-report.json | cut -d' ' -f1)"
+          echo 'B02U_MARKDOWN_GZIP_BASE64_BEGIN'
+          gzip -9 -c docs/DOMAIN-COMPLETION-MATRIX.md | base64 -w0 | fold -w 60000
+          echo 'B02U_MARKDOWN_GZIP_BASE64_END'
+          echo 'B02U_REPORT_GZIP_BASE64_BEGIN'
+          gzip -9 -c reports/generated/domain-completion-matrix-report.json | base64 -w0 | fold -w 60000
+          echo 'B02U_REPORT_GZIP_BASE64_END'
