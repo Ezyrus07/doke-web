@@ -1,83 +1,52 @@
-name: UX CSS Important 019 iPad Safari Permanent Cert R6
+name: UX CSS Important Post 019 Fresh Ranking R1
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  certify019:
+  rank020:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
-      PARENT_SHA: 8dc95bcda2d42cd531314d981fadb6263924e69d
-      PERM_SHA: ce77f61a6745cff6d92314db4b144cb6ac38fe1e
-      PERM_TREE: 899038df8b5bd801c00960071802f30c8cf983eb
-      TARGET_FILE: assets/css/components/shell/ipad-safari-scroll.css
-      PARENT_BLOB: ea0aa4d31a5ff383b800f233bcc67794e5f30626
-      PERM_BLOB: 67627bf2e209ec66d784a044c3444e7f2dfac427
-      CANDIDATE_SHA256: 46177ce6f08abc0af038a01c7b1abf1289964f2c127e10fb63923ea2764d3dca
-      PERM_BRANCH: ux/ux-css-important-019-ipad-safari-dormant-priority
+      PARENT_SHA: ce77f61a6745cff6d92314db4b144cb6ac38fe1e
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-019-ipad-safari-permanent-cert-r6.txt
+      RESULT_FILE: .diagnostics/ux-css-important-post-019-fresh-ranking-r1.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: certify
+      - id: rank
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/c.log) 2>&1
-          test "$(git rev-parse --is-shallow-repository)" = false
-          git show HEAD:.diagnostics/ux-css-important-019-ipad-safari-reach-r2.txt >/tmp/reach.txt
-          git show HEAD:.diagnostics/ux-css-important-019-ipad-safari-visual-r3.txt >/tmp/browser.txt
-          git show HEAD:.diagnostics/ux-css-important-019-ipad-safari-governance-r4.txt >/tmp/gov.txt
-          grep -q '^RESULT=PASS$' /tmp/reach.txt; grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0|importers=0' /tmp/reach.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/reach.txt
-          grep -q '^RESULT=PASS$' /tmp/browser.txt; grep -Fq "sha256=$CANDIDATE_SHA256" /tmp/browser.txt; grep -Fq 'metadataDiffs=0|screenshotDiffs=0|pageErrors=0|targetStylesheetLoads=0' /tmp/browser.txt; grep -Fq 'portraitTabletCoverage=1' /tmp/browser.txt
-          grep -q '^RESULT=PASS$' /tmp/gov.txt; grep -Fq "candidateHash=$CANDIDATE_SHA256" /tmp/gov.txt; grep -Fq 'IMPORTANT PASS|total=10575|outsideServiceCard=10513|files=28|delta=-65' /tmp/gov.txt
-          echo 'PROOF TRANSFER PASS|reach=current-pass|browser=current-pass|governance=current-pass|candidateHash=exact|runIdCoupling=0|promotionReceiptCoupling=0'
-          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null; test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$PERM_SHA"
-          git checkout --detach "$PERM_SHA" >/dev/null
-          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$PERM_TREE"; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$PERM_BLOB"; test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
-          test "$(git rev-list --count "$PARENT_SHA..$PERM_SHA")" -eq 1; test "$(git diff --name-only "$PARENT_SHA" "$PERM_SHA" | wc -l)" -eq 1; test "$(git diff --name-only "$PARENT_SHA" "$PERM_SHA")" = "$TARGET_FILE"; test "$(git diff --numstat "$PARENT_SHA" "$PERM_SHA" -- "$TARGET_FILE")" = $'65\t65\t'"$TARGET_FILE"
-          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
-          node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto');let s=fs.readFileSync('/tmp/parent.css','utf8'),before=(s.match(/!important\b/g)||[]).length;s=s.replace(/\s*!important\b/g,'');const b=Buffer.from(s),h=crypto.createHash('sha256').update(b).digest('hex'),after=(s.match(/!important\b/g)||[]).length;if(before!==65||after!==0||h!==process.env.CANDIDATE_SHA256)throw Error(`${before}/${after}/${h}`);fs.writeFileSync('/tmp/rebuilt.css',s);console.log(`RECONSTRUCTION PASS|sha256=${h}|bytes=${b.length}|important=65->0|removed=65|byteIdentical=1|browserProofTransfer=hash-identical|wholeFileDormant=1`)
-          NODE
-          cmp -s /tmp/rebuilt.css "$TARGET_FILE"; test "$(grep -o '!important' "$TARGET_FILE" | wc -l || true)" -eq 0
+          set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
+          git checkout --detach "$PARENT_SHA" >/dev/null
           npm ci --ignore-scripts >/dev/null
-          node scripts/generate-responsive-index-baseline.js >/dev/null
-          npm run test:responsive-contract | tee /tmp/responsive.log
-          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
-          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|state=permanent'
-          npm run audit:agent-governance >/dev/null
-          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
-          node <<'NODE'
-          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
-          NODE
-          npm run audit:shared-app-header-contract >/dev/null
-          npm run audit:mobile-shell-location-contract >/dev/null
-          npm run audit:responsive-boundaries >/dev/null
-          npm run audit:duplicate-assets | tee /tmp/dup.log
-          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
-          npm run audit:domain-completion-matrix | tee /tmp/domain.log
-          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
-          git checkout "$PERM_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
-          npm run audit:active-legacy-structures >/dev/null
           npm run audit:important-reduction-plan >/dev/null
           npm run audit:global-css-design-system >/dev/null
           node <<'NODE'
-          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary,ps=p.summary;if(s.totalImportant!==10575||s.outsideServiceCardImportant!==10513||s.filesWithImportant!==28)throw Error(`important ${JSON.stringify(s)}`);if(ps.affectedFiles!==27||ps.totalImportantOutsideServiceCard!==10513||ps.byRisk?.['high-baseline-required']!==10505||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error(`plan ${JSON.stringify(ps)}`);console.log('IMPORTANT PASS|total=10575|outsideServiceCard=10513|files=28');console.log('QUEUE PASS|affectedFiles=27|highBaselineRequired=10505|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6');
+          const fs=require('fs'),path=require('path');
+          const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));
+          const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
+          const s=b.summary,ps=p.summary;
+          if(s.totalImportant!==10575||s.outsideServiceCardImportant!==10513||s.filesWithImportant!==28)throw Error('baseline '+JSON.stringify(s));
+          if(ps.affectedFiles!==27||ps.totalImportantOutsideServiceCard!==10513||ps.byRisk?.['high-baseline-required']!==10505||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error('plan '+JSON.stringify(ps));
+          console.log(`PLAN SUMMARY|affectedFiles=${ps.affectedFiles}|outside=${ps.totalImportantOutsideServiceCard}|high=${ps.byRisk['high-baseline-required']}|medium=${ps.byRisk['medium-baseline-required']}|low=${ps.byRisk['low-review-candidate']}`);
+          console.log(`BASELINE SUMMARY|total=${s.totalImportant}|outside=${s.outsideServiceCardImportant}|files=${s.filesWithImportant}`);
+          const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]});
+          const inv=walk('assets/css').filter(f=>f.endsWith('.css')).map(file=>({file:file.replaceAll('\\','/'),important:(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length})).filter(x=>x.important).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
+          const total=inv.reduce((a,x)=>a+x.important,0);if(total!==10575||inv.length!==28)throw Error(`inventory ${total}/${inv.length}`);
+          console.log(`COUNT INVENTORY|files=${inv.length}|total=${total}`);for(const x of inv)console.log(`COUNT FILE|important=${x.important}|file=${x.file}`);
+          const highs=new Set();
+          const scan=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){for(const x of o)scan(x);return;}const vals=Object.values(o);if(vals.some(v=>v==='high-baseline-required'))for(const v of vals)if(typeof v==='string'&&v.startsWith('assets/css/')&&v.endsWith('.css'))highs.add(v);for(const v of vals)scan(v)};scan(p);
+          const ranked=[...highs].map(file=>({file,important:inv.find(x=>x.file===file)?.important||0})).filter(x=>x.important>0).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
+          if(!ranked.length)throw Error('no ranked high');for(const x of ranked)console.log(`PLAN FILE|important=${x.important}|risk=high-baseline-required|file=${x.file}`);console.log(`NEXT HIGH|important=${ranked[0].important}|file=${ranked[0].file}`);
           NODE
-          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
-          node <<'NODE'
-          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
-          NODE
-          echo "AUDIT_EXIT=$code"; echo 'CERTIFICATION PASS|fullHistory=1|oneCommit=1|oneFile=1|reach=whole-file-dormant|browserMetadataDiffs=0|browserScreenshotDiffs=0|browserPageErrors=0|targetStylesheetLoads=0|portraitTabletCoverage=1|browserProofTransfer=hash-identical|duplicates=0/0|domain=23/15/2.91/12'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.certify.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PERM_SHA=$PERM_SHA"; echo "PARENT_SHA=$PARENT_SHA"; echo "PERM_TREE=$PERM_TREE"; echo "PERM_BLOB=$PERM_BLOB"; echo "CERTIFY=${{ steps.certify.outcome }}"; grep -E '^(PROOF TRANSFER PASS|RECONSTRUCTION PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|CERTIFICATION PASS)\|' /tmp/c.log || true; grep '^AUDIT_EXIT=' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/c.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 019 ipad safari permanent cert r6 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.rank.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "RANK=${{ steps.rank.outcome }}"; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|NEXT HIGH)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 360 /tmp/r.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish post-019 fresh important ranking r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
