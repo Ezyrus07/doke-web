@@ -1,80 +1,91 @@
-name: UX CSS Important Post 013 Fresh Ranking R1
+name: UX CSS Important 014 Marketplace Contract Reach R2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  rank014:
+  reach014:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       TARGET_SHA: 28877228c2cbf0478b7a0202d9bde786da14cdd4
-      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
-      TARGET_BLOB: fea7bdfea3f78f77a38385c155e442ca47911bfe
-      TARGET_SHA256: 8fb214cc0bb9792a8a26bc646748e1aa5e60211e77f625b9fadc4b6785729fc4
+      TARGET_FILE: assets/css/components/shell/marketplace-page-contract.css
+      TARGET_BLOB: c6d0b3b9ffa9e30e1fca815ab1dbe3d607c4dcaa
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-post-013-fresh-ranking-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-014-marketplace-contract-reach-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: rank
+      - id: reach
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/rank.log) 2>&1
-          test "$(git rev-parse --is-shallow-repository)" = false
+          set -euo pipefail; exec > >(tee /tmp/reach.log) 2>&1
           git cat-file -e "$TARGET_SHA^{commit}"
           test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
           git checkout "$TARGET_SHA" -- .
           test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
-          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
-          test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 128
-          echo 'PREFLIGHT PASS|parent=013|targetBlob=exact|targetSha256=exact|targetImportant=128|productMutation=0'
-          npm ci --ignore-scripts
-          npm run audit:important-reduction-plan
-          npm run audit:global-css-design-system
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 104
+          echo 'PREFLIGHT PASS|parent=013|targetBlob=exact|targetImportant=104|productMutation=0'
           node <<'NODE'
-          const fs=require('fs');
-          const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
-          const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));
-          const s=p.summary||{}, bs=b.summary||{};
-          console.log(`PLAN SUMMARY|affectedFiles=${s.affectedFiles}|outside=${s.totalImportantOutsideServiceCard}|high=${s.byRisk?.['high-baseline-required']}|medium=${s.byRisk?.['medium-baseline-required']}|low=${s.byRisk?.['low-review-candidate']}`);
-          console.log(`BASELINE SUMMARY|total=${bs.totalImportant}|outside=${bs.outsideServiceCardImportant}|files=${bs.filesWithImportant}`);
-          const rows=[];
-          const seen=new Set();
-          function walk(v,path='root'){
-            if(Array.isArray(v)){v.forEach((x,i)=>walk(x,`${path}[${i}]`));return;}
-            if(!v||typeof v!=='object')return;
-            const file=v.filePath||v.file||v.path||v.asset||v.filename||v.cssFile;
-            const count=[v.importantCount,v.totalImportant,v.important,v.count,v.markerCount].find(x=>Number.isFinite(x));
-            const risk=v.risk||v.riskLevel||v.classification||v.bucket||v.status||'';
-            const pages=[v.pageCount,v.pagesCount,v.reachCount,v.consumerCount].find(x=>Number.isFinite(x));
-            if(typeof file==='string'&&file.endsWith('.css')&&Number.isFinite(count)){
-              const key=`${file}|${count}|${risk}|${pages??''}`;
-              if(!seen.has(key)){seen.add(key);rows.push({file,count,risk:String(risk),pages:pages??null,path});}
-            }
-            for(const [k,x] of Object.entries(v))walk(x,`${path}.${k}`);
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET_FILE.replace(/\\/g,'/');
+          const all=cp.execFileSync('git',['ls-tree','-r','--name-only',process.env.TARGET_SHA],{encoding:'utf8'}).trim().split(/\n/).filter(Boolean);
+          const activeHtml=all.filter(f=>f.endsWith('.html')&&!/^(archive|reports|tools|test-results|node_modules)\//.test(f));
+          const fileSet=new Set(all);
+          function text(f){return cp.execFileSync('git',['show',`${process.env.TARGET_SHA}:${f}`],{encoding:'utf8',maxBuffer:20*1024*1024});}
+          function norm(base,href){
+            href=href.split(/[?#]/)[0].trim();
+            if(!href||/^(?:https?:)?\/\//.test(href)||href.startsWith('data:'))return null;
+            href=href.replace(/^\.\//,'');
+            const r=path.posix.normalize(path.posix.join(path.posix.dirname(base),href));
+            return r.replace(/^\/+/, '');
           }
-          walk(p);
-          rows.sort((a,b)=>a.count-b.count||a.file.localeCompare(b.file));
-          console.log(`PLAN ROWS|count=${rows.length}`);
-          for(const r of rows)console.log(`PLAN FILE|important=${r.count}|risk=${r.risk||'unknown'}|pages=${r.pages??'unknown'}|file=${r.file}|source=${r.path}`);
-          console.log('PLAN TOPLEVEL|keys='+Object.keys(p).join(','));
+          const direct=new Set();
+          for(const html of activeHtml){
+            const s=text(html); let m;
+            const re=/<link\b[^>]*\bhref=["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi;
+            while((m=re.exec(s))){const r=norm(html,m[1]); if(r&&fileSet.has(r))direct.add(r);}
+          }
+          const reachable=new Set(), stack=[...direct];
+          while(stack.length){
+            const f=stack.pop(); if(reachable.has(f))continue; reachable.add(f);
+            const s=text(f); let m;
+            const re=/@import\s+(?:url\(\s*)?["']([^"']+\.css(?:[?#][^"']*)?)["']/gi;
+            while((m=re.exec(s))){const r=norm(f,m[1]); if(r&&fileSet.has(r)&&!reachable.has(r))stack.push(r);}
+          }
+          let jsRefs=[];
+          for(const f of all.filter(x=>x.startsWith('assets/js/')&&/\.(?:js|mjs|cjs)$/.test(x))){
+            const s=text(f); if(s.includes('marketplace-page-contract')||s.includes(target))jsRefs.push(f);
+          }
+          let runtimeTextRefs=[];
+          for(const f of all.filter(x=>(x.endsWith('.html')||x.startsWith('assets/css/')||x.startsWith('assets/js/'))&&f!==target)){
+            const s=text(f); if(s.includes('marketplace-page-contract'))runtimeTextRefs.push(f);
+          }
+          console.log(`REACH GRAPH|activeHtml=${activeHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(target)?1:0}|jsRefs=${jsRefs.length}|runtimeTextRefs=${runtimeTextRefs.length}`);
+          if(jsRefs.length)console.log('JS REFS|files='+jsRefs.join(','));
+          if(runtimeTextRefs.length)console.log('TEXT REFS|files='+runtimeTextRefs.join(','));
+          if(reachable.has(target)||jsRefs.length||runtimeTextRefs.length)throw Error('target reachable');
+          let css=fs.readFileSync(target,'utf8'); const before=(css.match(/!important\b/g)||[]).length;
+          const declarationsBefore=(css.match(/:[^;{}]+;/g)||[]).length;
+          const selectorsBefore=(css.match(/[^{}]+\{/g)||[]).length;
+          css=css.replace(/\s*!important\b/g,'');
+          const after=(css.match(/!important\b/g)||[]).length;
+          const declarationsAfter=(css.match(/:[^;{}]+;/g)||[]).length;
+          const selectorsAfter=(css.match(/[^{}]+\{/g)||[]).length;
+          const buf=Buffer.from(css),sha=crypto.createHash('sha256').update(buf).digest('hex');
+          if(before!==104||after!==0||declarationsBefore!==declarationsAfter||selectorsBefore!==selectorsAfter)throw Error(`identity ${before}/${after}/${declarationsBefore}/${declarationsAfter}/${selectorsBefore}/${selectorsAfter}`);
+          console.log(`CANDIDATE IDENTITY|sha256=${sha}|bytes=${buf.length}|important=104->0|priorityMarkersRemoved=104|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`);
+          console.log('RESULT=PASS');
           NODE
-          find assets -type f -name '*.css' -print0 | while IFS= read -r -d '' f; do c=$(grep -o '!important' "$f" | wc -l || true); if test "$c" -gt 0; then printf '%06d\t%s\n' "$c" "$f"; fi; done | sort -n >/tmp/css_counts.txt
-          echo "COUNT INVENTORY|files=$(wc -l </tmp/css_counts.txt)|total=$(awk '{s+=$1}END{print s+0}' /tmp/css_counts.txt)"
-          cat /tmp/css_counts.txt | while IFS=$'\t' read -r c f; do echo "COUNT FILE|important=$((10#$c))|file=$f"; done
-          echo 'RESULT=PASS'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.rank.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "RANK=${{ steps.rank.outcome }}"; grep -E '^(PREFLIGHT PASS|PLAN SUMMARY|BASELINE SUMMARY|PLAN ROWS|PLAN FILE|PLAN TOPLEVEL|COUNT INVENTORY|COUNT FILE)\|' /tmp/rank.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 320 /tmp/rank.log || true; fi; } >/tmp/out
+          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(PREFLIGHT PASS|REACH GRAPH|JS REFS|TEXT REFS|CANDIDATE IDENTITY)\|' /tmp/reach.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 260 /tmp/reach.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add "$RESULT_FILE"; git commit -m 'diag: publish post-013 fresh important ranking r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          git add "$RESULT_FILE"; git commit -m 'diag: publish 014 marketplace contract reach r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
