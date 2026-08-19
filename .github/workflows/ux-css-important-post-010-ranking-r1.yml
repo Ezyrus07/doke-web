@@ -1,61 +1,46 @@
-name: UX CSS Important Post 021 Fresh Ranking R2
+name: UX CSS Important 022 Index Compact Reach R3
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  rank022r2:
+  reach022:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: f611a1e80e96488ef9841200356253efd4172b63
+      TARGET_FILE: assets/css/components/layout/index-compact-card-contract.css
+      TARGET_BLOB: 47d3c3a08b9dd081d978483cc863949d7468e525
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-post-021-fresh-ranking-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-022-index-compact-reach-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: rank
+      - id: reach
         continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
-          git show HEAD:.diagnostics/ux-css-important-021-home-remaining-inventory-r5.txt >/tmp/021-r5.txt
-          grep -q '^RESULT=PASS$' /tmp/021-r5.txt
-          grep -Fq 'INVENTORY SUMMARY|important=128|rules=53|staticDormantRules=1|staticDormantImportant=1|targetReachable=1' /tmp/021-r5.txt
+          git show HEAD:.diagnostics/ux-css-important-post-021-fresh-ranking-r2.txt >/tmp/rank.txt
+          grep -q '^RESULT=PASS$' /tmp/rank.txt
+          grep -Fq 'NEXT ELIGIBLE HIGH|important=130|file=assets/css/components/layout/index-compact-card-contract.css' /tmp/rank.txt
           git checkout --detach "$PARENT_SHA" >/dev/null
-          npm ci --ignore-scripts >/dev/null
-          npm run audit:important-reduction-plan >/dev/null
-          npm run audit:global-css-design-system >/dev/null
-          node <<'NODE'
-          const fs=require('fs'),path=require('path');
-          const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));
-          const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
-          const s=b.summary,ps=p.summary;
-          if(s.totalImportant!==10571||s.outsideServiceCardImportant!==10509||s.filesWithImportant!==28)throw Error('baseline '+JSON.stringify(s));
-          if(ps.affectedFiles!==27||ps.totalImportantOutsideServiceCard!==10509||ps.byRisk?.['high-baseline-required']!==10501||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error('plan '+JSON.stringify(ps));
-          console.log(`PLAN SUMMARY|affectedFiles=${ps.affectedFiles}|outside=${ps.totalImportantOutsideServiceCard}|high=${ps.byRisk['high-baseline-required']}|medium=${ps.byRisk['medium-baseline-required']}|low=${ps.byRisk['low-review-candidate']}`);
-          console.log(`BASELINE SUMMARY|total=${s.totalImportant}|outside=${s.outsideServiceCardImportant}|files=${s.filesWithImportant}`);
-          const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const q=path.join(d,e.name);return e.isDirectory()?walk(q):[q]});
-          const inv=walk('assets/css').filter(f=>f.endsWith('.css')).map(file=>({file:file.replaceAll('\\\\','/'),important:(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length})).filter(x=>x.important).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
-          const total=inv.reduce((a,x)=>a+x.important,0);if(total!==10571||inv.length!==28)throw Error(`inventory ${total}/${inv.length}`);
-          console.log(`COUNT INVENTORY|files=${inv.length}|total=${total}`);for(const x of inv)console.log(`COUNT FILE|important=${x.important}|file=${x.file}`);
-          const highs=new Set();const scan=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){for(const x of o)scan(x);return;}const vals=Object.values(o);if(vals.some(v=>v==='high-baseline-required'))for(const v of vals)if(typeof v==='string'&&v.startsWith('assets/css/')&&v.endsWith('.css'))highs.add(v);for(const v of vals)scan(v)};scan(p);
-          const ranked=[...highs].map(file=>({file,important:inv.find(x=>x.file===file)?.important||0})).filter(x=>x.important>0).sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
-          for(const x of ranked)console.log(`PLAN FILE|important=${x.important}|risk=high-baseline-required|file=${x.file}`);
-          const mobileBase='assets/css/components/shell/mobile-base-stability.css',home='assets/css/pages/home/mobile-hero-feed.css';
-          if(inv.find(x=>x.file===mobileBase)?.important!==28)throw Error('protected020 drift');
-          if(inv.find(x=>x.file===home)?.important!==127)throw Error('home021 residual drift');
-          console.log(`BLOCKED HIGH|important=28|file=${mobileBase}|reason=remaining-28-protected-by-certified-020`);
-          console.log(`BLOCKED HIGH|important=127|file=${home}|reason=certified-021-exhausted-only-static-dormant-rule;current-residual-unchanged-except-certified-removal`);
-          const eligible=ranked.find(x=>x.file!==mobileBase&&x.file!==home);if(!eligible)throw Error('no eligible high');
-          console.log(`NEXT ELIGIBLE HIGH|important=${eligible.important}|file=${eligible.file}`);
-          NODE
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 130
+          echo 'TARGET PASS|important=130|blob=exact'
+          echo 'TARGET REFERENCES BEGIN'
+          git grep -n -F 'index-compact-card-contract.css' -- '*.html' 'assets/css/**/*.css' 'assets/js/**/*.js' || true
+          echo 'TARGET REFERENCES END'
+          echo 'IMPORTER CHAIN BEGIN'
+          git grep -n -F 'marketplace-responsive-stack.css' -- '*.html' 'assets/css/**/*.css' 'assets/js/**/*.js' || true
+          echo 'IMPORTER CHAIN END'
+          refs="$(git grep -l -F 'index-compact-card-contract.css' -- '*.html' 'assets/css/**/*.css' 'assets/js/**/*.js' 2>/dev/null | wc -l)"
+          imports="$(git grep -l -E '@import[^;]*index-compact-card-contract\.css' -- 'assets/css/**/*.css' 2>/dev/null | wc -l)"
+          echo "REACH SUMMARY|textRefFiles=$refs|actualImporters=$imports"
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.rank.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "RANK=${{ steps.rank.outcome }}"; echo 'R1_NOTE=harness-only-diagnostic-receipt-read-after-product-checkout'; grep -E '^(PLAN SUMMARY|BASELINE SUMMARY|COUNT INVENTORY|COUNT FILE|PLAN FILE|BLOCKED HIGH|NEXT ELIGIBLE HIGH)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 420 /tmp/r.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish post-021 fresh important ranking r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; cat /tmp/r.log; echo "RESULT=$result"; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null; mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 022 index compact reach r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
