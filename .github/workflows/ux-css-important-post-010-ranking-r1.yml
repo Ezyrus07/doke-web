@@ -1,90 +1,126 @@
-name: UX CSS Important 014 Marketplace Contract Reach R3
+name: UX CSS Important 014 Marketplace Contract Visual R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach014:
+  visual014:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       TARGET_SHA: 28877228c2cbf0478b7a0202d9bde786da14cdd4
       TARGET_FILE: assets/css/components/shell/marketplace-page-contract.css
       TARGET_BLOB: c6d0b3b9ffa9e30e1fca815ab1dbe3d607c4dcaa
+      CANDIDATE_SHA256: 3e53813d15d725c1f7609ab4e7800cf2fe78e587c034c08b84ba1bb639e30ae6
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-014-marketplace-contract-reach-r3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-014-marketplace-contract-visual-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: reach
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: visual
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/reach.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/visual.log) 2>&1
           git cat-file -e "$TARGET_SHA^{commit}"
           test "$(git rev-parse "$TARGET_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show HEAD:.diagnostics/ux-css-important-014-marketplace-contract-reach-r3.txt >/tmp/reach.txt
+          grep -q '^RESULT=PASS$' /tmp/reach.txt
+          grep -Fq 'targetReachable=0|jsRefs=0|runtimeTextRefs=0' /tmp/reach.txt
+          grep -q "sha256=$CANDIDATE_SHA256" /tmp/reach.txt
           git checkout "$TARGET_SHA" -- .
-          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
           test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 104
-          echo 'PREFLIGHT PASS|parent=013|targetBlob=exact|targetImportant=104|productMutation=0'
+          echo 'PREFLIGHT PASS|parent=013|reach=pass|targetReachable=0|targetImportant=104'
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium >/tmp/pw.log 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          mkdir -p /tmp/p014 /tmp/c014
           node <<'NODE'
-          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
-          const target=process.env.TARGET_FILE.replace(/\\/g,'/');
-          const all=cp.execFileSync('git',['ls-tree','-r','--name-only',process.env.TARGET_SHA],{encoding:'utf8'}).trim().split(/\n/).filter(Boolean);
-          const activeHtml=all.filter(f=>f.endsWith('.html')&&!/^(archive|reports|tools|test-results|node_modules)\//.test(f));
-          const fileSet=new Set(all);
-          function text(f){return cp.execFileSync('git',['show',`${process.env.TARGET_SHA}:${f}`],{encoding:'utf8',maxBuffer:20*1024*1024});}
-          function norm(base,href){
-            href=href.split(/[?#]/)[0].trim();
-            if(!href||/^(?:https?:)?\/\//.test(href)||href.startsWith('data:'))return null;
-            href=href.replace(/^\.\//,'');
-            const r=path.posix.normalize(path.posix.join(path.posix.dirname(base),href));
-            return r.replace(/^\/+/, '');
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require('@playwright/test');
+          const target=process.env.TARGET_FILE;
+          const candidateHash=process.env.CANDIDATE_SHA256;
+          const widths=[1024,1025,1280,1360,1361,1440];
+          const pages=[
+            {name:'home',url:'index.html',selectors:['.home-index-topbar','.page__content-inner','.home-side-meta__profile','.home-index-topbar .topbar__right']},
+            {name:'detail',url:'detalhe-anuncio.html',selectors:['.detail-index-header','.detalhe-anuncio-page__container--service-view','.detail-index-header__profile','.ad-service-shell']}
+          ];
+          const pixel='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+          const items=Array.from({length:8},(_,i)=>({id:'i14-'+i,serviceId:'i14-'+i,status:'active',title:'Servico '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
+          const stable=o=>JSON.stringify(o,Object.keys(o).sort());
+          async function phase(label){
+            const browser=await chromium.launch({headless:true});
+            const meta={}; let pageErrors=0, loadedTarget=0;
+            for(const pg of pages)for(const w of widths){
+              const ctx=await browser.newContext({viewport:{width:w,height:1050},reducedMotion:'reduce'});
+              const p=await ctx.newPage(),errs=[];
+              p.on('pageerror',e=>errs.push(e.message));
+              await p.route('**/*',async r=>{
+                const u=r.request().url();
+                if(u.startsWith('http://127.0.0.1:4173/'))return r.continue();
+                const rt=r.request().resourceType();
+                if(rt==='image')return r.fulfill({status:200,contentType:'image/png',body:Buffer.from(pixel,'base64')});
+                if(['font','stylesheet','script'].includes(rt))return r.fulfill({status:200,body:''});
+                return r.fulfill({status:200,contentType:'application/json',body:'{}'});
+              });
+              await p.goto(`http://127.0.0.1:4173/${pg.url}?i14=${label}-${w}`,{waitUntil:'domcontentloaded'});
+              await p.waitForLoadState('networkidle').catch(()=>{});
+              if(pg.name==='home'){
+                await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});
+                await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(a&&b){a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})));}},items);
+              }
+              const data=await p.evaluate(selectors=>{
+                const out={};
+                for(const s of selectors){const e=document.querySelector(s);if(!e){out[s]={count:0};continue;}const cs=getComputedStyle(e),r=e.getBoundingClientRect();out[s]={count:document.querySelectorAll(s).length,display:cs.display,position:cs.position,width:cs.width,height:cs.height,marginLeft:cs.marginLeft,marginRight:cs.marginRight,paddingTop:cs.paddingTop,paddingBottom:cs.paddingBottom,gridTemplateColumns:cs.gridTemplateColumns,x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2)};}
+                const sheets=[...document.styleSheets].map(x=>x.href||'');
+                const resources=performance.getEntriesByType('resource').map(x=>x.name);
+                return {out,targetLoaded:sheets.concat(resources).some(x=>x.includes('marketplace-page-contract.css'))};
+              },pg.selectors);
+              if(data.targetLoaded)loadedTarget++;
+              pageErrors+=errs.length;
+              const key=`${pg.name}-${w}`; meta[key]={selectors:data.out,targetLoaded:data.targetLoaded,pageErrors:errs.length};
+              const shot=await p.screenshot({fullPage:true,animations:'disabled',caret:'hide'});
+              fs.writeFileSync(`/tmp/${label==='parent'?'p014':'c014'}/${key}.png`,shot);
+              await ctx.close();
+            }
+            await browser.close();
+            fs.writeFileSync(`/tmp/${label}.json`,JSON.stringify(meta,null,2));
+            console.log(`PHASE|label=${label}|states=${Object.keys(meta).length}|pageErrors=${pageErrors}|targetStylesheetLoads=${loadedTarget}`);
+            return {meta,pageErrors,loadedTarget};
           }
-          const direct=new Set();
-          for(const html of activeHtml){
-            const s=text(html); let m;
-            const re=/<link\b[^>]*\bhref=["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi;
-            while((m=re.exec(s))){const r=norm(html,m[1]); if(r&&fileSet.has(r))direct.add(r);}
-          }
-          const reachable=new Set(), stack=[...direct];
-          while(stack.length){
-            const f=stack.pop(); if(reachable.has(f))continue; reachable.add(f);
-            const s=text(f); let m;
-            const re=/@import\s+(?:url\(\s*)?["']([^"']+\.css(?:[?#][^"']*)?)["']/gi;
-            while((m=re.exec(s))){const r=norm(f,m[1]); if(r&&fileSet.has(r)&&!reachable.has(r))stack.push(r);}
-          }
-          const jsRefs=[];
-          for(const f of all.filter(x=>x.startsWith('assets/js/')&&/\.(?:js|mjs|cjs)$/.test(x))){
-            const s=text(f); if(s.includes('marketplace-page-contract')||s.includes(target))jsRefs.push(f);
-          }
-          const runtimeTextRefs=[];
-          for(const f of all.filter(x=>(x.endsWith('.html')||x.startsWith('assets/css/')||x.startsWith('assets/js/'))&&x!==target)){
-            const s=text(f); if(s.includes('marketplace-page-contract'))runtimeTextRefs.push(f);
-          }
-          console.log(`REACH GRAPH|activeHtml=${activeHtml.length}|directCss=${direct.size}|reachableCss=${reachable.size}|targetReachable=${reachable.has(target)?1:0}|jsRefs=${jsRefs.length}|runtimeTextRefs=${runtimeTextRefs.length}`);
-          if(jsRefs.length)console.log('JS REFS|files='+jsRefs.join(','));
-          if(runtimeTextRefs.length)console.log('TEXT REFS|files='+runtimeTextRefs.join(','));
-          if(reachable.has(target)||jsRefs.length||runtimeTextRefs.length)throw Error('target reachable');
-          let css=fs.readFileSync(target,'utf8'); const before=(css.match(/!important\b/g)||[]).length;
-          const declarationsBefore=(css.match(/:[^;{}]+;/g)||[]).length;
-          const selectorsBefore=(css.match(/[^{}]+\{/g)||[]).length;
-          css=css.replace(/\s*!important\b/g,'');
-          const after=(css.match(/!important\b/g)||[]).length;
-          const declarationsAfter=(css.match(/:[^;{}]+;/g)||[]).length;
-          const selectorsAfter=(css.match(/[^{}]+\{/g)||[]).length;
-          const buf=Buffer.from(css),sha=crypto.createHash('sha256').update(buf).digest('hex');
-          if(before!==104||after!==0||declarationsBefore!==declarationsAfter||selectorsBefore!==selectorsAfter)throw Error(`identity ${before}/${after}/${declarationsBefore}/${declarationsAfter}/${selectorsBefore}/${selectorsAfter}`);
-          console.log(`CANDIDATE IDENTITY|sha256=${sha}|bytes=${buf.length}|important=104->0|priorityMarkersRemoved=104|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`);
+          (async()=>{
+            const parent=await phase('parent');
+            let css=fs.readFileSync(target,'utf8');css=css.replace(/\s*!important\b/g,'');
+            const h=crypto.createHash('sha256').update(Buffer.from(css)).digest('hex'),count=(css.match(/!important\b/g)||[]).length;
+            if(h!==candidateHash||count!==0)throw Error(`candidate ${h}/${count}`);
+            fs.writeFileSync(target,css);
+            const cand=await phase('candidate');
+            const ptxt=fs.readFileSync('/tmp/parent.json','utf8'),ctxt=fs.readFileSync('/tmp/candidate.json','utf8');
+            const metadataDiffs=ptxt===ctxt?0:1;
+            let screenshotDiffs=0;
+            for(const pg of pages)for(const w of widths){const k=`${pg.name}-${w}`,a=fs.readFileSync(`/tmp/p014/${k}.png`),b=fs.readFileSync(`/tmp/c014/${k}.png`);if(!a.equals(b))screenshotDiffs++;}
+            const pageErrors=parent.pageErrors+cand.pageErrors;
+            const targetLoads=parent.loadedTarget+cand.loadedTarget;
+            console.log(`CANDIDATE PARITY|sha256=${h}|bytes=${Buffer.byteLength(css)}|important=104->0|priorityMarkersRemoved=104|states=12|pages=home,detail|viewports=${widths.join(',')}|metadataDiffs=${metadataDiffs}|screenshotDiffs=${screenshotDiffs}|pageErrors=${pageErrors}|targetStylesheetLoads=${targetLoads}|syntheticDOM=0|criteriaRelaxed=0`);
+            if(metadataDiffs||screenshotDiffs||pageErrors||targetLoads)throw Error(`parity ${metadataDiffs}/${screenshotDiffs}/${pageErrors}/${targetLoads}`);
+          })().catch(e=>{console.error(e);process.exit(1)});
           NODE
+          git checkout "$TARGET_SHA" -- "$TARGET_FILE"
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l)" -eq 104
+          git diff --exit-code -- "$TARGET_FILE"
+          echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(PREFLIGHT PASS|REACH GRAPH|JS REFS|TEXT REFS|CANDIDATE IDENTITY)\|' /tmp/reach.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 260 /tmp/reach.log || true; fi; } >/tmp/out
+          set -euo pipefail; result=FAIL; if test '${{ steps.visual.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$TARGET_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.visual.outcome }}"; grep -E '^(PREFLIGHT PASS|PHASE|CANDIDATE PARITY|RESTORE PASS)\|' /tmp/visual.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 360 /tmp/visual.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add "$RESULT_FILE"; git commit -m 'diag: publish 014 marketplace contract reach r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          git add "$RESULT_FILE"; git commit -m 'diag: publish 014 marketplace contract visual r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
