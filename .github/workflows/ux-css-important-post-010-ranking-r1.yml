@@ -9,122 +9,54 @@ permissions:
   contents: write
 
 jobs:
-  rank:
+  source011:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: 58df6a9856874d541951430f9eab99e322da3c0f
-      RESULT_FILE: .diagnostics/ux-css-important-post-010-ranking-r1.txt
+      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+      RESULT_FILE: .diagnostics/ux-css-important-011-mobile-hero-source-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
-      - name: Verify parent and rank current importance debt
+      - name: Conservative global source closure for 011
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
-          node scripts/audit-important-reduction-plan.js
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const cp = require('child_process');
-          const ROOT = process.cwd();
-          const parent = process.env.PARENT_SHA;
-          const resultFile = process.env.RESULT_FILE;
-          const reportPath = path.join(ROOT, 'reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json');
-          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-          const norm = (p) => p.replace(/\\/g, '/').replace(/^\.\//, '');
-          const rootHtml = fs.readdirSync(ROOT, {withFileTypes:true})
-            .filter(e => e.isFile() && e.name.endsWith('.html'))
-            .map(e => e.name)
-            .sort();
-
-          function localCssLinks(htmlFile) {
-            const text = fs.readFileSync(path.join(ROOT, htmlFile), 'utf8');
-            const out = [];
-            for (const m of text.matchAll(/<link\b[^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi)) {
-              const href = m[1].split('?')[0].split('#')[0];
-              if (/^(?:https?:)?\/\//i.test(href) || href.startsWith('data:')) continue;
-              out.push(norm(path.posix.normalize(path.posix.join(path.posix.dirname(htmlFile), href))));
-            }
-            return out;
-          }
-
-          function cssImports(cssFile) {
-            const abs = path.join(ROOT, cssFile);
-            if (!fs.existsSync(abs)) return [];
-            const text = fs.readFileSync(abs, 'utf8');
-            const out = [];
-            for (const m of text.matchAll(/@import\s+(?:url\()?\s*["']([^"']+\.css(?:\?[^"']*)?)["']\s*\)?/gi)) {
-              const href = m[1].split('?')[0].split('#')[0];
-              if (/^(?:https?:)?\/\//i.test(href) || href.startsWith('data:')) continue;
-              out.push(norm(path.posix.normalize(path.posix.join(path.posix.dirname(cssFile), href))));
-            }
-            return out;
-          }
-
-          const pageClosures = new Map();
-          for (const html of rootHtml) {
-            const seen = new Set();
-            const queue = [...localCssLinks(html)];
-            while (queue.length) {
-              const css = queue.shift();
-              if (seen.has(css)) continue;
-              seen.add(css);
-              for (const imp of cssImports(css)) if (!seen.has(imp)) queue.push(imp);
-            }
-            pageClosures.set(html, seen);
-          }
-
-          function reach(file) {
-            const pages = [];
-            for (const [html, set] of pageClosures) if (set.has(file)) pages.push(html);
-            return pages;
-          }
-
-          const all = report.topFiles.concat(
-            report.lowRiskFiles
-              .filter(f => !report.topFiles.some(x => x.file === f))
-              .map(f => {
-                const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
-                return {file:f, importantCount:(text.match(/!important\b/g)||[]).length, risk:'low-review-candidate', layer:'unknown'};
-              })
-          );
-
-          const high = report.topFiles
-            .filter(x => x.risk === 'high-baseline-required')
-            .map(x => ({...x, pages: reach(x.file)}))
-            .sort((a,b) => a.pages.length - b.pages.length || b.importantCount - a.importantCount || a.file.localeCompare(b.file));
-
-          const low = report.lowRiskFiles.map(file => {
-            const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
-            return {file, importantCount:(text.match(/!important\b/g)||[]).length, pages:reach(file)};
-          });
-
-          const protected006 = 'assets/css/pages/home/mobile-composition.css';
-          const protected006Count = fs.existsSync(path.join(ROOT, protected006))
-            ? (fs.readFileSync(path.join(ROOT, protected006),'utf8').match(/!important\b/g)||[]).length : -1;
-
-          const lines = [];
-          lines.push(`PARENT_SHA=${parent}`);
-          lines.push(`REPORT_STATUS=${report.status}`);
-          lines.push(`AFFECTED_FILES=${report.summary.affectedFiles}`);
-          lines.push(`TOTAL_OUTSIDE_SERVICE_CARD=${report.summary.totalImportantOutsideServiceCard}`);
-          lines.push(`LOW_TOKENS=${report.summary.byRisk?.['low-review-candidate'] || 0}`);
-          lines.push(`MEDIUM_TOKENS=${report.summary.byRisk?.['medium-baseline-required'] || 0}`);
-          lines.push(`HIGH_TOKENS=${report.summary.byRisk?.['high-baseline-required'] || 0}`);
-          lines.push(`LOW_FILES=${report.summary.lowRiskFileCount}`);
-          lines.push(`PROTECTED006_FILE=${protected006}`);
-          lines.push(`PROTECTED006_COUNT=${protected006Count}`);
-          for (const x of low) lines.push(`LOW|file=${x.file}|important=${x.importantCount}|reach=${x.pages.length}|pages=${x.pages.join(',')}`);
-          high.slice(0, 12).forEach((x,i) => lines.push(`HIGH${i}|file=${x.file}|important=${x.importantCount}|reach=${x.pages.length}|pages=${x.pages.join(',')}`));
-          lines.push(`ROOT_HTML_COUNT=${rootHtml.length}`);
-          lines.push('RESULT=PASS');
-          fs.mkdirSync(path.dirname(resultFile), {recursive:true});
-          fs.writeFileSync(resultFile, lines.join('\n')+'\n');
-          console.log(lines.join('\n'));
+          git merge-base --is-ancestor "$PARENT_SHA" HEAD
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$(git rev-parse "HEAD:$TARGET_FILE")"
+          set +e
+          node <<'NODE' >/tmp/source.log 2>&1
+          const fs=require('fs'),path=require('path'),crypto=require('crypto');
+          const root=process.cwd(),target=process.env.TARGET_FILE,result=process.env.RESULT_FILE;
+          const src=fs.readFileSync(target,'utf8');
+          const clean=src.replace(/\/\*[\s\S]*?\*\//g,m=>m.replace(/[^\n]/g,' '));
+          const lineOf=p=>1+src.slice(0,p).split('\n').length-1;
+          const norm=s=>s.trim().replace(/\s+/g,' ');
+          const rules=[];
+          function closeBrace(open,limit){let d=1,q=null,e=false;for(let i=open+1;i<limit;i++){const c=clean[i];if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}if(c==='"'||c==="'"){q=c;continue}if(c==='{')d++;else if(c==='}'){d--;if(d===0)return i}}throw Error('unclosed block')}
+          function walkBlock(start,end,at=[]){let cur=start;while(cur<end){while(cur<end&&/[\s;]/.test(clean[cur]))cur++;if(cur>=end)break;let i=cur,q=null,e=false;for(;i<end;i++){const c=clean[i];if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}if(c==='"'||c==="'"){q=c;continue}if(c==='{'||c===';'||c==='}')break}if(i>=end||clean[i]==='}')break;if(clean[i]===';'){cur=i+1;continue}const pre=clean.slice(cur,i).trim(),endb=closeBrace(i,end);if(pre.startsWith('@'))walkBlock(i+1,endb,[...at,norm(pre)]);else{const body=clean.slice(i+1,endb),imps=[...body.matchAll(/([\w-]+)\s*:\s*([^;{}]*?)\s*!important\b/gi)].map(m=>({prop:m[1].toLowerCase(),value:m[2].trim()}));if(imps.length)rules.push({selector:norm(pre),at:at.join(' || '),line:lineOf(cur),important:imps})}cur=endb+1}}
+          walkBlock(0,clean.length,[]);
+          const parsed=rules.reduce((n,r)=>n+r.important.length,0);if(parsed!==179)throw Error(`parsed important ${parsed}`);
+          const files=[];function tree(dir,pred){if(!fs.existsSync(dir))return;for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())tree(p,pred);else if(e.isFile()&&pred(p))files.push(p)}}
+          tree(root,p=>path.dirname(p)===root&&p.endsWith('.html'));
+          tree(path.join(root,'assets/js'),p=>p.endsWith('.js'));
+          const corpus=files.map(f=>fs.readFileSync(f,'utf8')).join('\n');
+          const index=fs.readFileSync('index.html','utf8');
+          const directScripts=[...index.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1].split(/[?#]/)[0]).filter(x=>!/^https?:\/\//i.test(x));
+          const zero=[];let eligible=0,ambiguous=0;
+          for(const r of rules){if(r.selector.includes(',')||/:is\(|:where\(|:has\(/i.test(r.selector)){ambiguous++;continue}const toks=[...new Set([...r.selector.matchAll(/\.([A-Za-z_][\w-]*)/g)].map(m=>m[1]).concat([...r.selector.matchAll(/#([A-Za-z_][\w-]*)/g)].map(m=>m[1])))];if(!toks.length){ambiguous++;continue}eligible++;const missing=toks.filter(t=>!corpus.includes(t));if(missing.length)zero.push({...r,toks,missing})}
+          const markers=zero.reduce((n,r)=>n+r.important.length,0),hash=crypto.createHash('sha256').update(Buffer.from(src)).digest('hex');
+          const lines=[`PARENT_SHA=${process.env.PARENT_SHA}`,`TARGET_FILE=${target}`,`TARGET_SHA256=${hash}`,`TARGET_BYTES=${Buffer.byteLength(src)}`,'TARGET_IMPORTANT=179',`GLOBAL_SOURCE_FILES=${files.length}`,`DIRECT_HOME_SCRIPTS=${directScripts.length}`,`IMPORTANT_RULES=${rules.length}`,`ELIGIBLE_SIMPLE_RULES=${eligible}`,`AMBIGUOUS_EXCLUDED_RULES=${ambiguous}`,`ZERO_TOKEN_RULES=${zero.length}`,`ZERO_TOKEN_MARKERS=${markers}`];
+          zero.forEach((r,i)=>lines.push(`ZERO|rank=${i}|line=${r.line}|markers=${r.important.length}|missing=${r.missing.join(',')}|tokens=${r.toks.join(',')}|at=${JSON.stringify(r.at)}|selector=${JSON.stringify(r.selector)}|props=${r.important.map(x=>x.prop).join(',')}`));
+          lines.push('INTERPRETATION=conservative global source absence only; runtime proof required before candidate promotion','RESULT=PASS');
+          fs.mkdirSync(path.dirname(result),{recursive:true});fs.writeFileSync(result,lines.join('\n')+'\n');console.log(lines.join('\n'));
           NODE
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ]; then mkdir -p "$(dirname "$RESULT_FILE")"; { echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "SOURCE_EXIT=$code"; echo "RESULT=FAIL"; tail -n 160 /tmp/source.log || true; } > "$RESULT_FILE"; fi
+          cat "$RESULT_FILE"
       - name: Publish receipt
         shell: bash
         run: |
@@ -132,5 +64,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish post-010 important ranking r1 [skip ci]'
+          git commit -m 'diag: publish 011 mobile hero source r3 [skip ci]'
           git push origin HEAD:refs/heads/diag/ux-css-important-post-010-ranking-r1
