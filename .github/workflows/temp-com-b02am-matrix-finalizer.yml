@@ -19,6 +19,7 @@ jobs:
       CANDIDATE: 30e9bd6e76da6e008ef1a88a3148e2c2ee6b2a28
       TEMP_V1: c5924e56f5ac099477b65b7963bb098c7a2a1aa6
       TEMP_V2: b4fec9ddd94b08b66692c43ea436cee654490de3
+      TEMP_V3: 593b16a18627e4385a38964884ca854615823c64
       BRANCH: com/com-001-baseline-audit
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       TEMP_PATH: .github/workflows/temp-com-b02am-matrix-finalizer.yml
@@ -41,9 +42,10 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
-          test "$(git rev-parse HEAD^)" = "$TEMP_V2"
-          test "$(git rev-parse HEAD^^)" = "$TEMP_V1"
-          test "$(git rev-parse HEAD^^^)" = "$CANDIDATE"
+          test "$(git rev-parse HEAD^)" = "$TEMP_V3"
+          test "$(git rev-parse HEAD^^)" = "$TEMP_V2"
+          test "$(git rev-parse HEAD^^^)" = "$TEMP_V1"
+          test "$(git rev-parse HEAD^^^^)" = "$CANDIDATE"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           actual="$(git diff --name-only "$CANDIDATE" HEAD | sort)"
           test "$actual" = "$TEMP_PATH"
@@ -79,7 +81,8 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git rm -- "$TEMP_PATH"
-          git add -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f -- reports/generated/domain-completion-matrix-report.json
           expected_cached="$(printf '%s\n' "$TEMP_PATH" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
           actual_cached="$(git diff --cached --name-only | sort)"
           test "$actual_cached" = "$expected_cached"
