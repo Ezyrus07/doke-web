@@ -1,4 +1,4 @@
-name: UX CSS Important 026 Tablet Shell Contract Browser R2
+name: UX CSS Important 026 Tablet Shell Contract Browser R3
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -13,7 +13,7 @@ jobs:
       TARGET_BLOB: 49ef7f96f515dbbadca3b59690be54288cd0d211
       CANDIDATE_SHA256: dae4b097d958cbaa316ac02b49176c722a02d8844a5d2a699450b6122ffb8447
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-026-tablet-shell-contract-browser-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-026-tablet-shell-contract-browser-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -38,17 +38,17 @@ jobs:
           cat >/tmp/proof.js <<'NODE'
           const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
           const pages=[
-            {url:'detalhe-anuncio.html',key:'detail'},
-            {url:'pedidos.html',key:'orders'},
-            {url:'mensagens.html',key:'messages'},
-            {url:'configuracoes.html',key:'settings'}
+            {url:'detalhe-anuncio.html',key:'detail',expected:'detalhe-anuncio'},
+            {url:'resultados.html',key:'results',expected:'resultados'},
+            {url:'perfil.html',key:'profile',expected:'perfil'},
+            {url:'comunidade.html',key:'community',expected:'comunidade'}
           ];
           const cases=[{w:560,h:1000,key:'560p'},{w:561,h:1000,key:'561p'},{w:760,h:1000,key:'760p'},{w:761,h:1000,key:'761p'},{w:900,h:1000,key:'900p'},{w:1024,h:900,key:'1024l'},{w:1025,h:900,key:'1025l'}];
           const target='tablet-shell-contract.css',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,position:cs.position,visibility:cs.visibility,overflowX:cs.overflowX,overflowY:cs.overflowY}};return{vw:innerWidth,vh:innerHeight,page:document.body?.dataset?.page||null,html:document.documentElement.className,body:document.body.className,shell:q('.app-shell'),pageNode:q('.app-shell > .page'),header:q('.app-header.home-side-meta, .topbar.internal-page-topbar, header.app-header'),content:q('.page__content, main.page__content'),workspace:q('.page__content-inner, .app-shell-page__workspace, .orders-shell-content, .messages-shell-content, .settings-page-shell, .ad-detail-shell')}};
+          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,position:cs.position,visibility:cs.visibility,overflowX:cs.overflowX,overflowY:cs.overflowY}};return{vw:innerWidth,vh:innerHeight,page:document.body?.dataset?.page||null,path:location.pathname,html:document.documentElement.className,body:document.body.className,shell:q('.app-shell'),pageNode:q('.app-shell > .page'),header:q('.app-header.home-side-meta, .topbar.internal-page-topbar, header.app-header'),content:q('.page__content, main.page__content'),workspace:q('.page__content-inner, .app-shell-page__workspace, .search-results-workspace, .profile-shell-content, .communities-v2-shell, .ad-detail-shell')}};
           async function stableMeta(page){let prev='';for(let i=0;i<12;i++){const m=await page.evaluate(metaFn),s=JSON.stringify(m);if(s===prev)return m;prev=s;await page.waitForTimeout(300);}return await page.evaluate(metaFn)}
           async function phase(label){const browser=await chromium.launch({headless:true});const out={};let loads=0,errs=0,stable=0,pageRoots=0;
-            for(const p of pages)for(const c of cases){const key=`${p.key}-${c.key}`;const ctx=await browser.newContext({viewport:{width:c.w,height:c.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Sao_Paulo',reducedMotion:'reduce'});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787097600000;const RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{if(r.url().includes(target))loads++});await page.goto(`http://127.0.0.1:4173/${p.url}`,{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(700);const meta=await stableMeta(page);const m2=await page.evaluate(metaFn);if(JSON.stringify(meta)===JSON.stringify(m2))stable++;if(meta.page&&meta.shell)pageRoots++;await page.screenshot({fullPage:true});await page.waitForTimeout(200);const shot=await page.screenshot({fullPage:true});out[key]={meta,shot:hash(shot)};await ctx.close();}
+            for(const p of pages)for(const c of cases){const key=`${p.key}-${c.key}`;const ctx=await browser.newContext({viewport:{width:c.w,height:c.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Sao_Paulo',reducedMotion:'reduce'});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787097600000;const RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{if(r.url().includes(target))loads++});await page.goto(`http://127.0.0.1:4173/${p.url}`,{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(700);const meta=await stableMeta(page);const m2=await page.evaluate(metaFn);if(JSON.stringify(meta)===JSON.stringify(m2))stable++;if(meta.page===p.expected&&meta.shell&&meta.pageNode&&meta.header)pageRoots++;else console.log(`ROOT MISS|state=${key}|expected=${p.expected}|actual=${meta.page}|path=${meta.path}|shell=${meta.shell?1:0}|pageNode=${meta.pageNode?1:0}|header=${meta.header?1:0}`);await page.screenshot({fullPage:true});await page.waitForTimeout(200);const shot=await page.screenshot({fullPage:true});out[key]={meta,shot:hash(shot)};await ctx.close();}
             await browser.close();console.log(`PHASE|label=${label}|states=${pages.length*cases.length}|stableStates=${stable}|pageErrors=${errs}|targetStylesheetLoads=${loads}|pageRoots=${pageRoots}`);return{out,loads,errs,stable,pageRoots};}
           (async()=>{const p=await phase(process.argv[2]);fs.writeFileSync(process.argv[3],JSON.stringify(p));})().catch(e=>{console.error(e);process.exit(1)});
           NODE
@@ -56,7 +56,7 @@ jobs:
           cp /tmp/candidate.css "$TARGET_FILE"
           NODE_PATH="$PWD/node_modules" node /tmp/proof.js candidate /tmp/candidate.json
           node <<'NODE'
-          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const n=Object.keys(a.out).length;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|pages=detail,orders,messages,settings|states=${n}|viewports=560p,561p,760p,761p,900p,1024l,1025l|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|pageRoots=${a.pageRoots}/${b.pageRoots}|syntheticDOM=0|criteriaRelaxed=0|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1`);if(md||sd||a.errs||b.errs||a.loads||b.loads||a.stable!==28||b.stable!==28||a.pageRoots!==28||b.pageRoots!==28)process.exit(1)
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const n=Object.keys(a.out).length;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|pages=detail,results,profile,community|states=${n}|viewports=560p,561p,760p,761p,900p,1024l,1025l|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|pageRoots=${a.pageRoots}/${b.pageRoots}|syntheticDOM=0|criteriaRelaxed=0|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1`);if(md||sd||a.errs||b.errs||a.loads||b.loads||a.stable!==28||b.stable!==28||a.pageRoots!==28||b.pageRoots!==28)process.exit(1)
           NODE
           cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
@@ -64,7 +64,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.proof.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; grep -E '^(CANDIDATE PASS|PHASE|PAGE ERROR|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 900 /tmp/v.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.proof.outcome }}"; grep -E '^(CANDIDATE PASS|PHASE|PAGE ERROR|ROOT MISS|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 900 /tmp/v.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"
@@ -72,6 +72,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 026 tablet shell contract browser r2 [skip ci]' >/dev/null
+          git commit -m 'diag: publish 026 tablet shell contract browser r3 [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
