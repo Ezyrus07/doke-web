@@ -1,10 +1,10 @@
-name: UX CSS Important 029 Mobile Page Rhythm Contract Browser R2
+name: UX CSS Important 029 Mobile Page Rhythm Contract Browser R3 Corrected
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  browser029r2:
+  browser029r3:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -15,8 +15,10 @@ jobs:
       CANDIDATE_BLOB: 9e5f1ee53dad8a6c57238359cb70c49f4d15ac99
       REACH_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-reach-r1.txt
       REACH_BLOB: c896e4936b1f5ba89da808feffaf7a46316dc33b
+      R2_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-browser-r2.txt
+      R2_BLOB: 4213fba52a318ca5e950112573f2b6ce2a01ed51
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-browser-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-browser-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -29,7 +31,10 @@ jobs:
           set -euo pipefail; exec > >(tee /tmp/v.log) 2>&1
           test "$(git rev-parse --is-shallow-repository)" = false
           test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
+          test "$(git rev-parse "HEAD:$R2_FILE")" = "$R2_BLOB"
           git show HEAD:"$REACH_FILE" >/tmp/reach.txt
+          git show HEAD:"$R2_FILE" >/tmp/r2.txt
+
           grep -q '^RUN_ID=32423054273$' /tmp/reach.txt
           grep -q '^RESULT=PASS$' /tmp/reach.txt
           grep -Fq "CANDIDATE PASS|bytes=12876|important=236->0|removed=236|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/reach.txt
@@ -37,6 +42,13 @@ jobs:
           grep -Fq 'ALIAS RECONCILIATION PASS|historicalPath=assets/css/components/shell/mobile-page-rhythm-contract.css|oldPhysical=0|oldHtmlLinks=0|oldActualImporters=0|oldRuntimeJsRefs=0|oldToolingJsRefs=2|oldOtherJsRefs=0|oldCssTextRefs=0|oldActive=0|docsOnlyRefs=1|canonicalPath=assets/css/components/navigation/mobile-page-rhythm-contract.css' /tmp/reach.txt
           grep -Fq 'GOVERNANCE TARGET PASS|deprecatedCanonical=1|historicalAliasDocumented=1|quarantine=1|policyRecomputed=1|repoGlobalStrictSeparated=1' /tmp/reach.txt
           echo 'REACH TRANSFER PASS|source=R1|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=0|candidateHash=exact|candidateBlob=exact|aliasRuntimeReach=0|repoGlobalStrictSeparated=1'
+
+          grep -q '^RUN_ID=32423410184$' /tmp/r2.txt
+          grep -q '^PROOF=failure$' /tmp/r2.txt
+          grep -q '^RESULT=FAIL$' /tmp/r2.txt
+          grep -Fq "CANDIDATE PASS|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|important=236->0|bytes=12876|reachR1HashStable=1" /tmp/r2.txt
+          grep -Fq 'page.evaluate: ReferenceError: q is not defined' /tmp/r2.txt
+          echo 'R2 TRANSFER PASS|run=32423410184|historicalResult=FAIL|classification=harness-invalid|failure=q-not-defined|candidateHash=exact|candidateBlob=exact|visualComparisonStarted=0'
 
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse HEAD)" = "$PARENT_SHA"
@@ -52,7 +64,7 @@ jobs:
           const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
           const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
           if(before!==236||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB) throw Error(`candidate ${before}/${after}/${h}/${blob}`);
-          console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=236->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1`)
+          console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=236->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1|r2HashStable=1`)
           NODE
 
           npm ci --ignore-scripts >/dev/null
@@ -79,12 +91,14 @@ jobs:
             {w:761,h:1000,key:'761p'}
           ];
           const target='mobile-page-rhythm-contract.css',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,position:cs.position,visibility:cs.visibility,overflowX:cs.overflowX,overflowY:cs.overflowY,gridTemplateColumns:cs.gridTemplateColumns,paddingTop:cs.paddingTop,paddingRight:cs.paddingRight,paddingBottom:cs.paddingBottom,paddingLeft:cs.paddingLeft,marginTop:cs.marginTop,marginBottom:cs.marginBottom}};
-          const metaFn=marker=>({
-            vw:innerWidth,vh:innerHeight,page:document.body?.dataset?.page||null,path:location.pathname,html:document.documentElement.className,body:document.body.className,
-            shell:q('.app-shell'),pageNode:q('.app-shell > .page'),content:q('main.page__content, .page__content'),workspace:q('.page__content-inner, .app-shell-page__workspace, .search-results-workspace, .profile-shell-content, .communities-v2-shell, .orders-shell-content, .messages-shell-content, .settings-shell-content'),
-            desktopHeader:q('.app-header.home-side-meta, .topbar.internal-page-topbar, header.app-header'),mobileHeader:q('.home-mobile-hero, .orders-page-header, .notifications-mobile-header, .messages-mobile-header, .settings-mobile-header, .communities-mobile-header, .doke-mobile-page-header'),marker:q(marker)
-          });
+          const metaFn=marker=>{
+            const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,position:cs.position,visibility:cs.visibility,overflowX:cs.overflowX,overflowY:cs.overflowY,gridTemplateColumns:cs.gridTemplateColumns,paddingTop:cs.paddingTop,paddingRight:cs.paddingRight,paddingBottom:cs.paddingBottom,paddingLeft:cs.paddingLeft,marginTop:cs.marginTop,marginBottom:cs.marginBottom}};
+            return{
+              vw:innerWidth,vh:innerHeight,page:document.body?.dataset?.page||null,path:location.pathname,html:document.documentElement.className,body:document.body.className,
+              shell:q('.app-shell'),pageNode:q('.app-shell > .page'),content:q('main.page__content, .page__content'),workspace:q('.page__content-inner, .app-shell-page__workspace, .search-results-workspace, .profile-shell-content, .communities-v2-shell, .orders-shell-content, .messages-shell-content, .settings-shell-content'),
+              desktopHeader:q('.app-header.home-side-meta, .topbar.internal-page-topbar, header.app-header'),mobileHeader:q('.home-mobile-hero, .orders-page-header, .notifications-mobile-header, .messages-mobile-header, .settings-mobile-header, .communities-mobile-header, .doke-mobile-page-header'),marker:q(marker)
+            };
+          };
           async function stableMeta(page,marker){let prev='';for(let i=0;i<12;i++){const m=await page.evaluate(metaFn,marker),s=JSON.stringify(m);if(s===prev)return m;prev=s;await page.waitForTimeout(300);}return await page.evaluate(metaFn,marker)}
           async function phase(label){const browser=await chromium.launch({headless:true});const out={};let loads=0,errs=0,stable=0,pageRoots=0;
             for(const p of pages)for(const c of cases){const key=`${p.key}-${c.key}`;const ctx=await browser.newContext({viewport:{width:c.w,height:c.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000;const RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{if(r.url().includes(target))loads++});await page.goto(`http://127.0.0.1:4173/${p.url}`,{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(700);const meta=await stableMeta(page,p.marker);const m2=await page.evaluate(metaFn,p.marker);if(JSON.stringify(meta)===JSON.stringify(m2))stable++;if(meta.page===p.expected&&meta.shell&&meta.pageNode&&meta.content&&meta.marker)pageRoots++;else console.log(`ROOT MISS|state=${key}|expected=${p.expected}|actual=${meta.page}|path=${meta.path}|shell=${meta.shell?1:0}|pageNode=${meta.pageNode?1:0}|content=${meta.content?1:0}|marker=${meta.marker?1:0}`);await page.screenshot({fullPage:true});await page.waitForTimeout(200);const shot=await page.screenshot({fullPage:true});out[key]={meta,shot:hash(shot)};await ctx.close();}
@@ -104,7 +118,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.browser.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(REACH TRANSFER PASS|CANDIDATE PASS|PHASE|PAGE ERROR|ROOT MISS|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1400 /tmp/v.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(REACH TRANSFER PASS|R2 TRANSFER PASS|CANDIDATE PASS|PHASE|PAGE ERROR|ROOT MISS|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1400 /tmp/v.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"
@@ -112,6 +126,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 029 mobile page rhythm contract browser r2 [skip ci]' >/dev/null
+          git commit -m 'diag: publish 029 mobile page rhythm contract browser r3 corrected [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
