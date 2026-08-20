@@ -1,0 +1,123 @@
+name: COM-B02AE Repository-Only Continuation State Registry Adapter Implementation
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-adapter-implementation.js'
+      - 'config/com-b02ae-repository-only-continuation-state-registry-adapter-implementation.json'
+      - 'scripts/test-com-b02ae-repository-only-continuation-state-registry-adapter-implementation.js'
+      - '.github/workflows/com-b02ae-repository-only-continuation-state-registry-adapter-implementation.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02ae-repository-only-continuation-state-registry-adapter-implementation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02AD predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=f9b57034e27a7d8ed42a4eeb9673d6a640e69915
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git merge-base --is-ancestor "$BASE" HEAD
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-adapter-contract.js)" = "db53a52234c4ef8b2928e5cfd217bc7d4a406397"
+          test "$(git rev-parse HEAD:config/com-b02ad-repository-only-continuation-state-registry-adapter-contract.json)" = "e1142eaf30ebb7cb39dd918c3d194479f95a621f"
+          test "$(git rev-parse HEAD:scripts/test-com-b02ad-repository-only-continuation-state-registry-adapter-contract.js)" = "de4901df687cde169d2f1cbe5cb6b15a20b4a4a8"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02ad-repository-only-continuation-state-registry-adapter-contract.yml)" = "d3c398c6b0a852bd6bb4721401803a8565de6182"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse HEAD:backend/runtime/staging/staging-api-runtime.js)" = "69de100fe3a269507a0da7847ae8e9887f831ceb"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02ae-repository-only-continuation-state-registry-adapter-implementation.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-adapter-implementation.js \
+            config/com-b02ae-repository-only-continuation-state-registry-adapter-implementation.json \
+            scripts/test-com-b02ae-repository-only-continuation-state-registry-adapter-implementation.js | sort)"
+          expected_reconciled="$(printf '%s\n' \
+            .github/workflows/com-b02ae-repository-only-continuation-state-registry-adapter-implementation.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-adapter-implementation.js \
+            config/com-b02ae-repository-only-continuation-state-registry-adapter-implementation.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02ae-repository-only-continuation-state-registry-adapter-implementation.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$expected_reconciled"
+
+      - name: Syntax and semantic B02AE implementation conformance
+        run: |
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-adapter-implementation.js
+          node --check scripts/test-com-b02ae-repository-only-continuation-state-registry-adapter-implementation.js
+          node scripts/test-com-b02ae-repository-only-continuation-state-registry-adapter-implementation.js
+
+      - name: Adapter implementation remains descriptor-only and unbound
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-adapter-implementation.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -F 'repository-only-route-continuation-state-registry-adapter-implementation' backend/runtime/staging/staging-api-runtime.js
+          ! grep -F 'repository-only-route-continuation-state-registry-adapter-implementation' backend/shared/http/route-registry.js
+          ! grep -F 'repository-only-route-continuation-state-registry-adapter-implementation' backend/shared/http/module-route-loader.js
+          ! grep -F 'repository-only-route-continuation-state-registry-adapter-implementation' backend/modules/communities/route-handlers.js
+          node - <<'NODE'
+          const handlers=require('./backend/modules/communities/route-handlers');
+          const loader=require('./backend/shared/http/module-route-loader');
+          const impl=require('./backend/shared/http/repository-only-route-continuation-state-registry-adapter-implementation');
+          for(const name of ['registerOpaqueContinuationState','resolveOpaqueContinuationState','releaseOpaqueContinuationState']){
+            if(typeof impl[name]!=='function')throw new Error(`B02AE_IMPLEMENTATION_EXPORT_MISSING:${name}`);
+            if(Object.prototype.hasOwnProperty.call(handlers.handlers,name))throw new Error(`B02AE_IMPLEMENTATION_RUNTIME_BOUND:${name}`);
+            if(loader.getHandler('communities',name)!==null)throw new Error(`B02AE_LOADER_EXPOSES_IMPLEMENTATION:${name}`);
+          }
+          const state={secret:'must-not-export', continuation:()=>true};
+          const d=impl.registerOpaqueContinuationState({routeName:'communities.membership.command',continuationState:state});
+          if(d.decision!=='repository_only_registry_adapter_operation_prepared'||d.execute!==false||d.registryInstanceBound!==false||d.registryOperationInvoked!==false||d.continuationStateStored!==false||d.opaqueStateHandleGenerated!==false)throw new Error('B02AE_DESCRIPTOR_SCOPE_DRIFT');
+          if(Object.prototype.hasOwnProperty.call(d,'continuationState')||JSON.stringify(d).includes('must-not-export'))throw new Error('B02AE_RAW_STATE_EXPORT_DRIFT');
+          const b=require('./config/com-b02ae-repository-only-continuation-state-registry-adapter-implementation.json');
+          if(b.authorization.received!==true||b.authorization.singleUse!==true||b.authorization.reusable!==false||b.authorization.genericNextAuthorizedWithinRepositoryOnlyScope!==false||b.authorization.sensitiveBoundariesExcluded!==true)throw new Error('B02AE_AUTHORIZATION_DRIFT');
+          if(b.implementation.registryAdapterImplementationMaterialized!==true||b.implementation.operationDescriptorsOnly!==true||b.implementation.registryOperationInvocationImplemented!==false||b.implementation.registryInstanceMaterialized!==false||b.implementation.registryAdapterBound!==false)throw new Error('B02AE_IMPLEMENTATION_SCOPE_DRIFT');
+          if(b.authority.repositoryOnlyContinuationStateRegistryAdapterImplementationAuthority!==true)throw new Error('B02AE_REPOSITORY_ONLY_AUTHORITY_REQUIRED');
+          for(const k of ['registryInstanceMaterializationAuthority','registryAdapterBindingAuthority','opaqueContinuationCarrierInstanceAuthority','opaqueStateHandleGenerationAuthority','continuationStateStorageAuthority','registryOperationInvocationAuthority','registryLookupAuthority','registryReleaseAuthority','resumeSurfaceInvocationAuthority','activeExecuteHandlerInvocationAuthority','repositoryOperationInvocationAuthority','runtimeBindingAuthority','routeRegistryMutationAuthority','moduleRouteLoaderMutationAuthority','routeHandlerMutationAuthority','credentialSourceBindingAuthority','credentialReadAuthority','rpcExecutionAuthority','networkAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','migrationApplicationAuthority','runtimeActivationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02AE_FORBIDDEN_AUTHORITY:${k}`);
+          for(const k of ['registryInstanceAdded','registryAdapterBound','carrierInstanceAdded','opaqueStateHandleGenerated','continuationStateStored','rawStateSerialized','rawStateExported','executableReferencesExported','registryOperationInvoked','registryLookupExecuted','registryReleaseExecuted','resumeSurfaceInvoked','activeExecuteHandlerInvoked','repositoryOperationInvoked','routeRegistryChanged','moduleRouteLoaderChanged','routeHandlersChanged','stagingApiRuntimeChanged','credentialSourceBound','credentialReadExecuted','rpcExecuted','networkExecuted','stagingReadExecuted','stagingMutationExecuted','migrationApplied','runtimeActivated','productionChanged','pullRequestMerged','readyForReviewChanged'])if(b.effects[k]!==false)throw new Error(`B02AE_FORBIDDEN_EFFECT:${k}`);
+          if(b.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H'||b.functionalCheckpoint.exactRootCauseProven!==false||b.functionalCheckpoint.causalPromotionAllowed!==false||b.functionalCheckpoint.privatePresencePromotionAllowed!==false||b.functionalCheckpoint.r5iCreated!==false||b.functionalCheckpoint.r5iInferred!==false)throw new Error('B02AE_FUNCTIONAL_CHECKPOINT_DRIFT');
+          NODE
+          ! git diff --name-only f9b57034e27a7d8ed42a4eeb9673d6a640e69915 HEAD | grep '^supabase/migrations/'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check f9b57034e27a7d8ed42a4eeb9673d6a640e69915 HEAD
