@@ -36,8 +36,8 @@ jobs:
         run: |
           set -euo pipefail
           CANDIDATE=cd1dbec32a3479184e19626a6703f3bedbfe24a0
-          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
-          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/temp-com-b02ae-matrix-finalizer.yml"
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
+          test "$(git diff --name-only "$CANDIDATE" HEAD)" = ".github/workflows/temp-com-b02ae-matrix-finalizer.yml"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
 
       - name: Install dependencies
@@ -74,7 +74,8 @@ jobs:
           BASE=f9b57034e27a7d8ed42a4eeb9673d6a640e69915
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f -- reports/generated/domain-completion-matrix-report.json
           git rm -- .github/workflows/temp-com-b02ae-matrix-finalizer.yml
           actual="$(git diff HEAD --name-only "$BASE" | sort)"
           expected="$(printf '%s\n' \
