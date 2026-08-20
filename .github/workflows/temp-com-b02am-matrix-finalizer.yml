@@ -1,8 +1,8 @@
 name: TEMP COM-B02AM Matrix Finalizer
 
 on:
-  push:
-    branches: [com/com-001-baseline-audit]
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
     paths:
       - '.github/workflows/temp-com-b02am-matrix-finalizer.yml'
 
@@ -11,20 +11,23 @@ permissions:
 
 jobs:
   finalize:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       BASE: cca461c0c97a6197d33e44bb37745b216d8d0424
       CANDIDATE: 30e9bd6e76da6e008ef1a88a3148e2c2ee6b2a28
       TEMP_V1: c5924e56f5ac099477b65b7963bb098c7a2a1aa6
+      TEMP_V2: b4fec9ddd94b08b66692c43ea436cee654490de3
       BRANCH: com/com-001-baseline-audit
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       TEMP_PATH: .github/workflows/temp-com-b02am-matrix-finalizer.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
-      - name: Checkout exact temporary head
+      - name: Checkout exact recovered temporary head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.PR_HEAD_SHA }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -37,8 +40,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$TEMP_V1"
-          test "$(git rev-parse HEAD^^)" = "$CANDIDATE"
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse HEAD^)" = "$TEMP_V2"
+          test "$(git rev-parse HEAD^^)" = "$TEMP_V1"
+          test "$(git rev-parse HEAD^^^)" = "$CANDIDATE"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           actual="$(git diff --name-only "$CANDIDATE" HEAD | sort)"
           test "$actual" = "$TEMP_PATH"
@@ -97,5 +102,5 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin "$BRANCH"
-          test "$(git rev-parse "origin/$BRANCH")" = "$GITHUB_SHA"
+          test "$(git rev-parse "origin/$BRANCH")" = "$PR_HEAD_SHA"
           git push origin HEAD:refs/heads/$BRANCH
