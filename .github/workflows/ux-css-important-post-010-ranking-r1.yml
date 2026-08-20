@@ -1,10 +1,10 @@
-name: UX CSS Important 029 Mobile Page Rhythm Contract Governance R6
+name: UX CSS Important 029 Candidate Materialization
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  governance029r6:
+  materialize029:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -13,157 +13,45 @@ jobs:
       TARGET_BLOB: 7952fd91dbd24f722350c491f7103c74d4160345
       CANDIDATE_SHA256: 841d8a0d6b65497c468da14c010c081e10111930631b3b6952d694870cfdf262
       CANDIDATE_BLOB: 9e5f1ee53dad8a6c57238359cb70c49f4d15ac99
-      REACH_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-reach-r1.txt
-      REACH_BLOB: c896e4936b1f5ba89da808feffaf7a46316dc33b
-      BROWSER_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-browser-r5.txt
-      BROWSER_BLOB: a51c074c85934f4df958b95f74f1f80e4654aa08
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-governance-r6.txt
+      RESULT_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-candidate.b64
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: govern
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail; exec > >(tee /tmp/g.log) 2>&1
-          test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
-          test "$(git rev-parse "HEAD:$BROWSER_FILE")" = "$BROWSER_BLOB"
-          git show HEAD:"$REACH_FILE" >/tmp/reach.txt
-          git show HEAD:"$BROWSER_FILE" >/tmp/browser.txt
-          grep -q '^RESULT=PASS$' /tmp/reach.txt
-          grep -Fq "CANDIDATE PASS|bytes=12876|important=236->0|removed=236|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/reach.txt
-          grep -Fq 'CANONICAL REACH PASS|rootHtml=27|loadedCss=402|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=0|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1|toolingRefs=none' /tmp/reach.txt
-          grep -Fq 'GLOBAL POLICY DIAGNOSTIC PASS|strictExit=1|expectedExit=1|reactivatedDeprecated=0|registeredMissingFiles=1|unregisteredActiveImportant=0|scope=repo-global|targetBlocking=0' /tmp/reach.txt
-          grep -Fq 'GOVERNANCE TARGET PASS|deprecatedCanonical=1|historicalAliasDocumented=1|quarantine=1|policyRecomputed=1|repoGlobalStrictSeparated=1' /tmp/reach.txt
-          grep -q '^RESULT=PASS$' /tmp/browser.txt
-          grep -Fq "CANDIDATE PASS|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|important=236->0|bytes=12876|reachR1HashStable=1|r2HashStable=1|r3HashStable=1|r4HashStable=1" /tmp/browser.txt
-          grep -Fq "BROWSER PASS|sha256=$CANDIDATE_SHA256|pages=home,results,profile,community,orders,notifications,messages,settings|states=32|viewports=360p,430p,760p,761p|metadataDiffs=0|screenshotDiffs=0|stableStates=32/32|pageErrors=0|targetStylesheetLoads=0/0|renderedRoots=16/16|authRedirects=16/16|authUnexpected=0/0|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|authContractMode=explicit|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1|breakpoints=760/761" /tmp/browser.txt
-          echo 'EVIDENCE CHAIN PASS|reach=R1|browser=R5|candidateHash=exact|candidateBlob=exact|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=0|repoGlobalStrictSeparated=1|historicalR2R3R4Preserved=1'
-
-          git checkout --detach "$PARENT_SHA" >/dev/null
-          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
-          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          cp "$TARGET_FILE" /tmp/parent.css
-          trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true' EXIT
-          node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
-          const o=fs.readFileSync(process.env.TARGET_FILE,'utf8');
-          const c=o.replace(/\s*!important\b/g,'');
-          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
-          const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
-          fs.writeFileSync('/tmp/candidate.css',c);
-          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
-          if(before!==236||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB) throw Error(`candidate ${before}/${after}/${h}/${blob}`);
-          fs.writeFileSync(process.env.TARGET_FILE,c);
-          console.log(`STATIC PASS|sha256=${h}|blob=${blob}|bytes=${Buffer.byteLength(c)}|important=236->0|priorityMarkersRemoved=236|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`);
-          NODE
-
-          npm ci --ignore-scripts >/dev/null
-          node scripts/generate-responsive-index-baseline.js >/dev/null
-          npm run test:responsive-contract | tee /tmp/responsive.log
-          grep -q 'Checks: 893' /tmp/responsive.log
-          grep -q 'Failures: 0' /tmp/responsive.log
-          grep -q 'Skips: 277' /tmp/responsive.log
-          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
-
-          npm run audit:agent-governance >/dev/null
-          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
-          node <<'NODE'
-          const fs=require('fs');
-          const m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);
-          if(!m||+m[1]>339) throw Error('conflicts');
-          console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`);
-          NODE
-          npm run audit:shared-app-header-contract >/dev/null
-          npm run audit:mobile-shell-location-contract >/dev/null
-          npm run audit:responsive-boundaries >/dev/null
-          npm run audit:duplicate-assets | tee /tmp/dup.log
-          grep -q 'Duplicate groups: 0' /tmp/dup.log
-          grep -q 'Duplicated files: 0' /tmp/dup.log
-          npm run audit:domain-completion-matrix | tee /tmp/domain.log
-          grep -q 'Domains: 23' /tmp/domain.log
-          grep -q 'Critical flows: 15' /tmp/domain.log
-          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
-          grep -q 'Critical blockers: 12' /tmp/domain.log
-          git checkout "$PARENT_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
-          npm run audit:active-legacy-structures >/dev/null
-          npm run audit:important-reduction-plan >/dev/null
-          npm run audit:global-css-design-system >/dev/null
-
-          node <<'NODE'
-          const fs=require('fs');
-          const b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8'));
-          const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
-          const s=b.summary,ps=p.summary;
-          if(s.totalImportant!==9105||s.outsideServiceCardImportant!==9043||s.filesWithImportant!==20) throw Error(`important ${JSON.stringify(s)}`);
-          if(ps.affectedFiles!==19||ps.totalImportantOutsideServiceCard!==9043||ps.byRisk?.['high-baseline-required']!==9035||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2) throw Error(`plan ${JSON.stringify(ps)}`);
-          const protectedFiles={
-            protected006:['assets/css/pages/home/mobile-composition.css',6],
-            protected010:['assets/css/components/cards/mobile-card-contract.css',2],
-            protected020:['assets/css/components/shell/mobile-base-stability.css',28],
-            protected021:['assets/css/pages/home/mobile-hero-feed.css',127]
-          };
-          for(const [label,[file,want]] of Object.entries(protectedFiles)){
-            const got=(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length;
-            if(got!==want) throw Error(`${label} ${file} ${got}/${want}`);
-          }
-          const target=(fs.readFileSync(process.env.TARGET_FILE,'utf8').match(/!important\b/g)||[]).length;
-          if(target!==0) throw Error(`targetImportant ${target}`);
-          console.log('IMPORTANT PASS|total=9105|outsideServiceCard=9043|files=20|delta=-236');
-          console.log('QUEUE PASS|affectedFiles=19|highBaselineRequired=9035|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127');
-          NODE
-
-          set +e
-          npm audit --json >/tmp/audit.json
-          code=$?
-          set -e
-          node <<'NODE'
-          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};
-          if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2) throw Error(`deps ${JSON.stringify(v)}`);
-          console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
-          NODE
-
-          test "$(git diff --name-only | wc -l)" -eq 1
-          test "$(git diff --name-only)" = "$TARGET_FILE"
-          num="$(git diff --numstat -- "$TARGET_FILE")"
-          add="$(printf '%s' "$num" | cut -f1)"
-          del="$(printf '%s' "$num" | cut -f2)"
-          test "$add" = "$del"
-          test "$add" = 236
-          echo "PRODUCT DIFF PASS|files=1|additions=$add|deletions=$del|file=$TARGET_FILE|markerDelta=236"
-          echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|browserProof=hash-identical|reachProof=hash-identical|wholeFileDormant=1|candidateHash=exact|candidateBlob=exact|repoGlobalStrictSeparated=1'
-          echo "AUDIT_EXIT=$code"
-          cp /tmp/parent.css "$TARGET_FILE"
-          cmp -s /tmp/parent.css "$TARGET_FILE"
-          echo 'RESTORE PASS|target=parent-exact'
-      - name: publish
-        if: always()
+      - id: materialize
         shell: bash
         run: |
           set -euo pipefail
-          result=FAIL
-          if test '${{ steps.govern.outcome }}' = success; then result=PASS; fi
-          {
-            echo "RUN_ID=$GITHUB_RUN_ID"
-            echo "PARENT_SHA=$PARENT_SHA"
-            echo "TARGET_FILE=$TARGET_FILE"
-            echo "TARGET_BLOB=$TARGET_BLOB"
-            echo "GOVERNANCE=${{ steps.govern.outcome }}"
-            grep -E '^(EVIDENCE CHAIN PASS|STATIC PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|PRODUCT DIFF PASS|GOVERNANCE PASS|RESTORE PASS)\|' /tmp/g.log || true
-            grep '^AUDIT_EXIT=' /tmp/g.log || true
-            echo "RESULT=$result"
-            if test "$result" = FAIL; then tail -n 1000 /tmp/g.log || true; fi
-          } >/tmp/out
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          python3 - <<'PY'
+          import hashlib, os, pathlib, re, subprocess
+          p=pathlib.Path(os.environ['TARGET_FILE'])
+          src=p.read_text()
+          candidate=re.sub(r'\s*!important\b','',src)
+          before=len(re.findall(r'!important\b',src)); after=len(re.findall(r'!important\b',candidate))
+          raw=candidate.encode()
+          sha=hashlib.sha256(raw).hexdigest()
+          pathlib.Path('/tmp/candidate.css').write_bytes(raw)
+          blob=subprocess.check_output(['git','hash-object','/tmp/candidate.css'],text=True).strip()
+          assert before==236 and after==0, (before,after)
+          assert len(raw)==12876, len(raw)
+          assert sha==os.environ['CANDIDATE_SHA256'], sha
+          assert blob==os.environ['CANDIDATE_BLOB'], blob
+          PY
+          base64 -w0 /tmp/candidate.css >/tmp/candidate.b64
+      - name: publish
+        if: ${{ steps.materialize.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"
-          cp /tmp/out "$RESULT_FILE"
+          cp /tmp/candidate.b64 "$RESULT_FILE"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 029 mobile page rhythm contract governance r6 [skip ci]' >/dev/null
+          git commit -m 'diag: publish certified 029 candidate materialization [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
-          test "$result" = PASS
