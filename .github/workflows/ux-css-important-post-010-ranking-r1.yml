@@ -1,10 +1,10 @@
-name: UX CSS Important 029 Candidate Materialization
+name: UX CSS Important 029 Certified Product Promotion
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  materialize029:
+  promote029:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -13,15 +13,18 @@ jobs:
       TARGET_BLOB: 7952fd91dbd24f722350c491f7103c74d4160345
       CANDIDATE_SHA256: 841d8a0d6b65497c468da14c010c081e10111930631b3b6952d694870cfdf262
       CANDIDATE_BLOB: 9e5f1ee53dad8a6c57238359cb70c49f4d15ac99
+      PERM_BRANCH: ux/ux-css-important-029-mobile-page-rhythm-contract-dormant-priority
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-candidate.b64
+      RESULT_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-promotion.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: materialize
+      - id: promote
         shell: bash
         run: |
-          set -euo pipefail
+          set -euo pipefail; exec > >(tee /tmp/p.log) 2>&1
+          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$PERM_BRANCH")" = "$PARENT_SHA"
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse HEAD)" = "$PARENT_SHA"
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
@@ -31,27 +34,49 @@ jobs:
           src=p.read_text()
           candidate=re.sub(r'\s*!important\b','',src)
           before=len(re.findall(r'!important\b',src)); after=len(re.findall(r'!important\b',candidate))
-          raw=candidate.encode()
-          sha=hashlib.sha256(raw).hexdigest()
+          raw=candidate.encode(); sha=hashlib.sha256(raw).hexdigest()
           pathlib.Path('/tmp/candidate.css').write_bytes(raw)
           blob=subprocess.check_output(['git','hash-object','/tmp/candidate.css'],text=True).strip()
           assert before==236 and after==0, (before,after)
           assert len(raw)==12876, len(raw)
           assert sha==os.environ['CANDIDATE_SHA256'], sha
           assert blob==os.environ['CANDIDATE_BLOB'], blob
+          p.write_bytes(raw)
           PY
-          base64 -w0 /tmp/candidate.css >/tmp/candidate.b64
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          num="$(git diff --numstat -- "$TARGET_FILE")"
+          add="$(printf '%s' "$num" | cut -f1)"; del="$(printf '%s' "$num" | cut -f2)"
+          test "$add" = 236; test "$del" = 236
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- "$TARGET_FILE"
+          test "$(git diff --cached --name-only)" = "$TARGET_FILE"
+          git commit -m 'UX-CSS-IMPORTANT-029: remove dormant mobile page rhythm contract priorities' >/dev/null
+          PRODUCT_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD | wc -l)" -eq 1
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = "$TARGET_FILE"
+          TREE="$(git rev-parse 'HEAD^{tree}')"
+          echo "PRODUCT COMMIT PASS|head=$PRODUCT_HEAD|tree=$TREE|parent=$PARENT_SHA|blob=$CANDIDATE_BLOB|files=1|additions=236|deletions=236|markerOnly=1"
+          git push origin "HEAD:refs/heads/$PERM_BRANCH" >/dev/null
+          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$PERM_BRANCH")" = "$PRODUCT_HEAD"
+          echo "PRODUCT PUSH PASS|branch=$PERM_BRANCH|head=$PRODUCT_HEAD|force=0"
       - name: publish
-        if: ${{ steps.materialize.outcome == 'success' }}
+        if: ${{ steps.promote.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"
-          cp /tmp/candidate.b64 "$RESULT_FILE"
+          {
+            grep -E '^(PRODUCT COMMIT PASS|PRODUCT PUSH PASS)\|' /tmp/p.log
+            echo 'RESULT=PASS'
+          } >"$RESULT_FILE"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add "$RESULT_FILE"
-          git commit -m 'diag: publish certified 029 candidate materialization [skip ci]' >/dev/null
+          git add -- "$RESULT_FILE"
+          git commit -m 'diag: publish 029 permanent promotion receipt [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
