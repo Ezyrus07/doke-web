@@ -39,7 +39,8 @@ jobs:
           CANDIDATE=e74aba10ce1afcadc9f6dedb4dd00eed2432ef52
           TEMP=.github/workflows/temp-com-b02ai-matrix-finalizer.yml
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
-          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          test "$(git rev-parse HEAD^)" = "a1849e9562f429a45efd6c54a7dd5537acf3d5ab"
+          test "$(git rev-parse HEAD^^)" = "$CANDIDATE"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
           test "$(git diff --name-only "$CANDIDATE" HEAD)" = "$TEMP"
           expected_candidate="$(printf '%s\n' \
@@ -57,13 +58,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          CANDIDATE=e74aba10ce1afcadc9f6dedb4dd00eed2432ef52
           SOURCE_BEFORE="$(git rev-parse HEAD:config/domain-completion-matrix.json)"
           test "$SOURCE_BEFORE" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
           npm run write:domain-completion-matrix
           git diff --exit-code -- config/domain-completion-matrix.json
           expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
-          actual="$(git diff --name-only "$CANDIDATE" | sort)"
+          actual="$(git diff --name-only HEAD | sort)"
           test "$actual" = "$expected"
 
       - name: Revalidate B02AI Matrix governance and diff hygiene
