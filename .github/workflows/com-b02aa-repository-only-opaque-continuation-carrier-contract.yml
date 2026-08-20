@@ -7,15 +7,15 @@ on:
       - '.github/workflows/com-b02aa-repository-only-opaque-continuation-carrier-contract.yml'
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: read
 
 concurrency:
-  group: com-b02aa-matrix-materialization-via-certifier-${{ github.ref }}
+  group: com-b02aa-domain-completion-matrix-finalization-${{ github.ref }}
   cancel-in-progress: false
 
 env:
-  EXPECTED_PARENT_HEAD: bb3c32d4c5ee198af8c9ec538cff5b0357c39c45
+  EXPECTED_PARENT_HEAD: a83bf0b9aede838e4104a9b241e5d394757ea22b
   CANONICAL_B02AA_HEAD: a406d618749aca3c7281e032962e8c7abc8a7710
   EXPECTED_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
   EXPECTED_B02AA_CONTRACT_BLOB: fb7448f83fe385e94a2be61685f612d9e27d949f
@@ -24,7 +24,7 @@ env:
   CANONICAL_CERTIFIER_BLOB: 7f9a67841ffe5f7cd1bade37d13f281c7a4c585a
 
 jobs:
-  materialize:
+  finalize:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -33,7 +33,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -41,10 +41,11 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Materialize exact final B02AA Matrix hashes read-only
+      - name: Regenerate exact B02AA derivatives and fast-forward final snapshot
         shell: bash
         run: |
           set -euo pipefail
+          BRANCH='com/com-001-baseline-audit'
           EVENT_HEAD='${{ github.event.pull_request.head.sha }}'
           CERT='.github/workflows/com-b02aa-repository-only-opaque-continuation-carrier-contract.yml'
           OLD_TEMP='.github/workflows/com-b02aa-domain-completion-matrix-materialization-temp.yml'
@@ -75,7 +76,16 @@ jobs:
             reports/generated/domain-completion-matrix-report.json | sort)"
           test "$actual" = "$expected"
 
+          test "$(git hash-object "$CERT")" = "$CANONICAL_CERTIFIER_BLOB"
           echo "MARKDOWN_BLOB=$(git hash-object docs/DOMAIN-COMPLETION-MATRIX.md)"
           echo "REPORT_BLOB=$(git hash-object reports/generated/domain-completion-matrix-report.json)"
-          echo "SOURCE_BLOB=$(git rev-parse HEAD:config/domain-completion-matrix.json)"
-          echo 'COM-B02AA_MATRIX_MATERIALIZATION=PASS'
+
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add "$CERT" docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git commit -m 'docs(com): reconcile B02AA Domain Completion Matrix derivatives'
+
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$EVENT_HEAD"
+          git push origin HEAD:"refs/heads/$BRANCH"
