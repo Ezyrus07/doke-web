@@ -1,31 +1,111 @@
-name: Domain Completion Matrix Artifact Sync
+name: COM-B02AC Domain Completion Matrix Finalization TEMP
 
 on:
   pull_request:
     branches: [rep/rep-001-baseline-audit]
     paths:
-      - 'config/domain-completion-matrix.json'
-      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
-      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/domain-completion-matrix-sync.yml'
 
-permissions: { contents: read }
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: com-b02ac-domain-completion-matrix-finalization-fallback-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FIRST_TEMP_HEAD: a686a8aa930da18f6bd5e5120c6b4911cc88a4ac
+  CANDIDATE_HEAD: 84193e65cd12ea8f45596fcbc5d775670b9593e4
+  B02AB_BASE: 2cd92f6e76ec41496cd8ca33b0e32303a3615ee3
+  EXPECTED_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+  EXPECTED_MODULE_BLOB: f194e8c044d6d2ebf0928a0d8c5fd2c3e8f6c50d
+  EXPECTED_CONFIG_BLOB: 3ec5790d66900d8deedcf53dcc419d756f8fc0e8
+  EXPECTED_TEST_BLOB: 6e3a1706eab2f37b3461a23de5aaa6c0df7b63b2
+  CANONICAL_CERTIFIER_BLOB: dda2bd356357990f722c28a7165295c27deb9790
+  ORIGINAL_SYNC_BLOB: 299108d86dc097ba090392ebe9f218f6849e74ad
 
 jobs:
-  verify:
+  finalize:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-node@v4
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
-      - run: npm ci --ignore-scripts
-      - name: Domain Completion Matrix
-        run: npm run audit:domain-completion-matrix
-      - name: Agent Governance
-        run: npm run audit:agent-governance
-      - name: Diff hygiene
-        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+
+      - name: Regenerate exact B02AC derivatives and prepare final snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH='com/com-001-baseline-audit'
+          EVENT_HEAD='${{ github.event.pull_request.head.sha }}'
+          SYNC='.github/workflows/domain-completion-matrix-sync.yml'
+          CERT='.github/workflows/com-b02ac-repository-only-continuation-state-registry-adapter-readiness.yml'
+
+          test "$(git rev-parse HEAD)" = "$EVENT_HEAD"
+          test "$(git rev-parse HEAD^)" = "$FIRST_TEMP_HEAD"
+          git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-adapter-readiness.js)" = "$EXPECTED_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02ac-repository-only-continuation-state-registry-adapter-readiness.json)" = "$EXPECTED_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:scripts/test-com-b02ac-repository-only-continuation-state-registry-adapter-readiness.js)" = "$EXPECTED_TEST_BLOB"
+          test "$(git rev-parse HEAD:$CERT)" = "$CANONICAL_CERTIFIER_BLOB"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$EXPECTED_SOURCE_BLOB"
+
+          git show "$B02AB_BASE:$SYNC" > "$SYNC"
+          test "$(git hash-object "$SYNC")" = "$ORIGINAL_SYNC_BLOB"
+          test "$(git hash-object "$CERT")" = "$CANONICAL_CERTIFIER_BLOB"
+
+          node scripts/audit-domain-completion-matrix.js --write
+          git diff --exit-code -- config/domain-completion-matrix.json
+          node scripts/test-com-b02ac-repository-only-continuation-state-registry-adapter-readiness.js
+          npm ci --ignore-scripts
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+          actual="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' \
+            "$SYNC" \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json | sort)"
+          test "$actual" = "$expected"
+          test "$(git hash-object "$SYNC")" = "$ORIGINAL_SYNC_BLOB"
+          test "$(git hash-object "$CERT")" = "$CANONICAL_CERTIFIER_BLOB"
+
+          echo "MARKDOWN_BLOB=$(git hash-object docs/DOMAIN-COMPLETION-MATRIX.md)"
+          echo "REPORT_BLOB=$(git hash-object reports/generated/domain-completion-matrix-report.json)"
+
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add "$SYNC" docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git commit -m 'docs(com): reconcile B02AC Domain Completion Matrix derivatives'
+
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02ac-repository-only-continuation-state-registry-adapter-readiness.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-adapter-readiness.js \
+            config/com-b02ac-repository-only-continuation-state-registry-adapter-readiness.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02ac-repository-only-continuation-state-registry-adapter-readiness.js | sort)"
+          actual_final="$(git diff --name-only "$B02AB_BASE" HEAD | sort)"
+          test "$actual_final" = "$expected_final"
+          test "$(git rev-parse HEAD:$SYNC)" = "$ORIGINAL_SYNC_BLOB"
+          test "$(git rev-parse HEAD:$CERT)" = "$CANONICAL_CERTIFIER_BLOB"
+
+          echo "PREPARED_FINAL_HEAD=$(git rev-parse HEAD)"
+          echo "PREPARED_FINAL_TREE=$(git rev-parse HEAD^{tree})"
+
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$EVENT_HEAD"
+          git push origin HEAD:"refs/heads/$BRANCH"
