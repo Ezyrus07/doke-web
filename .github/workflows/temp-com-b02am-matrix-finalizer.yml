@@ -16,6 +16,7 @@ jobs:
     env:
       BASE: cca461c0c97a6197d33e44bb37745b216d8d0424
       CANDIDATE: 30e9bd6e76da6e008ef1a88a3148e2c2ee6b2a28
+      TEMP_V1: c5924e56f5ac099477b65b7963bb098c7a2a1aa6
       BRANCH: com/com-001-baseline-audit
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       TEMP_PATH: .github/workflows/temp-com-b02am-matrix-finalizer.yml
@@ -32,11 +33,12 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze candidate lineage and Matrix source
+      - name: Freeze recovered candidate lineage and Matrix source
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          test "$(git rev-parse HEAD^)" = "$TEMP_V1"
+          test "$(git rev-parse HEAD^^)" = "$CANDIDATE"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           actual="$(git diff --name-only "$CANDIDATE" HEAD | sort)"
           test "$actual" = "$TEMP_PATH"
@@ -90,7 +92,7 @@ jobs:
           test "$actual_final" = "$expected_final"
           ! git ls-tree -r --name-only HEAD | grep -Fx "$TEMP_PATH"
 
-      - name: Fast-forward branch only if temporary head is still current
+      - name: Fast-forward branch only if recovered temporary head is still current
         shell: bash
         run: |
           set -euo pipefail
