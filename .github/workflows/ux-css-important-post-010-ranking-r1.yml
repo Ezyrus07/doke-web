@@ -1,10 +1,10 @@
-name: UX CSS Important 031 Home Sections Browser R2
+name: UX CSS Important 031 Home Sections Browser R3 Corrected
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  browser031r2:
+  browser031r3:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -15,8 +15,10 @@ jobs:
       CANDIDATE_BLOB: f26ea47194a9c814ec9f27b86b9a29ae14519fca
       REACH_FILE: .diagnostics/ux-css-important-031-home-sections-reach-r1.txt
       REACH_BLOB: 716bbb15d9a2b2388c1759980b8cba5144b124d2
+      R2_FILE: .diagnostics/ux-css-important-031-home-sections-browser-r2.txt
+      R2_BLOB: 954284f50d0ceed6cfdd7a8dc8d4d1ad80f1e99f
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-031-home-sections-browser-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-031-home-sections-browser-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -28,15 +30,25 @@ jobs:
         run: |
           set -euo pipefail; exec > >(tee /tmp/v.log) 2>&1
           test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
+          test "$(git rev-parse "HEAD:$R2_FILE")" = "$R2_BLOB"
           git show HEAD:"$REACH_FILE" >/tmp/reach.txt
-          grep -q '^RUN_ID=32428524333$' /tmp/reach.txt
+          git show HEAD:"$R2_FILE" >/tmp/r2.txt
           grep -q '^RESULT=PASS$' /tmp/reach.txt
           grep -Fq "CANDIDATE PASS|bytes=29174|important=290->0|removed=290|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/reach.txt
           grep -Fq 'CANONICAL REACH PASS|rootHtml=27|loadedCss=402|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=1|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1' /tmp/reach.txt
-          echo 'REACH TRANSFER PASS|source=R1|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=1|candidateHash=exact|candidateBlob=exact'
+          grep -q '^RESULT=FAIL$' /tmp/r2.txt
+          grep -Fq 'targetStylesheetLoads=7/7|pageRoots=0/0' /tmp/r2.txt
+          echo 'R2 CLASSIFICATION PASS|run=32428613702|historicalResult=FAIL|classification=harness-invalid|basenameCollision=home-sections.css_vs_home/sections.css|legacyRoots=before-after,featured-pros|preserved=1'
+          echo 'REACH TRANSFER PASS|source=R1|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=1|candidateHash=exact|candidateBlob=exact|historicalR2Preserved=1'
 
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          live_blob="$(git rev-parse HEAD:assets/css/pages/home-sections.css)"
+          test "$live_blob" != "$TARGET_BLOB"
+          grep -Fq '@import url("./home-sections.css?v=20260612-lower-feed-contract-v3");' assets/css/pages/home-runtime-page.css
+          if grep -Fq 'home/sections.css' assets/css/pages/home-runtime-page.css; then echo 'canonical target unexpectedly imported'; exit 1; fi
+          echo "PATH RECONCILIATION PASS|target=/assets/css/pages/home/sections.css|live=/assets/css/pages/home-sections.css|liveBlob=$live_blob|distinctBlobs=1|exactRuntimeImport=home-sections.css"
+
           cp "$TARGET_FILE" /tmp/parent.css
           trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true; kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
           node <<'NODE'
@@ -46,8 +58,9 @@ jobs:
           const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
           const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
           if(before!==290||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);
-          console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=290->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1`);
+          console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=290->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1|r2HashStable=1`);
           NODE
+
           npm ci --ignore-scripts >/dev/null
           npx playwright install --with-deps chromium >/dev/null 2>&1
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
@@ -55,17 +68,17 @@ jobs:
           cat >/tmp/proof.js <<'NODE'
           const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
           const cases=[{w:360,h:900,key:'360p'},{w:420,h:900,key:'420p'},{w:421,h:900,key:'421p'},{w:560,h:950,key:'560p'},{w:561,h:950,key:'561p'},{w:760,h:1000,key:'760p'},{w:761,h:1000,key:'761p'}];
-          const target='sections.css',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,overflowX:cs.overflowX,gridTemplateColumns:cs.gridTemplateColumns,gridAutoColumns:cs.gridAutoColumns,gridAutoRows:cs.gridAutoRows,gap:cs.gap,padding:cs.padding,margin:cs.margin}};return{vw:innerWidth,vh:innerHeight,page:document.body?.dataset?.page||null,path:location.pathname,shell:q('.app-shell'),content:q('main.page__content, .page__content'),shortVideos:q('.short-videos'),workers:q('.short-videos__track'),beforeAfter:q('.before-after'),comparison:q('.comparison-grid'),moreServices:q('.more-services'),moreGrid:q('.more-services .service-grid--compact'),publications:q('.home-publications'),pros:q('.featured-pros'),prosGrid:q('.featured-pros__grid, #featured-pros-track')};};
+          const targetPath='/assets/css/pages/home/sections.css',livePath='/assets/css/pages/home-sections.css',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,overflowX:cs.overflowX,gridTemplateColumns:cs.gridTemplateColumns,gridAutoColumns:cs.gridAutoColumns,gridAutoRows:cs.gridAutoRows,gap:cs.gap,padding:cs.padding,margin:cs.margin}};return{vw:innerWidth,vh:innerHeight,page:document.body?.dataset?.page||null,path:location.pathname,shell:q('.app-shell'),content:q('main.page__content, .page__content'),shortVideos:q('.short-videos'),workers:q('.short-videos__track'),moreServices:q('.more-services'),moreGrid:q('.more-services .service-grid--compact'),publications:q('.home-publications'),professionalShowcase:q('.professional-showcase'),professionalTrack:q('.professional-showcase__track')};};
           async function stableMeta(page){let prev='';for(let i=0;i<12;i++){const m=await page.evaluate(metaFn),s=JSON.stringify(m);if(s===prev)return m;prev=s;await page.waitForTimeout(300);}return page.evaluate(metaFn)}
-          async function phase(label){const browser=await chromium.launch({headless:true});const out={};let loads=0,errs=0,stable=0,roots=0;for(const c of cases){const key=c.key,ctx=await browser.newContext({viewport:{width:c.w,height:c.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{if(r.url().includes(target))loads++});await page.goto('http://127.0.0.1:4173/index.html',{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(700);const meta=await stableMeta(page),m2=await page.evaluate(metaFn);if(JSON.stringify(meta)===JSON.stringify(m2))stable++;if(meta.page==='home'&&meta.path==='/index.html'&&meta.shell&&meta.content&&meta.shortVideos&&meta.beforeAfter&&meta.moreServices&&meta.pros)roots++;else console.log(`ROOT MISS|state=${key}|page=${meta.page}|path=${meta.path}|shell=${meta.shell?1:0}|content=${meta.content?1:0}|short=${meta.shortVideos?1:0}|before=${meta.beforeAfter?1:0}|more=${meta.moreServices?1:0}|pros=${meta.pros?1:0}`);await page.screenshot({fullPage:true});await page.waitForTimeout(200);const shot=await page.screenshot({fullPage:true});out[key]={meta,shot:hash(shot)};await ctx.close();}await browser.close();console.log(`PHASE|label=${label}|states=${cases.length}|stableStates=${stable}|pageErrors=${errs}|targetStylesheetLoads=${loads}|pageRoots=${roots}`);return{out,loads,errs,stable,roots};}
+          async function phase(label){const browser=await chromium.launch({headless:true});const out={};let targetLoads=0,liveLoads=0,errs=0,stable=0,roots=0;for(const c of cases){const key=c.key,ctx=await browser.newContext({viewport:{width:c.w,height:c.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath)targetLoads++;if(u.pathname===livePath)liveLoads++;});await page.goto('http://127.0.0.1:4173/index.html',{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(700);const meta=await stableMeta(page),m2=await page.evaluate(metaFn);if(JSON.stringify(meta)===JSON.stringify(m2))stable++;if(meta.page==='home'&&meta.path==='/index.html'&&meta.shell&&meta.content&&meta.shortVideos&&meta.moreServices&&meta.publications&&meta.professionalShowcase)roots++;else console.log(`ROOT MISS|state=${key}|page=${meta.page}|path=${meta.path}|shell=${meta.shell?1:0}|content=${meta.content?1:0}|short=${meta.shortVideos?1:0}|more=${meta.moreServices?1:0}|publications=${meta.publications?1:0}|professionalShowcase=${meta.professionalShowcase?1:0}`);await page.screenshot({fullPage:true});await page.waitForTimeout(200);const shot=await page.screenshot({fullPage:true});out[key]={meta,shot:hash(shot)};await ctx.close();}await browser.close();console.log(`PHASE|label=${label}|states=${cases.length}|stableStates=${stable}|pageErrors=${errs}|targetStylesheetLoads=${targetLoads}|liveHomeSectionsLoads=${liveLoads}|pageRoots=${roots}`);return{out,targetLoads,liveLoads,errs,stable,roots};}
           (async()=>{const p=await phase(process.argv[2]);fs.writeFileSync(process.argv[3],JSON.stringify(p));})().catch(e=>{console.error(e);process.exit(1)});
           NODE
           NODE_PATH="$PWD/node_modules" node /tmp/proof.js parent /tmp/parent.json
           cp /tmp/candidate.css "$TARGET_FILE"
           NODE_PATH="$PWD/node_modules" node /tmp/proof.js candidate /tmp/candidate.json
           node <<'NODE'
-          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const n=Object.keys(a.out).length;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|page=home|states=${n}|viewports=360p,420p,421p,560p,561p,760p,761p|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|pageRoots=${a.roots}/${b.roots}|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1|breakpoints=420/421,560/561,760/761`);if(md||sd||a.errs||b.errs||a.loads||b.loads||a.stable!==7||b.stable!==7||a.roots!==7||b.roots!==7)process.exit(1);
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const n=Object.keys(a.out).length;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|page=home|states=${n}|viewports=360p,420p,421p,560p,561p,760p,761p|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.targetLoads}/${b.targetLoads}|liveHomeSectionsLoads=${a.liveLoads}/${b.liveLoads}|pageRoots=${a.roots}/${b.roots}|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1|breakpoints=420/421,560/561,760/761`);if(md||sd||a.errs||b.errs||a.targetLoads||b.targetLoads||a.liveLoads!==7||b.liveLoads!==7||a.stable!==7||b.stable!==7||a.roots!==7||b.roots!==7)process.exit(1);
           NODE
           cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
@@ -73,6 +86,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.browser.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(REACH TRANSFER PASS|CANDIDATE PASS|PHASE|PAGE ERROR|ROOT MISS|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1400 /tmp/v.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(R2 CLASSIFICATION PASS|REACH TRANSFER PASS|PATH RECONCILIATION PASS|CANDIDATE PASS|PHASE|PAGE ERROR|ROOT MISS|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1400 /tmp/v.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 031 home sections browser r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add "$RESULT_FILE"; git commit -m 'diag: publish 031 home sections browser r3 corrected [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
