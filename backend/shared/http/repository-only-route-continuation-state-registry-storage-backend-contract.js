@@ -38,10 +38,10 @@ function freeze(value) {
   return Object.freeze(value);
 }
 
-function containsFunction(value, seen = new Set()) {
+function containsFunction(value, seen = []) {
   if (typeof value === 'function') return true;
-  if (!value || typeof value !== 'object' || seen.has(value)) return false;
-  seen.add(value);
+  if (!value || typeof value !== 'object' || seen.includes(value)) return false;
+  seen.push(value);
   return Object.values(value).some((child) => containsFunction(child, seen));
 }
 
@@ -146,11 +146,9 @@ function validateRepositoryOnlyContinuationStateRegistryStorageBackendContractSh
       'B02AK_STATE_CLASSIFICATION_REQUIRED');
     req(JSON.stringify(candidate.routeNames) === JSON.stringify(predecessor.routeNames),
       'CANONICAL_COMMAND_ROUTES_REQUIRED');
-    req(JSON.stringify(candidate.requiredOperationNames) ===
-      JSON.stringify(predecessor.requiredOperationNames),
+    req(JSON.stringify(candidate.requiredOperationNames) === JSON.stringify(predecessor.requiredOperationNames),
       'EXACT_STORAGE_OPERATION_NAMES_REQUIRED');
-    req(JSON.stringify(candidate.storageBackendRequirements) ===
-      JSON.stringify(predecessor.storageBackendRequirements),
+    req(JSON.stringify(candidate.storageBackendRequirements) === JSON.stringify(predecessor.storageBackendRequirements),
       'EXACT_STORAGE_BACKEND_REQUIREMENTS_REQUIRED');
     req(candidate.storageBackendReadinessMaterialized === true,
       'B02AK_STORAGE_BACKEND_READINESS_REQUIRED');
