@@ -1,0 +1,111 @@
+name: TEMP COM-B02AH Matrix Finalizer
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/temp-com-b02ah-matrix-finalizer.yml'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: temp-com-b02ah-matrix-finalizer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Prove TEMP lineage and frozen Matrix source
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE=c87c9fdf3e548e4f24283628c9da1a7aa028de12
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
+          test "$(git diff --name-only "$CANDIDATE" HEAD)" = ".github/workflows/temp-com-b02ah-matrix-finalizer.yml"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate canonical Matrix derivatives only
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_BEFORE="$(git hash-object config/domain-completion-matrix.json)"
+          npm run write:domain-completion-matrix
+          SOURCE_AFTER="$(git hash-object config/domain-completion-matrix.json)"
+          test "$SOURCE_BEFORE" = "$SOURCE_AFTER"
+          test "$SOURCE_AFTER" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          test "$changed" = "$expected"
+
+      - name: Revalidate B02AH and governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-adapter-to-instance-binding-readiness.js
+          node --check "$TARGET"
+          node --check scripts/test-com-b02ah-repository-only-continuation-state-registry-adapter-to-instance-binding-readiness.js
+          node scripts/test-com-b02ah-repository-only-continuation-state-registry-adapter-to-instance-binding-readiness.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E 'registryAdapter\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Remove TEMP and prove final permanent scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=fa62d6e5a6e705b83640a0e551d1a23d7e1d42f3
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f -- reports/generated/domain-completion-matrix-report.json
+          git rm -- .github/workflows/temp-com-b02ah-matrix-finalizer.yml
+          FINAL_TREE="$(git write-tree)"
+          actual="$(git diff --name-only "$BASE" "$FINAL_TREE" | sort)"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02ah-repository-only-continuation-state-registry-adapter-to-instance-binding-readiness.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-adapter-to-instance-binding-readiness.js \
+            config/com-b02ah-repository-only-continuation-state-registry-adapter-to-instance-binding-readiness.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02ah-repository-only-continuation-state-registry-adapter-to-instance-binding-readiness.js | sort)"
+          test "$actual" = "$expected"
+          ! git ls-tree -r --name-only "$FINAL_TREE" | grep -Fx '.github/workflows/temp-com-b02ah-matrix-finalizer.yml'
+          test "$(git rev-parse "$FINAL_TREE:config/domain-completion-matrix.json")" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          test "$(git rev-parse "$FINAL_TREE:backend/shared/http/repository-only-route-continuation-state-registry-instance.js")" = "f51c31d5cdf049f762663151661cecb4adca33a2"
+          test "$(git rev-parse "$FINAL_TREE:backend/shared/http/repository-only-route-continuation-state-registry-adapter-implementation.js")" = "cff5c53dd5aea9af7c1fda6a4f8665ce19a9d40a"
+          test "$(git rev-parse "$FINAL_TREE:backend/shared/http/module-route-loader.js")" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse "$FINAL_TREE:backend/shared/http/route-registry.js")" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse "$FINAL_TREE:backend/modules/communities/route-handlers.js")" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse "$FINAL_TREE:backend/runtime/staging/staging-api-runtime.js")" = "69de100fe3a269507a0da7847ae8e9887f831ceb"
+          git diff --check "$BASE" "$FINAL_TREE"
+          git commit -m "docs(com): reconcile B02AH Domain Completion Matrix derivatives"
+
+      - name: Fast-forward branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin com/com-001-baseline-audit
+          test "$(git rev-parse origin/com/com-001-baseline-audit)" = "${{ github.event.pull_request.head.sha }}"
+          git push origin HEAD:refs/heads/com/com-001-baseline-audit
