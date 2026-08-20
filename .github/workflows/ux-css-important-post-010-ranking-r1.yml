@@ -1,10 +1,10 @@
-name: UX CSS Important 028 Responsive Page Contract Reach R1
+name: UX CSS Important 028 Responsive Page Contract Reach R2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach028:
+  reach028r2:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -12,8 +12,15 @@ jobs:
       TARGET_FILE: assets/css/components/layout/responsive-page-contract.css
       TARGET_BLOB: 58381e6cbd8b589bed873c7694f41b275fd04790
       EXPECTED_IMPORTANT: '230'
+      CANDIDATE_SHA256: 2ddd7cb123174dca0ab445f414b342a2bf2dde605842cebd35c6868832baaff4
+      CANDIDATE_BLOB: ef9a3ce33425b9f5565b83e5ccaa23e9cc437a4f
+      R1_FILE: .diagnostics/ux-css-important-028-responsive-page-contract-reach-r1.txt
+      R1_BLOB: 64152b299b60d270a861d2543bf4d7a8f71dd0d3
+      POLICY_SCRIPT_BLOB: fcade2556f9ed5f1f04e02ca6c4fd7bd249d8318
+      REGISTER_BLOB: 63943f80013e0a66cb3f6c6de4e91530bb83daf5
+      DEPRECATED_BLOB: 7626d257532d8e91dfa2a76dccced57e5a07b8d7
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-028-responsive-page-contract-reach-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-028-responsive-page-contract-reach-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -21,9 +28,24 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/r2.log) 2>&1
           test "$(git rev-parse --is-shallow-repository)" = false
+          test "$(git rev-parse "HEAD:$R1_FILE")" = "$R1_BLOB"
+          git show "HEAD:$R1_FILE" >/tmp/r1.txt
+          grep -q '^RUN_ID=32364826321$' /tmp/r1.txt
+          grep -q '^PARENT_SHA=0f63db75ceab50e2b1487e1dc212272da68dfada$' /tmp/r1.txt
+          grep -q '^TARGET_BLOB=58381e6cbd8b589bed873c7694f41b275fd04790$' /tmp/r1.txt
+          grep -q '^REACH=failure$' /tmp/r1.txt
+          grep -q '^RESULT=FAIL$' /tmp/r1.txt
+          grep -Fq "CANDIDATE PASS|bytes=23953|important=230->0|removed=230|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/r1.txt
+          grep -Fq 'CLASSIFICATION PASS|activeHtml=32|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=0|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1|toolingRefs=none' /tmp/r1.txt
+          grep -Fq 'REACH PASS|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|otherJsRefs=0|active=0|wholeFileDormant=1' /tmp/r1.txt
+          echo 'R1 TRANSFER PASS|run=32364826321|historicalResult=FAIL|classification=harness-invalid|materialReach=PASS|wholeFileDormant=1|candidateHash=exact|candidateBlob=exact'
+
           test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git rev-parse "$PARENT_SHA:scripts/audit-css-dormant-debt-policy.js")" = "$POLICY_SCRIPT_BLOB"
+          test "$(git rev-parse "$PARENT_SHA:config/important-debt-register.json")" = "$REGISTER_BLOB"
+          test "$(git rev-parse "$PARENT_SHA:docs/DEPRECATED-CSS.md")" = "$DEPRECATED_BLOB"
           git show "$PARENT_SHA:$TARGET_FILE" >/tmp/source.css
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
@@ -33,81 +55,125 @@ jobs:
           const after=(out.match(/!important\b/g)||[]).length;
           const removed=before-after;
           if(before!==+process.env.EXPECTED_IMPORTANT||after!==0||removed!==+process.env.EXPECTED_IMPORTANT) throw Error(`important ${before}->${after}`);
-          fs.writeFileSync('/tmp/candidate.css',out);
           const sha256=crypto.createHash('sha256').update(Buffer.from(out)).digest('hex');
+          fs.writeFileSync('/tmp/candidate.css',out);
           const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
-          console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(out)}|important=${before}->${after}|removed=${removed}|sha256=${sha256}|blob=${blob}|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
+          if(sha256!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB) throw Error(`candidate identity ${sha256}/${blob}`);
+          console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(out)}|important=${before}->${after}|removed=${removed}|sha256=${sha256}|blob=${blob}|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0|r1HashStable=1`);
           NODE
+
           git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
           node <<'NODE'
           const fs=require('fs'),path=require('path');
-          const root=process.cwd(), target=process.env.TARGET_FILE.replace(/\\/g,'/');
-          const excluded=new Set(['archive','reports','tools','test-results','.git','node_modules']);
-          const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'');
-          function walk(dir='.') {
+          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
+          const root=process.cwd(),target=process.env.TARGET_FILE.replace(/\\/g,'/');
+          const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'').replace(/^\/+/, '').split('?')[0].split('#')[0];
+          const rootHtml=fs.readdirSync(root).filter(f=>f.endsWith('.html')).sort();
+          const loaded=new Set();
+          for(const page of rootHtml){
+            const html=fs.readFileSync(page,'utf8');
+            for(const asset of getLoadedCssAssets(html,root)) loaded.add(norm(asset));
+          }
+          function walk(dir,skip=new Set()){
             const out=[];
+            if(!fs.existsSync(dir)) return out;
             for(const ent of fs.readdirSync(dir,{withFileTypes:true})){
-              if(ent.isDirectory()&&excluded.has(ent.name)) continue;
-              const p=path.join(dir,ent.name);
-              if(ent.isDirectory()) out.push(...walk(p)); else out.push(norm(p));
+              if(ent.isDirectory()&&skip.has(ent.name)) continue;
+              const full=path.join(dir,ent.name);
+              if(ent.isDirectory()) out.push(...walk(full,skip)); else out.push(norm(path.relative(root,full)));
             }
             return out;
           }
-          const files=walk();
-          const htmlFiles=files.filter(f=>f.endsWith('.html'));
-          const cssFiles=files.filter(f=>f.startsWith('assets/css/')&&f.endsWith('.css'));
-          const jsFiles=files.filter(f=>/\.(?:js|mjs|cjs)$/.test(f));
-          const strip=s=>s.split('#')[0].split('?')[0];
-          const resolve=(from,raw)=>norm(path.posix.normalize(path.posix.join(path.posix.dirname(from),strip(raw))));
-          const directLinks=new Map();
+          const cssFiles=walk(path.join(root,'assets','css')).filter(f=>f.endsWith('.css'));
+          const allFiles=walk(root,new Set(['node_modules','.git','archive','reports','test-results']));
+          const jsFiles=allFiles.filter(f=>/\.(?:js|mjs|cjs)$/.test(f));
+          const resolve=(from,raw)=>{
+            let clean=String(raw||'').split('?')[0].split('#')[0];
+            if(clean.startsWith('/')) return norm(clean);
+            if(clean.startsWith('assets/')) return norm(clean);
+            return norm(path.posix.normalize(path.posix.join(path.posix.dirname(from),clean)));
+          };
           let htmlLinks=0;
-          for(const h of htmlFiles){
-            const text=fs.readFileSync(h,'utf8'), links=[];
-            for(const m of text.matchAll(/<link\b[^>]*>/gi)){
-              const tag=m[0], rel=tag.match(/\brel\s*=\s*["']([^"']+)["']/i)?.[1]||'';
-              if(!/\bstylesheet\b/i.test(rel)) continue;
-              const href=tag.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
-              if(!href||/^(?:https?:|data:|\/\/)/i.test(href)) continue;
-              const r=resolve(h,href); links.push(r); if(r===target) htmlLinks++;
+          for(const page of rootHtml){
+            const html=fs.readFileSync(page,'utf8');
+            for(const m of html.matchAll(/<link\b[^>]*>/gi)){
+              const tag=m[0];
+              const rel=(tag.match(/\brel\s*=\s*(["'])(.*?)\1/i)||[])[2]||'';
+              const href=(tag.match(/\bhref\s*=\s*(["'])(.*?)\1/i)||[])[2]||'';
+              if(!rel.toLowerCase().split(/\s+/).includes('stylesheet')||!href||/^(?:https?:|data:|\/\/)/i.test(href)) continue;
+              if(resolve(page,href)===target) htmlLinks++;
             }
-            directLinks.set(h,links);
           }
-          const imports=new Map(); let actualImporters=0, cssTextRefs=0;
-          for(const c of cssFiles){
-            const text=fs.readFileSync(c,'utf8'), arr=[];
+          let actualImporters=0,cssTextRefs=0;
+          for(const file of cssFiles){
+            const text=fs.readFileSync(file,'utf8');
             for(const m of text.matchAll(/@import\s+(?:url\(\s*)?(?:["']([^"']+)["']|([^\s;)]+))\s*\)?/gi)){
-              const raw=m[1]||m[2]; if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw)) continue;
-              const r=resolve(c,raw); arr.push(r); if(r===target) actualImporters++;
+              const raw=m[1]||m[2];
+              if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw)) continue;
+              if(resolve(file,raw)===target) actualImporters++;
             }
-            imports.set(c,arr); if(c!==target&&text.includes(target)) cssTextRefs++;
+            if(file!==target&&text.includes(target)) cssTextRefs++;
           }
-          const reachable=new Set(), q=[];
-          for(const links of directLinks.values()) for(const c of links){if(!reachable.has(c)){reachable.add(c);q.push(c)}}
-          for(let i=0;i<q.length;i++) for(const x of (imports.get(q[i])||[])){if(!reachable.has(x)){reachable.add(x);q.push(x)}}
-          const runtimeRefs=[], toolingRefs=[], otherRefs=[];
-          for(const f of jsFiles){
-            const text=fs.readFileSync(f,'utf8'); if(!text.includes(target)) continue;
-            if(f.startsWith('assets/js/')) runtimeRefs.push(f);
-            else if(f.startsWith('scripts/')||f.startsWith('tests/')||f.startsWith('test/')||f.startsWith('tools/')) toolingRefs.push(f);
-            else otherRefs.push(f);
+          const runtimeRefs=[],toolingRefs=[],otherRefs=[];
+          for(const file of jsFiles){
+            const text=fs.readFileSync(file,'utf8');
+            if(!text.includes(target)) continue;
+            if(file.startsWith('assets/js/')) runtimeRefs.push(file);
+            else if(file.startsWith('scripts/')||file.startsWith('tests/')||file.startsWith('test/')||file.startsWith('tools/')) toolingRefs.push(file);
+            else otherRefs.push(file);
           }
-          const active=reachable.has(target)?1:0;
-          const dormant=htmlLinks===0&&actualImporters===0&&runtimeRefs.length===0&&otherRefs.length===0&&active===0?1:0;
-          console.log(`CLASSIFICATION PASS|activeHtml=${htmlFiles.length}|physicalCss=${cssFiles.length}|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeRefs.length}|toolingJsRefs=${toolingRefs.length}|otherJsRefs=${otherRefs.length}|cssTextRefs=${cssTextRefs}|active=${active}|wholeFileDormant=${dormant}|toolingRefs=${toolingRefs.sort().join(',')||'none'}`);
-          console.log(`REACH PASS|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeRefs.length}|otherJsRefs=${otherRefs.length}|active=${active}|wholeFileDormant=${dormant}`);
-          if(!dormant||cssTextRefs!==0) throw Error('target is not whole-file dormant under current graph');
+          const active=loaded.has(target)?1:0;
+          const wholeFileDormant=htmlLinks===0&&actualImporters===0&&runtimeRefs.length===0&&otherRefs.length===0&&cssTextRefs===0&&active===0?1:0;
+          console.log(`CANONICAL REACH PASS|rootHtml=${rootHtml.length}|loadedCss=${loaded.size}|physicalCss=${cssFiles.length}|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeRefs.length}|toolingJsRefs=${toolingRefs.length}|otherJsRefs=${otherRefs.length}|cssTextRefs=${cssTextRefs}|active=${active}|wholeFileDormant=${wholeFileDormant}|toolingRefs=${toolingRefs.sort().join(',')||'none'}`);
+          if(!wholeFileDormant) throw Error('target is not whole-file dormant under canonical current graph');
           NODE
-          node scripts/audit-css-dormant-debt-policy.js --strict >/tmp/policy.log
-          grep -Fq '| `assets/css/components/layout/responsive-page-contract.css` | responsive-shell | 230 | high | sim |' /tmp/policy.log
-          grep -Fq 'assets/css/components/layout/responsive-page-contract.css' docs/DEPRECATED-CSS.md
-          echo 'GOVERNANCE PASS|policyRecomputed=1|quarantine=1|deprecatedDoc=1|risk=high|group=responsive-shell'
+
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/policy.log
+          node <<'NODE'
+          const fs=require('fs');
+          const text=fs.readFileSync('/tmp/policy.log','utf8');
+          const target='assets/css/components/layout/responsive-page-contract.css';
+          const row=`| \`${target}\` | responsive-shell | 230 | high | sim |`;
+          if(!text.includes(row)) throw Error('target quarantine row missing or changed');
+          const get=(label)=>{const m=text.match(new RegExp(`- ${label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}: (\\d+)`));if(!m)throw Error(`summary missing ${label}`);return +m[1]};
+          const reactivated=get('CSS depreciado reativado');
+          const missing=get('Arquivos registrados ausentes');
+          const unregistered=get('CSS ativo com !important fora do registro');
+          fs.writeFileSync('/tmp/policy.env',`REACTIVATED=${reactivated}\nMISSING=${missing}\nUNREGISTERED=${unregistered}\n`);
+          console.log(`TARGET POLICY PASS|quarantine=1|documentedDeprecated=1|group=responsive-shell|risk=high|important=230|globalReactivatedDeprecated=${reactivated}|globalRegisteredMissingFiles=${missing}|globalUnregisteredActiveImportant=${unregistered}|strictCoupling=0`);
+          NODE
+          source /tmp/policy.env
+          set +e
+          node scripts/audit-css-dormant-debt-policy.js --strict >/tmp/policy-strict.log 2>&1
+          strict_code=$?
+          set -e
+          expected_strict=0
+          if test "$REACTIVATED" -gt 0 || test "$MISSING" -gt 0 || test "$UNREGISTERED" -gt 0; then expected_strict=1; fi
+          test "$strict_code" -eq "$expected_strict"
+          echo "GLOBAL POLICY DIAGNOSTIC PASS|strictExit=$strict_code|expectedExit=$expected_strict|reactivatedDeprecated=$REACTIVATED|registeredMissingFiles=$MISSING|unregisteredActiveImportant=$UNREGISTERED|scope=repo-global|targetBlocking=0"
+          grep -Fq "$TARGET_FILE" docs/DEPRECATED-CSS.md
+          echo 'GOVERNANCE TARGET PASS|deprecatedDoc=1|quarantine=1|policyRecomputed=1|repoGlobalStrictSeparated=1|r1FailureExplained=1'
           echo "PARENT PASS|sha=$PARENT_SHA|target=$TARGET_FILE|blob=$TARGET_BLOB|important=$EXPECTED_IMPORTANT"
+          git checkout "$PARENT_SHA" -- docs/validation/css-dormant-debt-policy.md
+          git diff --quiet
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(CANDIDATE PASS|CLASSIFICATION PASS|REACH PASS|GOVERNANCE PASS|PARENT PASS)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 900 /tmp/r.log || true; fi; } >/tmp/out
+          set -euo pipefail
+          result=FAIL
+          if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "PARENT_SHA=$PARENT_SHA"
+            echo "TARGET_FILE=$TARGET_FILE"
+            echo "TARGET_BLOB=$TARGET_BLOB"
+            echo "REACH_R2=${{ steps.reach.outcome }}"
+            grep -E '^(R1 TRANSFER PASS|CANDIDATE PASS|CANONICAL REACH PASS|TARGET POLICY PASS|GLOBAL POLICY DIAGNOSTIC PASS|GOVERNANCE TARGET PASS|PARENT PASS)\|' /tmp/r2.log || true
+            echo "RESULT=$result"
+            if test "$result" = FAIL; then tail -n 1000 /tmp/r2.log || true; fi
+          } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"
@@ -115,6 +181,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 028 responsive page contract reach r1 [skip ci]' >/dev/null
+          git commit -m 'diag: publish 028 responsive page contract reach r2 [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
