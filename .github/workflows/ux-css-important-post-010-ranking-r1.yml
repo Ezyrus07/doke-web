@@ -1,132 +1,113 @@
-name: UX CSS Important 027 App Mobile Topbar Permanent Cert R5
+name: UX CSS Important 028 Responsive Page Contract Reach R1
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  certify027:
+  reach028:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
-      PARENT_SHA: a8771e5f631c4731afc11b5a07e005de78071ccf
-      PERM_SHA: 0f63db75ceab50e2b1487e1dc212272da68dfada
-      PERM_TREE: af3cd460387c8494d8e4586b2f1dc9d37e73a3f5
-      TARGET_FILE: assets/css/components/navigation/app-mobile-topbar.css
-      PARENT_BLOB: 603aea29473ce66d31f97a046b70bfb2eb039bf4
-      PERM_BLOB: afdec46c60e07af090c7d77c87329e175e27c1bc
-      CANDIDATE_SHA256: 336788f462e6309ffefb51389c4366b61edd4f83dd6f6611fb05d2e82a817e02
-      PERM_BRANCH: ux/ux-css-important-027-app-mobile-topbar-dormant-priority
+      PARENT_SHA: 0f63db75ceab50e2b1487e1dc212272da68dfada
+      TARGET_FILE: assets/css/components/layout/responsive-page-contract.css
+      TARGET_BLOB: 58381e6cbd8b589bed873c7694f41b275fd04790
+      EXPECTED_IMPORTANT: '230'
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      REACH_FILE: .diagnostics/ux-css-important-027-app-mobile-topbar-reach-r2.txt
-      BROWSER_FILE: .diagnostics/ux-css-important-027-app-mobile-topbar-browser-r3.txt
-      GOV_FILE: .diagnostics/ux-css-important-027-app-mobile-topbar-governance-r4.txt
-      RESULT_FILE: .diagnostics/ux-css-important-027-app-mobile-topbar-permanent-cert-r5.txt
+      RESULT_FILE: .diagnostics/ux-css-important-028-responsive-page-contract-reach-r1.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: certify
+      - id: reach
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/c.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
           test "$(git rev-parse --is-shallow-repository)" = false
-          git show HEAD:"$REACH_FILE" >/tmp/reach.txt
-          git show HEAD:"$BROWSER_FILE" >/tmp/browser.txt
-          git show HEAD:"$GOV_FILE" >/tmp/gov.txt
-          grep -q '^RESULT=PASS$' /tmp/reach.txt
-          grep -Fq "sha256=$CANDIDATE_SHA256|blob=$PERM_BLOB|transform=marker-only|r1HashStable=1" /tmp/reach.txt
-          grep -Fq 'REACH PASS|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=3|cssTextRefs=0|active=0|wholeFileDormant=1' /tmp/reach.txt
-          grep -Fq 'GOVERNANCE CLASSIFICATION PASS|deprecatedDoc=1|trackedDormantMap=1|toolingExcludedFromRuntime=1' /tmp/reach.txt
-          grep -q '^RESULT=PASS$' /tmp/browser.txt
-          grep -Fq "sha256=$CANDIDATE_SHA256|blob=$PERM_BLOB|important=214->0" /tmp/browser.txt
-          grep -Fq 'metadataDiffs=0|screenshotDiffs=0|stableStates=28/28|pageErrors=0|targetStylesheetLoads=0/0' /tmp/browser.txt
-          grep -Fq 'pageRoots=28/28|syntheticDOM=0|criteriaRelaxed=0' /tmp/browser.txt
-          grep -q '^RESULT=PASS$' /tmp/gov.txt
-          grep -Fq 'IMPORTANT PASS|total=9571|outsideServiceCard=9509|files=22|delta=-214' /tmp/gov.txt
-          grep -Fq 'QUEUE PASS|affectedFiles=21|highBaselineRequired=9501|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127' /tmp/gov.txt
-          grep -Fq 'DEPENDENCY PASS|total=13|critical=0|high=10|moderate=1|low=2' /tmp/gov.txt
-          grep -Fq 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|browserProof=hash-identical|reachProof=hash-identical|wholeFileDormant=1|candidateHash=exact|candidateBlob=exact' /tmp/gov.txt
-          echo 'PROOF TRANSFER PASS|reach=R2|browser=R3|governance=R4|candidateHash=exact|candidateBlob=exact|runIdCoupling=0|promotionReceiptCoupling=0|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=3'
-          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
-          test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$PERM_SHA"
-          git checkout --detach "$PERM_SHA" >/dev/null
-          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
-          test "$(git rev-parse HEAD^{tree})" = "$PERM_TREE"
-          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$PERM_BLOB"
-          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
-          test "$(git rev-list --count "$PARENT_SHA..$PERM_SHA")" -eq 1
-          test "$(git diff --name-only "$PARENT_SHA" "$PERM_SHA" | wc -l)" -eq 1
-          test "$(git diff --name-only "$PARENT_SHA" "$PERM_SHA")" = "$TARGET_FILE"
-          test "$(git diff --numstat "$PARENT_SHA" "$PERM_SHA" -- "$TARGET_FILE")" = $'214\t214\t'"$TARGET_FILE"
-          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/source.css
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
-          const o=fs.readFileSync('/tmp/parent.css','utf8'),c=o.replace(/\s*!important\b/g,''),h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
-          const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
-          fs.writeFileSync('/tmp/rebuilt.css',c);
-          const blob=cp.execFileSync('git',['hash-object','/tmp/rebuilt.css'],{encoding:'utf8'}).trim();
-          if(before!==214||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.PERM_BLOB)throw Error(`rebuild ${before}/${after}/${h}/${blob}`);
-          console.log(`RECONSTRUCTION PASS|sha256=${h}|blob=${blob}|bytes=${Buffer.byteLength(c)}|important=214->0|removed=214|byteIdentical=1|browserProofTransfer=hash-identical|reachProofTransfer=hash-identical|wholeFileDormant=1`)
+          const src=fs.readFileSync('/tmp/source.css','utf8');
+          const before=(src.match(/!important\b/g)||[]).length;
+          const out=src.replace(/\s*!important\b/g,'');
+          const after=(out.match(/!important\b/g)||[]).length;
+          const removed=before-after;
+          if(before!==+process.env.EXPECTED_IMPORTANT||after!==0||removed!==+process.env.EXPECTED_IMPORTANT) throw Error(`important ${before}->${after}`);
+          fs.writeFileSync('/tmp/candidate.css',out);
+          const sha256=crypto.createHash('sha256').update(Buffer.from(out)).digest('hex');
+          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
+          console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(out)}|important=${before}->${after}|removed=${removed}|sha256=${sha256}|blob=${blob}|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
           NODE
-          cmp -s /tmp/rebuilt.css "$TARGET_FILE"
-          test "$(grep -o '!important' "$TARGET_FILE" | wc -l || true)" -eq 0
-          npm ci --ignore-scripts >/dev/null
-          node scripts/generate-responsive-index-baseline.js >/dev/null
-          npm run test:responsive-contract | tee /tmp/responsive.log
-          grep -q 'Checks: 893' /tmp/responsive.log
-          grep -q 'Failures: 0' /tmp/responsive.log
-          grep -q 'Skips: 277' /tmp/responsive.log
-          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|state=permanent'
-          npm run audit:agent-governance >/dev/null
-          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          git checkout --detach "$PARENT_SHA" >/dev/null
           node <<'NODE'
-          const fs=require('fs'),m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`)
+          const fs=require('fs'),path=require('path');
+          const root=process.cwd(), target=process.env.TARGET_FILE.replace(/\\/g,'/');
+          const excluded=new Set(['archive','reports','tools','test-results','.git','node_modules']);
+          const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'');
+          function walk(dir='.') {
+            const out=[];
+            for(const ent of fs.readdirSync(dir,{withFileTypes:true})){
+              if(ent.isDirectory()&&excluded.has(ent.name)) continue;
+              const p=path.join(dir,ent.name);
+              if(ent.isDirectory()) out.push(...walk(p)); else out.push(norm(p));
+            }
+            return out;
+          }
+          const files=walk();
+          const htmlFiles=files.filter(f=>f.endsWith('.html'));
+          const cssFiles=files.filter(f=>f.startsWith('assets/css/')&&f.endsWith('.css'));
+          const jsFiles=files.filter(f=>/\.(?:js|mjs|cjs)$/.test(f));
+          const strip=s=>s.split('#')[0].split('?')[0];
+          const resolve=(from,raw)=>norm(path.posix.normalize(path.posix.join(path.posix.dirname(from),strip(raw))));
+          const directLinks=new Map();
+          let htmlLinks=0;
+          for(const h of htmlFiles){
+            const text=fs.readFileSync(h,'utf8'), links=[];
+            for(const m of text.matchAll(/<link\b[^>]*>/gi)){
+              const tag=m[0], rel=tag.match(/\brel\s*=\s*["']([^"']+)["']/i)?.[1]||'';
+              if(!/\bstylesheet\b/i.test(rel)) continue;
+              const href=tag.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
+              if(!href||/^(?:https?:|data:|\/\/)/i.test(href)) continue;
+              const r=resolve(h,href); links.push(r); if(r===target) htmlLinks++;
+            }
+            directLinks.set(h,links);
+          }
+          const imports=new Map(); let actualImporters=0, cssTextRefs=0;
+          for(const c of cssFiles){
+            const text=fs.readFileSync(c,'utf8'), arr=[];
+            for(const m of text.matchAll(/@import\s+(?:url\(\s*)?(?:["']([^"']+)["']|([^\s;)]+))\s*\)?/gi)){
+              const raw=m[1]||m[2]; if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw)) continue;
+              const r=resolve(c,raw); arr.push(r); if(r===target) actualImporters++;
+            }
+            imports.set(c,arr); if(c!==target&&text.includes(target)) cssTextRefs++;
+          }
+          const reachable=new Set(), q=[];
+          for(const links of directLinks.values()) for(const c of links){if(!reachable.has(c)){reachable.add(c);q.push(c)}}
+          for(let i=0;i<q.length;i++) for(const x of (imports.get(q[i])||[])){if(!reachable.has(x)){reachable.add(x);q.push(x)}}
+          const runtimeRefs=[], toolingRefs=[], otherRefs=[];
+          for(const f of jsFiles){
+            const text=fs.readFileSync(f,'utf8'); if(!text.includes(target)) continue;
+            if(f.startsWith('assets/js/')) runtimeRefs.push(f);
+            else if(f.startsWith('scripts/')||f.startsWith('tests/')||f.startsWith('test/')||f.startsWith('tools/')) toolingRefs.push(f);
+            else otherRefs.push(f);
+          }
+          const active=reachable.has(target)?1:0;
+          const dormant=htmlLinks===0&&actualImporters===0&&runtimeRefs.length===0&&otherRefs.length===0&&active===0?1:0;
+          console.log(`CLASSIFICATION PASS|activeHtml=${htmlFiles.length}|physicalCss=${cssFiles.length}|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeRefs.length}|toolingJsRefs=${toolingRefs.length}|otherJsRefs=${otherRefs.length}|cssTextRefs=${cssTextRefs}|active=${active}|wholeFileDormant=${dormant}|toolingRefs=${toolingRefs.sort().join(',')||'none'}`);
+          console.log(`REACH PASS|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeRefs.length}|otherJsRefs=${otherRefs.length}|active=${active}|wholeFileDormant=${dormant}`);
+          if(!dormant||cssTextRefs!==0) throw Error('target is not whole-file dormant under current graph');
           NODE
-          npm run audit:shared-app-header-contract >/dev/null
-          npm run audit:mobile-shell-location-contract >/dev/null
-          npm run audit:responsive-boundaries >/dev/null
-          npm run audit:duplicate-assets | tee /tmp/dup.log
-          grep -q 'Duplicate groups: 0' /tmp/dup.log
-          grep -q 'Duplicated files: 0' /tmp/dup.log
-          npm run audit:domain-completion-matrix | tee /tmp/domain.log
-          grep -q 'Domains: 23' /tmp/domain.log
-          grep -q 'Critical flows: 15' /tmp/domain.log
-          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
-          grep -q 'Critical blockers: 12' /tmp/domain.log
-          git checkout "$PERM_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
-          npm run audit:active-legacy-structures >/dev/null
-          npm run audit:important-reduction-plan >/dev/null
-          npm run audit:global-css-design-system >/dev/null
-          node <<'NODE'
-          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8')),s=b.summary,ps=p.summary;
-          if(s.totalImportant!==9571||s.outsideServiceCardImportant!==9509||s.filesWithImportant!==22)throw Error(`important ${JSON.stringify(s)}`);
-          if(ps.affectedFiles!==21||ps.totalImportantOutsideServiceCard!==9509||ps.byRisk?.['high-baseline-required']!==9501||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error(`plan ${JSON.stringify(ps)}`);
-          const protectedFiles={
-            protected006:['assets/css/pages/home/mobile-composition.css',6],
-            protected010:['assets/css/components/cards/mobile-card-contract.css',2],
-            protected020:['assets/css/components/shell/mobile-base-stability.css',28],
-            protected021:['assets/css/pages/home/mobile-hero-feed.css',127]
-          };
-          for(const [label,[file,want]] of Object.entries(protectedFiles)){const got=(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length;if(got!==want)throw Error(`${label} ${file} ${got}/${want}`)}
-          console.log('IMPORTANT PASS|total=9571|outsideServiceCard=9509|files=22');
-          console.log('QUEUE PASS|affectedFiles=21|highBaselineRequired=9501|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127')
-          NODE
-          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
-          node <<'NODE'
-          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};
-          if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);
-          console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`)
-          NODE
-          echo "AUDIT_EXIT=$code"
-          echo 'CERTIFICATION PASS|fullHistory=1|oneCommit=1|oneFile=1|numstat=214/214|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=3|browserMetadataDiffs=0|browserScreenshotDiffs=0|browserStableStates=28/28|browserPageErrors=0|targetStylesheetLoads=0/0|pageRoots=28/28|browserProofTransfer=hash-identical|reachProofTransfer=hash-identical|duplicates=0/0|domain=23/15/2.91/12|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127'
+          node scripts/audit-css-dormant-debt-policy.js --strict >/tmp/policy.log
+          grep -Fq '| `assets/css/components/layout/responsive-page-contract.css` | responsive-shell | 230 | high | sim |' /tmp/policy.log
+          grep -Fq 'assets/css/components/layout/responsive-page-contract.css' docs/DEPRECATED-CSS.md
+          echo 'GOVERNANCE PASS|policyRecomputed=1|quarantine=1|deprecatedDoc=1|risk=high|group=responsive-shell'
+          echo "PARENT PASS|sha=$PARENT_SHA|target=$TARGET_FILE|blob=$TARGET_BLOB|important=$EXPECTED_IMPORTANT"
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.certify.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PERM_SHA=$PERM_SHA"; echo "PARENT_SHA=$PARENT_SHA"; echo "PERM_TREE=$PERM_TREE"; echo "PERM_BLOB=$PERM_BLOB"; echo "CERTIFY=${{ steps.certify.outcome }}"; grep -E '^(PROOF TRANSFER PASS|RECONSTRUCTION PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|CERTIFICATION PASS)\|' /tmp/c.log || true; grep '^AUDIT_EXIT=' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 900 /tmp/c.log || true; fi; } >/tmp/out
+          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(CANDIDATE PASS|CLASSIFICATION PASS|REACH PASS|GOVERNANCE PASS|PARENT PASS)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 900 /tmp/r.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"
@@ -134,6 +115,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 027 app mobile topbar permanent cert r5 [skip ci]' >/dev/null
+          git commit -m 'diag: publish 028 responsive page contract reach r1 [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
