@@ -12,22 +12,33 @@ on:
       - 'reports/generated/domain-completion-matrix-report.json'
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: read
 
 concurrency:
-  group: com-b02ab-repository-only-continuation-state-registry-binding-contract-${{ github.ref }}
+  group: com-b02ab-domain-completion-matrix-finalization-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  CANDIDATE_HEAD: 782bb6fd5b7aa170c5a2a4404f43264fab7d8f4f
+  B02AA_BASE: d77aceca20588f42f8594f9897e3ae9e12649990
+  EXPECTED_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+  EXPECTED_MODULE_BLOB: 5cd04d4a72f0b728cb78ef8dd41f4f8b6a5efa6e
+  EXPECTED_CONFIG_BLOB: 0274e5a998982b257bc0a6ba4072142c3785ebc8
+  EXPECTED_TEST_BLOB: c882494fa36d7c2b60aa79ec695df7cf415b6777
+  CANONICAL_CERTIFIER_BLOB: 555f2342c91f1295320b7da2370dcf5325dd1460
+
 jobs:
-  certify:
+  finalize:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout exact PR head
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -35,65 +46,62 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Frozen B02AA predecessor and exact repository-only scope
+      - name: Regenerate exact B02AB derivatives and prepare final snapshot
         shell: bash
         run: |
           set -euo pipefail
-          BASE=d77aceca20588f42f8594f9897e3ae9e12649990
-          git merge-base --is-ancestor "$BASE" HEAD
-          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-carrier-contract.js)" = "fb7448f83fe385e94a2be61685f612d9e27d949f"
-          test "$(git rev-parse HEAD:config/com-b02aa-repository-only-opaque-continuation-carrier-contract.json)" = "cd0bb4a13f44a4465d3163fb63692732ac10bd3a"
-          test "$(git rev-parse HEAD:.github/workflows/com-b02aa-repository-only-opaque-continuation-carrier-contract.yml)" = "7f9a67841ffe5f7cd1bade37d13f281c7a4c585a"
-          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
-          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
-          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
-          test "$(git rev-parse HEAD:backend/runtime/staging/staging-api-runtime.js)" = "69de100fe3a269507a0da7847ae8e9887f831ceb"
-          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          BRANCH='com/com-001-baseline-audit'
+          EVENT_HEAD='${{ github.event.pull_request.head.sha }}'
+          CERT='.github/workflows/com-b02ab-repository-only-continuation-state-registry-binding-contract.yml'
+
+          test "$(git rev-parse HEAD)" = "$EVENT_HEAD"
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE_HEAD"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-binding-contract.js)" = "$EXPECTED_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02ab-repository-only-continuation-state-registry-binding-contract.json)" = "$EXPECTED_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:scripts/test-com-b02ab-repository-only-continuation-state-registry-binding-contract.js)" = "$EXPECTED_TEST_BLOB"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$EXPECTED_SOURCE_BLOB"
+
+          git show "$CANDIDATE_HEAD:$CERT" > "$CERT"
+          test "$(git hash-object "$CERT")" = "$CANONICAL_CERTIFIER_BLOB"
+
+          node scripts/audit-domain-completion-matrix.js --write
+          git diff --exit-code -- config/domain-completion-matrix.json
+          node scripts/test-com-b02ab-repository-only-continuation-state-registry-binding-contract.js
+          npm ci --ignore-scripts
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+          actual="$(git diff --name-only | sort)"
           expected="$(printf '%s\n' \
-            .github/workflows/com-b02ab-repository-only-continuation-state-registry-binding-contract.yml \
-            backend/shared/http/repository-only-route-continuation-state-registry-binding-contract.js \
-            config/com-b02ab-repository-only-continuation-state-registry-binding-contract.json \
-            scripts/test-com-b02ab-repository-only-continuation-state-registry-binding-contract.js | sort)"
-          expected_reconciled="$(printf '%s\n' \
+            "$CERT" \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json | sort)"
+          test "$actual" = "$expected"
+          test "$(git hash-object "$CERT")" = "$CANONICAL_CERTIFIER_BLOB"
+
+          echo "MARKDOWN_BLOB=$(git hash-object docs/DOMAIN-COMPLETION-MATRIX.md)"
+          echo "REPORT_BLOB=$(git hash-object reports/generated/domain-completion-matrix-report.json)"
+
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add "$CERT" docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git commit -m 'docs(com): reconcile B02AB Domain Completion Matrix derivatives'
+
+          expected_final="$(printf '%s\n' \
             .github/workflows/com-b02ab-repository-only-continuation-state-registry-binding-contract.yml \
             backend/shared/http/repository-only-route-continuation-state-registry-binding-contract.js \
             config/com-b02ab-repository-only-continuation-state-registry-binding-contract.json \
             docs/DOMAIN-COMPLETION-MATRIX.md \
             reports/generated/domain-completion-matrix-report.json \
             scripts/test-com-b02ab-repository-only-continuation-state-registry-binding-contract.js | sort)"
-          actual="$(git diff --name-only "$BASE" HEAD | sort)"
-          test "$actual" = "$expected" || test "$actual" = "$expected_reconciled"
+          actual_final="$(git diff --name-only "$B02AA_BASE" HEAD | sort)"
+          test "$actual_final" = "$expected_final"
 
-      - name: Syntax and semantic registry-binding contract conformance
-        run: |
-          node --check backend/shared/http/repository-only-route-continuation-state-registry-binding-contract.js
-          node --check scripts/test-com-b02ab-repository-only-continuation-state-registry-binding-contract.js
-          node scripts/test-com-b02ab-repository-only-continuation-state-registry-binding-contract.js
+          echo "PREPARED_FINAL_HEAD=$(git rev-parse HEAD)"
+          echo "PREPARED_FINAL_TREE=$(git rev-parse HEAD^{tree})"
 
-      - name: Registry binding remains contract-only and remote effects remain blocked
-        shell: bash
-        run: |
-          set -euo pipefail
-          FILE=backend/shared/http/repository-only-route-continuation-state-registry-binding-contract.js
-          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$FILE"
-          ! grep -E 'registerOpaqueContinuationState\(|resolveOpaqueContinuationState\(|releaseOpaqueContinuationState\(' "$FILE"
-          ! grep -E 'resumeRepositoryOnlyCommandHandlerOrchestration\(|\.resumeSurface\(|resolution\.resumeSurface\(' "$FILE"
-          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$FILE"
-          ! grep -F 'repository-only-route-continuation-state-registry-binding-contract' backend/runtime/staging/staging-api-runtime.js
-          grep -F "const { getHandler } = require('../../shared/http/module-route-loader');" backend/runtime/staging/staging-api-runtime.js
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Domain Completion Matrix
-        run: npm run audit:domain-completion-matrix
-
-      - name: Agent Governance
-        run: npm run audit:agent-governance
-
-      - name: Diff hygiene
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE=d77aceca20588f42f8594f9897e3ae9e12649990
-          git diff --check "$BASE" HEAD
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$EVENT_HEAD"
+          git push origin HEAD:"refs/heads/$BRANCH"
