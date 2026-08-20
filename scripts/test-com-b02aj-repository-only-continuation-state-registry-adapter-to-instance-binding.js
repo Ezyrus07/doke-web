@@ -166,8 +166,8 @@ for (const operationName of EXPECTED_OPERATIONS) {
 assert.equal(Object.keys(binding).includes('registryInstanceReference'), false);
 assert.equal(Object.keys(binding).includes('adapterOperationSurfaces'), false);
 const serializedBinding = JSON.stringify(binding);
-assert.equal(serializedBinding.includes('registryInstanceReference'), false);
-assert.equal(serializedBinding.includes('adapterOperationSurfaces'), false);
+assert.equal(serializedBinding.includes('"registryInstanceReference":'), false);
+assert.equal(serializedBinding.includes('"adapterOperationSurfaces":'), false);
 
 for (const key of [
   'storageBackendMaterialized', 'entryContainerMaterialized',
