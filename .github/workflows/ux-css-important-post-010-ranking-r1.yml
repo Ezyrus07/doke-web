@@ -1,181 +1,110 @@
-name: UX CSS Important 029 Mobile Page Rhythm Contract Reach R1
+name: UX CSS Important 029 Mobile Page Rhythm Contract Browser R2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach029r1:
+  browser029r2:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: f33944c9c44bd7bcad50ccd84ac41b2bed4b314d
       TARGET_FILE: assets/css/components/navigation/mobile-page-rhythm-contract.css
       TARGET_BLOB: 7952fd91dbd24f722350c491f7103c74d4160345
-      OLD_TARGET_FILE: assets/css/components/shell/mobile-page-rhythm-contract.css
-      EXPECTED_IMPORTANT: '236'
-      POLICY_SCRIPT_BLOB: fcade2556f9ed5f1f04e02ca6c4fd7bd249d8318
-      REGISTER_BLOB: 63943f80013e0a66cb3f6c6de4e91530bb83daf5
-      DEPRECATED_BLOB: 7626d257532d8e91dfa2a76dccced57e5a07b8d7
+      CANDIDATE_SHA256: 841d8a0d6b65497c468da14c010c081e10111930631b3b6952d694870cfdf262
+      CANDIDATE_BLOB: 9e5f1ee53dad8a6c57238359cb70c49f4d15ac99
+      REACH_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-reach-r1.txt
+      REACH_BLOB: c896e4936b1f5ba89da808feffaf7a46316dc33b
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-reach-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-029-mobile-page-rhythm-contract-browser-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: reach
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: browser
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/r1.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/v.log) 2>&1
           test "$(git rev-parse --is-shallow-repository)" = false
-          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
-          test "$(git rev-parse "$PARENT_SHA:scripts/audit-css-dormant-debt-policy.js")" = "$POLICY_SCRIPT_BLOB"
-          test "$(git rev-parse "$PARENT_SHA:config/important-debt-register.json")" = "$REGISTER_BLOB"
-          test "$(git rev-parse "$PARENT_SHA:docs/DEPRECATED-CSS.md")" = "$DEPRECATED_BLOB"
-          if git cat-file -e "$PARENT_SHA:$OLD_TARGET_FILE" 2>/dev/null; then
-            echo "historical alias unexpectedly exists as a physical file: $OLD_TARGET_FILE"
-            exit 1
-          fi
-
-          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/source.css
-          node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
-          const src=fs.readFileSync('/tmp/source.css','utf8');
-          const before=(src.match(/!important\b/g)||[]).length;
-          const out=src.replace(/\s*!important\b/g,'');
-          const after=(out.match(/!important\b/g)||[]).length;
-          const removed=before-after;
-          if(before!==+process.env.EXPECTED_IMPORTANT||after!==0||removed!==+process.env.EXPECTED_IMPORTANT) throw Error(`important ${before}->${after}`);
-          fs.writeFileSync('/tmp/candidate.css',out);
-          const sha256=crypto.createHash('sha256').update(Buffer.from(out)).digest('hex');
-          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
-          console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(out)}|important=${before}->${after}|removed=${removed}|sha256=${sha256}|blob=${blob}|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
-          NODE
+          test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
+          git show HEAD:"$REACH_FILE" >/tmp/reach.txt
+          grep -q '^RUN_ID=32423054273$' /tmp/reach.txt
+          grep -q '^RESULT=PASS$' /tmp/reach.txt
+          grep -Fq "CANDIDATE PASS|bytes=12876|important=236->0|removed=236|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/reach.txt
+          grep -Fq 'CANONICAL REACH PASS|rootHtml=27|loadedCss=402|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=0|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1|toolingRefs=none' /tmp/reach.txt
+          grep -Fq 'ALIAS RECONCILIATION PASS|historicalPath=assets/css/components/shell/mobile-page-rhythm-contract.css|oldPhysical=0|oldHtmlLinks=0|oldActualImporters=0|oldRuntimeJsRefs=0|oldToolingJsRefs=2|oldOtherJsRefs=0|oldCssTextRefs=0|oldActive=0|docsOnlyRefs=1|canonicalPath=assets/css/components/navigation/mobile-page-rhythm-contract.css' /tmp/reach.txt
+          grep -Fq 'GOVERNANCE TARGET PASS|deprecatedCanonical=1|historicalAliasDocumented=1|quarantine=1|policyRecomputed=1|repoGlobalStrictSeparated=1' /tmp/reach.txt
+          echo 'REACH TRANSFER PASS|source=R1|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=0|candidateHash=exact|candidateBlob=exact|aliasRuntimeReach=0|repoGlobalStrictSeparated=1'
 
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          cp "$TARGET_FILE" /tmp/parent.css
+          trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true; kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
           node <<'NODE'
-          const fs=require('fs'),path=require('path');
-          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
-          const root=process.cwd();
-          const target=process.env.TARGET_FILE.replace(/\\/g,'/');
-          const oldTarget=process.env.OLD_TARGET_FILE.replace(/\\/g,'/');
-          const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'').replace(/^\/+/, '').split('?')[0].split('#')[0];
-          const rootHtml=fs.readdirSync(root).filter(f=>f.endsWith('.html')).sort();
-          const loaded=new Set();
-          for(const page of rootHtml){
-            const html=fs.readFileSync(page,'utf8');
-            for(const asset of getLoadedCssAssets(html,root)) loaded.add(norm(asset));
-          }
-          function walk(dir,skip=new Set()){
-            const out=[];
-            if(!fs.existsSync(dir)) return out;
-            for(const ent of fs.readdirSync(dir,{withFileTypes:true})){
-              if(ent.isDirectory()&&skip.has(ent.name)) continue;
-              const full=path.join(dir,ent.name);
-              if(ent.isDirectory()) out.push(...walk(full,skip)); else out.push(norm(path.relative(root,full)));
-            }
-            return out;
-          }
-          const cssFiles=walk(path.join(root,'assets','css')).filter(f=>f.endsWith('.css'));
-          const allFiles=walk(root,new Set(['node_modules','.git','archive','reports','test-results']));
-          const jsFiles=allFiles.filter(f=>/\.(?:js|mjs|cjs)$/.test(f));
-          const docFiles=allFiles.filter(f=>/\.(?:md|json|txt|ya?ml)$/i.test(f));
-          const resolve=(from,raw)=>{
-            const clean=String(raw||'').split('?')[0].split('#')[0];
-            if(clean.startsWith('/')) return norm(clean);
-            if(clean.startsWith('assets/')) return norm(clean);
-            return norm(path.posix.normalize(path.posix.join(path.posix.dirname(from),clean)));
-          };
-          function classify(targetPath){
-            let htmlLinks=0,actualImporters=0,cssTextRefs=0;
-            for(const page of rootHtml){
-              const html=fs.readFileSync(page,'utf8');
-              for(const m of html.matchAll(/<link\b[^>]*>/gi)){
-                const tag=m[0];
-                const rel=(tag.match(/\brel\s*=\s*(["'])(.*?)\1/i)||[])[2]||'';
-                const href=(tag.match(/\bhref\s*=\s*(["'])(.*?)\1/i)||[])[2]||'';
-                if(!rel.toLowerCase().split(/\s+/).includes('stylesheet')||!href||/^(?:https?:|data:|\/\/)/i.test(href)) continue;
-                if(resolve(page,href)===targetPath) htmlLinks++;
-              }
-            }
-            for(const file of cssFiles){
-              const text=fs.readFileSync(file,'utf8');
-              for(const m of text.matchAll(/@import\s+(?:url\(\s*)?(?:["']([^"']+)["']|([^\s;)]+))\s*\)?/gi)){
-                const raw=m[1]||m[2];
-                if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw)) continue;
-                if(resolve(file,raw)===targetPath) actualImporters++;
-              }
-              if(file!==targetPath&&text.includes(targetPath)) cssTextRefs++;
-            }
-            const runtimeRefs=[],toolingRefs=[],otherRefs=[];
-            for(const file of jsFiles){
-              const text=fs.readFileSync(file,'utf8');
-              if(!text.includes(targetPath)) continue;
-              if(file.startsWith('assets/js/')) runtimeRefs.push(file);
-              else if(file.startsWith('scripts/')||file.startsWith('tests/')||file.startsWith('test/')||file.startsWith('tools/')) toolingRefs.push(file);
-              else otherRefs.push(file);
-            }
-            const active=loaded.has(targetPath)?1:0;
-            return {htmlLinks,actualImporters,cssTextRefs,runtimeRefs,toolingRefs,otherRefs,active};
-          }
-          const c=classify(target);
-          const wholeFileDormant=c.htmlLinks===0&&c.actualImporters===0&&c.runtimeRefs.length===0&&c.otherRefs.length===0&&c.cssTextRefs===0&&c.active===0?1:0;
-          console.log(`CANONICAL REACH PASS|rootHtml=${rootHtml.length}|loadedCss=${loaded.size}|physicalCss=${cssFiles.length}|htmlLinks=${c.htmlLinks}|actualImporters=${c.actualImporters}|runtimeJsRefs=${c.runtimeRefs.length}|toolingJsRefs=${c.toolingRefs.length}|otherJsRefs=${c.otherRefs.length}|cssTextRefs=${c.cssTextRefs}|active=${c.active}|wholeFileDormant=${wholeFileDormant}|toolingRefs=${c.toolingRefs.sort().join(',')||'none'}`);
-          if(!wholeFileDormant) throw Error('canonical target is not whole-file dormant under current graph');
-
-          const a=classify(oldTarget);
-          const oldPhysical=fs.existsSync(path.join(root,oldTarget))?1:0;
-          const docsOnlyRefs=docFiles.filter(file=>fs.readFileSync(file,'utf8').includes(oldTarget)).length;
-          console.log(`ALIAS RECONCILIATION PASS|historicalPath=${oldTarget}|oldPhysical=${oldPhysical}|oldHtmlLinks=${a.htmlLinks}|oldActualImporters=${a.actualImporters}|oldRuntimeJsRefs=${a.runtimeRefs.length}|oldToolingJsRefs=${a.toolingRefs.length}|oldOtherJsRefs=${a.otherRefs.length}|oldCssTextRefs=${a.cssTextRefs}|oldActive=${a.active}|docsOnlyRefs=${docsOnlyRefs}|canonicalPath=${target}`);
-          if(oldPhysical!==0||a.htmlLinks!==0||a.actualImporters!==0||a.runtimeRefs.length!==0||a.otherRefs.length!==0||a.cssTextRefs!==0||a.active!==0) throw Error('historical alias has non-documentary reach');
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const o=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const c=o.replace(/\s*!important\b/g,'');
+          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
+          fs.writeFileSync('/tmp/candidate.css',c);
+          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
+          const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
+          if(before!==236||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB) throw Error(`candidate ${before}/${after}/${h}/${blob}`);
+          console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=236->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1`)
           NODE
 
-          node scripts/audit-css-dormant-debt-policy.js >/tmp/policy.log
-          node <<'NODE'
-          const fs=require('fs');
-          const text=fs.readFileSync('/tmp/policy.log','utf8');
-          const target=process.env.TARGET_FILE;
-          const row=`| \`${target}\` | responsive-shell | 236 | high | sim |`;
-          if(!text.includes(row)) throw Error('target quarantine row missing or changed');
-          const get=(label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=text.match(new RegExp(`- ${esc}: (\\d+)`));if(!m)throw Error(`summary missing ${label}`);return +m[1]};
-          const reactivated=get('CSS depreciado reativado');
-          const missing=get('Arquivos registrados ausentes');
-          const unregistered=get('CSS ativo com !important fora do registro');
-          fs.writeFileSync('/tmp/policy.env',`REACTIVATED=${reactivated}\nMISSING=${missing}\nUNREGISTERED=${unregistered}\n`);
-          console.log(`TARGET POLICY PASS|quarantine=1|documentedDeprecated=1|group=responsive-shell|risk=high|important=236|globalReactivatedDeprecated=${reactivated}|globalRegisteredMissingFiles=${missing}|globalUnregisteredActiveImportant=${unregistered}|strictCoupling=0`);
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/index.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
+
+          cat >/tmp/proof.js <<'NODE'
+          const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
+          const pages=[
+            {url:'index.html',key:'home',expected:'home',marker:'.home-mobile-hero, .home-search-hero'},
+            {url:'resultados.html',key:'results',expected:'resultados',marker:'.search-results-page, .search-results-workspace'},
+            {url:'perfil.html',key:'profile',expected:'perfil',marker:'.profile-page, .profile-shell-content'},
+            {url:'comunidade.html',key:'community',expected:'comunidade',marker:'.communities-page, .communities-v2-shell, .communities-shell'},
+            {url:'pedidos.html',key:'orders',expected:'pedidos',marker:'.orders-page-header'},
+            {url:'notificacoes.html',key:'notifications',expected:'notificacoes',marker:'.notifications-mobile-header, .notifications-page'},
+            {url:'mensagens.html',key:'messages',expected:'mensagens',marker:'.messages-mobile-header, .messages-page'},
+            {url:'configuracoes.html',key:'settings',expected:'configuracoes',marker:'.settings-mobile-header, .settings-page'}
+          ];
+          const cases=[
+            {w:360,h:900,key:'360p'},
+            {w:430,h:900,key:'430p'},
+            {w:760,h:1000,key:'760p'},
+            {w:761,h:1000,key:'761p'}
+          ];
+          const target='mobile-page-rhythm-contract.css',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,position:cs.position,visibility:cs.visibility,overflowX:cs.overflowX,overflowY:cs.overflowY,gridTemplateColumns:cs.gridTemplateColumns,paddingTop:cs.paddingTop,paddingRight:cs.paddingRight,paddingBottom:cs.paddingBottom,paddingLeft:cs.paddingLeft,marginTop:cs.marginTop,marginBottom:cs.marginBottom}};
+          const metaFn=marker=>({
+            vw:innerWidth,vh:innerHeight,page:document.body?.dataset?.page||null,path:location.pathname,html:document.documentElement.className,body:document.body.className,
+            shell:q('.app-shell'),pageNode:q('.app-shell > .page'),content:q('main.page__content, .page__content'),workspace:q('.page__content-inner, .app-shell-page__workspace, .search-results-workspace, .profile-shell-content, .communities-v2-shell, .orders-shell-content, .messages-shell-content, .settings-shell-content'),
+            desktopHeader:q('.app-header.home-side-meta, .topbar.internal-page-topbar, header.app-header'),mobileHeader:q('.home-mobile-hero, .orders-page-header, .notifications-mobile-header, .messages-mobile-header, .settings-mobile-header, .communities-mobile-header, .doke-mobile-page-header'),marker:q(marker)
+          });
+          async function stableMeta(page,marker){let prev='';for(let i=0;i<12;i++){const m=await page.evaluate(metaFn,marker),s=JSON.stringify(m);if(s===prev)return m;prev=s;await page.waitForTimeout(300);}return await page.evaluate(metaFn,marker)}
+          async function phase(label){const browser=await chromium.launch({headless:true});const out={};let loads=0,errs=0,stable=0,pageRoots=0;
+            for(const p of pages)for(const c of cases){const key=`${p.key}-${c.key}`;const ctx=await browser.newContext({viewport:{width:c.w,height:c.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000;const RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{if(r.url().includes(target))loads++});await page.goto(`http://127.0.0.1:4173/${p.url}`,{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(700);const meta=await stableMeta(page,p.marker);const m2=await page.evaluate(metaFn,p.marker);if(JSON.stringify(meta)===JSON.stringify(m2))stable++;if(meta.page===p.expected&&meta.shell&&meta.pageNode&&meta.content&&meta.marker)pageRoots++;else console.log(`ROOT MISS|state=${key}|expected=${p.expected}|actual=${meta.page}|path=${meta.path}|shell=${meta.shell?1:0}|pageNode=${meta.pageNode?1:0}|content=${meta.content?1:0}|marker=${meta.marker?1:0}`);await page.screenshot({fullPage:true});await page.waitForTimeout(200);const shot=await page.screenshot({fullPage:true});out[key]={meta,shot:hash(shot)};await ctx.close();}
+            await browser.close();console.log(`PHASE|label=${label}|states=${pages.length*cases.length}|stableStates=${stable}|pageErrors=${errs}|targetStylesheetLoads=${loads}|pageRoots=${pageRoots}`);return{out,loads,errs,stable,pageRoots};}
+          (async()=>{const p=await phase(process.argv[2]);fs.writeFileSync(process.argv[3],JSON.stringify(p));})().catch(e=>{console.error(e);process.exit(1)});
           NODE
-          source /tmp/policy.env
-          set +e
-          node scripts/audit-css-dormant-debt-policy.js --strict >/tmp/policy-strict.log 2>&1
-          strict_code=$?
-          set -e
-          expected_strict=0
-          if test "$REACTIVATED" -gt 0 || test "$MISSING" -gt 0 || test "$UNREGISTERED" -gt 0; then expected_strict=1; fi
-          test "$strict_code" -eq "$expected_strict"
-          echo "GLOBAL POLICY DIAGNOSTIC PASS|strictExit=$strict_code|expectedExit=$expected_strict|reactivatedDeprecated=$REACTIVATED|registeredMissingFiles=$MISSING|unregisteredActiveImportant=$UNREGISTERED|scope=repo-global|targetBlocking=0"
-          grep -Fq "$TARGET_FILE" docs/DEPRECATED-CSS.md
-          grep -Fq "$OLD_TARGET_FILE" docs/DEPRECATED-CSS.md
-          echo 'GOVERNANCE TARGET PASS|deprecatedCanonical=1|historicalAliasDocumented=1|quarantine=1|policyRecomputed=1|repoGlobalStrictSeparated=1'
-          echo "PARENT PASS|sha=$PARENT_SHA|target=$TARGET_FILE|blob=$TARGET_BLOB|important=$EXPECTED_IMPORTANT"
-          git checkout "$PARENT_SHA" -- docs/validation/css-dormant-debt-policy.md
-          git diff --quiet
+
+          NODE_PATH="$PWD/node_modules" node /tmp/proof.js parent /tmp/parent.json
+          cp /tmp/candidate.css "$TARGET_FILE"
+          NODE_PATH="$PWD/node_modules" node /tmp/proof.js candidate /tmp/candidate.json
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const n=Object.keys(a.out).length;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|pages=home,results,profile,community,orders,notifications,messages,settings|states=${n}|viewports=360p,430p,760p,761p|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|pageRoots=${a.pageRoots}/${b.pageRoots}|syntheticDOM=0|syntheticAuth=0|criteriaRelaxed=0|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1|breakpoints=760/761`);if(md||sd||a.errs||b.errs||a.loads||b.loads||a.stable!==32||b.stable!==32||a.pageRoots!==32||b.pageRoots!==32)process.exit(1)
+          NODE
+          cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail
-          result=FAIL
-          if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          {
-            echo "RUN_ID=$GITHUB_RUN_ID"
-            echo "PARENT_SHA=$PARENT_SHA"
-            echo "TARGET_FILE=$TARGET_FILE"
-            echo "TARGET_BLOB=$TARGET_BLOB"
-            echo "REACH_R1=${{ steps.reach.outcome }}"
-            grep -E '^(CANDIDATE PASS|CANONICAL REACH PASS|ALIAS RECONCILIATION PASS|TARGET POLICY PASS|GLOBAL POLICY DIAGNOSTIC PASS|GOVERNANCE TARGET PASS|PARENT PASS)\|' /tmp/r1.log || true
-            echo "RESULT=$result"
-            if test "$result" = FAIL; then tail -n 1200 /tmp/r1.log || true; fi
-          } >/tmp/out
+          set -euo pipefail; result=FAIL; if test '${{ steps.browser.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(REACH TRANSFER PASS|CANDIDATE PASS|PHASE|PAGE ERROR|ROOT MISS|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/v.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1400 /tmp/v.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"
@@ -183,6 +112,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 029 mobile page rhythm contract reach r1 [skip ci]' >/dev/null
+          git commit -m 'diag: publish 029 mobile page rhythm contract browser r2 [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
