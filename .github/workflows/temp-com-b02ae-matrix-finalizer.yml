@@ -77,7 +77,8 @@ jobs:
           git add -- docs/DOMAIN-COMPLETION-MATRIX.md
           git add -f -- reports/generated/domain-completion-matrix-report.json
           git rm -- .github/workflows/temp-com-b02ae-matrix-finalizer.yml
-          actual="$(git diff HEAD --name-only "$BASE" | sort)"
+          FINAL_TREE="$(git write-tree)"
+          actual="$(git diff --name-only "$BASE" "$FINAL_TREE" | sort)"
           expected="$(printf '%s\n' \
             .github/workflows/com-b02ae-repository-only-continuation-state-registry-adapter-implementation.yml \
             backend/shared/http/repository-only-route-continuation-state-registry-adapter-implementation.js \
@@ -86,8 +87,9 @@ jobs:
             reports/generated/domain-completion-matrix-report.json \
             scripts/test-com-b02ae-repository-only-continuation-state-registry-adapter-implementation.js | sort)"
           test "$actual" = "$expected"
-          test "$(git hash-object config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
-          git diff --check "$BASE"
+          ! git ls-tree -r --name-only "$FINAL_TREE" | grep -Fx '.github/workflows/temp-com-b02ae-matrix-finalizer.yml'
+          test "$(git rev-parse "$FINAL_TREE:config/domain-completion-matrix.json")" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          git diff --check "$BASE" "$FINAL_TREE"
           git commit -m "docs(com): reconcile B02AE Domain Completion Matrix derivatives"
 
       - name: Fast-forward branch only
