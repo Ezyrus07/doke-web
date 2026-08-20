@@ -1,10 +1,10 @@
-name: UX CSS Important 027 App Mobile Topbar Reach R1
+name: UX CSS Important 027 App Mobile Topbar Reach R2 Corrected
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reach027:
+  reach027r2:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -12,8 +12,10 @@ jobs:
       TARGET_FILE: assets/css/components/navigation/app-mobile-topbar.css
       EXPECTED_BLOB: 603aea29473ce66d31f97a046b70bfb2eb039bf4
       EXPECTED_IMPORTANT: '214'
+      EXPECTED_CANDIDATE_SHA256: 336788f462e6309ffefb51389c4366b61edd4f83dd6f6611fb05d2e82a817e02
+      EXPECTED_CANDIDATE_BLOB: afdec46c60e07af090c7d77c87329e175e27c1bc
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-027-app-mobile-topbar-reach-r1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-027-app-mobile-topbar-reach-r2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -32,16 +34,17 @@ jobs:
           git show "HEAD:$TARGET_FILE" >/tmp/target.css
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
-          const target=process.env.TARGET_FILE;
           const original=fs.readFileSync('/tmp/target.css','utf8');
           const before=(original.match(/!important\b/g)||[]).length;
           const candidate=original.replace(/\s*!important\b/g,'');
           const after=(candidate.match(/!important\b/g)||[]).length;
-          if(before!==Number(process.env.EXPECTED_IMPORTANT)||after!==0) throw Error(`important ${before}->${after}`);
-          fs.writeFileSync('/tmp/candidate.css',candidate);
           const sha256=crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex');
+          fs.writeFileSync('/tmp/candidate.css',candidate);
           const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
-          console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(candidate)}|important=${before}->${after}|removed=${before}|sha256=${sha256}|blob=${blob}|transform=marker-only`);
+          if(before!==Number(process.env.EXPECTED_IMPORTANT)||after!==0) throw Error(`important ${before}->${after}`);
+          if(sha256!==process.env.EXPECTED_CANDIDATE_SHA256) throw Error(`candidate sha256 ${sha256}`);
+          if(blob!==process.env.EXPECTED_CANDIDATE_BLOB) throw Error(`candidate blob ${blob}`);
+          console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(candidate)}|important=${before}->${after}|removed=${before}|sha256=${sha256}|blob=${blob}|transform=marker-only|r1HashStable=1`);
           NODE
           node <<'NODE'
           const fs=require('fs'),path=require('path');
@@ -50,22 +53,28 @@ jobs:
           const excludedTop=new Set(['archive','reports','tools','test-results','node_modules','.git','.diagnostics']);
           function walk(dir='.') {
             const out=[];
-            for (const ent of fs.readdirSync(dir,{withFileTypes:true})) {
+            for(const ent of fs.readdirSync(dir,{withFileTypes:true})) {
               const rel=path.posix.join(dir==='.'?'':dir,ent.name);
               const top=rel.split('/')[0];
-              if (excludedTop.has(top)) continue;
-              if (ent.isDirectory()) out.push(...walk(rel)); else out.push(rel);
+              if(excludedTop.has(top)) continue;
+              if(ent.isDirectory()) out.push(...walk(rel)); else out.push(rel);
             }
             return out;
+          }
+          function hasTarget(f){
+            const t=fs.readFileSync(f,'utf8');
+            return t.includes(target)||t.includes(targetBase);
           }
           const all=walk('.');
           const html=all.filter(f=>f.endsWith('.html'));
           const css=all.filter(f=>f.startsWith('assets/css/')&&f.endsWith('.css'));
-          const js=all.filter(f=>f.endsWith('.js'));
+          const runtimeJs=all.filter(f=>f.startsWith('assets/js/')&&f.endsWith('.js'));
+          const toolingJs=all.filter(f=>f.startsWith('scripts/')&&f.endsWith('.js'));
+          const otherJs=all.filter(f=>f.endsWith('.js')&&!f.startsWith('assets/js/')&&!f.startsWith('scripts/'));
           function cleanRef(s){return s.trim().split(/[?#]/)[0].replace(/^['"]|['"]$/g,'');}
           function resolveRef(from,ref){
             ref=cleanRef(ref);
-            if(!ref||/^(?:https?:|data:|\/\/)/i.test(ref))return null;
+            if(!ref||/^(?:https?:|data:|\/\/)/i.test(ref)) return null;
             if(ref.startsWith('/')) return path.posix.normalize(ref.slice(1));
             return path.posix.normalize(path.posix.join(path.posix.dirname(from),ref));
           }
@@ -74,7 +83,8 @@ jobs:
             const t=fs.readFileSync(f,'utf8');
             const re=/<link\b[^>]*href\s*=\s*["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi;
             for(const m of t.matchAll(re)){
-              const r=resolveRef(f,m[1]); if(r){directEntrypoints.add(r); if(r===target) htmlLinks++;}
+              const r=resolveRef(f,m[1]);
+              if(r){directEntrypoints.add(r); if(r===target) htmlLinks++;}
             }
           }
           const imports=new Map(); let actualImporters=0; let cssTextRefs=0;
@@ -82,7 +92,8 @@ jobs:
             const t=fs.readFileSync(f,'utf8'); const refs=[];
             const re=/@import\s+(?:url\(\s*)?["']([^"']+\.css(?:[?#][^"']*)?)["']\s*\)?/gi;
             for(const m of t.matchAll(re)){
-              const r=resolveRef(f,m[1]); if(r){refs.push(r); if(r===target)actualImporters++;}
+              const r=resolveRef(f,m[1]);
+              if(r){refs.push(r); if(r===target) actualImporters++;}
             }
             imports.set(f,refs);
             if(f!==target){
@@ -91,22 +102,38 @@ jobs:
             }
           }
           const reachable=new Set(),stack=[...directEntrypoints];
-          while(stack.length){const f=stack.pop(); if(reachable.has(f))continue; reachable.add(f); for(const r of imports.get(f)||[])stack.push(r);}
-          let runtimeJsRefs=0;
-          for(const f of js){const t=fs.readFileSync(f,'utf8'); if(t.includes(target)||t.includes(targetBase))runtimeJsRefs++;}
+          while(stack.length){
+            const f=stack.pop(); if(reachable.has(f)) continue;
+            reachable.add(f); for(const r of imports.get(f)||[]) stack.push(r);
+          }
+          const runtimeRefs=runtimeJs.filter(hasTarget).sort();
+          const toolingRefs=toolingJs.filter(hasTarget).sort();
+          const otherRefs=otherJs.filter(hasTarget).sort();
+          const expectedTooling=[
+            'scripts/audit-css-dormant-debt-policy.js',
+            'scripts/audit-frontend-contracts.js',
+            'scripts/audit-responsive-inventory.js'
+          ];
+          if(runtimeRefs.length!==0) throw Error(`runtime refs: ${runtimeRefs.join(',')}`);
+          if(otherRefs.length!==0) throw Error(`unclassified js refs: ${otherRefs.join(',')}`);
+          if(JSON.stringify(toolingRefs)!==JSON.stringify(expectedTooling)) throw Error(`tooling refs: ${JSON.stringify(toolingRefs)}`);
           const active=reachable.has(target)?1:0;
-          const wholeFileDormant=(htmlLinks===0&&actualImporters===0&&runtimeJsRefs===0&&cssTextRefs===0&&active===0)?1:0;
+          const wholeFileDormant=(htmlLinks===0&&actualImporters===0&&runtimeRefs.length===0&&cssTextRefs===0&&active===0)?1:0;
           console.log(`LOADMAP PASS|activeHtml=${html.length}|physicalCss=${css.length}|directEntrypoints=${directEntrypoints.size}|reachableCss=${reachable.size}`);
-          console.log(`REACH ${wholeFileDormant?'PASS':'FAIL'}|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeJsRefs}|cssTextRefs=${cssTextRefs}|active=${active}|wholeFileDormant=${wholeFileDormant}`);
+          console.log(`CLASSIFICATION PASS|runtimeJsScope=assets/js/**|runtimeJsRefs=${runtimeRefs.length}|toolingJsScope=scripts/**|toolingJsRefs=${toolingRefs.length}|otherJsRefs=${otherRefs.length}|toolingRefs=${toolingRefs.join(',')}`);
+          console.log(`REACH ${wholeFileDormant?'PASS':'FAIL'}|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeRefs.length}|toolingJsRefs=${toolingRefs.length}|cssTextRefs=${cssTextRefs}|active=${active}|wholeFileDormant=${wholeFileDormant}`);
           if(!wholeFileDormant) throw Error('target has active/runtime reach');
           NODE
+          grep -Fq "$TARGET_FILE" docs/DEPRECATED-CSS.md
+          grep -Fq "$TARGET_FILE" docs/validation/active-css-load-map.md
+          echo 'GOVERNANCE CLASSIFICATION PASS|deprecatedDoc=1|trackedDormantMap=1|toolingExcludedFromRuntime=1'
           echo "PARENT PASS|sha=$PARENT_SHA|target=$TARGET_FILE|blob=$EXPECTED_BLOB|important=$EXPECTED_IMPORTANT"
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$EXPECTED_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(PARENT PASS|CANDIDATE PASS|LOADMAP PASS|REACH (PASS|FAIL))\|' /tmp/reach.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/reach.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$EXPECTED_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(PARENT PASS|CANDIDATE PASS|LOADMAP PASS|CLASSIFICATION PASS|REACH (PASS|FAIL)|GOVERNANCE CLASSIFICATION PASS)\|' /tmp/reach.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 700 /tmp/reach.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"
@@ -114,6 +141,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add "$RESULT_FILE"
-          git commit -m 'diag: publish 027 app mobile topbar reach r1 [skip ci]' >/dev/null
+          git commit -m 'diag: publish 027 app mobile topbar reach r2 [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
