@@ -1,0 +1,122 @@
+name: TEMP COM-B02AJ Matrix Finalizer
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/temp-com-b02aj-matrix-finalizer.yml'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: temp-com-b02aj-matrix-finalizer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Prove exact temporary lineage and frozen Matrix source
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=52ca9648cce2368999b558e273aafd692a2c6dc3
+          CANDIDATE=9b6161744df91e13d2430aea03c80dc27c059a70
+          TEMP=.github/workflows/temp-com-b02aj-matrix-finalizer.yml
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          test "$(git diff --name-only "$CANDIDATE" HEAD)" = "$TEMP"
+          expected_candidate="$(printf '%s\n' \
+            .github/workflows/com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-adapter-to-instance-binding.js \
+            config/com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.json \
+            scripts/test-com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.js | sort)"
+          actual_candidate="$(git diff --name-only "$BASE" "$CANDIDATE" | sort)"
+          test "$actual_candidate" = "$expected_candidate"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Generate canonical Matrix derivatives only
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_BEFORE="$(git rev-parse HEAD:config/domain-completion-matrix.json)"
+          test "$SOURCE_BEFORE" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          npm run write:domain-completion-matrix
+          git diff --exit-code -- config/domain-completion-matrix.json
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only HEAD | sort)"
+          test "$actual" = "$expected"
+
+      - name: Revalidate B02AJ Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-adapter-to-instance-binding.js
+          node --check scripts/test-com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.js
+          node scripts/test-com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.js
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-adapter-to-instance-binding.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'registryInstanceReference\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)[[:space:]]*=' "$TARGET"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Self-remove TEMP and prove permanent B02AJ scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=52ca9648cce2368999b558e273aafd692a2c6dc3
+          TEMP=.github/workflows/temp-com-b02aj-matrix-finalizer.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f -- reports/generated/domain-completion-matrix-report.json
+          git rm -- "$TEMP"
+          expected_staged="$(printf '%s\n' \
+            .github/workflows/temp-com-b02aj-matrix-finalizer.yml \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json | sort)"
+          actual_staged="$(git diff --cached --name-only | sort)"
+          test "$actual_staged" = "$expected_staged"
+          git diff --cached --check
+          git commit -m "docs(com): reconcile B02AJ Domain Completion Matrix derivatives"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected_permanent="$(printf '%s\n' \
+            .github/workflows/com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-adapter-to-instance-binding.js \
+            config/com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.js | sort)"
+          actual_permanent="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual_permanent" = "$expected_permanent"
+          ! git diff --name-only "$BASE" HEAD | grep '^supabase/migrations/'
+
+      - name: Fast-forward branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMP_HEAD="${{ github.event.pull_request.head.sha }}"
+          git fetch origin com/com-001-baseline-audit
+          test "$(git rev-parse origin/com/com-001-baseline-audit)" = "$TEMP_HEAD"
+          git push origin HEAD:com/com-001-baseline-audit
