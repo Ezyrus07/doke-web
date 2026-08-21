@@ -54,7 +54,10 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
-          test "$(git rev-parse HEAD^^)" = "$CANDIDATE_HEAD"
+          git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
+          for commit in $(git rev-list --first-parent "$CANDIDATE_HEAD"..HEAD); do
+            test "$(git diff-tree --no-commit-id --name-only -r "$commit" | sort -u)" = "$TEMP_PATH"
+          done
           test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
           test "$(git rev-parse "$CANDIDATE_HEAD^")" = "$PREDECESSOR_HEAD"
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
@@ -137,7 +140,8 @@ jobs:
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f -- reports/generated/domain-completion-matrix-report.json
           git rm -- "$TEMP_PATH"
           git commit -m "ci(com): finalize B02BF repository-only certification [run ${GITHUB_RUN_ID}]"
           ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02bf-'
