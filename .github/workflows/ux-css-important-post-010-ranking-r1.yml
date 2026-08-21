@@ -1,81 +1,47 @@
-name: UX CSS Important Post-034 Residual Reach Ranking R2
+name: UX CSS Important 035 Doke Shell Contract Reach R1
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  reachranking034r2:
+  reach035r1:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
-      PERM_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
+      TARGET_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
+      EXPECTED_IMPORTANT: '2552'
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-post-034-reach-ranking-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-reach-r1.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22}
       - id: reach
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/reach-ranking.log) 2>&1
-          git fetch origin "refs/heads/ux/ux-css-important-034-tablet-safari-layout-dormant-priority:refs/remotes/origin/ux/ux-css-important-034-tablet-safari-layout-dormant-priority" >/dev/null
-          test "$(git rev-parse refs/remotes/origin/ux/ux-css-important-034-tablet-safari-layout-dormant-priority)" = "$PERM_SHA"
-          git checkout --detach "$PERM_SHA" >/dev/null
-          test "$(git rev-parse HEAD)" = "$PERM_SHA"
-          node scripts/audit-important-reduction-plan.js >/dev/null
+          set -euo pipefail; exec > >(tee /tmp/r.log) 2>&1
+          test "$(git rev-parse --is-shallow-repository)" = false
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show "HEAD:$TARGET_FILE" >/tmp/source.css
           node <<'NODE'
-          const fs=require('fs'),path=require('path');
-          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
-          const root=process.cwd();
-          const norm=s=>s.replace(/\\/g,'/').replace(/^\.\//,'').split('?')[0];
-          const htmls=fs.readdirSync(root).filter(f=>f.endsWith('.html')).sort();
-          const loaded=new Set(), pagesByAsset=new Map();
-          for(const h of htmls){
-            const html=fs.readFileSync(h,'utf8');
-            for(const a0 of getLoadedCssAssets(html,root)){
-              const a=norm(a0); loaded.add(a);
-              if(!pagesByAsset.has(a)) pagesByAsset.set(a,new Set());
-              pagesByAsset.get(a).add(h);
-            }
-          }
-          const cssFiles=[];
-          const walk=(dir,ext,out)=>{if(!fs.existsSync(dir))return;for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())walk(p,ext,out);else if(e.isFile()&&p.endsWith(ext))out.push(norm(path.relative(root,p)));}};
-          walk(path.join(root,'assets','css'),'.css',cssFiles);
-          const importerMap=new Map();
-          const importRe=/@import\s+(?:url\()?['"]?([^"')\s]+)['"]?\)?/g;
-          for(const f of cssFiles){const src=fs.readFileSync(f,'utf8');let m;while((m=importRe.exec(src))){const resolved=norm(path.join(path.dirname(f),m[1]));if(!importerMap.has(resolved))importerMap.set(resolved,new Set());importerMap.get(resolved).add(f);}}
-          const runtimeJs=[]; walk(path.join(root,'assets','js'),'.js',runtimeJs);
-          const toolingJs=[]; walk(path.join(root,'scripts'),'.js',toolingJs); walk(path.join(root,'tests'),'.js',toolingJs);
-          const refCount=(files,target)=>files.reduce((n,f)=>n+(fs.readFileSync(f,'utf8').includes(target)?1:0),0);
-          const directHtmlLinks=(target)=>htmls.reduce((n,h)=>n+(fs.readFileSync(h,'utf8').includes(target)?1:0),0);
-          const p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
-          const s=p.summary||{}, risk=s.byRisk||{};
-          if(s.affectedFiles!==14||s.totalImportantOutsideServiceCard!==7514||risk['high-baseline-required']!==7506||risk['medium-baseline-required']!==6||risk['low-review-candidate']!==2)throw Error(`summary ${JSON.stringify(s)}`);
-          console.log(`GRAPH PASS|rootHtml=${htmls.length}|loadedCss=${loaded.size}|physicalCss=${cssFiles.length}|ranked=${p.topFiles.length}`);
-          p.topFiles.forEach((x,i)=>{
-            const pages=[...(pagesByAsset.get(x.file)||[])].sort();
-            const importers=[...(importerMap.get(x.file)||[])].sort();
-            const htmlRefs=directHtmlLinks(x.file), runtimeRefs=refCount(runtimeJs,x.file), toolingRefs=refCount(toolingJs,x.file);
-            const active=loaded.has(x.file)?1:0;
-            const wholeFileDormant=active===0&&htmlRefs===0&&importers.length===0&&runtimeRefs===0?1:0;
-            console.log(`REACH ${String(i+1).padStart(2,'0')}|file=${x.file}|important=${x.importantCount}|risk=${x.risk}|loaded=${active}|pages=${pages.length?pages.join(','):'-'}|htmlLinks=${htmlRefs}|actualImporters=${importers.length}|runtimeJsRefs=${runtimeRefs}|toolingJsRefs=${toolingRefs}|wholeFileDormant=${wholeFileDormant}`);
-          });
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const src=fs.readFileSync('/tmp/source.css','utf8');const before=(src.match(/!important\b/g)||[]).length;const out=src.replace(/\s*!important\b/g,'');const after=(out.match(/!important\b/g)||[]).length;const removed=before-after;if(before!==+process.env.EXPECTED_IMPORTANT||after!==0||removed!==+process.env.EXPECTED_IMPORTANT)throw Error(`important ${before}->${after}`);fs.writeFileSync('/tmp/candidate.css',out);const sha256=crypto.createHash('sha256').update(Buffer.from(out)).digest('hex');const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(out)}|important=${before}->${after}|removed=${removed}|sha256=${sha256}|blob=${blob}|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
           NODE
-          test -z "$(git status --porcelain -- assets/css)"
-          echo "SNAPSHOT PASS|sha=$PERM_SHA|productCssChanged=0"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');const {getLoadedCssAssets}=require('./scripts/lib/css-assets');const root=process.cwd(),target=process.env.TARGET_FILE.replace(/\\/g,'/');const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'').replace(/^\/+/, '').split('?')[0].split('#')[0];const rootHtml=fs.readdirSync(root).filter(f=>f.endsWith('.html')).sort(),loaded=new Set();for(const page of rootHtml){const html=fs.readFileSync(page,'utf8');for(const asset of getLoadedCssAssets(html,root))loaded.add(norm(asset));}function walk(dir,skip=new Set()){const out=[];if(!fs.existsSync(dir))return out;for(const ent of fs.readdirSync(dir,{withFileTypes:true})){if(ent.isDirectory()&&skip.has(ent.name))continue;const full=path.join(dir,ent.name);if(ent.isDirectory())out.push(...walk(full,skip));else out.push(norm(path.relative(root,full)));}return out;}const cssFiles=walk(path.join(root,'assets','css')).filter(f=>f.endsWith('.css'));const allFiles=walk(root,new Set(['node_modules','.git','archive','reports','test-results']));const jsFiles=allFiles.filter(f=>/\.(?:js|mjs|cjs)$/.test(f));const resolve=(from,raw)=>{const clean=String(raw||'').split('?')[0].split('#')[0];if(clean.startsWith('/'))return norm(clean);if(clean.startsWith('assets/'))return norm(clean);return norm(path.posix.normalize(path.posix.join(path.posix.dirname(from),clean)));};let htmlLinks=0,actualImporters=0,cssTextRefs=0;for(const page of rootHtml){const html=fs.readFileSync(page,'utf8');for(const m of html.matchAll(/<link\b[^>]*>/gi)){const tag=m[0],rel=(tag.match(/\brel\s*=\s*(["'])(.*?)\1/i)||[])[2]||'',href=(tag.match(/\bhref\s*=\s*(["'])(.*?)\1/i)||[])[2]||'';if(!rel.toLowerCase().split(/\s+/).includes('stylesheet')||!href||/^(?:https?:|data:|\/\/)/i.test(href))continue;if(resolve(page,href)===target)htmlLinks++;}}for(const file of cssFiles){const text=fs.readFileSync(file,'utf8');for(const m of text.matchAll(/@import\s+(?:url\(\s*)?(?:["']([^"']+)["']|([^\s;)]+))\s*\)?/gi)){const raw=m[1]||m[2];if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw))continue;if(resolve(file,raw)===target)actualImporters++;}if(file!==target&&text.includes(target))cssTextRefs++;}const runtimeRefs=[],toolingRefs=[],otherRefs=[];for(const file of jsFiles){const text=fs.readFileSync(file,'utf8');if(!text.includes(target))continue;if(file.startsWith('assets/js/'))runtimeRefs.push(file);else if(file.startsWith('scripts/')||file.startsWith('tests/')||file.startsWith('test/')||file.startsWith('tools/'))toolingRefs.push(file);else otherRefs.push(file);}const active=loaded.has(target)?1:0;const wholeFileDormant=htmlLinks===0&&actualImporters===0&&runtimeRefs.length===0&&otherRefs.length===0&&cssTextRefs===0&&active===0?1:0;console.log(`CANONICAL REACH PASS|rootHtml=${rootHtml.length}|loadedCss=${loaded.size}|physicalCss=${cssFiles.length}|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeRefs.length}|toolingJsRefs=${toolingRefs.length}|otherJsRefs=${otherRefs.length}|cssTextRefs=${cssTextRefs}|active=${active}|wholeFileDormant=${wholeFileDormant}|toolingRefs=${toolingRefs.sort().join(',')||'none'}`);if(!wholeFileDormant)process.exit(1);
+          NODE
+          node <<'NODE'
+          const fs=require('fs');const target=process.env.TARGET_FILE;const reg=JSON.parse(fs.readFileSync('config/important-debt-register.json','utf8'));const item=reg.items.find(x=>x.file===target);if(!item)throw Error('unregistered target');if(item.group!=='responsive-shell'||item.risk!=='high')throw Error(`register ${JSON.stringify(item)}`);const dormant=fs.readFileSync('docs/validation/css-dormant-debt-policy.md','utf8').includes('`'+target+'`');const deprecated=fs.readFileSync('docs/DEPRECATED-CSS.md','utf8').includes(target);if(!dormant||!deprecated)throw Error(`policy dormant=${dormant} deprecated=${deprecated}`);console.log(`POLICY PASS|dormantQuarantine=1|deprecatedDocumented=1|registered=1|risk=${item.risk}|group=${item.group}|registerImportant=${item.importantCount}|actualImportant=${process.env.EXPECTED_IMPORTANT}`);
+          NODE
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PERM_SHA=$PERM_SHA"; echo "REACH_RANKING=${{ steps.reach.outcome }}"; grep -E '^(GRAPH PASS|REACH [0-9][0-9]|SNAPSHOT PASS)\|' /tmp/reach-ranking.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 700 /tmp/reach-ranking.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
-          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
-          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- "$RESULT_FILE"; git commit -m 'diag: publish post-034 residual reach ranking r2 [skip ci]' >/dev/null
-          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
-          test "$result" = PASS
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(CANDIDATE PASS|CANONICAL REACH PASS|POLICY PASS)\|' /tmp/r.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1000 /tmp/r.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 doke shell contract reach r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
