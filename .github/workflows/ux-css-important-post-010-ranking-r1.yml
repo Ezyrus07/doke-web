@@ -1,10 +1,10 @@
-name: UX CSS Important 035 Dynamic Inactive Variance P11
+name: UX CSS Important 035 Body Variance Isolation P12
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  probe035p11:
+  probe035p12:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -14,13 +14,9 @@ jobs:
       TARGET_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
       CANDIDATE_SHA256: fa114edbfe30797719983d9f599b4efb589dd89f57cd332ecb779bbe9b1b9845
       CANDIDATE_BLOB: 5000b0aa60f6d93e123bc17811887e57668d4988
-      R1_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-reach-r1.txt
-      R1_BLOB: 01cd7a8768241d353db06403d165732bfc215893
-      P10_FILE: .diagnostics/ux-css-important-035-render-active-canonical-parity-p10.txt
-      P10_BLOB: ec914a7cfee726aa39db85194195fc68e2a2d6e7
-      R2_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-browser-r2.txt
-      R2_BLOB: 0577cc293eb2e99d57155d8adc33f0061c7779b4
-      RESULT_FILE: .diagnostics/ux-css-important-035-dynamic-inactive-variance-p11.txt
+      P11_FILE: .diagnostics/ux-css-important-035-dynamic-inactive-variance-p11.txt
+      P11_BLOB: 491ce37885c17ac7567fa672a2ae93ce5a69d649
+      RESULT_FILE: .diagnostics/ux-css-important-035-body-variance-p12.txt
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -31,34 +27,25 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/p11.log) 2>&1
-          test "$(git rev-parse "HEAD:$R1_FILE")" = "$R1_BLOB"
-          test "$(git rev-parse "HEAD:$P10_FILE")" = "$P10_BLOB"
-          test "$(git rev-parse "HEAD:$R2_FILE")" = "$R2_BLOB"
-          git show HEAD:"$R1_FILE" >/tmp/r1.txt
-          git show HEAD:"$P10_FILE" >/tmp/p10.txt
-          git show HEAD:"$R2_FILE" >/tmp/r2.txt
-          grep -q '^RUN_ID=32437166283$' /tmp/r1.txt; grep -q '^RESULT=PASS$' /tmp/r1.txt
-          grep -q '^RUN_ID=32487686782$' /tmp/p10.txt; grep -q '^RESULT=PASS$' /tmp/p10.txt
-          grep -Fq 'PROBE RESULT|renderActiveExact=1|renderActiveEqual=4/4|bodyStable=1|criteriaRelaxed=0|pixelTolerance=0|pixelMask=0|targetLoads=0/0|oracle=body-full-computed-style-plus-active-sheet-order-plus-inactive-head-multiset' /tmp/p10.txt
-          grep -q '^RUN_ID=32488139199$' /tmp/r2.txt; grep -q '^RESULT=FAIL$' /tmp/r2.txt
-          grep -Fq 'RENDER DIFF|state=index.html@1280x802|fields=dynamicInactiveHash' /tmp/r2.txt
-          grep -q '^R2_EXIT=124$' /tmp/r2.txt
-          echo 'EVIDENCE TRANSFER PASS|reach=R1|visualCalibration=P10|failedR2=32488139199|failedField=dynamicInactiveHash|failedExit=124|criteriaRelaxed=0'
+          set -euo pipefail; exec > >(tee /tmp/p12.log) 2>&1
+          test "$(git rev-parse "HEAD:$P11_FILE")" = "$P11_BLOB"
+          git show HEAD:"$P11_FILE" >/tmp/p11.txt
+          grep -q '^RUN_ID=32503132763$' /tmp/p11.txt; grep -q '^RESULT=FAIL$' /tmp/p11.txt
+          grep -Fq 'P11 SUMMARY|pairs=4|renderActiveEqual=3/4|dynamicInactiveEqual=1/4|bodyStableUnique=2/1' /tmp/p11.txt
+          grep -Fq 'notification-action.js?v=20260809-ux-notif-009-v1' /tmp/p11.txt
+          grep -Fq 'notification-action.js?v=20260810-ux-notif-010-v1' /tmp/p11.txt
+          echo 'EVIDENCE TRANSFER PASS|probe=P11|inactiveVariance=notification-action-version|bodyVariance=1pair|criteriaRelaxed=0'
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          mkdir /tmp/parent-site /tmp/candidate-site
+          rm -rf /tmp/parent-site /tmp/candidate-site; mkdir /tmp/parent-site /tmp/candidate-site
           git archive "$PARENT_SHA" | tar -x -C /tmp/parent-site
           git archive "$PARENT_SHA" | tar -x -C /tmp/candidate-site
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
           const p='/tmp/candidate-site/'+process.env.TARGET_FILE,s=fs.readFileSync(p,'utf8'),c=s.replace(/\s*!important\b/g,'');
-          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
-          fs.writeFileSync(p,c);
-          const blob=cp.execFileSync('git',['hash-object',p],{encoding:'utf8'}).trim();
-          const before=(s.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
-          if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB) throw Error(`candidate ${before}/${after}/${h}/${blob}`);
-          console.log(`CANDIDATE PASS|important=${before}->${after}|sha256=${h}|blob=${blob}|transform=marker-only`);
+          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');fs.writeFileSync(p,c);const blob=cp.execFileSync('git',['hash-object',p],{encoding:'utf8'}).trim();
+          if((s.match(/!important\b/g)||[]).length!==2552||(c.match(/!important\b/g)||[]).length!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error('candidate mismatch');
+          console.log(`CANDIDATE PASS|important=2552->0|sha256=${h}|blob=${blob}|transform=marker-only`);
           NODE
           npm ci --ignore-scripts >/dev/null
           npx playwright install --with-deps chromium >/dev/null 2>&1
@@ -66,61 +53,32 @@ jobs:
           python3 -m http.server 4174 --bind 127.0.0.1 --directory /tmp/candidate-site >/tmp/http-candidate.log 2>&1 & echo $! >/tmp/http-candidate.pid
           trap 'kill $(cat /tmp/http-parent.pid 2>/dev/null) $(cat /tmp/http-candidate.pid 2>/dev/null) 2>/dev/null || true' EXIT
           for port in 4173 4174; do ok=0; for i in {1..30}; do if curl -fsS "http://127.0.0.1:$port/index.html" >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1; done
-          cat >/tmp/p11.js <<'NODE'
-          const {chromium}=require('playwright');
-          const targetPath='/assets/css/components/shell/doke-shell-contract.css';
-          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-          const timeout=(p,ms,label)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label)),ms))]);
-          async function headSig(page){return page.evaluate(()=>{const norm=v=>String(v??'').replace(/https?:\/\/(?:127\.0\.0\.1|localhost):\d+/g,'<ORIGIN>');const isDyn=l=>l.hasAttribute('data-doke-route-preload')||l.hasAttribute('data-doke-stable-route-style')||l.hasAttribute('data-doke-route-style-pending');const attrs=l=>[...l.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0]));return JSON.stringify([...document.head.querySelectorAll('link')].filter(isDyn).map(attrs).map(JSON.stringify).sort())})}
-          async function waitHeadQuiet(page){let prev='',same=0;for(let i=0;i<48;i++){const s=await headSig(page);if(s===prev)same++;else same=0;prev=s;if(same>=4)return 1;await sleep(250)}return 0}
-          async function canonical(page){return page.evaluate(async()=>{
-            const norm=v=>String(v??'').replace(/https?:\/\/(?:127\.0\.0\.1|localhost):\d+/g,'<ORIGIN>');
-            const round=n=>Number.isFinite(n)?+n.toFixed(4):n;
-            const sha=async value=>{const b=new TextEncoder().encode(typeof value==='string'?value:JSON.stringify(value)),d=await crypto.subtle.digest('SHA-256',b);return[...new Uint8Array(d)].map(v=>v.toString(16).padStart(2,'0')).join('')};
-            const style=(el,pseudo=null)=>{const cs=getComputedStyle(el,pseudo),a=[];for(const p of [...cs].sort())a.push([p,norm(cs.getPropertyValue(p))]);return a};
-            const element=el=>{const r=el.getBoundingClientRect(),bc=getComputedStyle(el,'::before').content,ac=getComputedStyle(el,'::after').content;return{tag:el.tagName.toLowerCase(),attrs:[...el.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0])),ownText:[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>norm(n.nodeValue)).join(''),rect:[round(r.x),round(r.y),round(r.width),round(r.height),round(r.right),round(r.bottom)],client:[el.clientWidth,el.clientHeight,el.clientLeft,el.clientTop],scroll:[el.scrollWidth,el.scrollHeight,el.scrollLeft,el.scrollTop],state:{value:'value'in el?norm(el.value):null,checked:'checked'in el?!!el.checked:null,selected:'selected'in el?!!el.selected:null,disabled:'disabled'in el?!!el.disabled:null},style:style(el),before:bc!=='none'?style(el,'::before'):null,after:ac!=='none'?style(el,'::after'):null}};
-            const bodyRows=[document.body,...document.body.querySelectorAll('*')].map(element),bodyHash=await sha(bodyRows);
-            const rootAttrs=[...document.documentElement.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0]));
-            const bodyAttrs=[...document.body.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0]));
-            const links=[...document.head.querySelectorAll('link')],isDynamic=l=>l.hasAttribute('data-doke-route-preload')||l.hasAttribute('data-doke-stable-route-style')||l.hasAttribute('data-doke-route-style-pending'),attrs=l=>[...l.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0])),activeLink=l=>l.rel==='stylesheet'&&!l.disabled&&(!(l.media||'').trim()||(l.media||'').trim()==='all'||matchMedia(l.media).matches);
-            const dynActive=links.filter(l=>isDynamic(l)&&activeLink(l)).map(attrs).map(JSON.stringify).sort();
-            const dynInactive=links.filter(l=>isDynamic(l)&&!activeLink(l)).map(attrs).map(JSON.stringify).sort();
-            const staticOrdered=links.filter(l=>!isDynamic(l)).map(attrs);
-            const inactiveContract=links.filter(l=>isDynamic(l)&&!activeLink(l)).every(l=>l.rel!=='stylesheet'||l.disabled||((l.media||'').trim()&&((l.media||'').trim()!=='all')&&!matchMedia(l.media).matches));
-            const sheets=[...document.styleSheets].map(s=>{let rules=-1;try{rules=s.cssRules.length}catch{}const media=s.media?.mediaText||'',active=!s.disabled&&(!media||media==='all'||matchMedia(media).matches);return{href:s.href?norm(new URL(s.href,location.href).href):null,media,disabled:s.disabled,rules,active}}),activeSheets=sheets.filter(s=>s.active),inactiveSheets=sheets.filter(s=>!s.active).map(JSON.stringify).sort();
-            const styles=[...document.head.querySelectorAll('style')].map(s=>norm(s.textContent||''));
-            return{path:location.pathname,bodyHash,bodyRows:bodyRows.length,rootAttrs,bodyAttrs,dynamicActiveHash:await sha(dynActive),dynamicActiveCount:dynActive.length,dynamicInactiveHash:await sha(dynInactive),dynamicInactiveCount:dynInactive.length,dynamicInactive:dynInactive,inactiveContract,staticHash:await sha(staticOrdered),staticCount:staticOrdered.length,activeSheetsHash:await sha(activeSheets),activeSheetsCount:activeSheets.length,inactiveSheetsHash:await sha(inactiveSheets),inactiveSheetsCount:inactiveSheets.length,styleTagsHash:await sha(styles),styleTagsCount:styles.length};
-          })}
-          async function capture(port,side,iter){const browser=await chromium.launch({headless:true});const ctx=await browser.newContext({viewport:{width:1280,height:802},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{
-            await ctx.route('**/*',route=>{const u=new URL(route.request().url());return(u.hostname==='127.0.0.1'||u.hostname==='localhost')?route.continue():route.abort()});
-            await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}}globalThis.Date=FixedDate});
-            const page=await ctx.newPage();let loads=0,errors=0;page.on('request',r=>{if(new URL(r.url()).pathname===targetPath)loads++});page.on('pageerror',()=>errors++);
-            await page.goto(`http://127.0.0.1:${port}/index.html`,{waitUntil:'domcontentloaded',timeout:30000});
-            await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});
-            await page.waitForFunction(()=>document.readyState==='complete',null,{timeout:15000}).catch(()=>{});
-            await page.evaluate(()=>document.fonts?.ready);
-            await page.waitForFunction(()=>[...document.images].every(i=>i.complete),null,{timeout:10000}).catch(()=>{});
-            await page.evaluate(async()=>{await Promise.allSettled([...document.images].map(i=>typeof i.decode==='function'?i.decode():Promise.resolve()))});
-            const quiet=await waitHeadQuiet(page);await sleep(500);
-            const c=await timeout(canonical(page),45000,`CANON_TIMEOUT_${side}_${iter}`);
-            if(!quiet||loads||errors||c.path!=='/index.html'||!c.inactiveContract)throw Error(`contract side=${side} iter=${iter} quiet=${quiet} loads=${loads} errors=${errors} path=${c.path} inactiveContract=${c.inactiveContract}`);
-            console.log(`CAPTURE PASS|side=${side}|iteration=${iter}|headQuiet=1|loads=0|errors=0|bodyRows=${c.bodyRows}|dynamicActive=${c.dynamicActiveCount}|dynamicInactive=${c.dynamicInactiveCount}|activeSheets=${c.activeSheetsCount}|inactiveSheets=${c.inactiveSheetsCount}`);
-            return c;
-          } finally {await ctx.close().catch(()=>{});await browser.close().catch(()=>{})}}
-          (async()=>{const rows=[];let renderEq=0,inactiveEq=0;const renderFields=['bodyHash','bodyRows','rootAttrs','bodyAttrs','dynamicActiveHash','dynamicActiveCount','staticHash','staticCount','activeSheetsHash','activeSheetsCount','inactiveSheetsHash','inactiveSheetsCount','styleTagsHash','styleTagsCount'];for(let i=1;i<=4;i++){const order=i%2?['P','C']:['C','P'],out={};for(const side of order)out[side]=await capture(side==='P'?4173:4174,side,i);const rd=renderFields.filter(f=>JSON.stringify(out.P[f])!==JSON.stringify(out.C[f]));const ie=out.P.dynamicInactiveHash===out.C.dynamicInactiveHash&&out.P.dynamicInactiveCount===out.C.dynamicInactiveCount;if(!rd.length)renderEq++;if(ie)inactiveEq++;const onlyP=out.P.dynamicInactive.filter(x=>!out.C.dynamicInactive.includes(x)),onlyC=out.C.dynamicInactive.filter(x=>!out.P.dynamicInactive.includes(x));console.log(`PAIR|iteration=${i}|order=${order.join('')}|renderActiveEqual=${rd.length?0:1}|renderDiffs=${rd.join(',')||'none'}|dynamicInactiveEqual=${ie?1:0}|dynamicInactive=${out.P.dynamicInactiveCount}/${out.C.dynamicInactiveCount}|onlyP=${onlyP.length}|onlyC=${onlyC.length}`);for(const x of onlyP.slice(0,3))console.log(`INACTIVE ONLY|iteration=${i}|side=P|entry=${x}`);for(const x of onlyC.slice(0,3))console.log(`INACTIVE ONLY|iteration=${i}|side=C|entry=${x}`);rows.push(out)}const pBody=new Set(rows.map(r=>r.P.bodyHash)).size,cBody=new Set(rows.map(r=>r.C.bodyHash)).size,pInactive=new Set(rows.map(r=>r.P.dynamicInactiveHash)).size,cInactive=new Set(rows.map(r=>r.C.dynamicInactiveHash)).size;let classification='UNRESOLVED';if(renderEq===4&&inactiveEq===4&&pBody===1&&cBody===1)classification='QUIESCENCE_RESTORES_EXACT';else if(renderEq===4&&pBody===1&&cBody===1&&(inactiveEq<4||pInactive>1||cInactive>1))classification='INACTIVE_MULTISET_NONDETERMINISTIC_NONRENDERING';console.log(`P11 SUMMARY|pairs=4|renderActiveEqual=${renderEq}/4|dynamicInactiveEqual=${inactiveEq}/4|bodyStableUnique=${pBody}/${cBody}|dynamicInactiveUnique=${pInactive}/${cInactive}|targetLoads=0/0|headQuiet=1|captureTimeout=45000|criteriaRelaxed=0|classification=${classification}`);console.log(`PROBE RESULT|classification=${classification}|renderActiveExact=${renderEq===4&&pBody===1&&cBody===1?1:0}|criteriaRelaxed=0|targetLoads=0/0`);if(classification==='UNRESOLVED')process.exit(2)})().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)})
+          cat >/tmp/p12.js <<'NODE'
+          const {chromium}=require('playwright'),crypto=require('crypto');
+          const H=v=>crypto.createHash('sha256').update(JSON.stringify(v)).digest('hex');
+          const target='/assets/css/components/shell/doke-shell-contract.css';
+          async function snap(browser,port,side,iter){
+            const ctx=await browser.newContext({viewport:{width:1280,height:802},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});let loads=0,errors=0;
+            try{
+              await ctx.route('**/*',route=>{const u=new URL(route.request().url());return(u.hostname==='127.0.0.1'||u.hostname==='localhost')?route.continue():route.abort()});
+              await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}}globalThis.Date=FixedDate});
+              const page=await ctx.newPage();page.setDefaultTimeout(60000);page.setDefaultNavigationTimeout(45000);page.on('request',r=>{if(new URL(r.url()).pathname===target)loads++});page.on('pageerror',()=>errors++);
+              await page.goto(`http://127.0.0.1:${port}/index.html`,{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(1000);
+              const rows=await page.evaluate(()=>{const norm=v=>String(v??'').replace(/https?:\/\/(?:127\.0\.0\.1|localhost):\d+/g,'<ORIGIN>'),round=n=>Number.isFinite(n)?+n.toFixed(4):n,sty=(el,p=null)=>{const cs=getComputedStyle(el,p),o={};for(const k of [...cs].sort())o[k]=norm(cs.getPropertyValue(k));return o};return [document.body,...document.body.querySelectorAll('*')].map((el,i)=>{const r=el.getBoundingClientRect(),bc=getComputedStyle(el,'::before').content,ac=getComputedStyle(el,'::after').content;return{i,locator:{tag:el.tagName.toLowerCase(),id:el.id||'',class:typeof el.className==='string'?el.className:''},attrs:[...el.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0])),ownText:[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>norm(n.nodeValue)).join(''),rect:[round(r.x),round(r.y),round(r.width),round(r.height),round(r.right),round(r.bottom)],client:[el.clientWidth,el.clientHeight,el.clientLeft,el.clientTop],scroll:[el.scrollWidth,el.scrollHeight,el.scrollLeft,el.scrollTop],state:{value:'value'in el?norm(el.value):null,checked:'checked'in el?!!el.checked:null,selected:'selected'in el?!!el.selected:null,disabled:'disabled'in el?!!el.disabled:null},style:sty(el),before:bc!=='none'?sty(el,'::before'):null,after:ac!=='none'?sty(el,'::after'):null}})});
+              console.log(`SNAP|side=${side}|iter=${iter}|rows=${rows.length}|hash=${H(rows)}|loads=${loads}|errors=${errors}`);if(loads||errors)throw Error('runtime contract');return rows;
+            }finally{await ctx.close().catch(()=>{})}}
+          function diff(a,b,label){let n=0;for(let i=0;i<Math.max(a.length,b.length);i++){const A=a[i],B=b[i];if(H(A)===H(B))continue;n++;const parts=[];for(const k of ['locator','attrs','ownText','rect','client','scroll','state','style','before','after'])if(H(A?.[k])!==H(B?.[k]))parts.push(k);console.log(`ROW DIFF|${label}|index=${i}|locator=${JSON.stringify(A?.locator||B?.locator)}|parts=${parts.join(',')}`);if(parts.includes('style')){const keys=new Set([...Object.keys(A?.style||{}),...Object.keys(B?.style||{})]);const sd=[...keys].filter(k=>(A?.style||{})[k]!==(B?.style||{})[k]);console.log(`STYLE DIFF|${label}|index=${i}|props=${sd.slice(0,30).join(',')}`)}if(n>=20)break}console.log(`DIFF SUMMARY|${label}|changedRows=${n}|rows=${a.length}/${b.length}`);return n}
+          (async()=>{const browser=await chromium.launch({headless:true});try{const P1=await snap(browser,4173,'P',1),C1=await snap(browser,4174,'C',1),P2=await snap(browser,4173,'P',2),C2=await snap(browser,4174,'C',2),P3=await snap(browser,4173,'P',3),C3=await snap(browser,4174,'C',3);const pp12=diff(P1,P2,'P1-P2'),pp13=diff(P1,P3,'P1-P3'),cc12=diff(C1,C2,'C1-C2'),cc13=diff(C1,C3,'C1-C3'),pc11=diff(P1,C1,'P1-C1'),pc22=diff(P2,C2,'P2-C2'),pc33=diff(P3,C3,'P3-C3');const intra=(pp12>0||pp13>0||cc12>0||cc13>0)?1:0,cross=[pc11,pc22,pc33];console.log(`P12 SUMMARY|intraSideVariance=${intra}|P1P2=${pp12}|P1P3=${pp13}|C1C2=${cc12}|C1C3=${cc13}|cross=${cross.join(',')}|targetLoads=0/0|criteriaRelaxed=0`);if(intra){console.log('PROBE RESULT|classification=RUNTIME_BODY_VARIANCE|criteriaRelaxed=0');}else if(cross.every(x=>x===0)){console.log('PROBE RESULT|classification=TRANSIENT_NOT_REPRODUCED|criteriaRelaxed=0');}else{console.log('PROBE RESULT|classification=STABLE_CROSS_SIDE_DIFF|criteriaRelaxed=0');process.exitCode=1}}finally{await browser.close()}})().catch(e=>{console.error('P12 ERROR|'+(e.stack||e));process.exit(1)});
           NODE
-          timeout --signal=TERM --kill-after=20s 1500s env NODE_PATH="$PWD/node_modules" node /tmp/p11.js
-          echo 'RESTORE PASS|workspace=parent-untouched|candidate=tmp-only'
-      - name: publish
+          set +e; timeout 1500s node /tmp/p12.js; rc=$?; set -e
+          echo "P12_EXIT=$rc"; test "$rc" = 0
+      - name: Publish receipt
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(EVIDENCE TRANSFER PASS|CANDIDATE PASS|CAPTURE PASS|PAIR\||INACTIVE ONLY|P11 SUMMARY|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p11.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1200 /tmp/p11.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
-          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
-          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 dynamic inactive variance p11 [skip ci]' >/dev/null
-          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
-          test "$result" = PASS
+          set -euo pipefail
+          { echo "RUN_ID=${{ github.run_id }}"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; if [ "${{ steps.probe.outcome }}" = success ]; then echo 'PROBE=success'; else echo 'PROBE=failure'; fi; cat /tmp/p12.log 2>/dev/null || true; if [ "${{ steps.probe.outcome }}" = success ]; then echo 'RESULT=PASS'; else echo 'RESULT=FAIL'; fi; } > "$RESULT_FILE"
+          git checkout "$DIAG_BRANCH"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 body variance p12 [skip ci]'; git push origin "$DIAG_BRANCH"
+      - name: Require PASS
+        if: always()
+        run: test "${{ steps.probe.outcome }}" = success
