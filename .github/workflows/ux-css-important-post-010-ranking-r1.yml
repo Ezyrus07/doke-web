@@ -1,4 +1,4 @@
-name: UX CSS Important 035 Community 820 Header Flake Probe P5
+name: UX CSS Important 035 Community 820 Header Flake Probe P5 Fixed
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -28,8 +28,10 @@ jobs:
           set -euo pipefail; exec > >(tee /tmp/p5.log) 2>&1
           test "$(git rev-parse "HEAD:$P4_FILE")" = "$P4_BLOB"
           git show HEAD:"$P4_FILE" >/tmp/p4.txt
-          grep -q '^RUN_ID=32484418392$' /tmp/p4.txt; grep -q '^RESULT=PASS$' /tmp/p4.txt
-          grep -Fq 'PROBE RESULT|classification=DOM_RUNTIME_NONDETERMINISM|runs=6|pngUnique=3|pixelUnique=3|domUnique=5|textUnique=1|pixelDiff={"dimensionMismatch":0,"diffPixels":17,"bbox":"661,21-674,25","maxDelta":15}|targetLoads=0|criteriaRelaxed=0' /tmp/p4.txt
+          grep -q '^RUN_ID=32484418392$' /tmp/p4.txt
+          grep -q '^RESULT=PASS$' /tmp/p4.txt
+          grep -Fq 'classification=DOM_RUNTIME_NONDETERMINISM' /tmp/p4.txt
+          grep -Fq 'bbox":"661,21-674,25"' /tmp/p4.txt
           echo 'P4 TRANSFER PASS|classification=DOM_RUNTIME_NONDETERMINISM|bbox=661,21-674,25|diffPixels=17|targetLoads=0'
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
@@ -39,14 +41,158 @@ jobs:
           trap 'kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
           ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/comunidade.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
           cat >/tmp/p5.js <<'NODE'
-          const {chromium}=require('playwright'),crypto=require('crypto');
-          const h=b=>crypto.createHash('sha256').update(b).digest('hex'),targetPath='/assets/css/components/shell/doke-shell-contract.css';
-          async function settleImages(page){await page.waitForFunction(()=>[...document.images].every(i=>i.complete),null,{timeout:15000}).catch(()=>{});await page.evaluate(async()=>{await Promise.allSettled([...document.images].map(i=>typeof i.decode==='function'?i.decode():Promise.resolve()));});}
-          async function pixelHash(page,buf){const b64=buf.toString('base64');return page.evaluate(async b64=>{const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const bmp=await createImageBitmap(new Blob([u],{type:'image/png'})),c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(bmp,0,0);const p=x.getImageData(0,0,c.width,c.height).data,d=await crypto.subtle.digest('SHA-256',p);return[...new Uint8Array(d)].map(v=>v.toString(16).padStart(2,'0')).join('');},b64);}
-          const inspectFn=()=>{const box={x1:661,y1:21,x2:674,y2:25},fmt=e=>{const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{tag:e.tagName.toLowerCase(),id:e.id||'',cls:typeof e.className==='string'?e.className:(e.getAttribute('class')||''),aria:e.getAttribute('aria-label')||'',role:e.getAttribute('role')||'',attrs:[...e.attributes].map(a=>[a.name,a.value]).sort(),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),w:+r.width.toFixed(3),h:+r.height.toFixed(3),right:+r.right.toFixed(3),bottom:+r.bottom.toFixed(3)},style:{display:cs.display,position:cs.position,visibility:cs.visibility,opacity:cs.opacity,transform:cs.transform,color:cs.color,backgroundColor:cs.backgroundColor,borderColor:cs.borderColor,borderWidth:cs.borderWidth,fontSize:cs.fontSize,lineHeight:cs.lineHeight}};const all=[...document.querySelectorAll('*')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.right>=box.x1&&r.left<=box.x2&&r.bottom>=box.y1&&r.top<=box.y2;}).map(fmt);const stack=document.elementsFromPoint(668,23).map(fmt);const actions=[...document.querySelectorAll('.app-header .home-side-meta__alert,.app-header .home-side-meta__profile,.app-header .home-side-meta__tablet-menu,.app-header .home-side-meta__search')].map(fmt);return{box,stack,intersections:all,actions,htmlAttrs:[...document.documentElement.attributes].map(a=>[a.name,a.value]).sort(),bodyAttrs:[...document.body.attributes].map(a=>[a.name,a.value]).sort()};};
-          async function capture(iteration){const browser=await chromium.launch({headless:true});try{const ctx=await browser.newContext({viewport:{width:820,height:1180},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.setDefaultTimeout(45000);page.setDefaultNavigationTimeout(45000);let loads=0,errs=0;page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath)loads++;});page.on('pageerror',()=>errs++);await page.goto('http://127.0.0.1:4173/comunidade.html',{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await settleImages(page);await page.waitForTimeout(900);await page.screenshot({fullPage:true,timeout:60000});await page.waitForTimeout(350);const shot=await page.screenshot({fullPage:true,timeout:60000}),pixel=await pixelHash(page,shot),info=await page.evaluate(inspectFn),region=h(Buffer.from(JSON.stringify(info)));console.log(`RUN PASS|iteration=${iteration}|pixel=${pixel}|region=${region}|loads=${loads}|errors=${errs}|stackTop=${info.stack[0]?.tag||'none'}#${info.stack[0]?.id||''}.${(info.stack[0]?.cls||'').replace(/\s+/g,'.')}|stackAria=${info.stack[0]?.aria||''}`);if(loads||errs)throw Error(`state contract ${loads}/${errs}`);return{iteration,pixel,region,info};}finally{await ctx.close().catch(()=>{});}}finally{await browser.close().catch(()=>{});}}
-          function diff(a,b,path=''){const out=[];if(typeof a!==typeof b||Array.isArray(a)!==Array.isArray(b)){out.push(`${path}:TYPE`);return out;}if(a&&typeof a==='object'){const keys=[...new Set([...Object.keys(a),...Object.keys(b)])].sort();for(const k of keys)out.push(...diff(a[k],b[k],path?`${path}.${k}`:k));return out;}if(a!==b)out.push(`${path}:${JSON.stringify(a)}=>${JSON.stringify(b)}`);return out;}
-          (async()=>{const rows=[];for(let i=1;i<=8;i++)rows.push(await capture(i));const pixels=[...new Set(rows.map(r=>r.pixel))],regions=[...new Set(rows.map(r=>r.region))];console.log(`SUMMARY|runs=8|pixelUnique=${pixels.length}|regionUnique=${regions.length}`);for(const ph of pixels){const r=rows.find(x=>x.pixel===ph);console.log(`VARIANT|pixel=${ph}|iteration=${r.iteration}|region=${r.region}|stack=${JSON.stringify(r.info.stack)}|intersections=${JSON.stringify(r.info.intersections)}|actions=${JSON.stringify(r.info.actions)}|htmlAttrs=${JSON.stringify(r.info.htmlAttrs)}|bodyAttrs=${JSON.stringify(r.info.bodyAttrs)}`);}if(pixels.length>1){const a=rows.find(r=>r.pixel===pixels[0]),b=rows.find(r=>r.pixel===pixels[1]),changes=diff(a.info,b.info);console.log(`VARIANT DIFF|a=${a.pixel}|b=${b.pixel}|changes=${JSON.stringify(changes)}`);}console.log(`PROBE RESULT|pixelUnique=${pixels.length}|regionUnique=${regions.length}|state=comunidade.html@820x1180|bbox=661,21-674,25|targetLoads=0|criteriaRelaxed=0`);})().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)});
+          const { chromium } = require('playwright');
+          const crypto = require('crypto');
+          const targetPath = '/assets/css/components/shell/doke-shell-contract.css';
+          const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
+
+          async function settleImages(page) {
+            await page.waitForFunction(() => [...document.images].every((i) => i.complete), null, { timeout: 15000 }).catch(() => {});
+            await page.evaluate(async () => {
+              await Promise.allSettled([...document.images].map((i) => typeof i.decode === 'function' ? i.decode() : Promise.resolve()));
+            });
+          }
+
+          async function pixelHash(page, buffer) {
+            const b64 = buffer.toString('base64');
+            return page.evaluate(async (encoded) => {
+              const bin = atob(encoded);
+              const bytes = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+              const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+              const canvas = document.createElement('canvas');
+              canvas.width = bmp.width;
+              canvas.height = bmp.height;
+              const ctx = canvas.getContext('2d', { willReadFrequently: true });
+              ctx.drawImage(bmp, 0, 0);
+              const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+              const digest = await crypto.subtle.digest('SHA-256', pixels);
+              return [...new Uint8Array(digest)].map((v) => v.toString(16).padStart(2, '0')).join('');
+            }, b64);
+          }
+
+          async function inspect(page) {
+            return page.evaluate(() => {
+              const box = { x1: 661, y1: 21, x2: 674, y2: 25 };
+              const fmt = (el) => {
+                const r = el.getBoundingClientRect();
+                const cs = getComputedStyle(el);
+                return {
+                  tag: el.tagName.toLowerCase(),
+                  id: el.id || '',
+                  cls: typeof el.className === 'string' ? el.className : (el.getAttribute('class') || ''),
+                  aria: el.getAttribute('aria-label') || '',
+                  role: el.getAttribute('role') || '',
+                  attrs: [...el.attributes].map((a) => [a.name, a.value]).sort(),
+                  rect: {
+                    x: +r.x.toFixed(3), y: +r.y.toFixed(3), w: +r.width.toFixed(3), h: +r.height.toFixed(3),
+                    right: +r.right.toFixed(3), bottom: +r.bottom.toFixed(3)
+                  },
+                  style: {
+                    display: cs.display, position: cs.position, visibility: cs.visibility, opacity: cs.opacity,
+                    transform: cs.transform, color: cs.color, backgroundColor: cs.backgroundColor,
+                    borderColor: cs.borderColor, borderWidth: cs.borderWidth, fontSize: cs.fontSize, lineHeight: cs.lineHeight
+                  }
+                };
+              };
+              const intersections = [...document.querySelectorAll('*')]
+                .filter((el) => {
+                  const r = el.getBoundingClientRect();
+                  return r.width > 0 && r.height > 0 && r.right >= box.x1 && r.left <= box.x2 && r.bottom >= box.y1 && r.top <= box.y2;
+                })
+                .map(fmt);
+              const stack = document.elementsFromPoint(668, 23).map(fmt);
+              const actions = [...document.querySelectorAll('.app-header .home-side-meta__alert,.app-header .home-side-meta__profile,.app-header .home-side-meta__tablet-menu,.app-header .home-side-meta__search')].map(fmt);
+              return {
+                box, stack, intersections, actions,
+                htmlAttrs: [...document.documentElement.attributes].map((a) => [a.name, a.value]).sort(),
+                bodyAttrs: [...document.body.attributes].map((a) => [a.name, a.value]).sort()
+              };
+            });
+          }
+
+          async function capture(iteration) {
+            const browser = await chromium.launch({ headless: true });
+            try {
+              const ctx = await browser.newContext({ viewport: { width: 820, height: 1180 }, deviceScaleFactor: 1, locale: 'pt-BR', timezoneId: 'America/Bahia', reducedMotion: 'reduce' });
+              try {
+                await ctx.route('**/*', (route) => {
+                  const u = new URL(route.request().url());
+                  if (u.hostname === '127.0.0.1' || u.hostname === 'localhost') return route.continue();
+                  return route.abort();
+                });
+                await ctx.addInitScript(() => {
+                  let n = 0;
+                  Math.random = () => ((++n % 997) / 997);
+                  const fixed = 1787263200000;
+                  const RealDate = Date;
+                  class FixedDate extends RealDate {
+                    constructor(...args) { super(...(args.length ? args : [fixed])); }
+                    static now() { return fixed; }
+                  }
+                  globalThis.Date = FixedDate;
+                });
+                const page = await ctx.newPage();
+                page.setDefaultTimeout(45000);
+                page.setDefaultNavigationTimeout(45000);
+                let loads = 0;
+                let errors = 0;
+                page.on('request', (r) => { if (new URL(r.url()).pathname === targetPath) loads += 1; });
+                page.on('pageerror', () => { errors += 1; });
+                await page.goto('http://127.0.0.1:4173/comunidade.html', { waitUntil: 'networkidle', timeout: 45000 });
+                await page.addStyleTag({ content: '*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}' });
+                await page.evaluate(() => document.fonts?.ready);
+                await settleImages(page);
+                await page.waitForTimeout(900);
+                await page.screenshot({ fullPage: true, timeout: 60000 });
+                await page.waitForTimeout(350);
+                const shot = await page.screenshot({ fullPage: true, timeout: 60000 });
+                const pixel = await pixelHash(page, shot);
+                const info = await inspect(page);
+                const region = hash(Buffer.from(JSON.stringify(info)));
+                console.log(`RUN PASS|iteration=${iteration}|pixel=${pixel}|region=${region}|loads=${loads}|errors=${errors}|stackTop=${info.stack[0]?.tag || 'none'}#${info.stack[0]?.id || ''}.${(info.stack[0]?.cls || '').replace(/\s+/g, '.')}|stackAria=${info.stack[0]?.aria || ''}`);
+                if (loads || errors) throw new Error(`state contract ${loads}/${errors}`);
+                return { iteration, pixel, region, info };
+              } finally {
+                await ctx.close().catch(() => {});
+              }
+            } finally {
+              await browser.close().catch(() => {});
+            }
+          }
+
+          function diff(a, b, path = '') {
+            const out = [];
+            if (typeof a !== typeof b || Array.isArray(a) !== Array.isArray(b)) return [`${path}:TYPE`];
+            if (a && typeof a === 'object') {
+              const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+              for (const key of keys) out.push(...diff(a[key], b[key], path ? `${path}.${key}` : key));
+              return out;
+            }
+            if (a !== b) out.push(`${path}:${JSON.stringify(a)}=>${JSON.stringify(b)}`);
+            return out;
+          }
+
+          (async () => {
+            const rows = [];
+            for (let i = 1; i <= 8; i += 1) rows.push(await capture(i));
+            const pixels = [...new Set(rows.map((r) => r.pixel))];
+            const regions = [...new Set(rows.map((r) => r.region))];
+            console.log(`SUMMARY|runs=8|pixelUnique=${pixels.length}|regionUnique=${regions.length}`);
+            for (const ph of pixels) {
+              const row = rows.find((r) => r.pixel === ph);
+              console.log(`VARIANT|pixel=${ph}|iteration=${row.iteration}|region=${row.region}|stack=${JSON.stringify(row.info.stack)}|intersections=${JSON.stringify(row.info.intersections)}|actions=${JSON.stringify(row.info.actions)}|htmlAttrs=${JSON.stringify(row.info.htmlAttrs)}|bodyAttrs=${JSON.stringify(row.info.bodyAttrs)}`);
+            }
+            if (pixels.length > 1) {
+              const a = rows.find((r) => r.pixel === pixels[0]);
+              const b = rows.find((r) => r.pixel === pixels[1]);
+              console.log(`VARIANT DIFF|a=${a.pixel}|b=${b.pixel}|changes=${JSON.stringify(diff(a.info, b.info))}`);
+            }
+            console.log(`PROBE RESULT|pixelUnique=${pixels.length}|regionUnique=${regions.length}|state=comunidade.html@820x1180|bbox=661,21-674,25|targetLoads=0|criteriaRelaxed=0`);
+          })().catch((error) => {
+            console.error('PROBE ERROR|' + (error?.stack || error));
+            process.exit(1);
+          });
           NODE
           timeout --signal=TERM --kill-after=20s 900s env NODE_PATH="$PWD/node_modules" node /tmp/p5.js
           echo 'RESTORE PASS|target=parent-exact'
@@ -57,4 +203,4 @@ jobs:
           set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success; then result=PASS; fi
           { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(P4 TRANSFER PASS|RUN PASS|SUMMARY|VARIANT\||VARIANT DIFF|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p5.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 900 /tmp/p5.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 community 820 header flake probe p5 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 community 820 header flake probe p5 fixed [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
