@@ -1,10 +1,10 @@
-name: UX CSS Important 032 App Header Canonical Contract Browser R2
+name: UX CSS Important 032 App Header Canonical Contract Governance R3
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  browser032r2:
+  governance032r3:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
@@ -15,30 +15,35 @@ jobs:
       CANDIDATE_BLOB: ed8220a58070aad2fd533c60396441a2ebd7420f
       REACH_FILE: .diagnostics/ux-css-important-032-app-header-canonical-contract-reach-r1.txt
       REACH_BLOB: 3507e417499f56d880a9f14572b36fcf3d9465f5
+      BROWSER_FILE: .diagnostics/ux-css-important-032-app-header-canonical-contract-browser-r2.txt
+      BROWSER_BLOB: e460d3d065321a36439e6c3e45406a186dcfb6fc
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-032-app-header-canonical-contract-browser-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-032-app-header-canonical-contract-governance-r3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: browser
+      - id: govern
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/b.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/g.log) 2>&1
           test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
+          test "$(git rev-parse "HEAD:$BROWSER_FILE")" = "$BROWSER_BLOB"
           git show HEAD:"$REACH_FILE" >/tmp/reach.txt
-          grep -q '^RUN_ID=32431387421$' /tmp/reach.txt
+          git show HEAD:"$BROWSER_FILE" >/tmp/browser.txt
           grep -q '^RESULT=PASS$' /tmp/reach.txt
+          grep -q '^RESULT=PASS$' /tmp/browser.txt
           grep -Fq "CANDIDATE PASS|bytes=20879|important=304->0|removed=304|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/reach.txt
           grep -Fq 'CANONICAL REACH PASS|rootHtml=27|loadedCss=402|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=2|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1' /tmp/reach.txt
-          echo 'REACH TRANSFER PASS|source=R1|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=2|candidateHash=exact|candidateBlob=exact'
+          grep -Fq "BROWSER PASS|sha256=$CANDIDATE_SHA256|pages=index,resultados,perfil,comunidade|states=24|viewports=599,600,760,761,1179,1180|metadataDiffs=0|screenshotDiffs=0|stableStates=24/24|pageErrors=0|targetStylesheetLoads=0/0|pageRoots=24/24|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1|breakpoints=599/600,760/761,1179/1180" /tmp/browser.txt
+          echo 'EVIDENCE CHAIN PASS|reach=R1|browser=R2|candidateHash=exact|candidateBlob=exact|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=2|exactPathMatch=1'
 
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
           cp "$TARGET_FILE" /tmp/parent.css
-          trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true; kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
+          trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true' EXIT
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
           const o=fs.readFileSync(process.env.TARGET_FILE,'utf8'),c=o.replace(/\s*!important\b/g,'');
@@ -46,35 +51,53 @@ jobs:
           const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
           const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
           if(before!==304||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);
-          console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=304->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1`);
+          fs.writeFileSync(process.env.TARGET_FILE,c);
+          console.log(`STATIC PASS|sha256=${h}|blob=${blob}|bytes=${Buffer.byteLength(c)}|important=304->0|priorityMarkersRemoved=304|declarationsRemoved=0|selectorsRemoved=0|valuesChanged=0|wholeFileDormant=1`);
           NODE
 
           npm ci --ignore-scripts >/dev/null
-          npx playwright install --with-deps chromium >/dev/null 2>&1
-          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
-          ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/index.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
-          cat >/tmp/proof.js <<'NODE'
-          const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
-          const pages=['index.html','resultados.html','perfil.html','comunidade.html'];
-          const cases=[{w:599,h:900,key:'599'},{w:600,h:900,key:'600'},{w:760,h:950,key:'760'},{w:761,h:950,key:'761'},{w:1179,h:1000,key:'1179'},{w:1180,h:1000,key:'1180'}];
-          const targetPath='/assets/css/components/shell/app-header-canonical-contract.css',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,visibility:cs.visibility,position:cs.position,overflow:cs.overflow,gridTemplateColumns:cs.gridTemplateColumns,gap:cs.gap,padding:cs.padding,margin:cs.margin,borderRadius:cs.borderRadius}};return{vw:innerWidth,vh:innerHeight,page:document.body?.dataset?.page||null,path:location.pathname,shell:q('.app-shell'),content:q('main.page__content, .page__content'),header:q('.app-header'),inner:q('.app-header__inner'),primary:q('.app-header__group--primary, .home-side-meta__group--primary'),secondary:q('.app-header__group--secondary, .home-side-meta__group--secondary'),location:q('.home-side-meta__location'),profile:q('.home-side-meta__profile'),tabletMenu:q('.home-side-meta__tablet-menu')};};
-          async function stableMeta(page){let prev='';for(let i=0;i<12;i++){const m=await page.evaluate(metaFn),s=JSON.stringify(m);if(s===prev)return m;prev=s;await page.waitForTimeout(300);}return page.evaluate(metaFn)}
-          async function phase(label){const browser=await chromium.launch({headless:true});const out={};let loads=0,errs=0,stable=0,roots=0;for(const p of pages){for(const c of cases){const key=`${p}@${c.key}`,ctx=await browser.newContext({viewport:{width:c.w,height:c.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath)loads++});await page.goto(`http://127.0.0.1:4173/${p}`,{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(700);const meta=await stableMeta(page),m2=await page.evaluate(metaFn);if(JSON.stringify(meta)===JSON.stringify(m2))stable++;const expectedPath=`/${p}`;if(meta.path===expectedPath&&meta.shell&&meta.content&&meta.header)roots++;else console.log(`ROOT MISS|state=${key}|page=${meta.page}|path=${meta.path}|shell=${meta.shell?1:0}|content=${meta.content?1:0}|header=${meta.header?1:0}`);await page.screenshot({fullPage:true});await page.waitForTimeout(200);const shot=await page.screenshot({fullPage:true});out[key]={meta,shot:hash(shot)};await ctx.close();}}await browser.close();console.log(`PHASE|label=${label}|states=${pages.length*cases.length}|stableStates=${stable}|pageErrors=${errs}|targetStylesheetLoads=${loads}|pageRoots=${roots}`);return{out,loads,errs,stable,roots};}
-          (async()=>{const p=await phase(process.argv[2]);fs.writeFileSync(process.argv[3],JSON.stringify(p));})().catch(e=>{console.error(e);process.exit(1)});
-          NODE
-          NODE_PATH="$PWD/node_modules" node /tmp/proof.js parent /tmp/parent.json
-          cp /tmp/candidate.css "$TARGET_FILE"
-          NODE_PATH="$PWD/node_modules" node /tmp/proof.js candidate /tmp/candidate.json
+          node scripts/generate-responsive-index-baseline.js >/dev/null
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|baselineSource=exact-parent'
+          npm run audit:agent-governance >/dev/null
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
           node <<'NODE'
-          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const n=Object.keys(a.out).length;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|pages=index,resultados,perfil,comunidade|states=${n}|viewports=599,600,760,761,1179,1180|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|pageRoots=${a.roots}/${b.roots}|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1|breakpoints=599/600,760/761,1179/1180`);if(md||sd||a.errs||b.errs||a.loads||b.loads||a.stable!==24||b.stable!==24||a.roots!==24||b.roots!==24)process.exit(1);
+          const fs=require('fs');const m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`);
           NODE
+          npm run audit:shared-app-header-contract >/dev/null
+          npm run audit:mobile-shell-location-contract >/dev/null
+          npm run audit:responsive-boundaries >/dev/null
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$PARENT_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures >/dev/null
+          npm run audit:important-reduction-plan >/dev/null
+          npm run audit:global-css-design-system >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
+          const s=b.summary,ps=p.summary;if(s.totalImportant!==8234||s.outsideServiceCardImportant!==8172||s.filesWithImportant!==17)throw Error(`important ${JSON.stringify(s)}`);if(ps.affectedFiles!==16||ps.totalImportantOutsideServiceCard!==8172)throw Error(`plan ${JSON.stringify(ps)}`);
+          const risk=ps.byRisk||{},high=risk['high-baseline-required']||0,medium=risk['medium-baseline-required']||0,low=risk['low-review-candidate']||0;if(high!==8164||medium!==6||low!==2)throw Error(`risk ${JSON.stringify(risk)}`);
+          const protectedFiles={protected006:['assets/css/pages/home/mobile-composition.css',6],protected010:['assets/css/components/cards/mobile-card-contract.css',2],protected020:['assets/css/components/shell/mobile-base-stability.css',28],protected021:['assets/css/pages/home/mobile-hero-feed.css',127]};for(const [label,[file,want]] of Object.entries(protectedFiles)){const got=(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length;if(got!==want)throw Error(`${label} ${got}/${want}`);}const target=(fs.readFileSync(process.env.TARGET_FILE,'utf8').match(/!important\b/g)||[]).length;if(target!==0)throw Error(`target ${target}`);
+          console.log('IMPORTANT PASS|total=8234|outsideServiceCard=8172|files=17|delta=-304');console.log('QUEUE PASS|affectedFiles=16|highBaselineRequired=8164|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
+          node <<'NODE'
+          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
+          NODE
+          test "$(git diff --name-only | wc -l)" -eq 1; test "$(git diff --name-only)" = "$TARGET_FILE"
+          num="$(git diff --numstat -- "$TARGET_FILE")"; add="$(printf '%s' "$num"|cut -f1)"; del="$(printf '%s' "$num"|cut -f2)"; test "$add" = "$del"; test "$add" -gt 0
+          echo "PRODUCT DIFF PASS|files=1|additions=$add|deletions=$del|file=$TARGET_FILE|markerDelta=304|numstatDecoupledFromMarkerCount=1"
+          echo 'GOVERNANCE PASS|duplicates=0/0|domain=23/15/2.91/12|browserProof=hash-identical|reachProof=hash-identical|wholeFileDormant=1|candidateHash=exact|candidateBlob=exact|exactPathMatch=1'
+          echo "AUDIT_EXIT=$code"
           cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.browser.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(REACH TRANSFER PASS|CANDIDATE PASS|PHASE|PAGE ERROR|ROOT MISS|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/b.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1400 /tmp/b.log || true; fi; } >/tmp/out
+          set -euo pipefail; result=FAIL; if test '${{ steps.govern.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "GOVERNANCE=${{ steps.govern.outcome }}"; grep -E '^(EVIDENCE CHAIN PASS|STATIC PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|PRODUCT DIFF PASS|GOVERNANCE PASS|RESTORE PASS)\|' /tmp/g.log || true; grep '^AUDIT_EXIT=' /tmp/g.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1200 /tmp/g.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 032 app header canonical contract browser r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 032 app header canonical contract governance r3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
