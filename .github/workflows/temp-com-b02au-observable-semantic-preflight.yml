@@ -1,0 +1,93 @@
+name: TEMP COM-B02AU Observable Semantic Preflight
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/temp-com-b02au-observable-semantic-preflight.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prove-candidate:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CANDIDATE_HEAD: fd859fb33c06ca5d41255e5b6f948cc4f919c16c
+      CANDIDATE_TREE: 285fd47310c4069bec6ee38f22c8c39f3377df4a
+      PREDECESSOR_HEAD: 53137be9ad8fb833d00ecec8575500e226f9c3e7
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      BRANCH: com/com-001-baseline-audit
+      TEMP_PATH: .github/workflows/temp-com-b02au-observable-semantic-preflight.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact temporary preflight head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02AU candidate and temporary-only lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE_HEAD"
+          test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git diff --name-only "$CANDIDATE_HEAD" HEAD)" = "$TEMP_PATH"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02au-repository-only-continuation-state-registry-storage-backend-entry-container-implementation.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-implementation.js \
+            config/com-b02au-repository-only-continuation-state-registry-storage-backend-entry-container-implementation.json \
+            scripts/test-com-b02au-repository-only-continuation-state-registry-storage-backend-entry-container-implementation.js | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)"
+          test "$actual" = "$expected"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Prove B02AU syntax semantic and hard blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-implementation.js
+          node --check scripts/test-com-b02au-repository-only-continuation-state-registry-storage-backend-entry-container-implementation.js
+          node scripts/test-com-b02au-repository-only-continuation-state-registry-storage-backend-entry-container-implementation.js
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-implementation.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'storageBackendMaterialized[[:space:]]*:[[:space:]]*true|entryContainerMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true|carrierInstanceMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'opaqueStateHandleGenerated[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+          git diff --check "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD"
+
+      - name: Self-remove and preserve exact candidate tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -- "$TEMP_PATH"
+          test "$(git write-tree)" = "$CANDIDATE_TREE"
+          git commit -m "ci(com): prove B02AU semantic preflight [run ${GITHUB_RUN_ID}]"
+          test "$(git rev-parse HEAD^{tree})" = "$CANDIDATE_TREE"
+          ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02au-'
+
+      - name: Fast-forward branch only if temporary head is still current
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse "origin/$BRANCH")" = "$PR_HEAD_SHA"
+          git push origin HEAD:refs/heads/$BRANCH
