@@ -1,10 +1,10 @@
-name: UX CSS Important 035 Community 820 Visual Flake Probe P3
+name: UX CSS Important 035 Community 820 Pixel Oracle Probe P4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  probe035p3:
+  probe035p4:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -12,12 +12,10 @@ jobs:
       PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
       TARGET_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
-      CANDIDATE_SHA256: fa114edbfe30797719983d9f599b4efb589dd89f57cd332ecb779bbe9b1b9845
-      CANDIDATE_BLOB: 5000b0aa60f6d93e123bc17811887e57668d4988
-      R2_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-browser-r2.txt
-      R2_BLOB: 9c72a093f0f751b982dbf691cf5be1319c0b8b5e
+      P3_FILE: .diagnostics/ux-css-important-035-community-820-visual-flake-probe-p3.txt
+      P3_BLOB: bcf67faa19add418b218814f399bc1b826833306
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-035-community-820-visual-flake-probe-p3.txt
+      RESULT_FILE: .diagnostics/ux-css-important-035-community-820-pixel-oracle-probe-p4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -27,62 +25,35 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/p3.log) 2>&1
-          test "$(git rev-parse "HEAD:$R2_FILE")" = "$R2_BLOB"
-          git show HEAD:"$R2_FILE" >/tmp/r2.txt
-          grep -q '^RUN_ID=32483306437$' /tmp/r2.txt
-          grep -q '^RESULT=FAIL$' /tmp/r2.txt
-          grep -Fq 'SHOT DIFF|state=comunidade.html@820x1180' /tmp/r2.txt
-          grep -Fq 'metadataDiffs=0|screenshotDiffs=1|stableStates=45/45|pageErrors=0|targetStylesheetLoads=0/0' /tmp/r2.txt
-          echo 'R2 FAILURE TRANSFER PASS|run=32483306437|onlyShotDiff=comunidade.html@820x1180|metadataDiffs=0|targetLoads=0/0'
+          set -euo pipefail; exec > >(tee /tmp/p4.log) 2>&1
+          test "$(git rev-parse "HEAD:$P3_FILE")" = "$P3_BLOB"
+          git show HEAD:"$P3_FILE" >/tmp/p3.txt
+          grep -q '^RUN_ID=32484136138$' /tmp/p3.txt; grep -q '^RESULT=PASS$' /tmp/p3.txt
+          grep -Fq 'PROBE RESULT|classification=SCREENSHOT_NONDETERMINISM|parentShotUnique=2|candidateShotUnique=1|parentMetaUnique=1|candidateMetaUnique=1|metadataParity=1|screenshotParity=1|targetLoads=0/0|criteriaRelaxed=0' /tmp/p3.txt
+          echo 'P3 TRANSFER PASS|classification=SCREENSHOT_NONDETERMINISM|state=comunidade.html@820x1180|targetLoads=0/0'
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          cp "$TARGET_FILE" /tmp/parent.css
-          trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true; kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
-          node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
-          const o=fs.readFileSync(process.env.TARGET_FILE,'utf8'),c=o.replace(/\s*!important\b/g,'');
-          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
-          fs.writeFileSync('/tmp/candidate.css',c);
-          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
-          const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
-          if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);
-          console.log(`CANDIDATE PASS|important=${before}->${after}|sha256=${h}|blob=${blob}|transform=marker-only`);
-          NODE
           npm ci --ignore-scripts >/dev/null
           npx playwright install --with-deps chromium >/dev/null 2>&1
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          trap 'kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
           ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/comunidade.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
-          cat >/tmp/probe.js <<'NODE'
+          cat >/tmp/p4.js <<'NODE'
           const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
-          const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const targetPath='/assets/css/components/shell/doke-shell-contract.css';
-          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,visibility:cs.visibility,position:cs.position,overflowX:cs.overflowX,overflowY:cs.overflowY}};const de=document.documentElement,b=document.body;return{path:location.pathname,page:b?.dataset?.page||null,bodyClass:b?.className||'',htmlClass:de?.className||'',shell:q('.app-shell'),sidebar:q('.sidebar'),header:q('.app-header'),content:q('.page__content, main.page__content'),docClientWidth:de.clientWidth,docScrollWidth:de.scrollWidth,bodyScrollWidth:b?.scrollWidth||0,docScrollHeight:de.scrollHeight,bodyScrollHeight:b?.scrollHeight||0,images:[...document.images].map(i=>({src:i.getAttribute('src')||'',complete:i.complete,nw:i.naturalWidth,nh:i.naturalHeight}))};};
-          async function stableMeta(page){let prev='';for(let i=0;i<12;i++){const m=await page.evaluate(metaFn),s=JSON.stringify(m);if(s===prev)return m;prev=s;await page.waitForTimeout(300);}return page.evaluate(metaFn)}
+          const h=b=>crypto.createHash('sha256').update(b).digest('hex'), targetPath='/assets/css/components/shell/doke-shell-contract.css';
           async function settleImages(page){await page.waitForFunction(()=>[...document.images].every(i=>i.complete),null,{timeout:15000}).catch(()=>{});await page.evaluate(async()=>{await Promise.allSettled([...document.images].map(i=>typeof i.decode==='function'?i.decode():Promise.resolve()));});}
-          (async()=>{const label=process.argv[2],outPath=process.argv[3],rows=[];for(let iteration=1;iteration<=4;iteration++){const browser=await chromium.launch({headless:true});try{const ctx=await browser.newContext({viewport:{width:820,height:1180},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.setDefaultTimeout(45000);page.setDefaultNavigationTimeout(45000);let loads=0,errs=0;page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath)loads++;});page.on('pageerror',()=>errs++);await page.goto('http://127.0.0.1:4173/comunidade.html',{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await settleImages(page);await page.waitForTimeout(700);const meta=await stableMeta(page);await page.screenshot({fullPage:true,timeout:60000});await settleImages(page);await page.waitForTimeout(350);const shot=await page.screenshot({fullPage:true,timeout:60000});const mh=hash(Buffer.from(JSON.stringify(meta))),sh=hash(shot);console.log(`RUN PASS|phase=${label}|iteration=${iteration}|meta=${mh}|shot=${sh}|loads=${loads}|errors=${errs}|path=${meta.path}|page=${meta.page}|images=${meta.images.length}`);if(loads||errs||meta.path!=='/comunidade.html'||meta.page!=='comunidade')throw Error(`state contract ${label}/${iteration}/${loads}/${errs}/${meta.path}/${meta.page}`);rows.push({iteration,metaHash:mh,shotHash:sh,meta});}finally{await ctx.close().catch(()=>{});}}finally{await browser.close().catch(()=>{});}}const shotUnique=new Set(rows.map(r=>r.shotHash)).size,metaUnique=new Set(rows.map(r=>r.metaHash)).size;console.log(`SIDE SUMMARY|phase=${label}|runs=4|shotUnique=${shotUnique}|metaUnique=${metaUnique}|targetLoads=0|pageErrors=0|imagesSettled=1`);fs.writeFileSync(outPath,JSON.stringify({label,rows,shotUnique,metaUnique}));})().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)});
+          async function pixelInfo(page,buf){const b64=buf.toString('base64');return page.evaluate(async b64=>{const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const bmp=await createImageBitmap(new Blob([u],{type:'image/png'})),c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(bmp,0,0);const p=x.getImageData(0,0,c.width,c.height).data,d=await crypto.subtle.digest('SHA-256',p);return{hash:[...new Uint8Array(d)].map(v=>v.toString(16).padStart(2,'0')).join(''),w:c.width,h:c.height};},b64);}
+          async function capture(iteration){const browser=await chromium.launch({headless:true});try{const ctx=await browser.newContext({viewport:{width:820,height:1180},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.setDefaultTimeout(45000);page.setDefaultNavigationTimeout(45000);let loads=0,errs=0;page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath)loads++;});page.on('pageerror',()=>errs++);await page.goto('http://127.0.0.1:4173/comunidade.html',{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await settleImages(page);await page.waitForTimeout(700);await page.screenshot({fullPage:true,timeout:60000});await settleImages(page);await page.waitForTimeout(350);const dom=await page.content(),text=await page.locator('body').innerText(),shot=await page.screenshot({fullPage:true,timeout:60000}),pix=await pixelInfo(page,shot);fs.writeFileSync(`/tmp/p4-${iteration}.png`,shot);const row={iteration,png:h(shot),pixel:pix.hash,w:pix.w,h:pix.h,dom:h(Buffer.from(dom)),text:h(Buffer.from(text)),loads,errs};console.log(`RUN PASS|iteration=${iteration}|png=${row.png}|pixel=${row.pixel}|dom=${row.dom}|text=${row.text}|size=${row.w}x${row.h}|loads=${loads}|errors=${errs}`);if(loads||errs)throw Error(`state contract ${loads}/${errs}`);return row;}finally{await ctx.close().catch(()=>{});}}finally{await browser.close().catch(()=>{});}}
+          async function comparePixels(aPath,bPath){const browser=await chromium.launch({headless:true});try{const page=await browser.newPage();await page.goto('http://127.0.0.1:4173/index.html',{waitUntil:'domcontentloaded'});const a=fs.readFileSync(aPath).toString('base64'),b=fs.readFileSync(bPath).toString('base64');return await page.evaluate(async({a,b})=>{async function dec(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const bmp=await createImageBitmap(new Blob([u],{type:'image/png'})),c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(bmp,0,0);return{w:c.width,h:c.height,p:x.getImageData(0,0,c.width,c.height).data};}const A=await dec(a),B=await dec(b);if(A.w!==B.w||A.h!==B.h)return{dimensionMismatch:1,a:`${A.w}x${A.h}`,b:`${B.w}x${B.h}`};let diff=0,minX=A.w,minY=A.h,maxX=-1,maxY=-1,maxDelta=0;for(let i=0;i<A.p.length;i+=4){let d=0;for(let c=0;c<4;c++)d=Math.max(d,Math.abs(A.p[i+c]-B.p[i+c]));if(d){diff++;const px=i/4,x=px%A.w,y=Math.floor(px/A.w);if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;if(d>maxDelta)maxDelta=d;}}return{dimensionMismatch:0,diffPixels:diff,bbox:diff?`${minX},${minY}-${maxX},${maxY}`:'none',maxDelta};},{a,b});}finally{await browser.close().catch(()=>{});}}
+          (async()=>{const rows=[];for(let i=1;i<=6;i++)rows.push(await capture(i));const pngUnique=new Set(rows.map(r=>r.png)).size,pixelUnique=new Set(rows.map(r=>r.pixel)).size,domUnique=new Set(rows.map(r=>r.dom)).size,textUnique=new Set(rows.map(r=>r.text)).size;let classification='STABLE';if(pngUnique>1&&pixelUnique===1)classification='PNG_ENCODING_NONDETERMINISM';else if(pixelUnique>1&&domUnique===1&&textUnique===1)classification='RASTER_NONDETERMINISM';else if(pixelUnique>1)classification='DOM_RUNTIME_NONDETERMINISM';let diff='not-needed';if(pixelUnique>1){const first=rows[0],other=rows.find(r=>r.pixel!==first.pixel);if(other){const d=await comparePixels(`/tmp/p4-${first.iteration}.png`,`/tmp/p4-${other.iteration}.png`);diff=JSON.stringify(d);}}console.log(`PROBE RESULT|classification=${classification}|runs=6|pngUnique=${pngUnique}|pixelUnique=${pixelUnique}|domUnique=${domUnique}|textUnique=${textUnique}|pixelDiff=${diff}|targetLoads=0|criteriaRelaxed=0`);})().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)});
           NODE
-          timeout --signal=TERM --kill-after=20s 600s env NODE_PATH="$PWD/node_modules" node /tmp/probe.js parent /tmp/parent.json
-          cp /tmp/candidate.css "$TARGET_FILE"
-          timeout --signal=TERM --kill-after=20s 600s env NODE_PATH="$PWD/node_modules" node /tmp/probe.js candidate /tmp/candidate.json
-          node <<'NODE'
-          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));
-          const sameSideNondeterministic=a.shotUnique>1||b.shotUnique>1;
-          const metadataStable=a.metaUnique===1&&b.metaUnique===1;
-          const metadataParity=JSON.stringify(a.rows[0].meta)===JSON.stringify(b.rows[0].meta);
-          const screenshotParity=a.rows[0].shotHash===b.rows[0].shotHash;
-          let classification='STABLE_VISUAL_DIVERGENCE';
-          if(sameSideNondeterministic)classification='SCREENSHOT_NONDETERMINISM';
-          else if(metadataStable&&metadataParity&&screenshotParity)classification='STABLE_PARITY';
-          else if(!metadataStable||!metadataParity)classification='METADATA_DIVERGENCE';
-          console.log(`PROBE RESULT|classification=${classification}|parentShotUnique=${a.shotUnique}|candidateShotUnique=${b.shotUnique}|parentMetaUnique=${a.metaUnique}|candidateMetaUnique=${b.metaUnique}|metadataParity=${metadataParity?1:0}|screenshotParity=${screenshotParity?1:0}|targetLoads=0/0|criteriaRelaxed=0`);
-          NODE
-          cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
+          timeout --signal=TERM --kill-after=20s 900s env NODE_PATH="$PWD/node_modules" node /tmp/p4.js
+          echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(R2 FAILURE TRANSFER PASS|CANDIDATE PASS|RUN PASS|SIDE SUMMARY|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p3.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 800 /tmp/p3.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(P3 TRANSFER PASS|RUN PASS|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p4.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 800 /tmp/p4.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 community 820 visual flake probe p3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 community 820 pixel oracle probe p4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
