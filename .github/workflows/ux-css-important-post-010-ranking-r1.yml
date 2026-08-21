@@ -1,139 +1,86 @@
-name: UX CSS Important 031 Home Sections Permanent Cert R5
+name: UX CSS Important 032 App Header Canonical Contract Reach R1
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  certify031r5:
+  reach032r1:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
-      PARENT_SHA: 856361e1728829909daf1546f01d14417eded811
-      PERM_SHA: 6cc3d03e5f9bd451f11daff835fecefb08e25216
-      PERM_TREE: 2b2085f8231c73461ae58cbc3364834ad575a346
-      TARGET_FILE: assets/css/pages/home/sections.css
-      PARENT_BLOB: 6bc5eebe08c4ada3395474eea74fde3b9a850d5c
-      PERM_BLOB: f26ea47194a9c814ec9f27b86b9a29ae14519fca
-      CANDIDATE_SHA256: 2cf829c60ec4ecd72f3aeab599df3d5b7dcc43640a8d1d0e13ebb3b719f88253
-      PERM_BRANCH: ux/ux-css-important-031-home-sections-dormant-priority
-      REACH_FILE: .diagnostics/ux-css-important-031-home-sections-reach-r1.txt
-      REACH_BLOB: 716bbb15d9a2b2388c1759980b8cba5144b124d2
-      R2_FILE: .diagnostics/ux-css-important-031-home-sections-browser-r2.txt
-      R2_BLOB: 954284f50d0ceed6cfdd7a8dc8d4d1ad80f1e99f
-      BROWSER_FILE: .diagnostics/ux-css-important-031-home-sections-browser-r3.txt
-      BROWSER_BLOB: 61f4a9800a38efdb2acac9087950bbad33341c86
-      GOV_FILE: .diagnostics/ux-css-important-031-home-sections-governance-r4.txt
-      GOV_BLOB: d564951dc936e8e39f63cd814f337e5ec84e7c4c
-      PROMO_FILE: .diagnostics/ux-css-important-031-home-sections-promotion.txt
-      PROMO_BLOB: e752d074f66960689325c7c903885fa1f66724c7
+      PARENT_SHA: 6cc3d03e5f9bd451f11daff835fecefb08e25216
+      TARGET_FILE: assets/css/components/shell/app-header-canonical-contract.css
+      TARGET_BLOB: a9de4b3fefe54ded6693ba655524310682de5038
+      EXPECTED_IMPORTANT: '304'
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-031-home-sections-permanent-cert-r5.txt
+      RESULT_FILE: .diagnostics/ux-css-important-032-app-header-canonical-contract-reach-r1.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: {node-version: 22, cache: npm}
-      - id: certify
+      - id: reach
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/c.log) 2>&1
-          test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
-          test "$(git rev-parse "HEAD:$R2_FILE")" = "$R2_BLOB"
-          test "$(git rev-parse "HEAD:$BROWSER_FILE")" = "$BROWSER_BLOB"
-          test "$(git rev-parse "HEAD:$GOV_FILE")" = "$GOV_BLOB"
-          test "$(git rev-parse "HEAD:$PROMO_FILE")" = "$PROMO_BLOB"
-          git show HEAD:"$REACH_FILE" >/tmp/reach.txt
-          git show HEAD:"$R2_FILE" >/tmp/r2.txt
-          git show HEAD:"$BROWSER_FILE" >/tmp/browser.txt
-          git show HEAD:"$GOV_FILE" >/tmp/gov.txt
-          git show HEAD:"$PROMO_FILE" >/tmp/promo.txt
-          grep -q '^RESULT=PASS$' /tmp/reach.txt
-          grep -q '^RESULT=FAIL$' /tmp/r2.txt
-          grep -q '^RESULT=PASS$' /tmp/browser.txt
-          grep -q '^RESULT=PASS$' /tmp/gov.txt
-          grep -q '^RESULT=PASS$' /tmp/promo.txt
-          grep -Fq 'CANONICAL REACH PASS|rootHtml=27|loadedCss=402|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=1|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1' /tmp/reach.txt
-          grep -Fq 'R2 CLASSIFICATION PASS|run=32428613702|historicalResult=FAIL|classification=harness-invalid|basenameCollision=home-sections.css_vs_home/sections.css|legacyRoots=before-after,featured-pros|preserved=1' /tmp/browser.txt
-          grep -Fq "BROWSER PASS|sha256=$CANDIDATE_SHA256|page=home|states=7|viewports=360p,420p,421p,560p,561p,760p,761p|metadataDiffs=0|screenshotDiffs=0|stableStates=7/7|pageErrors=0|targetStylesheetLoads=0/0|liveHomeSectionsLoads=7/7|pageRoots=7/7|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1|breakpoints=420/421,560/561,760/761" /tmp/browser.txt
-          grep -Fq 'IMPORTANT PASS|total=8538|outsideServiceCard=8476|files=18|delta=-290' /tmp/gov.txt
-          grep -Fq 'QUEUE PASS|affectedFiles=17|highBaselineRequired=8468|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127' /tmp/gov.txt
-          grep -Fq "PRODUCT COMMIT PASS|head=$PERM_SHA|tree=$PERM_TREE|parent=$PARENT_SHA|blob=$PERM_BLOB|files=1|additions=290|deletions=290|markerDelta=290|markerOnly=1" /tmp/promo.txt
-          echo 'PROOF TRANSFER PASS|reach=R1|browser=R3|governance=R4|historicalR2Preserved=1|candidateHash=exact|candidateBlob=exact|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=1|exactPathMatch=1'
+          set -euo pipefail; exec > >(tee /tmp/r1.log) 2>&1
+          test "$(git rev-parse --is-shallow-repository)" = false
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
+          git show "HEAD:$TARGET_FILE" >/tmp/source.css
 
-          git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
-          test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$PERM_SHA"
-          git checkout --detach "$PERM_SHA" >/dev/null
-          test "$(git rev-parse HEAD)" = "$PERM_SHA"
-          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
-          test "$(git rev-parse HEAD^{tree})" = "$PERM_TREE"
-          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$PERM_BLOB"
-          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
-          test "$(git rev-list --count "$PARENT_SHA..$PERM_SHA")" -eq 1
-          test "$(git diff --name-only "$PARENT_SHA" "$PERM_SHA" | wc -l)" -eq 1
-          test "$(git diff --name-only "$PARENT_SHA" "$PERM_SHA")" = "$TARGET_FILE"
-          num="$(git diff --numstat "$PARENT_SHA" "$PERM_SHA" -- "$TARGET_FILE")"; add="$(printf '%s' "$num"|cut -f1)"; del="$(printf '%s' "$num"|cut -f2)"; test "$add" = 290; test "$del" = 290
-
-          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/source.css
-          git show "$PERM_SHA:$TARGET_FILE" >/tmp/permanent.css
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
-          const src=fs.readFileSync('/tmp/source.css','utf8'),perm=fs.readFileSync('/tmp/permanent.css','utf8');
-          const c=src.replace(/\s*!important\b/g,'');
-          const before=(src.match(/!important\b/g)||[]).length,after=(perm.match(/!important\b/g)||[]).length;
-          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');fs.writeFileSync('/tmp/reconstructed.css',c);
-          const blob=cp.execFileSync('git',['hash-object','/tmp/reconstructed.css'],{encoding:'utf8'}).trim();
-          if(before!==290||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.PERM_BLOB||c!==perm)throw Error(`reconstruction ${before}/${after}/${h}/${blob}/${c===perm}`);
-          console.log(`RECONSTRUCTION PASS|sha256=${h}|blob=${blob}|bytes=${Buffer.byteLength(c)}|important=290->0|removed=290|byteIdentical=1|browserProofTransfer=hash-identical|reachProofTransfer=hash-identical|wholeFileDormant=1`);
+          const src=fs.readFileSync('/tmp/source.css','utf8');
+          const before=(src.match(/!important\b/g)||[]).length;
+          const out=src.replace(/\s*!important\b/g,'');
+          const after=(out.match(/!important\b/g)||[]).length;
+          const removed=before-after;
+          if(before!==+process.env.EXPECTED_IMPORTANT||after!==0||removed!==+process.env.EXPECTED_IMPORTANT) throw Error(`important ${before}->${after}`);
+          fs.writeFileSync('/tmp/candidate.css',out);
+          const sha256=crypto.createHash('sha256').update(Buffer.from(out)).digest('hex');
+          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
+          console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(out)}|important=${before}->${after}|removed=${removed}|sha256=${sha256}|blob=${blob}|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
           NODE
 
-          live_blob="$(git rev-parse HEAD:assets/css/pages/home-sections.css)"; test "$live_blob" = 1185b6d4d6319eee7b982247fc683c03528ca076
-          grep -Fq '@import url("./home-sections.css?v=20260612-lower-feed-contract-v3");' assets/css/pages/home-runtime-page.css
-          if grep -Fq 'home/sections.css' assets/css/pages/home-runtime-page.css; then exit 1; fi
-          echo "PATH RECONCILIATION PASS|target=/assets/css/pages/home/sections.css|live=/assets/css/pages/home-sections.css|liveBlob=$live_blob|exactRuntimeImport=home-sections.css|permanent=1"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
+          const root=process.cwd(), target=process.env.TARGET_FILE.replace(/\\/g,'/');
+          const norm=p=>p.replace(/\\/g,'/').replace(/^\.\//,'').replace(/^\/+/, '').split('?')[0].split('#')[0];
+          const rootHtml=fs.readdirSync(root).filter(f=>f.endsWith('.html')).sort();
+          const loaded=new Set();
+          for(const page of rootHtml){const html=fs.readFileSync(page,'utf8');for(const asset of getLoadedCssAssets(html,root))loaded.add(norm(asset));}
+          function walk(dir,skip=new Set()){const out=[];if(!fs.existsSync(dir))return out;for(const ent of fs.readdirSync(dir,{withFileTypes:true})){if(ent.isDirectory()&&skip.has(ent.name))continue;const full=path.join(dir,ent.name);if(ent.isDirectory())out.push(...walk(full,skip));else out.push(norm(path.relative(root,full)));}return out;}
+          const cssFiles=walk(path.join(root,'assets','css')).filter(f=>f.endsWith('.css'));
+          const allFiles=walk(root,new Set(['node_modules','.git','archive','reports','test-results']));
+          const jsFiles=allFiles.filter(f=>/\.(?:js|mjs|cjs)$/.test(f));
+          const resolve=(from,raw)=>{const clean=String(raw||'').split('?')[0].split('#')[0];if(clean.startsWith('/'))return norm(clean);if(clean.startsWith('assets/'))return norm(clean);return norm(path.posix.normalize(path.posix.join(path.posix.dirname(from),clean)));};
+          let htmlLinks=0,actualImporters=0,cssTextRefs=0;
+          for(const page of rootHtml){const html=fs.readFileSync(page,'utf8');for(const m of html.matchAll(/<link\b[^>]*>/gi)){const tag=m[0],rel=(tag.match(/\brel\s*=\s*(["'])(.*?)\1/i)||[])[2]||'',href=(tag.match(/\bhref\s*=\s*(["'])(.*?)\1/i)||[])[2]||'';if(!rel.toLowerCase().split(/\s+/).includes('stylesheet')||!href||/^(?:https?:|data:|\/\/)/i.test(href))continue;if(resolve(page,href)===target)htmlLinks++;}}
+          for(const file of cssFiles){const text=fs.readFileSync(file,'utf8');for(const m of text.matchAll(/@import\s+(?:url\(\s*)?(?:["']([^"']+)["']|([^\s;)]+))\s*\)?/gi)){const raw=m[1]||m[2];if(!raw||/^(?:https?:|data:|\/\/)/i.test(raw))continue;if(resolve(file,raw)===target)actualImporters++;}if(file!==target&&text.includes(target))cssTextRefs++;}
+          const runtimeRefs=[],toolingRefs=[],otherRefs=[];
+          for(const file of jsFiles){const text=fs.readFileSync(file,'utf8');if(!text.includes(target))continue;if(file.startsWith('assets/js/'))runtimeRefs.push(file);else if(file.startsWith('scripts/')||file.startsWith('tests/')||file.startsWith('test/')||file.startsWith('tools/'))toolingRefs.push(file);else otherRefs.push(file);}
+          const active=loaded.has(target)?1:0;
+          const wholeFileDormant=htmlLinks===0&&actualImporters===0&&runtimeRefs.length===0&&otherRefs.length===0&&cssTextRefs===0&&active===0?1:0;
+          console.log(`CANONICAL REACH PASS|rootHtml=${rootHtml.length}|loadedCss=${loaded.size}|physicalCss=${cssFiles.length}|htmlLinks=${htmlLinks}|actualImporters=${actualImporters}|runtimeJsRefs=${runtimeRefs.length}|toolingJsRefs=${toolingRefs.length}|otherJsRefs=${otherRefs.length}|cssTextRefs=${cssTextRefs}|active=${active}|wholeFileDormant=${wholeFileDormant}|toolingRefs=${toolingRefs.sort().join(',')||'none'}`);
+          if(!wholeFileDormant)throw Error('target is not whole-file dormant under current graph');
+          NODE
 
-          npm ci --ignore-scripts >/dev/null
-          node scripts/generate-responsive-index-baseline.js >/dev/null
-          npm run test:responsive-contract | tee /tmp/responsive.log
-          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
-          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|state=permanent'
-          npm run audit:agent-governance >/dev/null
-          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
-          node <<'NODE'
-          const fs=require('fs');const m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`);
-          NODE
-          npm run audit:shared-app-header-contract >/dev/null
-          npm run audit:mobile-shell-location-contract >/dev/null
-          npm run audit:responsive-boundaries >/dev/null
-          npm run audit:duplicate-assets | tee /tmp/dup.log
-          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
-          npm run audit:domain-completion-matrix | tee /tmp/domain.log
-          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
-          git checkout "$PERM_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
-          npm run audit:active-legacy-structures >/dev/null
-          npm run audit:important-reduction-plan >/dev/null
-          npm run audit:global-css-design-system >/dev/null
-          node <<'NODE'
-          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));
-          const s=b.summary,ps=p.summary;if(s.totalImportant!==8538||s.outsideServiceCardImportant!==8476||s.filesWithImportant!==18)throw Error(`important ${JSON.stringify(s)}`);if(ps.affectedFiles!==17||ps.totalImportantOutsideServiceCard!==8476||ps.byRisk?.['high-baseline-required']!==8468||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error(`queue ${JSON.stringify(ps)}`);
-          const protectedFiles={protected006:['assets/css/pages/home/mobile-composition.css',6],protected010:['assets/css/components/cards/mobile-card-contract.css',2],protected020:['assets/css/components/shell/mobile-base-stability.css',28],protected021:['assets/css/pages/home/mobile-hero-feed.css',127]};for(const [label,[file,want]] of Object.entries(protectedFiles)){const got=(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length;if(got!==want)throw Error(`${label} ${got}/${want}`);}const target=(fs.readFileSync(process.env.TARGET_FILE,'utf8').match(/!important\b/g)||[]).length;if(target!==0)throw Error(`target ${target}`);
-          console.log('IMPORTANT PASS|total=8538|outsideServiceCard=8476|files=18');console.log('QUEUE PASS|affectedFiles=17|highBaselineRequired=8468|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127');
-          NODE
-          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
-          node <<'NODE'
-          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
-          NODE
-          echo "CERTIFICATION PASS|fullHistory=1|oneCommit=1|oneFile=1|numstat=$add/$del|markerDelta=290|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=1|browserMetadataDiffs=0|browserScreenshotDiffs=0|browserStableStates=7/7|browserPageErrors=0|targetStylesheetLoads=0/0|liveHomeSectionsLoads=7/7|pageRoots=7/7|historicalR2Preserved=1|exactPathMatch=1|browserProofTransfer=hash-identical|reachProofTransfer=hash-identical|duplicates=0/0|domain=23/15/2.91/12|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127"
-          echo "AUDIT_EXIT=$code"
+          grep -Fq "\`$TARGET_FILE\` | responsive-shell | 304 | high | sim" docs/validation/css-dormant-debt-policy.md
+          grep -Fq "$TARGET_FILE" docs/DEPRECATED-CSS.md
+          grep -Fq '"file": "assets/css/components/shell/app-header-canonical-contract.css"' config/important-debt-register.json
+          echo 'POLICY PASS|dormantQuarantine=1|deprecatedDocumented=1|registered=1|risk=high|group=responsive-shell|important=304'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.certify.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PERM_SHA=$PERM_SHA"; echo "PARENT_SHA=$PARENT_SHA"; echo "PERM_TREE=$PERM_TREE"; echo "PERM_BLOB=$PERM_BLOB"; echo "CERTIFY=${{ steps.certify.outcome }}"; grep -E '^(PROOF TRANSFER PASS|RECONSTRUCTION PASS|PATH RECONCILIATION PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|CERTIFICATION PASS)\|' /tmp/c.log || true; grep '^AUDIT_EXIT=' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1200 /tmp/c.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          set -euo pipefail; result=FAIL; if test '${{ steps.reach.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "REACH=${{ steps.reach.outcome }}"; grep -E '^(CANDIDATE PASS|CANONICAL REACH PASS|POLICY PASS)\|' /tmp/r1.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1000 /tmp/r1.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- "$RESULT_FILE"; git commit -m 'diag: publish 031 home sections permanent cert r5 [skip ci]' >/dev/null
+          git add -- "$RESULT_FILE"; git commit -m 'diag: publish 032 app header canonical contract reach r1 [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
