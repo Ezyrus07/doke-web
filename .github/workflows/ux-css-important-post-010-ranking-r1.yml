@@ -1,4 +1,4 @@
-name: UX CSS Important 035 Doke Shell Contract Browser R2
+name: UX CSS Important 035 Doke Shell Contract Browser R2 Hardened
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
@@ -7,6 +7,7 @@ jobs:
   browser035r2:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     env:
       PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
@@ -39,7 +40,14 @@ jobs:
           cp "$TARGET_FILE" /tmp/parent.css
           trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true; kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');const o=fs.readFileSync(process.env.TARGET_FILE,'utf8'),c=o.replace(/\s*!important\b/g,'');const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');fs.writeFileSync('/tmp/candidate.css',c);const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=2552->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1`);
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const o=fs.readFileSync(process.env.TARGET_FILE,'utf8'),c=o.replace(/\s*!important\b/g,'');
+          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
+          fs.writeFileSync('/tmp/candidate.css',c);
+          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
+          const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
+          if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);
+          console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=2552->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1`);
           NODE
           npm ci --ignore-scripts >/dev/null
           npx playwright install --with-deps chromium >/dev/null 2>&1
@@ -49,17 +57,46 @@ jobs:
           const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
           const pages=['index.html','perfil.html','pedidos.html','mensagens.html','notificacoes.html','comunidade.html','resultados.html','detalhe-anuncio.html','ajuda.html'];
           const views=[{w:1366,h:768,key:'1366x768'},{w:1280,h:802,key:'1280x802'},{w:820,h:1180,key:'820x1180'},{w:608,h:926,key:'608x926'},{w:390,h:844,key:'390x844'}];
+          const states=pages.flatMap(p=>views.map(v=>({p,v,key:`${p}@${v.key}`})));
           const targetPath='/assets/css/components/shell/doke-shell-contract.css',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
           const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,visibility:cs.visibility,position:cs.position,overflowX:cs.overflowX,overflowY:cs.overflowY,padding:cs.padding,margin:cs.margin}};const de=document.documentElement,b=document.body;return{path:location.pathname,page:b?.dataset?.page||null,bodyClass:b?.className||'',htmlClass:de?.className||'',shell:q('.app-shell'),sidebar:q('.sidebar'),header:q('.app-header'),headerInner:q('.app-header__inner'),content:q('.page__content, main.page__content'),contentInner:q('.page__content-inner'),docClientWidth:de?.clientWidth||0,docScrollWidth:de?.scrollWidth||0,bodyScrollWidth:b?.scrollWidth||0,docScrollHeight:de?.scrollHeight||0,bodyScrollHeight:b?.scrollHeight||0};};
           async function stableMeta(page){let prev='';for(let i=0;i<10;i++){const m=await page.evaluate(metaFn),s=JSON.stringify(m);if(s===prev)return m;prev=s;await page.waitForTimeout(120);}return page.evaluate(metaFn)}
-          async function phase(label){const browser=await chromium.launch({headless:true});const out={};let loads=0,errs=0,stable=0,roots=0,overflow=0;for(const p of pages){for(const v of views){const key=`${p}@${v.key}`;const ctx=await browser.newContext({viewport:{width:v.w,height:v.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce',javaScriptEnabled:false});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});const page=await ctx.newPage();page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath)loads++});await page.goto(`http://127.0.0.1:4173/${p}`,{waitUntil:'networkidle'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.waitForTimeout(250);const meta=await stableMeta(page),m2=await page.evaluate(metaFn);if(JSON.stringify(meta)===JSON.stringify(m2))stable++;if(meta.path===`/${p}`&&meta.content)roots++;else console.log(`ROOT MISS|state=${key}|path=${meta.path}|page=${meta.page}|content=${meta.content?1:0}`);if(Math.max(meta.docScrollWidth,meta.bodyScrollWidth)>v.w+1){overflow++;console.log(`OVERFLOW|state=${key}|doc=${meta.docScrollWidth}|body=${meta.bodyScrollWidth}|vw=${v.w}`)}const shot=await page.screenshot({fullPage:true});out[key]={meta,shot:hash(shot)};await ctx.close();}}await browser.close();console.log(`PHASE|label=${label}|states=${pages.length*views.length}|stableStates=${stable}|pageErrors=${errs}|targetStylesheetLoads=${loads}|pageRoots=${roots}|overflowStates=${overflow}|javascriptEnabled=0`);return{out,loads,errs,stable,roots,overflow};}
-          (async()=>{const p=await phase(process.argv[2]);fs.writeFileSync(process.argv[3],JSON.stringify(p));})().catch(e=>{console.error(e);process.exit(1)});
+          async function runState(browser,s,label){
+            console.log(`STATE START|phase=${label}|state=${s.key}`);
+            const ctx=await browser.newContext({viewport:{width:s.v.w,height:s.v.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce',javaScriptEnabled:false});
+            try{
+              await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});
+              const page=await ctx.newPage(); page.setDefaultTimeout(45000); page.setDefaultNavigationTimeout(45000);
+              let errs=0,loads=0; page.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|state=${s.key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath)loads++});
+              await page.goto(`http://127.0.0.1:4173/${s.p}`,{waitUntil:'networkidle',timeout:45000});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});
+              await page.waitForTimeout(250);const meta=await stableMeta(page),m2=await page.evaluate(metaFn);const stable=JSON.stringify(meta)===JSON.stringify(m2)?1:0;
+              const root=meta.path===`/${s.p}`&&meta.content?1:0;if(!root)console.log(`ROOT MISS|state=${s.key}|path=${meta.path}|page=${meta.page}|content=${meta.content?1:0}`);
+              const overflow=Math.max(meta.docScrollWidth,meta.bodyScrollWidth)>s.v.w+1?1:0;if(overflow)console.log(`OVERFLOW|state=${s.key}|doc=${meta.docScrollWidth}|body=${meta.bodyScrollWidth}|vw=${s.v.w}`);
+              const shot=await page.screenshot({fullPage:true,timeout:60000});
+              console.log(`STATE PASS|phase=${label}|state=${s.key}|stable=${stable}|errors=${errs}|loads=${loads}|root=${root}|overflow=${overflow}`);
+              return{key:s.key,meta,shot:hash(shot),stable,errs,loads,root,overflow};
+            } finally {await ctx.close().catch(()=>{});}
+          }
+          async function phase(label){
+            const browser=await chromium.launch({headless:true});const out={};let next=0;const rows=[];
+            async function worker(){while(true){const i=next++;if(i>=states.length)return;rows.push(await runState(browser,states[i],label));}}
+            try{await Promise.all(Array.from({length:3},()=>worker()));}finally{await browser.close().catch(()=>{});}
+            let loads=0,errs=0,stable=0,roots=0,overflow=0;for(const r of rows){out[r.key]={meta:r.meta,shot:r.shot};loads+=r.loads;errs+=r.errs;stable+=r.stable;roots+=r.root;overflow+=r.overflow;}
+            console.log(`PHASE|label=${label}|states=${rows.length}|stableStates=${stable}|pageErrors=${errs}|targetStylesheetLoads=${loads}|pageRoots=${roots}|overflowStates=${overflow}|javascriptEnabled=0|workers=3|harness=hardened-r2`);
+            return{out,loads,errs,stable,roots,overflow};
+          }
+          (async()=>{const p=await phase(process.argv[2]);fs.writeFileSync(process.argv[3],JSON.stringify(p));})().catch(e=>{console.error('HARNESS ERROR|'+(e?.stack||e));process.exit(1)});
           NODE
           NODE_PATH="$PWD/node_modules" node /tmp/proof.js parent /tmp/parent.json
           cp /tmp/candidate.css "$TARGET_FILE"
           NODE_PATH="$PWD/node_modules" node /tmp/proof.js candidate /tmp/candidate.json
           node <<'NODE'
-          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const n=Object.keys(a.out).length;const overParity=a.overflow===b.overflow?1:0;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|pages=9|states=${n}|viewports=1366x768,1280x802,820x1180,608x926,390x844|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|pageRoots=${a.roots}/${b.roots}|overflowStates=${a.overflow}/${b.overflow}|overflowParity=${overParity}|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|javascriptEnabled=0`);if(md||sd||a.errs||b.errs||a.loads||b.loads||a.stable!==45||b.stable!==45||a.roots!==45||b.roots!==45||!overParity)process.exit(1);
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;
+          for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}
+          const n=Object.keys(a.out).length,overParity=a.overflow===b.overflow?1:0;
+          console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|pages=9|states=${n}|viewports=1366x768,1280x802,820x1180,608x926,390x844|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|pageRoots=${a.roots}/${b.roots}|overflowStates=${a.overflow}/${b.overflow}|overflowParity=${overParity}|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|javascriptEnabled=0|workers=3|harness=hardened-r2`);
+          if(n!==45||md||sd||a.errs||b.errs||a.loads||b.loads||a.stable!==45||b.stable!==45||a.roots!==45||b.roots!==45||!overParity)process.exit(1);
           NODE
           cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
@@ -67,6 +104,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.browser.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(REACH TRANSFER PASS|CANDIDATE PASS|PHASE|PAGE ERROR|ROOT MISS|OVERFLOW|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS)\|' /tmp/b.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 2000 /tmp/b.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(REACH TRANSFER PASS|CANDIDATE PASS|STATE START|STATE PASS|PHASE|PAGE ERROR|ROOT MISS|OVERFLOW|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS|HARNESS ERROR)\|' /tmp/b.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 2200 /tmp/b.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 doke shell contract browser r2 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 doke shell contract browser r2 hardened [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
