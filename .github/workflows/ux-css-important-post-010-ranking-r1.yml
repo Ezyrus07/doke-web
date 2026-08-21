@@ -1,10 +1,10 @@
-name: UX CSS Important 035 Renderer Determinism Probe P6
+name: UX CSS Important 035 Renderer Determinism Probe P6B
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  probe035p6:
+  probe035p6b:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -12,10 +12,10 @@ jobs:
       PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
       TARGET_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
-      P5_FILE: .diagnostics/ux-css-important-035-community-820-header-flake-probe-p5.txt
-      P5_BLOB: 1532bfab72f8947787bf906d5fdbcbcb348ece36
+      P6_FILE: .diagnostics/ux-css-important-035-renderer-determinism-probe-p6.txt
+      P6_BLOB: a18a097d8d9a150e9f6c8891b09b6cc892f25875
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-035-renderer-determinism-probe-p6.txt
+      RESULT_FILE: .diagnostics/ux-css-important-035-renderer-determinism-probe-p6b.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -25,14 +25,14 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/p6.log) 2>&1
-          test "$(git rev-parse "HEAD:$P5_FILE")" = "$P5_BLOB"
-          git show HEAD:"$P5_FILE" >/tmp/p5.txt
-          grep -q '^RUN_ID=32484777161$' /tmp/p5.txt; grep -q '^RESULT=PASS$' /tmp/p5.txt
-          grep -Fq 'SUMMARY|runs=8|pixelUnique=2|regionUnique=1' /tmp/p5.txt
-          grep -Fq 'VARIANT DIFF|' /tmp/p5.txt; grep -Fq 'changes=[]' /tmp/p5.txt
-          grep -Fq 'stackTop=button#.home-side-meta__profile|stackAria=Entrar na Doke' /tmp/p5.txt
-          echo 'P5 TRANSFER PASS|state=comunidade.html@820x1180|pixelUnique=2|regionUnique=1|regionDiff=0|source=pure-raster-subpixel'
+          set -euo pipefail; exec > >(tee /tmp/p6b.log) 2>&1
+          test "$(git rev-parse "HEAD:$P6_FILE")" = "$P6_BLOB"
+          git show HEAD:"$P6_FILE" >/tmp/p6.txt
+          grep -q '^RUN_ID=32485117647$' /tmp/p6.txt; grep -q '^RESULT=FAIL$' /tmp/p6.txt
+          grep -Fq 'MODE SUMMARY|mode=default|runs=8|pixelUnique=2|regionUnique=1|args=[]' /tmp/p6.txt
+          grep -Fq 'MODE SUMMARY|mode=disable-gpu|runs=8|pixelUnique=3|regionUnique=1|args=["--disable-gpu"]' /tmp/p6.txt
+          grep -Fq 'PROBE ERROR|page.screenshot: Timeout 60000ms exceeded.' /tmp/p6.txt
+          echo 'P6 TRANSFER PASS|default=unstable|disable-gpu=unstable|deterministic-mode=unusable|regionUnique=1'
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
           npm ci --ignore-scripts >/dev/null
@@ -40,79 +40,28 @@ jobs:
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
           trap 'kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
           ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/comunidade.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
-          cat >/tmp/p6.js <<'NODE'
+          cat >/tmp/p6b.js <<'NODE'
           const { chromium } = require('playwright');
           const crypto = require('crypto');
-          const targetPath = '/assets/css/components/shell/doke-shell-contract.css';
-          const MODES = [
-            { name: 'default', args: [] },
-            { name: 'disable-gpu', args: ['--disable-gpu'] },
-            { name: 'deterministic-mode', args: ['--deterministic-mode'] },
-            { name: 'deterministic-compositor', args: ['--disable-gpu','--run-all-compositor-stages-before-draw','--disable-threaded-animation','--disable-threaded-scrolling','--disable-checker-imaging'] }
+          const targetPath='/assets/css/components/shell/doke-shell-contract.css';
+          const baseArgs=['--run-all-compositor-stages-before-draw','--disable-new-content-rendering-timeout','--disable-threaded-animation','--disable-threaded-scrolling','--disable-checker-imaging','--disable-image-animation-resync'];
+          const modes=[
+            {name:'headless-bundle',args:[...baseArgs]},
+            {name:'headless-bundle-srgb',args:[...baseArgs,'--force-color-profile=srgb']},
+            {name:'headless-bundle-srgb-scale',args:[...baseArgs,'--force-color-profile=srgb','--force-device-scale-factor=1']}
           ];
-          async function settleImages(page) {
-            await page.waitForFunction(() => [...document.images].every(i => i.complete), null, { timeout: 15000 }).catch(() => {});
-            await page.evaluate(async () => { await Promise.allSettled([...document.images].map(i => typeof i.decode === 'function' ? i.decode() : Promise.resolve())); });
-          }
-          async function pixelHash(page, buffer) {
-            return page.evaluate(async (b64) => {
-              const bin = atob(b64), bytes = new Uint8Array(bin.length);
-              for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-              const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
-              const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
-              const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(bmp, 0, 0);
-              const p = x.getImageData(0, 0, c.width, c.height).data;
-              const d = await crypto.subtle.digest('SHA-256', p);
-              return [...new Uint8Array(d)].map(v => v.toString(16).padStart(2,'0')).join('');
-            }, buffer.toString('base64'));
-          }
-          async function one(mode, iteration) {
-            const browser = await chromium.launch({ headless: true, args: mode.args });
-            try {
-              const ctx = await browser.newContext({ viewport: { width: 820, height: 1180 }, deviceScaleFactor: 1, locale: 'pt-BR', timezoneId: 'America/Bahia', reducedMotion: 'reduce' });
-              try {
-                await ctx.route('**/*', route => { const u = new URL(route.request().url()); return (u.hostname === '127.0.0.1' || u.hostname === 'localhost') ? route.continue() : route.abort(); });
-                await ctx.addInitScript(() => { let n=0; Math.random=()=>((++n%997)/997); const fixed=1787263200000, RealDate=Date; class FixedDate extends RealDate { constructor(...a){ super(...(a.length?a:[fixed])); } static now(){ return fixed; } } globalThis.Date=FixedDate; });
-                const page = await ctx.newPage(); page.setDefaultTimeout(45000); page.setDefaultNavigationTimeout(45000);
-                let loads=0, errors=0; page.on('request', r => { if (new URL(r.url()).pathname === targetPath) loads++; }); page.on('pageerror', () => errors++);
-                await page.goto('http://127.0.0.1:4173/comunidade.html', { waitUntil:'networkidle', timeout:45000 });
-                await page.addStyleTag({ content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}' });
-                await page.evaluate(() => document.fonts?.ready); await settleImages(page); await page.waitForTimeout(900);
-                await page.screenshot({ fullPage:true, timeout:60000 }); await page.waitForTimeout(350);
-                const shot = await page.screenshot({ fullPage:true, timeout:60000 });
-                const pixel = await pixelHash(page, shot);
-                const region = await page.evaluate(() => { const e=document.querySelector('.app-header .home-side-meta__profile'), a=document.querySelector('.app-header .home-side-meta__avatar'); const f=x=>{const r=x.getBoundingClientRect(),c=getComputedStyle(x);return{r:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],border:c.border,bg:c.backgroundColor,transform:c.transform,cls:x.className,aria:x.getAttribute('aria-label')||''};}; return { profile:f(e), avatar:f(a) }; });
-                const regionHash = crypto.createHash('sha256').update(JSON.stringify(region)).digest('hex');
-                if (loads || errors) throw new Error(`contract mode=${mode.name} iteration=${iteration} loads=${loads} errors=${errors}`);
-                console.log(`RUN PASS|mode=${mode.name}|iteration=${iteration}|pixel=${pixel}|region=${regionHash}|loads=0|errors=0`);
-                return { pixel, regionHash };
-              } finally { await ctx.close().catch(()=>{}); }
-            } finally { await browser.close().catch(()=>{}); }
-          }
-          (async()=>{
-            const summaries=[];
-            for (const mode of MODES) {
-              const rows=[];
-              for (let i=1;i<=8;i++) rows.push(await one(mode,i));
-              const pixelUnique=new Set(rows.map(r=>r.pixel)).size, regionUnique=new Set(rows.map(r=>r.regionHash)).size;
-              console.log(`MODE SUMMARY|mode=${mode.name}|runs=8|pixelUnique=${pixelUnique}|regionUnique=${regionUnique}|args=${JSON.stringify(mode.args)}`);
-              summaries.push({mode:mode.name,pixelUnique,regionUnique,args:mode.args});
-            }
-            const stable=summaries.filter(x=>x.pixelUnique===1&&x.regionUnique===1);
-            const preference=['deterministic-mode','deterministic-compositor','disable-gpu','default'];
-            stable.sort((a,b)=>preference.indexOf(a.mode)-preference.indexOf(b.mode));
-            const selected=stable[0]||null;
-            console.log(`PROBE RESULT|stableModes=${stable.map(x=>x.mode).join(',')||'none'}|selected=${selected?.mode||'none'}|selectedArgs=${JSON.stringify(selected?.args||[])}|exactPixelEquality=${selected?1:0}|criteriaRelaxed=0|targetLoads=0`);
-            if (!selected) process.exit(2);
-          })().catch(e=>{ console.error('PROBE ERROR|'+(e?.stack||e)); process.exit(1); });
+          async function settleImages(page){await page.waitForFunction(()=>[...document.images].every(i=>i.complete),null,{timeout:15000}).catch(()=>{});await page.evaluate(async()=>{await Promise.allSettled([...document.images].map(i=>typeof i.decode==='function'?i.decode():Promise.resolve()));});}
+          async function pixelHash(page,buffer){return page.evaluate(async b64=>{const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const bmp=await createImageBitmap(new Blob([u],{type:'image/png'})),c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(bmp,0,0);const p=x.getImageData(0,0,c.width,c.height).data,d=await crypto.subtle.digest('SHA-256',p);return[...new Uint8Array(d)].map(v=>v.toString(16).padStart(2,'0')).join('');},buffer.toString('base64'));}
+          async function runOne(mode,iteration){const browser=await chromium.launch({headless:true,args:mode.args,timeout:45000});try{const ctx=await browser.newContext({viewport:{width:820,height:1180},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{await ctx.route('**/*',route=>{const u=new URL(route.request().url());return(u.hostname==='127.0.0.1'||u.hostname==='localhost')?route.continue():route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}}globalThis.Date=FixedDate;});const page=await ctx.newPage();page.setDefaultTimeout(45000);page.setDefaultNavigationTimeout(45000);let loads=0,errors=0;page.on('request',r=>{if(new URL(r.url()).pathname===targetPath)loads++});page.on('pageerror',()=>errors++);await page.goto('http://127.0.0.1:4173/comunidade.html',{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await settleImages(page);await page.waitForTimeout(900);await page.screenshot({fullPage:true,timeout:60000,animations:'disabled',caret:'hide'});await page.waitForTimeout(350);const shot=await page.screenshot({fullPage:true,timeout:60000,animations:'disabled',caret:'hide'}),pixel=await pixelHash(page,shot),region=await page.evaluate(()=>{const e=document.querySelector('.app-header .home-side-meta__profile'),a=document.querySelector('.app-header .home-side-meta__avatar'),f=x=>{const r=x.getBoundingClientRect(),c=getComputedStyle(x);return{r:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],border:c.border,bg:c.backgroundColor,transform:c.transform,cls:x.className,aria:x.getAttribute('aria-label')||''};};return{profile:f(e),avatar:f(a)}}),rh=crypto.createHash('sha256').update(JSON.stringify(region)).digest('hex');if(loads||errors)throw Error(`contract ${loads}/${errors}`);console.log(`RUN PASS|mode=${mode.name}|iteration=${iteration}|pixel=${pixel}|region=${rh}|loads=0|errors=0`);return{pixel,region:rh};}finally{await ctx.close().catch(()=>{})}}finally{await browser.close().catch(()=>{})}}
+          (async()=>{const summaries=[];for(const mode of modes){const rows=[],errs=[];for(let i=1;i<=8;i++){try{rows.push(await runOne(mode,i))}catch(e){errs.push(String(e?.message||e).split('\n')[0]);console.log(`RUN FAIL|mode=${mode.name}|iteration=${i}|error=${String(e?.message||e).split('\n')[0]}`)}}const pu=new Set(rows.map(r=>r.pixel)).size,ru=new Set(rows.map(r=>r.region)).size;console.log(`MODE SUMMARY|mode=${mode.name}|attempts=8|passes=${rows.length}|failures=${errs.length}|pixelUnique=${pu}|regionUnique=${ru}|args=${JSON.stringify(mode.args)}`);summaries.push({mode:mode.name,passes:rows.length,failures:errs.length,pixelUnique:pu,regionUnique:ru,args:mode.args});}const stable=summaries.filter(x=>x.passes===8&&x.failures===0&&x.pixelUnique===1&&x.regionUnique===1);const pref=['headless-bundle','headless-bundle-srgb','headless-bundle-srgb-scale'];stable.sort((a,b)=>pref.indexOf(a.mode)-pref.indexOf(b.mode));const selected=stable[0]||null;console.log(`PROBE RESULT|stableModes=${stable.map(x=>x.mode).join(',')||'none'}|selected=${selected?.mode||'none'}|selectedArgs=${JSON.stringify(selected?.args||[])}|exactPixelEquality=${selected?1:0}|criteriaRelaxed=0|targetLoads=0`);if(!selected)process.exit(2);})().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)});
           NODE
-          timeout --signal=TERM --kill-after=20s 1200s env NODE_PATH="$PWD/node_modules" node /tmp/p6.js
+          set +e; timeout --signal=TERM --kill-after=20s 1200s env NODE_PATH="$PWD/node_modules" node /tmp/p6b.js; code=$?; set -e; echo "PROBE_EXIT=$code"; test "$code" = 0
           echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(P5 TRANSFER PASS|RUN PASS|MODE SUMMARY|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p6.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1000 /tmp/p6.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(P6 TRANSFER PASS|RUN PASS|RUN FAIL|MODE SUMMARY|PROBE RESULT|PROBE ERROR|PROBE_EXIT=|RESTORE PASS)' /tmp/p6b.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1200 /tmp/p6b.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 renderer determinism probe p6 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 renderer determinism probe p6b [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
