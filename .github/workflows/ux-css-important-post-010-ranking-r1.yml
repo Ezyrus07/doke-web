@@ -1,65 +1,97 @@
-name: UX CSS Important 034 Tablet Safari Layout Promote Permanent
+name: UX CSS Important 034 Tablet Safari Layout Permanent Cert R4
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  promote034:
+  certify034r4:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     env:
       PARENT_SHA: 79b2820ba35e89ea066e90468d801908d5ea56f0
+      PERM_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      PERM_TREE: 714d5b26a67edec2fbcb4f87ebae8c1197304269
       TARGET_FILE: assets/css/pages/home/tablet-safari-layout.css
-      TARGET_BLOB: 74d2ddc5292edbeaf4629d4f43118c8d5e6f676b
+      PARENT_BLOB: 74d2ddc5292edbeaf4629d4f43118c8d5e6f676b
+      PERM_BLOB: ca0a440fd3fcbaa3767d7d8a53becf052fde1de0
       CANDIDATE_SHA256: 78658fe4802c3ebeb9463842c9f39d0be36835b95510f70fa1f28c8f443120c4
-      CANDIDATE_BLOB: ca0a440fd3fcbaa3767d7d8a53becf052fde1de0
+      PERM_BRANCH: ux/ux-css-important-034-tablet-safari-layout-dormant-priority
       REACH_FILE: .diagnostics/ux-css-important-034-tablet-safari-layout-reach-r1.txt
       REACH_BLOB: 0cf0956ff45e9ec1a458295631e889ceb12b7759
       BROWSER_FILE: .diagnostics/ux-css-important-034-tablet-safari-layout-browser-r2.txt
       BROWSER_BLOB: f8b660a4f574113287aeb33747de699075c91e1d
       GOV_FILE: .diagnostics/ux-css-important-034-tablet-safari-layout-governance-r3.txt
       GOV_BLOB: 89d787d8edad5bcd811a1bb8d48e4a3db36556dd
-      PERM_BRANCH: ux/ux-css-important-034-tablet-safari-layout-dormant-priority
+      PROMO_FILE: .diagnostics/ux-css-important-034-tablet-safari-layout-promotion.txt
+      PROMO_BLOB: 22854faf706c2c5c9887eb51a48a43986f1ad989
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-034-tablet-safari-layout-promotion.txt
+      RESULT_FILE: .diagnostics/ux-css-important-034-tablet-safari-layout-permanent-cert-r4.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
-      - id: promote
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - id: certify
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/p.log) 2>&1
+          set -euo pipefail; exec > >(tee /tmp/c.log) 2>&1
           test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
           test "$(git rev-parse "HEAD:$BROWSER_FILE")" = "$BROWSER_BLOB"
           test "$(git rev-parse "HEAD:$GOV_FILE")" = "$GOV_BLOB"
-          git show HEAD:"$REACH_FILE" >/tmp/reach.txt; git show HEAD:"$BROWSER_FILE" >/tmp/browser.txt; git show HEAD:"$GOV_FILE" >/tmp/gov.txt
-          grep -q '^RESULT=PASS$' /tmp/reach.txt; grep -q '^RESULT=PASS$' /tmp/browser.txt; grep -q '^RESULT=PASS$' /tmp/gov.txt
-          grep -Fq "CANDIDATE PASS|bytes=102236|important=341->0|removed=341|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/reach.txt
-          grep -Fq 'BROWSER PASS|' /tmp/browser.txt; grep -Fq 'GOVERNANCE PASS|' /tmp/gov.txt
+          test "$(git rev-parse "HEAD:$PROMO_FILE")" = "$PROMO_BLOB"
+          git show HEAD:"$REACH_FILE" >/tmp/reach.txt; git show HEAD:"$BROWSER_FILE" >/tmp/browser.txt; git show HEAD:"$GOV_FILE" >/tmp/gov.txt; git show HEAD:"$PROMO_FILE" >/tmp/promo.txt
+          grep -q '^RESULT=PASS$' /tmp/reach.txt; grep -q '^RESULT=PASS$' /tmp/browser.txt; grep -q '^RESULT=PASS$' /tmp/gov.txt; grep -q '^RESULT=PASS$' /tmp/promo.txt
+          grep -Fq 'CANONICAL REACH PASS|rootHtml=27|loadedCss=402|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=2|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1' /tmp/reach.txt
+          grep -Fq "BROWSER PASS|sha256=$CANDIDATE_SHA256|page=home|states=12|viewports=560,561,699,700,1024,1025,1180,1181,1366,1367,1600,1601|metadataDiffs=0|screenshotDiffs=0|stableStates=12/12|pageErrors=0|targetStylesheetLoads=0/0|pageRoots=12/12|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|dateFrozen=1|breakpoints=560/561,699/700,1024/1025,1180/1181,1366/1367,1600/1601" /tmp/browser.txt
+          grep -Fq 'IMPORTANT PASS|total=7576|outsideServiceCard=7514|files=15|delta=-341' /tmp/gov.txt
+          grep -Fq 'QUEUE PASS|affectedFiles=14|highBaselineRequired=7506|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127' /tmp/gov.txt
+          grep -Fq "PRODUCT COMMIT PASS|head=$PERM_SHA|tree=$PERM_TREE|parent=$PARENT_SHA|blob=$PERM_BLOB|files=1|additions=341|deletions=341|markerDelta=341|markerOnly=1" /tmp/promo.txt
+          echo 'PROOF TRANSFER PASS|reach=R1|browser=R2|governance=R3|candidateHash=exact|candidateBlob=exact|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=2|exactPathMatch=1'
           git fetch origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
-          test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$PARENT_SHA"
-          git checkout -B product "refs/remotes/origin/$PERM_BRANCH" >/dev/null
-          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
-          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          test -z "$(git status --porcelain)"
+          test "$(git rev-parse refs/remotes/origin/$PERM_BRANCH)" = "$PERM_SHA"
+          git checkout --detach "$PERM_SHA" >/dev/null
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse HEAD^{tree})" = "$PERM_TREE"; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$PERM_BLOB"; test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"; test "$(git rev-list --count "$PARENT_SHA..$PERM_SHA")" -eq 1; test "$(git diff --name-only "$PARENT_SHA" "$PERM_SHA" | wc -l)" -eq 1; test "$(git diff --name-only "$PARENT_SHA" "$PERM_SHA")" = "$TARGET_FILE"
+          num="$(git diff --numstat "$PARENT_SHA" "$PERM_SHA" -- "$TARGET_FILE")"; add="$(printf '%s' "$num"|cut -f1)"; del="$(printf '%s' "$num"|cut -f2)"; test "$add" = 341; test "$del" = 341
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/source.css; git show "$PERM_SHA:$TARGET_FILE" >/tmp/permanent.css
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');const o=fs.readFileSync(process.env.TARGET_FILE,'utf8'),c=o.replace(/\s*!important\b/g,'');const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');fs.writeFileSync('/tmp/candidate.css',c);const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();if(before!==341||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);fs.writeFileSync(process.env.TARGET_FILE,c);console.log(`CANDIDATE MATERIALIZATION PASS|sha256=${h}|blob=${blob}|bytes=${Buffer.byteLength(c)}|important=341->0|markerOnly=1|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');const src=fs.readFileSync('/tmp/source.css','utf8'),perm=fs.readFileSync('/tmp/permanent.css','utf8'),c=src.replace(/\s*!important\b/g,'');const before=(src.match(/!important\b/g)||[]).length,after=(perm.match(/!important\b/g)||[]).length;const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');fs.writeFileSync('/tmp/reconstructed.css',c);const blob=cp.execFileSync('git',['hash-object','/tmp/reconstructed.css'],{encoding:'utf8'}).trim();if(before!==341||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.PERM_BLOB||c!==perm)throw Error(`reconstruction ${before}/${after}/${h}/${blob}/${c===perm}`);console.log(`RECONSTRUCTION PASS|sha256=${h}|blob=${blob}|bytes=${Buffer.byteLength(c)}|important=341->0|removed=341|byteIdentical=1|browserProofTransfer=hash-identical|reachProofTransfer=hash-identical|wholeFileDormant=1`);
           NODE
-          git diff --check; test "$(git diff --name-only | wc -l)" -eq 1; test "$(git diff --name-only)" = "$TARGET_FILE"
-          num="$(git diff --numstat -- "$TARGET_FILE")"; add="$(printf '%s' "$num"|cut -f1)"; del="$(printf '%s' "$num"|cut -f2)"; test "$add" = 341; test "$del" = 341
-          git config user.name Ezyrus07; git config user.email 239011076+Ezyrus07@users.noreply.github.com
-          git add -- "$TARGET_FILE"; test "$(git diff --cached --name-only | wc -l)" -eq 1; test "$(git diff --cached --name-only)" = "$TARGET_FILE"
-          git commit -m 'UX-CSS-IMPORTANT-034: remove dormant tablet Safari layout priorities' >/dev/null
-          head="$(git rev-parse HEAD)"; tree="$(git rev-parse HEAD^{tree})"; test "$(git rev-parse HEAD^)" = "$PARENT_SHA"; test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$CANDIDATE_BLOB"; test "$(git rev-list --count "$PARENT_SHA..HEAD")" -eq 1; test "$(git diff --name-only "$PARENT_SHA" HEAD | wc -l)" -eq 1; test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$TARGET_FILE"
-          echo "PRODUCT COMMIT PASS|head=$head|tree=$tree|parent=$PARENT_SHA|blob=$CANDIDATE_BLOB|files=1|additions=$add|deletions=$del|markerDelta=341|markerOnly=1"
-          git push origin "HEAD:refs/heads/$PERM_BRANCH" >/dev/null; test "$(git ls-remote origin "refs/heads/$PERM_BRANCH" | cut -f1)" = "$head"
-          echo "PRODUCT PUSH PASS|branch=$PERM_BRANCH|head=$head|force=0"
+          npm ci --ignore-scripts >/dev/null
+          node scripts/generate-responsive-index-baseline.js >/dev/null
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log; grep -q 'Failures: 0' /tmp/responsive.log; grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277|state=permanent'
+          npm run audit:agent-governance >/dev/null
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          node <<'NODE'
+          const fs=require('fs');const m=fs.readFileSync('/tmp/conflicts.log','utf8').match(/Conflicting class\/property pairs:\s*(\d+)/);if(!m||+m[1]>339)throw Error('conflicts');console.log(`CONFLICTS PASS|count=${m[1]}|maxBaseline=339|regression=0`);
+          NODE
+          npm run audit:shared-app-header-contract >/dev/null
+          npm run audit:mobile-shell-location-contract >/dev/null
+          npm run audit:responsive-boundaries >/dev/null
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log; grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log; grep -q 'Critical flows: 15' /tmp/domain.log; grep -q 'Average maturity: 2.91/6' /tmp/domain.log; grep -q 'Critical blockers: 12' /tmp/domain.log
+          git checkout "$PERM_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          npm run audit:active-legacy-structures >/dev/null
+          npm run audit:important-reduction-plan >/dev/null
+          npm run audit:global-css-design-system >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),b=JSON.parse(fs.readFileSync('docs/validation/global-cycle-121-important-baseline-by-group-report.json','utf8')),p=JSON.parse(fs.readFileSync('reports/generated/css-important/global-cycle-117-important-reduction-plan-report.json','utf8'));const s=b.summary,ps=p.summary;if(s.totalImportant!==7576||s.outsideServiceCardImportant!==7514||s.filesWithImportant!==15)throw Error(`important ${JSON.stringify(s)}`);if(ps.affectedFiles!==14||ps.totalImportantOutsideServiceCard!==7514||ps.byRisk?.['high-baseline-required']!==7506||ps.byRisk?.['medium-baseline-required']!==6||ps.byRisk?.['low-review-candidate']!==2)throw Error(`queue ${JSON.stringify(ps)}`);const protectedFiles={protected006:['assets/css/pages/home/mobile-composition.css',6],protected010:['assets/css/components/cards/mobile-card-contract.css',2],protected020:['assets/css/components/shell/mobile-base-stability.css',28],protected021:['assets/css/pages/home/mobile-hero-feed.css',127]};for(const [label,[file,want]] of Object.entries(protectedFiles)){const got=(fs.readFileSync(file,'utf8').match(/!important\b/g)||[]).length;if(got!==want)throw Error(`${label} ${got}/${want}`);}const target=(fs.readFileSync(process.env.TARGET_FILE,'utf8').match(/!important\b/g)||[]).length;if(target!==0)throw Error(`target ${target}`);console.log('IMPORTANT PASS|total=7576|outsideServiceCard=7514|files=15');console.log('QUEUE PASS|affectedFiles=14|highBaselineRequired=7506|mediumBaselineRequired=6|lowReviewCandidate=2|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127');
+          NODE
+          set +e; npm audit --json >/tmp/audit.json; code=$?; set -e
+          node <<'NODE'
+          const v=require('/tmp/audit.json').metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw Error(`deps ${JSON.stringify(v)}`);console.log(`DEPENDENCY PASS|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
+          NODE
+          echo "CERTIFICATION PASS|fullHistory=1|oneCommit=1|oneFile=1|numstat=$add/$del|markerDelta=341|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=2|browserMetadataDiffs=0|browserScreenshotDiffs=0|browserStableStates=12/12|browserPageErrors=0|targetStylesheetLoads=0/0|pageRoots=12/12|exactPathMatch=1|browserProofTransfer=hash-identical|reachProofTransfer=hash-identical|duplicates=0/0|domain=23/15/2.91/12|targetImportant=0|protected006=6|protected010=2|protected020=28|protected021=127"
+          echo "AUDIT_EXIT=$code"
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.promote.outcome }}' = success; then result=PASS; fi
-          { grep -E '^(CANDIDATE MATERIALIZATION PASS|PRODUCT COMMIT PASS|PRODUCT PUSH PASS)\|' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 800 /tmp/p.log || true; fi; } >/tmp/out
+          set -euo pipefail; result=FAIL; if test '${{ steps.certify.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PERM_SHA=$PERM_SHA"; echo "PARENT_SHA=$PARENT_SHA"; echo "PERM_TREE=$PERM_TREE"; echo "PERM_BLOB=$PERM_BLOB"; echo "CERTIFY=${{ steps.certify.outcome }}"; grep -E '^(PROOF TRANSFER PASS|RECONSTRUCTION PASS|RESPONSIVE PASS|CONFLICTS PASS|IMPORTANT PASS|QUEUE PASS|DEPENDENCY PASS|CERTIFICATION PASS)\|' /tmp/c.log || true; grep '^AUDIT_EXIT=' /tmp/c.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1200 /tmp/c.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 034 tablet safari layout promotion [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 034 tablet safari layout permanent cert r4 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
