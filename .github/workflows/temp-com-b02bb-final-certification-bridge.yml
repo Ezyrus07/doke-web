@@ -1,0 +1,136 @@
+name: TEMP COM-B02BB Observable Final Certification Bridge
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/temp-com-b02bb-final-certification-bridge.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  certify-final-tree:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      FINAL_HEAD: d5d3dde088fc49a2b95bb7e56dfdeb89bacbd087
+      FINAL_TREE: 301b46f746a2d8404280ddfefe41f7cc693cb9f1
+      PREDECESSOR_HEAD: 416c69549ab82524ae2fa31ed6056093597ade48
+      PREDECESSOR_TREE: a08e60555f79283ae800857c4a9a1fd02e849983
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      B02BB_MODULE_BLOB: 7caa4a78a72488fb8b3d6249a72936aa4a703cf2
+      B02BB_CONFIG_BLOB: f1c2087f9748629d580710147c6627d708c89d6c
+      B02BB_TEST_BLOB: 10c565df6bbbc46b0cdbe3efe00f8402b28f9dd6
+      B02BB_WORKFLOW_BLOB: 6b5891ad65490af58437564c79875736a44df909
+      B02BA_MODULE_BLOB: 0ef13e0b9081075b8fb8bdce74e0fba981753e54
+      B02BA_CONFIG_BLOB: 34096c9d97aff49782a94985b4549e7b72fecc9b
+      B02AZ_MODULE_BLOB: 35e2bbe0b983d6a249bc7f8cb4ee157d3b85d654
+      B02AZ_CONFIG_BLOB: 528c8c7fe9e27a5e7ff4e0292a442d78be204a49
+      B02AY_MODULE_BLOB: 96583348127ec79eae90bffd69a14b345ed8c441
+      B02AX_MODULE_BLOB: 33e7af667457918df2bddc4439b70ef8df1beef1
+      B02AW_MODULE_BLOB: 2962453da8857e3ca0be3a2c49455e7012d736a6
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      BRANCH: com/com-001-baseline-audit
+      TEMP_PATH: .github/workflows/temp-com-b02bb-final-certification-bridge.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact temporary bridge head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze final B02BB tree and bridge-only lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse HEAD^)" = "$FINAL_HEAD"
+          test "$(git rev-parse "$FINAL_HEAD^{tree}")" = "$FINAL_TREE"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git diff --name-only "$FINAL_HEAD" HEAD)" = "$TEMP_PATH"
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02bb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.js \
+            config/com-b02bb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02bb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.js | sort)"
+          actual_final="$(git diff --name-only "$PREDECESSOR_HEAD" "$FINAL_HEAD" | sort)"
+          test "$actual_final" = "$expected_final"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.js)" = "$B02BB_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02bb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.json)" = "$B02BB_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:scripts/test-com-b02bb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.js)" = "$B02BB_TEST_BLOB"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02bb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.yml)" = "$B02BB_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js)" = "$B02BA_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.json)" = "$B02BA_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-inert-instance.js)" = "$B02AZ_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02az-repository-only-continuation-state-registry-storage-backend-entry-container-inert-instance.json)" = "$B02AZ_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-materialization-readiness.js)" = "$B02AY_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-implementation.js)" = "$B02AX_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-contract.js)" = "$B02AW_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          ! git ls-tree -r --name-only "$FINAL_HEAD" | grep '^.github/workflows/temp-com-b02bb-'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax semantic and hard-block B02BB final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.js
+          node --check scripts/test-com-b02bb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.js
+          node scripts/test-com-b02bb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.js
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-contract.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'entryContainerInstanceOperationMethodsAttachmentImplementationMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'entryContainerMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true|carrierInstanceMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'opaqueStateHandleGenerated[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" "$FINAL_HEAD"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+
+      - name: Self-remove bridge and preserve exact final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -- "$TEMP_PATH"
+          test "$(git write-tree)" = "$FINAL_TREE"
+          git commit -m "ci(com): certify B02BB final tree [run ${GITHUB_RUN_ID}]"
+          test "$(git rev-parse HEAD^{tree})" = "$FINAL_TREE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02bb-'
+
+      - name: Fast-forward branch only if bridge head is still current
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse "origin/$BRANCH")" = "$PR_HEAD_SHA"
+          git push origin HEAD:refs/heads/$BRANCH
