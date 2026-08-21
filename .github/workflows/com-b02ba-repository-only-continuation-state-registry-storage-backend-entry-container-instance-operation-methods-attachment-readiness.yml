@@ -1,0 +1,111 @@
+name: COM-B02BA Repository-Only Entry Container Instance Operation Methods Attachment Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js'
+      - 'config/com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.json'
+      - 'scripts/test-com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js'
+      - '.github/workflows/com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: f48367405b1295eeee50e94336be27fb22e9b738
+      PREDECESSOR_TREE: 1905d9d1853d0f7653f2c56fecd1a8fc7a990f55
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      B02AZ_MODULE_BLOB: 35e2bbe0b983d6a249bc7f8cb4ee157d3b85d654
+      B02AZ_CONFIG_BLOB: 528c8c7fe9e27a5e7ff4e0292a442d78be204a49
+      B02AY_MODULE_BLOB: 96583348127ec79eae90bffd69a14b345ed8c441
+      B02AX_MODULE_BLOB: 33e7af667457918df2bddc4439b70ef8df1beef1
+      B02AW_MODULE_BLOB: 2962453da8857e3ca0be3a2c49455e7012d736a6
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02AZ predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-inert-instance.js)" = "$B02AZ_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02az-repository-only-continuation-state-registry-storage-backend-entry-container-inert-instance.json)" = "$B02AZ_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-materialization-readiness.js)" = "$B02AY_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-implementation.js)" = "$B02AX_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-contract.js)" = "$B02AW_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          expected_candidate="$(printf '%s\n' \
+            .github/workflows/com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js \
+            config/com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.json \
+            scripts/test-com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js | sort)"
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js \
+            config/com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected_candidate" || test "$actual" = "$expected_final"
+          ! printf '%s\n' "$actual" | grep -E '(^|/)migrations?/|^supabase/migrations/'
+          ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02ba-'
+
+      - name: Syntax and semantic B02BA operation methods attachment readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js
+          node --check scripts/test-com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js
+          node scripts/test-com-b02ba-repository-only-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js
+
+      - name: Operation methods remain unattached and side-effect-free
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-operation-methods-attachment-readiness.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'entryContainerMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true|carrierInstanceMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'opaqueStateHandleGenerated[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check "$PREDECESSOR_HEAD" HEAD
