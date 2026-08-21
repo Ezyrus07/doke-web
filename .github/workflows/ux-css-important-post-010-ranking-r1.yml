@@ -1,13 +1,13 @@
-name: UX CSS Important 035 Browser Deadlock Probe P1
+name: UX CSS Important 035 Browser Deadlock Probe P2
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  probe035p1:
+  probe035p2:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
     env:
       PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
@@ -15,7 +15,7 @@ jobs:
       REACH_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-reach-r1.txt
       REACH_BLOB: 01cd7a8768241d353db06403d165732bfc215893
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-035-browser-deadlock-probe-p1.txt
+      RESULT_FILE: .diagnostics/ux-css-important-035-browser-deadlock-probe-p2.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
@@ -37,7 +37,7 @@ jobs:
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
           trap 'kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
           ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/index.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
-          echo 'PROBE PREP PASS|parent=exact|reach=R1|server=ready|state=index.html@1366x768'
+          echo 'PROBE PREP PASS|parent=exact|reach=R1|server=ready|state=index.html@1366x768|runtimeJs=enabled'
           cat >/tmp/probe.js <<'NODE'
           const {chromium}=require('playwright');
           const mark=s=>console.log(`PROBE STAGE|${s}|ts=${Date.now()}`);
@@ -46,55 +46,61 @@ jobs:
             const browser=await chromium.launch({headless:true});
             mark('launch:pass');
             mark('context:start');
-            const ctx=await browser.newContext({viewport:{width:1366,height:768},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce',javaScriptEnabled:false});
+            const ctx=await browser.newContext({viewport:{width:1366,height:768},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});
             mark('context:pass');
             try{
               mark('route:start');
-              await ctx.route('**/*',async route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')await route.continue();else await route.abort();});
+              await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});
               mark('route:pass');
+              mark('init:start');
+              await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});
+              mark('init:pass');
               mark('page:start');
               const page=await ctx.newPage();
               page.setDefaultTimeout(45000);page.setDefaultNavigationTimeout(45000);
               mark('page:pass');
-              page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/assets/css/components/shell/doke-shell-contract.css')console.log('TARGET LOAD|1')});
+              let targetLoads=0;page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/assets/css/components/shell/doke-shell-contract.css')targetLoads++});
               mark('goto:start');
               await page.goto('http://127.0.0.1:4173/index.html',{waitUntil:'networkidle',timeout:45000});
               mark('goto:pass');
               mark('style:start');
               await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});
               mark('style:pass');
+              mark('fonts:start');await page.evaluate(()=>document.fonts?.ready);mark('fonts:pass');
+              await page.waitForTimeout(700);
               mark('meta:start');
-              const meta=await page.evaluate(()=>{const de=document.documentElement,b=document.body;return{path:location.pathname,content:!!document.querySelector('.page__content, main.page__content'),docWidth:de.scrollWidth,bodyWidth:b?.scrollWidth||0}});
+              const meta=await page.evaluate(()=>{const de=document.documentElement,b=document.body;return{path:location.pathname,page:b?.dataset?.page||null,content:!!document.querySelector('.page__content, main.page__content'),docWidth:de.scrollWidth,bodyWidth:b?.scrollWidth||0}});
               console.log('PROBE META|'+JSON.stringify(meta));
               mark('meta:pass');
               mark('shot:start');
               const shot=await page.screenshot({fullPage:true,timeout:60000});
-              console.log(`PROBE SHOT|bytes=${shot.length}`);
+              console.log(`PROBE SHOT|bytes=${shot.length}|targetLoads=${targetLoads}`);
               mark('shot:pass');
+              if(targetLoads!==0)throw new Error(`target loaded ${targetLoads}`);
             }finally{
               mark('context-close:start');await ctx.close().catch(()=>{});mark('context-close:pass');
               mark('browser-close:start');await browser.close().catch(()=>{});mark('browser-close:pass');
             }
-            console.log('PROBE RESULT|PASS');
+            console.log('PROBE RESULT|PASS|runtimeJs=enabled|dateFrozen=1|criteriaRelaxed=0');
           })().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)});
           NODE
           set +e
-          timeout --signal=TERM --kill-after=15s 300s env NODE_PATH="$PWD/node_modules" node /tmp/probe.js
+          timeout --signal=TERM --kill-after=15s 180s env NODE_PATH="$PWD/node_modules" node /tmp/probe.js
           code=$?
           set -e
           echo "PROBE_EXIT=$code"
-          if test "$code" = 0; then echo 'PROBE SHELL PASS|watchdog=300s'; else echo 'PROBE SHELL FAIL|watchdog=300s'; fi
+          if test "$code" = 0; then echo 'PROBE SHELL PASS|watchdog=180s'; else echo 'PROBE SHELL FAIL|watchdog=180s'; fi
           test "$code" = 0
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(PROBE PREP PASS|PROBE STAGE|PROBE META|PROBE SHOT|TARGET LOAD|PROBE RESULT|PROBE ERROR|PROBE_EXIT=|PROBE SHELL)' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/p.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(PROBE PREP PASS|PROBE STAGE|PROBE META|PROBE SHOT|PROBE RESULT|PROBE ERROR|PROBE_EXIT=|PROBE SHELL)' /tmp/p.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 500 /tmp/p.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
           git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 browser deadlock probe p1 [skip ci]' >/dev/null
+          git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 browser deadlock probe p2 [skip ci]' >/dev/null
           git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
           test "$result" = PASS
