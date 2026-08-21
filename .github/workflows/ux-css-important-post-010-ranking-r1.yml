@@ -1,22 +1,22 @@
-name: UX CSS Important 035 Paired Visual Probe P7
+name: UX CSS Important 035 Semantic Visual Oracle Probe P8
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  probe035p7:
+  probe035p8:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
       TARGET_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
       CANDIDATE_SHA256: fa114edbfe30797719983d9f599b4efb589dd89f57cd332ecb779bbe9b1b9845
       CANDIDATE_BLOB: 5000b0aa60f6d93e123bc17811887e57668d4988
-      P6B_FILE: .diagnostics/ux-css-important-035-renderer-determinism-probe-p6b.txt
-      P6B_BLOB: ce1aaf62faf63b298315ffdd628fee59c884121f
-      RESULT_FILE: .diagnostics/ux-css-important-035-paired-visual-probe-p7.txt
+      P7_FILE: .diagnostics/ux-css-important-035-paired-visual-probe-p7.txt
+      P7_BLOB: b3102cee29075758646d1c2aadb45e47d6ca5e27
+      RESULT_FILE: .diagnostics/ux-css-important-035-semantic-visual-oracle-probe-p8.txt
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -27,22 +27,26 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/p7.log) 2>&1
-          test "$(git rev-parse "HEAD:$P6B_FILE")" = "$P6B_BLOB"
-          git show HEAD:"$P6B_FILE" >/tmp/p6b.txt
-          grep -q '^RUN_ID=32485449161$' /tmp/p6b.txt
-          grep -Fq 'stableModes=none|selected=none' /tmp/p6b.txt
-          echo 'P6B TRANSFER PASS|globalRendererStability=unavailable|next=paired-same-process'
+          set -euo pipefail; exec > >(tee /tmp/p8.log) 2>&1
+          test "$(git rev-parse "HEAD:$P7_FILE")" = "$P7_BLOB"
+          git show HEAD:"$P7_FILE" >/tmp/p7.txt
+          grep -q '^RUN_ID=32485969485$' /tmp/p7.txt
+          grep -q '^RESULT=FAIL$' /tmp/p7.txt
+          grep -Fq 'PAIR SUMMARY|pairs=8|pixelEqual=5/8|metaEqual=8/8|parentPixelUnique=2|candidatePixelUnique=2|sameBrowserProcess=1|newContextPerSide=1|separateServers=1|pixelTolerance=0' /tmp/p7.txt
+          grep -Fq 'PROBE RESULT|pairedExact=0|pixelEqual=5/8|metaEqual=8/8|globalPixelNondeterminism=1|criteriaRelaxed=0|pixelTolerance=0|targetLoads=0/0' /tmp/p7.txt
+          echo 'P7 TRANSFER PASS|pixelOracle=nondeterministic|metadata=8/8|pixelTolerance=0|next=semantic-render-tree'
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          rm -rf /tmp/parent-site /tmp/candidate-site
-          cp -a . /tmp/parent-site
-          cp -a . /tmp/candidate-site
+          mkdir /tmp/parent-site /tmp/candidate-site
+          git archive "$PARENT_SHA" | tar -x -C /tmp/parent-site
+          git archive "$PARENT_SHA" | tar -x -C /tmp/candidate-site
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),p='/tmp/candidate-site/'+process.env.TARGET_FILE;
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const p='/tmp/candidate-site/'+process.env.TARGET_FILE;
           const s=fs.readFileSync(p,'utf8'),c=s.replace(/\s*!important\b/g,'');
           const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
-          fs.writeFileSync(p,c); const blob=cp.execFileSync('git',['hash-object',p],{encoding:'utf8'}).trim();
+          fs.writeFileSync(p,c);
+          const blob=cp.execFileSync('git',['hash-object',p],{encoding:'utf8'}).trim();
           const before=(s.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
           if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);
           console.log(`CANDIDATE PASS|important=${before}->${after}|sha256=${h}|blob=${blob}|transform=marker-only`);
@@ -53,21 +57,73 @@ jobs:
           python3 -m http.server 4174 --bind 127.0.0.1 --directory /tmp/candidate-site >/tmp/http-candidate.log 2>&1 & echo $! >/tmp/http-candidate.pid
           trap 'kill $(cat /tmp/http-parent.pid 2>/dev/null) $(cat /tmp/http-candidate.pid 2>/dev/null) 2>/dev/null || true' EXIT
           for port in 4173 4174; do ok=0; for i in {1..30}; do if curl -fsS "http://127.0.0.1:$port/comunidade.html" >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1; done
-          cat >/tmp/p7.js <<'NODE'
+          cat >/tmp/p8.js <<'NODE'
           const {chromium}=require('playwright'),crypto=require('crypto');
           const targetPath='/assets/css/components/shell/doke-shell-contract.css';
-          const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const nodeHash=v=>crypto.createHash('sha256').update(v).digest('hex');
           async function rgbaHash(page,buf){return page.evaluate(async b64=>{const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const bmp=await createImageBitmap(new Blob([u],{type:'image/png'})),c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(bmp,0,0);const p=x.getImageData(0,0,c.width,c.height).data,d=await crypto.subtle.digest('SHA-256',p);return[...new Uint8Array(d)].map(v=>v.toString(16).padStart(2,'0')).join('');},buf.toString('base64'));}
-          async function capture(browser,port,label){const ctx=await browser.newContext({viewport:{width:820,height:1180},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{await ctx.route('**/*',route=>{const u=new URL(route.request().url());return(u.hostname==='127.0.0.1'||u.hostname==='localhost')?route.continue():route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}}globalThis.Date=FixedDate;});const page=await ctx.newPage();let loads=0,errors=0;page.on('request',r=>{if(new URL(r.url()).pathname===targetPath)loads++});page.on('pageerror',()=>errors++);await page.goto(`http://127.0.0.1:${port}/comunidade.html`,{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(900);const meta=await page.evaluate(()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),c=getComputedStyle(e);return{x:+r.x.toFixed(3),y:+r.y.toFixed(3),w:+r.width.toFixed(3),h:+r.height.toFixed(3),display:c.display,visibility:c.visibility,opacity:c.opacity,transform:c.transform,border:c.border,background:c.backgroundColor}};return{path:location.pathname,page:document.body?.dataset?.page||null,profile:q('.app-header .home-side-meta__profile'),avatar:q('.app-header .home-side-meta__avatar'),content:q('.page__content, main.page__content'),docWidth:document.documentElement.scrollWidth,bodyWidth:document.body?.scrollWidth||0};});await page.screenshot({fullPage:true,timeout:60000,animations:'disabled',caret:'hide'});await page.waitForTimeout(350);const shot=await page.screenshot({fullPage:true,timeout:60000,animations:'disabled',caret:'hide'});if(loads||errors||meta.path!=='/comunidade.html'||meta.page!=='comunidade')throw Error(`${label} contract ${loads}/${errors}/${meta.path}/${meta.page}`);return{pixel:await rgbaHash(page,shot),metaHash:digest(Buffer.from(JSON.stringify(meta))),meta};}finally{await ctx.close().catch(()=>{})}}
-          (async()=>{let pixelPass=0,metaPass=0;const rows=[];for(let i=1;i<=8;i++){const browser=await chromium.launch({headless:true});try{const order=i%2?['P','C']:['C','P'],out={};for(const side of order)out[side]=await capture(browser,side==='P'?4173:4174,side);const pe=out.P.pixel===out.C.pixel,me=JSON.stringify(out.P.meta)===JSON.stringify(out.C.meta);if(pe)pixelPass++;if(me)metaPass++;rows.push({p:out.P.pixel,c:out.C.pixel});console.log(`PAIR PASS|iteration=${i}|order=${order.join('')}|pixelEqual=${pe?1:0}|metaEqual=${me?1:0}|parentPixel=${out.P.pixel}|candidatePixel=${out.C.pixel}`);}finally{await browser.close().catch(()=>{})}}const pu=new Set(rows.map(r=>r.p)).size,cu=new Set(rows.map(r=>r.c)).size;console.log(`PAIR SUMMARY|pairs=8|pixelEqual=${pixelPass}/8|metaEqual=${metaPass}/8|parentPixelUnique=${pu}|candidatePixelUnique=${cu}|sameBrowserProcess=1|newContextPerSide=1|separateServers=1|pixelTolerance=0`);console.log(`PROBE RESULT|pairedExact=${pixelPass===8&&metaPass===8?1:0}|pixelEqual=${pixelPass}/8|metaEqual=${metaPass}/8|globalPixelNondeterminism=${pu>1||cu>1?1:0}|criteriaRelaxed=0|pixelTolerance=0|targetLoads=0/0`);if(pixelPass!==8||metaPass!==8)process.exit(2);})().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)});
+          async function semantic(page){return page.evaluate(async()=>{
+            const round=n=>Number.isFinite(n)?+n.toFixed(4):n;
+            const styleObject=(el,pseudo=null)=>{const cs=getComputedStyle(el,pseudo),props=[...cs].sort(),vals=[];for(const p of props)vals.push([p,cs.getPropertyValue(p)]);return vals;};
+            const rects=el=>[...el.getClientRects()].map(r=>[round(r.x),round(r.y),round(r.width),round(r.height),round(r.right),round(r.bottom)]);
+            const rows=[];let styleProps=0,pseudoElements=0,pseudoProps=0;
+            for(const el of document.querySelectorAll('*')){
+              const r=el.getBoundingClientRect(),base=styleObject(el);styleProps+=base.length;
+              const beforeContent=getComputedStyle(el,'::before').content,afterContent=getComputedStyle(el,'::after').content;
+              const before=beforeContent!=='none'?styleObject(el,'::before'):null,after=afterContent!=='none'?styleObject(el,'::after'):null;
+              if(before){pseudoElements++;pseudoProps+=before.length} if(after){pseudoElements++;pseudoProps+=after.length}
+              rows.push({
+                tag:el.tagName.toLowerCase(),
+                attrs:[...el.attributes].map(a=>[a.name,a.value]).sort((a,b)=>a[0].localeCompare(b[0])),
+                ownText:[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>n.nodeValue).join(''),
+                rect:[round(r.x),round(r.y),round(r.width),round(r.height),round(r.right),round(r.bottom)],
+                clientRects:rects(el),client:[el.clientWidth,el.clientHeight,el.clientLeft,el.clientTop],scroll:[el.scrollWidth,el.scrollHeight,el.scrollLeft,el.scrollTop],
+                state:{value:'value'in el?el.value:null,checked:'checked'in el?!!el.checked:null,selected:'selected'in el?!!el.selected:null,disabled:'disabled'in el?!!el.disabled:null},
+                style:base,before,after
+              });
+            }
+            const sheets=[...document.styleSheets].map(s=>{let rules=-1;try{rules=s.cssRules.length}catch{}return{href:s.href?new URL(s.href,location.href).pathname:null,disabled:s.disabled,media:s.media?.mediaText||'',rules};});
+            const root=document.documentElement,body=document.body;
+            const payload={
+              path:location.pathname,title:document.title,ready:document.readyState,fonts:document.fonts?.status||'na',
+              rootAttrs:[...root.attributes].map(a=>[a.name,a.value]).sort((a,b)=>a[0].localeCompare(b[0])),
+              bodyAttrs:[...body.attributes].map(a=>[a.name,a.value]).sort((a,b)=>a[0].localeCompare(b[0])),
+              viewport:[innerWidth,innerHeight,devicePixelRatio],doc:[root.clientWidth,root.clientHeight,root.scrollWidth,root.scrollHeight,body.scrollWidth,body.scrollHeight],
+              sheets,rows
+            };
+            const text=JSON.stringify(payload),bytes=new TextEncoder().encode(text),d=await crypto.subtle.digest('SHA-256',bytes);
+            return{hash:[...new Uint8Array(d)].map(v=>v.toString(16).padStart(2,'0')).join(''),bytes:bytes.length,elements:rows.length,styleProps,pseudoElements,pseudoProps,sheets:sheets.length};
+          });}
+          async function capture(browser,port,label){const ctx=await browser.newContext({viewport:{width:820,height:1180},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{
+            await ctx.route('**/*',route=>{const u=new URL(route.request().url());return(u.hostname==='127.0.0.1'||u.hostname==='localhost')?route.continue():route.abort();});
+            await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}}globalThis.Date=FixedDate;});
+            const page=await ctx.newPage();page.setDefaultTimeout(60000);page.setDefaultNavigationTimeout(45000);let loads=0,errors=0;
+            page.on('request',r=>{if(new URL(r.url()).pathname===targetPath)loads++});page.on('pageerror',()=>errors++);
+            await page.goto(`http://127.0.0.1:${port}/comunidade.html`,{waitUntil:'networkidle',timeout:45000});
+            await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});
+            await page.evaluate(()=>document.fonts?.ready);await page.waitForFunction(()=>[...document.images].every(i=>i.complete),null,{timeout:15000}).catch(()=>{});
+            await page.evaluate(async()=>{await Promise.allSettled([...document.images].map(i=>typeof i.decode==='function'?i.decode():Promise.resolve()))});await page.waitForTimeout(900);
+            const a=await semantic(page);await page.waitForTimeout(350);const b=await semantic(page);const stable=a.hash===b.hash;
+            const shot=await page.screenshot({fullPage:true,timeout:60000,animations:'disabled',caret:'hide'}),pixel=await rgbaHash(page,shot);
+            const path=await page.evaluate(()=>location.pathname),pageKey=await page.evaluate(()=>document.body?.dataset?.page||'');
+            if(loads||errors||path!=='/comunidade.html'||pageKey!=='comunidade'||!stable)throw Error(`${label} contract loads=${loads} errors=${errors} path=${path} page=${pageKey} stable=${stable}`);
+            return{semantic:a,pixel,stable,loads,errors};
+          }finally{await ctx.close().catch(()=>{})}}
+          (async()=>{let semEq=0,stableSides=0,pixEq=0;const rows=[];
+            for(let i=1;i<=6;i++){const browser=await chromium.launch({headless:true});try{const order=i%2?['P','C']:['C','P'],out={};for(const side of order)out[side]=await capture(browser,side==='P'?4173:4174,side);const se=out.P.semantic.hash===out.C.semantic.hash,pe=out.P.pixel===out.C.pixel;if(se)semEq++;if(pe)pixEq++;if(out.P.stable)stableSides++;if(out.C.stable)stableSides++;rows.push({ps:out.P.semantic.hash,cs:out.C.semantic.hash,pp:out.P.pixel,cp:out.C.pixel});console.log(`PAIR PASS|iteration=${i}|order=${order.join('')}|semanticEqual=${se?1:0}|pixelEqual=${pe?1:0}|parentSemantic=${out.P.semantic.hash}|candidateSemantic=${out.C.semantic.hash}|elements=${out.P.semantic.elements}/${out.C.semantic.elements}|styleProps=${out.P.semantic.styleProps}/${out.C.semantic.styleProps}|pseudoElements=${out.P.semantic.pseudoElements}/${out.C.semantic.pseudoElements}|semanticBytes=${out.P.semantic.bytes}/${out.C.semantic.bytes}`)}finally{await browser.close().catch(()=>{})}}
+            const psu=new Set(rows.map(r=>r.ps)).size,csu=new Set(rows.map(r=>r.cs)).size,ppu=new Set(rows.map(r=>r.pp)).size,cpu=new Set(rows.map(r=>r.cp)).size;
+            console.log(`SEMANTIC SUMMARY|pairs=6|semanticEqual=${semEq}/6|stableSides=${stableSides}/12|parentSemanticUnique=${psu}|candidateSemanticUnique=${csu}|pixelEqual=${pixEq}/6|parentPixelUnique=${ppu}|candidatePixelUnique=${cpu}|pixelTolerance=0|pixelMask=0`);
+            console.log(`PROBE RESULT|semanticExact=${semEq===6&&stableSides===12&&psu===1&&csu===1?1:0}|semanticEqual=${semEq}/6|semanticStable=${stableSides}/12|pixelOracleObservedOnly=1|criteriaRelaxed=0|pixelTolerance=0|pixelMask=0|targetLoads=0/0|oracle=dom-layout-computed-style-pseudo`);
+            if(semEq!==6||stableSides!==12||psu!==1||csu!==1)process.exit(2);
+          })().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)});
           NODE
-          timeout --signal=TERM --kill-after=20s 900s env NODE_PATH="$PWD/node_modules" node /tmp/p7.js
-          echo 'RESTORE PASS|workspace=parent-untouched'
+          timeout --signal=TERM --kill-after=20s 1200s env NODE_PATH="$PWD/node_modules" node /tmp/p8.js
+          echo 'RESTORE PASS|workspace=parent-untouched|candidate=tmp-only'
       - name: publish
         if: always()
         shell: bash
         run: |
           set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(P6B TRANSFER PASS|CANDIDATE PASS|PAIR PASS|PAIR SUMMARY|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p7.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1000 /tmp/p7.log || true; fi; } >/tmp/out
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(P7 TRANSFER PASS|CANDIDATE PASS|PAIR PASS|SEMANTIC SUMMARY|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p8.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1400 /tmp/p8.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 paired visual probe p7 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 semantic visual oracle probe p8 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
