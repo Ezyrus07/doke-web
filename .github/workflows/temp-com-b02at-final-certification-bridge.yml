@@ -1,0 +1,115 @@
+name: TEMP COM-B02AT Observable Final Certification Bridge
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/temp-com-b02at-final-certification-bridge.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  certify-final-tree:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      FINAL_HEAD: 69088c7e4700819bd514c91433388f245d92a742
+      FINAL_TREE: 6563df2ca3830271a49b74d2ff03a86078d25f95
+      PREDECESSOR_HEAD: 6e0c9deb0dd9aeac353883607d613c97fef4b03e
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      BRANCH: com/com-001-baseline-audit
+      TEMP_PATH: .github/workflows/temp-com-b02at-final-certification-bridge.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact temporary bridge head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze final B02AT tree and bridge-only lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse HEAD^)" = "$FINAL_HEAD"
+          test "$(git rev-parse "$FINAL_HEAD^{tree}")" = "$FINAL_TREE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          actual_bridge="$(git diff --name-only "$FINAL_HEAD" HEAD | sort)"
+          test "$actual_bridge" = "$TEMP_PATH"
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02at-repository-only-continuation-state-registry-storage-backend-entry-container-contract.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-contract.js \
+            config/com-b02at-repository-only-continuation-state-registry-storage-backend-entry-container-contract.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02at-repository-only-continuation-state-registry-storage-backend-entry-container-contract.js | sort)"
+          actual_final="$(git diff --name-only "$PREDECESSOR_HEAD" "$FINAL_HEAD" | sort)"
+          test "$actual_final" = "$expected_final"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-contract.js)" = "5c0572ecca18cac3e33e4194fee48c7d3f289234"
+          test "$(git rev-parse HEAD:config/com-b02at-repository-only-continuation-state-registry-storage-backend-entry-container-contract.json)" = "aa2a54228c60950e81f721959bf6cc12d7afc995"
+          test "$(git rev-parse HEAD:scripts/test-com-b02at-repository-only-continuation-state-registry-storage-backend-entry-container-contract.js)" = "f8564c097c969f393cd3e72a4134283f1c73bfa9"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02at-repository-only-continuation-state-registry-storage-backend-entry-container-contract.yml)" = "4f9b79e3f0aa00f9d48142a2e6deece4981222c1"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-materialization-readiness.js)" = "8ccfdf32303322ac4d793c00988f3033ec637c83"
+          test "$(git rev-parse HEAD:config/com-b02as-repository-only-continuation-state-registry-storage-backend-entry-container-materialization-readiness.json)" = "61ec15bccce88831956e1929d58961efb20aa42c"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance.js)" = "762b0c5ed4ffaee24f2375a780e6c1bea7fb65d9"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax semantic and hard-block B02AT final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-contract.js
+          node --check scripts/test-com-b02at-repository-only-continuation-state-registry-storage-backend-entry-container-contract.js
+          node scripts/test-com-b02at-repository-only-continuation-state-registry-storage-backend-entry-container-contract.js
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-contract.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'storageBackendMaterialized[[:space:]]*:[[:space:]]*true|entryContainerMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'entryContainerImplementationMaterialized[[:space:]]*:[[:space:]]*true|operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'carrierInstanceMaterialized[[:space:]]*:[[:space:]]*true|opaqueStateHandleGenerated[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" "$FINAL_HEAD"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+
+      - name: Self-remove bridge and preserve exact final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -- "$TEMP_PATH"
+          test "$(git write-tree)" = "$FINAL_TREE"
+          git commit -m "ci(com): certify B02AT final tree [run ${GITHUB_RUN_ID}]"
+          test "$(git rev-parse HEAD^{tree})" = "$FINAL_TREE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02at-'
+
+      - name: Fast-forward branch only if bridge head is still current
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse "origin/$BRANCH")" = "$PR_HEAD_SHA"
+          git push origin HEAD:refs/heads/$BRANCH
