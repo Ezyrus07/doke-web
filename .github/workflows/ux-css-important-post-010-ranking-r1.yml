@@ -1,82 +1,88 @@
-name: UX CSS Important 035 Doke Shell Contract Browser R2 Auth-Aware
+name: UX CSS Important 035 Community 820 Visual Flake Probe P3
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  browser035r2:
+  probe035p3:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     env:
       PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
       TARGET_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
       CANDIDATE_SHA256: fa114edbfe30797719983d9f599b4efb589dd89f57cd332ecb779bbe9b1b9845
       CANDIDATE_BLOB: 5000b0aa60f6d93e123bc17811887e57668d4988
-      REACH_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-reach-r1.txt
-      REACH_BLOB: 01cd7a8768241d353db06403d165732bfc215893
-      PROBE_FILE: .diagnostics/ux-css-important-035-browser-deadlock-probe-p2.txt
-      PROBE_BLOB: 83debee040ee2aee2739645624ff88217e663a15
-      AUTH_GUARD_FILE: assets/js/core/header-auth-surface-early.js
-      AUTH_GUARD_BLOB: 861ab94d6d894d36e372d25a3294ee1697b0f44e
+      R2_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-browser-r2.txt
+      R2_BLOB: 9c72a093f0f751b982dbf691cf5be1319c0b8b5e
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
-      RESULT_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-browser-r2.txt
+      RESULT_FILE: .diagnostics/ux-css-important-035-community-820-visual-flake-probe-p3.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: browser
+      - id: probe
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/b.log) 2>&1
-          test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
-          test "$(git rev-parse "HEAD:$PROBE_FILE")" = "$PROBE_BLOB"
-          git show HEAD:"$REACH_FILE" >/tmp/reach.txt; git show HEAD:"$PROBE_FILE" >/tmp/probe.txt
-          grep -q '^RUN_ID=32437166283$' /tmp/reach.txt; grep -q '^RESULT=PASS$' /tmp/reach.txt
-          grep -Fq "CANDIDATE PASS|bytes=205262|important=2552->0|removed=2552|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/reach.txt
-          grep -Fq 'CANONICAL REACH PASS|rootHtml=27|loadedCss=402|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=0|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1' /tmp/reach.txt
-          grep -q '^RUN_ID=32482264889$' /tmp/probe.txt; grep -q '^RESULT=PASS$' /tmp/probe.txt; grep -Fq 'PROBE RESULT|PASS|runtimeJs=enabled|dateFrozen=1|criteriaRelaxed=0' /tmp/probe.txt
+          set -euo pipefail; exec > >(tee /tmp/p3.log) 2>&1
+          test "$(git rev-parse "HEAD:$R2_FILE")" = "$R2_BLOB"
+          git show HEAD:"$R2_FILE" >/tmp/r2.txt
+          grep -q '^RUN_ID=32483306437$' /tmp/r2.txt
+          grep -q '^RESULT=FAIL$' /tmp/r2.txt
+          grep -Fq 'SHOT DIFF|state=comunidade.html@820x1180' /tmp/r2.txt
+          grep -Fq 'metadataDiffs=0|screenshotDiffs=1|stableStates=45/45|pageErrors=0|targetStylesheetLoads=0/0' /tmp/r2.txt
+          echo 'R2 FAILURE TRANSFER PASS|run=32483306437|onlyShotDiff=comunidade.html@820x1180|metadataDiffs=0|targetLoads=0/0'
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          test "$(git rev-parse "HEAD:$AUTH_GUARD_FILE")" = "$AUTH_GUARD_BLOB"
-          grep -Fq "'mensagens.html'" "$AUTH_GUARD_FILE"; grep -Fq "'notificacoes.html'" "$AUTH_GUARD_FILE"; grep -Fq "'pedidos.html'" "$AUTH_GUARD_FILE"
-          grep -Fq "return new URL('auth/login.html?next='" "$AUTH_GUARD_FILE"; grep -Fq 'root.location.replace(loginHref());' "$AUTH_GUARD_FILE"
-          echo 'AUTH ROOT CONTRACT PASS|protected=pedidos.html,mensagens.html,notificacoes.html|anonymousPath=/auth/login.html|sourceBlob=exact|syntheticAuth=0'
-          echo 'EVIDENCE TRANSFER PASS|reach=R1|probe=P2|wholeFileDormant=1|runtimeJsRefs=0|toolingJsRefs=0|candidateHash=exact|candidateBlob=exact|harnessFix=runtime-js-canonical'
           cp "$TARGET_FILE" /tmp/parent.css
           trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true; kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
           node <<'NODE'
-          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');const o=fs.readFileSync(process.env.TARGET_FILE,'utf8'),c=o.replace(/\s*!important\b/g,'');const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');fs.writeFileSync('/tmp/candidate.css',c);const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=2552->0|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1`);
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const o=fs.readFileSync(process.env.TARGET_FILE,'utf8'),c=o.replace(/\s*!important\b/g,'');
+          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
+          fs.writeFileSync('/tmp/candidate.css',c);
+          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
+          const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
+          if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);
+          console.log(`CANDIDATE PASS|important=${before}->${after}|sha256=${h}|blob=${blob}|transform=marker-only`);
           NODE
-          npm ci --ignore-scripts >/dev/null; npx playwright install --with-deps chromium >/dev/null 2>&1
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
-          ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/index.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
-          cat >/tmp/proof.js <<'NODE'
+          ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/comunidade.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
+          cat >/tmp/probe.js <<'NODE'
           const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
-          const pages=['index.html','perfil.html','pedidos.html','mensagens.html','notificacoes.html','comunidade.html','resultados.html','detalhe-anuncio.html','ajuda.html'];
-          const protectedPages=new Set(['pedidos.html','mensagens.html','notificacoes.html']);
-          const views=[{w:1366,h:768,key:'1366x768'},{w:1280,h:802,key:'1280x802'},{w:820,h:1180,key:'820x1180'},{w:608,h:926,key:'608x926'},{w:390,h:844,key:'390x844'}];
-          const targetPath='/assets/css/components/shell/doke-shell-contract.css',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,visibility:cs.visibility,position:cs.position,overflowX:cs.overflowX,overflowY:cs.overflowY,padding:cs.padding,margin:cs.margin}};const de=document.documentElement,b=document.body;return{path:location.pathname,page:b?.dataset?.page||null,bodyClass:b?.className||'',htmlClass:de?.className||'',shell:q('.app-shell'),sidebar:q('.sidebar'),header:q('.app-header'),headerInner:q('.app-header__inner'),content:q('.page__content, main.page__content'),contentInner:q('.page__content-inner'),docClientWidth:de?.clientWidth||0,docScrollWidth:de?.scrollWidth||0,bodyScrollWidth:b?.scrollWidth||0,docScrollHeight:de?.scrollHeight||0,bodyScrollHeight:b?.scrollHeight||0};};
+          const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const targetPath='/assets/css/components/shell/doke-shell-contract.css';
+          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,visibility:cs.visibility,position:cs.position,overflowX:cs.overflowX,overflowY:cs.overflowY}};const de=document.documentElement,b=document.body;return{path:location.pathname,page:b?.dataset?.page||null,bodyClass:b?.className||'',htmlClass:de?.className||'',shell:q('.app-shell'),sidebar:q('.sidebar'),header:q('.app-header'),content:q('.page__content, main.page__content'),docClientWidth:de.clientWidth,docScrollWidth:de.scrollWidth,bodyScrollWidth:b?.scrollWidth||0,docScrollHeight:de.scrollHeight,bodyScrollHeight:b?.scrollHeight||0,images:[...document.images].map(i=>({src:i.getAttribute('src')||'',complete:i.complete,nw:i.naturalWidth,nh:i.naturalHeight}))};};
           async function stableMeta(page){let prev='';for(let i=0;i<12;i++){const m=await page.evaluate(metaFn),s=JSON.stringify(m);if(s===prev)return m;prev=s;await page.waitForTimeout(300);}return page.evaluate(metaFn)}
-          async function phase(label){const browser=await chromium.launch({headless:true});const out={};let loads=0,errs=0,stable=0,pageRoots=0,authRedirects=0,accepted=0,overflow=0;try{for(const p of pages){for(const v of views){const key=`${p}@${v.key}`;console.log(`STATE START|phase=${label}|state=${key}`);const ctx=await browser.newContext({viewport:{width:v.w,height:v.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.setDefaultTimeout(45000);page.setDefaultNavigationTimeout(45000);let stateErrs=0,stateLoads=0;page.on('pageerror',e=>{stateErrs++;errs++;console.log(`PAGE ERROR|state=${key}|message=${String(e.message||e).slice(0,180)}`)});page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath){stateLoads++;loads++;}});await page.goto(`http://127.0.0.1:4173/${p}`,{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForTimeout(700);const meta=await stableMeta(page),m2=await page.evaluate(metaFn),isStable=JSON.stringify(meta)===JSON.stringify(m2)?1:0;if(isStable)stable++;let rootKind='invalid',root=0;if(protectedPages.has(p)){if(meta.path==='/auth/login.html'&&!meta.content){authRedirects++;accepted++;root=1;rootKind='auth-redirect';}}else if(meta.path===`/${p}`&&!!meta.content){pageRoots++;accepted++;root=1;rootKind='page-root';}if(!root)console.log(`ROOT MISS|state=${key}|path=${meta.path}|page=${meta.page}|content=${meta.content?1:0}|expected=${protectedPages.has(p)?'/auth/login.html':`/${p}`}`);const stateOverflow=Math.max(meta.docScrollWidth,meta.bodyScrollWidth)>v.w+1?1:0;if(stateOverflow){overflow++;console.log(`OVERFLOW|state=${key}|doc=${meta.docScrollWidth}|body=${meta.bodyScrollWidth}|vw=${v.w}`)}await page.screenshot({fullPage:true,timeout:60000});await page.waitForTimeout(200);const shot=await page.screenshot({fullPage:true,timeout:60000});out[key]={meta,shot:hash(shot)};console.log(`STATE PASS|phase=${label}|state=${key}|stable=${isStable}|errors=${stateErrs}|loads=${stateLoads}|accepted=${root}|rootKind=${rootKind}|overflow=${stateOverflow}`);}finally{await ctx.close().catch(()=>{});}}}}finally{await browser.close().catch(()=>{});}console.log(`PHASE|label=${label}|states=${Object.keys(out).length}|stableStates=${stable}|pageErrors=${errs}|targetStylesheetLoads=${loads}|pageRoots=${pageRoots}|authRedirects=${authRedirects}|acceptedStates=${accepted}|overflowStates=${overflow}|javascriptEnabled=1|dateFrozen=1|workers=1|harness=auth-aware-canonical`);return{out,loads,errs,stable,pageRoots,authRedirects,accepted,overflow};}
-          (async()=>{const p=await phase(process.argv[2]);fs.writeFileSync(process.argv[3],JSON.stringify(p));})().catch(e=>{console.error('HARNESS ERROR|'+(e?.stack||e));process.exit(1)});
+          async function settleImages(page){await page.waitForFunction(()=>[...document.images].every(i=>i.complete),null,{timeout:15000}).catch(()=>{});await page.evaluate(async()=>{await Promise.allSettled([...document.images].map(i=>typeof i.decode==='function'?i.decode():Promise.resolve()));});}
+          (async()=>{const label=process.argv[2],outPath=process.argv[3],rows=[];for(let iteration=1;iteration<=4;iteration++){const browser=await chromium.launch({headless:true});try{const ctx=await browser.newContext({viewport:{width:820,height:1180},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=FixedDate;});const page=await ctx.newPage();page.setDefaultTimeout(45000);page.setDefaultNavigationTimeout(45000);let loads=0,errs=0;page.on('request',r=>{const u=new URL(r.url());if(u.pathname===targetPath)loads++;});page.on('pageerror',()=>errs++);await page.goto('http://127.0.0.1:4173/comunidade.html',{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await settleImages(page);await page.waitForTimeout(700);const meta=await stableMeta(page);await page.screenshot({fullPage:true,timeout:60000});await settleImages(page);await page.waitForTimeout(350);const shot=await page.screenshot({fullPage:true,timeout:60000});const mh=hash(Buffer.from(JSON.stringify(meta))),sh=hash(shot);console.log(`RUN PASS|phase=${label}|iteration=${iteration}|meta=${mh}|shot=${sh}|loads=${loads}|errors=${errs}|path=${meta.path}|page=${meta.page}|images=${meta.images.length}`);if(loads||errs||meta.path!=='/comunidade.html'||meta.page!=='comunidade')throw Error(`state contract ${label}/${iteration}/${loads}/${errs}/${meta.path}/${meta.page}`);rows.push({iteration,metaHash:mh,shotHash:sh,meta});}finally{await ctx.close().catch(()=>{});}}finally{await browser.close().catch(()=>{});}}const shotUnique=new Set(rows.map(r=>r.shotHash)).size,metaUnique=new Set(rows.map(r=>r.metaHash)).size;console.log(`SIDE SUMMARY|phase=${label}|runs=4|shotUnique=${shotUnique}|metaUnique=${metaUnique}|targetLoads=0|pageErrors=0|imagesSettled=1`);fs.writeFileSync(outPath,JSON.stringify({label,rows,shotUnique,metaUnique}));})().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)});
           NODE
-          set +e; timeout --signal=TERM --kill-after=20s 2400s env NODE_PATH="$PWD/node_modules" node /tmp/proof.js parent /tmp/parent.json; parentCode=$?; set -e; echo "PARENT_PHASE_EXIT=$parentCode"; test "$parentCode" = 0
+          timeout --signal=TERM --kill-after=20s 600s env NODE_PATH="$PWD/node_modules" node /tmp/probe.js parent /tmp/parent.json
           cp /tmp/candidate.css "$TARGET_FILE"
-          set +e; timeout --signal=TERM --kill-after=20s 2400s env NODE_PATH="$PWD/node_modules" node /tmp/proof.js candidate /tmp/candidate.json; candidateCode=$?; set -e; echo "CANDIDATE_PHASE_EXIT=$candidateCode"; test "$candidateCode" = 0
+          timeout --signal=TERM --kill-after=20s 600s env NODE_PATH="$PWD/node_modules" node /tmp/probe.js candidate /tmp/candidate.json
           node <<'NODE'
-          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;const ak=Object.keys(a.out),bk=Object.keys(b.out);if(ak.length!==45||bk.length!==45||ak.join('\n')!==bk.join('\n'))throw Error(`state sets ${ak.length}/${bk.length}`);for(const k of ak){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const overParity=a.overflow===b.overflow?1:0;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|pages=9|states=45|viewports=1366x768,1280x802,820x1180,608x926,390x844|metadataDiffs=${md}|screenshotDiffs=${sd}|stableStates=${a.stable}/${b.stable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|pageRoots=${a.pageRoots}/${b.pageRoots}|authRedirects=${a.authRedirects}/${b.authRedirects}|acceptedStates=${a.accepted}/${b.accepted}|overflowStates=${a.overflow}/${b.overflow}|overflowParity=${overParity}|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|javascriptEnabled=1|dateFrozen=1|runtimeParity=1|authRootContract=source-exact|harness=auth-aware-canonical`);if(md||sd||a.errs||b.errs||a.loads||b.loads||a.stable!==45||b.stable!==45||a.pageRoots!==30||b.pageRoots!==30||a.authRedirects!==15||b.authRedirects!==15||a.accepted!==45||b.accepted!==45||!overParity)process.exit(1);
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));
+          const sameSideNondeterministic=a.shotUnique>1||b.shotUnique>1;
+          const metadataStable=a.metaUnique===1&&b.metaUnique===1;
+          const metadataParity=JSON.stringify(a.rows[0].meta)===JSON.stringify(b.rows[0].meta);
+          const screenshotParity=a.rows[0].shotHash===b.rows[0].shotHash;
+          let classification='STABLE_VISUAL_DIVERGENCE';
+          if(sameSideNondeterministic)classification='SCREENSHOT_NONDETERMINISM';
+          else if(metadataStable&&metadataParity&&screenshotParity)classification='STABLE_PARITY';
+          else if(!metadataStable||!metadataParity)classification='METADATA_DIVERGENCE';
+          console.log(`PROBE RESULT|classification=${classification}|parentShotUnique=${a.shotUnique}|candidateShotUnique=${b.shotUnique}|parentMetaUnique=${a.metaUnique}|candidateMetaUnique=${b.metaUnique}|metadataParity=${metadataParity?1:0}|screenshotParity=${screenshotParity?1:0}|targetLoads=0/0|criteriaRelaxed=0`);
           NODE
           cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.browser.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(AUTH ROOT CONTRACT PASS|EVIDENCE TRANSFER PASS|CANDIDATE PASS|STATE START|STATE PASS|PHASE|PAGE ERROR|ROOT MISS|OVERFLOW|META DIFF|SHOT DIFF|BROWSER PASS|RESTORE PASS|HARNESS ERROR|PARENT_PHASE_EXIT=|CANDIDATE_PHASE_EXIT=)' /tmp/b.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 2600 /tmp/b.log || true; fi; } >/tmp/out
+          set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(R2 FAILURE TRANSFER PASS|CANDIDATE PASS|RUN PASS|SIDE SUMMARY|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p3.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 800 /tmp/p3.log || true; fi; } >/tmp/out
           git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 doke shell contract browser r2 auth-aware [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 community 820 visual flake probe p3 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
