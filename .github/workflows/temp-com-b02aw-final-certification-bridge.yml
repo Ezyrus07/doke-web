@@ -1,0 +1,129 @@
+name: TEMP COM-B02AW Final Certification Bridge
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/temp-com-b02aw-final-certification-bridge.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  certify-final-tree:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      FINAL_HEAD: d3d09394342abfc5ca6f1608f4b485d94e44ac98
+      FINAL_TREE: 92863e980174a2f29af5331a4c28908554f7adb9
+      PREDECESSOR_HEAD: 97eaad7adf1dad302aafb95325daed45c7e0e9c9
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      B02AW_MODULE_BLOB: 2962453da8857e3ca0be3a2c49455e7012d736a6
+      B02AW_CONFIG_BLOB: 9a1d60723a1ca4c422fac2008ae04e1283f7910b
+      B02AW_TEST_BLOB: afbe8e94b38eb2d696104a83ddf25e2a58292092
+      B02AW_WORKFLOW_BLOB: 5e9109678c77e36f8f552d7efbe39fa8b82c62eb
+      B02AV_MODULE_BLOB: ae5f90bf8e6c185794b83eb268ab2da04a4e8ab9
+      B02AV_CONFIG_BLOB: c623335238f7def08606fd6a950dfe92883bfb2d
+      B02AU_MODULE_BLOB: 36b552b00bf0b3dea8af24b35fec97c405ede480
+      B02AT_MODULE_BLOB: 5c0572ecca18cac3e33e4194fee48c7d3f289234
+      B02AR_INSTANCE_BLOB: 762b0c5ed4ffaee24f2375a780e6c1bea7fb65d9
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      BRANCH: com/com-001-baseline-audit
+      TEMP_PATH: .github/workflows/temp-com-b02aw-final-certification-bridge.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact bridge head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze final B02AW tree and bridge-only lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse HEAD^)" = "$FINAL_HEAD"
+          test "$(git rev-parse "$FINAL_HEAD^{tree}")" = "$FINAL_TREE"
+          test "$(git diff --name-only "$FINAL_HEAD" HEAD)" = "$TEMP_PATH"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-contract.js \
+            config/com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.js | sort)"
+          actual_final="$(git diff --name-only "$PREDECESSOR_HEAD" "$FINAL_HEAD" | sort)"
+          test "$actual_final" = "$expected_final"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-contract.js)" = "$B02AW_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.json)" = "$B02AW_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:scripts/test-com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.js)" = "$B02AW_TEST_BLOB"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.yml)" = "$B02AW_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-readiness.js)" = "$B02AV_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02av-repository-only-continuation-state-registry-storage-backend-entry-container-instance-readiness.json)" = "$B02AV_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-implementation.js)" = "$B02AU_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-contract.js)" = "$B02AT_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance.js)" = "$B02AR_INSTANCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Prove final B02AW semantics and hard blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-contract.js
+          node --check scripts/test-com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.js
+          node scripts/test-com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.js
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-contract.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'entryContainerInstanceImplementationMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'entryContainerInstanceMaterialized[[:space:]]*:[[:space:]]*true|entryContainerMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true|carrierInstanceMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'opaqueStateHandleGenerated[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Validate Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node scripts/test-com-b02aw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-contract.js
+          git diff --check "$PREDECESSOR_HEAD" "$FINAL_HEAD"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+
+      - name: Self-remove bridge preserving exact permanent tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -- "$TEMP_PATH"
+          test "$(git write-tree)" = "$FINAL_TREE"
+          git commit -m "ci(com): certify B02AW final tree [run ${GITHUB_RUN_ID}]"
+          test "$(git rev-parse HEAD^{tree})" = "$FINAL_TREE"
+          ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02aw-'
+
+      - name: Fast-forward branch only if bridge head is still current
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse "origin/$BRANCH")" = "$PR_HEAD_SHA"
+          git push origin HEAD:refs/heads/$BRANCH
