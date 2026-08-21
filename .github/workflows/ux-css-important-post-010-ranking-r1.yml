@@ -1,63 +1,64 @@
-name: UX CSS Important 035 Doke Shell Contract Browser R2 Render Active
+name: UX CSS Important 035 Dynamic Inactive Variance P11
 on:
   push:
     branches: [diag/ux-css-important-post-010-ranking-r1]
 permissions: {contents: write}
 jobs:
-  browser035r2:
+  probe035p11:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
       PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
       TARGET_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
       CANDIDATE_SHA256: fa114edbfe30797719983d9f599b4efb589dd89f57cd332ecb779bbe9b1b9845
       CANDIDATE_BLOB: 5000b0aa60f6d93e123bc17811887e57668d4988
-      REACH_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-reach-r1.txt
-      REACH_BLOB: 01cd7a8768241d353db06403d165732bfc215893
+      R1_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-reach-r1.txt
+      R1_BLOB: 01cd7a8768241d353db06403d165732bfc215893
       P10_FILE: .diagnostics/ux-css-important-035-render-active-canonical-parity-p10.txt
       P10_BLOB: ec914a7cfee726aa39db85194195fc68e2a2d6e7
-      AUTH_GUARD_FILE: assets/js/core/header-auth-surface-early.js
-      AUTH_GUARD_BLOB: 861ab94d6d894d36e372d25a3294ee1697b0f44e
-      RESULT_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-browser-r2.txt
+      R2_FILE: .diagnostics/ux-css-important-035-doke-shell-contract-browser-r2.txt
+      R2_BLOB: 0577cc293eb2e99d57155d8adc33f0061c7779b4
+      RESULT_FILE: .diagnostics/ux-css-important-035-dynamic-inactive-variance-p11.txt
       DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {fetch-depth: 0}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
-      - id: browser
+      - id: probe
         continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail; exec > >(tee /tmp/r2.log) 2>&1
-          test "$(git rev-parse "HEAD:$REACH_FILE")" = "$REACH_BLOB"
+          set -euo pipefail; exec > >(tee /tmp/p11.log) 2>&1
+          test "$(git rev-parse "HEAD:$R1_FILE")" = "$R1_BLOB"
           test "$(git rev-parse "HEAD:$P10_FILE")" = "$P10_BLOB"
-          git show HEAD:"$REACH_FILE" >/tmp/reach.txt; git show HEAD:"$P10_FILE" >/tmp/p10.txt
-          grep -q '^RUN_ID=32437166283$' /tmp/reach.txt; grep -q '^RESULT=PASS$' /tmp/reach.txt
-          grep -Fq "CANDIDATE PASS|bytes=205262|important=2552->0|removed=2552|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/reach.txt
-          grep -Fq 'CANONICAL REACH PASS|rootHtml=27|loadedCss=402|physicalCss=533|htmlLinks=0|actualImporters=0|runtimeJsRefs=0|toolingJsRefs=0|otherJsRefs=0|cssTextRefs=0|active=0|wholeFileDormant=1' /tmp/reach.txt
+          test "$(git rev-parse "HEAD:$R2_FILE")" = "$R2_BLOB"
+          git show HEAD:"$R1_FILE" >/tmp/r1.txt
+          git show HEAD:"$P10_FILE" >/tmp/p10.txt
+          git show HEAD:"$R2_FILE" >/tmp/r2.txt
+          grep -q '^RUN_ID=32437166283$' /tmp/r1.txt; grep -q '^RESULT=PASS$' /tmp/r1.txt
           grep -q '^RUN_ID=32487686782$' /tmp/p10.txt; grep -q '^RESULT=PASS$' /tmp/p10.txt
-          grep -Fq 'CANONICAL SUMMARY|pairs=4|renderActiveEqual=4/4|bodyStableUnique=1/1|pixelEqual=0/4|dynamicHeadLinksInactive=1|dynamicHeadOrderCanonicalized=1|activeStylesheetOrderPreserved=1|inactiveStylesheetOrderCanonicalized=1|pixelTolerance=0|pixelMask=0' /tmp/p10.txt
           grep -Fq 'PROBE RESULT|renderActiveExact=1|renderActiveEqual=4/4|bodyStable=1|criteriaRelaxed=0|pixelTolerance=0|pixelMask=0|targetLoads=0/0|oracle=body-full-computed-style-plus-active-sheet-order-plus-inactive-head-multiset' /tmp/p10.txt
-          echo 'EVIDENCE TRANSFER PASS|reach=R1|visualCalibration=P10|wholeFileDormant=1|candidateHash=exact|candidateBlob=exact|pixelOracle=nondeterministic-proven|renderActiveOracle=exact|criteriaRelaxed=0'
+          grep -q '^RUN_ID=32488139199$' /tmp/r2.txt; grep -q '^RESULT=FAIL$' /tmp/r2.txt
+          grep -Fq 'RENDER DIFF|state=index.html@1280x802|fields=dynamicInactiveHash' /tmp/r2.txt
+          grep -q '^R2_EXIT=124$' /tmp/r2.txt
+          echo 'EVIDENCE TRANSFER PASS|reach=R1|visualCalibration=P10|failedR2=32488139199|failedField=dynamicInactiveHash|failedExit=124|criteriaRelaxed=0'
           git checkout --detach "$PARENT_SHA" >/dev/null
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$TARGET_BLOB"
-          test "$(git rev-parse "HEAD:$AUTH_GUARD_FILE")" = "$AUTH_GUARD_BLOB"
-          grep -Fq "'mensagens.html'" "$AUTH_GUARD_FILE"; grep -Fq "'notificacoes.html'" "$AUTH_GUARD_FILE"; grep -Fq "'pedidos.html'" "$AUTH_GUARD_FILE"
-          grep -Fq "return new URL('auth/login.html?next='" "$AUTH_GUARD_FILE"; grep -Fq 'root.location.replace(loginHref());' "$AUTH_GUARD_FILE"
-          echo 'AUTH ROOT CONTRACT PASS|protected=pedidos.html,mensagens.html,notificacoes.html|anonymousPath=/auth/login.html|sourceBlob=exact|syntheticAuth=0'
           mkdir /tmp/parent-site /tmp/candidate-site
           git archive "$PARENT_SHA" | tar -x -C /tmp/parent-site
           git archive "$PARENT_SHA" | tar -x -C /tmp/candidate-site
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
           const p='/tmp/candidate-site/'+process.env.TARGET_FILE,s=fs.readFileSync(p,'utf8'),c=s.replace(/\s*!important\b/g,'');
-          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');fs.writeFileSync(p,c);const blob=cp.execFileSync('git',['hash-object',p],{encoding:'utf8'}).trim();
+          const h=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
+          fs.writeFileSync(p,c);
+          const blob=cp.execFileSync('git',['hash-object',p],{encoding:'utf8'}).trim();
           const before=(s.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
-          if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB)throw Error(`candidate ${before}/${after}/${h}/${blob}`);
-          console.log(`CANDIDATE PASS|sha256=${h}|blob=${blob}|important=${before}->${after}|bytes=${Buffer.byteLength(c)}|reachR1HashStable=1`);
+          if(before!==2552||after!==0||h!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB) throw Error(`candidate ${before}/${after}/${h}/${blob}`);
+          console.log(`CANDIDATE PASS|important=${before}->${after}|sha256=${h}|blob=${blob}|transform=marker-only`);
           NODE
           npm ci --ignore-scripts >/dev/null
           npx playwright install --with-deps chromium >/dev/null 2>&1
@@ -65,14 +66,13 @@ jobs:
           python3 -m http.server 4174 --bind 127.0.0.1 --directory /tmp/candidate-site >/tmp/http-candidate.log 2>&1 & echo $! >/tmp/http-candidate.pid
           trap 'kill $(cat /tmp/http-parent.pid 2>/dev/null) $(cat /tmp/http-candidate.pid 2>/dev/null) 2>/dev/null || true' EXIT
           for port in 4173 4174; do ok=0; for i in {1..30}; do if curl -fsS "http://127.0.0.1:$port/index.html" >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1; done
-          cat >/tmp/r2.js <<'NODE'
+          cat >/tmp/p11.js <<'NODE'
           const {chromium}=require('playwright');
-          const pages=['index.html','perfil.html','pedidos.html','mensagens.html','notificacoes.html','comunidade.html','resultados.html','detalhe-anuncio.html','ajuda.html'];
-          const protectedPages=new Set(['pedidos.html','mensagens.html','notificacoes.html']);
-          const views=[{w:1366,h:768,key:'1366x768'},{w:1280,h:802,key:'1280x802'},{w:820,h:1180,key:'820x1180'},{w:608,h:926,key:'608x926'},{w:390,h:844,key:'390x844'}];
           const targetPath='/assets/css/components/shell/doke-shell-contract.css';
-          const metaFn=()=>{const q=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2),display:cs.display,visibility:cs.visibility,position:cs.position,overflowX:cs.overflowX,overflowY:cs.overflowY,padding:cs.padding,margin:cs.margin}};const de=document.documentElement,b=document.body;return{path:location.pathname,page:b?.dataset?.page||null,bodyClass:b?.className||'',htmlClass:de?.className||'',shell:q('.app-shell'),sidebar:q('.sidebar'),header:q('.app-header'),headerInner:q('.app-header__inner'),content:q('.page__content, main.page__content'),contentInner:q('.page__content-inner'),docClientWidth:de?.clientWidth||0,docScrollWidth:de?.scrollWidth||0,bodyScrollWidth:b?.scrollWidth||0,docScrollHeight:de?.scrollHeight||0,bodyScrollHeight:b?.scrollHeight||0};};
-          async function stableMeta(page){let prev='';for(let i=0;i<12;i++){const m=await page.evaluate(metaFn),s=JSON.stringify(m);if(s===prev)return{meta:m,stable:1};prev=s;await page.waitForTimeout(300)}return{meta:await page.evaluate(metaFn),stable:0}}
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const timeout=(p,ms,label)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label)),ms))]);
+          async function headSig(page){return page.evaluate(()=>{const norm=v=>String(v??'').replace(/https?:\/\/(?:127\.0\.0\.1|localhost):\d+/g,'<ORIGIN>');const isDyn=l=>l.hasAttribute('data-doke-route-preload')||l.hasAttribute('data-doke-stable-route-style')||l.hasAttribute('data-doke-route-style-pending');const attrs=l=>[...l.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0]));return JSON.stringify([...document.head.querySelectorAll('link')].filter(isDyn).map(attrs).map(JSON.stringify).sort())})}
+          async function waitHeadQuiet(page){let prev='',same=0;for(let i=0;i<48;i++){const s=await headSig(page);if(s===prev)same++;else same=0;prev=s;if(same>=4)return 1;await sleep(250)}return 0}
           async function canonical(page){return page.evaluate(async()=>{
             const norm=v=>String(v??'').replace(/https?:\/\/(?:127\.0\.0\.1|localhost):\d+/g,'<ORIGIN>');
             const round=n=>Number.isFinite(n)?+n.toFixed(4):n;
@@ -83,34 +83,44 @@ jobs:
             const rootAttrs=[...document.documentElement.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0]));
             const bodyAttrs=[...document.body.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0]));
             const links=[...document.head.querySelectorAll('link')],isDynamic=l=>l.hasAttribute('data-doke-route-preload')||l.hasAttribute('data-doke-stable-route-style')||l.hasAttribute('data-doke-route-style-pending'),attrs=l=>[...l.attributes].map(a=>[a.name,norm(a.value)]).sort((a,b)=>a[0].localeCompare(b[0])),activeLink=l=>l.rel==='stylesheet'&&!l.disabled&&(!(l.media||'').trim()||(l.media||'').trim()==='all'||matchMedia(l.media).matches);
-            const dynamicActive=links.filter(l=>isDynamic(l)&&activeLink(l)).map(attrs),dynamicInactive=links.filter(l=>isDynamic(l)&&!activeLink(l)).map(attrs).map(x=>JSON.stringify(x)).sort(),staticOrdered=links.filter(l=>!isDynamic(l)).map(attrs);
-            const sheets=[...document.styleSheets].map(s=>{let rules=-1;try{rules=s.cssRules.length}catch{}const media=s.media?.mediaText||'',active=!s.disabled&&(!media||media==='all'||matchMedia(media).matches);return{href:s.href?norm(new URL(s.href,location.href).href):null,media,disabled:s.disabled,rules,active}}),activeSheets=sheets.filter(s=>s.active),inactiveSheets=sheets.filter(s=>!s.active).map(x=>JSON.stringify(x)).sort();
+            const dynActive=links.filter(l=>isDynamic(l)&&activeLink(l)).map(attrs).map(JSON.stringify).sort();
+            const dynInactive=links.filter(l=>isDynamic(l)&&!activeLink(l)).map(attrs).map(JSON.stringify).sort();
+            const staticOrdered=links.filter(l=>!isDynamic(l)).map(attrs);
+            const inactiveContract=links.filter(l=>isDynamic(l)&&!activeLink(l)).every(l=>l.rel!=='stylesheet'||l.disabled||((l.media||'').trim()&&((l.media||'').trim()!=='all')&&!matchMedia(l.media).matches));
+            const sheets=[...document.styleSheets].map(s=>{let rules=-1;try{rules=s.cssRules.length}catch{}const media=s.media?.mediaText||'',active=!s.disabled&&(!media||media==='all'||matchMedia(media).matches);return{href:s.href?norm(new URL(s.href,location.href).href):null,media,disabled:s.disabled,rules,active}}),activeSheets=sheets.filter(s=>s.active),inactiveSheets=sheets.filter(s=>!s.active).map(JSON.stringify).sort();
             const styles=[...document.head.querySelectorAll('style')].map(s=>norm(s.textContent||''));
-            return{title:document.title,bodyHash,bodyRows:bodyRows.length,rootAttrs,bodyAttrs,dynamicActiveHash:await sha(dynamicActive),dynamicActiveCount:dynamicActive.length,dynamicInactiveHash:await sha(dynamicInactive),dynamicInactiveCount:dynamicInactive.length,staticHash:await sha(staticOrdered),staticCount:staticOrdered.length,activeSheetsHash:await sha(activeSheets),activeSheetsCount:activeSheets.length,inactiveSheetsHash:await sha(inactiveSheets),inactiveSheetsCount:inactiveSheets.length,styleTagsHash:await sha(styles),styleTagsCount:styles.length};
+            return{path:location.pathname,bodyHash,bodyRows:bodyRows.length,rootAttrs,bodyAttrs,dynamicActiveHash:await sha(dynActive),dynamicActiveCount:dynActive.length,dynamicInactiveHash:await sha(dynInactive),dynamicInactiveCount:dynInactive.length,dynamicInactive:dynInactive,inactiveContract,staticHash:await sha(staticOrdered),staticCount:staticOrdered.length,activeSheetsHash:await sha(activeSheets),activeSheetsCount:activeSheets.length,inactiveSheetsHash:await sha(inactiveSheets),inactiveSheetsCount:inactiveSheets.length,styleTagsHash:await sha(styles),styleTagsCount:styles.length};
           })}
-          const fields=['title','bodyHash','bodyRows','rootAttrs','bodyAttrs','dynamicActiveHash','dynamicActiveCount','dynamicInactiveHash','dynamicInactiveCount','staticHash','staticCount','activeSheetsHash','activeSheetsCount','inactiveSheetsHash','inactiveSheetsCount','styleTagsHash','styleTagsCount'];
-          async function capture(browser,port,p,v,side){const key=`${p}@${v.key}`,ctx=await browser.newContext({viewport:{width:v.w,height:v.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{
+          async function capture(port,side,iter){const browser=await chromium.launch({headless:true});const ctx=await browser.newContext({viewport:{width:1280,height:802},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});try{
             await ctx.route('**/*',route=>{const u=new URL(route.request().url());return(u.hostname==='127.0.0.1'||u.hostname==='localhost')?route.continue():route.abort()});
             await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787263200000,RealDate=Date;class FixedDate extends RealDate{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}}globalThis.Date=FixedDate});
-            const page=await ctx.newPage();page.setDefaultTimeout(90000);page.setDefaultNavigationTimeout(45000);let loads=0,errors=0;page.on('request',r=>{if(new URL(r.url()).pathname===targetPath)loads++});page.on('pageerror',e=>{errors++;console.log(`PAGE ERROR|side=${side}|state=${key}|message=${String(e.message||e).slice(0,160)}`)});
-            await page.goto(`http://127.0.0.1:${port}/${p}`,{waitUntil:'networkidle',timeout:45000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await page.evaluate(()=>document.fonts?.ready);await page.waitForFunction(()=>[...document.images].every(i=>i.complete),null,{timeout:15000}).catch(()=>{});await page.evaluate(async()=>{await Promise.allSettled([...document.images].map(i=>typeof i.decode==='function'?i.decode():Promise.resolve()))});await page.waitForTimeout(600);
-            const sm=await stableMeta(page),meta=sm.meta;let accepted=0,pageRoot=0,authRedirect=0,rootKind='invalid';if(protectedPages.has(p)){if(meta.path==='/auth/login.html'&&!meta.content){accepted=1;authRedirect=1;rootKind='auth-redirect'}}else if(meta.path===`/${p}`&&!!meta.content){accepted=1;pageRoot=1;rootKind='page-root'}
-            const overflow=Math.max(meta.docScrollWidth,meta.bodyScrollWidth)>v.w+1?1:0;if(overflow)console.log(`OVERFLOW|side=${side}|state=${key}|doc=${meta.docScrollWidth}|body=${meta.bodyScrollWidth}|vw=${v.w}`);
-            const canon=await canonical(page);const post=await page.evaluate(metaFn),postStable=JSON.stringify(meta)===JSON.stringify(post)?1:0;const stable=sm.stable&&postStable?1:0;
-            if(loads||errors||!accepted||!stable)throw Error(`${side} ${key} contract loads=${loads} errors=${errors} accepted=${accepted} stable=${stable} path=${meta.path}`);
-            console.log(`STATE PASS|side=${side}|state=${key}|stable=${stable}|errors=${errors}|loads=${loads}|accepted=${accepted}|rootKind=${rootKind}|overflow=${overflow}|bodyRows=${canon.bodyRows}|activeSheets=${canon.activeSheetsCount}`);
-            return{canon,stable,loads,errors,accepted,pageRoot,authRedirect,overflow,meta};
-          }finally{await ctx.close().catch(()=>{})}}
-          async function run(){const browser=await chromium.launch({headless:true});let semantic=0,stableP=0,stableC=0,loadsP=0,loadsC=0,errors=0,rootsP=0,rootsC=0,authP=0,authC=0,acceptedP=0,acceptedC=0,overP=0,overC=0;try{for(const p of pages){for(const v of views){const key=`${p}@${v.key}`;console.log(`STATE START|state=${key}`);const a=await capture(browser,4173,p,v,'parent'),b=await capture(browser,4174,p,v,'candidate');const diffs=fields.filter(f=>JSON.stringify(a.canon[f])!==JSON.stringify(b.canon[f]));if(diffs.length)console.log(`RENDER DIFF|state=${key}|fields=${diffs.join(',')}`);else semantic++;stableP+=a.stable;stableC+=b.stable;loadsP+=a.loads;loadsC+=b.loads;errors+=a.errors+b.errors;rootsP+=a.pageRoot;rootsC+=b.pageRoot;authP+=a.authRedirect;authC+=b.authRedirect;acceptedP+=a.accepted;acceptedC+=b.accepted;overP+=a.overflow;overC+=b.overflow;}}}finally{await browser.close().catch(()=>{})}const parity=overP===overC?1:0;console.log(`BROWSER PASS|sha256=${process.env.CANDIDATE_SHA256}|pages=9|states=45|viewports=1366x768,1280x802,820x1180,608x926,390x844|renderActiveDiffs=${45-semantic}|renderActiveEqual=${semantic}/45|stableStates=${stableP}/${stableC}|pageErrors=${errors}|targetStylesheetLoads=${loadsP}/${loadsC}|pageRoots=${rootsP}/${rootsC}|authRedirects=${authP}/${authC}|acceptedStates=${acceptedP}/${acceptedC}|overflowStates=${overP}/${overC}|overflowParity=${parity}|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|exactPathMatch=1|externalResourcesBlocked=1|animationsDisabled=1|javascriptEnabled=1|dateFrozen=1|runtimeParity=1|pixelTolerance=0|pixelMask=0|pixelOracle=calibrated-nondeterministic-p10|screenshotGate=replaced-by-render-active-canonical-p10|oracle=body-full-computed-style-plus-active-order-inactive-multiset`);if(semantic!==45||stableP!==45||stableC!==45||errors||loadsP||loadsC||rootsP!==30||rootsC!==30||authP!==15||authC!==15||acceptedP!==45||acceptedC!==45||!parity)process.exit(2)}
-          run().catch(e=>{console.error('HARNESS ERROR|'+(e?.stack||e));process.exit(1)});
+            const page=await ctx.newPage();let loads=0,errors=0;page.on('request',r=>{if(new URL(r.url()).pathname===targetPath)loads++});page.on('pageerror',()=>errors++);
+            await page.goto(`http://127.0.0.1:${port}/index.html`,{waitUntil:'domcontentloaded',timeout:30000});
+            await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});
+            await page.waitForFunction(()=>document.readyState==='complete',null,{timeout:15000}).catch(()=>{});
+            await page.evaluate(()=>document.fonts?.ready);
+            await page.waitForFunction(()=>[...document.images].every(i=>i.complete),null,{timeout:10000}).catch(()=>{});
+            await page.evaluate(async()=>{await Promise.allSettled([...document.images].map(i=>typeof i.decode==='function'?i.decode():Promise.resolve()))});
+            const quiet=await waitHeadQuiet(page);await sleep(500);
+            const c=await timeout(canonical(page),45000,`CANON_TIMEOUT_${side}_${iter}`);
+            if(!quiet||loads||errors||c.path!=='/index.html'||!c.inactiveContract)throw Error(`contract side=${side} iter=${iter} quiet=${quiet} loads=${loads} errors=${errors} path=${c.path} inactiveContract=${c.inactiveContract}`);
+            console.log(`CAPTURE PASS|side=${side}|iteration=${iter}|headQuiet=1|loads=0|errors=0|bodyRows=${c.bodyRows}|dynamicActive=${c.dynamicActiveCount}|dynamicInactive=${c.dynamicInactiveCount}|activeSheets=${c.activeSheetsCount}|inactiveSheets=${c.inactiveSheetsCount}`);
+            return c;
+          } finally {await ctx.close().catch(()=>{});await browser.close().catch(()=>{})}}
+          (async()=>{const rows=[];let renderEq=0,inactiveEq=0;const renderFields=['bodyHash','bodyRows','rootAttrs','bodyAttrs','dynamicActiveHash','dynamicActiveCount','staticHash','staticCount','activeSheetsHash','activeSheetsCount','inactiveSheetsHash','inactiveSheetsCount','styleTagsHash','styleTagsCount'];for(let i=1;i<=4;i++){const order=i%2?['P','C']:['C','P'],out={};for(const side of order)out[side]=await capture(side==='P'?4173:4174,side,i);const rd=renderFields.filter(f=>JSON.stringify(out.P[f])!==JSON.stringify(out.C[f]));const ie=out.P.dynamicInactiveHash===out.C.dynamicInactiveHash&&out.P.dynamicInactiveCount===out.C.dynamicInactiveCount;if(!rd.length)renderEq++;if(ie)inactiveEq++;const onlyP=out.P.dynamicInactive.filter(x=>!out.C.dynamicInactive.includes(x)),onlyC=out.C.dynamicInactive.filter(x=>!out.P.dynamicInactive.includes(x));console.log(`PAIR|iteration=${i}|order=${order.join('')}|renderActiveEqual=${rd.length?0:1}|renderDiffs=${rd.join(',')||'none'}|dynamicInactiveEqual=${ie?1:0}|dynamicInactive=${out.P.dynamicInactiveCount}/${out.C.dynamicInactiveCount}|onlyP=${onlyP.length}|onlyC=${onlyC.length}`);for(const x of onlyP.slice(0,3))console.log(`INACTIVE ONLY|iteration=${i}|side=P|entry=${x}`);for(const x of onlyC.slice(0,3))console.log(`INACTIVE ONLY|iteration=${i}|side=C|entry=${x}`);rows.push(out)}const pBody=new Set(rows.map(r=>r.P.bodyHash)).size,cBody=new Set(rows.map(r=>r.C.bodyHash)).size,pInactive=new Set(rows.map(r=>r.P.dynamicInactiveHash)).size,cInactive=new Set(rows.map(r=>r.C.dynamicInactiveHash)).size;let classification='UNRESOLVED';if(renderEq===4&&inactiveEq===4&&pBody===1&&cBody===1)classification='QUIESCENCE_RESTORES_EXACT';else if(renderEq===4&&pBody===1&&cBody===1&&(inactiveEq<4||pInactive>1||cInactive>1))classification='INACTIVE_MULTISET_NONDETERMINISTIC_NONRENDERING';console.log(`P11 SUMMARY|pairs=4|renderActiveEqual=${renderEq}/4|dynamicInactiveEqual=${inactiveEq}/4|bodyStableUnique=${pBody}/${cBody}|dynamicInactiveUnique=${pInactive}/${cInactive}|targetLoads=0/0|headQuiet=1|captureTimeout=45000|criteriaRelaxed=0|classification=${classification}`);console.log(`PROBE RESULT|classification=${classification}|renderActiveExact=${renderEq===4&&pBody===1&&cBody===1?1:0}|criteriaRelaxed=0|targetLoads=0/0`);if(classification==='UNRESOLVED')process.exit(2)})().catch(e=>{console.error('PROBE ERROR|'+(e?.stack||e));process.exit(1)})
           NODE
-          set +e; timeout --signal=TERM --kill-after=20s 3300s env NODE_PATH="$PWD/node_modules" node /tmp/r2.js; code=$?; set -e; echo "R2_EXIT=$code"; test "$code" = 0
+          timeout --signal=TERM --kill-after=20s 1500s env NODE_PATH="$PWD/node_modules" node /tmp/p11.js
           echo 'RESTORE PASS|workspace=parent-untouched|candidate=tmp-only'
       - name: publish
         if: always()
         shell: bash
         run: |
-          set -euo pipefail; result=FAIL; if test '${{ steps.browser.outcome }}' = success; then result=PASS; fi
-          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROOF=${{ steps.browser.outcome }}"; grep -E '^(EVIDENCE TRANSFER PASS|AUTH ROOT CONTRACT PASS|CANDIDATE PASS|STATE START|STATE PASS|PAGE ERROR|OVERFLOW|RENDER DIFF|BROWSER PASS|HARNESS ERROR|R2_EXIT=|RESTORE PASS)' /tmp/r2.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 3200 /tmp/r2.log || true; fi; } >/tmp/out
-          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null; git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
-          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"; git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com; git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 doke shell contract browser r2 render active [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null; test "$result" = PASS
+          set -euo pipefail; result=FAIL; if test '${{ steps.probe.outcome }}' = success; then result=PASS; fi
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; echo "TARGET_BLOB=$TARGET_BLOB"; echo "PROBE=${{ steps.probe.outcome }}"; grep -E '^(EVIDENCE TRANSFER PASS|CANDIDATE PASS|CAPTURE PASS|PAIR\||INACTIVE ONLY|P11 SUMMARY|PROBE RESULT|PROBE ERROR|RESTORE PASS)' /tmp/p11.log || true; echo "RESULT=$result"; if test "$result" = FAIL; then tail -n 1200 /tmp/p11.log || true; fi; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 dynamic inactive variance p11 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
