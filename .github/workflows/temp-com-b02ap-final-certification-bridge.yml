@@ -1,0 +1,106 @@
+name: TEMP COM-B02AP Final Certification Bridge
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/temp-com-b02ap-final-certification-bridge.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  certify-final-tree:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      BASE: 030605606a377cbd2468d6753305abebec9f9183
+      FINAL_HEAD: 038e9b931059a220715b96afbd0c050d0f1e4e9b
+      FINAL_TREE: 5b9a871512cfa509e770fee4cc764fcb6cabda55
+      BRANCH: com/com-001-baseline-audit
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      TEMP_PATH: .github/workflows/temp-com-b02ap-final-certification-bridge.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact temporary certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze final B02AP tree and bridge-only lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse HEAD^)" = "$FINAL_HEAD"
+          test "$(git rev-parse "$FINAL_HEAD^{tree}")" = "$FINAL_TREE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          actual="$(git diff --name-only "$FINAL_HEAD" HEAD | sort)"
+          test "$actual" = "$TEMP_PATH"
+
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02ap-repository-only-continuation-state-registry-storage-backend-instance-implementation.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-implementation.js \
+            config/com-b02ap-repository-only-continuation-state-registry-storage-backend-instance-implementation.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02ap-repository-only-continuation-state-registry-storage-backend-instance-implementation.js | sort)"
+          actual_final="$(git diff --name-only "$BASE" "$FINAL_HEAD" | sort)"
+          test "$actual_final" = "$expected_final"
+          ! git ls-tree -r --name-only "$FINAL_HEAD" | grep -Fx "$TEMP_PATH"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax semantic and hard-block B02AP certification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-implementation.js
+          node --check scripts/test-com-b02ap-repository-only-continuation-state-registry-storage-backend-instance-implementation.js
+          node scripts/test-com-b02ap-repository-only-continuation-state-registry-storage-backend-instance-implementation.js
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-implementation.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'storageBackendInstanceMaterialized[[:space:]]*:[[:space:]]*true|storageBackendMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'entryContainerMaterialized[[:space:]]*:[[:space:]]*true|operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true|carrierInstanceMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'opaqueStateHandleGenerated[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true|registryOperationInvoked[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true|rawStateSerialized[[:space:]]*:[[:space:]]*true|rawStateExported[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Domain Completion Matrix Agent Governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$BASE" "$FINAL_HEAD"
+
+      - name: Self-remove bridge and preserve exact certified tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -- "$TEMP_PATH"
+          test "$(git write-tree)" = "$FINAL_TREE"
+          git commit -m "ci(com): certify B02AP repository-only final tree"
+          test "$(git rev-parse HEAD^{tree})" = "$FINAL_TREE"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          ! git ls-tree -r --name-only HEAD | grep -Fx "$TEMP_PATH"
+
+      - name: Fast-forward branch only if bridge head is still current
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse "origin/$BRANCH")" = "$PR_HEAD_SHA"
+          git push origin HEAD:refs/heads/$BRANCH
