@@ -17,6 +17,8 @@ jobs:
     env:
       CANDIDATE_HEAD: 53c08a5cb6e15a14cfc420b7d4feab7a3ad438f3
       CANDIDATE_TREE: fcdb5faf08f8e08a8bcf7364ed9e5b3629c46bc4
+      RECOVERY_HEAD: 50040da812ea1e8114b7def3b66ea7de1b4ed60d
+      PREVIOUS_TEMP_HEAD: 97b48ccf8973dbd4aa176d8adee0a33cd016b456
       PREDECESSOR_HEAD: feebb2f6a4b041de1c040bc8ed7022d4e7b3f7ae
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       B02AZ_MODULE_BLOB: 35e2bbe0b983d6a249bc7f8cb4ee157d3b85d654
@@ -38,7 +40,7 @@ jobs:
       TEMP_PATH: .github/workflows/temp-com-b02az-domain-completion-matrix-reconciliation.yml
       PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
-      - name: Checkout exact temporary reconciliation head
+      - name: Checkout exact corrected temporary reconciliation head
         uses: actions/checkout@v4
         with:
           ref: ${{ env.PR_HEAD_SHA }}
@@ -50,13 +52,15 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze B02AZ candidate and temporary-only lineage
+      - name: Freeze B02AZ candidate compensated lineage and temporary-only scope
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
-          test "$(git rev-parse HEAD^)" = "$CANDIDATE_HEAD"
+          test "$(git rev-parse HEAD^)" = "$PREVIOUS_TEMP_HEAD"
           test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$RECOVERY_HEAD^{tree}")" = "$CANDIDATE_TREE"
+          test -z "$(git diff --name-only "$CANDIDATE_HEAD" "$RECOVERY_HEAD")"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           test "$(git diff --name-only "$CANDIDATE_HEAD" HEAD)" = "$TEMP_PATH"
           expected_candidate="$(printf '%s\n' \
@@ -81,6 +85,7 @@ jobs:
           test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
           test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          ! git ls-tree -r --name-only HEAD | grep '^noop$'
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -134,6 +139,7 @@ jobs:
           git commit -m "docs(com): reconcile B02AZ derived matrix artifacts"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02az-'
+          ! git ls-tree -r --name-only HEAD | grep '^noop$'
           expected_final="$(printf '%s\n' \
             .github/workflows/com-b02az-repository-only-continuation-state-registry-storage-backend-entry-container-inert-instance.yml \
             backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-inert-instance.js \
@@ -144,7 +150,7 @@ jobs:
           actual_final="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
           test "$actual_final" = "$expected_final"
 
-      - name: Fast-forward branch only if temporary head is still current
+      - name: Fast-forward branch only if corrected temporary head is still current
         shell: bash
         run: |
           set -euo pipefail
