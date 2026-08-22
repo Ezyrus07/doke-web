@@ -69,7 +69,7 @@ function describeRepositoryOnlyContinuationStateRegistryStorageBackendEntryConta
     binding.executableReferenceBindingObjectFrozen === true &&
     binding.executableReferenceBindingReferencesNonEnumerable === true &&
     binding.executableReferenceBindingReferencesReadOnly === true &&
-    binding.referenceIdentityPreserved === true &&
+    binding.exactReferenceIdentityVerified === true &&
     binding.operationMethodsAttachedToInstance === false &&
     binding.executableOperationMethodsInvoked === false;
 
