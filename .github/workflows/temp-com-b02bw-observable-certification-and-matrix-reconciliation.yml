@@ -1,0 +1,175 @@
+name: TEMP COM-B02BW Observable Certification and Matrix Reconciliation
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - '.github/workflows/temp-com-b02bw-observable-certification-and-matrix-reconciliation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  certify-reconcile-and-finalize:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CANDIDATE_HEAD: 01f62a3428d89120ad2c7603602685da4a4c488e
+      CANDIDATE_TREE: 4c176edb91b09ea8606ea3f01e52d8f13c2f70ba
+      PREDECESSOR_HEAD: 75c4a85ce1ac046e6ba3cd754cb6a132328611e3
+      PREDECESSOR_TREE: 006924885619facdd2066fe3df4ce4dfc016267c
+      B02BW_MODULE_BLOB: 73be7612967256db6e1d51897b8fd39a099ed5b3
+      B02BW_CONFIG_BLOB: 7e767ece253ddef39d1c7f9e832c113ba1bd211b
+      B02BW_TEST_BLOB: 766508c88883d9b3ec12d37e82c00f5ee1f54ee7
+      B02BW_WORKFLOW_BLOB: 21cf76f86c8fdb41f9d365658de1e3cbc940025d
+      B02BV_MODULE_BLOB: f924fea5b3ce33567020d94bd57268c88ecd41b7
+      B02BV_CONFIG_BLOB: b60d8658d3ced77adfa87d5dad83bfeee13e0713
+      B02BU_MODULE_BLOB: ead15b75489c9f7c57439a00badf9b6e02d4d415
+      B02BO_BINDING_BLOB: 16da9ada3a308535e5515a242ac381c54c7c2fc4
+      B02BJ_IMPLEMENTATION_BLOB: 99d804721a5d350dcf8e59dd935937e24561e094
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      BRANCH: com/com-001-baseline-audit
+      TEMP_PATH: .github/workflows/temp-com-b02bw-observable-certification-and-matrix-reconciliation.yml
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.js
+      CONFIG: config/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.json
+      TEST: scripts/test-com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.js
+      CANONICAL_WORKFLOW: .github/workflows/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - name: Checkout exact temporary head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze candidate lineage and exact scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
+          for commit in $(git rev-list --first-parent "$CANDIDATE_HEAD"..HEAD); do
+            test "$(git diff-tree --no-commit-id --name-only -r "$commit" | sort -u)" = "$TEMP_PATH"
+          done
+          test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git diff --name-only "$CANDIDATE_HEAD" HEAD)" = "$TEMP_PATH"
+          expected="$(printf '%s\n' "$CANONICAL_WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse HEAD:$TARGET)" = "$B02BW_MODULE_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$B02BW_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$B02BW_TEST_BLOB"
+          test "$(git rev-parse HEAD:$CANONICAL_WORKFLOW)" = "$B02BW_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-readiness-after-attachment-capable-target-materialization.js)" = "$B02BV_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02bv-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-readiness-after-attachment-capable-target-materialization.json)" = "$B02BV_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-materialization.js)" = "$B02BU_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-method-references-binding.js)" = "$B02BO_BINDING_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-methods-implementation.js)" = "$B02BJ_IMPLEMENTATION_BLOB"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax semantic and hard-block B02BW candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          test "$(grep -Fc 'Object.defineProperties(attachmentTarget, descriptors)' "$TARGET")" -eq 1
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(call|apply)[[:space:]]*\(|Reflect\.apply[[:space:]]*\(' "$TARGET"
+          ! grep -E 'registerOpaqueContinuationState[[:space:]]*\(|resolveOpaqueContinuationState[[:space:]]*\(|releaseOpaqueContinuationState[[:space:]]*\(' "$TARGET"
+          ! grep -E 'executableOperationMethodsInvoked[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true|registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Reconcile Matrix only for the exact stale-derived blocker
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          output="$(npm run audit:domain-completion-matrix 2>&1)"
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            printf '%s\n' "$output"
+            stale='- docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix'
+            test "$(printf '%s\n' "$output" | grep -Fxc -- "$stale")" -eq 1
+            unexpected="$(printf '%s\n' "$output" | grep '^- ' | grep -Fvx -- "$stale" || true)"
+            test -z "$unexpected"
+            npm run write:domain-completion-matrix
+          fi
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          changed="$(git diff --name-only | sort)"
+          if [ -n "$changed" ]; then
+            expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+            test "$changed" = "$expected"
+          fi
+
+      - name: Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node "$TEST"
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          git diff --check
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+
+      - name: Commit permanent derived state and self-remove TEMP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f -- reports/generated/domain-completion-matrix-report.json
+          git rm -- "$TEMP_PATH"
+          git commit -m "ci(com): finalize B02BW repository-only certification [run ${GITHUB_RUN_ID}]"
+          ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02bw-'
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+
+      - name: Certify permanent B02BW tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected4="$(printf '%s\n' "$CANONICAL_WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
+          expected6="$(printf '%s\n' "$CANONICAL_WORKFLOW" "$TARGET" "$CONFIG" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json "$TEST" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected4" || test "$actual" = "$expected6"
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$TARGET)" = "$B02BW_MODULE_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$B02BW_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$B02BW_TEST_BLOB"
+          test "$(git rev-parse HEAD:$CANONICAL_WORKFLOW)" = "$B02BW_WORKFLOW_BLOB"
+          ! git ls-tree -r --name-only HEAD | grep '^.github/workflows/temp-com-b02bw-'
+
+      - name: Fast-forward branch only if TEMP head is still current
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse "origin/$BRANCH")" = "$PR_HEAD_SHA"
+          git push origin HEAD:refs/heads/$BRANCH
