@@ -1,13 +1,13 @@
-name: COM-B02BW Repository-Only Actual Operation Methods Attachment
+name: COM-B02BW Repository-Only Actual Operation Methods Attachment Contract
 
 on:
   pull_request:
     branches: [rep/rep-001-baseline-audit]
     paths:
-      - '.github/workflows/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.yml'
-      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.js'
-      - 'config/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.json'
-      - 'scripts/test-com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.js'
+      - '.github/workflows/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.yml'
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.js'
+      - 'config/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.json'
+      - 'scripts/test-com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.js'
 
 permissions:
   contents: read
@@ -24,15 +24,14 @@ jobs:
       B02BV_CONFIG_BLOB: b60d8658d3ced77adfa87d5dad83bfeee13e0713
       B02BU_MODULE_BLOB: ead15b75489c9f7c57439a00badf9b6e02d4d415
       B02BO_BINDING_BLOB: 16da9ada3a308535e5515a242ac381c54c7c2fc4
-      B02BJ_IMPLEMENTATION_BLOB: 99d804721a5d350dcf8e59dd935937e24561e094
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
       MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
       COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
-      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.js
-      CONFIG: config/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.json
-      TEST: scripts/test-com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.js
-      WORKFLOW: .github/workflows/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.yml
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.js
+      CONFIG: config/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.json
+      TEST: scripts/test-com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.js
+      WORKFLOW: .github/workflows/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.yml
       PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
     steps:
@@ -48,7 +47,7 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze lineage and exact scope
+      - name: Freeze lineage and exact authorized scope
         shell: bash
         run: |
           set -euo pipefail
@@ -62,30 +61,28 @@ jobs:
           test "$(git rev-parse HEAD:config/com-b02bv-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-readiness-after-attachment-capable-target-materialization.json)" = "$B02BV_CONFIG_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-materialization.js)" = "$B02BU_MODULE_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-method-references-binding.js)" = "$B02BO_BINDING_BLOB"
-          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-methods-implementation.js)" = "$B02BJ_IMPLEMENTATION_BLOB"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
-          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
-          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
-          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          ! git ls-tree -r --name-only HEAD | grep 'com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment\.yml'
+          ! git ls-tree -r --name-only HEAD | grep 'repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment\.js'
+          ! git ls-tree -r --name-only HEAD | grep '^\.github/workflows/temp-com-b02bw-'
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Syntax semantic and hard-block B02BW
+      - name: Syntax semantic and hard-block B02BW contract
         shell: bash
         run: |
           set -euo pipefail
           node --check "$TARGET"
           node --check "$TEST"
           node "$TEST"
-          test "$(grep -Fc 'Object.defineProperties(attachmentTarget, descriptors)' "$TARGET")" -eq 1
-          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E 'Object\.definePropert(y|ies)\(' "$TARGET"
           ! grep -E '\.(call|apply)[[:space:]]*\(|Reflect\.apply[[:space:]]*\(' "$TARGET"
-          ! grep -E 'registerOpaqueContinuationState[[:space:]]*\(|resolveOpaqueContinuationState[[:space:]]*\(|releaseOpaqueContinuationState[[:space:]]*\(' "$TARGET"
-          ! grep -E 'executableOperationMethodsInvoked[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true|registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
-          test "$(grep -Fc 'attachmentAppliedToEntryContainerInstance: attachmentCertified' "$TARGET")" -eq 1
-          test "$(grep -Fc 'operationMethodsAttachedToInstance: attachmentCertified' "$TARGET")" -eq 1
-          test "$(grep -Fc 'executableOperationMethodsInvoked: false' "$TARGET")" -ge 2
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'executableOperationMethodsInvoked[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'targetMutationPerformedByBoundary[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'executableReferencesCopiedToTarget[[:space:]]*:[[:space:]]*true' "$TARGET"
 
       - name: Frozen repository surfaces and Matrix
         shell: bash
