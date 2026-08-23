@@ -1,4 +1,4 @@
-name: TEMP COM-B02BZ Observable Certification and Matrix Reconciliation
+name: TEMP COM-B02BZ Observable Certification and Matrix Reconciliation R2
 
 on:
   pull_request:
@@ -135,7 +135,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm "$TEMP_PATH"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json "$TEMP_PATH"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md "$TEMP_PATH"
+          git add -f reports/generated/domain-completion-matrix-report.json 2>/dev/null || true
           staged="$(git diff --cached --name-only | sort)"
           test -n "$staged"
           test "$(printf '%s\n' "$staged" | grep -c "^$TEMP_PATH$")" -eq 1
