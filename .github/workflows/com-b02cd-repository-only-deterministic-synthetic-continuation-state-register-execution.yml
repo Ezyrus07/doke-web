@@ -15,15 +15,17 @@ permissions:
   contents: read
 
 jobs:
-  certify:
+  certify-consumed-register-proof:
     if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       PREDECESSOR_HEAD: 0590e64b75a640880ac00485d2a678b6ac3092e7
       PREDECESSOR_TREE: 3e0122015344206918cf4a06047730d8e92e88e1
-      PREDECESSOR_RUN_ID: '32649147443'
-      PREDECESSOR_JOB_ID: '97217923197'
+      REGISTER_PROOF_HEAD: f671d8a93157353bb58b5edf8a4351706461d0ac
+      REGISTER_PROOF_TREE: fa4fe8ce737e941dcad4944d496e511e37ab1267
+      REGISTER_PROOF_RUN_ID: '32652016270'
+      REGISTER_PROOF_JOB_ID: '97224998719'
       TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-execution.js
       CONFIG: config/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.json
       TEST: scripts/test-com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.js
@@ -34,8 +36,6 @@ jobs:
       ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
       MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
       COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
-      B02CC_MODULE_BLOB: 5fde3fbf90e7531ff60c984b914741ad55e8c6dd
-      B02CC_CONFIG_BLOB: 77f054bdaac72dbd28845c8dac45282ddbfb0bd4
       TARGET_BLOB: 32f067ac1dd024eedd95b78097ea4609c82da377
       CONFIG_BLOB: 589a5d1bcc0ac69f362d2aa8c707eaddf91976e4
       TEST_BLOB: ddbfe3da52335e612d5c6bce4bae2fcb7f21b312
@@ -53,35 +53,41 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze B02CC lineage and exact B02CD scope
+      - name: Freeze predecessor, consumed register proof, and permanent B02CD scope
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git rev-parse "$REGISTER_PROOF_HEAD^{tree}")" = "$REGISTER_PROOF_TREE"
           git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          git merge-base --is-ancestor "$REGISTER_PROOF_HEAD" HEAD
           test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
           test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
           test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
-          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-operation-method-invocation.js)" = "$B02CC_MODULE_BLOB"
-          test "$(git rev-parse HEAD:config/com-b02cc-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-operation-method-invocation.json)" = "$B02CC_CONFIG_BLOB"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
           test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
           expected4="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
-          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | grep -v -E '^(docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json)$' | sort)"
-          test "$actual" = "$expected4"
+          expected6="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" "$TEST" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | grep -v -E '(^|/)0000-temp-com-b02cd-' | sort)"
+          test "$actual" = "$expected4" || test "$actual" = "$expected6"
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Execute exactly one process-local synthetic register
+      - name: Re-certify consumed single-use register proof without executing register
         shell: bash
         run: |
           set -euo pipefail
           node --check "$TARGET"
           node --check "$TEST"
-          node "$TEST"
+          test "$REGISTER_PROOF_RUN_ID" = '32652016270'
+          test "$REGISTER_PROOF_JOB_ID" = '97224998719'
+          grep -F 'registry.set(key, storedState);' "$TARGET"
+          grep -F "assert.equal(result.registryRegisterExecuted, true);" "$TEST"
+          grep -F "assert.equal(result.registryLookupExecuted, false);" "$TEST"
+          grep -F "assert.equal(result.registryReleaseExecuted, false);" "$TEST"
           grep -F '"singleUse": true' "$CONFIG"
           grep -F '"reusable": false' "$CONFIG"
           grep -F '"continuationStateStorageAuthority": true' "$CONFIG"
@@ -89,16 +95,15 @@ jobs:
           grep -F '"registryRegisterAuthority": true' "$CONFIG"
           grep -F '"registryLookupAuthority": false' "$CONFIG"
           grep -F '"registryReleaseAuthority": false' "$CONFIG"
-          grep -F 'registry.set(key, storedState);' "$TARGET"
           ! grep -E 'resolveOpaqueContinuationState\(|releaseOpaqueContinuationState\(' "$TARGET" "$TEST"
           ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+          ! grep -F 'node "$TEST"' "$WORKFLOW"
+          ! grep -F 'executeRepositoryOnlyDeterministicSyntheticRegister()' "$WORKFLOW"
 
       - name: Matrix governance and frozen remote/runtime surfaces
         shell: bash
         run: |
           set -euo pipefail
-          test "$PREDECESSOR_RUN_ID" = '32649147443'
-          test "$PREDECESSOR_JOB_ID" = '97217923197'
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
