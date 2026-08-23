@@ -28,7 +28,7 @@ const externalReferences = Object.fromEntries(
 const attachedTarget = attachment.applyRepositoryOnlyContinuationStateRegistryStorageBackendEntryContainerInstanceActualOperationMethodsAttachment();
 
 assert.equal(attachedTarget, targetBefore);
-assert.equal(attachedTarget, target/aterialization.getRepositoryOnlyContinuationStateRegistryStorageBackendEntryContainerInstanceAttachmentCapableTarget());
+assert.equal(attachedTarget, targetMaterialization.getRepositoryOnlyContinuationStateRegistryStorageBackendEntryContainerInstanceAttachmentCapableTarget());
 assert.equal(Object.isExtensible(attachedTarget), true);
 
 for (const operationName of attachment.REQUIRED_OPERATION_NAMES) {
@@ -125,7 +125,7 @@ const packet = {
   executableOperationMethodsInvoked: false,
   continuationStateStored: false,
   registryOperationInvoked: false,
-  registryLookupexecuted: false,
+  registryLookupExecuted: false,
   registryReleaseExecuted: false,
   rawStateSerialized: false,
   rawStateExported: false,
