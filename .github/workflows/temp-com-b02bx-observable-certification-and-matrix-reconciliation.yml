@@ -1,9 +1,9 @@
 name: TEMP COM-B02BX Observable Certification and Matrix Reconciliation
 
 on:
-  push:
+  pull_request:
     branches:
-      - com/com-001-baseline-audit
+      - rep/rep-001-baseline-audit
     paths:
       - '.github/workflows/temp-com-b02bx-observable-certification-and-matrix-reconciliation.yml'
 
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   certify-reconcile-and-finalize:
-    if: github.ref == 'refs/heads/com/com-001-baseline-audit'
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -38,7 +38,7 @@ jobs:
       CONFIG: config/com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.json
       TEST: scripts/test-com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.js
       CANONICAL_WORKFLOW: .github/workflows/com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.yml
-      TEMP_HEAD_SHA: ${{ github.sha }}
+      TEMP_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
     steps:
       - name: Checkout exact temporary head
