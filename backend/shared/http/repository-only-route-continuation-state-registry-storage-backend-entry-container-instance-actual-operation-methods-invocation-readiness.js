@@ -284,7 +284,7 @@ function evaluateBoundaryCertification(packet) {
     productionAuthority: false,
     r5iCreationAuthority: false,
     nextAction:
-      'proceed_under_standing_repository_only_authorization_to_a_separate_deterministic_synthetic_invocation_harness_boundary_before_any_operation_method_invocation_state_storage_registry_execution_or_sensitive_scope'
+      'stop_and_require_fresh_explicit_authorization_before_any_deterministic_repository_only_synthetic_invocation_harness_boundary_or_operation_method_invocation_state_storage_registry_execution_or_sensitive_scope'
   });
 }
 
