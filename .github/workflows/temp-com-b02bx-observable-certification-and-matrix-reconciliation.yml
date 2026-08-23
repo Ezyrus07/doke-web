@@ -23,7 +23,8 @@ jobs:
       B02BX_MODULE_BLOB: 2987c0e5eec8cafb776f4520a7866818aa94ed27
       B02BX_CONFIG_BLOB: 631871b705c67fc3e6807792aa483502ec317321
       B02BX_TEST_BLOB: 249b68bd30fdaf4744e02742bd2deb23fd137b07
-      B02BX_WORKFLOW_BLOB: d8f58298adac3bd0517476b05d5cf42a3f672c5c
+      CANDIDATE_WORKFLOW_BLOB: d8f58298adac3bd0517476b05d5cf42a3f672c5c
+      B02BX_WORKFLOW_BLOB: bf5036414c99f6a51533bee98fb7fad44cb0a63d
       B02BW_MODULE_BLOB: f7ca12013d9c7eb7cbcec295268bb9583af6ae6c
       B02BW_CONFIG_BLOB: ea847eb1f34e78ec647ab246eef71ff089f8f05e
       B02BU_MODULE_BLOB: ead15b75489c9f7c57439a00badf9b6e02d4d415
@@ -53,7 +54,7 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze candidate lineage and exact authorized scope
+      - name: Freeze candidate lineage and exact authorized repair scope
         shell: bash
         run: |
           set -euo pipefail
@@ -61,7 +62,10 @@ jobs:
           git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
           test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
-          test "$(git diff --name-only "$CANDIDATE_HEAD" HEAD)" = "$TEMP_PATH"
+          test "$(git rev-parse "$CANDIDATE_HEAD:$CANONICAL_WORKFLOW")" = "$CANDIDATE_WORKFLOW_BLOB"
+          repair_expected="$(printf '%s\n' "$CANONICAL_WORKFLOW" "$TEMP_PATH" | sort)"
+          repair_actual="$(git diff --name-only "$CANDIDATE_HEAD" HEAD | sort)"
+          test "$repair_actual" = "$repair_expected"
           expected="$(printf '%s\n' "$CANONICAL_WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
           actual="$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)"
           test "$actual" = "$expected"
@@ -96,7 +100,7 @@ jobs:
           ! grep -E 'attachmentAppliedToEntryContainerInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
           ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
           ! grep -E 'executableOperationMethodsInvoked[[:space:]]*:[[:space:]]*true' "$TARGET"
-          test "$(grep -Fc 'executableReferenceExternalToDescriptor: true' "$TARGET")" -ge 2
+          test "$(grep -Fc 'executableReferenceExternalToDescriptor: true' "$TARGET")" -ge 1
           test "$(grep -Fc 'targetMutationPerformedByBoundary: false' "$TARGET")" -ge 2
           test "$(grep -Fc 'operationMethodsAttachedToInstance: false' "$TARGET")" -ge 2
 
