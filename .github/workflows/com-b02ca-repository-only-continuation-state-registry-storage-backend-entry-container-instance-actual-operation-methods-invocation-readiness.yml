@@ -95,7 +95,7 @@ jobs:
           ! grep -F 'reusableWithinRepositoryOnlySequence' "$CONFIG"
           ! grep -F 'standing_general_repository_only_invocation_readiness_subset' "$CONFIG" "$TARGET"
           expected_next='stop_and_require_fresh_explicit_authorization_before_any_deterministic_repository_only_synthetic_invocation_harness_boundary_or_operation_method_invocation_state_storage_registry_execution_or_sensitive_scope'
-          test "$(grep -Fc "$expected_next" "$TARGET" "$CONFIG")" -eq 2
+          test "$(grep -Fh "$expected_next" "$TARGET" "$CONFIG" | wc -l | tr -d ' ')" -eq 2
 
       - name: Frozen repository surfaces and Matrix
         shell: bash
