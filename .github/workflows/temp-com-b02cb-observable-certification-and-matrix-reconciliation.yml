@@ -1,9 +1,8 @@
-name: TEMP COM-B02CB Observable Certification and Matrix Reconciliation
+name: TEMP COM-B02CB Observable Certification and Matrix Reconciliation R2
 
 on:
   pull_request:
-    branches:
-      - rep/rep-001-baseline-audit
+    branches: [rep/rep-001-baseline-audit]
     paths:
       - '.github/workflows/temp-com-b02cb-observable-certification-and-matrix-reconciliation.yml'
 
@@ -25,6 +24,7 @@ jobs:
       B02CB_TEST_BLOB: 7d6e65404cc276af98f0e6bea92ae508e04925e4
       B02CB_WORKFLOW_BLOB: 8039c6dd047716fc62b47aa2528f99b7d2f49cc5
       B02CA_MODULE_BLOB: 93cc7417a2c36248323bf0b356f9e1d032198391
+      B02CA_CONFIG_BLOB: 9333938c3b4710cbb63033fb70ab520bbe6386ee
       B02BJ_IMPLEMENTATION_BLOB: 99d804721a5d350dcf8e59dd935937e24561e094
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
@@ -36,6 +36,7 @@ jobs:
       CONFIG: config/com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.json
       TEST: scripts/test-com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.js
       CANONICAL_WORKFLOW: .github/workflows/com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.yml
+      B02CA_CONFIG: config/com-b02ca-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-invocation-readiness.json
       TEMP_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
     steps:
@@ -51,7 +52,7 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze candidate lineage and exact temporary scope
+      - name: Freeze candidate lineage predecessor and exact temporary scope
         shell: bash
         run: |
           set -euo pipefail
@@ -62,13 +63,13 @@ jobs:
           git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
           test "$(git diff --name-only "$CANDIDATE_HEAD" HEAD)" = "$TEMP_PATH"
           expected="$(printf '%s\n' "$CANONICAL_WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
-          actual="$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)"
-          test "$actual" = "$expected"
+          test "$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)" = "$expected"
           test "$(git rev-parse HEAD:$TARGET)" = "$B02CB_MODULE_BLOB"
           test "$(git rev-parse HEAD:$CONFIG)" = "$B02CB_CONFIG_BLOB"
           test "$(git rev-parse HEAD:$TEST)" = "$B02CB_TEST_BLOB"
           test "$(git rev-parse HEAD:$CANONICAL_WORKFLOW)" = "$B02CB_WORKFLOW_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-invocation-readiness.js)" = "$B02CA_MODULE_BLOB"
+          test "$(git rev-parse HEAD:$B02CA_CONFIG)" = "$B02CA_CONFIG_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-methods-implementation.js)" = "$B02BJ_IMPLEMENTATION_BLOB"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           test "$(git ls-tree -r --name-only HEAD | grep -c '^\.github/workflows/temp-com-b02cb-')" -eq 1
@@ -120,6 +121,7 @@ jobs:
           set -euo pipefail
           npm run audit:agent-governance
           git diff --check "$PREDECESSOR_HEAD"
+          test "$(git rev-parse HEAD:$B02CA_CONFIG)" = "$B02CA_CONFIG_BLOB"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
@@ -134,8 +136,7 @@ jobs:
           git rm "$TEMP_PATH"
           git add docs/DOMAIN-COMPLETION-MATRIX.md || true
           git add -f reports/generated/domain-completion-matrix-report.json || true
-          git commit -m "ci(com): finalize B02CB repository-only deterministic synthetic invocation harness certification [run ${{ github.run_id }}]"
-          echo "FINAL_HEAD=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          git commit -m "ci(com): finalize B02CB repository-only deterministic synthetic invocation harness certification R2 [run ${{ github.run_id }}]"
 
       - name: Certify permanent B02CB tree
         shell: bash
@@ -150,6 +151,7 @@ jobs:
           test "$(git rev-parse HEAD:$CONFIG)" = "$B02CB_CONFIG_BLOB"
           test "$(git rev-parse HEAD:$TEST)" = "$B02CB_TEST_BLOB"
           test "$(git rev-parse HEAD:$CANONICAL_WORKFLOW)" = "$B02CB_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$B02CA_CONFIG)" = "$B02CA_CONFIG_BLOB"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
           node "$TEST"
           npm run audit:domain-completion-matrix
