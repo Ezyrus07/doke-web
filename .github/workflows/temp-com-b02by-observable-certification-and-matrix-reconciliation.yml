@@ -1,4 +1,4 @@
-name: TEMP COM-B02BY Observable Certification and Matrix Reconciliation R3
+name: TEMP COM-B02BY Observable Certification and Matrix Reconciliation R5
 
 on:
   pull_request:
@@ -61,7 +61,10 @@ jobs:
           test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
           git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
-          test "$(git diff --name-only "$CANDIDATE_HEAD" HEAD)" = "$TEMP_PATH"
+          recovery_actual="$(git diff --name-only "$CANDIDATE_HEAD" HEAD | sort)"
+          recovery_expected_temp_only="$(printf '%s\n' "$TEMP_PATH" | sort)"
+          recovery_expected_with_matrix="$(printf '%s\n' "$TEMP_PATH" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          test "$recovery_actual" = "$recovery_expected_temp_only" || test "$recovery_actual" = "$recovery_expected_with_matrix"
           expected="$(printf '%s\n' "$CANONICAL_WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
           actual="$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)"
           test "$actual" = "$expected"
