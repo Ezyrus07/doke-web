@@ -1,0 +1,154 @@
+name: UX-CSS-IMPORTANT-035 Permanent Certification
+on:
+  push:
+    branches:
+      - diag/ux-css-important-035-certify-permanent
+permissions:
+  contents: write
+jobs:
+  certify035:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      PARENT_TREE: 714d5b26a67edec2fbcb4f87ebae8c1197304269
+      HEAD_SHA: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      HEAD_TREE: 01704fc7f8e4b17f895bd11a0ed8f235baa9ec47
+      PERMANENT_BRANCH: ux/ux-css-important-035-domain-cards-active-priority
+      TARGET_FILE: assets/css/components/domain/doke-domain-cards.css
+      TARGET_PARENT_BLOB: 42df66dea7658af5859a1092e6148d9394472e2a
+      TARGET_BLOB: f7b0f8c5c4efcd7c0f821b18f514b788eef4cdfa
+      TARGET_SHA256: d99be25b5e0c364890bec8bc0aa28226b227d9b4bd45131fe193c440328aebed
+      LEDGER: diag/ux-css-important-post-010-ranking-r1
+      R5C_FILE: .diagnostics/ux-css-important-035-domain-cards-reconcile-r5c.txt
+      R5C_BLOB: ab7e5e4202b1fdd85c4699e4937e313c8fe49ca4
+      R5D_FILE: .diagnostics/ux-css-important-035-domain-cards-evidence-r5d.txt
+      R5D_BLOB: e7a5c8a581d91b1def2672444c22ab81b03677dd
+      R6C_FILE: .diagnostics/ux-css-important-035-domain-cards-governance-r6c.txt
+      R6C_BLOB: cbeeefa8e7ae32c151c6242dbb9cf8067609bde6
+      RESULT_FILE: .diagnostics/ux-css-important-035-permanent-certification.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Certify permanent candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          : >/tmp/summary
+          pass(){ echo "$1" | tee -a /tmp/summary; }
+
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null
+          git fetch origin "refs/heads/$LEDGER:refs/remotes/origin/$LEDGER" >/dev/null
+
+          test "$(git rev-parse "refs/remotes/origin/$PERMANENT_BRANCH")" = "$HEAD_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$HEAD_SHA^{tree}")" = "$HEAD_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_PARENT_BLOB"
+          test "$(git rev-parse "$HEAD_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git merge-base "$PARENT_SHA" "$HEAD_SHA")" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..$HEAD_SHA")" = 1
+          test "$(git diff --name-only "$PARENT_SHA" "$HEAD_SHA" | wc -l | tr -d ' ')" = 1
+          test "$(git diff --name-only "$PARENT_SHA" "$HEAD_SHA")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$HEAD_SHA" -- "$TARGET_FILE")" = $'215\t215\t'"$TARGET_FILE"
+          git diff --check "$PARENT_SHA" "$HEAD_SHA" -- "$TARGET_FILE"
+          pass 'LINEAGE PASS|ahead=1|behind=0|mergeBase=parent|files=1|additions=215|deletions=215'
+
+          test "$(git rev-parse "refs/remotes/origin/$LEDGER:$R5C_FILE")" = "$R5C_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$LEDGER:$R5D_FILE")" = "$R5D_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$LEDGER:$R6C_FILE")" = "$R6C_BLOB"
+          git show "refs/remotes/origin/$LEDGER:$R5C_FILE" >/tmp/r5c.txt
+          git show "refs/remotes/origin/$LEDGER:$R5D_FILE" >/tmp/r5d.txt
+          git show "refs/remotes/origin/$LEDGER:$R6C_FILE" >/tmp/r6c.txt
+          grep -q '^RUN_ID=32726102394$' /tmp/r5c.txt
+          grep -Fq 'RECONCILE PASS|states=36|metadataDiffs=0|screenshotDiffs=0|metadataStable=36/36|screenshotStable=36/36|pageErrors=0|targetStylesheetLoads=100/100|sampledDomainNodes=136/136|r3DeepTransfer=PASS' /tmp/r5c.txt
+          grep -q '^RESULT=PASS$' /tmp/r5c.txt
+          grep -q '^PROOF_RESULT=PASS$' /tmp/r5c.txt
+          grep -Fq 'BROWSER RECONCILIATION PASS|' /tmp/r5d.txt
+          grep -Fq 'deepPropertywiseDiffs=0|historicalR5FailPreserved=1|criteriaRelaxed=0' /tmp/r5d.txt
+          grep -q '^RESULT=PASS$' /tmp/r5d.txt
+          grep -q '^RUN_ID=32727503402$' /tmp/r6c.txt
+          grep -Fq "CANDIDATE PASS|important=215->0|sha256=$TARGET_SHA256|blob=$TARGET_BLOB|bytes=28604|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/r6c.txt
+          grep -q '^RESULT=PASS$' /tmp/r6c.txt
+          grep -q '^PROOF_RESULT=PASS$' /tmp/r6c.txt
+          pass 'EVIDENCE TRANSFER PASS|r5c=32726102394|r5d=32726425188|r6c=32727503402|criteriaRelaxed=0'
+
+          git checkout --detach "$HEAD_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test "$(grep -o '!important\b' "$TARGET_FILE" | wc -l | tr -d ' ')" = 0
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const root=process.cwd(),target=process.env.TARGET_FILE;
+          const protectedFiles=new Map([
+            ['assets/css/pages/home/mobile-composition.css','006'],
+            ['assets/css/components/cards/mobile-card-contract.css','010'],
+            ['assets/css/components/shell/mobile-base-stability.css','020'],
+            ['assets/css/pages/home/mobile-hero-feed.css','021'],
+          ]);
+          const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const f=path.join(d,e.name);return e.isDirectory()?walk(f):(e.isFile()&&e.name.endsWith('.css')?[f]:[])});
+          const rel=f=>path.relative(root,f).replace(/\\/g,'/');
+          const risk=(r,n)=>{if(r.includes('service-card'))return'excluded-service-card';if(r.includes('/core/')||r.includes('/layout/')||r.includes('shell')||r.includes('sidebar')||r.includes('header'))return'high-baseline-required';if(n>=25)return'high-baseline-required';if(n>=5)return'medium-baseline-required';return'low-review-candidate'};
+          const rows=walk(path.join(root,'assets/css')).map(f=>{const file=rel(f),n=(fs.readFileSync(f,'utf8').match(/!important\b/g)||[]).length;return{file,n,risk:risk(file,n)}});
+          const res=rows.filter(x=>x.n>0&&x.risk!=='excluded-service-card');
+          const m={global:rows.reduce((s,x)=>s+x.n,0),outsideService:res.reduce((s,x)=>s+x.n,0),files:res.length,high:res.filter(x=>x.risk==='high-baseline-required').reduce((s,x)=>s+x.n,0),medium:res.filter(x=>x.risk==='medium-baseline-required').reduce((s,x)=>s+x.n,0),low:res.filter(x=>x.risk==='low-review-candidate').reduce((s,x)=>s+x.n,0),target:rows.find(x=>x.file===target)?.n??-1,protected:Object.fromEntries([...protectedFiles].map(([f,k])=>[k,rows.find(x=>x.file===f)?.n??-1]))};
+          const exp={global:7361,outsideService:7299,files:13,high:7291,medium:6,low:2,target:0};
+          for(const [k,v] of Object.entries(exp))if(m[k]!==v)throw Error(`${k}=${m[k]} expected ${v}`);
+          for(const [k,v] of Object.entries({'006':6,'010':2,'020':28,'021':127}))if(m.protected[k]!==v)throw Error(`protected ${k}=${m.protected[k]} expected ${v}`);
+          NODE
+          pass 'PERMANENT IDENTITY PASS|important=0|global=7361|outsideService=7299|queueFiles=13|high=7291|medium=6|low=2|protected006=6|protected010=2|protected020=28|protected021=127'
+
+          npm ci --ignore-scripts >/dev/null
+          node scripts/generate-responsive-index-baseline.js >/tmp/responsive-baseline.log 2>&1
+          npm run test:responsive-contract >/tmp/responsive.log 2>&1
+          pass 'RESPONSIVE CONTRACT PASS'
+          npm run audit:domain >/tmp/domain-card.log 2>&1
+          pass 'DOMAIN CARD CONTRACT PASS'
+          npm run audit:agent-governance >/tmp/agent.log 2>&1
+          pass 'AGENT GOVERNANCE PASS'
+          node scripts/audit-css-responsive-conflicts.js >/tmp/conflicts.log 2>&1
+          pass 'CSS RESPONSIVE CONFLICTS PASS'
+          npm run audit:shared-app-header-contract >/tmp/header.log 2>&1
+          npm run audit:mobile-shell-location-contract >/tmp/mobile-shell.log 2>&1
+          npm run audit:responsive-boundaries >/tmp/boundaries.log 2>&1
+          pass 'SHARED RESPONSIVE CONTRACTS PASS'
+          npm run audit:duplicate-assets >/tmp/duplicates.log 2>&1
+          npm run audit:domain-completion-matrix >/tmp/domain-matrix.log 2>&1
+          pass 'DUPLICATES + DOMAIN MATRIX PASS'
+          npm run audit:active-legacy-structures >/tmp/legacy.log 2>&1
+          npm run audit:important-reduction-plan >/tmp/important-plan.log 2>&1
+          npm run audit:global-css-design-system >/tmp/design-system.log 2>&1
+          pass 'CSS GOVERNANCE SUITE PASS'
+          npm audit --json >/tmp/npm-audit.json 2>/dev/null || true
+          node <<'NODE'
+          const fs=require('fs');const v=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8')).metadata?.vulnerabilities||{};if(Number(v.total||0)!==13||Number(v.critical||0)!==0||Number(v.high||0)!==10||Number(v.moderate||0)!==1||Number(v.low||0)!==2)throw Error(JSON.stringify(v));
+          NODE
+          pass 'DEPENDENCIES PASS|total=13|critical=0|high=10|moderate=1|low=2'
+          git restore --worktree -- .
+          git clean -fd >/dev/null
+          test -z "$(git status --short --untracked-files=no)"
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$HEAD_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          pass 'RESTORE PASS|head=permanent-exact|tree=permanent-exact|workspaceTrackedClean=1'
+          pass 'RESULT=PASS'
+      - name: Publish permanent certification receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; test -f /tmp/summary && grep -q '^RESULT=PASS$' /tmp/summary && result=PASS || true
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "HEAD_SHA=$HEAD_SHA"; echo "HEAD_TREE=$HEAD_TREE"; echo "PR=356"; echo "TARGET_FILE=$TARGET_FILE"; test -f /tmp/summary && cat /tmp/summary || true; echo "PROOF_RESULT=$result"; } >/tmp/out
+          git fetch origin "refs/heads/$LEDGER:refs/remotes/origin/$LEDGER" >/dev/null
+          git checkout -B diag-output "origin/$LEDGER" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          git commit -m 'diag: publish 035 permanent certification [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$LEDGER" >/dev/null
+          test "$result" = PASS
