@@ -51,14 +51,12 @@ jobs:
           grep -q '^PROOF_RESULT=FAIL$' /tmp/r5.txt
           grep -q '^PROOF_RESULT=FAIL$' /tmp/r5b.txt
           pass 'HISTORICAL EVIDENCE PASS|r5TechnicalPasses=1|r5FailPreserved=1|r5bStaleAnchorFailPreserved=1'
-
           git checkout --detach "$PARENT_SHA" >/dev/null
           cp "$TARGET_FILE" /tmp/parent.css
           node <<'NODE'
           const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');const t=process.env.TARGET_FILE,b=new Set([106,139,141,142,147,275]);const o=fs.readFileSync(t,'utf8');let i=-1;const c=o.replace(/\s*!important\b/gi,m=>{i++;return b.has(i)?m:'';});fs.writeFileSync('/tmp/candidate.css',c);const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();if(i+1!==314||(c.match(/!important\b/gi)||[]).length!==6||blob!==process.env.CANDIDATE_BLOB)throw Error('candidate identity');if(o.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('not marker-only');fs.writeFileSync(t,c);
           NODE
           pass 'CANDIDATE IDENTITY PASS|important=314->6|removed=308|markerOnly=1'
-
           npm ci --ignore-scripts >/dev/null
           npm run audit:domain >/dev/null
           npm run audit:agent-governance >/dev/null
@@ -74,7 +72,6 @@ jobs:
           npm run audit:important-reduction-plan >/dev/null
           npm run audit:global-css-design-system >/dev/null
           pass 'AUDIT REPRODUCTION PASS'
-
           git diff --name-only | sort -u >/tmp/tracked.txt
           git ls-files --others --exclude-standard | sort -u >/tmp/untracked.txt
           cat /tmp/tracked.txt /tmp/untracked.txt | sort -u >/tmp/all.txt
@@ -82,7 +79,6 @@ jobs:
           const fs=require('fs'),target=process.env.TARGET_FILE;const all=fs.readFileSync('/tmp/all.txt','utf8').split(/\r?\n/).filter(Boolean);const unexpected=all.filter(p=>p!==target&&!p.startsWith('reports/'));if(unexpected.length)throw Error('unexpected side effects: '+unexpected.join(','));const reports=all.filter(p=>p.startsWith('reports/'));fs.writeFileSync('/tmp/effect-summary',`AUDIT SIDE EFFECT ATTRIBUTION PASS|changedTotal=${all.length}|reportPaths=${reports.length}|targetPresent=${all.includes(target)?1:0}|unexpectedNonReport=0\nREPORT_PATHS=${reports.join(',')}\n`);
           NODE
           cat /tmp/effect-summary | tee -a /tmp/summary
-
           git restore --worktree -- reports 2>/dev/null || true
           git clean -fd -- reports >/dev/null 2>&1 || true
           test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
@@ -111,3 +107,5 @@ jobs:
           git add -- "$RESULT_FILE"
           if ! git diff --cached --quiet; then git commit -m 'diag: publish 036 governance hygiene R5C [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null; fi
           test "$result" = PASS
+
+# trigger-r5c
