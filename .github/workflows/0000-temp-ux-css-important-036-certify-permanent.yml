@@ -1,0 +1,193 @@
+name: UX-CSS-IMPORTANT-036 Permanent Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-036-certify-permanent
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-036-certify-permanent.yml
+
+permissions:
+  contents: write
+
+jobs:
+  certify036:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PARENT_SHA: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      PARENT_TREE: 01704fc7f8e4b17f895bd11a0ed8f235baa9ec47
+      HEAD_SHA: d3d45498ca2e8889c50273fa82550f92d3b7af1f
+      HEAD_TREE: c44532c746318e9f82d59755c1d857abb346e5c6
+      PERMANENT_BRANCH: ux/ux-css-important-036-mobile-app-shell-active-priority
+      TARGET_FILE: assets/css/components/shell/mobile-app-shell.css
+      TARGET_PARENT_BLOB: af6fd982517f2bc821435e633d70237e95ee11a8
+      TARGET_BLOB: 14fb64c93777d606b07c0abbf2c6532aed134cc4
+      TARGET_SHA256: 8fb0e7919197559b37a2d2b3c348766cff38729792c13cfffcdcb9bada8ad097
+      TARGET_BYTES: 37020
+      R5_BRANCH: diag/ux-css-important-036-narrow-governance-r5
+      R5_FILE: .diagnostics/ux-css-important-036-narrow-governance-r5.txt
+      R5_BLOB: f48d94a4d4ca1fe6f82b138cc2298308277aaaa2
+      R5E_BRANCH: diag/ux-css-important-036-narrow-governance-r5e
+      R5E_FILE: .diagnostics/ux-css-important-036-narrow-governance-r5e.txt
+      R5E_BLOB: acdc143aafb62b9fc085096d7b22aa1dd20d98e4
+      RESULT_FILE: .diagnostics/ux-css-important-036-permanent-certification.txt
+      OUTPUT_BRANCH: diag/ux-css-important-036-certify-permanent
+      PR_NUM: 358
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Certify permanent candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          : >/tmp/summary
+          pass(){ echo "$1" | tee -a /tmp/summary; }
+
+          git fetch --no-tags origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null
+          git fetch --no-tags origin "refs/heads/$R5_BRANCH:refs/remotes/origin/$R5_BRANCH" >/dev/null
+          git fetch --no-tags origin "refs/heads/$R5E_BRANCH:refs/remotes/origin/$R5E_BRANCH" >/dev/null
+
+          test "$(git rev-parse "refs/remotes/origin/$PERMANENT_BRANCH")" = "$HEAD_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$HEAD_SHA^{tree}")" = "$HEAD_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_PARENT_BLOB"
+          test "$(git rev-parse "$HEAD_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git merge-base "$PARENT_SHA" "$HEAD_SHA")" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..$HEAD_SHA")" = 1
+          test "$(git rev-list --count "$HEAD_SHA..$PARENT_SHA")" = 0
+          test "$(git diff --name-only "$PARENT_SHA" "$HEAD_SHA" | wc -l | tr -d ' ')" = 1
+          test "$(git diff --name-only "$PARENT_SHA" "$HEAD_SHA")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$HEAD_SHA" -- "$TARGET_FILE")" = $'308\t308\t'"$TARGET_FILE"
+          git diff --check "$PARENT_SHA" "$HEAD_SHA" -- "$TARGET_FILE"
+          pass 'LINEAGE PASS|ahead=1|behind=0|mergeBase=parent|files=1|additions=308|deletions=308'
+
+          test "$(git rev-parse "refs/remotes/origin/$R5_BRANCH:$R5_FILE")" = "$R5_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R5E_BRANCH:$R5E_FILE")" = "$R5E_BLOB"
+          git show "refs/remotes/origin/$R5_BRANCH:$R5_FILE" >/tmp/r5.txt
+          git show "refs/remotes/origin/$R5E_BRANCH:$R5E_FILE" >/tmp/r5e.txt
+
+          grep -Fq 'BROWSER + RESPONSIVE EVIDENCE PASS|states=60|metadataDiffs=0|screenshotDiffs=0|responsiveChecks=893|responsiveFailures=0|criteriaRelaxed=0' /tmp/r5.txt
+          grep -Fq "CANDIDATE PASS|important=314->6|removed=308|sha256=$TARGET_SHA256|blob=$TARGET_BLOB|bytes=$TARGET_BYTES|blockers=106,139,141,142,147,275|markerOnly=1" /tmp/r5.txt
+          grep -Fq 'IMPORTANT FRESH PASS|global=7361->7053|outsideService=7299->6991|queueFiles=13->13|high=7291->6983|medium=6->6|low=2->2|protected006=6|protected010=2|protected020=28|protected021=127' /tmp/r5.txt
+          grep -q '^DOMAIN CARD CONTRACT PASS$' /tmp/r5.txt
+          grep -q '^AGENT GOVERNANCE PASS$' /tmp/r5.txt
+          grep -q '^CSS RESPONSIVE CONFLICTS PASS$' /tmp/r5.txt
+          grep -q '^SHARED SHELL + RESPONSIVE STATIC CONTRACTS PASS$' /tmp/r5.txt
+          grep -q '^DUPLICATES + DOMAIN MATRIX PASS$' /tmp/r5.txt
+          grep -q '^CSS GOVERNANCE SUITE PASS$' /tmp/r5.txt
+          grep -q '^DEPENDENCIES PASS|total=13|critical=0|high=10|moderate=1|low=2$' /tmp/r5.txt
+          grep -q '^PROOF_RESULT=FAIL$' /tmp/r5.txt
+
+          grep -Fq 'CANDIDATE IDENTITY PASS|important=314->6|removed=308|markerOnly=1' /tmp/r5e.txt
+          grep -Fq 'AUDIT REPRODUCTION PASS|domain=1|agent=1|conflicts=1|shell=1|matrix=1|designSystem=1' /tmp/r5e.txt
+          grep -Fq 'DERIVATIVE ATTRIBUTION PASS|changed=3|reports=0|derivedDocs=2|unexpected=0' /tmp/r5e.txt
+          grep -Fq 'DIFF HYGIENE PASS|files=1|additions=308|deletions=308|removedMarkers=308|markerOnly=1' /tmp/r5e.txt
+          grep -Fq 'RESTORE PASS|parentExact=1|workspaceClean=1' /tmp/r5e.txt
+          grep -q '^RESULT=PASS$' /tmp/r5e.txt
+          grep -q '^PROOF_RESULT=PASS$' /tmp/r5e.txt
+          pass 'EVIDENCE TRANSFER PASS|r5TechnicalHistoricalFailPreserved=1|r5eFinalPass=1|criteriaRelaxed=0'
+
+          git checkout --detach "$HEAD_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs');
+          const parent=fs.readFileSync('/tmp/parent.css','utf8');
+          const head=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const blockers=new Set([106,139,141,142,147,275]);
+          let i=-1;
+          const expected=parent.replace(/\s*!important\b/gi,m=>{i++;return blockers.has(i)?m:'';});
+          const parentCount=(parent.match(/!important\b/gi)||[]).length;
+          const headCount=(head.match(/!important\b/gi)||[]).length;
+          if(i+1!==314||parentCount!==314||headCount!==6) throw Error(`marker counts ${i+1}/${parentCount}/${headCount}`);
+          if(expected!==head) throw Error('permanent bytes differ from deterministic 314->6 candidate');
+          if(parent.replace(/\s*!important\b/gi,'')!==head.replace(/\s*!important\b/gi,'')) throw Error('non-marker mutation');
+          NODE
+          pass 'PERMANENT IDENTITY PASS|important=314->6|removed=308|blockers=106,139,141,142,147,275|blob=exact|sha256=exact|bytes=37020|markerOnly=1'
+
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile()&&p.endsWith('.css'))out.push(p)}return out}
+          const count=f=>(fs.readFileSync(f,'utf8').match(/!important\b/gi)||[]).length;
+          const total=walk('assets/css').reduce((s,f)=>s+count(f),0);
+          const checks={
+            'assets/css/pages/home/mobile-composition.css':6,
+            'assets/css/components/cards/mobile-card-contract.css':2,
+            'assets/css/components/shell/mobile-base-stability.css':28,
+            'assets/css/pages/home/mobile-hero-feed.css':127,
+            [process.env.TARGET_FILE]:6
+          };
+          if(total!==7053)throw Error(`global important ${total}`);
+          for(const [f,n] of Object.entries(checks)){const got=count(f);if(got!==n)throw Error(`${f}=${got} expected ${n}`)}
+          NODE
+          pass 'IMPORTANT FRESH PASS|global=7053|target=6|protected006=6|protected010=2|protected020=28|protected021=127'
+
+          npm ci --ignore-scripts >/dev/null
+          node scripts/generate-responsive-index-baseline.js >/tmp/responsive-baseline.log 2>&1
+          npm run test:responsive-contract >/tmp/responsive.log 2>&1
+          pass 'RESPONSIVE CONTRACT PASS'
+          npm run audit:domain >/tmp/domain.log 2>&1
+          pass 'DOMAIN CARD CONTRACT PASS'
+          npm run audit:agent-governance >/tmp/agent.log 2>&1
+          pass 'AGENT GOVERNANCE PASS'
+          node scripts/audit-css-responsive-conflicts.js >/tmp/conflicts.log 2>&1
+          pass 'CSS RESPONSIVE CONFLICTS PASS'
+          npm run audit:shared-app-header-contract >/tmp/header.log 2>&1
+          npm run audit:mobile-shell-location-contract >/tmp/mobile-shell.log 2>&1
+          npm run audit:responsive-boundaries >/tmp/boundaries.log 2>&1
+          npm run audit:mobile-base >/tmp/mobile-base.log 2>&1
+          node scripts/test-home-mobile-shell-rail-contract.js >/tmp/home-shell-rail.log 2>&1
+          pass 'SHARED SHELL + RESPONSIVE STATIC CONTRACTS PASS'
+          npm run audit:duplicate-assets >/tmp/duplicates.log 2>&1
+          npm run audit:domain-completion-matrix >/tmp/domain-matrix.log 2>&1
+          pass 'DUPLICATES + DOMAIN MATRIX PASS'
+          npm run audit:active-legacy-structures >/tmp/legacy.log 2>&1
+          npm run audit:important-reduction-plan >/tmp/important-plan.log 2>&1
+          npm run audit:global-css-design-system >/tmp/design-system.log 2>&1
+          pass 'CSS GOVERNANCE SUITE PASS'
+          npm audit --json >/tmp/npm-audit.json 2>/dev/null || true
+          node - <<'NODE'
+          const v=JSON.parse(require('fs').readFileSync('/tmp/npm-audit.json','utf8')).metadata?.vulnerabilities||{};
+          const expected={total:13,critical:0,high:10,moderate:1,low:2};
+          for(const [k,n] of Object.entries(expected)) if(Number(v[k]||0)!==n) throw Error(`${k}=${v[k]} expected ${n}`);
+          NODE
+          pass 'DEPENDENCIES PASS|total=13|critical=0|high=10|moderate=1|low=2'
+
+          git restore --worktree -- .
+          git clean -fd >/dev/null
+          test -z "$(git status --short --untracked-files=no)"
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$HEAD_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          pass 'RESTORE PASS|head=permanent-exact|tree=permanent-exact|workspaceTrackedClean=1'
+          pass 'RESULT=PASS'
+
+      - name: Publish permanent certification receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          test -f /tmp/summary && grep -q '^RESULT=PASS$' /tmp/summary && result=PASS || true
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "HEAD_SHA=$HEAD_SHA"; echo "HEAD_TREE=$HEAD_TREE"; echo "PR=$PR_NUM"; echo "TARGET_FILE=$TARGET_FILE"; test -f /tmp/summary && cat /tmp/summary || true; echo "PROOF_RESULT=$result"; } >/tmp/out
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: publish 036 permanent certification [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
+          test "$result" = PASS
