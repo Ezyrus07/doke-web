@@ -1,0 +1,77 @@
+name: UX-CSS-IMPORTANT-036 Delta Isolation R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-036-delta-isolation-r3
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-036-delta-isolation-r3.yml
+      - .diagnostics/ux-css-important-036-delta-isolation-r3.js
+
+permissions:
+  contents: write
+
+jobs:
+  isolate036r3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      SCRIPT: .diagnostics/ux-css-important-036-delta-isolation-r3.js
+      RESULT: .diagnostics/ux-css-important-036-delta-isolation-r3.json
+      WORKFLOW: .github/workflows/0000-temp-ux-css-important-036-delta-isolation-r3.yml
+      R2C_BRANCH: diag/ux-css-important-036-candidate-browser-r2c
+      R2C_PATH: .diagnostics/ux-css-important-036-candidate-browser-r2c.json
+      R2C_BLOB: 296e2618c43caaa9bef93203840d2ac86bce5b6f
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: diag/ux-css-important-036-delta-isolation-r3
+          fetch-depth: 0
+
+      - name: Freeze lineage and transfer canonical R2C failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$PARENT" HEAD
+          actual="$(git diff --name-only "$PARENT" HEAD | sort)"
+          expected2="$(printf '%s\n' "$SCRIPT" "$WORKFLOW" | sort)"
+          expected3="$(printf '%s\n' "$RESULT" "$SCRIPT" "$WORKFLOW" | sort)"
+          test "$actual" = "$expected2" || test "$actual" = "$expected3"
+          test -z "$(git diff --name-only "$PARENT" HEAD -- 'assets/css/**' '*.html' 'assets/js/**')"
+          git fetch --no-tags origin "$R2C_BRANCH"
+          blob="$(git show FETCH_HEAD:"$R2C_PATH" | git hash-object --stdin)"
+          test "$blob" = "$R2C_BLOB"
+          git show FETCH_HEAD:"$R2C_PATH" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(x.status!=="FAIL"||x.diffs.total!==10||x.diffs.metadata!==10||x.diffs.screenshot!==0)process.exit(1)})'
+
+      - name: Install browser harness dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+
+      - name: Isolate exact semantic blockers
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$SCRIPT"
+          node -e 'const x=require("./.diagnostics/ux-css-important-036-delta-isolation-r3.json");if(x.status!=="PASS"||x.blockerDeclarationCount<1||x.differingStateCount<1||x.mutationAuthorityGranted!==false)process.exit(1)'
+          git diff --check
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+
+      - name: Publish R3 diagnostic receipt only
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$RESULT" || { echo '{"boundary":"UX-CSS-IMPORTANT-036","proof":"delta-isolation-r3","status":"FAIL","error":"receipt missing"}' > "$RESULT"; }
+          git checkout -- 'assets/css/components/shell/mobile-app-shell.css' 2>/dev/null || true
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$RESULT"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test(ux): publish 036 delta isolation R3 receipt'
+          git push origin HEAD:diag/ux-css-important-036-delta-isolation-r3
