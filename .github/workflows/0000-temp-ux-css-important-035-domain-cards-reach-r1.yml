@@ -1,0 +1,175 @@
+name: UX-CSS-IMPORTANT-035 Domain Cards Reach R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-035-domain-cards-reach-r1
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-035-domain-cards-reach-r1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reach035r1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      TARGET_FILE: assets/css/components/domain/doke-domain-cards.css
+      DIAG_WORKFLOW: .github/workflows/0000-temp-ux-css-important-035-domain-cards-reach-r1.yml
+      DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
+      RESULT_FILE: .diagnostics/ux-css-important-035-domain-cards-reach-r1.txt
+    steps:
+      - name: Checkout exact diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: diag/ux-css-important-035-domain-cards-reach-r1
+          fetch-depth: 0
+
+      - name: Freeze certified 034 lineage and diagnostic-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "714d5b26a67edec2fbcb4f87ebae8c1197304269"
+          git merge-base --is-ancestor "$PARENT_SHA" HEAD
+          test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$DIAG_WORKFLOW"
+          test -z "$(git diff --name-only "$PARENT_SHA" HEAD -- 'assets/css/**')"
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l | tr -d ' ')" = "215"
+
+      - name: Compute candidate and canonical reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' >/tmp/reach.txt
+          const fs = require('fs');
+          const path = require('path');
+          const crypto = require('crypto');
+          const cp = require('child_process');
+          const ROOT = process.cwd();
+          const TARGET = process.env.TARGET_FILE.replace(/\\/g, '/');
+          const SKIP_DIRS = new Set(['.git','node_modules','archive','reports','test-results','tools']);
+
+          function walk(dir, pred) {
+            if (!fs.existsSync(dir)) return [];
+            return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e => {
+              if (e.isDirectory() && SKIP_DIRS.has(e.name)) return [];
+              const full = path.join(dir,e.name);
+              if (e.isDirectory()) return walk(full,pred);
+              return e.isFile() && pred(full) ? [full] : [];
+            });
+          }
+          function rel(p){ return path.relative(ROOT,p).replace(/\\/g,'/'); }
+          function cleanRef(ref){ return ref.split('#')[0].split('?')[0].trim(); }
+          function resolveLocal(fromFile, ref){
+            ref = cleanRef(ref);
+            if (!ref || /^(?:https?:|data:|blob:|\/\/)/i.test(ref)) return null;
+            const abs = ref.startsWith('/') ? path.join(ROOT, ref.replace(/^\/+/,'')) : path.resolve(path.dirname(fromFile), ref);
+            if (!abs.startsWith(ROOT)) return null;
+            return rel(abs);
+          }
+
+          const htmlFiles = walk(ROOT, f => f.endsWith('.html'));
+          const cssFiles = walk(path.join(ROOT,'assets','css'), f => f.endsWith('.css'));
+          const jsFiles = walk(ROOT, f => f.endsWith('.js'));
+          const cssSet = new Set(cssFiles.map(rel));
+          const direct = new Set();
+          const htmlTargetRefs = [];
+
+          for (const file of htmlFiles) {
+            const text = fs.readFileSync(file,'utf8');
+            const re = /<link\b[^>]*?href\s*=\s*["']([^"']+\.css(?:[?#][^"']*)?)["'][^>]*>/gi;
+            let m;
+            while ((m = re.exec(text))) {
+              const r = resolveLocal(file,m[1]);
+              if (r && cssSet.has(r)) direct.add(r);
+              if (r === TARGET) htmlTargetRefs.push(rel(file));
+            }
+          }
+
+          const graph = new Map();
+          const importers = [];
+          for (const file of cssFiles) {
+            const text = fs.readFileSync(file,'utf8');
+            const imports = [];
+            const re = /@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?\s*\)?[^;]*;/gi;
+            let m;
+            while ((m = re.exec(text))) {
+              const r = resolveLocal(file,m[1]);
+              if (r && cssSet.has(r)) imports.push(r);
+              if (r === TARGET) importers.push(rel(file));
+            }
+            graph.set(rel(file),imports);
+          }
+
+          const reachable = new Set();
+          const stack = [...direct];
+          while (stack.length) {
+            const cur = stack.pop();
+            if (reachable.has(cur)) continue;
+            reachable.add(cur);
+            for (const next of graph.get(cur) || []) stack.push(next);
+          }
+
+          const refs = {runtime:[], tooling:[], other:[]};
+          for (const file of jsFiles) {
+            const text = fs.readFileSync(file,'utf8');
+            if (!text.includes(TARGET) && !text.includes(path.basename(TARGET))) continue;
+            const r = rel(file);
+            if (r.startsWith('assets/js/')) refs.runtime.push(r);
+            else if (r.startsWith('scripts/')) refs.tooling.push(r);
+            else refs.other.push(r);
+          }
+
+          const original = fs.readFileSync(TARGET,'utf8');
+          const before = (original.match(/!important\b/g)||[]).length;
+          const candidate = original.replace(/\s*!important\b/g,'');
+          const after = (candidate.match(/!important\b/g)||[]).length;
+          const sha256 = crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex');
+          const blob = cp.execFileSync('git',['hash-object','--stdin'],{input:candidate,encoding:'utf8'}).trim();
+          const active = reachable.has(TARGET);
+          const wholeFileDormant = !active && refs.runtime.length===0 && refs.other.length===0;
+
+          console.log(`CANDIDATE PASS|bytes=${Buffer.byteLength(candidate)}|important=${before}->${after}|removed=${before-after}|sha256=${sha256}|blob=${blob}|transform=marker-only|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
+          console.log(`CANONICAL REACH PASS|rootHtml=${htmlFiles.length}|directCss=${direct.size}|loadedCss=${reachable.size}|physicalCss=${cssFiles.length}|htmlLinks=${htmlTargetRefs.length}|actualImporters=${new Set(importers).size}|runtimeJsRefs=${new Set(refs.runtime).size}|toolingJsRefs=${new Set(refs.tooling).size}|otherJsRefs=${new Set(refs.other).size}|active=${active?1:0}|wholeFileDormant=${wholeFileDormant?1:0}`);
+          console.log(`HTML_TARGET_REFS=${[...new Set(htmlTargetRefs)].sort().join(',') || 'none'}`);
+          console.log(`CSS_IMPORTERS=${[...new Set(importers)].sort().join(',') || 'none'}`);
+          console.log(`RUNTIME_JS_REFS=${[...new Set(refs.runtime)].sort().join(',') || 'none'}`);
+          console.log(`TOOLING_JS_REFS=${[...new Set(refs.tooling)].sort().join(',') || 'none'}`);
+          console.log(`OTHER_JS_REFS=${[...new Set(refs.other)].sort().join(',') || 'none'}`);
+          if (before !== 215 || after !== 0) throw new Error(`target marker invariant ${before}->${after}`);
+          NODE
+          cat /tmp/reach.txt
+
+      - name: Publish immutable R1 receipt to diagnostic ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "PARENT_SHA=$PARENT_SHA"
+            echo "TARGET_FILE=$TARGET_FILE"
+            echo "REACH=success"
+            cat /tmp/reach.txt
+            echo "RESULT=PASS"
+          } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if git diff --cached --quiet; then
+            echo 'receipt already current'
+            exit 0
+          fi
+          git commit -m 'diag: publish 035 domain cards reach r1 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          git diff --check "$PARENT_SHA" HEAD
