@@ -4,109 +4,111 @@ const assert = require('assert');
 const contract = require('../backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-resolve-execution');
 const config = require('../config/com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.json');
 
-function staticChecks() {
-  assert.strictEqual(contract.CONTRACT_ID, config.contractId);
-  assert.strictEqual(contract.BOUNDARY_ID, 'COM-B02CF');
-  assert.strictEqual(contract.PREDECESSOR_CONTRACT_ID, config.predecessor.contractId);
-  assert.strictEqual(contract.PREDECESSOR_HEAD, config.predecessor.head);
-  assert.strictEqual(contract.PREDECESSOR_TREE, config.predecessor.tree);
-  assert.strictEqual(contract.PREDECESSOR_CERTIFICATION_RUN_ID, config.predecessor.certificationRunId);
-  assert.strictEqual(contract.PREDECESSOR_CERTIFICATION_JOB_ID, config.predecessor.certificationJobId);
-  assert.strictEqual(config.predecessor.repositoryCertified, true);
-  assert.strictEqual(config.authorization.singleUse, true);
-  assert.strictEqual(config.authorization.reusable, false);
-  assert.strictEqual(config.authorization.operationMethodInvocationAuthority, true);
-  assert.strictEqual(config.authorization.continuationStateStorageAuthority, true);
-  assert.strictEqual(config.authorization.registryOperationInvocationAuthority, true);
-  assert.strictEqual(config.authorization.registryRegisterAuthority, true);
-  assert.strictEqual(config.authorization.registryLookupAuthority, true);
-  assert.strictEqual(config.authorization.registryResolveAuthority, true);
-  assert.strictEqual(config.authorization.registryReleaseAuthority, false);
-  assert.strictEqual(config.executionIntent.singleProcessOnly, true);
-  assert.strictEqual(config.executionIntent.registerThenResolveSameEntry, true);
-  assert.strictEqual(config.executionIntent.resolveConsumesEntry, false);
-  assert.strictEqual(config.executionIntent.releaseExcluded, true);
-  assert.strictEqual(config.executionIntent.historicalB02ceStateReuseAttempted, false);
-  assert.strictEqual(config.executionIntent.newSyntheticStateRequiredBecauseB02ceWasEphemeral, true);
-  assert.strictEqual(typeof contract.executeRepositoryOnlyDeterministicSyntheticRegisterResolve, 'function');
-  assert.strictEqual(typeof contract.evaluateBoundaryCertification, 'function');
-}
+assert.strictEqual(contract.CONTRACT_ID, config.contractId);
+assert.strictEqual(contract.BOUNDARY_ID, 'COM-B02CF');
+assert.strictEqual(contract.PREDECESSOR_CONTRACT_ID, config.predecessor.contractId);
+assert.strictEqual(contract.PREDECESSOR_HEAD, config.predecessor.head);
+assert.strictEqual(contract.PREDECESSOR_TREE, config.predecessor.tree);
+assert.strictEqual(contract.PREDECESSOR_CERTIFICATION_RUN_ID, config.predecessor.certificationRunId);
+assert.strictEqual(contract.PREDECESSOR_CERTIFICATION_JOB_ID, config.predecessor.certificationJobId);
+assert.strictEqual(contract.EXECUTION_PROOF_HEAD, config.executionProof.head);
+assert.strictEqual(contract.EXECUTION_PROOF_TREE, config.executionProof.tree);
+assert.strictEqual(contract.EXECUTION_PROOF_RUN_ID, config.executionProof.runId);
+assert.strictEqual(contract.EXECUTION_PROOF_JOB_ID, config.executionProof.jobId);
+assert.strictEqual(contract.AUTHORIZATION_KIND, config.authorization.kind);
+assert.strictEqual(contract.AUTHORIZATION_SOURCE, config.authorization.source);
+assert.strictEqual(config.status, 'EXECUTION_PROVEN_REPOSITORY_CERTIFICATION_CANDIDATE');
+assert.strictEqual(config.executionProof.authorizationConsumed, true);
+assert.strictEqual(config.executionProof.executionEffectAcceptedAsAuthorizedBoundary, true);
+assert.strictEqual(config.executionProof.registryRegisterExecuted, true);
+assert.strictEqual(config.executionProof.registryLookupExecuted, true);
+assert.strictEqual(config.executionProof.registryResolveExecuted, true);
+assert.strictEqual(config.executionProof.registryReleaseExecuted, false);
+assert.strictEqual(config.executionProof.entryCountAfterRegister, 1);
+assert.strictEqual(config.executionProof.entryCountAfterResolve, 1);
+assert.strictEqual(config.executionProof.resolvedStateMatchesExpected, true);
+assert.strictEqual(config.executionProof.processLocalOnly, true);
+assert.strictEqual(config.executionProof.ephemeralRegistry, true);
+assert.strictEqual(config.executionProof.stateEscapesExecutionProcess, false);
+assert.strictEqual(config.finalization.executableSurfaceRemoved, true);
+assert.strictEqual(config.finalization.singleUseExecutorRemoved, true);
+assert.strictEqual(config.finalization.matrixExporterRemoved, true);
+assert.strictEqual(config.finalization.matrixPromoterRemoved, true);
+assert.strictEqual(config.finalization.reexecutionAllowed, false);
+assert.strictEqual(typeof contract.evaluateRepositoryCertification, 'function');
+assert.strictEqual(contract.executeRepositoryOnlyDeterministicSyntheticRegisterResolve, undefined);
 
-function executeExactlyOnce() {
-  const proof = contract.executeRepositoryOnlyDeterministicSyntheticRegisterResolve();
-  assert.strictEqual(proof.decision, 'repository_only_deterministic_synthetic_continuation_state_registered_and_resolved');
-  for (const key of [
-    'registerOperationInvoked', 'resolveOperationInvoked',
-    'preparedRegisterMethodValidated', 'preparedResolveMethodValidated',
-    'continuationStateStored', 'registryOperationInvoked',
-    'registryRegisterExecuted', 'registryLookupExecuted', 'registryResolveExecuted',
-    'storedStateMatchesExpected', 'resolvedStatePresent',
-    'resolvedStateMatchesExpected', 'entryRetainedAfterResolve',
-    'processLocalOnly', 'ephemeralRegistry'
-  ]) assert.strictEqual(proof[key], true, key);
+const certification = contract.evaluateRepositoryCertification({
+  predecessorContractId: config.predecessor.contractId,
+  predecessorHead: config.predecessor.head,
+  predecessorTree: config.predecessor.tree,
+  predecessorCertificationRunId: config.predecessor.certificationRunId,
+  predecessorCertificationJobId: config.predecessor.certificationJobId,
+  predecessorRepositoryCertified: config.predecessor.repositoryCertified,
+  executionProofHead: config.executionProof.head,
+  executionProofTree: config.executionProof.tree,
+  executionProofRunId: config.executionProof.runId,
+  executionProofJobId: config.executionProof.jobId,
+  executionStepConclusion: config.executionProof.executionStepConclusion,
+  authorizationConsumed: config.executionProof.authorizationConsumed,
+  executionEffectAcceptedAsAuthorizedBoundary: config.executionProof.executionEffectAcceptedAsAuthorizedBoundary,
+  registerOperationInvoked: config.executionProof.registerOperationInvoked,
+  resolveOperationInvoked: config.executionProof.resolveOperationInvoked,
+  preparedRegisterMethodValidated: config.executionProof.preparedRegisterMethodValidated,
+  preparedResolveMethodValidated: config.executionProof.preparedResolveMethodValidated,
+  continuationStateStored: config.executionProof.continuationStateStored,
+  registryOperationInvoked: config.executionProof.registryOperationInvoked,
+  registryRegisterExecuted: config.executionProof.registryRegisterExecuted,
+  registryLookupExecuted: config.executionProof.registryLookupExecuted,
+  registryResolveExecuted: config.executionProof.registryResolveExecuted,
+  registryReleaseExecuted: config.executionProof.registryReleaseExecuted,
+  entryCountAfterRegister: config.executionProof.entryCountAfterRegister,
+  entryCountAfterResolve: config.executionProof.entryCountAfterResolve,
+  storedStateMatchesExpected: config.executionProof.storedStateMatchesExpected,
+  resolvedStatePresent: config.executionProof.resolvedStatePresent,
+  resolvedStateMatchesExpected: config.executionProof.resolvedStateMatchesExpected,
+  entryRetainedAfterResolve: config.executionProof.entryRetainedAfterResolve,
+  processLocalOnly: config.executionProof.processLocalOnly,
+  ephemeralRegistry: config.executionProof.ephemeralRegistry,
+  stateEscapesExecutionProcess: config.executionProof.stateEscapesExecutionProcess,
+  rawStateSerialized: config.executionProof.rawStateSerialized,
+  rawStateExported: config.executionProof.rawStateExported,
+  executableReferencesSerialized: config.executionProof.executableReferencesSerialized,
+  executableReferencesExported: config.executionProof.executableReferencesExported,
+  resumeSurfaceInvoked: config.executionProof.resumeSurfaceInvoked,
+  activeExecuteHandlerInvoked: config.executionProof.activeExecuteHandlerInvoked,
+  repositoryOperationInvoked: config.executionProof.repositoryOperationInvoked,
+  credentialReadExecuted: config.executionProof.credentialReadExecuted,
+  rpcExecuted: config.executionProof.rpcExecuted,
+  networkExecuted: config.executionProof.networkExecuted,
+  stagingReadExecuted: config.executionProof.stagingReadExecuted,
+  stagingMutationExecuted: config.executionProof.stagingMutationExecuted,
+  migrationApplied: config.executionProof.migrationApplied,
+  runtimeActivated: config.executionProof.runtimeActivated,
+  productionChanged: config.executionProof.productionChanged,
+  routeRegistryChanged: config.executionProof.routeRegistryChanged,
+  moduleRouteLoaderChanged: config.executionProof.moduleRouteLoaderChanged,
+  routeHandlersChanged: config.executionProof.routeHandlersChanged,
+  authority: config.authorization,
+  executableSurfaceRemoved: config.finalization.executableSurfaceRemoved,
+  singleUseExecutorRemoved: config.finalization.singleUseExecutorRemoved,
+  matrixExporterRemoved: config.finalization.matrixExporterRemoved,
+  matrixPromoterRemoved: config.finalization.matrixPromoterRemoved,
+  historicalExecutionProofPreserved: config.finalization.historicalExecutionProofPreserved,
+  historicalExecutionAcceptedAsAuthorizedBoundary: config.finalization.historicalExecutionAcceptedAsAuthorizedBoundary,
+  reexecutionAllowed: config.finalization.reexecutionAllowed
+});
 
-  assert.strictEqual(proof.registryReleaseExecuted, false);
-  assert.strictEqual(proof.entryCountAfterRegister, 1);
-  assert.strictEqual(proof.entryCountAfterResolve, 1);
-  assert.strictEqual(proof.stateEscapesExecutionProcess, false);
+assert.strictEqual(certification.ready, true);
+assert.deepStrictEqual(certification.blockers, []);
+assert.strictEqual(certification.registryRegisterExecuted, true);
+assert.strictEqual(certification.registryLookupExecuted, true);
+assert.strictEqual(certification.registryResolveExecuted, true);
+assert.strictEqual(certification.registryReleaseExecuted, false);
+assert.strictEqual(certification.networkExecuted, false);
+assert.strictEqual(certification.runtimeActivated, false);
+assert.strictEqual(certification.productionChanged, false);
+assert.strictEqual(certification.reexecutionAllowed, false);
+assert.strictEqual(certification.nextAction, config.nextAction);
 
-  for (const key of [
-    'rawStateSerialized', 'rawStateExported',
-    'executableReferencesSerialized', 'executableReferencesExported',
-    'resumeSurfaceInvoked', 'activeExecuteHandlerInvoked', 'repositoryOperationInvoked',
-    'credentialReadExecuted', 'rpcExecuted', 'networkExecuted',
-    'stagingReadExecuted', 'stagingMutationExecuted', 'migrationApplied',
-    'runtimeActivated', 'productionChanged'
-  ]) assert.strictEqual(proof[key], false, key);
-
-  const certification = contract.evaluateBoundaryCertification({
-    predecessorContractId: config.predecessor.contractId,
-    predecessorHead: config.predecessor.head,
-    predecessorTree: config.predecessor.tree,
-    b02ceCertificationRunId: config.predecessor.certificationRunId,
-    b02ceCertificationJobId: config.predecessor.certificationJobId,
-    ...proof,
-    authority: config.authorization,
-    routeRegistryChanged: false,
-    moduleRouteLoaderChanged: false,
-    routeHandlersChanged: false
-  });
-
-  assert.strictEqual(certification.ready, true);
-  assert.deepStrictEqual(certification.blockers, []);
-  assert.strictEqual(certification.registryReleaseExecuted, false);
-  assert.strictEqual(certification.networkExecuted, false);
-  assert.strictEqual(certification.runtimeActivated, false);
-  assert.strictEqual(certification.productionChanged, false);
-
-  console.log(JSON.stringify({
-    contractId: proof.contractId,
-    boundaryId: proof.boundaryId,
-    decision: proof.decision,
-    registerOperationInvoked: proof.registerOperationInvoked,
-    resolveOperationInvoked: proof.resolveOperationInvoked,
-    continuationStateStored: proof.continuationStateStored,
-    registryRegisterExecuted: proof.registryRegisterExecuted,
-    registryLookupExecuted: proof.registryLookupExecuted,
-    registryResolveExecuted: proof.registryResolveExecuted,
-    registryReleaseExecuted: proof.registryReleaseExecuted,
-    entryCountAfterRegister: proof.entryCountAfterRegister,
-    entryCountAfterResolve: proof.entryCountAfterResolve,
-    resolvedStateMatchesExpected: proof.resolvedStateMatchesExpected,
-    processLocalOnly: proof.processLocalOnly,
-    ephemeralRegistry: proof.ephemeralRegistry,
-    stateEscapesExecutionProcess: proof.stateEscapesExecutionProcess,
-    networkExecuted: proof.networkExecuted,
-    runtimeActivated: proof.runtimeActivated,
-    productionChanged: proof.productionChanged,
-    certificationReady: certification.ready
-  }, null, 2));
-}
-
-staticChecks();
-
-if (process.argv.includes('--execute')) {
-  executeExactlyOnce();
-} else {
-  console.log('COM-B02CF static contract checks passed; execution not invoked.');
-}
+console.log('COM-B02CF static repository certification proof passed; no execution surface remains.');
