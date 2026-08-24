@@ -1,9 +1,10 @@
 name: UX-CSS-IMPORTANT-035 Residual Ranking Diagnostic R1
 
 on:
-  push:
+  pull_request:
     branches:
-      - diag/ux-css-important-035-ranking-r1
+      - ux/ux-css-important-034-tablet-safari-layout-dormant-priority
+    types: [opened, synchronize, reopened]
     paths:
       - .github/workflows/0000-temp-ux-css-important-035-ranking-r1.yml
 
@@ -18,9 +19,10 @@ jobs:
       CERTIFIED_034_HEAD: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       DIAG_WORKFLOW: .github/workflows/0000-temp-ux-css-important-035-ranking-r1.yml
     steps:
-      - name: Checkout diagnostic head
+      - name: Checkout exact diagnostic head
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Freeze certified 034 lineage and diagnostic-only scope
