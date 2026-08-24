@@ -3,10 +3,10 @@ name: UX-CSS-IMPORTANT-035 Residual Ranking Diagnostic R1
 on:
   pull_request:
     branches:
-      - ux/ux-css-important-034-tablet-safari-layout-dormant-priority
+      - diag/ux-css-important-035-ranking-r1
     types: [opened, synchronize, reopened]
     paths:
-      - .github/workflows/0000-temp-ux-css-important-035-ranking-r1.yml
+      - .diagnostics/ux-css-important-035-ranking-r1-trigger.txt
 
 permissions:
   contents: read
@@ -18,8 +18,9 @@ jobs:
     env:
       CERTIFIED_034_HEAD: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       DIAG_WORKFLOW: .github/workflows/0000-temp-ux-css-important-035-ranking-r1.yml
+      DIAG_TRIGGER: .diagnostics/ux-css-important-035-ranking-r1-trigger.txt
     steps:
-      - name: Checkout exact diagnostic head
+      - name: Checkout exact diagnostic PR head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -30,8 +31,9 @@ jobs:
         run: |
           set -euo pipefail
           git merge-base --is-ancestor "$CERTIFIED_034_HEAD" HEAD
-          actual="$(git diff --name-only "$CERTIFIED_034_HEAD" HEAD)"
-          test "$actual" = "$DIAG_WORKFLOW"
+          expected="$(printf '%s\n' "$DIAG_WORKFLOW" "$DIAG_TRIGGER" | sort)"
+          actual="$(git diff --name-only "$CERTIFIED_034_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
           test -z "$(git diff --name-only "$CERTIFIED_034_HEAD" HEAD -- 'assets/css/**')"
 
       - name: Rank exact post-034 residuals
