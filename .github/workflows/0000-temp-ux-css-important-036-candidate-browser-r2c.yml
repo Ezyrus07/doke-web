@@ -1,0 +1,100 @@
+name: UX-CSS-IMPORTANT-036 Candidate Browser R2C
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-036-candidate-browser-r2c
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-036-candidate-browser-r2c.yml
+      - .diagnostics/ux-css-important-036-candidate-browser-r2c.js
+
+permissions:
+  contents: write
+
+jobs:
+  prove036r2c:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PARENT: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      TARGET: assets/css/components/shell/mobile-app-shell.css
+      SCRIPT: .diagnostics/ux-css-important-036-candidate-browser-r2c.js
+      RESULT: .diagnostics/ux-css-important-036-candidate-browser-r2c.json
+      WORKFLOW: .github/workflows/0000-temp-ux-css-important-036-candidate-browser-r2c.yml
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: diag/ux-css-important-036-candidate-browser-r2c
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Freeze predecessor and diagnostic-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$PARENT" HEAD
+          actual="$(git diff --name-only "$PARENT" HEAD | sort)"
+          expected2="$(printf '%s\n' "$SCRIPT" "$WORKFLOW" | sort)"
+          expected3="$(printf '%s\n' "$RESULT" "$SCRIPT" "$WORKFLOW" | sort)"
+          test "$actual" = "$expected2" || test "$actual" = "$expected3"
+          test -z "$(git diff --name-only "$PARENT" HEAD -- 'assets/css/**' '*.html' 'assets/js/**')"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "af6fd982517f2bc821435e633d70237e95ee11a8"
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Candidate identity and browser A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$SCRIPT"
+          node - <<'NODE'
+          const x=require('./.diagnostics/ux-css-important-036-candidate-browser-r2c.json');
+          if(x.status!=='BROWSER_PASS') process.exit(1);
+          if(x.parentImportant!==314 || x.candidateImportant!==0) process.exit(1);
+          if(x.diffs.total!==0 || x.parent.stableScreenshots!==60 || x.candidate.stableScreenshots!==60) process.exit(1);
+          NODE
+      - name: Candidate responsive and shared-shell contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$TARGET" /tmp/ux036-parent.css
+          restore(){ cp /tmp/ux036-parent.css "$TARGET"; }
+          trap restore EXIT
+          node - <<'NODE'
+          const fs=require('fs'); const p=process.env.TARGET; const s=fs.readFileSync(p,'utf8');
+          if((s.match(/!important\b/g)||[]).length!==314) throw new Error('parent marker mismatch');
+          const c=s.replace(/\s*!important\b/g,'');
+          if((c.match(/!important\b/g)||[]).length!==0) throw new Error('candidate markers remain');
+          fs.writeFileSync(p,c);
+          NODE
+          node scripts/test-responsive-contract.js
+          node scripts/audit-responsive-boundaries.js
+          node scripts/audit-mobile-base-stability.js
+          node scripts/audit-shared-app-header-contract.js
+          node scripts/audit-mobile-shell-location-contract.js
+          node scripts/test-home-mobile-shell-rail-contract.js
+          node scripts/audit-css-responsive-conflicts.js
+          restore
+          trap - EXIT
+          git diff --check
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+      - name: Publish diagnostic receipt only
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+          if [ ! -f "$RESULT" ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$RESULT"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test(ux): publish 036 candidate browser R2C receipt'
+          git push origin HEAD:diag/ux-css-important-036-candidate-browser-r2c
