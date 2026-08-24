@@ -1,0 +1,73 @@
+name: UX-CSS-IMPORTANT-036 Narrow Static R4B
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-036-narrow-static-r4b
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-036-narrow-static-r4b.yml
+      - .diagnostics/ux-css-important-036-narrow-static-r4b.js
+
+permissions:
+  contents: write
+
+jobs:
+  static036r4b:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PARENT: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      TARGET: assets/css/components/shell/mobile-app-shell.css
+      SCRIPT: .diagnostics/ux-css-important-036-narrow-static-r4b.js
+      RESULT: .diagnostics/ux-css-important-036-narrow-static-r4b.json
+      WORKFLOW: .github/workflows/0000-temp-ux-css-important-036-narrow-static-r4b.yml
+      R4_BRANCH: diag/ux-css-important-036-narrow-candidate-r4
+      R4_PATH: .diagnostics/ux-css-important-036-narrow-candidate-r4.json
+      R4_BLOB: 48107edc5888823b64aa77700d968070844c9df0
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: diag/ux-css-important-036-narrow-static-r4b
+          fetch-depth: 0
+
+      - name: Freeze lineage and browser evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$PARENT" HEAD
+          actual="$(git diff --name-only "$PARENT" HEAD | sort)"
+          expected2="$(printf '%s\n' "$SCRIPT" "$WORKFLOW" | sort)"
+          expected3="$(printf '%s\n' "$RESULT" "$SCRIPT" "$WORKFLOW" | sort)"
+          test "$actual" = "$expected2" || test "$actual" = "$expected3"
+          test -z "$(git diff --name-only "$PARENT" HEAD -- 'assets/css/**' '*.html' 'assets/js/**')"
+          git fetch --no-tags origin "$R4_BRANCH"
+          test "$(git show FETCH_HEAD:"$R4_PATH" | git hash-object --stdin)" = "$R4_BLOB"
+          git show FETCH_HEAD:"$R4_PATH" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(x.diffs.total!==0||x.candidateImportant!==6||x.removedMarkers!==308)process.exit(1)})'
+
+      - name: Install audit dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+
+      - name: Run static audit attribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$SCRIPT"
+
+      - name: Publish R4B receipt only
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- "$TARGET" 2>/dev/null || true
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+          test -f "$RESULT" || echo '{"boundary":"UX-CSS-IMPORTANT-036","proof":"narrow-static-r4b","status":"FAIL","error":"receipt missing"}' > "$RESULT"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$RESULT"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test(ux): publish 036 narrow static R4B receipt'
+          git push origin HEAD:diag/ux-css-important-036-narrow-static-r4b
