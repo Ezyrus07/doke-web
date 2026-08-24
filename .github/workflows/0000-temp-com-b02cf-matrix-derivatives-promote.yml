@@ -1,0 +1,111 @@
+name: 0000 TEMP COM-B02CF Matrix Derivatives Promote
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02cf-matrix-derivatives-promote.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote-exact-matrix-derivatives:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      EXPECTED_PARENT: ffb422b0d40bf5effe1c029704fc588575ec751d
+      EXPECTED_PARENT_TREE: 2965aac851883a16ec77550f25f83a920310fb27
+      HELPER_PATH: .github/workflows/0000-temp-com-b02cf-matrix-derivatives-promote.yml
+      EXECUTOR_PATH: .github/workflows/0000-temp-com-b02cf-authorized-single-use-register-resolve-execution.yml
+      EXECUTOR_BLOB: 4cd6c3332a4dcf73f3ec95963a145d742905a59f
+      EXPORTER_PATH: .github/workflows/0000-temp-com-b02cf-matrix-derivatives-export.yml
+      EXPORTER_BLOB: 47466f6d03d0a8a75e01c5326b1920a5a951a989
+      EXECUTION_RUN_ID: '32725256676'
+      EXECUTION_JOB_ID: '97424982777'
+      EXPORT_RUN_ID: '32725638035'
+      EXPORT_JOB_ID: '97426176545'
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-resolve-execution.js
+      TARGET_BLOB: fe54e170a68f346aaa6049ba26acd930ba10579b
+      CONFIG: config/com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.json
+      CONFIG_BLOB: c48e15c789796b43374abeeb699b163d56211db3
+      TEST: scripts/test-com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.js
+      TEST_BLOB: 4f2768955bcae98e8327e58d543f8b4edd20e562
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_MD_BLOB: 257a5fddaa70f8b94bd4defc699be8a66073070d
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_REPORT_BLOB: 1a28456df5ec8b6d759d5e304545ec6072851550
+
+    steps:
+      - name: Checkout exact promotion head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze consumed execution and exact promotion scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$EXPECTED_PARENT^{tree}")" = "$EXPECTED_PARENT_TREE"
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
+          actual="$(git diff --name-only "$EXPECTED_PARENT" HEAD)"
+          test "$actual" = "$HELPER_PATH"
+          test "$EXECUTION_RUN_ID" = '32725256676'
+          test "$EXECUTION_JOB_ID" = '97424982777'
+          test "$EXPORT_RUN_ID" = '32725638035'
+          test "$EXPORT_JOB_ID" = '97426176545'
+          test "$(git rev-parse HEAD:$EXECUTOR_PATH)" = "$EXECUTOR_BLOB"
+          test "$(git rev-parse HEAD:$EXPORTER_PATH)" = "$EXPORTER_BLOB"
+          test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          grep -F '"registryReleaseAuthority": false' "$CONFIG"
+          ! grep -F -- '--execute' "$HELPER_PATH"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate and verify exact exported Matrix bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$TEST"
+          npm run write:domain-completion-matrix
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          git diff --quiet -- "$MATRIX_SOURCE"
+          test "$(git hash-object "$MATRIX_MD")" = "$MATRIX_MD_BLOB"
+          test "$(git hash-object "$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
+          expected="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Commit exact derivatives and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse origin/com/com-001-baseline-audit)" = "$(git rev-parse HEAD)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$MATRIX_MD"
+          git add -f "$MATRIX_REPORT"
+          git rm "$HELPER_PATH"
+          staged="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' "$HELPER_PATH" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$staged" = "$expected"
+          git commit -m 'fix(com): materialize B02CF Matrix derivatives'
+          git push origin "HEAD:refs/heads/com/com-001-baseline-audit"
