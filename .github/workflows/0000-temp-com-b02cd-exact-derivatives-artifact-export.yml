@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      EXPECTED_PARENT: a2a99b6c13fa5706dfeb5c0958056c091ae556ab
+      EXPECTED_PARENT: 75c60dc56160fcaa7ba73114430338ad35a2a7f3
       HELPER_PATH: .github/workflows/0000-temp-com-b02cd-exact-derivatives-artifact-export.yml
-      EXISTING_TEMP: .github/workflows/0000-temp-com-b02cd-governance-recovery-matrix-materialization.yml
-      EXISTING_TEMP_BLOB: 8e4ade4f16f3841741dbe2cee0215405f27fb335
+      REMOVED_TEMP: .github/workflows/0000-temp-com-b02cd-governance-recovery-matrix-materialization.yml
+      REMOVED_TEMP_BLOB: 8e4ade4f16f3841741dbe2cee0215405f27fb335
       TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-execution.js
       CONFIG: config/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.json
       TEST: scripts/test-com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.js
@@ -46,13 +46,16 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze exporter lineage and repository-only scope
+      - name: Freeze corrective lineage and repository-only scope
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
-          test "$(git diff --name-only "$EXPECTED_PARENT" HEAD)" = "$HELPER_PATH"
-          test "$(git rev-parse HEAD:"$EXISTING_TEMP")" = "$EXISTING_TEMP_BLOB"
+          expected="$(printf '%s\n' "$HELPER_PATH" "$REMOVED_TEMP" | sort)"
+          actual="$(git diff --name-only "$EXPECTED_PARENT" HEAD | sort)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse "$EXPECTED_PARENT:$REMOVED_TEMP")" = "$REMOVED_TEMP_BLOB"
+          ! git cat-file -e "HEAD:$REMOVED_TEMP"
           test "$(git rev-parse HEAD:"$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
