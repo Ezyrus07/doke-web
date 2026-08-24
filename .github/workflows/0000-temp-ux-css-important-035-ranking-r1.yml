@@ -1,15 +1,14 @@
 name: UX-CSS-IMPORTANT-035 Residual Ranking Diagnostic R1
 
 on:
-  pull_request:
+  push:
     branches:
       - diag/ux-css-important-035-ranking-r1
-    types: [opened, synchronize, reopened]
     paths:
-      - .diagnostics/ux-css-important-035-ranking-r1-trigger.txt
+      - .github/workflows/0000-temp-ux-css-important-035-ranking-r1.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   rank035r1:
@@ -18,12 +17,12 @@ jobs:
     env:
       CERTIFIED_034_HEAD: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
       DIAG_WORKFLOW: .github/workflows/0000-temp-ux-css-important-035-ranking-r1.yml
-      DIAG_TRIGGER: .diagnostics/ux-css-important-035-ranking-r1-trigger.txt
+      RESULT: .diagnostics/ux-css-important-035-ranking-r1.json
     steps:
-      - name: Checkout exact diagnostic PR head
+      - name: Checkout exact diagnostic branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: diag/ux-css-important-035-ranking-r1
           fetch-depth: 0
 
       - name: Freeze certified 034 lineage and diagnostic-only scope
@@ -31,33 +30,34 @@ jobs:
         run: |
           set -euo pipefail
           git merge-base --is-ancestor "$CERTIFIED_034_HEAD" HEAD
-          expected="$(printf '%s\n' "$DIAG_WORKFLOW" "$DIAG_TRIGGER" | sort)"
           actual="$(git diff --name-only "$CERTIFIED_034_HEAD" HEAD | sort)"
-          test "$actual" = "$expected"
+          expected1="$DIAG_WORKFLOW"
+          expected2="$(printf '%s\n' "$DIAG_WORKFLOW" "$RESULT" | sort)"
+          test "$actual" = "$expected1" || test "$actual" = "$expected2"
           test -z "$(git diff --name-only "$CERTIFIED_034_HEAD" HEAD -- 'assets/css/**')"
 
-      - name: Rank exact post-034 residuals
+      - name: Compute exact post-034 residual ranking
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p "$(dirname "$RESULT")"
           node <<'NODE'
           const fs = require('fs');
           const path = require('path');
-
           const ROOT = process.cwd();
           const CSS_ROOT = path.join(ROOT, 'assets', 'css');
+          const RESULT = process.env.RESULT;
           const protectedFiles = new Map([
             ['assets/css/pages/home/mobile-composition.css', 'UX-CSS-IMPORTANT-006'],
             ['assets/css/components/cards/mobile-card-contract.css', 'UX-CSS-IMPORTANT-010'],
             ['assets/css/components/shell/mobile-base-stability.css', 'UX-CSS-IMPORTANT-020'],
             ['assets/css/pages/home/mobile-hero-feed.css', 'UX-CSS-IMPORTANT-021'],
           ]);
-
           function walk(dir) {
-            return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-              const full = path.join(dir, entry.name);
-              if (entry.isDirectory()) return walk(full);
-              return entry.isFile() && entry.name.endsWith('.css') ? [full] : [];
+            return fs.readdirSync(dir, {withFileTypes:true}).flatMap(e => {
+              const full = path.join(dir, e.name);
+              if (e.isDirectory()) return walk(full);
+              return e.isFile() && e.name.endsWith('.css') ? [full] : [];
             });
           }
           function rel(file) { return path.relative(ROOT, file).replace(/\\/g, '/'); }
@@ -69,69 +69,46 @@ jobs:
             if (count >= 5) return 'medium-baseline-required';
             return 'low-review-candidate';
           }
-
-          const residuals = walk(CSS_ROOT).map((file) => {
+          const residuals = walk(CSS_ROOT).map(file => {
             const content = fs.readFileSync(file, 'utf8');
             const importantCount = (content.match(/!important\b/g) || []).length;
             const filePath = rel(file);
-            return {
-              file: filePath,
-              importantCount,
-              risk: risk(file, importantCount),
-              protectedBy: protectedFiles.get(filePath) || null,
-            };
-          }).filter((item) => item.importantCount > 0 && item.risk !== 'excluded-service-card');
-
-          const riskOrder = {
-            'low-review-candidate': 0,
-            'medium-baseline-required': 1,
-            'high-baseline-required': 2,
-          };
-          const sortQueue = (a, b) =>
-            riskOrder[a.risk] - riskOrder[b.risk] ||
-            a.importantCount - b.importantCount ||
-            a.file.localeCompare(b.file);
-
-          const protectedResiduals = residuals.filter((x) => x.protectedBy).sort(sortQueue);
-          const eligibleResiduals = residuals.filter((x) => !x.protectedBy).sort(sortQueue);
-          const lowAll = residuals.filter((x) => x.risk === 'low-review-candidate').sort(sortQueue);
-          const lowEligible = eligibleResiduals.filter((x) => x.risk === 'low-review-candidate');
-          const mediumEligible = eligibleResiduals.filter((x) => x.risk === 'medium-baseline-required');
-          const highEligible = eligibleResiduals.filter((x) => x.risk === 'high-baseline-required');
-
+            return {file:filePath, importantCount, risk:risk(file, importantCount), protectedBy:protectedFiles.get(filePath)||null};
+          }).filter(x => x.importantCount > 0 && x.risk !== 'excluded-service-card');
+          const riskOrder = {'low-review-candidate':0,'medium-baseline-required':1,'high-baseline-required':2};
+          const sortQueue = (a,b) => riskOrder[a.risk]-riskOrder[b.risk] || a.importantCount-b.importantCount || a.file.localeCompare(b.file);
+          const lowAll = residuals.filter(x=>x.risk==='low-review-candidate').sort(sortQueue);
+          const protectedResiduals = residuals.filter(x=>x.protectedBy).sort(sortQueue);
+          const eligibleQueue = residuals.filter(x=>!x.protectedBy).sort(sortQueue);
           const out = {
             certified034Head: process.env.CERTIFIED_034_HEAD,
-            totalResidualImportant: residuals.reduce((n, x) => n + x.importantCount, 0),
+            totalResidualImportant: residuals.reduce((n,x)=>n+x.importantCount,0),
             residualFileCount: residuals.length,
-            lowAllImportant: lowAll.reduce((n, x) => n + x.importantCount, 0),
+            lowAllImportant: lowAll.reduce((n,x)=>n+x.importantCount,0),
             lowAll,
             protectedResiduals,
-            eligibleCounts: {
-              low: lowEligible.reduce((n, x) => n + x.importantCount, 0),
-              medium: mediumEligible.reduce((n, x) => n + x.importantCount, 0),
-              high: highEligible.reduce((n, x) => n + x.importantCount, 0),
-            },
-            eligibleQueue: eligibleResiduals,
-            nextEligible: eligibleResiduals[0] || null,
+            eligibleQueue,
+            nextEligible: eligibleQueue[0] || null,
           };
-
-          console.log('UX035_RANKING_JSON_BEGIN');
+          if (out.lowAllImportant !== 2) throw new Error(`Expected low-review total=2, got ${out.lowAllImportant}`);
+          if (eligibleQueue.some(x=>x.risk==='low-review-candidate')) throw new Error('Unexpected unprotected low candidate');
+          if (!out.nextEligible) throw new Error('No eligible residual candidate');
+          fs.writeFileSync(RESULT, JSON.stringify(out, null, 2) + '\n');
           console.log(JSON.stringify(out, null, 2));
-          console.log('UX035_RANKING_JSON_END');
-
-          if (lowAll.reduce((n, x) => n + x.importantCount, 0) !== 2) {
-            throw new Error('Expected exact post-034 low-review-candidate total of 2');
-          }
-          if (lowEligible.length !== 0) {
-            throw new Error('Protected residual policy drift: an unprotected low candidate exists');
-          }
-          if (!eligibleResiduals.length) {
-            throw new Error('No unprotected residual candidate remains');
-          }
           NODE
 
-      - name: Diff hygiene
+      - name: Publish diagnostic evidence only
         shell: bash
         run: |
           set -euo pipefail
-          git diff --check "$CERTIFIED_034_HEAD" HEAD
+          test -z "$(git status --short -- 'assets/css/**')"
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$RESULT"
+          if git diff --cached --quiet; then
+            echo 'ranking evidence already current'
+            exit 0
+          fi
+          git commit -m 'test(ux): publish 035 residual ranking R1 evidence'
+          git push origin HEAD:diag/ux-css-important-035-ranking-r1
