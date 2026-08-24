@@ -1,0 +1,223 @@
+name: UX-CSS-IMPORTANT-037 Dormant Candidate Static Governance R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-037-mobile-search-header-candidate-r2
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-037-mobile-search-header-candidate-r2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prove037r2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT_SHA: d3d45498ca2e8889c50273fa82550f92d3b7af1f
+      PARENT_TREE: c44532c746318e9f82d59755c1d857abb346e5c6
+      TARGET_FILE: assets/css/components/navigation/mobile-search-header-shared.css
+      TARGET_BLOB: 946a1e094936900ca550442dead9a108fbf7221c
+      PARENT_IMPORTANT: 348
+      PARENT_GLOBAL_IMPORTANT: 7053
+      R1B_BRANCH: diag/ux-css-important-037-mobile-search-header-reach-r1b
+      R1B_FILE: .diagnostics/ux-css-important-037-mobile-search-header-reach-r1b.json
+      R1B_BLOB: cfe8d8352f1b455bc6f98c04bfd72d3099e04bd5
+      OUTPUT_BRANCH: diag/ux-css-important-037-mobile-search-header-candidate-r2
+      RESULT_FILE: .diagnostics/ux-css-important-037-mobile-search-header-candidate-r2.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and R1B evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch origin "refs/heads/$R1B_BRANCH:refs/remotes/origin/$R1B_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$R1B_BRANCH:$R1B_FILE")" = "$R1B_BLOB"
+          git show "origin/$R1B_BRANCH:$R1B_FILE" > /tmp/r1b.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r1b.json','utf8'));
+          const ok = r.result==='PASS' && r.parentSha===process.env.PARENT_SHA && r.parentTree===process.env.PARENT_TREE && r.targetFile===process.env.TARGET_FILE && r.targetBlob===process.env.TARGET_BLOB && r.importantDeclarationCount===348 && r.reach?.canonicalLoaded===false && r.reach?.wholeFileDormant===true && (r.reach?.directHtmlRefs||[]).length===0 && (r.reach?.cssImporters||[]).length===0 && (r.reach?.runtimeJsRefs||[]).length===0 && r.authority?.replacementCss==='assets/css/components/shell/mobile-app-shell.css';
+          if(!ok) throw new Error('R1B evidence transfer mismatch');
+          NODE
+
+      - name: Build exact marker-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          cp "$TARGET_FILE" /tmp/target-parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(f,'utf8');
+          const before=(parent.match(/!important\b/gi)||[]).length;
+          if(before!==Number(process.env.PARENT_IMPORTANT)) throw new Error(`parent important ${before}`);
+          const candidate=parent.replace(/\s*!important\b/gi,'');
+          const after=(candidate.match(/!important\b/gi)||[]).length;
+          if(after!==0) throw new Error(`candidate important ${after}`);
+          if(parent.replace(/\s*!important\b/gi,'')!==candidate) throw new Error('marker-only invariant failed');
+          fs.writeFileSync(f,candidate);
+          const sha256=crypto.createHash('sha256').update(candidate).digest('hex');
+          const gitBlob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const bytes=Buffer.byteLength(candidate);
+          fs.writeFileSync('/tmp/candidate-identity.json',JSON.stringify({before,after,removed:before-after,sha256,gitBlob,bytes},null,2)+'\n');
+          NODE
+          test "$(grep -oi '!important' "$TARGET_FILE" | wc -l)" -eq 0
+          test "$(git diff --name-only "$PARENT_SHA" -- | wc -l)" -eq 1
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --numstat "$PARENT_SHA" -- "$TARGET_FILE" > /tmp/numstat.txt
+          awk 'NF==3 && $3==ENVIRON["TARGET_FILE"] { if ($1 != 348 || $2 != 348) exit 1; ok=1 } END { exit(ok?0:1) }' /tmp/numstat.txt
+          node <<'NODE'
+          const fs=require('fs');
+          const a=fs.readFileSync('/tmp/target-parent.css','utf8');
+          const b=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const strip=s=>s.replace(/\s*!important\b/gi,'');
+          if(strip(a)!==b) throw new Error('candidate differs beyond priority markers');
+          const lines=fs.readFileSync('/tmp/numstat.txt','utf8').trim().split(/\s+/);
+          if(Number(lines[0])!==348||Number(lines[1])!==348) throw new Error('unexpected diff numstat');
+          NODE
+
+      - name: Measure fresh priority queue
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile()&&e.name.endsWith('.css'))out.push(p)}return out}
+          const files=walk('assets/css');
+          const count=f=>(fs.readFileSync(f,'utf8').match(/!important\b/gi)||[]).length;
+          const candidateGlobal=files.reduce((n,f)=>n+count(f),0);
+          const target=count(process.env.TARGET_FILE);
+          const parentGlobal=Number(process.env.PARENT_GLOBAL_IMPORTANT);
+          if(target!==0) throw new Error(`target residual ${target}`);
+          if(candidateGlobal!==parentGlobal-Number(process.env.PARENT_IMPORTANT)) throw new Error(`global ${candidateGlobal} expected ${parentGlobal-Number(process.env.PARENT_IMPORTANT)}`);
+          const residual=files.map(f=>({file:f.replace(/\\/g,'/'),count:count(f)})).filter(x=>x.count>0).sort((a,b)=>b.count-a.count||a.file.localeCompare(b.file));
+          fs.writeFileSync('/tmp/queue.json',JSON.stringify({parentGlobal,candidateGlobal,delta:candidateGlobal-parentGlobal,residualFileCount:residual.length,topResidual:residual.slice(0,15)},null,2)+'\n');
+          NODE
+
+      - name: Prove canonical dormancy survives candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-dormant-debt-policy.js --strict > /tmp/dormancy-policy.txt
+          node <<'NODE'
+          const fs=require('fs');
+          const target=process.env.TARGET_FILE;
+          const s=fs.readFileSync('/tmp/dormancy-policy.txt','utf8');
+          const active=(s.split('## Dívida ativa registrada')[1]||'').split('## Quarentena dormente registrada')[0]||'';
+          const dormant=(s.split('## Quarentena dormente registrada')[1]||'').split('## Violações')[0]||'';
+          if(active.includes(target)) throw new Error('candidate reactivated target');
+          if(!dormant.includes(target)) throw new Error('candidate absent from dormant quarantine');
+          if(!s.includes('CSS depreciado reativado: 0')) throw new Error('deprecated CSS reactivation detected');
+          NODE
+          git checkout "$PARENT_SHA" -- docs/validation/css-dormant-debt-policy.md
+
+      - name: Run static and governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > /tmp/audit-summary.txt
+          run_gate() {
+            label="$1"; shift
+            echo "RUN|$label" | tee -a /tmp/audit-summary.txt
+            "$@" > "/tmp/${label}.log" 2>&1
+            echo "PASS|$label" | tee -a /tmp/audit-summary.txt
+          }
+          run_gate agent_governance node scripts/audit-agent-governance.js
+          run_gate responsive_boundaries npm run audit:responsive-boundaries
+          run_gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          run_gate important_reduction_plan npm run audit:important-reduction-plan
+          run_gate global_css_design_system npm run audit:global-css-design-system
+          run_gate domain_completion_matrix npm run audit:domain-completion-matrix
+          run_gate frontend_strict npm run audit:frontend:strict
+
+      - name: Verify diff hygiene and restore exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate_blob="$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/candidate-identity.json','utf8')).gitBlob)")"
+          test "$(git hash-object "$TARGET_FILE")" = "$candidate_blob"
+          test "$(grep -oi '!important' "$TARGET_FILE" | wc -l)" -eq 0
+          git status --porcelain=v1 > /tmp/status-after-audits.txt
+          node <<'NODE'
+          const fs=require('fs');
+          const lines=fs.readFileSync('/tmp/status-after-audits.txt','utf8').split('\n').filter(Boolean);
+          const target=process.env.TARGET_FILE;
+          if(!lines.some(x=>x.slice(3)===target)) throw new Error('target missing from audit status');
+          const allowedGenerated=new Set([
+            'docs/HOME-AUTHORITY-CLASSIFICATION.md',
+            'docs/PAGE-ASSET-AUTHORITY-MATRIX.md',
+            'docs/validation/css-dormant-debt-policy.md',
+            'docs/validation/important-reduction-plan.md',
+            'docs/validation/important-baseline-by-group.md',
+            'docs/validation/important-low-risk-groups.md',
+            'docs/validation/css-import-consolidation-candidates.md',
+            'docs/validation/css-design-system-entry-gate.md'
+          ]);
+          const extras=lines.map(x=>x.slice(3)).filter(p=>p!==target&&!allowedGenerated.has(p));
+          if(extras.length) throw new Error('unexpected generated/modified paths: '+extras.join(','));
+          fs.writeFileSync('/tmp/generated-paths.json',JSON.stringify(lines.map(x=>x.slice(3)).filter(p=>p!==target),null,2)+'\n');
+          NODE
+          git checkout "$PARENT_SHA" -- .
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Build R2 receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const id=JSON.parse(fs.readFileSync('/tmp/candidate-identity.json','utf8'));
+          const q=JSON.parse(fs.readFileSync('/tmp/queue.json','utf8'));
+          const generated=JSON.parse(fs.readFileSync('/tmp/generated-paths.json','utf8'));
+          const auditLines=fs.readFileSync('/tmp/audit-summary.txt','utf8').trim().split('\n').filter(Boolean);
+          const passes=auditLines.filter(x=>x.startsWith('PASS|')).map(x=>x.slice(5));
+          const expected=['agent_governance','responsive_boundaries','css_responsive_conflicts','important_reduction_plan','global_css_design_system','domain_completion_matrix','frontend_strict'];
+          if(expected.some(x=>!passes.includes(x))) throw new Error('missing audit pass');
+          const receipt={
+            proof:'UX-CSS-IMPORTANT-037 Dormant Candidate Static Governance R2',
+            parentSha:process.env.PARENT_SHA,parentTree:process.env.PARENT_TREE,
+            targetFile:process.env.TARGET_FILE,parentTargetBlob:process.env.TARGET_BLOB,
+            r1b:{branch:process.env.R1B_BRANCH,file:process.env.R1B_FILE,blob:process.env.R1B_BLOB,result:'PASS',canonicalLoaded:false,wholeFileDormant:true},
+            candidate:{importantBefore:id.before,importantAfter:id.after,removed:id.removed,sha256:id.sha256,gitBlob:id.gitBlob,bytes:id.bytes,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,diffFiles:1,additions:348,deletions:348},
+            queue:q,
+            dormancyAfterCandidate:{canonicalLoaded:false,wholeFileDormant:true,deprecatedReactivated:0,runtimeRelevant:false},
+            audits:Object.fromEntries(expected.map(x=>[x,'PASS'])),
+            generatedDerivativesDuringAudit:generated,
+            restore:{targetParentExact:true,trackedWorkspaceClean:true},
+            browserRequired:false,
+            browserReason:'Canonical loader proves whole-file dormancy before and after marker-only candidate; no HTML/CSS/runtime-JS reach.',
+            result:'PASS'
+          };
+          fs.writeFileSync('/tmp/r2.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify({candidateBlob:id.gitBlob,sha256:id.sha256,bytes:id.bytes,important:`${id.before}->${id.after}`,global:`${q.parentGlobal}->${q.candidateGlobal}`,audits:passes.length,dormant:true,result:'PASS'}));
+          NODE
+
+      - name: Publish R2 receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          test -s /tmp/r2.json && result="$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/r2.json','utf8')).result||'FAIL')")" || true
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          if test -s /tmp/r2.json; then cp /tmp/r2.json "$RESULT_FILE"; else printf '{"proof":"UX-CSS-IMPORTANT-037 Dormant Candidate Static Governance R2","result":"FAIL","reason":"receipt missing"}\n' > "$RESULT_FILE"; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: publish UX-CSS-IMPORTANT-037 dormant candidate R2 [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
+          test "$result" = PASS
