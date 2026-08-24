@@ -27,6 +27,7 @@ jobs:
       DERIVED_DOC_1: docs/HOME-AUTHORITY-CLASSIFICATION.md
       DERIVED_DOC_2: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
       RESULT_FILE: .diagnostics/ux-css-important-036-narrow-governance-r5e.txt
+      OUTPUT_CANDIDATE: .diagnostics/ux-css-important-036-certified-candidate.css
       OUTPUT_BRANCH: diag/ux-css-important-036-narrow-governance-r5e
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -111,7 +112,7 @@ jobs:
           test -z "$(git status --short --untracked-files=all)"
           pass 'RESTORE PASS|parentExact=1|workspaceClean=1'
           pass 'RESULT=PASS'
-      - name: Publish R5E receipt
+      - name: Publish R5E receipt and certified candidate blob
         if: always()
         shell: bash
         run: |
@@ -123,13 +124,20 @@ jobs:
           git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
           mkdir -p "$(dirname "$RESULT_FILE")"
           cp /tmp/out "$RESULT_FILE"
+          if [ "$result" = PASS ]; then
+            test -f /tmp/candidate.css
+            cp /tmp/candidate.css "$OUTPUT_CANDIDATE"
+            test "$(git hash-object "$OUTPUT_CANDIDATE")" = "$CANDIDATE_BLOB"
+          else
+            rm -f "$OUTPUT_CANDIDATE"
+          fi
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- "$RESULT_FILE"
+          git add -- "$RESULT_FILE" "$OUTPUT_CANDIDATE"
           if ! git diff --cached --quiet; then
-            git commit -m 'diag: publish 036 final governance R5E [skip ci]' >/dev/null
+            git commit -m 'diag: publish 036 final governance and candidate [skip ci]' >/dev/null
             git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
           fi
           test "$result" = PASS
 
-# trigger-r5e
+# trigger-r5e-materialize-candidate
