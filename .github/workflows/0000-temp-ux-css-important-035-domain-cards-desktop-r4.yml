@@ -1,0 +1,87 @@
+name: UX-CSS-IMPORTANT-035 Domain Cards Desktop R4
+on:
+  push:
+    branches:
+      - diag/ux-css-important-035-domain-cards-desktop-r4
+permissions:
+  contents: write
+jobs:
+  desktop035r4:
+    runs-on: ubuntu-latest
+    env:
+      PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      TARGET_FILE: assets/css/components/domain/doke-domain-cards.css
+      DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
+      RESULT_FILE: .diagnostics/ux-css-important-035-domain-cards-desktop-r4.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build exact desktop-only candidate and browser prove
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/r4.log) 2>&1
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          cp "$TARGET_FILE" /tmp/parent.css
+          trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true; kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET_FILE,o=fs.readFileSync(f,'utf8'),needle='@media (min-width: 761px) {';
+          const s=o.indexOf(needle); if(s<0) throw Error('desktop media missing');
+          const open=o.indexOf('{',s); let d=0,e=-1;
+          for(let i=open;i<o.length;i++){if(o[i]==='{')d++; else if(o[i]==='}'){d--; if(d===0){e=i+1;break;}}}
+          if(e<0) throw Error('desktop media unclosed');
+          const block=o.slice(s,e),removed=(block.match(/!important\b/g)||[]).length;
+          if(!removed) throw Error('no desktop markers');
+          const c=o.slice(0,s)+block.replace(/\s*!important\b/g,'')+o.slice(e);
+          const before=(o.match(/!important\b/g)||[]).length,after=(c.match(/!important\b/g)||[]).length;
+          if(before!==215||before-after!==removed) throw Error(`counts ${before}/${after}/${removed}`);
+          fs.writeFileSync('/tmp/candidate.css',c);
+          const sha=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
+          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
+          fs.writeFileSync('/tmp/candidate-meta',`removed=${removed}\nafter=${after}\nsha256=${sha}\nblob=${blob}\nbytes=${Buffer.byteLength(c)}\n`);
+          console.log(`CANDIDATE PASS|scope=min-width-761|important=${before}->${after}|removed=${removed}|sha256=${sha}|blob=${blob}|bytes=${Buffer.byteLength(c)}|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
+          NODE
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/resultados.html >/dev/null 2>&1 && break; sleep 1; done
+          cat >/tmp/proof.js <<'NODE'
+          const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
+          const pages=['index.html','resultados.html','perfil.html'];
+          const vps=[{w:760,h:1000},{w:761,h:1000},{w:820,h:1100},{w:1024,h:1100},{w:1025,h:1100},{w:1180,h:900},{w:1366,h:900},{w:1600,h:1000}];
+          const targetPath='/assets/css/components/domain/doke-domain-cards.css';
+          const sel='.service-card,.doke-service-card,.service-card__media,.service-card__body,.service-card__title,.service-card__rating,.service-card__tags,.service-card__meta-row,.service-card__profile,.service-card__avatar,.service-card__location,.service-card__footer,.service-card__footer--compact,.service-card__cta,.service-card__favorite';
+          const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const snap=()=>{const nodes=[...document.querySelectorAll(sel)].slice(0,40).map(e=>{const r=e.getBoundingClientRect(),c=getComputedStyle(e);return{tag:e.tagName,cls:e.className,rect:[r.x,r.y,r.width,r.height].map(x=>+x.toFixed(2)),display:c.display,position:c.position,gridColumns:c.gridTemplateColumns,gridRows:c.gridTemplateRows,gap:c.gap,padding:c.padding,width:c.width,height:c.height,minHeight:c.minHeight,maxHeight:c.maxHeight,overflow:c.overflow,borderRadius:c.borderRadius,transform:c.transform}});return{path:location.pathname,count:document.querySelectorAll(sel).length,nodes};};
+          async function phase(label){const browser=await chromium.launch({headless:true}),out={};let errs=0,loads=0,stable=0,nodes=0;for(const file of pages){for(const v of vps){const key=`${file}@${v.w}`,ctx=await browser.newContext({viewport:{width:v.w,height:v.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});await ctx.route('**/*',r=>{const u=new URL(r.request().url());if(['127.0.0.1','localhost'].includes(u.hostname))return r.continue();return r.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787562000000,R=Date;class F extends R{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}}globalThis.Date=F;});const p=await ctx.newPage();p.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|${key}|${String(e.message||e).slice(0,160)}`)});p.on('request',r=>{try{if(new URL(r.url()).pathname===targetPath)loads++;}catch{}});await p.goto(`http://127.0.0.1:4173/${file}`,{waitUntil:'domcontentloaded'});await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await p.evaluate(()=>document.fonts?.ready);await p.waitForTimeout(900);let a=await p.evaluate(snap);await p.waitForTimeout(300);let b=await p.evaluate(snap);if(JSON.stringify(a)===JSON.stringify(b))stable++;nodes+=a.count;await p.screenshot({fullPage:true});await p.waitForTimeout(120);const shot=await p.screenshot({fullPage:true});out[key]={meta:b,shot:hash(shot)};await ctx.close();}}await browser.close();console.log(`PHASE|label=${label}|states=${pages.length*vps.length}|stable=${stable}|errors=${errs}|loads=${loads}|nodes=${nodes}`);return{out,errs,loads,stable,nodes};}
+          (async()=>{const a=await phase('parent');fs.writeFileSync('/tmp/parent.json',JSON.stringify(a));})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          NODE_PATH="$PWD/node_modules" node /tmp/proof.js
+          cp /tmp/candidate.css "$TARGET_FILE"
+          sed 's/phase('\''parent'\'')/phase('\''candidate'\'')/; s#/tmp/parent.json#/tmp/candidate.json#' /tmp/proof.js >/tmp/proof-c.js
+          NODE_PATH="$PWD/node_modules" node /tmp/proof-c.js
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}`)}}const n=Object.keys(a.out).length;console.log(`BROWSER RESULT|states=${n}|viewports=760,761,820,1024,1025,1180,1366,1600|metadataDiffs=${md}|screenshotDiffs=${sd}|stable=${a.stable}/${b.stable}|errors=${a.errs+b.errs}|loads=${a.loads}/${b.loads}|nodes=${a.nodes}/${b.nodes}|syntheticDOM=0|credentialsUsed=0|criteriaRelaxed=0`);if(md||sd||a.errs||b.errs||a.loads===0||b.loads===0||a.loads!==b.loads||a.nodes!==b.nodes||a.stable!==n||b.stable!==n)process.exit(1);
+          NODE
+          cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
+          echo 'RESULT=PASS'
+      - name: Publish R4 receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; grep -q '^RESULT=PASS$' /tmp/r4.log && result=PASS || true
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; grep -E '^(CANDIDATE PASS|PHASE|PAGE ERROR|META DIFF|SHOT DIFF|BROWSER RESULT|RESTORE PASS|RESULT=)' /tmp/r4.log || true; echo "PROOF_RESULT=$result"; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 domain cards desktop r4 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
