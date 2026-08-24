@@ -1,0 +1,133 @@
+name: UX-CSS-IMPORTANT-035 Residual Ranking Diagnostic R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-035-ranking-r1
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-035-ranking-r1.yml
+
+permissions:
+  contents: read
+
+jobs:
+  rank035r1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CERTIFIED_034_HEAD: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      DIAG_WORKFLOW: .github/workflows/0000-temp-ux-css-important-035-ranking-r1.yml
+    steps:
+      - name: Checkout diagnostic head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze certified 034 lineage and diagnostic-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$CERTIFIED_034_HEAD" HEAD
+          actual="$(git diff --name-only "$CERTIFIED_034_HEAD" HEAD)"
+          test "$actual" = "$DIAG_WORKFLOW"
+          test -z "$(git diff --name-only "$CERTIFIED_034_HEAD" HEAD -- 'assets/css/**')"
+
+      - name: Rank exact post-034 residuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const ROOT = process.cwd();
+          const CSS_ROOT = path.join(ROOT, 'assets', 'css');
+          const protectedFiles = new Map([
+            ['assets/css/pages/home/mobile-composition.css', 'UX-CSS-IMPORTANT-006'],
+            ['assets/css/components/cards/mobile-card-contract.css', 'UX-CSS-IMPORTANT-010'],
+            ['assets/css/components/shell/mobile-base-stability.css', 'UX-CSS-IMPORTANT-020'],
+            ['assets/css/pages/home/mobile-hero-feed.css', 'UX-CSS-IMPORTANT-021'],
+          ]);
+
+          function walk(dir) {
+            return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) return walk(full);
+              return entry.isFile() && entry.name.endsWith('.css') ? [full] : [];
+            });
+          }
+          function rel(file) { return path.relative(ROOT, file).replace(/\\/g, '/'); }
+          function risk(file, count) {
+            const r = rel(file);
+            if (r.includes('service-card')) return 'excluded-service-card';
+            if (r.includes('/core/') || r.includes('/layout/') || r.includes('shell') || r.includes('sidebar') || r.includes('header')) return 'high-baseline-required';
+            if (count >= 25) return 'high-baseline-required';
+            if (count >= 5) return 'medium-baseline-required';
+            return 'low-review-candidate';
+          }
+
+          const residuals = walk(CSS_ROOT).map((file) => {
+            const content = fs.readFileSync(file, 'utf8');
+            const importantCount = (content.match(/!important\b/g) || []).length;
+            const filePath = rel(file);
+            return {
+              file: filePath,
+              importantCount,
+              risk: risk(file, importantCount),
+              protectedBy: protectedFiles.get(filePath) || null,
+            };
+          }).filter((item) => item.importantCount > 0 && item.risk !== 'excluded-service-card');
+
+          const riskOrder = {
+            'low-review-candidate': 0,
+            'medium-baseline-required': 1,
+            'high-baseline-required': 2,
+          };
+          const sortQueue = (a, b) =>
+            riskOrder[a.risk] - riskOrder[b.risk] ||
+            a.importantCount - b.importantCount ||
+            a.file.localeCompare(b.file);
+
+          const protectedResiduals = residuals.filter((x) => x.protectedBy).sort(sortQueue);
+          const eligibleResiduals = residuals.filter((x) => !x.protectedBy).sort(sortQueue);
+          const lowAll = residuals.filter((x) => x.risk === 'low-review-candidate').sort(sortQueue);
+          const lowEligible = eligibleResiduals.filter((x) => x.risk === 'low-review-candidate');
+          const mediumEligible = eligibleResiduals.filter((x) => x.risk === 'medium-baseline-required');
+          const highEligible = eligibleResiduals.filter((x) => x.risk === 'high-baseline-required');
+
+          const out = {
+            certified034Head: process.env.CERTIFIED_034_HEAD,
+            totalResidualImportant: residuals.reduce((n, x) => n + x.importantCount, 0),
+            residualFileCount: residuals.length,
+            lowAllImportant: lowAll.reduce((n, x) => n + x.importantCount, 0),
+            lowAll,
+            protectedResiduals,
+            eligibleCounts: {
+              low: lowEligible.reduce((n, x) => n + x.importantCount, 0),
+              medium: mediumEligible.reduce((n, x) => n + x.importantCount, 0),
+              high: highEligible.reduce((n, x) => n + x.importantCount, 0),
+            },
+            eligibleQueue: eligibleResiduals,
+            nextEligible: eligibleResiduals[0] || null,
+          };
+
+          console.log('UX035_RANKING_JSON_BEGIN');
+          console.log(JSON.stringify(out, null, 2));
+          console.log('UX035_RANKING_JSON_END');
+
+          if (lowAll.reduce((n, x) => n + x.importantCount, 0) !== 2) {
+            throw new Error('Expected exact post-034 low-review-candidate total of 2');
+          }
+          if (lowEligible.length !== 0) {
+            throw new Error('Protected residual policy drift: an unprotected low candidate exists');
+          }
+          if (!eligibleResiduals.length) {
+            throw new Error('No unprotected residual candidate remains');
+          }
+          NODE
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "$CERTIFIED_034_HEAD" HEAD
