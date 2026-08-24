@@ -1,0 +1,142 @@
+name: UX-CSS-IMPORTANT-037 Canonical Dormancy Reconciliation R1B
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-037-mobile-search-header-reach-r1b
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-037-mobile-search-header-reach-r1b.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile037r1b:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT_SHA: d3d45498ca2e8889c50273fa82550f92d3b7af1f
+      PARENT_TREE: c44532c746318e9f82d59755c1d857abb346e5c6
+      TARGET_FILE: assets/css/components/navigation/mobile-search-header-shared.css
+      TARGET_BLOB: 946a1e094936900ca550442dead9a108fbf7221c
+      TARGET_IMPORTANT: 348
+      POLICY_SCRIPT: scripts/audit-css-dormant-debt-policy.js
+      POLICY_SCRIPT_BLOB: fcade2556f9ed5f1f04e02ca6c4fd7bd249d8318
+      DEPRECATED_DOC: docs/DEPRECATED-CSS.md
+      DEPRECATED_BLOB: 7626d257532d8e91dfa2a76dccced57e5a07b8d7
+      OUTPUT_BRANCH: diag/ux-css-important-037-mobile-search-header-reach-r1b
+      RESULT_FILE: .diagnostics/ux-css-important-037-mobile-search-header-reach-r1b.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Reconcile canonical dormant reach and source ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git rev-parse "$PARENT_SHA:$POLICY_SCRIPT")" = "$POLICY_SCRIPT_BLOB"
+          test "$(git rev-parse "$PARENT_SHA:$DEPRECATED_DOC")" = "$DEPRECATED_BLOB"
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+
+          node "$POLICY_SCRIPT" >/tmp/policy.txt
+
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
+          const target=process.env.TARGET_FILE.replace(/\\/g,'/');
+          const expected=Number(process.env.TARGET_IMPORTANT);
+          const normalize=f=>f.replace(/\\/g,'/').replace(/^\.\//,'');
+          const root=process.cwd();
+          const rootHtml=fs.readdirSync(root).filter(f=>f.endsWith('.html')).sort();
+          function imports(cssFile){
+            if(!fs.existsSync(cssFile))return [];
+            const css=fs.readFileSync(cssFile,'utf8'),out=[];let m;
+            const re=/@import\s+(?:url\()?['"]([^'")]+)['"]\)?/g;
+            while((m=re.exec(css))){const raw=m[1].split('?')[0];if(/^https?:\/\//i.test(raw))continue;out.push(normalize(path.join(path.dirname(cssFile),raw)));}
+            return [...new Set(out)];
+          }
+          const loaded=new Set(),pagesBy=new Map(),queue=[];
+          for(const page of rootHtml){
+            const html=fs.readFileSync(page,'utf8');
+            for(const asset of getLoadedCssAssets(html,root).map(normalize)){
+              loaded.add(asset);queue.push(asset);if(!pagesBy.has(asset))pagesBy.set(asset,new Set());pagesBy.get(asset).add(page);
+            }
+          }
+          for(let i=0;i<queue.length;i++){
+            const cur=queue[i];
+            for(const imp of imports(cur)){
+              if(!loaded.has(imp)){loaded.add(imp);queue.push(imp)}
+              if(!pagesBy.has(imp))pagesBy.set(imp,new Set());
+              for(const p of pagesBy.get(cur)||[])pagesBy.get(imp).add(p);
+            }
+          }
+          const targetCss=fs.readFileSync(target,'utf8');
+          const important=(targetCss.match(/!important\b/gi)||[]).length;
+          if(important!==expected)throw Error(`important ${important} expected ${expected}`);
+          if(loaded.has(target))throw Error('canonical loader says target active');
+
+          const policy=fs.readFileSync('/tmp/policy.txt','utf8');
+          const activeSection=(policy.split('## Dívida ativa registrada')[1]||'').split('## Quarentena dormente registrada')[0]||'';
+          const dormantSection=(policy.split('## Quarentena dormente registrada')[1]||'').split('## Violações')[0]||'';
+          if(activeSection.includes(target))throw Error('target listed active in canonical policy');
+          if(!dormantSection.includes(target))throw Error('target absent from canonical dormant quarantine');
+
+          const deprecated=fs.readFileSync(process.env.DEPRECATED_DOC,'utf8');
+          if(!deprecated.includes(target))throw Error('target not documented deprecated');
+          if(!deprecated.includes('Autoridade atual:')||!deprecated.includes('assets/css/components/shell/mobile-app-shell.css'))throw Error('replacement authority not documented');
+
+          function walk(d,out=[]){if(!fs.existsSync(d))return out;for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['.git','node_modules','reports','.diagnostics'].includes(e.name))continue;const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile())out.push(normalize(p));}return out}
+          const files=walk('.');
+          const css=files.filter(f=>f.endsWith('.css'));
+          const html=files.filter(f=>f.endsWith('.html'));
+          const js=files.filter(f=>/\.(?:js|mjs|cjs|ts)$/i.test(f));
+          const basename=path.posix.basename(target);
+          const directHtmlRefs=html.filter(f=>{const s=fs.readFileSync(f,'utf8');return s.includes(target)||s.includes(basename)});
+          const cssImporters=css.filter(f=>f!==target&&imports(f).includes(target));
+          const runtimeJsRefs=[],toolingRefs=[];
+          for(const f of js){const s=fs.readFileSync(f,'utf8');if(!(s.includes(target)||s.includes(basename)))continue;(f.startsWith('scripts/')||f.startsWith('tests/')||f.includes('/test')?toolingRefs:runtimeJsRefs).push(f)}
+          if(directHtmlRefs.length||cssImporters.length||runtimeJsRefs.length)throw Error(`unexpected runtime reach html=${directHtmlRefs.length} css=${cssImporters.length} js=${runtimeJsRefs.length}`);
+
+          const selectorTokens=new Set();let m;const tokenRe=/[.#]([A-Za-z_][\w-]*)/g;while((m=tokenRe.exec(targetCss)))selectorTokens.add(m[1]);
+          const sourceText=[...html,...js].map(f=>fs.readFileSync(f,'utf8')).join('\n');
+          const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+          const referenced=[...selectorTokens].filter(t=>new RegExp(`(^|[^A-Za-z0-9_-])${esc(t)}([^A-Za-z0-9_-]|$)`).test(sourceText));
+          const unreferenced=[...selectorTokens].filter(t=>!referenced.includes(t));
+
+          const mediaHeaders=[];const mediaRe=/@media\s*([^\{]+)\{/gi;while((m=mediaRe.exec(targetCss)))mediaHeaders.push(m[1].replace(/\s+/g,' ').trim());
+          const props={};const declRe=/([\w-]+)\s*:\s*[^;{}]*!important\b/gi;while((m=declRe.exec(targetCss)))props[m[1].toLowerCase()]=(props[m[1].toLowerCase()]||0)+1;
+          const result={
+            proof:'UX-CSS-IMPORTANT-037 Reach Source Cascade R1B',
+            historicalR1:{runId:32791086911,jobId:97632628749,result:'FAIL',reason:'custom resolver classified dormant then threw before receipt; preserved'},
+            parentSha:process.env.PARENT_SHA,parentTree:process.env.PARENT_TREE,targetFile:target,targetBlob:process.env.TARGET_BLOB,
+            importantDeclarationCount:important,
+            reach:{canonicalLoaded:false,wholeFileDormant:true,rootHtmlCount:rootHtml.length,loadedCssCount:[...loaded].filter(f=>f.endsWith('.css')).length,pages:[],directHtmlRefs,cssImporters,runtimeJsRefs,toolingRefs},
+            authority:{deprecatedDocumented:true,replacementCss:'assets/css/components/shell/mobile-app-shell.css',policyScriptBlob:process.env.POLICY_SCRIPT_BLOB,deprecatedDocBlob:process.env.DEPRECATED_BLOB},
+            source:{selectorTokenCount:selectorTokens.size,referencedSelectorTokens:referenced.length,unreferencedSelectorTokens:unreferenced.length,unreferencedTokenSample:unreferenced.sort().slice(0,30)},
+            cascade:{runtimeRelevant:false,dormantImportant:important,mediaBlockCount:mediaHeaders.length,mediaHeaders,importantByProperty:Object.entries(props).sort((a,b)=>b[1]-a[1]).map(([property,count])=>({property,count}))},
+            result:'PASS'
+          };
+          fs.writeFileSync('/tmp/r1b.json',JSON.stringify(result,null,2)+'\n');
+          console.log(JSON.stringify({canonicalLoaded:false,dormant:true,important,rootHtml:rootHtml.length,loadedCss:result.reach.loadedCssCount,directHtmlRefs:0,cssImporters:0,runtimeJsRefs:0,toolingRefs:toolingRefs.length,selectorTokens:selectorTokens.size,referencedTokens:referenced.length}));
+          NODE
+
+      - name: Publish R1B receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          test -s /tmp/r1b.json && result="$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/r1b.json','utf8')).result||'FAIL')")" || true
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          if test -s /tmp/r1b.json; then cp /tmp/r1b.json "$RESULT_FILE"; else printf '{"proof":"UX-CSS-IMPORTANT-037 Reach Source Cascade R1B","result":"FAIL","reason":"receipt missing"}\n' > "$RESULT_FILE"; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then git commit -m 'diag: publish UX-CSS-IMPORTANT-037 canonical reach R1B [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null; fi
+          test "$result" = PASS
