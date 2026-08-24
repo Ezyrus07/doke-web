@@ -45,7 +45,6 @@ jobs:
           set -euo pipefail
           : >/tmp/summary
           pass(){ echo "$1" | tee -a /tmp/summary; }
-
           git fetch --no-tags origin "refs/heads/$R5_BRANCH:refs/remotes/origin/$R5_BRANCH" >/dev/null
           git fetch --no-tags origin "refs/heads/$R5C_BRANCH:refs/remotes/origin/$R5C_BRANCH" >/dev/null
           test "$(git rev-parse "refs/remotes/origin/$R5_BRANCH:$R5_PATH")" = "$R5_BLOB"
@@ -62,14 +61,12 @@ jobs:
           grep -q '^AUDIT REPRODUCTION PASS$' /tmp/r5c.txt
           grep -q '^PROOF_RESULT=FAIL$' /tmp/r5c.txt
           pass 'EVIDENCE + DERIVATIVE AUTHORITY PASS|r5Technical=1|r5cAttributionFailPreserved=1|derivedDocs=2'
-
           git checkout --detach "$PARENT_SHA" >/dev/null
           cp "$TARGET_FILE" /tmp/parent.css
           node <<'NODE'
           const fs=require('fs'),cp=require('child_process');const t=process.env.TARGET_FILE,b=new Set([106,139,141,142,147,275]);const o=fs.readFileSync(t,'utf8');let i=-1;const c=o.replace(/\s*!important\b/gi,m=>{i++;return b.has(i)?m:'';});fs.writeFileSync('/tmp/candidate.css',c);const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();if(i+1!==314||(c.match(/!important\b/gi)||[]).length!==6||blob!==process.env.CANDIDATE_BLOB)throw Error('candidate identity');if(o.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('not marker-only');fs.writeFileSync(t,c);
           NODE
           pass 'CANDIDATE IDENTITY PASS|important=314->6|removed=308|markerOnly=1'
-
           npm ci --ignore-scripts >/dev/null
           npm run audit:domain >/dev/null
           npm run audit:agent-governance >/dev/null
@@ -85,21 +82,13 @@ jobs:
           npm run audit:important-reduction-plan >/dev/null
           npm run audit:global-css-design-system >/dev/null
           pass 'AUDIT REPRODUCTION PASS'
-
           git diff --name-only | sort -u >/tmp/tracked.txt
           git ls-files --others --exclude-standard | sort -u >/tmp/untracked.txt
           cat /tmp/tracked.txt /tmp/untracked.txt | sort -u >/tmp/all.txt
           node <<'NODE'
-          const fs=require('fs'),target=process.env.TARGET_FILE,d1=process.env.DERIVED_DOC_1,d2=process.env.DERIVED_DOC_2;
-          const all=fs.readFileSync('/tmp/all.txt','utf8').split(/\r?\n/).filter(Boolean);
-          const allowed=p=>p===target||p===d1||p===d2||p.startsWith('reports/');
-          const unexpected=all.filter(p=>!allowed(p));if(unexpected.length)throw Error('unexpected side effects: '+unexpected.join(','));
-          const reports=all.filter(p=>p.startsWith('reports/'));
-          if(!all.includes(d1)||!all.includes(d2)||!all.includes(target))throw Error('expected derived paths/target missing');
-          fs.writeFileSync('/tmp/effect-summary',`AUDIT SIDE EFFECT ATTRIBUTION PASS|changedTotal=${all.length}|reportPaths=${reports.length}|derivedDocs=2|targetPresent=1|unexpected=0\nDERIVED_DOCS=${d1},${d2}\nREPORT_PATHS=${reports.join(',')}\n`);
+          const fs=require('fs'),target=process.env.TARGET_FILE,d1=process.env.DERIVED_DOC_1,d2=process.env.DERIVED_DOC_2;const all=fs.readFileSync('/tmp/all.txt','utf8').split(/\r?\n/).filter(Boolean);const allowed=p=>p===target||p===d1||p===d2||p.startsWith('reports/');const unexpected=all.filter(p=>!allowed(p));if(unexpected.length)throw Error('unexpected side effects: '+unexpected.join(','));const reports=all.filter(p=>p.startsWith('reports/'));if(!all.includes(d1)||!all.includes(d2)||!all.includes(target))throw Error('expected derived paths/target missing');fs.writeFileSync('/tmp/effect-summary',`AUDIT SIDE EFFECT ATTRIBUTION PASS|changedTotal=${all.length}|reportPaths=${reports.length}|derivedDocs=2|targetPresent=1|unexpected=0\nDERIVED_DOCS=${d1},${d2}\nREPORT_PATHS=${reports.join(',')}\n`);
           NODE
           cat /tmp/effect-summary | tee -a /tmp/summary
-
           git restore --worktree -- reports "$DERIVED_DOC_1" "$DERIVED_DOC_2" 2>/dev/null || true
           git clean -fd -- reports >/dev/null 2>&1 || true
           test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
@@ -109,7 +98,6 @@ jobs:
           num="$(git diff --numstat -- "$TARGET_FILE")"; a="$(printf '%s' "$num"|cut -f1)"; d="$(printf '%s' "$num"|cut -f2)"; p="$(printf '%s' "$num"|cut -f3-)"
           test "$a" = 308; test "$d" = 308; test "$p" = "$TARGET_FILE"
           pass 'DIFF HYGIENE PASS|files=1|additions=308|deletions=308|removedMarkers=308|markerOnly=1'
-
           cp /tmp/parent.css "$TARGET_FILE"
           test "$(git hash-object "$TARGET_FILE")" = "$TARGET_PARENT_BLOB"
           test -z "$(git status --short --untracked-files=all)"
@@ -129,3 +117,5 @@ jobs:
           git add -- "$RESULT_FILE"
           if ! git diff --cached --quiet; then git commit -m 'diag: publish 036 governance hygiene R5D [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null; fi
           test "$result" = PASS
+
+# trigger-r5d
