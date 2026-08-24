@@ -1,0 +1,114 @@
+name: UX-CSS-IMPORTANT-035 Domain Cards Delta R3
+on:
+  push:
+    branches:
+      - diag/ux-css-important-035-domain-cards-delta-r3
+permissions:
+  contents: write
+jobs:
+  delta035r3:
+    runs-on: ubuntu-latest
+    env:
+      PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      TARGET_FILE: assets/css/components/domain/doke-domain-cards.css
+      DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
+      RESULT_FILE: .diagnostics/ux-css-important-035-domain-cards-delta-r3.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Probe exact cascade delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/probe.log) 2>&1
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(grep -o '!important' "$TARGET_FILE" | wc -l | tr -d ' ')" = 215
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          trap 'kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/resultados.html >/dev/null 2>&1 && break; sleep 1; done
+          cat >/tmp/probe.js <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const target = process.env.TARGET_FILE;
+          const original = fs.readFileSync(target,'utf8');
+          const candidate = original.replace(/\s*!important\b/g,'');
+          const sha = crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex');
+          if ((original.match(/!important\b/g)||[]).length !== 215 || (candidate.match(/!important\b/g)||[]).length !== 0) throw new Error('candidate-count');
+          if (sha !== 'd99be25b5e0c364890bec8bc0aa28226b227d9b4bd45131fe193c440328aebed') throw new Error('candidate-hash');
+          const makeContext = async browser => {
+            const ctx = await browser.newContext({viewport:{width:760,height:900},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});
+            await ctx.route('**/*', route => {
+              const u = new URL(route.request().url());
+              if (u.hostname === '127.0.0.1' || u.hostname === 'localhost') return route.continue();
+              return route.abort();
+            });
+            await ctx.addInitScript(() => {
+              let n=0; Math.random=()=>((++n%997)/997);
+              const fixed=1787562000000, RealDate=Date;
+              class FixedDate extends RealDate { constructor(...a){ super(...(a.length?a:[fixed])); } static now(){ return fixed; } }
+              globalThis.Date=FixedDate;
+            });
+            return ctx;
+          };
+          async function snap(browser,label){
+            const ctx=await makeContext(browser); const page=await ctx.newPage(); let errs=[]; let loads=0;
+            page.on('pageerror',e=>errs.push(String(e.message||e)));
+            page.on('request',r=>{try{if(new URL(r.url()).pathname==='/assets/css/components/domain/doke-domain-cards.css')loads++;}catch{}});
+            await page.goto('http://127.0.0.1:4173/resultados.html',{waitUntil:'networkidle'});
+            await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});
+            await page.evaluate(()=>document.fonts?.ready); await page.waitForTimeout(900);
+            const data=await page.evaluate(()=>{
+              const props=Array.from(getComputedStyle(document.documentElement));
+              const css=(el,pseudo=null)=>{const c=getComputedStyle(el,pseudo);const o={};for(const p of props)o[p]=c.getPropertyValue(p);return o;};
+              const nodes=Array.from(document.querySelectorAll('*')).map((el,i)=>{const r=el.getBoundingClientRect();return{idx:i,tag:el.tagName,id:el.id||'',cls:typeof el.className==='string'?el.className:'',rect:[r.x,r.y,r.width,r.height].map(v=>+v.toFixed(3)),style:css(el),before:css(el,'::before'),after:css(el,'::after')};});
+              return {nodes,bodyClass:document.body.className,bodyPage:document.body.dataset.page||'',url:location.pathname};
+            });
+            const shot=await page.screenshot({fullPage:true});
+            await ctx.close();
+            return {label,data,shot:crypto.createHash('sha256').update(shot).digest('hex'),errs,loads};
+          }
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            let a,b;
+            try {
+              fs.writeFileSync(target,original); a=await snap(browser,'parent');
+              fs.writeFileSync(target,candidate); b=await snap(browser,'candidate');
+            } finally { fs.writeFileSync(target,original); await browser.close(); }
+            const diffs=[]; const A=a.data.nodes,B=b.data.nodes;
+            if(A.length!==B.length) diffs.push(`NODE_COUNT ${A.length}->${B.length}`);
+            const n=Math.min(A.length,B.length);
+            for(let i=0;i<n;i++){
+              const x=A[i],y=B[i];
+              if(JSON.stringify(x.rect)!==JSON.stringify(y.rect)) diffs.push(`RECT|idx=${i}|tag=${x.tag}|id=${x.id}|class=${x.cls}|${JSON.stringify(x.rect)}=>${JSON.stringify(y.rect)}`);
+              for(const scope of ['style','before','after']) for(const p of Object.keys(x[scope])) if(x[scope][p]!==y[scope][p]) diffs.push(`STYLE|scope=${scope}|idx=${i}|tag=${x.tag}|id=${x.id}|class=${x.cls}|prop=${p}|${x[scope][p]}=>${y[scope][p]}`);
+            }
+            console.log(`DELTA SUMMARY|nodes=${A.length}/${B.length}|styleOrRectDiffs=${diffs.length}|screenshotDiff=${a.shot===b.shot?0:1}|loads=${a.loads}/${b.loads}|pageErrors=${a.errs.length+b.errs.length}|candidateSha256=${sha}`);
+            for(const d of diffs.slice(0,120)) console.log(`DELTA ${d}`);
+            if(diffs.length>120) console.log(`DELTA TRUNCATED|remaining=${diffs.length-120}`);
+            console.log('RESULT=PASS');
+          })().catch(e=>{try{fs.writeFileSync(target,original)}catch{};console.error(e);process.exit(1)});
+          NODE
+          NODE_PATH="$PWD/node_modules" node /tmp/probe.js
+      - name: Publish receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; grep -q '^RESULT=PASS$' /tmp/probe.log && result=PASS || true
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; grep -E '^(DELTA SUMMARY|DELTA |DELTA TRUNCATED|RESULT=)' /tmp/probe.log || true; echo "PROBE_RESULT=$result"; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          git commit -m 'diag: publish 035 domain cards delta r3 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
