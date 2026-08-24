@@ -25,7 +25,7 @@ jobs:
       R5D_FILE: .diagnostics/ux-css-important-035-domain-cards-evidence-r5d.txt
       R5D_BLOB: e7a5c8a581d91b1def2672444c22ab81b03677dd
       R6C_FILE: .diagnostics/ux-css-important-035-domain-cards-governance-r6c.txt
-      R6C_BLOB: cbeeefa8e7ae32c151c6242dbb9cf8067609bde6
+      R6C_BLOB: 7aa13b5e87551a5ce9dc438abd48ffa492b352bd
       RESULT_FILE: .diagnostics/ux-css-important-035-permanent-certification.txt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -44,7 +44,6 @@ jobs:
 
           git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null
           git fetch origin "refs/heads/$LEDGER:refs/remotes/origin/$LEDGER" >/dev/null
-
           test "$(git rev-parse "refs/remotes/origin/$PERMANENT_BRANCH")" = "$HEAD_SHA"
           test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
           test "$(git rev-parse "$HEAD_SHA^{tree}")" = "$HEAD_TREE"
@@ -68,39 +67,22 @@ jobs:
           grep -Fq 'RECONCILE PASS|states=36|metadataDiffs=0|screenshotDiffs=0|metadataStable=36/36|screenshotStable=36/36|pageErrors=0|targetStylesheetLoads=100/100|sampledDomainNodes=136/136|r3DeepTransfer=PASS' /tmp/r5c.txt
           grep -q '^RESULT=PASS$' /tmp/r5c.txt
           grep -q '^PROOF_RESULT=PASS$' /tmp/r5c.txt
+          grep -q '^RUN_ID=32726425188$' /tmp/r5d.txt
           grep -Fq 'BROWSER RECONCILIATION PASS|' /tmp/r5d.txt
           grep -Fq 'deepPropertywiseDiffs=0|historicalR5FailPreserved=1|criteriaRelaxed=0' /tmp/r5d.txt
           grep -q '^RESULT=PASS$' /tmp/r5d.txt
-          grep -q '^RUN_ID=32727503402$' /tmp/r6c.txt
+          grep -q '^RUN_ID=32728051038$' /tmp/r6c.txt
           grep -Fq "CANDIDATE PASS|important=215->0|sha256=$TARGET_SHA256|blob=$TARGET_BLOB|bytes=28604|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/r6c.txt
+          grep -Fq 'IMPORTANT FRESH PASS|global=7576->7361|outsideService=7514->7299|queueFiles=14->13|high=7506->7291|medium=6->6|low=2->2|protected006=6|protected010=2|protected020=28|protected021=127' /tmp/r6c.txt
           grep -q '^RESULT=PASS$' /tmp/r6c.txt
           grep -q '^PROOF_RESULT=PASS$' /tmp/r6c.txt
-          pass 'EVIDENCE TRANSFER PASS|r5c=32726102394|r5d=32726425188|r6c=32727503402|criteriaRelaxed=0'
+          pass 'EVIDENCE TRANSFER PASS|r5c=32726102394|r5d=32726425188|r6c=32728051038|criteriaRelaxed=0'
 
           git checkout --detach "$HEAD_SHA" >/dev/null
           test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
           test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
-          test "$(grep -o '!important\b' "$TARGET_FILE" | wc -l | tr -d ' ')" = 0
-          node <<'NODE'
-          const fs=require('fs'),path=require('path');
-          const root=process.cwd(),target=process.env.TARGET_FILE;
-          const protectedFiles=new Map([
-            ['assets/css/pages/home/mobile-composition.css','006'],
-            ['assets/css/components/cards/mobile-card-contract.css','010'],
-            ['assets/css/components/shell/mobile-base-stability.css','020'],
-            ['assets/css/pages/home/mobile-hero-feed.css','021'],
-          ]);
-          const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const f=path.join(d,e.name);return e.isDirectory()?walk(f):(e.isFile()&&e.name.endsWith('.css')?[f]:[])});
-          const rel=f=>path.relative(root,f).replace(/\\/g,'/');
-          const risk=(r,n)=>{if(r.includes('service-card'))return'excluded-service-card';if(r.includes('/core/')||r.includes('/layout/')||r.includes('shell')||r.includes('sidebar')||r.includes('header'))return'high-baseline-required';if(n>=25)return'high-baseline-required';if(n>=5)return'medium-baseline-required';return'low-review-candidate'};
-          const rows=walk(path.join(root,'assets/css')).map(f=>{const file=rel(f),n=(fs.readFileSync(f,'utf8').match(/!important\b/g)||[]).length;return{file,n,risk:risk(file,n)}});
-          const res=rows.filter(x=>x.n>0&&x.risk!=='excluded-service-card');
-          const m={global:rows.reduce((s,x)=>s+x.n,0),outsideService:res.reduce((s,x)=>s+x.n,0),files:res.length,high:res.filter(x=>x.risk==='high-baseline-required').reduce((s,x)=>s+x.n,0),medium:res.filter(x=>x.risk==='medium-baseline-required').reduce((s,x)=>s+x.n,0),low:res.filter(x=>x.risk==='low-review-candidate').reduce((s,x)=>s+x.n,0),target:rows.find(x=>x.file===target)?.n??-1,protected:Object.fromEntries([...protectedFiles].map(([f,k])=>[k,rows.find(x=>x.file===f)?.n??-1]))};
-          const exp={global:7361,outsideService:7299,files:13,high:7291,medium:6,low:2,target:0};
-          for(const [k,v] of Object.entries(exp))if(m[k]!==v)throw Error(`${k}=${m[k]} expected ${v}`);
-          for(const [k,v] of Object.entries({'006':6,'010':2,'020':28,'021':127}))if(m.protected[k]!==v)throw Error(`protected ${k}=${m.protected[k]} expected ${v}`);
-          NODE
-          pass 'PERMANENT IDENTITY PASS|important=0|global=7361|outsideService=7299|queueFiles=13|high=7291|medium=6|low=2|protected006=6|protected010=2|protected020=28|protected021=127'
+          node -e "const fs=require('fs');const s=fs.readFileSync(process.env.TARGET_FILE,'utf8');if((s.match(/!important\\b/g)||[]).length!==0)process.exit(1)"
+          pass 'PERMANENT IDENTITY PASS|targetImportant=0|blob=exact|sha256=exact'
 
           npm ci --ignore-scripts >/dev/null
           node scripts/generate-responsive-index-baseline.js >/tmp/responsive-baseline.log 2>&1
@@ -124,10 +106,9 @@ jobs:
           npm run audit:global-css-design-system >/tmp/design-system.log 2>&1
           pass 'CSS GOVERNANCE SUITE PASS'
           npm audit --json >/tmp/npm-audit.json 2>/dev/null || true
-          node <<'NODE'
-          const fs=require('fs');const v=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8')).metadata?.vulnerabilities||{};if(Number(v.total||0)!==13||Number(v.critical||0)!==0||Number(v.high||0)!==10||Number(v.moderate||0)!==1||Number(v.low||0)!==2)throw Error(JSON.stringify(v));
-          NODE
+          node -e "const v=JSON.parse(require('fs').readFileSync('/tmp/npm-audit.json','utf8')).metadata?.vulnerabilities||{};if(Number(v.total||0)!==13||Number(v.critical||0)!==0||Number(v.high||0)!==10||Number(v.moderate||0)!==1||Number(v.low||0)!==2)process.exit(1)"
           pass 'DEPENDENCIES PASS|total=13|critical=0|high=10|moderate=1|low=2'
+
           git restore --worktree -- .
           git clean -fd >/dev/null
           test -z "$(git status --short --untracked-files=no)"
