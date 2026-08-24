@@ -1,0 +1,113 @@
+name: TEMP COM-B02CG Authorized Single-Use Register Resolve Release Execution
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-resolve-release-execution.js'
+      - 'config/com-b02cg-repository-only-deterministic-synthetic-continuation-state-register-resolve-release-execution.json'
+      - 'scripts/test-com-b02cg-repository-only-deterministic-synthetic-continuation-state-register-resolve-release-execution.js'
+      - '.github/workflows/0000-temp-com-b02cg-authorized-single-use-register-resolve-release-execution.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  execute-authorized-single-use-register-resolve-release:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 495f48ef847ebcfe599b9b2fc95750b78ba409d1
+      PREDECESSOR_TREE: 5d8e112b88bdd6b72f4df787ff5ab5b13e64623a
+      PREDECESSOR_RUN_ID: '32727679055'
+      PREDECESSOR_JOB_ID: '97432567051'
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-resolve-release-execution.js
+      CONFIG: config/com-b02cg-repository-only-deterministic-synthetic-continuation-state-register-resolve-release-execution.json
+      TEST: scripts/test-com-b02cg-repository-only-deterministic-synthetic-continuation-state-register-resolve-release-execution.js
+      WORKFLOW: .github/workflows/0000-temp-com-b02cg-authorized-single-use-register-resolve-release-execution.yml
+      B02CF_TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-resolve-execution.js
+      B02CF_TARGET_BLOB: 625741a92467c37ea5b268791f330502989dfd92
+      B02CF_CONFIG: config/com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.json
+      B02CF_CONFIG_BLOB: 20559d236373135f89187e3eda6e6f5ea88e53a8
+      B02CF_TEST: scripts/test-com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.js
+      B02CF_TEST_BLOB: a36ebdc807e3ed4077944db0a860c3328a1648d8
+      B02CF_WORKFLOW: .github/workflows/com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.yml
+      B02CF_WORKFLOW_BLOB: 69a51cb233493c6d8983ec2d638f7418b3373647
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact authorized candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CF lineage and exact single-use scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.run_attempt }}" = '1'
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$PREDECESSOR_RUN_ID" = '32727679055'
+          test "$PREDECESSOR_JOB_ID" = '97432567051'
+          test "$(git rev-parse HEAD:$B02CF_TARGET)" = "$B02CF_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CF_CONFIG)" = "$B02CF_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02CF_TEST)" = "$B02CF_TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02CF_WORKFLOW)" = "$B02CF_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          expected="$(printf '%s\n' "$TARGET" "$CONFIG" "$TEST" "$WORKFLOW" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+          grep -F '"status": "AUTHORIZED_SINGLE_USE_EXECUTION_PENDING"' "$CONFIG"
+          grep -F '"singleUse": true' "$CONFIG"
+          grep -F '"reusable": false' "$CONFIG"
+          grep -F '"registryReleaseAuthority": true' "$CONFIG"
+          grep -F '"resumeSurfaceInvocationAuthority": false' "$CONFIG"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Static preflight without execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          grep -F 'registry.set(key, storedState);' "$TARGET"
+          grep -F 'const resolvedState = registry.get(key);' "$TARGET"
+          grep -F 'const released = registry.delete(key);' "$TARGET"
+          grep -F 'implementation.releaseOpaqueContinuationState(releaseCase.packet)' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+
+      - name: Execute exactly one authorized process-local synthetic register resolve release
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.run_attempt }}" = '1'
+          node "$TEST" --execute
+
+      - name: Governance and Matrix observation after consumed execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD
