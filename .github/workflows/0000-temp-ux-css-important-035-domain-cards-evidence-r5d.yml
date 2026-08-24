@@ -1,0 +1,75 @@
+name: UX-CSS-IMPORTANT-035 Domain Cards Evidence R5D
+on:
+  push:
+    branches:
+      - diag/ux-css-important-035-domain-cards-evidence-r5d
+permissions:
+  contents: write
+jobs:
+  evidence035r5d:
+    runs-on: ubuntu-latest
+    env:
+      PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      PARENT_TREE: 714d5b26a67edec2fbcb4f87ebae8c1197304269
+      CANDIDATE_SHA256: d99be25b5e0c364890bec8bc0aa28226b227d9b4bd45131fe193c440328aebed
+      CANDIDATE_BLOB: f7b0f8c5c4efcd7c0f821b18f514b788eef4cdfa
+      LEDGER: diag/ux-css-important-post-010-ranking-r1
+      R3_FILE: .diagnostics/ux-css-important-035-domain-cards-delta-r3.txt
+      R3_BLOB: 253232f6a0c1b895b92da11a65a277a4f6207c86
+      R5_FILE: .diagnostics/ux-css-important-035-domain-cards-reconcile-r5.txt
+      R5_BLOB: e4f87f2ecc690e0bb58f6986497d5e83d298a5d3
+      R3_BRANCH: diag/ux-css-important-035-domain-cards-delta-r3
+      R3_WORKFLOW: .github/workflows/ux-css-important-035-domain-cards-delta-r3.yml
+      R3_WORKFLOW_BLOB: a415b866496f87d92b0f0adbaa2c6886234cc8c4
+      R5_BRANCH: diag/ux-css-important-035-domain-cards-reconcile-r5
+      R5_WORKFLOW: .github/workflows/0000-temp-ux-css-important-035-domain-cards-reconcile-r5.yml
+      R5_WORKFLOW_BLOB: 2ea496f9a44c580434cf9b9b40ef9e450290c49a
+      RESULT_FILE: .diagnostics/ux-css-important-035-domain-cards-evidence-r5d.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Reconcile exact completed evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/r5d.log) 2>&1
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          git fetch origin "refs/heads/$LEDGER:refs/remotes/origin/$LEDGER" "refs/heads/$R3_BRANCH:refs/remotes/origin/$R3_BRANCH" "refs/heads/$R5_BRANCH:refs/remotes/origin/$R5_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$LEDGER:$R3_FILE")" = "$R3_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$LEDGER:$R5_FILE")" = "$R5_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R3_BRANCH:$R3_WORKFLOW")" = "$R3_WORKFLOW_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R5_BRANCH:$R5_WORKFLOW")" = "$R5_WORKFLOW_BLOB"
+          git show "refs/remotes/origin/$LEDGER:$R3_FILE" >/tmp/r3.txt
+          git show "refs/remotes/origin/$LEDGER:$R5_FILE" >/tmp/r5.txt
+          git show "refs/remotes/origin/$R3_BRANCH:$R3_WORKFLOW" >/tmp/r3.yml
+          git show "refs/remotes/origin/$R5_BRANCH:$R5_WORKFLOW" >/tmp/r5.yml
+          grep -q '^RUN_ID=32724815997$' /tmp/r3.txt
+          grep -Fq "DELTA SUMMARY|nodes=977/977|styleOrRectDiffs=0|screenshotDiff=0|loads=6/6|pageErrors=0|candidateSha256=$CANDIDATE_SHA256" /tmp/r3.txt
+          grep -q '^RESULT=PASS$' /tmp/r3.txt
+          grep -q '^PROBE_RESULT=PASS$' /tmp/r3.txt
+          grep -q '^RUN_ID=32725291044$' /tmp/r5.txt
+          grep -Fq "CANDIDATE PASS|important=215->0|removed=215|sha256=$CANDIDATE_SHA256|blob=$CANDIDATE_BLOB|bytes=28604|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0" /tmp/r5.txt
+          grep -Fq 'PHASE|label=parent|states=36|metadataStable=36|screenshotStable=36|pageErrors=0|targetStylesheetLoads=100|domainNodes=136' /tmp/r5.txt
+          grep -Fq 'PHASE|label=candidate|states=36|metadataStable=36|screenshotStable=36|pageErrors=0|targetStylesheetLoads=100|domainNodes=136' /tmp/r5.txt
+          grep -Fq 'RECONCILE RESULT|states=36|metadataDiffs=0|screenshotDiffs=0|deepNodeDiffs=977|metadataStable=36/36|screenshotStable=36/36|pageErrors=0|targetStylesheetLoads=100/100|domainNodes=136/136|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|externalResourcesBlocked=1|dateFrozen=1' /tmp/r5.txt
+          grep -q '^PROOF_RESULT=FAIL$' /tmp/r5.txt
+          grep -Fq "if(JSON.stringify(da[i])!==JSON.stringify(db[i]))deep++" /tmp/r5.yml
+          grep -Fq "for(const scope of ['style','before','after']) for(const p of Object.keys(x[scope])) if(x[scope][p]!==y[scope][p])" /tmp/r3.yml
+          echo "R5 HISTORICAL FAIL PRESERVED|run=32725291044|reason=representation-sensitive-deep-comparator|visualStates=36|metadataDiffs=0|screenshotDiffs=0"
+          echo "R3 PROPERTYWISE PASS|run=32724815997|state=resultados.html@760|nodes=977/977|styleOrRectDiffs=0|screenshotDiff=0"
+          echo "BROWSER RECONCILIATION PASS|candidateSha256=$CANDIDATE_SHA256|candidateBlob=$CANDIDATE_BLOB|visualStates=36|stableScreenshots=36/36|metadataDiffs=0|screenshotDiffs=0|deepPropertywiseDiffs=0|historicalR5FailPreserved=1|criteriaRelaxed=0"
+          echo 'RESULT=PASS'
+      - name: Publish reconciliation receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; grep -E '^(R5 HISTORICAL FAIL PRESERVED|R3 PROPERTYWISE PASS|BROWSER RECONCILIATION PASS|RESULT=)' /tmp/r5d.log; } >/tmp/out
+          git fetch origin "refs/heads/$LEDGER:refs/remotes/origin/$LEDGER" >/dev/null
+          git checkout -B diag-output "origin/$LEDGER" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          git commit -m 'diag: publish 035 browser evidence reconciliation r5d [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$LEDGER" >/dev/null
