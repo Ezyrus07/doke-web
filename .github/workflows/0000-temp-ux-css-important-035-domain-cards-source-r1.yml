@@ -1,0 +1,60 @@
+name: UX-CSS-IMPORTANT-035 Domain Cards Source R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-035-domain-cards-source-r1
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-035-domain-cards-source-r1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  source035r1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      DIAG_WORKFLOW: .github/workflows/0000-temp-ux-css-important-035-domain-cards-source-r1.yml
+      DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
+      RESULT_FILE: .diagnostics/ux-css-important-035-domain-cards-source-r1.txt
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: diag/ux-css-important-035-domain-cards-source-r1
+          fetch-depth: 0
+      - name: Freeze scope and inventory exact sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$DIAG_WORKFLOW"
+          test -z "$(git diff --name-only "$PARENT_SHA" HEAD -- 'assets/css/**')"
+          node <<'NODE' >/tmp/source.txt
+          const fs=require('fs'),path=require('path');
+          const pages=['index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'];
+          const classes=['doke-service-card','doke-worker-card','doke-order-card','doke-message-card','doke-community-card','doke-wallet-card','doke-notification-card','doke-profile-card','doke-media-card','doke-stat-card'];
+          const legacy=['service-card','service-card__media','service-card__body','service-card__favorite','service-card__badge','service-card__rating','service-card__tags'];
+          const html={}; for(const c of [...classes,...legacy])html[c]=0;
+          for(const p of pages){const s=fs.readFileSync(p,'utf8');for(const c of Object.keys(html)){const re=new RegExp(`(^|[^A-Za-z0-9_-])${c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Za-z0-9_-]|$)`,'g');html[c]+=(s.match(re)||[]).length;}}
+          function walk(d){if(!fs.existsSync(d))return[];return fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const f=path.join(d,e.name);return e.isDirectory()?walk(f):(e.isFile()&&f.endsWith('.js')?[f]:[]);});}
+          const jsFiles=walk('assets/js'),producers={};
+          for(const c of [...classes,...legacy]){producers[c]=[];for(const f of jsFiles){const s=fs.readFileSync(f,'utf8');if(s.includes(c))producers[c].push(f.replace(/\\/g,'/'));}}
+          console.log('SOURCE COVERAGE PASS');
+          for(const c of classes)console.log(`DOMAIN|class=${c}|htmlRefs=${html[c]}|jsProducerFiles=${producers[c].length}|js=${producers[c].join(',')||'none'}`);
+          for(const c of legacy)console.log(`LEGACY|class=${c}|htmlRefs=${html[c]}|jsProducerFiles=${producers[c].length}|js=${producers[c].join(',')||'none'}`);
+          const domainHtml=classes.reduce((n,c)=>n+html[c],0),domainJs=classes.reduce((n,c)=>n+producers[c].length,0);
+          const legacyHtml=legacy.reduce((n,c)=>n+html[c],0),legacyJs=legacy.reduce((n,c)=>n+producers[c].length,0);
+          console.log(`SUMMARY|pages=${pages.length}|domainHtmlRefs=${domainHtml}|domainJsProducerRefs=${domainJs}|legacyHtmlRefs=${legacyHtml}|legacyJsProducerRefs=${legacyJs}`);
+          NODE
+          cat /tmp/source.txt
+      - name: Publish source receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo 'SOURCE=success'; cat /tmp/source.txt; echo 'RESULT=PASS'; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"; git commit -m 'diag: publish 035 domain cards source r1 [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
