@@ -1,0 +1,1166 @@
+/*
+  Doke Mobile App Shell v2
+  Fonte única da verdade para chrome mobile: header, busca e bottom nav.
+  Governança:
+  - Páginas não redesenham header/search/bottom nav.
+  - Alterações visuais entram aqui ou em tokens globais.
+  - CSS legado de header/nav deve ser removido do HTML migrado.
+*/
+:root {
+  --doke-mobile-shell-max: min(430px, 100vw);
+  --doke-mobile-shell-edge: clamp(18px, 5.6vw, var(--space-6, 24px));
+  /* Browser chrome em iOS/iPadOS pode expor safe-area-inset-top alto demais em modo navegador.
+     O shell mobile não deve herdar esse valor integral, senão o cabeçalho nasce baixo
+     e a lista fica com um vazio grande no topo. */
+  --doke-mobile-shell-top: clamp(12px, env(safe-area-inset-top, 0px), 20px);
+  --doke-mobile-shell-gap: 12px;
+  --doke-mobile-shell-topbar-height: 40px;
+  --doke-mobile-shell-search-height: 56px;
+  --doke-mobile-shell-nav-height: 64px;
+  --doke-mobile-shell-bottom-reserve: calc(
+    var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px) + 14px
+  );
+  --doke-mobile-shell-action-height: var(--doke-mobile-shell-topbar-height);
+  --doke-mobile-shell-ink: var(--color-heading-soft, #17395f);
+  --doke-mobile-shell-muted: var(--color-text-muted, #8ca1b8);
+  --doke-mobile-shell-primary: var(--color-primary, #176db5);
+  --doke-mobile-shell-search-bottom: 18px;
+  --doke-mobile-shell-with-search-height: calc(
+    var(--doke-mobile-shell-top) + var(--doke-mobile-shell-topbar-height) +
+      var(--doke-mobile-shell-gap) + var(--doke-mobile-shell-search-height) +
+      var(--doke-mobile-shell-search-bottom)
+  );
+  --doke-mobile-shell-without-search-height: calc(
+    var(--doke-mobile-shell-top) + var(--doke-mobile-shell-topbar-height) + 18px
+  );
+}
+
+@media (max-width: 560px) {
+  html.doke-mobile-shell-pending
+    body:not([data-page="admin"]):not([data-page="notificacoes"]):not([data-page="novidades"]):not(.chat-room-mobile-open) {
+    padding-bottom: var(--doke-mobile-shell-bottom-reserve);
+  }
+}
+
+.doke-mobile-shell,
+.doke-mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 760px),
+  (hover: none) and (pointer: coarse) and (max-device-width: 560px) {
+  /* First-paint contract: reserve the same mobile shell space before JS mounts.
+     This removes the visible "wrong frame" where legacy page headers/content appear
+     and then jump after mobile-app-shell.js hydrates. */
+  html.doke-mobile-shell-pending body:not(.chat-room-mobile-open),
+  html.doke-mobile-shell-ready body:not(.chat-room-mobile-open) {
+    min-width: 0;
+    overflow-x: hidden;
+    padding-top: var(--doke-mobile-shell-without-search-height);
+    padding-bottom: 0;
+  }
+
+  html.doke-mobile-shell-pending
+    body:is(
+      [data-page="home"],
+      [data-page="resultados"],
+      .home-index-shell,
+      .search-results-body
+    ),
+  html.doke-mobile-shell-ready
+    body:is(
+      [data-page="home"],
+      [data-page="resultados"],
+      .home-index-shell,
+      .search-results-body
+    ) {
+    padding-top: var(--doke-mobile-shell-with-search-height);
+  }
+
+  /* Orders first-paint parity: pedidos uses the canonical injected mobile shell
+     for the compact topbar actions. During router transitions, the previous
+     page shell can remain mounted until the new page hydrates; keep that stale
+     shell invisible while .doke-mobile-shell-pending is active so the old
+     location/search layout never flashes over pedidos. */
+  html.doke-mobile-shell-pending .doke-mobile-shell,
+  html.doke-mobile-shell-pending .doke-mobile-bottom-nav {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  html.doke-mobile-shell-pending body.orders-page-shell .orders-page-header,
+  html.doke-mobile-shell-ready body.orders-page-shell .orders-page-header,
+  body.orders-page-shell.doke-mobile-shell-mounted .orders-page-header {
+    display: none;
+  }
+
+  html.doke-mobile-shell-pending
+    body
+    :is(
+      .sidebar,
+      .app-sidebar,
+      .desktop-sidebar,
+      .doke-desktop-sidebar,
+      .topbar,
+      .desktop-topbar,
+      .doke-desktop-topbar,
+      .doke-desktop-search,
+      .doke-desktop-search-panel,
+      .home-search-hero,
+      .home-side-meta,
+      .desktop-only,
+      .app-mobile-topbar,
+      .app-mobile-search,
+      .bottom-nav,
+      .doke-bottom-nav
+    ) {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  html.doke-mobile-shell-pending .app-mobile-topbar,
+  html.doke-mobile-shell-pending .app-mobile-search,
+  html.doke-mobile-shell-pending .bottom-nav,
+  html.doke-mobile-shell-pending .doke-bottom-nav,
+  html.doke-mobile-shell-ready .app-mobile-topbar,
+  html.doke-mobile-shell-ready .app-mobile-search,
+  html.doke-mobile-shell-ready .bottom-nav,
+  html.doke-mobile-shell-ready .doke-bottom-nav {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  html.doke-mobile-shell-ready .doke-mobile-shell,
+  html.doke-mobile-shell-ready .doke-mobile-bottom-nav {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open) {
+    min-width: 0;
+    overflow-x: hidden;
+    padding-top: var(--doke-mobile-shell-with-search-height);
+    padding-bottom: 0;
+  }
+
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open)[data-shell-bottom-nav="true"] {
+    padding-bottom: var(--doke-mobile-shell-bottom-reserve);
+  }
+
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open)[data-shell-search="false"] {
+    padding-top: var(--doke-mobile-shell-without-search-height);
+  }
+
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open) .doke-mobile-shell {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    z-index: 1200;
+    display: block;
+    width: min(100%, var(--doke-mobile-shell-max));
+    max-width: var(--doke-mobile-shell-max);
+    padding: var(--doke-mobile-shell-top) var(--doke-mobile-shell-edge)
+      var(--doke-mobile-shell-search-bottom);
+    transform: translateX(-50%);
+    background: linear-gradient(
+      180deg,
+      var(--doke-mobile-chrome-backdrop-start) 0%,
+      var(--doke-mobile-chrome-backdrop-mid) 76%,
+      var(--doke-mobile-chrome-backdrop-end) 100%
+    );
+    box-sizing: border-box;
+  }
+
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open)[data-shell-search="false"] .doke-mobile-shell {
+    padding-bottom: 18px;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__topbar {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: var(--doke-mobile-shell-topbar-height);
+    min-height: var(--doke-mobile-shell-topbar-height);
+    margin: 0;
+    padding: 0;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__profile {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    height: var(--doke-mobile-shell-topbar-height);
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--doke-mobile-shell-ink);
+    text-decoration: none;
+    overflow: hidden;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__avatar {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: var(--radius-pill);
+    background: var(--doke-mobile-chrome-avatar-gradient);
+    color: var(--doke-mobile-chrome-avatar-text);
+    font-family:
+      Poppins,
+      Inter,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-size: 13px;
+    font-weight: var(--doke-mobile-chrome-font-weight-strong);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__hello {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--doke-mobile-shell-ink);
+    font-family:
+      Poppins,
+      Inter,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-size: 15px;
+    font-weight: var(--doke-mobile-chrome-font-weight-strong);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    height: var(--doke-mobile-shell-topbar-height);
+    min-width: 0;
+    justify-self: end;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__location {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: clamp(108px, 31vw, 130px);
+    height: var(--doke-mobile-shell-action-height);
+    min-height: var(--doke-mobile-shell-action-height);
+    max-height: var(--doke-mobile-shell-action-height);
+    min-width: 0;
+    padding: 0 10px;
+    border: var(--border-soft);
+    border-radius: calc(var(--doke-mobile-shell-action-height) / 2);
+    background: var(--doke-mobile-chrome-surface);
+    color: var(--doke-mobile-shell-ink);
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__location-dot {
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--doke-mobile-chrome-success);
+    box-shadow: var(--doke-mobile-chrome-success-ring);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__location-label {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--doke-mobile-shell-ink);
+    font-family:
+      Poppins,
+      Inter,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-size: 10.5px;
+    font-weight: var(--doke-mobile-chrome-font-weight-strong);
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__notification {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    margin: 0;
+    padding: 0;
+    border: var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: var(--doke-mobile-chrome-surface);
+    color: var(--doke-mobile-shell-primary);
+    box-shadow: none;
+    text-decoration: none;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 36px 46px;
+    align-items: center;
+    width: 100%;
+    height: var(--doke-mobile-shell-search-height);
+    min-height: var(--doke-mobile-shell-search-height);
+    margin: var(--doke-mobile-shell-gap) 0 0;
+    padding: 0 6px 0 12px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--doke-mobile-chrome-surface-solid);
+    box-shadow: var(--shadow-control-hover);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  body.doke-mobile-shell-mounted[data-shell-search="false"]
+    .doke-mobile-shell__search {
+    display: none;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search-button,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__voice,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__filter {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-grid;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--doke-mobile-shell-primary);
+    line-height: 1;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search-button {
+    width: 30px;
+    height: var(--doke-mobile-shell-search-height);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field {
+    display: block;
+    min-width: 0;
+    height: var(--doke-mobile-shell-search-height);
+    margin: 0;
+    padding: 0;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input {
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    height: var(--doke-mobile-shell-search-height);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--doke-mobile-shell-ink);
+    -webkit-text-fill-color: var(--doke-mobile-shell-ink);
+    font-family:
+      Poppins,
+      Inter,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-size: 14px;
+    font-weight: var(--doke-mobile-chrome-font-weight-strong);
+    line-height: var(--doke-mobile-shell-search-height);
+    letter-spacing: var(--doke-mobile-chrome-letter-spacing);
+    box-shadow: none;
+    caret-color: var(--doke-mobile-shell-primary) !important;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input::placeholder {
+    color: var(--doke-mobile-shell-muted);
+    -webkit-text-fill-color: var(--doke-mobile-shell-muted);
+    opacity: 1;
+    font-size: 14px;
+    font-weight: var(--doke-mobile-chrome-font-weight-strong);
+    line-height: var(--doke-mobile-shell-search-height);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__voice {
+    width: 36px;
+    height: var(--doke-mobile-shell-search-height);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__filter {
+    width: 46px;
+    height: var(--control-height-lg);
+    border: 1px solid var(--color-secondary-border);
+    border-radius: var(--radius-exact-15);
+    background: var(--doke-mobile-chrome-secondary-bg);
+    color: var(--doke-mobile-chrome-secondary-text);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell svg,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open) .doke-mobile-bottom-nav {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 1200;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+    min-height: var(--doke-mobile-shell-nav-height);
+    padding: 0 max(10px, env(safe-area-inset-right)) env(safe-area-inset-bottom)
+      max(10px, env(safe-area-inset-left));
+    border-top: 1px solid var(--doke-mobile-chrome-border);
+    background: var(--doke-mobile-chrome-surface);
+    box-shadow: var(--doke-mobile-chrome-shadow);
+    box-sizing: border-box;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav__item {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    min-height: var(--doke-mobile-shell-nav-height);
+    color: var(--doke-mobile-chrome-muted);
+    text-decoration: none;
+    font-family:
+      Poppins,
+      Inter,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-size: 0.67rem;
+    font-weight: var(--doke-mobile-chrome-font-weight-strong);
+    line-height: 1;
+    background: transparent;
+  }
+
+  body.doke-mobile-shell-mounted
+    .doke-mobile-bottom-nav__item[aria-current="page"] {
+    color: var(--border-color-selected);
+  }
+
+  body.doke-mobile-shell-mounted
+    .doke-mobile-bottom-nav__item[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 34px;
+    height: 3px;
+    border-radius: 0 0 var(--radius-pill) var(--radius-pill);
+    background: var(--border-color-selected);
+    transform: translateX(-50%);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav__icon {
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav__label {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Neutralização dos wrappers antigos que geravam offsets diferentes entre páginas. */
+  body.doke-mobile-shell-mounted .home-search-hero,
+  body.doke-mobile-shell-mounted .home-search-hero__panel,
+  body.doke-mobile-shell-mounted .home-search-hero__card,
+  body.doke-mobile-shell-mounted .results-searchbar,
+  body.doke-mobile-shell-mounted .search-results-workspace {
+    margin-top: 0;
+    padding-top: 0 !important;
+    transform: none;
+  }
+
+  body.doke-mobile-shell-mounted .home-search-hero {
+    padding-inline: var(--doke-mobile-shell-edge) !important;
+  }
+}
+
+/*
+  Stage 26 — Mobile/Desktop Boundary Guard
+  Regra: no viewport mobile, o chrome e a busca vêm do Mobile App Shell.
+  Estruturas desktop da home não podem reaparecer abaixo do shell mobile.
+*/
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted .topbar,
+  body.doke-mobile-shell-mounted .internal-page-topbar,
+  body.doke-mobile-shell-mounted .topbar--location,
+  body.doke-mobile-shell-mounted .home-side-meta,
+  body.doke-mobile-shell-mounted .home-side-meta__search-form,
+  body.doke-mobile-shell-mounted .home-search-hero,
+  body.doke-mobile-shell-mounted .home-search-hero__panel,
+  body.doke-mobile-shell-mounted .home-search-hero__card,
+  body.doke-mobile-shell-mounted .home-search-hero__desktop-search,
+  body.doke-mobile-shell-mounted .doke-desktop-search-panel,
+  body.doke-mobile-shell-mounted .doke-desktop-search-panel__input,
+  body.doke-mobile-shell-mounted .doke-desktop-search-panel__submit,
+  body.doke-mobile-shell-mounted .desktop-app-shell,
+  body.doke-mobile-shell-mounted .desktop-shell,
+  body.doke-mobile-shell-mounted .desktop-only {
+    display: none !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  body.doke-mobile-shell-mounted .home-catégories,
+  body.doke-mobile-shell-mounted .home-categories,
+  body.doke-mobile-shell-mounted .home-recommendations,
+  body.doke-mobile-shell-mounted .home-section,
+  body.doke-mobile-shell-mounted .home-content,
+  body.doke-mobile-shell-mounted main {
+    position: relative;
+    z-index: 1;
+  }
+
+  body.doke-mobile-shell-mounted .profile-avatar-frame,
+  body.doke-mobile-shell-mounted .profile-avatar,
+  body.doke-mobile-shell-mounted .topbar-profile,
+  body.doke-mobile-shell-mounted .home-side-meta__profile-wrap {
+    max-width: 100% !important;
+  }
+}
+
+/* INTERNAL MOBILE HEADER CONTEXT ACTIONS
+   Replaces the home/location chrome on internal pages with page actions.
+   Scope: only pages where mobile-app-shell.js sets contextual quick actions. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted
+    .doke-mobile-shell__actions:has(.doke-mobile-shell__quick-action) {
+    display: grid;
+    grid-template-columns: repeat(4, 40px);
+    justify-content: end;
+    align-items: center;
+    gap: 7px;
+    min-width: max-content;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__quick-action {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    border: var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: var(--doke-mobile-chrome-surface);
+    color: #1266b0;
+    box-shadow: none;
+    text-decoration: none;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__quick-action svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__quick-action--active {
+    background: #18a88d;
+    border-color: transparent;
+    color: var(--doke-mobile-chrome-avatar-text);
+    box-shadow: none;
+  }
+
+  body.doke-mobile-shell-mounted[data-shell-page="pedidos"]
+    .orders-page-header__hero-strip {
+    display: none;
+  }
+
+  body.doke-mobile-shell-mounted[data-shell-page="pedidos"]
+    .orders-page-header__hero {
+    grid-template-areas: "search";
+    gap: 0;
+  }
+}
+
+/* MOBILE SHELL INTERACTION FIX
+   Scope: mobile shell only.
+   Fixes iOS tap overlay on the search input and keeps profile/filter actions reliable. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted .doke-mobile-shell,
+  body.doke-mobile-shell-mounted .doke-mobile-shell *,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:hover,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:focus,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:active,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field:focus-within {
+    background: transparent;
+    box-shadow: none;
+    outline: 0;
+    filter: none;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search {
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__profile,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__filter,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__quick-action {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+}
+
+/* MOBILE SHELL ACTION REPAIR v3
+   Scope: shell mobile only.
+   - Removes iOS gray tap/selection overlay from search field.
+   - Normalizes filter/voice/profile icon sizes.
+   - Keeps drawer/sidebar above content when opened by shell fallback. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted .doke-mobile-shell,
+  body.doke-mobile-shell-mounted .doke-mobile-shell *,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:hover,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:focus,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:active,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field:hover,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field:focus,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field:active,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field:focus-within {
+    outline: 0;
+    filter: none;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input::selection {
+    background: transparent;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input::selection {
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search {
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search :is(svg) {
+    width: 21px;
+    height: 21px;
+    stroke-width: 2.2;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__filter {
+    border-radius: var(--radius-exact-15);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__quick-action svg,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__notification svg,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav svg {
+    width: 21px;
+    height: 21px;
+    stroke-width: 2.2;
+  }
+
+  body.doke-mobile-shell-mounted.sidebar-open .sidebar {
+    z-index: 1400;
+  }
+}
+
+/* FINAL MOBILE SHELL ACTION/ICON STANDARD v4 */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted .doke-mobile-shell,
+  body.doke-mobile-shell-mounted .doke-mobile-shell *,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:hover,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:focus,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input:active,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__field:focus-within {
+    background: transparent;
+    box-shadow: none;
+    outline: 0;
+    filter: none;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__input::selection {
+    background: transparent;
+    color: var(--doke-mobile-shell-ink);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search {
+    background: #fff;
+    box-shadow: var(--shadow-control-hover);
+  }
+
+  body.doke-mobile-shell-mounted
+    :is(
+      .doke-mobile-shell__search-button,
+      .doke-mobile-shell__voice,
+      .doke-mobile-shell__filter,
+      .doke-mobile-shell__quick-action,
+      .doke-mobile-shell__notification,
+      .doke-mobile-bottom-nav__link
+    )
+    svg {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    stroke-width: 2.2;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__filter {
+    width: 46px;
+    height: var(--control-height-lg);
+    min-width: 46px;
+    min-height: var(--control-height-lg);
+  }
+
+  body.sidebar-open .sidebar {
+    z-index: 1400;
+  }
+}
+
+/* 2026-05-08 — Mobile shell action size contract
+   One visual contract for every square action in the mobile page header.
+   The notification button is the reference: 40x40, 14px radius, 17px icon. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted {
+    --doke-mobile-shell-action-size: 40px;
+    --doke-mobile-shell-action-radius: 14px;
+    --doke-mobile-shell-action-icon: 17px;
+    --doke-mobile-shell-action-stroke: 2.2;
+  }
+
+  body.doke-mobile-shell-mounted
+    .doke-mobile-shell__actions:has(.doke-mobile-shell__quick-action) {
+    display: grid;
+    grid-template-columns: repeat(
+      var(--doke-mobile-shell-action-count, 4),
+      var(--doke-mobile-shell-action-size)
+    );
+    align-items: center;
+    justify-content: end;
+    gap: 8px;
+    height: var(--doke-mobile-shell-action-size);
+    min-height: var(--doke-mobile-shell-action-size);
+    max-height: var(--doke-mobile-shell-action-size);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__actions--compact {
+    --doke-mobile-shell-action-count: 2;
+  }
+
+  body.doke-mobile-shell-mounted
+    :is(.doke-mobile-shell__quick-action, .doke-mobile-shell__notification) {
+    box-sizing: border-box;
+    width: var(--doke-mobile-shell-action-size);
+    height: var(--doke-mobile-shell-action-size);
+    min-width: var(--doke-mobile-shell-action-size);
+    min-height: var(--doke-mobile-shell-action-size);
+    max-width: var(--doke-mobile-shell-action-size);
+    max-height: var(--doke-mobile-shell-action-size);
+    flex: 0 0 var(--doke-mobile-shell-action-size);
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    margin: 0;
+    border-radius: var(--doke-mobile-shell-action-radius);
+    display: inline-grid;
+    place-items: center;
+    align-self: center;
+    line-height: 1;
+    overflow: hidden;
+  }
+
+  body.doke-mobile-shell-mounted
+    :is(.doke-mobile-shell__quick-action, .doke-mobile-shell__notification)
+    svg {
+    box-sizing: border-box;
+    display: block;
+    width: var(--doke-mobile-shell-action-icon);
+    height: var(--doke-mobile-shell-action-icon);
+    min-width: var(--doke-mobile-shell-action-icon);
+    min-height: var(--doke-mobile-shell-action-icon);
+    max-width: var(--doke-mobile-shell-action-icon);
+    max-height: var(--doke-mobile-shell-action-icon);
+    margin: 0;
+    padding: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--doke-mobile-shell-action-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+/* 2026-05-15 — Detail mobile header action alignment
+   Scope: detalhe-anuncio only. The announcement page does not use the location pill;
+   its compact actions must align to the right edge using the same square action contract. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted[data-shell-page="detalhe-anuncio"]
+    .doke-mobile-shell__actions {
+    margin-left: auto;
+    justify-self: end;
+  }
+
+  body.doke-mobile-shell-mounted[data-shell-page="detalhe-anuncio"]
+    .doke-mobile-shell__actions:has(.doke-mobile-shell__quick-action) {
+    display: grid;
+    grid-template-columns: repeat(
+      2,
+      var(--doke-mobile-shell-action-size, 40px)
+    );
+    justify-content: end;
+    justify-items: end;
+    align-items: center;
+    gap: 8px;
+    width: max-content;
+    min-width: max-content;
+  }
+}
+
+/* v20260515 — Canonical mobile bottom nav selected state uses the Doke green action token. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted
+    .doke-mobile-bottom-nav__item:is(:hover, :focus-visible),
+  body.doke-mobile-shell-mounted
+    .doke-mobile-bottom-nav__item[aria-current="page"],
+  body.doke-mobile-shell-mounted
+    .doke-mobile-bottom-nav__link:is(:hover, :focus-visible),
+  body.doke-mobile-shell-mounted
+    .doke-mobile-bottom-nav__link[aria-current="page"] {
+    color: var(--color-secondary, #14b8a6);
+  }
+
+  body.doke-mobile-shell-mounted
+    .doke-mobile-bottom-nav__item[aria-current="page"]::before,
+  body.doke-mobile-shell-mounted
+    .doke-mobile-bottom-nav__link[aria-current="page"]::before {
+    background: var(--color-secondary, #14b8a6);
+  }
+}
+
+/* First-paint/mobile regression v3
+   Corrige o espaço vertical excessivo visto no iPad mini/Safari depois do contrato
+   de estabilidade: o header local de notificações foi removido, então a página deve
+   nascer abaixo de um único shell global compacto, sem somar header antigo + shell. */
+@media (max-width: 760px) {
+  html.doke-mobile-shell-pending body.notifications-page-shell,
+  body.doke-mobile-shell-mounted.notifications-page-shell {
+    padding-top: var(--doke-mobile-shell-without-search-height);
+    padding-bottom: 0;
+  }
+
+  body.doke-mobile-shell-mounted[data-shell-page="notificacoes"]
+    .doke-mobile-shell {
+    position: fixed;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header,
+  body.notifications-page-shell .bottom-nav,
+  body.notifications-page-shell .doke-mobile-bottom-nav {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  body.notifications-page-shell .notifications-page {
+    margin-top: 0;
+    padding-top: 0;
+  }
+}
+
+/* 2026-05-31 — Large-phone rail parity.
+   On 430px+ phones, the runtime header was keeping a 430px outer shell plus
+   internal side padding, so the usable topbar/search rail became narrower than
+   the cards below it. Match the visible header controls to the same mobile
+   content rail used by the index sections. */
+@media (min-width: 390px) and (max-width: 760px) {
+  body.doke-mobile-shell-mounted {
+    --doke-mobile-shell-large-rail: min(448px, calc(100vw - 36px));
+    --doke-mobile-shell-max: var(--doke-mobile-shell-large-rail);
+    --doke-mobile-shell-edge: 0px;
+  }
+
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open) .doke-mobile-shell {
+    width: var(--doke-mobile-shell-large-rail);
+    max-width: var(--doke-mobile-shell-large-rail);
+    min-width: 0;
+    padding-right: 0;
+    padding-left: 0;
+    box-sizing: border-box;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__topbar,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* 2026-05-31 — Tablet hard guard.
+   Some iPad/Safari sessions can momentarily run the legacy mobile shell before
+   the tablet contract settles. In the tablet band, the index must stay on the
+   tablet header/card system even if an old cached runtime adds the mobile shell
+   class after first paint. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  body.home-index-shell.doke-mobile-shell-mounted {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  body.home-index-shell.doke-mobile-shell-mounted .doke-mobile-shell,
+  body.home-index-shell.doke-mobile-shell-mounted .doke-mobile-bottom-nav,
+  body.home-index-shell.doke-mobile-shell-mounted [data-doke-mobile-shell],
+  body.home-index-shell.doke-mobile-shell-mounted
+    [data-doke-mobile-bottom-nav] {
+    display: none;
+    visibility: hidden;
+    width: 0;
+    height: 0;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    .app-header.app-header--home.home-side-meta {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: block;
+    visibility: visible;
+    width: 100%;
+    min-height: 86px;
+    height: auto;
+    margin: 0;
+    pointer-events: auto;
+  }
+
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    .page__content {
+    padding-top: 0;
+  }
+}
+
+/* Mobile shell inline search disclosure. */
+@media (max-width: 760px),
+  (hover: none) and (pointer: coarse) and (max-device-width: 560px) {
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-search {
+    position: absolute;
+    display: block;
+    width: 0;
+    max-width: 0;
+    min-width: 0;
+    height: var(--doke-mobile-shell-topbar-height);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-6px);
+    transition:
+      width 180ms ease,
+      max-width 180ms ease,
+      opacity 140ms ease,
+      transform 180ms ease !important;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell.is-search-expanded .doke-mobile-shell__actions {
+    flex: 1 1 auto;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell.is-search-expanded .doke-mobile-shell__hello {
+    max-width: clamp(64px, 18vw, 112px);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell.is-search-expanded .doke-mobile-shell__actions > :not([data-shell-search-trigger]):not([data-shell-inline-search]) {
+    display: none;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-search.is-expanded {
+    position: static;
+    width: clamp(118px, 44vw, 178px);
+    max-width: clamp(118px, 44vw, 178px);
+    min-width: 118px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-field {
+    display: block;
+    width: 100%;
+    height: var(--doke-mobile-shell-topbar-height);
+    margin: 0;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-input {
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    height: var(--doke-mobile-shell-topbar-height);
+    margin: 0;
+    padding: 0 12px;
+    border: var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.98);
+    color: var(--doke-mobile-shell-ink);
+    -webkit-text-fill-color: var(--doke-mobile-shell-ink);
+    box-shadow: none;
+    outline: 0;
+    font-family:
+      Poppins,
+      Inter,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-size: 12px;
+    font-weight: var(--doke-mobile-chrome-font-weight-strong);
+    line-height: var(--doke-mobile-shell-topbar-height);
+    letter-spacing: var(--doke-mobile-chrome-letter-spacing);
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-input::placeholder {
+    color: var(--doke-mobile-shell-muted);
+    -webkit-text-fill-color: var(--doke-mobile-shell-muted);
+    opacity: 1;
+  }
+}
+
+
+/* Contrast-first mobile actions: header icon buttons are separated by fill. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted :is(.doke-mobile-shell__quick-action, .doke-mobile-shell__notification),
+  body.doke-mobile-shell-mounted :is(.doke-mobile-shell__quick-action, .doke-mobile-shell__notification):where(:hover, :focus-visible, :active, .doke-mobile-shell__quick-action--active) {
+    border-color: transparent;
+  }
+}
+
+/* Contrast-first inline search: expanded mobile search has its own fill. */
+@media (max-width: 760px),
+  (hover: none) and (pointer: coarse) and (max-device-width: 560px) {
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-input,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-input:where(:hover, :focus, :focus-visible, :active) {
+    border-color: transparent;
+  }
+  body.doke-mobile-shell-mounted :is(
+    .doke-mobile-shell__profile,
+    .doke-mobile-shell__location,
+    .doke-mobile-shell__notification,
+    .doke-mobile-shell__search-button,
+    .doke-mobile-shell__voice,
+    .doke-mobile-shell__filter,
+    .doke-mobile-bottom-nav__item
+  ):focus-visible {
+    outline: 0;
+    box-shadow: var(--doke-visual-focus-ring);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.doke-mobile-shell-mounted :is(
+      .doke-mobile-shell__profile,
+      .doke-mobile-shell__location,
+      .doke-mobile-shell__notification,
+      .doke-mobile-shell__search-button,
+      .doke-mobile-shell__voice,
+      .doke-mobile-shell__filter,
+      .doke-mobile-bottom-nav__item
+    ) {
+      transition-duration: 0.01ms;
+    }
+  }
+
+}
