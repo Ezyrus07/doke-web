@@ -1,0 +1,131 @@
+name: UX-CSS-IMPORTANT-036 Governance Hygiene R5D
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-036-narrow-governance-r5d
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-036-narrow-governance-r5d.yml
+
+permissions:
+  contents: write
+
+jobs:
+  hygiene036r5d:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PARENT_SHA: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      TARGET_FILE: assets/css/components/shell/mobile-app-shell.css
+      TARGET_PARENT_BLOB: af6fd982517f2bc821435e633d70237e95ee11a8
+      CANDIDATE_BLOB: 14fb64c93777d606b07c0abbf2c6532aed134cc4
+      R5_BRANCH: diag/ux-css-important-036-narrow-governance-r5
+      R5_PATH: .diagnostics/ux-css-important-036-narrow-governance-r5.txt
+      R5_BLOB: f48d94a4d4ca1fe6f82b138cc2298308277aaaa2
+      R5C_BRANCH: diag/ux-css-important-036-narrow-governance-r5c
+      R5C_PATH: .diagnostics/ux-css-important-036-narrow-governance-r5c.txt
+      R5C_BLOB: 3775a4ee18c5152a3287859bd26168a60b69cdf4
+      AUTHORITY_SCRIPT: scripts/audit-page-asset-authority-matrix.js
+      AUTHORITY_SCRIPT_BLOB: aadb2c7fb4b649c7ff2cadd9910c0d8593e90de2
+      DERIVED_DOC_1: docs/HOME-AUTHORITY-CLASSIFICATION.md
+      DERIVED_DOC_2: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+      RESULT_FILE: .diagnostics/ux-css-important-036-narrow-governance-r5d.txt
+      OUTPUT_BRANCH: diag/ux-css-important-036-narrow-governance-r5d
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Close generated-derivative hygiene attribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          : >/tmp/summary
+          pass(){ echo "$1" | tee -a /tmp/summary; }
+
+          git fetch --no-tags origin "refs/heads/$R5_BRANCH:refs/remotes/origin/$R5_BRANCH" >/dev/null
+          git fetch --no-tags origin "refs/heads/$R5C_BRANCH:refs/remotes/origin/$R5C_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$R5_BRANCH:$R5_PATH")" = "$R5_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R5C_BRANCH:$R5C_PATH")" = "$R5C_BLOB"
+          test "$(git rev-parse "$PARENT_SHA:$AUTHORITY_SCRIPT")" = "$AUTHORITY_SCRIPT_BLOB"
+          git show "$PARENT_SHA:$AUTHORITY_SCRIPT" >/tmp/authority.js
+          grep -Fq "docs', 'PAGE-ASSET-AUTHORITY-MATRIX.md" /tmp/authority.js
+          grep -Fq "docs', 'HOME-AUTHORITY-CLASSIFICATION.md" /tmp/authority.js
+          grep -Fq 'fs.writeFileSync(markdownPath, md)' /tmp/authority.js
+          grep -Fq 'fs.writeFileSync(homePath, homeMd)' /tmp/authority.js
+          git show "refs/remotes/origin/$R5_BRANCH:$R5_PATH" >/tmp/r5.txt
+          git show "refs/remotes/origin/$R5C_BRANCH:$R5C_PATH" >/tmp/r5c.txt
+          for line in 'BROWSER + RESPONSIVE EVIDENCE PASS|' 'CANDIDATE PASS|important=314->6|removed=308|' 'IMPORTANT FRESH PASS|' 'DOMAIN CARD CONTRACT PASS' 'AGENT GOVERNANCE PASS' 'CSS RESPONSIVE CONFLICTS PASS' 'SHARED SHELL + RESPONSIVE STATIC CONTRACTS PASS' 'DUPLICATES + DOMAIN MATRIX PASS' 'CSS GOVERNANCE SUITE PASS' 'DEPENDENCIES PASS|total=13|critical=0|high=10|moderate=1|low=2'; do grep -Fq "$line" /tmp/r5.txt; done
+          grep -q '^AUDIT REPRODUCTION PASS$' /tmp/r5c.txt
+          grep -q '^PROOF_RESULT=FAIL$' /tmp/r5c.txt
+          pass 'EVIDENCE + DERIVATIVE AUTHORITY PASS|r5Technical=1|r5cAttributionFailPreserved=1|derivedDocs=2'
+
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          cp "$TARGET_FILE" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');const t=process.env.TARGET_FILE,b=new Set([106,139,141,142,147,275]);const o=fs.readFileSync(t,'utf8');let i=-1;const c=o.replace(/\s*!important\b/gi,m=>{i++;return b.has(i)?m:'';});fs.writeFileSync('/tmp/candidate.css',c);const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();if(i+1!==314||(c.match(/!important\b/gi)||[]).length!==6||blob!==process.env.CANDIDATE_BLOB)throw Error('candidate identity');if(o.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('not marker-only');fs.writeFileSync(t,c);
+          NODE
+          pass 'CANDIDATE IDENTITY PASS|important=314->6|removed=308|markerOnly=1'
+
+          npm ci --ignore-scripts >/dev/null
+          npm run audit:domain >/dev/null
+          npm run audit:agent-governance >/dev/null
+          node scripts/audit-css-responsive-conflicts.js >/dev/null
+          npm run audit:shared-app-header-contract >/dev/null
+          npm run audit:mobile-shell-location-contract >/dev/null
+          npm run audit:responsive-boundaries >/dev/null
+          npm run audit:mobile-base >/dev/null
+          node scripts/test-home-mobile-shell-rail-contract.js >/dev/null
+          npm run audit:duplicate-assets >/dev/null
+          npm run audit:domain-completion-matrix >/dev/null
+          npm run audit:active-legacy-structures >/dev/null
+          npm run audit:important-reduction-plan >/dev/null
+          npm run audit:global-css-design-system >/dev/null
+          pass 'AUDIT REPRODUCTION PASS'
+
+          git diff --name-only | sort -u >/tmp/tracked.txt
+          git ls-files --others --exclude-standard | sort -u >/tmp/untracked.txt
+          cat /tmp/tracked.txt /tmp/untracked.txt | sort -u >/tmp/all.txt
+          node <<'NODE'
+          const fs=require('fs'),target=process.env.TARGET_FILE,d1=process.env.DERIVED_DOC_1,d2=process.env.DERIVED_DOC_2;
+          const all=fs.readFileSync('/tmp/all.txt','utf8').split(/\r?\n/).filter(Boolean);
+          const allowed=p=>p===target||p===d1||p===d2||p.startsWith('reports/');
+          const unexpected=all.filter(p=>!allowed(p));if(unexpected.length)throw Error('unexpected side effects: '+unexpected.join(','));
+          const reports=all.filter(p=>p.startsWith('reports/'));
+          if(!all.includes(d1)||!all.includes(d2)||!all.includes(target))throw Error('expected derived paths/target missing');
+          fs.writeFileSync('/tmp/effect-summary',`AUDIT SIDE EFFECT ATTRIBUTION PASS|changedTotal=${all.length}|reportPaths=${reports.length}|derivedDocs=2|targetPresent=1|unexpected=0\nDERIVED_DOCS=${d1},${d2}\nREPORT_PATHS=${reports.join(',')}\n`);
+          NODE
+          cat /tmp/effect-summary | tee -a /tmp/summary
+
+          git restore --worktree -- reports "$DERIVED_DOC_1" "$DERIVED_DOC_2" 2>/dev/null || true
+          git clean -fd -- reports >/dev/null 2>&1 || true
+          test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test -z "$(git ls-files --others --exclude-standard)"
+          git diff --check -- "$TARGET_FILE"
+          num="$(git diff --numstat -- "$TARGET_FILE")"; a="$(printf '%s' "$num"|cut -f1)"; d="$(printf '%s' "$num"|cut -f2)"; p="$(printf '%s' "$num"|cut -f3-)"
+          test "$a" = 308; test "$d" = 308; test "$p" = "$TARGET_FILE"
+          pass 'DIFF HYGIENE PASS|files=1|additions=308|deletions=308|removedMarkers=308|markerOnly=1'
+
+          cp /tmp/parent.css "$TARGET_FILE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_PARENT_BLOB"
+          test -z "$(git status --short --untracked-files=all)"
+          pass 'RESTORE PASS|parentExact=1|workspaceClean=1'
+          pass 'RESULT=PASS'
+      - name: Publish R5D receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; test -f /tmp/summary && grep -q '^RESULT=PASS$' /tmp/summary && result=PASS || true
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; test -f /tmp/summary && cat /tmp/summary || true; echo "PROOF_RESULT=$result"; } >/tmp/out
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then git commit -m 'diag: publish 036 governance hygiene R5D [skip ci]' >/dev/null; git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null; fi
+          test "$result" = PASS
