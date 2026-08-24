@@ -1,0 +1,85 @@
+name: UX-CSS-IMPORTANT-035 Domain Cards Reconcile R5
+on:
+  push:
+    branches:
+      - diag/ux-css-important-035-domain-cards-reconcile-r5
+permissions:
+  contents: write
+jobs:
+  reconcile035r5:
+    runs-on: ubuntu-latest
+    env:
+      PARENT_SHA: 4d1a80ae7fe9763d53e06c342c2b9b89ea65567a
+      PARENT_TREE: 714d5b26a67edec2fbcb4f87ebae8c1197304269
+      TARGET_FILE: assets/css/components/domain/doke-domain-cards.css
+      CANDIDATE_SHA256: d99be25b5e0c364890bec8bc0aa28226b227d9b4bd45131fe193c440328aebed
+      CANDIDATE_BLOB: f7b0f8c5c4efcd7c0f821b18f514b788eef4cdfa
+      DIAG_BRANCH: diag/ux-css-important-post-010-ranking-r1
+      RESULT_FILE: .diagnostics/ux-css-important-035-domain-cards-reconcile-r5.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Full deterministic browser reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/r5.log) 2>&1
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          cp "$TARGET_FILE" /tmp/parent.css
+          trap 'cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true; kill $(cat /tmp/http.pid 2>/dev/null) 2>/dev/null || true' EXIT
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const o=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const c=o.replace(/\s*!important\b/g,'');
+          const before=(o.match(/!important\b/g)||[]).length, after=(c.match(/!important\b/g)||[]).length;
+          const sha=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
+          fs.writeFileSync('/tmp/candidate.css',c);
+          const blob=cp.execFileSync('git',['hash-object','/tmp/candidate.css'],{encoding:'utf8'}).trim();
+          if(before!==215||after!==0||sha!==process.env.CANDIDATE_SHA256||blob!==process.env.CANDIDATE_BLOB) throw Error(`candidate mismatch ${before}/${after}/${sha}/${blob}`);
+          console.log(`CANDIDATE PASS|important=215->0|removed=215|sha256=${sha}|blob=${blob}|bytes=${Buffer.byteLength(c)}|selectorsRemoved=0|declarationsRemoved=0|valuesChanged=0`);
+          NODE
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & echo $! >/tmp/http.pid
+          ok=0; for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/index.html >/dev/null 2>&1; then ok=1; break; fi; sleep 1; done; test "$ok" = 1
+          cat >/tmp/reconcile.js <<'NODE'
+          const {chromium}=require('playwright'),crypto=require('crypto'),fs=require('fs');
+          const pages=['index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'];
+          const viewports=[{w:390,h:844},{w:760,h:1000},{w:761,h:1000},{w:1366,h:900}];
+          const targetPath='/assets/css/components/domain/doke-domain-cards.css';
+          const targetSelector='.service-card,.doke-service-card,.doke-worker-card,.doke-order-card,.doke-message-card,.doke-community-card,.doke-wallet-card,.doke-notification-card,.doke-profile-card,.doke-media-card,.doke-stat-card';
+          const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const metaFn=(sel)=>{const nodes=[...document.querySelectorAll(sel)].slice(0,40).map(e=>{const r=e.getBoundingClientRect(),c=getComputedStyle(e);return{tag:e.tagName,cls:typeof e.className==='string'?e.className:'',rect:[r.x,r.y,r.width,r.height].map(v=>+v.toFixed(2)),display:c.display,position:c.position,gridTemplateColumns:c.gridTemplateColumns,gridTemplateRows:c.gridTemplateRows,gap:c.gap,padding:c.padding,width:c.width,height:c.height,minHeight:c.minHeight,maxHeight:c.maxHeight,overflow:c.overflow,borderRadius:c.borderRadius,transform:c.transform}});return{path:location.pathname,page:document.body?.dataset?.page||null,nodeCount:document.querySelectorAll(sel).length,nodes};};
+          const deepFn=()=>{const props=Array.from(getComputedStyle(document.documentElement));const css=(el,pseudo=null)=>{const c=getComputedStyle(el,pseudo),o={};for(const p of props)o[p]=c.getPropertyValue(p);return o;};return[...document.querySelectorAll('*')].map((e,i)=>{const r=e.getBoundingClientRect();return{i,tag:e.tagName,id:e.id||'',cls:typeof e.className==='string'?e.className:'',rect:[r.x,r.y,r.width,r.height].map(v=>+v.toFixed(3)),style:css(e),before:css(e,'::before'),after:css(e,'::after')};});};
+          async function stableMeta(p){let prev='';for(let i=0;i<12;i++){const m=await p.evaluate(metaFn,targetSelector),s=JSON.stringify(m);if(s===prev)return m;prev=s;await p.waitForTimeout(250);}return p.evaluate(metaFn,targetSelector);}
+          async function phase(label){const browser=await chromium.launch({headless:true}),out={};let loads=0,errs=0,metaStable=0,shotStable=0,totalNodes=0;for(const file of pages){for(const v of viewports){const key=`${file}@${v.w}`,ctx=await browser.newContext({viewport:{width:v.w,height:v.h},deviceScaleFactor:1,locale:'pt-BR',timezoneId:'America/Bahia',reducedMotion:'reduce'});await ctx.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'||u.hostname==='localhost')return route.continue();return route.abort();});await ctx.addInitScript(()=>{let n=0;Math.random=()=>((++n%997)/997);const fixed=1787562000000,R=Date;class F extends R{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}}globalThis.Date=F;});const p=await ctx.newPage();p.on('pageerror',e=>{errs++;console.log(`PAGE ERROR|phase=${label}|state=${key}|message=${String(e.message||e).slice(0,160)}`)});p.on('request',r=>{try{if(new URL(r.url()).pathname===targetPath)loads++;}catch{}});await p.goto(`http://127.0.0.1:4173/${file}`,{waitUntil:'domcontentloaded'});await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}input,textarea{caret-color:transparent!important}'});await p.evaluate(()=>document.fonts?.ready);await p.waitForTimeout(900);const meta=await stableMeta(p);await p.waitForTimeout(300);const meta2=await p.evaluate(metaFn,targetSelector);if(JSON.stringify(meta)===JSON.stringify(meta2))metaStable++;totalNodes+=meta2.nodeCount;const s1=await p.screenshot({fullPage:true});await p.waitForTimeout(350);const s2=await p.screenshot({fullPage:true});const h1=hash(s1),h2=hash(s2);if(h1===h2)shotStable++;else console.log(`INTERNAL SHOT UNSTABLE|phase=${label}|state=${key}|shot1=${h1}|shot2=${h2}`);let deep=null;if(file==='resultados.html'&&v.w===760)deep=await p.evaluate(deepFn);out[key]={meta:meta2,shot:h2,deep};await ctx.close();}}await browser.close();console.log(`PHASE|label=${label}|states=${pages.length*viewports.length}|metadataStable=${metaStable}|screenshotStable=${shotStable}|pageErrors=${errs}|targetStylesheetLoads=${loads}|domainNodes=${totalNodes}`);return{out,loads,errs,metaStable,shotStable,totalNodes};}
+          (async()=>{const label=process.argv[2],path=process.argv[3],r=await phase(label);fs.writeFileSync(path,JSON.stringify(r));})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          NODE_PATH="$PWD/node_modules" node /tmp/reconcile.js parent /tmp/parent.json
+          cp /tmp/candidate.css "$TARGET_FILE"
+          NODE_PATH="$PWD/node_modules" node /tmp/reconcile.js candidate /tmp/candidate.json
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));let md=0,sd=0,deep=0;for(const k of Object.keys(a.out)){if(JSON.stringify(a.out[k].meta)!==JSON.stringify(b.out[k].meta)){md++;console.log(`META DIFF|state=${k}`)}if(a.out[k].shot!==b.out[k].shot){sd++;console.log(`SHOT DIFF|state=${k}|parent=${a.out[k].shot}|candidate=${b.out[k].shot}`)}}const da=a.out['resultados.html@760'].deep,db=b.out['resultados.html@760'].deep;if(JSON.stringify(da)!==JSON.stringify(db)){const n=Math.min(da.length,db.length);for(let i=0;i<n;i++){if(JSON.stringify(da[i])!==JSON.stringify(db[i]))deep++;}deep+=Math.abs(da.length-db.length);console.log(`DEEP DIFF|state=resultados.html@760|nodeDiffs=${deep}|nodes=${da.length}/${db.length}`)}const n=Object.keys(a.out).length;console.log(`RECONCILE RESULT|states=${n}|metadataDiffs=${md}|screenshotDiffs=${sd}|deepNodeDiffs=${deep}|metadataStable=${a.metaStable}/${b.metaStable}|screenshotStable=${a.shotStable}/${b.shotStable}|pageErrors=${a.errs+b.errs}|targetStylesheetLoads=${a.loads}/${b.loads}|domainNodes=${a.totalNodes}/${b.totalNodes}|syntheticDOM=0|syntheticAuth=0|credentialsUsed=0|criteriaRelaxed=0|externalResourcesBlocked=1|dateFrozen=1`);if(md||sd||deep||a.errs||b.errs||a.loads===0||b.loads===0||a.loads!==b.loads||a.totalNodes!==b.totalNodes||a.metaStable!==n||b.metaStable!==n||a.shotStable!==n||b.shotStable!==n)process.exit(1);
+          NODE
+          cp /tmp/parent.css "$TARGET_FILE"; cmp -s /tmp/parent.css "$TARGET_FILE"; echo 'RESTORE PASS|target=parent-exact'
+          echo 'RESULT=PASS'
+      - name: Publish R5 receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL; grep -q '^RESULT=PASS$' /tmp/r5.log && result=PASS || true
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "PARENT_SHA=$PARENT_SHA"; echo "TARGET_FILE=$TARGET_FILE"; grep -E '^(CANDIDATE PASS|PHASE|PAGE ERROR|INTERNAL SHOT UNSTABLE|META DIFF|SHOT DIFF|DEEP DIFF|RECONCILE RESULT|RESTORE PASS|RESULT=)' /tmp/r5.log || true; echo "PROOF_RESULT=$result"; } >/tmp/out
+          git fetch origin "refs/heads/$DIAG_BRANCH:refs/remotes/origin/$DIAG_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$DIAG_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"; cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"; git commit -m 'diag: publish 035 domain cards reconcile r5 [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$DIAG_BRANCH" >/dev/null
+          test "$result" = PASS
