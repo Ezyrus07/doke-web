@@ -1,0 +1,82 @@
+name: UX-CSS-IMPORTANT-036 Responsive Baseline R4C
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-036-responsive-baseline-r4c
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-036-responsive-baseline-r4c.yml
+      - .diagnostics/ux-css-important-036-responsive-baseline-r4c.js
+
+permissions:
+  contents: write
+
+jobs:
+  responsive036r4c:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      SCRIPT: .diagnostics/ux-css-important-036-responsive-baseline-r4c.js
+      RESULT: .diagnostics/ux-css-important-036-responsive-baseline-r4c.json
+      WORKFLOW: .github/workflows/0000-temp-ux-css-important-036-responsive-baseline-r4c.yml
+      R4_BRANCH: diag/ux-css-important-036-narrow-candidate-r4
+      R4_PATH: .diagnostics/ux-css-important-036-narrow-candidate-r4.json
+      R4_BLOB: 48107edc5888823b64aa77700d968070844c9df0
+      R4B_BRANCH: diag/ux-css-important-036-narrow-static-r4b
+      R4B_PATH: .diagnostics/ux-css-important-036-narrow-static-r4b.json
+      R4B_BLOB: adb051fdcc3333da3c3a08c9d25287eb5846b963
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: diag/ux-css-important-036-responsive-baseline-r4c
+          fetch-depth: 0
+
+      - name: Freeze lineage and transfer R4/R4B evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$PARENT" HEAD
+          actual="$(git diff --name-only "$PARENT" HEAD | sort)"
+          expected2="$(printf '%s\n' "$SCRIPT" "$WORKFLOW" | sort)"
+          expected3="$(printf '%s\n' "$RESULT" "$SCRIPT" "$WORKFLOW" | sort)"
+          test "$actual" = "$expected2" || test "$actual" = "$expected3"
+          test -z "$(git diff --name-only "$PARENT" HEAD -- 'assets/css/**' '*.html' 'assets/js/**')"
+          git fetch --no-tags origin "$R4_BRANCH"
+          test "$(git show FETCH_HEAD:"$R4_PATH" | git hash-object --stdin)" = "$R4_BLOB"
+          git show FETCH_HEAD:"$R4_PATH" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(x.diffs.total!==0||x.candidateImportant!==6||x.removedMarkers!==308||x.candidateGitBlob!=="14fb64c93777d606b07c0abbf2c6532aed134cc4")process.exit(1)})'
+          git fetch --no-tags origin "$R4B_BRANCH"
+          test "$(git show FETCH_HEAD:"$R4B_PATH" | git hash-object --stdin)" = "$R4B_BLOB"
+          git show FETCH_HEAD:"$R4B_PATH" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);const passed=x.audits.filter(a=>a.status===0).map(a=>a.name);const need=["audit:responsive-boundaries","audit:mobile-base","audit:shared-app-header","audit:mobile-shell-location","test:home-mobile-shell-rail","audit:css-responsive-conflicts","git:diff-check"];if(!need.every(n=>passed.includes(n))||x.failedAudits.length!==1||x.failedAudits[0]!=="test:responsive-contract")process.exit(1)})'
+
+      - name: Install browser dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+
+      - name: Generate parent baseline and test exact narrow candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$SCRIPT"
+          node -e 'const x=require("./.diagnostics/ux-css-important-036-responsive-baseline-r4c.json");if(x.status!=="PASS"||!x.baselineGeneratedFromParent||!x.baselineSha256||x.responsiveContract.status!==0||!x.restorePass||x.candidateImportant!==6||x.removedMarkers!==308)process.exit(1)'
+          git diff --check
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+
+      - name: Publish R4C receipt only
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- 'assets/css/components/shell/mobile-app-shell.css' 2>/dev/null || true
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+          test -f "$RESULT" || echo '{"boundary":"UX-CSS-IMPORTANT-036","proof":"responsive-baseline-r4c","status":"FAIL","error":"receipt missing"}' > "$RESULT"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$RESULT"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test(ux): publish 036 responsive baseline R4C receipt'
+          git push origin HEAD:diag/ux-css-important-036-responsive-baseline-r4c
