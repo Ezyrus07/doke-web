@@ -42,7 +42,6 @@ jobs:
           set -euo pipefail
           : >/tmp/summary
           pass(){ echo "$1" | tee -a /tmp/summary; }
-
           git fetch --no-tags origin "refs/heads/$R5_BRANCH:refs/remotes/origin/$R5_BRANCH" >/dev/null
           test "$(git rev-parse "refs/remotes/origin/$R5_BRANCH:$R5_PATH")" = "$R5_BLOB"
           test "$(git rev-parse "$PARENT_SHA:$AUTHORITY_SCRIPT")" = "$AUTHORITY_SCRIPT_BLOB"
@@ -54,7 +53,6 @@ jobs:
           grep -Fq 'fs.writeFileSync(markdownPath, md)' /tmp/authority.js
           grep -Fq 'fs.writeFileSync(homePath, homeMd)' /tmp/authority.js
           pass 'EVIDENCE AUTHORITY PASS|r5Technical=1|derivedDocsProven=2'
-
           git checkout --detach "$PARENT_SHA" >/dev/null
           cp "$TARGET_FILE" /tmp/parent.css
           node <<'NODE'
@@ -69,7 +67,6 @@ jobs:
           NODE
           test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
           pass 'CANDIDATE IDENTITY PASS|important=314->6|removed=308|markerOnly=1'
-
           npm ci --ignore-scripts >/dev/null
           npm run audit:domain >/dev/null
           npm run audit:agent-governance >/dev/null
@@ -85,7 +82,6 @@ jobs:
           npm run audit:important-reduction-plan >/dev/null
           npm run audit:global-css-design-system >/dev/null
           pass 'AUDIT REPRODUCTION PASS|domain=1|agent=1|conflicts=1|shell=1|matrix=1|designSystem=1'
-
           git diff --name-only | sort -u >/tmp/tracked.txt
           git ls-files --others --exclude-standard | sort -u >/tmp/untracked.txt
           cat /tmp/tracked.txt /tmp/untracked.txt | sort -u >/tmp/all.txt
@@ -99,7 +95,6 @@ jobs:
           fs.writeFileSync('/tmp/effects',`DERIVATIVE ATTRIBUTION PASS|changed=${all.length}|reports=${reports.length}|derivedDocs=2|unexpected=0\nDERIVED_DOCS=${d1},${d2}\nREPORT_PATHS=${reports.join(',')}\n`);
           NODE
           cat /tmp/effects | tee -a /tmp/summary
-
           git restore --worktree -- reports "$DERIVED_DOC_1" "$DERIVED_DOC_2" 2>/dev/null || true
           git clean -fd -- reports >/dev/null 2>&1 || true
           test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
@@ -111,13 +106,11 @@ jobs:
           test "$(printf '%s' "$num"|cut -f2)" = 308
           test "$(printf '%s' "$num"|cut -f3-)" = "$TARGET_FILE"
           pass 'DIFF HYGIENE PASS|files=1|additions=308|deletions=308|removedMarkers=308|markerOnly=1'
-
           cp /tmp/parent.css "$TARGET_FILE"
           test "$(git hash-object "$TARGET_FILE")" = "$TARGET_PARENT_BLOB"
           test -z "$(git status --short --untracked-files=all)"
           pass 'RESTORE PASS|parentExact=1|workspaceClean=1'
           pass 'RESULT=PASS'
-
       - name: Publish R5E receipt
         if: always()
         shell: bash
@@ -138,3 +131,5 @@ jobs:
             git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
           fi
           test "$result" = PASS
+
+# trigger-r5e
