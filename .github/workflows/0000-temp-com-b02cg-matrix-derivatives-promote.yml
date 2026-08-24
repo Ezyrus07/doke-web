@@ -1,0 +1,105 @@
+name: TEMP COM-B02CG Matrix Derivatives Promote
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02cg-matrix-derivatives-promote.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote-matrix-derivatives:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      EXPORTER_INSTALL_HEAD: b5deac8e825f9a0d8f2c8b55c7024cb66a433cfd
+      EXPORTER_INSTALL_TREE: a89caf9654d6eb6a90e9e51b674b0efde79cecd6
+      EXECUTION_PROOF_HEAD: a797a05b32fea1d2ec15ca348190afead19d2122
+      EXECUTION_PROOF_TREE: cce5e830695fcea86e160c46f9a134ad5c5f77b6
+      EXECUTION_PROOF_RUN_ID: '32734569237'
+      EXECUTION_PROOF_JOB_ID: '97454242038'
+      EXPORT_RUN_ID: '32734951176'
+      EXPORT_JOB_ID: '97455444071'
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_MD_BLOB: 35807ab1f41d11859696f6dba04618d24ae7a20a
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_REPORT_BLOB: 31646221c6edb2f974150a40bb6d26136a8fc6d7
+      EXECUTOR: .github/workflows/0000-temp-com-b02cg-authorized-single-use-register-resolve-release-execution.yml
+      EXECUTOR_BLOB: c32be91e4bead76fb1b266932afd32cb851d9ec0
+      EXPORTER: .github/workflows/0000-temp-com-b02cg-matrix-derivatives-export.yml
+      EXPORTER_BLOB: 5f0db67a1bbeba266491a9ab1e5d99f7eb760724
+      PROMOTER: .github/workflows/0000-temp-com-b02cg-matrix-derivatives-promote.yml
+      BRANCH: com/com-001-baseline-audit
+
+    steps:
+      - name: Checkout exact promoter head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze consumed execution, exporter proof, and promoter-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.run_attempt }}" = '1'
+          test "$(git rev-parse "$EXECUTION_PROOF_HEAD^{tree}")" = "$EXECUTION_PROOF_TREE"
+          test "$(git rev-parse "$EXPORTER_INSTALL_HEAD^{tree}")" = "$EXPORTER_INSTALL_TREE"
+          test "$(git rev-parse HEAD^)" = "$EXPORTER_INSTALL_HEAD"
+          test "$EXECUTION_PROOF_RUN_ID" = '32734569237'
+          test "$EXECUTION_PROOF_JOB_ID" = '97454242038'
+          test "$EXPORT_RUN_ID" = '32734951176'
+          test "$EXPORT_JOB_ID" = '97455444071'
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$EXECUTOR)" = "$EXECUTOR_BLOB"
+          test "$(git rev-parse HEAD:$EXPORTER)" = "$EXPORTER_BLOB"
+          expected="$(printf '%s\n' "$PROMOTER")"
+          actual="$(git diff --name-only "$EXPORTER_INSTALL_HEAD" HEAD)"
+          test "$actual" = "$expected"
+          needle='--''execute'
+          ! grep -F -- "$needle" "$PROMOTER"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate exact exported Matrix derivatives and audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git hash-object "$MATRIX_MD")" = "$MATRIX_MD_BLOB"
+          test "$(git hash-object "$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Commit only exact Matrix derivatives and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$MATRIX_MD" "$MATRIX_REPORT"
+          git restore --worktree -- .
+          rm "$PROMOTER"
+          git add "$PROMOTER"
+          expected="$(printf '%s\n' "$PROMOTER" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --cached --name-only | sort)"
+          test "$actual" = "$expected"
+          test "$(git hash-object "$MATRIX_MD")" = "$MATRIX_MD_BLOB"
+          test "$(git hash-object "$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
+          git commit -m 'fix(com): materialize B02CG Matrix derivatives'
+          git push origin "HEAD:$BRANCH"
