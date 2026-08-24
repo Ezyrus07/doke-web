@@ -1,0 +1,105 @@
+name: UX-CSS-IMPORTANT-036 Narrow Candidate R4
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-036-narrow-candidate-r4
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-036-narrow-candidate-r4.yml
+      - .diagnostics/ux-css-important-036-narrow-candidate-r4.js
+
+permissions:
+  contents: write
+
+jobs:
+  prove036r4:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      TARGET: assets/css/components/shell/mobile-app-shell.css
+      SCRIPT: .diagnostics/ux-css-important-036-narrow-candidate-r4.js
+      RESULT: .diagnostics/ux-css-important-036-narrow-candidate-r4.json
+      WORKFLOW: .github/workflows/0000-temp-ux-css-important-036-narrow-candidate-r4.yml
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: diag/ux-css-important-036-narrow-candidate-r4
+          fetch-depth: 0
+
+      - name: Freeze predecessor and diagnostic-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$PARENT" HEAD
+          actual="$(git diff --name-only "$PARENT" HEAD | sort)"
+          expected2="$(printf '%s\n' "$SCRIPT" "$WORKFLOW" | sort)"
+          expected3="$(printf '%s\n' "$RESULT" "$SCRIPT" "$WORKFLOW" | sort)"
+          test "$actual" = "$expected2" || test "$actual" = "$expected3"
+          test -z "$(git diff --name-only "$PARENT" HEAD -- 'assets/css/**' '*.html' 'assets/js/**')"
+
+      - name: Install browser harness dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+
+      - name: Full browser reconciliation for narrow candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$SCRIPT"
+          node -e 'const x=require("./.diagnostics/ux-css-important-036-narrow-candidate-r4.json");if(x.status!=="BROWSER_PASS"||x.parentImportant!==314||x.candidateImportant!==6||x.removedMarkers!==308||x.diffs.total!==0||!x.markerOnlyNormalizedEqual)process.exit(1)'
+
+      - name: Shared shell and responsive contracts on exact narrow candidate
+        shell: bash
+        run: |
+          set -u
+          fail=0
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const target='assets/css/components/shell/mobile-app-shell.css';
+          const result='.diagnostics/ux-css-important-036-narrow-candidate-r4.json';
+          const blockers=new Set([106,139,141,142,147,275]);
+          const original=fs.readFileSync(target,'utf8');let i=-1;
+          const candidate=original.replace(/\s*!important\b/gi,m=>{i++;return blockers.has(i)?m:'';});
+          const x=JSON.parse(fs.readFileSync(result,'utf8'));
+          const sha=crypto.createHash('sha256').update(Buffer.from(candidate)).digest('hex');
+          const b=Buffer.from(candidate),blob=crypto.createHash('sha1').update(Buffer.from(`blob ${b.length}\0`)).update(b).digest('hex');
+          if(i+1!==314||((candidate.match(/!important\b/gi)||[]).length)!==6||sha!==x.candidateSha256||blob!==x.candidateGitBlob)process.exit(1);
+          fs.writeFileSync(target,candidate);
+          NODE
+          npm run test:responsive-contract || fail=1
+          npm run audit:responsive-boundaries || fail=1
+          npm run audit:mobile-base || fail=1
+          npm run audit:shared-app-header || fail=1
+          node scripts/audit-mobile-shell-location-contract.js || fail=1
+          node scripts/test-home-mobile-shell-rail-contract.js || fail=1
+          npm run audit:css-responsive-conflicts || fail=1
+          git diff --check || fail=1
+          changed="$(git diff --name-only -- 'assets/css/**' '*.html' 'assets/js/**')"
+          test "$changed" = "$TARGET" || fail=1
+          git checkout -- "$TARGET"
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')" || fail=1
+          FAIL="$fail" node - <<'NODE'
+          const fs=require('fs');const p='.diagnostics/ux-css-important-036-narrow-candidate-r4.json';const x=JSON.parse(fs.readFileSync(p,'utf8'));
+          const fail=process.env.FAIL==='1';x.staticAudits={responsiveContract:true,responsiveBoundaries:true,mobileBase:true,sharedAppHeader:true,mobileShellLocation:true,homeMobileShellRail:true,cssResponsiveConflicts:true,overall:fail?'FAIL':'PASS'};x.status=fail?'FAIL_STATIC':'PASS';fs.writeFileSync(p,JSON.stringify(x,null,2)+'\n');
+          NODE
+          exit "$fail"
+
+      - name: Publish R4 receipt only
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- "$TARGET" 2>/dev/null || true
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+          test -f "$RESULT" || echo '{"boundary":"UX-CSS-IMPORTANT-036","proof":"narrow-candidate-r4","status":"FAIL","error":"receipt missing"}' > "$RESULT"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$RESULT"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test(ux): publish 036 narrow candidate R4 receipt'
+          git push origin HEAD:diag/ux-css-important-036-narrow-candidate-r4
