@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      EXPECTED_PARENT: 32bd6cda71571eb95946dc8f14a72f81253c08dc
+      EXPECTED_PARENT: bab6cb35cf2b7a17e1cd50e29a65a20969d3edb0
       HELPER_PATH: .github/workflows/0000-temp-com-b02cd-exact-derivatives-artifact-export.yml
       REMOVED_TEMP: .github/workflows/0000-temp-com-b02cd-governance-recovery-matrix-materialization.yml
       TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-execution.js
@@ -92,7 +92,8 @@ jobs:
           set -euo pipefail
           git config user.name "doke-repository-certifier"
           git config user.email "actions@users.noreply.github.com"
-          git add "$MATRIX_MD" "$MATRIX_REPORT"
+          git add "$MATRIX_MD"
+          git add -f "$MATRIX_REPORT"
           git rm "$HELPER_PATH"
           expected="$(printf '%s\n' "$HELPER_PATH" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
           actual="$(git diff --cached --name-only | sort)"
