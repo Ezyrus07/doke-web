@@ -1,0 +1,62 @@
+name: UX-CSS-IMPORTANT-036 Reach Source Cascade R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-036-reach-source-cascade-r1
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-036-reach-source-cascade-r1.yml
+      - .diagnostics/ux-css-important-036-reach-source-cascade-r1.js
+
+permissions:
+  contents: write
+
+jobs:
+  prove036r1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PARENT: 483d49d5f59c2eb24be0169f3d7ed6aec9703679
+      SCRIPT: .diagnostics/ux-css-important-036-reach-source-cascade-r1.js
+      RESULT: .diagnostics/ux-css-important-036-reach-source-cascade-r1.json
+      WORKFLOW: .github/workflows/0000-temp-ux-css-important-036-reach-source-cascade-r1.yml
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: diag/ux-css-important-036-reach-source-cascade-r1
+          fetch-depth: 0
+
+      - name: Freeze predecessor and diagnostic-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$PARENT" HEAD
+          actual="$(git diff --name-only "$PARENT" HEAD | sort)"
+          expected2="$(printf '%s\n' "$SCRIPT" "$WORKFLOW" | sort)"
+          expected3="$(printf '%s\n' "$RESULT" "$SCRIPT" "$WORKFLOW" | sort)"
+          test "$actual" = "$expected2" || test "$actual" = "$expected3"
+          test -z "$(git diff --name-only "$PARENT" HEAD -- 'assets/css/**' '*.html' 'assets/js/**')"
+
+      - name: Run reach source cascade proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$SCRIPT"
+          node -e 'const x=require("./.diagnostics/ux-css-important-036-reach-source-cascade-r1.json"); if(x.status!=="PASS"||x.importantCount!==314||!x.reach.active||x.reach.wholeFileDormant) process.exit(1)'
+          git diff --check
+
+      - name: Publish diagnostic receipt only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --short -- 'assets/css/**' '*.html' 'assets/js/**')"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$RESULT"
+          if git diff --cached --quiet; then
+            echo 'receipt already current'
+            exit 0
+          fi
+          git commit -m 'test(ux): publish 036 reach source cascade R1 receipt'
+          git push origin HEAD:diag/ux-css-important-036-reach-source-cascade-r1
