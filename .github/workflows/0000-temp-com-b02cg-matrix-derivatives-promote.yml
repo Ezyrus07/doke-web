@@ -18,6 +18,8 @@ jobs:
     env:
       EXPORTER_INSTALL_HEAD: b5deac8e825f9a0d8f2c8b55c7024cb66a433cfd
       EXPORTER_INSTALL_TREE: a89caf9654d6eb6a90e9e51b674b0efde79cecd6
+      PROMOTER_PARENT_HEAD: 0eaa69899ba26d84dcb34ba894863de3d2625ac5
+      PROMOTER_PARENT_TREE: 2f819c75a955b077cd1bcb7867a6d9f420507f33
       EXECUTION_PROOF_HEAD: a797a05b32fea1d2ec15ca348190afead19d2122
       EXECUTION_PROOF_TREE: cce5e830695fcea86e160c46f9a134ad5c5f77b6
       EXECUTION_PROOF_RUN_ID: '32734569237'
@@ -38,7 +40,7 @@ jobs:
       BRANCH: com/com-001-baseline-audit
 
     steps:
-      - name: Checkout exact promoter head
+      - name: Checkout exact corrected promoter head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -50,14 +52,15 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze consumed execution, exporter proof, and promoter-only scope
+      - name: Freeze consumed execution, exporter proof, and corrected promoter-only scope
         shell: bash
         run: |
           set -euo pipefail
           test "${{ github.run_attempt }}" = '1'
           test "$(git rev-parse "$EXECUTION_PROOF_HEAD^{tree}")" = "$EXECUTION_PROOF_TREE"
           test "$(git rev-parse "$EXPORTER_INSTALL_HEAD^{tree}")" = "$EXPORTER_INSTALL_TREE"
-          test "$(git rev-parse HEAD^)" = "$EXPORTER_INSTALL_HEAD"
+          test "$(git rev-parse "$PROMOTER_PARENT_HEAD^{tree}")" = "$PROMOTER_PARENT_TREE"
+          test "$(git rev-parse HEAD^)" = "$PROMOTER_PARENT_HEAD"
           test "$EXECUTION_PROOF_RUN_ID" = '32734569237'
           test "$EXECUTION_PROOF_JOB_ID" = '97454242038'
           test "$EXPORT_RUN_ID" = '32734951176'
@@ -92,7 +95,8 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$MATRIX_MD" "$MATRIX_REPORT"
+          git add "$MATRIX_MD"
+          git add -f "$MATRIX_REPORT"
           git restore --worktree -- .
           rm "$PROMOTER"
           git add "$PROMOTER"
