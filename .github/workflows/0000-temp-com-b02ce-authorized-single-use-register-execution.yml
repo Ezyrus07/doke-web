@@ -1,0 +1,111 @@
+name: TEMP COM-B02CE Authorized Single-Use Register Execution
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-authorized-reexecution.js'
+      - 'config/com-b02ce-repository-only-deterministic-synthetic-continuation-state-register-authorized-reexecution.json'
+      - 'scripts/test-com-b02ce-repository-only-deterministic-synthetic-continuation-state-register-authorized-reexecution.js'
+      - '.github/workflows/0000-temp-com-b02ce-authorized-single-use-register-execution.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  execute-authorized-single-use-register:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 0eee210c0b968ac6bae029e1ab448d03ae55b7f4
+      PREDECESSOR_TREE: f64913266231c886b315f6bd4d09d03a0b08952e
+      PREDECESSOR_RUN_ID: '32677911805'
+      PREDECESSOR_JOB_ID: '97289298570'
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-authorized-reexecution.js
+      CONFIG: config/com-b02ce-repository-only-deterministic-synthetic-continuation-state-register-authorized-reexecution.json
+      TEST: scripts/test-com-b02ce-repository-only-deterministic-synthetic-continuation-state-register-authorized-reexecution.js
+      WORKFLOW: .github/workflows/0000-temp-com-b02ce-authorized-single-use-register-execution.yml
+      TARGET_BLOB: c1fe633bfbe4db36099c98180d1c630fedd6c616
+      CONFIG_BLOB: b440145f64256ad2403d390748ebf8e68b4a9090
+      TEST_BLOB: f846f57748229e0983d887d1b4ee0cc3b7d29d35
+      B02CD_TARGET_BLOB: fe5cd04e593c85bebd0a0434f07e75f41dac4b22
+      B02CD_CONFIG_BLOB: 0e900788a5966caeca1f82277eecc5cdad42ecd0
+      B02CD_TEST_BLOB: 987b14dca52dbd036e1c968c46910d82c28cd686
+      B02CD_WORKFLOW_BLOB: 1b8e71fc32c2959671063e405dcc667c989dbc8d
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact authorized candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CD quarantine lineage and exact single-use scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-execution.js)" = "$B02CD_TARGET_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.json)" = "$B02CD_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:scripts/test-com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.js)" = "$B02CD_TEST_BLOB"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.yml)" = "$B02CD_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          expected="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+          test -z "$(git ls-files '.github/workflows/com-b02ce-*')"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Execute exactly one authorized process-local synthetic register
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          grep -F '"singleUse": true' "$CONFIG"
+          grep -F '"reusable": false' "$CONFIG"
+          grep -F '"operationMethodInvocationAuthority": true' "$CONFIG"
+          grep -F '"continuationStateStorageAuthority": true' "$CONFIG"
+          grep -F '"registryOperationInvocationAuthority": true' "$CONFIG"
+          grep -F '"registryRegisterAuthority": true' "$CONFIG"
+          grep -F '"registryLookupAuthority": false' "$CONFIG"
+          grep -F '"registryReleaseAuthority": false' "$CONFIG"
+          grep -F 'registry.set(key, storedState);' "$TARGET"
+          ! grep -E 'registry\.(get|has|delete)\(' "$TARGET" "$TEST"
+          ! grep -E 'implementation\.(resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET" "$TEST"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+
+      - name: Governance and frozen remote/runtime surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PREDECESSOR_RUN_ID" = '32677911805'
+          test "$PREDECESSOR_JOB_ID" = '97289298570'
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD
