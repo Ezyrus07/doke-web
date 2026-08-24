@@ -1,4 +1,4 @@
-name: 0000 TEMP COM-B02CD Exact Derivatives Artifact Export
+name: 0000 TEMP COM-B02CD Exact Derivatives Atomic Promotion
 
 on:
   pull_request:
@@ -8,18 +8,17 @@ on:
       - '.github/workflows/0000-temp-com-b02cd-exact-derivatives-artifact-export.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export-exact-derivatives:
+  promote-exact-derivatives:
     if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      EXPECTED_PARENT: 75c60dc56160fcaa7ba73114430338ad35a2a7f3
+      EXPECTED_PARENT: 32bd6cda71571eb95946dc8f14a72f81253c08dc
       HELPER_PATH: .github/workflows/0000-temp-com-b02cd-exact-derivatives-artifact-export.yml
       REMOVED_TEMP: .github/workflows/0000-temp-com-b02cd-governance-recovery-matrix-materialization.yml
-      REMOVED_TEMP_BLOB: 8e4ade4f16f3841741dbe2cee0215405f27fb335
       TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-execution.js
       CONFIG: config/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.json
       TEST: scripts/test-com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.js
@@ -34,7 +33,7 @@ jobs:
       COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
 
     steps:
-      - name: Checkout exact exporter head
+      - name: Checkout exact promotion head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -46,15 +45,12 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze corrective lineage and repository-only scope
+      - name: Freeze promotion lineage and repository-only scope
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
-          expected="$(printf '%s\n' "$HELPER_PATH" "$REMOVED_TEMP" | sort)"
-          actual="$(git diff --name-only "$EXPECTED_PARENT" HEAD | sort)"
-          test "$actual" = "$expected"
-          test "$(git rev-parse "$EXPECTED_PARENT:$REMOVED_TEMP")" = "$REMOVED_TEMP_BLOB"
+          test "$(git diff --name-only "$EXPECTED_PARENT" HEAD)" = "$HELPER_PATH"
           ! git cat-file -e "HEAD:$REMOVED_TEMP"
           test "$(git rev-parse HEAD:"$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
           test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
@@ -74,7 +70,7 @@ jobs:
           ! grep -E 'registerOpaqueContinuationState\(|registry\.set\(|new Map\(|executeRepositoryOnlyDeterministicSyntheticRegister' "$TARGET" "$TEST"
           ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
 
-      - name: Materialize and verify exact historical derivative identities
+      - name: Materialize and certify exact two derivatives
         shell: bash
         run: |
           set -euo pipefail
@@ -89,19 +85,32 @@ jobs:
           git diff --check
           test "$(git hash-object "$MATRIX_MD")" = "$MATRIX_MD_BLOB"
           test "$(git hash-object "$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
-          mkdir -p artifact/docs artifact/reports/generated
-          cp "$MATRIX_MD" artifact/docs/DOMAIN-COMPLETION-MATRIX.md
-          cp "$MATRIX_REPORT" artifact/reports/generated/domain-completion-matrix-report.json
-          test "$(git hash-object artifact/docs/DOMAIN-COMPLETION-MATRIX.md)" = "$MATRIX_MD_BLOB"
-          test "$(git hash-object artifact/reports/generated/domain-completion-matrix-report.json)" = "$MATRIX_REPORT_BLOB"
 
-      - name: Upload exact two derivatives only
-        uses: actions/upload-artifact@v4
-        with:
-          name: com-b02cd-exact-matrix-derivatives
-          path: |
-            artifact/docs/DOMAIN-COMPLETION-MATRIX.md
-            artifact/reports/generated/domain-completion-matrix-report.json
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 1
+      - name: Create atomic final recovery commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke-repository-certifier"
+          git config user.email "actions@users.noreply.github.com"
+          git add "$MATRIX_MD" "$MATRIX_REPORT"
+          git rm "$HELPER_PATH"
+          expected="$(printf '%s\n' "$HELPER_PATH" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --cached --name-only | sort)"
+          test "$actual" = "$expected"
+          git diff --cached --check
+          git commit -m "fix(com): promote B02CD recovery Matrix derivatives"
+          test "$(git rev-parse HEAD^)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git diff --name-only HEAD^ HEAD | sort)" = "$expected"
+          test "$(git rev-parse HEAD:"$MATRIX_MD")" = "$MATRIX_MD_BLOB"
+          test "$(git rev-parse HEAD:"$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
+          test "$(git rev-parse HEAD:"$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          ! git cat-file -e "HEAD:$HELPER_PATH"
+          ! git cat-file -e "HEAD:$REMOVED_TEMP"
+
+      - name: Fast-forward branch only if promotion head is still live
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin com/com-001-baseline-audit
+          test "$(git rev-parse FETCH_HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git push origin "HEAD:refs/heads/com/com-001-baseline-audit"
