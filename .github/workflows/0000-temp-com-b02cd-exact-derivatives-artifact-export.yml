@@ -1,0 +1,104 @@
+name: 0000 TEMP COM-B02CD Exact Derivatives Artifact Export
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02cd-exact-derivatives-artifact-export.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export-exact-derivatives:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      EXPECTED_PARENT: a2a99b6c13fa5706dfeb5c0958056c091ae556ab
+      HELPER_PATH: .github/workflows/0000-temp-com-b02cd-exact-derivatives-artifact-export.yml
+      EXISTING_TEMP: .github/workflows/0000-temp-com-b02cd-governance-recovery-matrix-materialization.yml
+      EXISTING_TEMP_BLOB: 8e4ade4f16f3841741dbe2cee0215405f27fb335
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-execution.js
+      CONFIG: config/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.json
+      TEST: scripts/test-com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.js
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_MD_BLOB: 0596f9a7d081fea8416f8fc293d7c793c4eebd05
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_REPORT_BLOB: 7cd6d6887c8fdfd9478ea50c9781506e7c5c51ab
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact exporter head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze exporter lineage and repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
+          test "$(git diff --name-only "$EXPECTED_PARENT" HEAD)" = "$HELPER_PATH"
+          test "$(git rev-parse HEAD:"$EXISTING_TEMP")" = "$EXISTING_TEMP_BLOB"
+          test "$(git rev-parse HEAD:"$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Revalidate static quarantine without operation execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          ! grep -E 'registerOpaqueContinuationState\(|registry\.set\(|new Map\(|executeRepositoryOnlyDeterministicSyntheticRegister' "$TARGET" "$TEST"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+
+      - name: Materialize and verify exact historical derivative identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git rev-parse HEAD:"$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          git diff --quiet -- "$MATRIX_SOURCE"
+          expected="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+          test "$(git hash-object "$MATRIX_MD")" = "$MATRIX_MD_BLOB"
+          test "$(git hash-object "$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
+          mkdir -p artifact/docs artifact/reports/generated
+          cp "$MATRIX_MD" artifact/docs/DOMAIN-COMPLETION-MATRIX.md
+          cp "$MATRIX_REPORT" artifact/reports/generated/domain-completion-matrix-report.json
+          test "$(git hash-object artifact/docs/DOMAIN-COMPLETION-MATRIX.md)" = "$MATRIX_MD_BLOB"
+          test "$(git hash-object artifact/reports/generated/domain-completion-matrix-report.json)" = "$MATRIX_REPORT_BLOB"
+
+      - name: Upload exact two derivatives only
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02cd-exact-matrix-derivatives
+          path: |
+            artifact/docs/DOMAIN-COMPLETION-MATRIX.md
+            artifact/reports/generated/domain-completion-matrix-report.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
