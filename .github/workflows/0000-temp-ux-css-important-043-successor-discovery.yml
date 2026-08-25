@@ -1,0 +1,60 @@
+name: TEMP UX-CSS-IMPORTANT-043 Successor Discovery
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-043-successor-discovery
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-043-successor-discovery.yml
+
+permissions:
+  contents: read
+
+jobs:
+  successor-discovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PARENT_SHA: deb8aebc0235fda21f820d7dbfe1e0035f582111
+      PARENT_TREE: b3c52048119014a8c9b04b4355db7f92d6689239
+      EXPECTED_GLOBAL: '4045'
+      TARGET_A: assets/css/pages/home-tablet-v2.css
+      TARGET_B: assets/css/components/shell/doke-shell-contract.css
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze certified 042 parent and diagnostic isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = '.github/workflows/0000-temp-ux-css-important-043-successor-discovery.yml'
+
+      - name: Measure actual remaining priority queue
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),path=require('path');
+          const count=f=>(fs.readFileSync(f,'utf8').match(/!important\b/gi)||[]).length;
+          const walk=(d,o=[])=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,o);else if(e.isFile()&&p.endsWith('.css'))o.push(p)}return o};
+          const files=walk('assets/css');
+          const global=files.reduce((n,f)=>n+count(f),0);
+          if(global!==Number(process.env.EXPECTED_GLOBAL)) throw new Error(`global mismatch ${global}`);
+          const rows=[process.env.TARGET_A,process.env.TARGET_B].map(f=>({file:f,important:count(f),blob:cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim(),bytes:fs.statSync(f).size}));
+          if(rows[0].important<=0||rows[1].important<=0) throw new Error('candidate unexpectedly empty');
+          const sorted=[...rows].sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
+          const out={checkpoint:'UX-CSS-IMPORTANT-043 successor discovery',parent:{sha:process.env.PARENT_SHA,tree:process.env.PARENT_TREE,globalImportant:global},candidates:rows,canonicalNext:sorted[0],following:sorted[1],scope:{repositoryOnly:true,productMutation:false,staging:false,production:false,backend:false,supabase:false,rpc:false,migrations:false,credentials:false,runtimeRealtime:false,merge:false,readyForReview:false,forcePush:false,historyRewrite:false}};
+          console.log('DISCOVERY_JSON='+JSON.stringify(out));
+          NODE
+
+      - name: Verify certified parent remains untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
