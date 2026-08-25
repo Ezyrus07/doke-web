@@ -1,0 +1,203 @@
+name: TEMP UX-CSS-IMPORTANT-041 App Header R1b
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-041-app-header-r1b
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-041-app-header-r1b.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reach-source-cascade-r1b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PRODUCT_SHA: d23744276157a2ea28ac8fa4e44a8d5095103260
+      PRODUCT_TREE: 40972482f565e3e9fac1b26291937c21c0b17f3c
+      TARGET: assets/css/components/shell/app-header.css
+      EXPECTED_IMPORTANT: '581'
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-css-important-041-app-header-r1b.yml
+      RECEIPT_PATH: .diagnostics/ux-css-important-041-app-header-r1b.json
+    steps:
+      - name: Checkout diagnostic branch with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze diagnostic isolation and certified predecessor
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PRODUCT_SHA^{tree}")" = "$PRODUCT_TREE"
+          test "$(git merge-base "$PRODUCT_SHA" HEAD)" = "$PRODUCT_SHA"
+          test "$(git rev-list --count "$PRODUCT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PRODUCT_SHA" HEAD)" = "$WORKFLOW_PATH"
+          test "$(git status --porcelain)" = ""
+
+      - name: Prove corrected reach source ownership and cascade inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,posixpath,re,subprocess
+          from pathlib import PurePosixPath
+          SHA=os.environ['PRODUCT_SHA']; TREE=os.environ['PRODUCT_TREE']; TARGET=os.environ['TARGET']; EXPECTED=int(os.environ['EXPECTED_IMPORTANT']); RECEIPT=os.environ['RECEIPT_PATH']
+          REL=[
+            'assets/css/components/layout/responsive-priority-contract.css',
+            'assets/css/components/navigation/app-mobile-header-contract.css',
+            'assets/css/components/shell/doke-shell-contract.css',
+            'assets/css/components/navigation/mobile-search-header-shared.css'
+          ]
+          DOCS=['AGENTS.md','docs/CSS_AUTHORITY_MAP.md','docs/GLOBAL-LAYOUT-CONTRACT.md','docs/DESIGN-SYSTEM-GUIDE.md','docs/BASELINE-VISUAL-APPROVED.md','docs/DOKE-PLANO-MESTRE-CONCLUSAO-PLATAFORMA.md','docs/DOMAIN-COMPLETION-MATRIX.md']
+          def sh(*a): return subprocess.check_output(a,text=True).rstrip('\n')
+          ALL=sh('git','ls-tree','-r','--name-only',SHA).splitlines(); S=set(ALL)
+          def read(p): return subprocess.check_output(['git','show',f'{SHA}:{p}']).decode('utf8','replace')
+          def blob(p): return sh('git','rev-parse',f'{SHA}:{p}')
+          def clean(s): return re.sub(r'/\*.*?\*/','',s,flags=re.S)
+          target=read(TARGET); raw_imp=len(re.findall(r'!important\b',target,re.I)); assert raw_imp==EXPECTED,(raw_imp,EXPECTED)
+
+          def imports(p):
+            out=[]
+            rx=r'@import\s+(?:url\(\s*)?(?:[\'\"])?([^\'\"\)\s;]+\.css(?:\?[^\'\"\)\s;]*)?)(?:[\'\"])?\s*\)?[^;]*;'
+            for m in re.finditer(rx,clean(read(p)),re.I):
+              raw=m.group(1); x=raw.split('?',1)[0].split('#',1)[0]
+              if re.match(r'^[a-z]+://',x,re.I): resolved=None
+              elif x.startswith('/'): resolved=x.lstrip('/')
+              else: resolved=posixpath.normpath(posixpath.join(posixpath.dirname(p),x))
+              out.append({'raw':raw,'resolved':resolved})
+            return out
+          CSS=[p for p in ALL if p.endswith('.css')]; IM={p:imports(p) for p in CSS}
+          direct_importers=sorted(p for p,v in IM.items() if any(i['resolved']==TARGET for i in v))
+          html=sorted(p for p in ALL if p.endswith('.html') and '/' not in p)
+          lr=re.compile(r'<link\b[^>]*?href\s*=\s*[\'\"]([^\'\"]+)[\'\"][^>]*>',re.I|re.S)
+          def starts(h):
+            out=[]
+            for x in lr.findall(read(h)):
+              x=x.split('?',1)[0].split('#',1)[0]
+              if x.endswith('.css') and not re.match(r'^[a-z]+://',x,re.I): out.append(posixpath.normpath(x.lstrip('/')))
+            return out
+          HD={h:starts(h) for h in html}; direct_html=sorted(h for h,v in HD.items() if TARGET in v)
+          def closure(xs):
+            seen=set(); st=list(xs)
+            while st:
+              p=st.pop()
+              if p in seen or p not in S or not p.endswith('.css'): continue
+              seen.add(p); st.extend(i['resolved'] for i in IM.get(p,[]) if i['resolved'])
+            return seen
+          REACH={h:closure(v) for h,v in HD.items()}; pages=sorted(h for h,v in REACH.items() if TARGET in v); loaded=set().union(*REACH.values()) if REACH else set()
+          needle=PurePosixPath(TARGET).name; runtime=[]; tooling=[]; other=[]
+          for p in ALL:
+            if p==TARGET or not re.search(r'\.(?:js|mjs|cjs|json|md|yml|yaml|html|css)$',p): continue
+            try: t=read(p)
+            except Exception: continue
+            if TARGET not in t and needle not in t: continue
+            if p.startswith('assets/js/'): runtime.append(p)
+            elif p.startswith(('scripts/','tests/','.github/','docs/','config/')): tooling.append(p)
+            else: other.append(p)
+
+          def split_top(s,sep=','):
+            out=[]; start=0; par=br=0; quote=None; esc=False
+            for i,c in enumerate(s):
+              if quote:
+                if esc: esc=False
+                elif c=='\\': esc=True
+                elif c==quote: quote=None
+                continue
+              if c in "'\"": quote=c
+              elif c=='(': par+=1
+              elif c==')': par=max(0,par-1)
+              elif c=='[': br+=1
+              elif c==']': br=max(0,br-1)
+              elif c==sep and par==0 and br==0: out.append(s[start:i].strip()); start=i+1
+            out.append(s[start:].strip()); return [x for x in out if x]
+          def declarations(body):
+            vals=[]; start=0; par=0; quote=None; esc=False
+            for i,c in enumerate(body+';'):
+              if quote:
+                if esc: esc=False
+                elif c=='\\': esc=True
+                elif c==quote: quote=None
+                continue
+              if c in "'\"": quote=c
+              elif c=='(': par+=1
+              elif c==')': par=max(0,par-1)
+              elif c==';' and par==0:
+                seg=body[start:i].strip(); start=i+1
+                if ':' in seg and not seg.startswith('@'):
+                  prop,val=seg.split(':',1); prop=prop.strip().lower(); val=val.strip()
+                  if re.match(r'^(?:--)?[a-zA-Z_]',prop): vals.append((prop,val))
+            return vals
+          def rule_blocks(text):
+            s=clean(text); n=len(s); out=[]
+            def close(i):
+              d=1;j=i+1;q=None;e=False
+              while j<n:
+                c=s[j]
+                if q:
+                  if e:e=False
+                  elif c=='\\':e=True
+                  elif c==q:q=None
+                else:
+                  if c in "'\"":q=c
+                  elif c=='{':d+=1
+                  elif c=='}':
+                    d-=1
+                    if d==0:return j
+                j+=1
+              raise AssertionError('unbalanced css')
+            def walk(a,b):
+              i=a
+              while i<b:
+                semi=s.find(';',i,b); brace=s.find('{',i,b)
+                if brace<0: break
+                if semi>=0 and semi<brace: i=semi+1; continue
+                head=s[i:brace].strip(); end=close(brace); body=s[brace+1:end]
+                if head.startswith('@'):
+                  if head.split(None,1)[0].lower() in ('@media','@supports','@layer','@container','@scope','@document'): walk(brace+1,end)
+                else:
+                  ds=declarations(body)
+                  if ds: out.append((split_top(head),ds))
+                i=end+1
+            walk(0,n); return out
+          def inv(p):
+            blocks=rule_blocks(read(p)); decl=sum(len(ds) for _,ds in blocks); imp=sum(1 for _,ds in blocks for _,v in ds if re.search(r'!important\b',v,re.I)); keys={(sel,prop) for sels,ds in blocks for sel in sels for prop,_ in ds}
+            return {'ruleBlocks':len(blocks),'selectors':len({s for sels,_ in blocks for s in sels}),'declarations':decl,'importantDeclarations':imp,'keys':keys}
+          T=inv(TARGET); assert T['importantDeclarations']==EXPECTED,(T['importantDeclarations'],EXPECTED)
+          relations={}
+          for p in REL:
+            if p in S:
+              x=inv(p); relations[p]={'blob':blob(p),'importantDeclarations':x['importantDeclarations'],'exactSelectorPropertyCollisions':len(T['keys']&x['keys']),'targetImportsRelation':any(i['resolved']==p for i in IM[TARGET]),'relationImportsTarget':any(i['resolved']==TARGET for i in IM[p])}
+          whole=(TARGET not in loaded and not direct_html and not direct_importers and not runtime)
+          receipt={
+            'proof':'UX-CSS-IMPORTANT-041 Reach / Source / Cascade R1b','result':'PASS','checkpoint':'UX-CSS-IMPORTANT-041',
+            'historicalDiagnosticFailure':{'run':32857025592,'job':97831394473,'classification':'DIAGNOSTIC_HARNESS_DECLARATION_DOUBLE_COUNT','productMutation':False,'criteriaRelaxed':False},
+            'product':{'sha':SHA,'tree':TREE},
+            'target':{'path':TARGET,'blob':blob(TARGET),'sha256':hashlib.sha256(target.encode()).hexdigest(),'bytes':len(target.encode()),'important':raw_imp,'ruleBlocks':T['ruleBlocks'],'selectors':T['selectors'],'declarations':T['declarations'],'imports':IM[TARGET]},
+            'reach':{'rootHtmlCount':len(html),'loadedCssCount':len(loaded),'canonicalLoaded':TARGET in loaded,'wholeFileDormant':whole,'targetPages':pages,'directHtmlRefs':direct_html,'directImporters':direct_importers,'runtimeJsRefs':sorted(runtime),'toolingRefs':sorted(tooling),'otherRefs':sorted(other),'browserReconciliationRequired':not whole},
+            'authorityDocs':{p:blob(p) for p in DOCS if p in S},'authorityRelations':relations,
+            'criteria':{'expectedImportant':EXPECTED,'parserCorrectionOnly':True,'criteriaRelaxed':0,'markerRemovalAttempted':False,'productMutation':False,'staging':False,'production':False,'backend':False,'supabase':False,'rpc':False,'migrations':False,'credentials':False,'runtimeRealtime':False,'merge':False,'readyForReview':False,'forcePush':False,'historyRewrite':False}
+          }
+          os.makedirs(os.path.dirname(RECEIPT),exist_ok=True); open(RECEIPT,'w').write(json.dumps(receipt,indent=2,sort_keys=True)+'\n'); print(json.dumps(receipt,indent=2,sort_keys=True))
+          PY
+
+      - name: Publish corrected R1b receipt on diagnostic branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RECEIPT_PATH"
+          test "$(git diff --cached --name-only)" = "$RECEIPT_PATH"
+          git commit -m "diagnostic(ux-css-important-041): publish corrected app header R1b receipt"
+          git push origin HEAD:diag/ux-css-important-041-app-header-r1b
+
+      - name: Verify certified predecessor unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PRODUCT_SHA^{tree}")" = "$PRODUCT_TREE"
+          test "$(git show "$PRODUCT_SHA:$TARGET" | grep -o '!important' | wc -l | tr -d ' ')" = "$EXPECTED_IMPORTANT"
+          test "$(git status --porcelain)" = ""
