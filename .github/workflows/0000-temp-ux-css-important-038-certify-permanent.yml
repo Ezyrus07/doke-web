@@ -1,0 +1,255 @@
+name: UX-CSS-IMPORTANT-038 Permanent Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-038-promotion-materialize-r3
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-038-certify-permanent.yml
+
+permissions:
+  contents: write
+
+jobs:
+  certify038:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PARENT_SHA: f0dff98b236eb189cc3864ae411f96f1ac6ba0bd
+      PARENT_TREE: c9a5daf5a77e5d247409bbb02d38ce83b55a2d20
+      HEAD_SHA: b64024a143e6531c51263d7750ab00162cf7e772
+      HEAD_TREE: 64f556068e5dd89f3dfdda211b0f85b3e5a773e8
+      PERMANENT_BRANCH: ux/ux-css-important-038-marketplace-responsive-card-stack-dormant-priority
+      TARGET_FILE: assets/css/components/cards/marketplace-responsive-card-stack.css
+      TARGET_PARENT_BLOB: ec63ebffb471979068e88d49e8f934e13e9658b3
+      TARGET_BLOB: 4609bbb257194173d418ae608f2eca20bb8cbeff
+      TARGET_SHA256: 631eb87c6bf14f5fc5b618ea08ee03b917249fba912bba6dae78e947178a5375
+      TARGET_BYTES: 39656
+      R1B_BRANCH: diag/ux-css-important-038-marketplace-card-reach-r1b
+      R1B_FILE: .diagnostics/ux-css-important-038-marketplace-card-reach-r1b.json
+      R1B_BLOB: 135265b8720f20c79171155be4a14af36e081c80
+      R2_BRANCH: diag/ux-css-important-038-marketplace-card-candidate-r2
+      R2_FILE: .diagnostics/ux-css-important-038-marketplace-card-candidate-r2.json
+      R2_BLOB: 6f99bcd5207a0414528a3642f2f9abc15b5d94d5
+      OUTPUT_BRANCH: diag/ux-css-important-038-promotion-materialize-r3
+      RESULT_FILE: .diagnostics/ux-css-important-038-permanent-certification.txt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Certify permanent 038
+        shell: bash
+        run: |
+          set -euo pipefail
+          : >/tmp/summary
+          pass(){ echo "$1" | tee -a /tmp/summary; }
+
+          git fetch --no-tags origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null
+          git fetch --no-tags origin "refs/heads/$R1B_BRANCH:refs/remotes/origin/$R1B_BRANCH" >/dev/null
+          git fetch --no-tags origin "refs/heads/$R2_BRANCH:refs/remotes/origin/$R2_BRANCH" >/dev/null
+
+          test "$(git rev-parse "refs/remotes/origin/$PERMANENT_BRANCH")" = "$HEAD_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$HEAD_SHA^{tree}")" = "$HEAD_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_PARENT_BLOB"
+          test "$(git rev-parse "$HEAD_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git merge-base "$PARENT_SHA" "$HEAD_SHA")" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..$HEAD_SHA")" = 1
+          test "$(git rev-list --count "$HEAD_SHA..$PARENT_SHA")" = 0
+          test "$(git diff --name-only "$PARENT_SHA" "$HEAD_SHA" | wc -l | tr -d ' ')" = 1
+          test "$(git diff --name-only "$PARENT_SHA" "$HEAD_SHA")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$HEAD_SHA" -- "$TARGET_FILE")" = $'316\t316\t'"$TARGET_FILE"
+          git diff --check "$PARENT_SHA" "$HEAD_SHA" -- "$TARGET_FILE"
+          pass 'LINEAGE PASS|ahead=1|behind=0|mergeBase=parent|files=1|additions=316|deletions=316'
+
+          test "$(git rev-parse "refs/remotes/origin/$R1B_BRANCH:$R1B_FILE")" = "$R1B_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R2_BRANCH:$R2_FILE")" = "$R2_BLOB"
+          git show "refs/remotes/origin/$R1B_BRANCH:$R1B_FILE" >/tmp/r1b.json
+          git show "refs/remotes/origin/$R2_BRANCH:$R2_FILE" >/tmp/r2.json
+          node <<'NODE'
+          const fs=require('fs');
+          const r1=JSON.parse(fs.readFileSync('/tmp/r1b.json','utf8'));
+          const r2=JSON.parse(fs.readFileSync('/tmp/r2.json','utf8'));
+          const c=r2.candidate||{}, g=r2.staticGateReconciliation||{};
+          const ok1=r1.result==='PASS'
+            && r1.parentSha===process.env.PARENT_SHA
+            && r1.parentTree===process.env.PARENT_TREE
+            && r1.targetFile===process.env.TARGET_FILE
+            && r1.targetBlob===process.env.TARGET_PARENT_BLOB
+            && r1.rawImportantMarkerCount===434
+            && r1.parsedPhysicalImportantDeclarationCount===434
+            && r1.representationInvariant===true
+            && r1.reach?.canonicalLoaded===false
+            && r1.reach?.wholeFileDormant===true
+            && r1.reach?.targetPageCount===0
+            && (r1.reach?.directHtmlRefs||[]).length===0
+            && (r1.reach?.runtimeJsRefs||[]).length===0
+            && r1.cascade?.runtimeExactCollisionRelationCount===0
+            && r1.cascade?.browserReconciliationRequired===false;
+          const ok2=r2.result==='PASS'
+            && r2.parentSha===process.env.PARENT_SHA
+            && r2.parentTree===process.env.PARENT_TREE
+            && r2.targetFile===process.env.TARGET_FILE
+            && r2.parentTargetBlob===process.env.TARGET_PARENT_BLOB
+            && c.importantBefore===434 && c.importantAfter===0 && c.removed===434
+            && c.gitBlob===process.env.TARGET_BLOB
+            && c.sha256===process.env.TARGET_SHA256
+            && c.bytes===Number(process.env.TARGET_BYTES)
+            && c.parentGlobal===6705 && c.candidateGlobal===6271
+            && c.additions===316 && c.deletions===316
+            && c.markerOnly===true && c.selectorsRemoved===0 && c.declarationsRemoved===0
+            && c.propertiesChanged===0 && c.valuesChanged===0
+            && r2.dormancyAfterCandidate?.candidateCanonicalLoaded===false
+            && (r2.dormancyAfterCandidate?.candidateTargetPages||[]).length===0
+            && g.introducedRegressions===0 && g.criteriaRelaxed===0
+            && r2.browserRequired===false
+            && r2.restore?.targetParentExact===true && r2.restore?.trackedWorkspaceClean===true;
+          if(!ok1||!ok2) throw new Error(`evidence mismatch r1=${ok1} r2=${ok2}`);
+          NODE
+          pass 'EVIDENCE TRANSFER PASS|r1b=PASS|r2=PASS|wholeFileDormant=1|introducedRegressions=0|criteriaRelaxed=0|browserRequired=0'
+
+          git checkout --detach "$HEAD_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs');
+          const parent=fs.readFileSync('/tmp/parent.css','utf8');
+          const head=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const before=(parent.match(/!important\b/gi)||[]).length;
+          const after=(head.match(/!important\b/gi)||[]).length;
+          if(before!==434||after!==0) throw new Error(`important ${before}->${after}`);
+          if(parent.replace(/\s*!important\b/gi,'')!==head) throw new Error('permanent bytes differ from deterministic marker-only candidate');
+          NODE
+          pass 'PERMANENT IDENTITY PASS|important=434->0|removed=434|blob=exact|sha256=exact|bytes=39656|markerOnly=1'
+
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile()&&p.endsWith('.css'))out.push(p)}return out}
+          const count=f=>(fs.readFileSync(f,'utf8').match(/!important\b/gi)||[]).length;
+          const total=walk('assets/css').reduce((s,f)=>s+count(f),0);
+          const checks={
+            'assets/css/pages/home/mobile-composition.css':6,
+            'assets/css/components/cards/mobile-card-contract.css':2,
+            'assets/css/components/shell/mobile-base-stability.css':28,
+            'assets/css/pages/home/mobile-hero-feed.css':127,
+            'assets/css/components/shell/mobile-app-shell.css':6,
+            'assets/css/components/navigation/mobile-search-header-shared.css':0,
+            [process.env.TARGET_FILE]:0
+          };
+          if(total!==6271) throw new Error(`global important ${total}`);
+          for(const [f,n] of Object.entries(checks)){const got=count(f);if(got!==n)throw new Error(`${f}=${got} expected ${n}`)}
+          NODE
+          pass 'IMPORTANT FRESH PASS|global=6271|target=0|protected006=6|protected010=2|protected020=28|protected021=127|protected036=6|037=0'
+
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
+          const norm=f=>String(f).replace(/\\/g,'/').replace(/^\.\//,'');
+          const target=norm(process.env.TARGET_FILE),pages=fs.readdirSync('.').filter(f=>f.endsWith('.html')).sort(),hits=[],loaded=new Set();
+          function imports(cssFile){if(!fs.existsSync(cssFile))return[];const css=fs.readFileSync(cssFile,'utf8'),out=[];let m;const re=/@import\s+(?:url\()?\s*['"]([^'")]+)['"]\s*\)?[^;]*;/gi;while((m=re.exec(css))){const raw=m[1].split('#')[0].split('?')[0];if(!raw||/^https?:\/\//i.test(raw)||/^data:/i.test(raw))continue;out.push(norm(raw.startsWith('/')?raw.slice(1):path.join(path.dirname(cssFile),raw)));}return[...new Set(out)]}
+          for(const page of pages){const html=fs.readFileSync(page,'utf8'),seen=new Set(),q=getLoadedCssAssets(html,process.cwd()).map(norm);for(let i=0;i<q.length;i++){const cur=norm(q[i]);if(seen.has(cur)||!fs.existsSync(cur))continue;seen.add(cur);loaded.add(cur);for(const imp of imports(cur))q.push(imp);}if(seen.has(target))hits.push(page)}
+          if(hits.length) throw new Error(`target runtime-reachable on ${hits.join(',')}`);
+          fs.writeFileSync('/tmp/reach-head.json',JSON.stringify({rootHtmlCount:pages.length,loadedCssCount:loaded.size,targetPages:hits,canonicalLoaded:false},null,2)+'\n');
+          NODE
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/dorm-head.txt 2>&1 || true
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/dorm-parent.txt 2>&1 || true
+          node <<'NODE'
+          const fs=require('fs');
+          const p=fs.readFileSync('/tmp/dorm-parent.txt','utf8'),h=fs.readFileSync('/tmp/dorm-head.txt','utf8');
+          const metric=(s,label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(esc+'[: ]+\\*?\\*?(\\d+)'));return m?Number(m[1]):null};
+          for(const label of ['CSS depreciado reativado','Arquivos registrados ausentes','CSS ativo com !important fora do registro']){const a=metric(p,label),b=metric(h,label);if(a===null||b===null||a!==b)throw new Error(`${label} changed ${a}->${b}`)}
+          NODE
+          pass 'DORMANCY PASS|canonicalLoaded=0|targetPages=0|policyViolationMetricsStable=1'
+
+          test "$(git rev-parse "$PARENT_SHA:package.json")" = "$(git rev-parse "$HEAD_SHA:package.json")"
+          test "$(git rev-parse "$PARENT_SHA:package-lock.json")" = "$(git rev-parse "$HEAD_SHA:package-lock.json")"
+          pass 'DEPENDENCY IDENTITY PASS|package=unchanged|packageLock=unchanged'
+
+          git checkout --detach "$HEAD_SHA" >/dev/null
+          npm ci --ignore-scripts >/dev/null
+          cat >/tmp/gates.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; sha="$2"; : > "/tmp/${phase}.tsv"
+          restore(){ git checkout --detach "$sha" >/dev/null 2>&1 || exit 90; git restore --source="$sha" --staged --worktree -- . >/dev/null 2>&1 || exit 91; return 0; }
+          norm(){ sed -E -e 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?/<TIME>/g' -e 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$1"; }
+          gate(){ label="$1"; shift; restore; log="/tmp/${phase}-${label}.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; norm "$log" >"${log}.norm"; hash="$(sha256sum "${log}.norm"|awk '{print $1}')"; printf '%s\t%s\t%s\n' "$label" "$rc" "$hash" >> "/tmp/${phase}.tsv"; echo "$phase|$label|rc=$rc|hash=$hash"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/gates.sh
+          /tmp/gates.sh parent "$PARENT_SHA"
+          /tmp/gates.sh permanent "$HEAD_SHA"
+
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const parse=f=>new Map(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [label,rc,hash]=x.split('\t');return[label,{rc:Number(rc),hash}]}));
+          const p=parse('/tmp/parent.tsv'),h=parse('/tmp/permanent.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix'];
+          const debt=['important_reduction_plan','global_css_design_system'];
+          let passBoth=0,baselineEquivalent=0;
+          for(const label of exact){const a=p.get(label),b=h.get(label);if(!a||!b)throw new Error('missing '+label);if(a.rc===0&&b.rc===0&&a.hash===b.hash){passBoth++;continue}if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash){baselineEquivalent++;continue}throw new Error(`${label} divergence ${a.rc}/${a.hash}->${b.rc}/${b.hash}`)}
+          for(const label of debt){const a=p.get(label),b=h.get(label);if(!a||!b)throw new Error('missing '+label);if(a.rc===0&&b.rc===0){passBoth++;continue}if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash){baselineEquivalent++;continue}if(a.rc!==0&&b.rc===0){passBoth++;continue}throw new Error(`${label} regression ${a.rc}/${a.hash}->${b.rc}/${b.hash}`)}
+          const fa=p.get('frontend_strict'),fb=h.get('frontend_strict');if(!fa||!fb||fa.rc!==fb.rc)throw new Error(`frontend rc ${fa?.rc}->${fb?.rc}`);
+          const pl=fs.readFileSync('/tmp/parent-frontend_strict.log','utf8'),hl=fs.readFileSync('/tmp/permanent-frontend_strict.log','utf8');
+          const num=(s,prefix)=>{const m=s.match(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*(\\d+)'));return m?Number(m[1]):null};
+          const cp=num(pl,'Críticos:'),ch=num(hl,'Críticos:'),wp=num(pl,'Avisos:'),wh=num(hl,'Avisos:');if(cp!==ch||wp!==wh)throw new Error(`frontend counts ${cp}/${wp}->${ch}/${wh}`);
+          const set=(s,key)=>s.split('\n').filter(x=>x.includes(key)).sort();if(JSON.stringify(set(pl,'**CRITICAL**'))!==JSON.stringify(set(hl,'**CRITICAL**')))throw new Error('critical set changed');if(JSON.stringify(set(pl,'**WARNING**'))!==JSON.stringify(set(hl,'**WARNING**')))throw new Error('warning set changed');
+          const debtMetric=(s,label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(esc+'\\s*(\\d+) uso\\(s\\) em (\\d+) arquivo\\(s\\)'));return m?{uses:Number(m[1]),files:Number(m[2])}:null};
+          const tp=debtMetric(pl,'Dívida !important registrada:'),th=debtMetric(hl,'Dívida !important registrada:');const ap=debtMetric(pl,'Dívida !important ativa carregada por HTML raiz:'),ah=debtMetric(hl,'Dívida !important ativa carregada por HTML raiz:');const dp=debtMetric(pl,'Dívida !important dormente no pacote:'),dh=debtMetric(hl,'Dívida !important dormente no pacote:');
+          if(!tp||!th||!ap||!ah||!dp||!dh)throw new Error('debt metrics missing');
+          if(tp.uses!==6705||th.uses!==6271||tp.files!==13||th.files!==12)throw new Error('total debt delta wrong');
+          if(ap.uses!==231||ah.uses!==231||ap.files!==6||ah.files!==6)throw new Error('active debt changed');
+          if(dp.uses!==6474||dh.uses!==6040||dp.files!==7||dh.files!==6)throw new Error('dormant debt delta wrong');
+          const normalize=s=>s.split('\n').filter(line=>!/^Gerado em:/.test(line)&&!/^Dívida !important registrada:/.test(line)&&!/^Dívida !important ativa carregada por HTML raiz:/.test(line)&&!/^Dívida !important dormente no pacote:/.test(line)).join('\n');
+          const hp=crypto.createHash('sha256').update(normalize(pl)).digest('hex'),hh=crypto.createHash('sha256').update(normalize(hl)).digest('hex');if(hp!==hh)throw new Error(`frontend semantic drift ${hp}->${hh}`);
+          baselineEquivalent++;
+          fs.writeFileSync('/tmp/gates.json',JSON.stringify({passBoth,baselineEquivalent,introducedRegressions:0,criteriaRelaxed:0,frontend:{critical:cp,warnings:wp,total:{parent:tp,permanent:th},active:{parent:ap,permanent:ah},dormant:{parent:dp,permanent:dh},semanticHash:hp}},null,2)+'\n');
+          NODE
+          pass 'STATIC GOVERNANCE PASS|introducedRegressions=0|criteriaRelaxed=0|activeDebt=231/6|totalDebt=6271|dormantDebt=6040/6'
+
+          git checkout --detach "$HEAD_SHA" >/dev/null
+          git restore --source="$HEAD_SHA" --staged --worktree -- . >/dev/null
+          git clean -fd reports >/dev/null 2>&1 || true
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$HEAD_TREE"
+          test -z "$(git status --porcelain=v1)"
+          pass 'RESTORE PASS|head=exact|tree=exact|targetBlob=exact|trackedWorkspaceClean=1'
+          pass 'RESULT=PASS'
+          pass 'PROOF_RESULT=PASS'
+
+      - name: Publish permanent certification receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          grep -q '^PROOF_RESULT=PASS$' /tmp/summary 2>/dev/null && result=PASS || true
+          git fetch --no-tags origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          if test -s /tmp/summary; then cp /tmp/summary "$RESULT_FILE"; else printf 'RESULT=FAIL\nPROOF_RESULT=FAIL\n' > "$RESULT_FILE"; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: publish UX-CSS-IMPORTANT-038 permanent certification [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
+          test "$result" = PASS
