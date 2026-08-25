@@ -1,0 +1,168 @@
+name: TEMP COM-B02CI Certification Recovery
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02ci-matrix-materializer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  recover-certification-evidence:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      B02CH_HEAD: 5c9f58e6ff604378b072829bd32dc22bcc4f62e5
+      B02CH_TREE: 9fd286b2b9c97e11c0ba7b12a8051f85f51ce84e
+      B02CH_RUN_ID: '32743823666'
+      B02CH_JOB_ID: '97484400141'
+      CANDIDATE_HEAD: ed3a2f557e48e78805567037ee3066eb1418c559
+      CANDIDATE_TREE: d9e98afb2a783a7b1b1c453c7e9b926fa1a96945
+      MATERIALIZED_HEAD: d57b34492de8204a018bd8192f0a9dd57ecad37c
+      MATERIALIZED_TREE: b3c9e4efca12b63b5afd9d1b9c8f1ee38d2aa536
+      FINAL_BASE_HEAD: 4ddb41c0bc612aa3385bb34915fb9341ee05e374
+      FINAL_BASE_TREE: 983a2861c1bbddf1e39415206b9819075d761df6
+      TARGET: backend/shared/http/repository-only-route-resume-dispatcher.js
+      TARGET_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      CONFIG: config/com-b02ci-repository-only-route-resume-dispatcher-implementation.json
+      CONFIG_BLOB: e4a69aa36ad8eed7cef59b05eaaa9166c1637418
+      TEST: scripts/test-com-b02ci-repository-only-route-resume-dispatcher-implementation.js
+      TEST_BLOB: 43df6763f7eb185d1a770cbb53ad9958c546ce5b
+      CERTIFIER: .github/workflows/com-b02ci-repository-only-route-resume-dispatcher-implementation.yml
+      CANDIDATE_CERTIFIER_BLOB: eb2daa3ebc6e4ea575a62503ae62c3c8a1b605ad
+      FINAL_CERTIFIER_BLOB: 018394ead4fa3225c38dfa6ee042f0809fed81d7
+      MATERIALIZER: .github/workflows/0000-temp-com-b02ci-matrix-materializer.yml
+      ORIGINAL_MATERIALIZER_BLOB: ac55d65d63b7dc541f8c0b921a2b0fee22e436f7
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      B02CH_TARGET: backend/shared/http/repository-only-route-resume-dispatch-post-carrier-wiring-readiness.js
+      B02CH_TARGET_BLOB: 1906135de39c3cc1ed1f38b137419f1a6702b76e
+      B02CH_CONFIG: config/com-b02ch-repository-only-route-resume-dispatch-post-carrier-wiring-readiness.json
+      B02CH_CONFIG_BLOB: 85fff4c61a12cee61ac3d0f1aee5225b12710daa
+      B02X: backend/shared/http/repository-only-route-surface-resolver.js
+      B02X_BLOB: 00df5c48a9ac4a72fefde4aa31486fe8ed46ea8c
+      B02T: backend/modules/communities/community-command-handler-repository-orchestration.js
+      B02T_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
+      B02AA: backend/shared/http/repository-only-route-continuation-carrier-contract.js
+      B02AA_BLOB: fb7448f83fe385e94a2be61685f612d9e27d949f
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      BRANCH: com/com-001-baseline-audit
+
+    steps:
+      - name: Checkout exact recovery head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze historical B02CI lineage and recovery-only delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.run_attempt }}" = '1'
+          test "$(git rev-parse "$B02CH_HEAD^{tree}")" = "$B02CH_TREE"
+          test "$B02CH_RUN_ID" = '32743823666'
+          test "$B02CH_JOB_ID" = '97484400141'
+          test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$CANDIDATE_HEAD^")" = "$B02CH_HEAD"
+          test "$(git rev-parse "$MATERIALIZED_HEAD^{tree}")" = "$MATERIALIZED_TREE"
+          test "$(git rev-parse "$MATERIALIZED_HEAD^")" = "$CANDIDATE_HEAD"
+          test "$(git rev-parse "$FINAL_BASE_HEAD^{tree}")" = "$FINAL_BASE_TREE"
+          test "$(git rev-parse "$FINAL_BASE_HEAD^")" = "$MATERIALIZED_HEAD"
+          test "$(git rev-parse HEAD^)" = "$FINAL_BASE_HEAD"
+          expected_recovery="$MATERIALIZER"
+          actual_recovery="$(git diff --name-only "$FINAL_BASE_HEAD" HEAD)"
+          test "$actual_recovery" = "$expected_recovery"
+          expected_candidate="$(printf '%s\n' "$TARGET" "$CONFIG" "$TEST" "$CERTIFIER" "$MATERIALIZER" | sort)"
+          actual_candidate="$(git diff --name-only "$B02CH_HEAD" "$CANDIDATE_HEAD" | sort)"
+          test "$actual_candidate" = "$expected_candidate"
+          expected_materialization="$(printf '%s\n' "$MATERIALIZER" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual_materialization="$(git diff --name-only "$CANDIDATE_HEAD" "$MATERIALIZED_HEAD" | sort)"
+          test "$actual_materialization" = "$expected_materialization"
+          expected_final="$(printf '%s\n' "$TARGET" "$CONFIG" "$TEST" "$CERTIFIER" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual_final="$(git diff --name-only "$B02CH_HEAD" "$FINAL_BASE_HEAD" | sort)"
+          test "$actual_final" = "$expected_final"
+          test "$(git rev-parse "$CANDIDATE_HEAD:$TARGET")" = "$TARGET_BLOB"
+          test "$(git rev-parse "$CANDIDATE_HEAD:$CONFIG")" = "$CONFIG_BLOB"
+          test "$(git rev-parse "$CANDIDATE_HEAD:$TEST")" = "$TEST_BLOB"
+          test "$(git rev-parse "$CANDIDATE_HEAD:$CERTIFIER")" = "$CANDIDATE_CERTIFIER_BLOB"
+          test "$(git rev-parse "$CANDIDATE_HEAD:$MATERIALIZER")" = "$ORIGINAL_MATERIALIZER_BLOB"
+          test "$(git rev-parse "$FINAL_BASE_HEAD:$TARGET")" = "$TARGET_BLOB"
+          test "$(git rev-parse "$FINAL_BASE_HEAD:$CONFIG")" = "$CONFIG_BLOB"
+          test "$(git rev-parse "$FINAL_BASE_HEAD:$TEST")" = "$TEST_BLOB"
+          test "$(git rev-parse "$FINAL_BASE_HEAD:$CERTIFIER")" = "$FINAL_CERTIFIER_BLOB"
+          test "$(git rev-parse "$FINAL_BASE_HEAD:$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$B02CH_TARGET)" = "$B02CH_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CH_CONFIG)" = "$B02CH_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02X)" = "$B02X_BLOB"
+          test "$(git rev-parse HEAD:$B02T)" = "$B02T_BLOB"
+          test "$(git rev-parse HEAD:$B02AA)" = "$B02AA_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          needle='--''execute'
+          ! grep -F -- "$needle" "$MATERIALIZER"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Re-certify static B02CI semantics without resume invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          grep -F 'resumeSurfaceInvocationAuthority !== true' "$TARGET"
+          test "$(grep -F -c 'resolution.resumeSurface(' "$TARGET")" = '1'
+          grep -F '"resumeDispatcherImplementationAuthority": true' "$CONFIG"
+          grep -F '"resumeSurfaceInvocationAuthority": false' "$CONFIG"
+          grep -F '"continuationStateStorageAuthority": false' "$CONFIG"
+          grep -F '"registryOperationInvocationAuthority": false' "$CONFIG"
+          grep -F '"resumeSurfaceInvoked": false' "$CONFIG"
+          grep -F '"newContinuationStateStored": false' "$CONFIG"
+          grep -F '"registryOperationInvoked": false' "$CONFIG"
+          ! grep -E 'registry\.(set|get|delete)\(' "$TARGET" "$TEST"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+
+      - name: Prove Matrix derivatives and governance are already canonical
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          git diff --exit-code -- "$MATRIX_SOURCE" "$MATRIX_MD" "$MATRIX_REPORT"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$B02CH_HEAD" HEAD
+          test -z "$(git status --porcelain)"
+
+      - name: Self-remove recovery TEMP and restore exact permanent tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin "$BRANCH"
+          test "$(git rev-parse "origin/$BRANCH")" = "$(git rev-parse HEAD)"
+          rm "$MATERIALIZER"
+          git add "$MATERIALIZER"
+          test "$(git diff --cached --name-only)" = "$MATERIALIZER"
+          git commit -m 'ci(com): remove TEMP B02CI certification recovery'
+          test "$(git rev-parse HEAD^{tree})" = "$FINAL_BASE_TREE"
+          git push origin "HEAD:$BRANCH"
