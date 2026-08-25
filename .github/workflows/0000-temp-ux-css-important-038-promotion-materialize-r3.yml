@@ -1,0 +1,87 @@
+name: UX-CSS-IMPORTANT-038 Promotion Materialize R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-038-promotion-materialize-r3
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-038-promotion-materialize-r3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize038:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PARENT_SHA: f0dff98b236eb189cc3864ae411f96f1ac6ba0bd
+      PARENT_TREE: c9a5daf5a77e5d247409bbb02d38ce83b55a2d20
+      TARGET_FILE: assets/css/components/cards/marketplace-responsive-card-stack.css
+      TARGET_BLOB: ec63ebffb471979068e88d49e8f934e13e9658b3
+      CANDIDATE_BLOB: 4609bbb257194173d418ae608f2eca20bb8cbeff
+      CANDIDATE_SHA256: 631eb87c6bf14f5fc5b618ea08ee03b917249fba912bba6dae78e947178a5375
+      CANDIDATE_BYTES: 39656
+      R2_BRANCH: diag/ux-css-important-038-marketplace-card-candidate-r2
+      R2_FILE: .diagnostics/ux-css-important-038-marketplace-card-candidate-r2.json
+      R2_BLOB: 6f99bcd5207a0414528a3642f2f9abc15b5d94d5
+      OUTPUT_BRANCH: diag/ux-css-important-038-promotion-materialize-r3
+      MATERIALIZED_FILE: .diagnostics/ux-css-important-038-certified-candidate.css
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Verify certified evidence and build exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch origin "refs/heads/$R2_BRANCH:refs/remotes/origin/$R2_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$R2_BRANCH:$R2_FILE")" = "$R2_BLOB"
+          git show "origin/$R2_BRANCH:$R2_FILE" > /tmp/r2.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r2.json','utf8'));
+          if(r.result!=='PASS') throw new Error('R2 not PASS');
+          if(r.parentSha!==process.env.PARENT_SHA || r.parentTree!==process.env.PARENT_TREE) throw new Error('parent mismatch');
+          if(r.targetFile!==process.env.TARGET_FILE || r.parentTargetBlob!==process.env.TARGET_BLOB) throw new Error('target mismatch');
+          if(r.candidate?.gitBlob!==process.env.CANDIDATE_BLOB) throw new Error('candidate blob mismatch');
+          if(r.candidate?.sha256!==process.env.CANDIDATE_SHA256) throw new Error('candidate sha mismatch');
+          if(r.candidate?.bytes!==Number(process.env.CANDIDATE_BYTES)) throw new Error('candidate bytes mismatch');
+          if(r.candidate?.importantBefore!==434 || r.candidate?.importantAfter!==0 || r.candidate?.markerOnly!==true) throw new Error('candidate contract mismatch');
+          if(r.staticGateReconciliation?.introducedRegressions!==0 || r.staticGateReconciliation?.criteriaRelaxed!==0) throw new Error('governance mismatch');
+          NODE
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET_FILE;
+          const p=fs.readFileSync(f,'utf8');
+          if((p.match(/!important\b/gi)||[]).length!==434) throw new Error('parent important mismatch');
+          const c=p.replace(/\s*!important\b/gi,'');
+          if((c.match(/!important\b/gi)||[]).length!==0) throw new Error('candidate important nonzero');
+          fs.writeFileSync('/tmp/candidate.css',c);
+          fs.writeFileSync(f,c);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha=crypto.createHash('sha256').update(c).digest('hex');
+          const bytes=Buffer.byteLength(c);
+          if(blob!==process.env.CANDIDATE_BLOB || sha!==process.env.CANDIDATE_SHA256 || bytes!==Number(process.env.CANDIDATE_BYTES)) throw new Error(`candidate identity ${blob} ${sha} ${bytes}`);
+          console.log(JSON.stringify({blob,sha,bytes}));
+          NODE
+
+      - name: Publish exact candidate bytes diagnostically
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$MATERIALIZED_FILE")"
+          cp /tmp/candidate.css "$MATERIALIZED_FILE"
+          test "$(git hash-object "$MATERIALIZED_FILE")" = "$CANDIDATE_BLOB"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$MATERIALIZED_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: materialize UX-CSS-IMPORTANT-038 certified candidate [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
