@@ -1,0 +1,1772 @@
+/*
+  Doke Marketplace Responsive Stack
+  Phase 4 CSS load reduction.
+  Consolidates adjacent responsive/marketplace pattern contracts without changing rule order.
+  Source files are preserved in this header for traceability.
+*/
+@import url("../components/cards/marketplace-responsive-card-stack.css?v=20260718-seller-identity-v1");
+
+
+/* === Source: assets/css/components/sections/section-header-canonical-contract.css === */
+/* Doke canonical section header contract
+   Source of truth: index.html marketplace/feed section headings.
+   Responsibility: title/action anatomy only. Pages may still own section placement and grid composition. */
+
+:root {
+  --doke-section-header-gap: clamp(0.625rem, 1.4vw, 1.125rem);
+  --doke-section-header-margin-after: clamp(0.75rem, 1.6vw, 1.125rem);
+  --doke-section-title-size: clamp(1.3rem, 2vw, 1.9rem);
+  --doke-section-title-line: 1.1;
+  --doke-section-title-weight: 800;
+  --doke-section-title-letter: 0;
+  --doke-section-action-height: 2.125rem;
+  --doke-section-action-padding-inline: 0.875rem;
+  --doke-section-action-radius: 999px;
+  --doke-section-action-size: 0.94rem;
+  --doke-section-action-line: 1;
+  --doke-section-eyebrow-size: 0.78rem;
+  --doke-section-eyebrow-line: 1.1;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --doke-section-title-size: 1rem;
+    --doke-section-title-line: 1.16;
+    --doke-section-title-letter: 0.11em;
+    --doke-section-action-height: 2rem;
+    --doke-section-action-padding-inline: 0.75rem;
+    --doke-section-action-size: 0.82rem;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --doke-section-header-gap: 0.625rem;
+    --doke-section-header-margin-after: 0.75rem;
+    --doke-section-title-size: 0.92rem;
+    --doke-section-action-height: 1.875rem;
+    --doke-section-action-padding-inline: 0.625rem;
+    --doke-section-action-size: 0.78rem;
+  }
+}
+
+:where(
+  .section-heading,
+  .home-section-header,
+  .detail-section__header,
+  .detail-section__header--row,
+  .results-related__header,
+  .communities-v2-section__heading,
+  .wallet-section-heading,
+  .profile-section-heading
+) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--doke-section-header-gap);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--doke-section-action-height);
+  margin: 0 0 var(--doke-section-header-margin-after);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:where(
+  .section-heading,
+  .home-section-header,
+  .detail-section__header,
+  .detail-section__header--row,
+  .results-related__header,
+  .communities-v2-section__heading,
+  .wallet-section-heading,
+  .profile-section-heading
+) > :first-child {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: min(100%, 42rem);
+}
+
+:where(
+  .section-heading__title,
+  .home-section-title,
+  .detail-section__header h2,
+  .detail-section__header h3,
+  .results-related__header h2,
+  .results-related__header h3,
+  .communities-v2-section__heading h2,
+  .wallet-section-heading h1,
+  .wallet-section-heading h2,
+  .profile-section-heading h2,
+  .doke-reviews-title
+) {
+  margin: 0;
+  max-width: none;
+  color: var(--doke-text-primary, var(--color-heading, #18314f));
+  font-size: var(--doke-section-title-size);
+  line-height: var(--doke-section-title-line);
+  font-weight: var(--doke-section-title-weight);
+  letter-spacing: var(--doke-section-title-letter);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+:where(
+  .section-heading__eyebrow,
+  .detail-eyebrow,
+  .results-panel__eyebrow,
+  .doke-section-header__eyebrow
+) {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0;
+  color: var(--doke-text-muted, #6d8097);
+  font-size: var(--doke-section-eyebrow-size);
+  line-height: var(--doke-section-eyebrow-line);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:where(
+  .section-heading__link,
+  .detail-section__header > a,
+  .detail-section__header--row > a,
+  .results-related__header > a,
+  .communities-v2-section__heading > a,
+  .wallet-section-heading > a,
+  .profile-section-heading > a
+) {
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+:where(
+  .section-heading__link,
+  .detail-section__header > a,
+  .detail-section__header--row > a,
+  .results-related__header > a,
+  .communities-v2-section__heading > a,
+  .wallet-section-heading > a,
+  .profile-section-heading > a
+):is(:hover, :focus-visible) {
+  transform: translateY(-1px);
+}
+
+/* Review panels keep their richer summary layout, but the heading itself follows the same title rhythm. */
+:where(.doke-reviews-panel__top) {
+  gap: var(--doke-section-header-gap);
+}
+
+:where(.doke-reviews-summary) {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  :where(
+    .section-heading,
+    .home-section-header,
+    .detail-section__header,
+    .detail-section__header--row,
+    .results-related__header,
+    .communities-v2-section__heading,
+    .wallet-section-heading,
+    .profile-section-heading
+  ) {
+    align-items: center;
+  }
+}
+
+@media (max-width: 560px) {
+  :where(
+    .section-heading,
+    .home-section-header,
+    .detail-section__header,
+    .detail-section__header--row,
+    .results-related__header,
+    .communities-v2-section__heading,
+    .wallet-section-heading,
+    .profile-section-heading
+  ) {
+    gap: var(--doke-section-header-gap);
+  }
+
+  :where(
+    .section-heading__eyebrow,
+    .detail-eyebrow,
+    .results-panel__eyebrow,
+    .doke-section-header__eyebrow
+  ) {
+    display: none;
+  }
+}
+
+/* High-specificity parity lock: loaded as the last contract layer to neutralize legacy page rules. */
+html body :is(
+  .section-heading.section-heading,
+  .home-section-header.home-section-header,
+  .detail-section__header.detail-section__header,
+  .detail-section__header--row.detail-section__header--row,
+  .results-related__header.results-related__header,
+  .communities-v2-section__heading.communities-v2-section__heading,
+  .wallet-section-heading.wallet-section-heading,
+  .profile-section-heading.profile-section-heading
+) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--doke-section-header-gap);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--doke-section-action-height);
+  margin: 0 0 var(--doke-section-header-margin-after);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html body :is(
+  .section-heading.section-heading,
+  .home-section-header.home-section-header,
+  .detail-section__header.detail-section__header,
+  .detail-section__header--row.detail-section__header--row,
+  .results-related__header.results-related__header,
+  .communities-v2-section__heading.communities-v2-section__heading,
+  .wallet-section-heading.wallet-section-heading,
+  .profile-section-heading.profile-section-heading
+) :is(
+  .section-heading__title,
+  .home-section-title,
+  h1,
+  h2,
+  h3
+) {
+  margin: 0;
+  max-width: none;
+  font-size: var(--doke-section-title-size);
+  line-height: var(--doke-section-title-line);
+  font-weight: var(--doke-section-title-weight);
+  letter-spacing: var(--doke-section-title-letter);
+  text-transform: uppercase;
+}
+
+html body :is(
+  .section-heading.section-heading,
+  .home-section-header.home-section-header,
+  .detail-section__header.detail-section__header,
+  .detail-section__header--row.detail-section__header--row,
+  .results-related__header.results-related__header,
+  .communities-v2-section__heading.communities-v2-section__heading,
+  .wallet-section-heading.wallet-section-heading,
+  .profile-section-heading.profile-section-heading
+) > :is(a, button, .section-heading__link) {
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+html body.home-index-shell section.more-services > .section-heading.home-section-header.home-section-header--stacked,
+html body.home-index-shell section.more-services > .section-heading.home-section-header,
+html body[data-page="detalhe-anuncio"] :is(.detail-related-workers, .detail-related-publications, .detail-section--similar-ads) > .detail-section__header.detail-section__header,
+html body[data-page="comunidade"] .communities-v2-section__heading.communities-v2-section__heading {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--doke-section-header-gap);
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--doke-section-action-height);
+  margin: 0 0 var(--doke-section-header-margin-after);
+  padding: 0;
+}
+
+/* 2026-05-25 — objective compact section-heading scale.
+   Reason: section titles were becoming visually dominant on tablet/desktop.
+   Scope: shared section/header anatomy only; no color/copy/hierarchy changes. */
+:root {
+  --doke-section-title-size: clamp(1.02rem, 1.28vw, 1.38rem);
+  --doke-section-title-line: 1.08;
+  --doke-section-eyebrow-size: 0.72rem;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --doke-section-title-size: 0.95rem;
+    --doke-section-title-line: 1.12;
+    --doke-section-eyebrow-size: 0.68rem;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --doke-section-title-size: 0.88rem;
+    --doke-section-title-line: 1.12;
+  }
+}
+
+html body :where(
+  .section-heading__title,
+  .home-section-title,
+  .detail-section__header h2,
+  .detail-section__header h3,
+  .results-related__header h2,
+  .results-related__header h3,
+  .communities-v2-section__heading h2,
+  .wallet-section-heading h1,
+  .wallet-section-heading h2,
+  .profile-section-heading h2,
+  .doke-reviews-title
+) {
+  font-size: var(--doke-section-title-size);
+  line-height: var(--doke-section-title-line);
+}
+
+html body :where(.section-heading__eyebrow, .detail-eyebrow, .results-panel__eyebrow, .doke-section-header__eyebrow) {
+  font-size: var(--doke-section-eyebrow-size);
+}
+
+/* 2026-05-25 — compact area-title parity lock.
+   Keep every section title on the same small scale as "Publicações em destaque",
+   even when older page/mobile contracts try to promote titles to hero size. */
+:root {
+  --doke-section-title-size: 0.86rem;
+  --doke-section-title-line: 1.14;
+  --doke-section-title-weight: 850;
+  --doke-section-title-letter: 0;
+  --doke-section-title-color: var(--doke-text-muted, #72839a);
+}
+
+@media (min-width: 701px) {
+  :root {
+    --doke-section-title-size: 0.82rem;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --doke-section-title-size: 0.78rem;
+    --doke-section-title-line: 1.16;
+  }
+}
+
+html body :is(
+  .section-heading.section-heading,
+  .home-section-header.home-section-header,
+  .detail-section__header.detail-section__header,
+  .detail-section__header--row.detail-section__header--row,
+  .results-related__header.results-related__header,
+  .communities-v2-section__heading.communities-v2-section__heading,
+  .wallet-section-heading.wallet-section-heading,
+  .profile-section-heading.profile-section-heading,
+  .doke-section-header.doke-section-header
+) :is(
+  .section-heading__title,
+  .home-section-title,
+  .doke-section-header__title,
+  h1,
+  h2,
+  h3
+),
+html body :is(
+  .section-heading__title.home-section-title,
+  .home-section-title,
+  .detail-section__header h2,
+  .detail-section__header h3,
+  .results-related__header h2,
+  .results-related__header h3,
+  .communities-v2-section__heading h2,
+  .wallet-section-heading h1,
+  .wallet-section-heading h2,
+  .profile-section-heading h2,
+  .doke-reviews-title,
+  .doke-section-header__title
+) {
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  color: var(--doke-section-title-color);
+  font-size: var(--doke-section-title-size);
+  line-height: var(--doke-section-title-line);
+  font-weight: var(--doke-section-title-weight);
+  letter-spacing: var(--doke-section-title-letter);
+  text-transform: uppercase;
+  text-align: left;
+}
+
+html body.home-index-shell section.more-services > .section-heading.home-section-header > :first-child,
+html body.home-index-shell section.more-services > .section-heading.home-section-header.home-section-header--stacked > :first-child {
+  max-width: 100%;
+  margin-left: 0;
+}
+
+html body.home-index-shell section.more-services #more-services-title {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* === Source: assets/css/components/layout/overflow-text-clipping-contract.css === */
+/* Doke overflow/text clipping contract
+   Objective layer only: prevents unintended horizontal leakage, clipped labels,
+   collapsed cards and badges/actions cut by card bounds. It does not redefine
+   subjective visual style or card anatomy. */
+
+body[data-page] :is(
+  .page,
+  .page__content,
+  .page__content-inner,
+  .shell-home__workspace,
+  .app-shell-page__workspace,
+  .doke-page-shell,
+  .doke-page-stack,
+  .ad-detail-shell,
+  .profile-shell-content,
+  .search-results-workspace,
+  .orders-shell-content,
+  .messages-shell-content,
+  .notifications-page-shell,
+  .communities-page-shell,
+  .home-search-hero,
+  .doke-search-panel__form,
+  .featured-services,
+  .home-recommendations,
+  .short-videos,
+  .home-publications,
+  .more-services,
+  .detail-section,
+  .profile-section,
+  .orders-list,
+  .notifications-group,
+  .communities-v2-section,
+  .doke-grid,
+  .service-grid,
+  .publication-grid,
+  .results-grid,
+  .detail-related-grid,
+  [class*="rail"],
+  [class*="track"]
+) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body[data-page] :is(
+  .app-header,
+  .app-header__inner,
+  .home-side-meta,
+  .home-side-meta__tablet-menu,
+  .home-side-meta__search,
+  .home-side-meta__location,
+  .home-side-meta__profile,
+  .home-side-meta__profile-wrap,
+  .home-side-meta__identity,
+  .home-side-meta__identity-text,
+  .home-side-meta__profile-copy
+) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body[data-page] :is(
+  .doke-ad-card,
+  .service-card,
+  .publication-card,
+  .video-card,
+  .doke-worker-card,
+  .worker-card,
+  .doke-review-card,
+  .review-card
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+body[data-page] :is(
+  .doke-scroll-rail,
+  .content-rail,
+  .home-media-rail,
+  .cards-rail,
+  .rail,
+  [data-rail-track],
+  .short-videos__track,
+  .detail-related-media-rail,
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .mini-tabs,
+  .more-services__tabs-track
+) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+body[data-page] :is(
+  .doke-scroll-rail,
+  .content-rail,
+  .home-media-rail,
+  .cards-rail,
+  .rail,
+  [data-rail-track],
+  .short-videos__track,
+  .detail-related-media-rail,
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .mini-tabs,
+  .more-services__tabs-track
+)::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  body[data-page] :is(.doke-search-panel__form, .doke-search-pill) {
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Stage 06C: compact/similar service grids keep their page-level axis.
+     This shared responsive stack must not force vertical sections into horizontal rails. */
+}
+
+/* === Source: assets/css/components/layout/professional-responsive-layout.css === */
+/* Professional Responsive Layout Contract
+   Objective layer: aligns shared marketplace anatomy, prevents dormant overlays from
+   participating in static layout, and contains horizontal rails without changing copy.
+   Owner: components/layout + components/cards. Load last. */
+
+html,
+body {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  overflow-x: clip;
+  margin: 0;
+}
+
+* {
+  min-inline-size: 0;
+}
+
+[hidden],
+[data-before-after-preview][hidden],
+[data-worker-preview][hidden],
+.before-after-preview[hidden],
+.worker-preview[hidden] {
+  display: none;
+}
+
+.app-shell,
+.page,
+.page__content,
+.page__content-inner,
+.shell-home__workspace,
+.ad-detail-shell,
+.profile-shell-content,
+.orders-shell-content,
+.messages-shell,
+.notifications-shell,
+.community-shell,
+.wallet-shell,
+.results-shell {
+  max-inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.content-rail,
+.doke-scroll-rail,
+.home-media-rail,
+.home-service-rail,
+.service-rail,
+.publication-rail,
+.worker-rail,
+.reviews-rail,
+[data-rail],
+[data-rail-track],
+[data-list],
+#featured-services-track,
+#home-publications-track,
+[data-more-services-grid] {
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  box-sizing: border-box;
+}
+
+.content-rail::-webkit-scrollbar,
+.doke-scroll-rail::-webkit-scrollbar,
+[data-rail]::-webkit-scrollbar,
+[data-rail-track]::-webkit-scrollbar,
+[data-list]::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dormant media viewers are overlays, not card-grid content. */
+:is(.before-after-preview, .worker-preview):not(.is-open):not(.is-active):not([data-state="open"]):not([aria-hidden="false"]) {
+  display: none;
+}
+
+/* Shared professional card rhythm: same radius, shadow, media containment and title/action rhythm. */
+
+/* Mobile/tablet: cards occupy the canonical rail width; no half-card fragments. */
+@media (max-width: 760px) {
+  .ad-detail-shell :is(.related-services-grid, .similar-services-grid, .publication-grid, .workers-grid, .service-grid),
+  .profile-shell-content :is(.publication-grid, .workers-grid, .service-grid),
+  .results-shell :is(.service-grid, .results-grid),
+  .orders-shell-content :is(.service-grid, .orders-grid),
+  .notifications-shell :is(.service-grid, .notifications-grid),
+  .community-shell :is(.publication-grid, .service-grid) {
+    display: grid;
+    grid-template-columns: 100%;
+    grid-auto-columns: 100%;
+    gap: var(--doke-card-grid-gap, 16px);
+    inline-size: 100%;
+  }
+
+  :is(.doke-ad-card, .publication-card, .service-card, .doke-review-card) {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    flex: 0 0 100%;
+  }
+
+  /* Mobile doke-ad-card anatomy is owned by components/cards/ad-card.css.
+     Do not assign a non-home min-block-size here: during routed/hydrated states
+     body classes change before all page CSS settles, and this old catch-all was
+     making the same card grow after first paint. */
+
+  /* Publication-card block-size is owned by components/cards/publication-card.css.
+     Do not force a 330px mobile/tablet minimum here; it creates the empty white
+     area seen in narrow tablet rails. */
+
+  /* Publication media sizing is owned by the component variables. */
+}
+
+/* Desktop/tablet landscape: use professional grids instead of oversized carousel cards. */
+@media (min-width: 761px) {
+  .ad-detail-shell :is(.related-services-grid, .similar-services-grid, .service-grid),
+  .results-shell :is(.service-grid, .results-grid) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--doke-card-grid-gap, 18px);
+    inline-size: 100%;
+    overflow: visible;
+  }
+
+  .ad-detail-shell :is(.publication-grid, .publications-grid),
+  .profile-shell-content :is(.publication-grid, .publications-grid) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--doke-card-grid-gap, 18px);
+    inline-size: 100%;
+    overflow: visible;
+  }
+
+  :is(.doke-ad-card, .publication-card, .service-card) {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    flex: 0 1 auto;
+  }
+
+  .doke-ad-card {
+    min-block-size: 545px;
+  }
+
+  /* Publication card block-size is owned by components/cards/publication-card.css.
+     Keep contextual grid/rail rules here, but do not force card anatomy globally. */
+
+  /* Publication media height is intentionally not set here.
+     The shared component contract owns media proportion across index/profile/detail. */
+
+  .home-workers-grid,
+  .workers-grid,
+  [data-worker-grid] {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--doke-card-grid-gap, 18px);
+    inline-size: 100%;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .ad-detail-shell :is(.related-services-grid, .similar-services-grid, .service-grid),
+  .results-shell :is(.service-grid, .results-grid),
+  .ad-detail-shell :is(.publication-grid, .publications-grid),
+  .profile-shell-content :is(.publication-grid, .publications-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Header polish: consistent pill finish while preserving the measured rail. */
+@media (min-width: 600px) {
+  body.has-global-header .app-header :is(.home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile) {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-color: rgba(15, 45, 75, 0.08);
+  }
+
+  body.has-global-header .app-header .home-side-meta__avatar,
+  body.has-global-header .app-header .home-side-meta__profile :is(img, .avatar, .doke-avatar) {
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+}
+
+/* === Source: assets/css/components/layout/responsive-priority-contract.css === */
+/* Doke responsive priority contract
+ * Objective fixes only, ordered by audit priority.
+ * P1: shared header geometry, shared rails/containers and horizontal overflow.
+ */
+
+html,
+body,
+.page,
+.app-shell,
+.page__content {
+  max-inline-size: 100%;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body,
+  .page,
+  .app-shell,
+  .page__content {
+    overflow-x: hidden;
+  }
+}
+
+body[data-page] :is(.page, .page__content, .app-shell, .app-header, .app-header__inner) {
+  box-sizing: border-box;
+}
+
+/* P1 — Header baseline: 608x926 index measurement. */
+@media (min-width: 600px) and (max-width: 760px) {
+  html body > .app-shell > .page > .app-header.home-side-meta,
+  html body.has-global-header > .app-shell > .page > .app-header.home-side-meta,
+  html body[data-page] > .app-shell > .page > .app-header.home-side-meta,
+  html body[data-page] .page > .app-header.home-side-meta {
+    display: block;
+    position: relative;
+    inset: auto;
+    inline-size: 100vw;
+    width: 100vw;
+    min-inline-size: 100vw;
+    max-inline-size: 100vw;
+    block-size: 86px;
+    height: 86px;
+    min-block-size: 86px;
+    max-block-size: 86px;
+    min-height: 86px;
+    max-height: 86px;
+    margin: 0;
+    padding: 20px 0 18px;
+    overflow: visible;
+    transform: none;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  html body > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body.has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body[data-page] > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body[data-page] .page > .app-header.home-side-meta > .app-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    inline-size: calc(100vw - 36px);
+    width: calc(100vw - 36px);
+    min-inline-size: calc(100vw - 36px);
+    max-inline-size: 572px;
+    block-size: 48px;
+    height: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    margin-inline: auto;
+    padding: 0;
+    gap: 10px;
+    transform: none;
+  }
+
+  html body .app-header.home-side-meta :is(.app-header__group, .home-side-meta__group) {
+    display: flex;
+    align-items: center;
+    block-size: 48px;
+    height: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    transform: none;
+  }
+
+  html body .app-header.home-side-meta :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    justify-content: flex-start;
+  }
+
+  html body .app-header.home-side-meta :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    flex: 0 0 auto;
+    min-inline-size: 0;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  html body .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .doke-icon-btn) {
+    inline-size: 48px;
+    width: 48px;
+    min-inline-size: 48px;
+    max-inline-size: 48px;
+    block-size: 48px;
+    height: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    flex: 0 0 48px;
+    margin: 0;
+    padding: 0;
+    border-radius: var(--radius-base);
+    box-sizing: border-box;
+    transform: none;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__location {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 170.23px;
+    width: 170.23px;
+    min-inline-size: 170.23px;
+    max-inline-size: 170.23px;
+    block-size: 48px;
+    height: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    flex: 0 0 170.23px;
+    margin: 0;
+    padding: 0 14px;
+    border-radius: var(--radius-md);
+    box-sizing: border-box;
+    transform: none;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__profile-wrap,
+  html body .app-header.home-side-meta .home-side-meta__profile {
+    block-size: 48px;
+    height: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    margin: 0;
+    transform: none;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__profile {
+    inline-size: 48px;
+    width: 48px;
+    min-inline-size: 48px;
+    max-inline-size: 48px;
+    flex: 0 0 48px;
+    padding: 6px;
+    border-radius: var(--radius-base);
+    box-sizing: border-box;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__avatar,
+  html body .app-header.home-side-meta .home-side-meta__profile img,
+  html body .app-header.home-side-meta .home-side-meta__profile .doke-avatar,
+  html body .app-header.home-side-meta .home-side-meta__profile .avatar {
+    inline-size: 34px;
+    width: 34px;
+    min-inline-size: 34px;
+    max-inline-size: 34px;
+    block-size: 34px;
+    height: 34px;
+    min-block-size: 34px;
+    max-block-size: 34px;
+    border-radius: var(--radius-pill);
+  }
+
+  html body .app-header.home-side-meta .page-header-context.messages-page-actions {
+    display: none;
+  }
+}
+
+/* P1 — Header baseline: 1280x800 index measurement. */
+@media (min-width: 1180px) {
+  html body:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta,
+  html body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta,
+  html body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta,
+  html body[data-page]:not(.home-index-shell) .page > .app-header.home-side-meta {
+    position: relative;
+    inset: auto;
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    max-inline-size: none;
+    margin-left: auto;
+    margin-right: 0;
+    transform: none;
+  }
+
+  html body:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body[data-page]:not(.home-index-shell) .page > .app-header.home-side-meta > .app-header__inner {
+    inline-size: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    min-inline-size: 0;
+    max-inline-size: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    block-size: 48px;
+    height: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    margin-inline: auto;
+    padding: 0;
+    gap: 12px;
+    transform: none;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__profile {
+    inline-size: 133.27px;
+    width: 133.27px;
+    min-inline-size: 133.27px;
+    max-inline-size: 133.27px;
+    block-size: 48px;
+    height: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    flex: 0 0 133.27px;
+    padding: 6px 14px 6px 8px;
+    border-radius: var(--radius-md);
+    box-sizing: border-box;
+    transform: none;
+  }
+
+  html body .app-header.home-side-meta .page-header-context.messages-page-actions {
+    display: none;
+  }
+}
+
+/* P1 v1.1 — high-specificity neutralization for legacy page header CSS. */
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page] .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta,
+  html body[data-page] .app-shell > .page > .doke-tablet-shell-header.app-header.home-side-meta.app-header.home-side-meta {
+    left: calc((100% - 100vw) / 2);
+    right: auto;
+    width: 100vw;
+    inline-size: 100vw;
+    min-width: 100vw;
+    max-width: 100vw;
+    height: 86px;
+    min-height: 86px;
+    max-height: 86px;
+    block-size: 86px;
+    min-block-size: 86px;
+    max-block-size: 86px;
+    padding: 20px 0 18px;
+    margin: 0;
+  }
+
+  html body[data-page] .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body[data-page] .app-shell > .page > .doke-tablet-shell-header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner {
+    width: calc(100vw - 36px);
+    inline-size: calc(100vw - 36px);
+    min-width: calc(100vw - 36px);
+    max-width: 572px;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    block-size: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    margin: 0 auto;
+    padding: 0;
+    gap: 10px;
+  }
+
+  html body[data-page] .app-header.home-side-meta .home-side-meta__location.home-side-meta__location {
+    width: 170.23px;
+    inline-size: 170.23px;
+    min-width: 170.23px;
+    max-width: 170.23px;
+    min-inline-size: 170.23px;
+    max-inline-size: 170.23px;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    flex: 0 0 170.23px;
+    padding: 0 14px;
+  }
+
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu.home-side-meta__tablet-menu, .home-side-meta__search.home-side-meta__search, .home-side-meta__alert.home-side-meta__alert, .detail-standard-topbar__back.detail-standard-topbar__back) {
+    width: 48px;
+    inline-size: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    flex: 0 0 48px;
+    padding: 0;
+  }
+
+  html body[data-page] .app-header.home-side-meta .home-side-meta__avatar.home-side-meta__avatar,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile .home-side-meta__avatar.home-side-meta__avatar,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile img.home-side-meta__avatar,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile .doke-avatar.doke-avatar {
+    border-radius: var(--radius-pill);
+    width: 34px;
+    height: 34px;
+    inline-size: 34px;
+    block-size: 34px;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page]:not(.home-index-shell) .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta,
+  html body[data-page]:not(.home-index-shell) .app-shell > .page > .doke-tablet-shell-header.app-header.home-side-meta.app-header.home-side-meta {
+    left: 0;
+    width: 100%;
+    inline-size: 100%;
+    min-width: 0;
+    max-width: none;
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  html body[data-page]:not(.home-index-shell) .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body[data-page]:not(.home-index-shell) .app-shell > .page > .doke-tablet-shell-header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner {
+    width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    inline-size: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    min-width: 0;
+    max-width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    block-size: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    margin: 0 auto;
+    padding: 0;
+    gap: 12px;
+  }
+
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile.home-side-meta__profile {
+    width: 133.27px;
+    inline-size: 133.27px;
+    min-width: 133.27px;
+    max-width: 133.27px;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    flex: 0 0 133.27px;
+    padding: 6px 14px 6px 8px;
+  }
+}
+
+/* P1 v1.2 — remove residual positional/cardinal overrides inside header controls. */
+@media (min-width: 600px) {
+  html body[data-page] .app-header.home-side-meta :is(
+    .home-side-meta__tablet-menu,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .detail-standard-topbar__back,
+    .home-side-meta__location,
+    .home-side-meta__profile,
+    .home-side-meta__profile-wrap,
+    .home-side-meta__avatar
+  ) {
+    position: static;
+    inset: auto;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    translate: none;
+    transform: none;
+    align-self: center;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="perfil"] .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta {
+    left: 0;
+  }
+
+  html body[data-page="perfil"] .app-header.home-side-meta .home-side-meta__location.home-side-meta__location,
+  html body[data-page="perfil"] .app-header.home-side-meta button.home-side-meta__location.home-side-meta__location {
+    display: inline-flex;
+    width: 170.23px;
+    inline-size: 170.23px;
+    min-width: 170.23px;
+    max-width: 170.23px;
+    min-inline-size: 170.23px;
+    max-inline-size: 170.23px;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    flex: 0 0 170.23px;
+    padding: 0 14px;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="perfil"] .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body[data-page="perfil"] .app-header.home-side-meta > .app-header__inner.app-header__inner {
+    width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    inline-size: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    min-width: 0;
+    max-width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    margin: 0 auto;
+  }
+
+  html body[data-page="mensagens"] .app-header.home-side-meta :is(.home-side-meta__profile-wrap, .home-side-meta__profile) {
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    align-self: center;
+  }
+
+  html body[data-page="mensagens"] .app-header.home-side-meta .home-side-meta__avatar.home-side-meta__avatar,
+  html body[data-page="mensagens"] .app-header.home-side-meta .home-side-meta__profile img.home-side-meta__avatar {
+    width: 36px;
+    height: 36px;
+    inline-size: 36px;
+    block-size: 36px;
+    min-width: 36px;
+    min-height: 34px;
+    max-width: 36px;
+    max-height: 36px;
+  }
+}
+
+/* P1 v1.3 — group-level high specificity for pages with tablet/desktop shell overrides. */
+@media (min-width: 600px) {
+  html body[data-page] .app-header.home-side-meta .app-header__group.app-header__group,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__group.home-side-meta__group,
+  html body[data-page] .app-header.home-side-meta .app-header__group.home-side-meta__group.app-header__group.home-side-meta__group {
+    position: static;
+    inset: auto;
+    display: flex;
+    align-items: center;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    block-size: 48px;
+    min-block-size: 48px;
+    max-block-size: 48px;
+    margin: 0;
+    padding: 0;
+    gap: 10px;
+    transform: none;
+  }
+
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile, .home-side-meta__profile-wrap).home-side-meta__tablet-menu,
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile, .home-side-meta__profile-wrap).home-side-meta__search,
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile, .home-side-meta__profile-wrap).home-side-meta__alert,
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile, .home-side-meta__profile-wrap).detail-standard-topbar__back,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__location.home-side-meta__location,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile.home-side-meta__profile,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile-wrap.home-side-meta__profile-wrap {
+    margin: 0;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page] .app-header.home-side-meta .app-header__group.app-header__group,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__group.home-side-meta__group {
+    gap: 12px;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="perfil"] .app-header.app-header--profile.home-side-meta .home-side-meta__location.home-side-meta__location.home-side-meta__location {
+    width: 170.23px;
+    inline-size: 170.23px;
+    min-width: 170.23px;
+    max-width: 170.23px;
+    min-inline-size: 170.23px;
+    max-inline-size: 170.23px;
+    flex-basis: 170.23px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="perfil"] .app-header.app-header--profile.home-side-meta .app-header__inner.app-header__inner.app-header__inner {
+    width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    inline-size: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    min-width: 0;
+    max-width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+  }
+}
+
+/* P1 v1.4 — exact overrides for profile professional legacy rail/header CSS. */
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .app-header--profile.home-side-meta .home-side-meta__location.home-side-meta__location,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .app-header--profile.home-side-meta button.home-side-meta__location.home-side-meta__location {
+    flex: 0 0 170.23px;
+    width: 170.23px;
+    min-width: 170.23px;
+    max-width: 170.23px;
+    inline-size: 170.23px;
+    min-inline-size: 170.23px;
+    max-inline-size: 170.23px;
+    padding: 0 14px;
+    justify-content: center;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .app-header--profile.home-side-meta .home-side-meta__location::before {
+    content: none;
+    display: none;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .app-header--profile.home-side-meta :is(.home-side-meta__location-dot, .home-side-meta__location-text, .home-side-meta__caret) {
+    display: block;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="perfil"].profile-page-shell.doke-app-shell-page.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > .app-header.home-side-meta > .app-header__inner.app-header__inner:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC) {
+    width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    max-width: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    inline-size: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    max-inline-size: var(--doke-internal-shared-rail-v19, var(--doke-header-content-rail-v21, var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-page-rail, var(--doke-shared-page-width))))));
+    min-width: 0;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* P2 — Shared card dimensions aligned to index.html runtime baseline.
+   Scope is restricted to detalhe-anuncio equivalents that were measured divergent. */
+body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar,
+body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card,
+body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card.doke-worker-card {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar {
+    width: 572px;
+    inline-size: 572px;
+    min-width: 572px;
+    max-width: 572px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(-n+3) {
+    width: 481.39px;
+    inline-size: 481.39px;
+    min-width: 481.39px;
+    max-width: 481.39px;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+    width: 345.39px;
+    inline-size: 345.39px;
+    min-width: 345.39px;
+    max-width: 345.39px;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card--before-after {
+    height: 347.66px;
+    block-size: 347.66px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1179px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(-n+3) {
+    width: 682.55px;
+    inline-size: 682.55px;
+    min-width: 682.55px;
+    max-width: 682.55px;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+    width: 546.55px;
+    inline-size: 546.55px;
+    min-width: 546.55px;
+    max-width: 546.55px;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card--photo {
+    height: 358.11px;
+    block-size: 358.11px;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card--video {
+    height: 352.03px;
+    block-size: 352.03px;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card--before-after {
+    height: 356.84px;
+    block-size: 356.84px;
+  }
+}
+
+@media (min-width: 1180px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar {
+    width: 273.33px;
+    inline-size: 273.33px;
+    min-width: 273.33px;
+    max-width: 273.33px;
+  }
+}
+
+/* P2 v1.1 — high-specificity detalhe-anuncio card parity. */
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar,
+body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card,
+body[data-page="detalhe-anuncio"] [data-related-workers-list] > article.video-card.doke-worker-card.doke-media-card {
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card {
+    width: 345.39px; inline-size: 345.39px; min-width: 345.39px; max-width: 345.39px;
+  }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--before-after.doke-card {
+    height: 347.66px; block-size: 347.66px; min-height: 347.66px; max-height: 347.66px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1179px) {
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card {
+    width: 546.55px; inline-size: 546.55px; min-width: 546.55px; max-width: 546.55px;
+  }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--photo.doke-card { height: 358.11px; block-size: 358.11px; min-height: 358.11px; max-height: 358.11px; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--video.doke-card { height: 352.03px; block-size: 352.03px; min-height: 352.03px; max-height: 352.03px; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--before-after.doke-card { height: 356.84px; block-size: 356.84px; min-height: 356.84px; max-height: 356.84px; }
+}
+
+/* === Source: assets/css/components/layout/responsive-priority-cards.css === */
+/* Doke responsive priority cards contract — objective P2 parity with index.html. */
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar,
+body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card,
+body[data-page="detalhe-anuncio"] [data-related-workers-list] > article.video-card.doke-worker-card.doke-media-card {
+  box-sizing: border-box;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar { width:572px; min-width:572px; max-width:572px; }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar:nth-of-type(-n+3) { width:481.39px; min-width:481.39px; max-width:481.39px; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card { width:345.39px; min-width:345.39px; max-width:345.39px; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--before-after.doke-card { height:347.66px; min-height:347.66px; max-height:347.66px; }
+}
+
+@media (min-width: 901px) and (max-width: 1179px) {
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar:nth-of-type(-n+3) { width:682.55px; min-width:682.55px; max-width:682.55px; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card { width:546.55px; min-width:546.55px; max-width:546.55px; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--photo.doke-card { height:358.11px; min-height:358.11px; max-height:358.11px; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--video.doke-card { height:352.03px; min-height:352.03px; max-height:352.03px; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--before-after.doke-card { height:356.84px; min-height:356.84px; max-height:356.84px; }
+}
+
+@media (min-width: 1180px) {
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar { width:273.33px; min-width:273.33px; max-width:273.33px; }
+}
+
+/* P2 validation lock: same specificity tier as legacy/detail contracts, objective bbox parity with index runtime baseline. */
+
+/* === Source: assets/css/components/layout/index-compact-card-contract.css === */
+/* Doke index compact card contract
+   Canonical compact anatomy for marketplace cards/section headings derived from index.html.
+   Purpose: keep equivalent cards/headers from becoming oversized on tablet rails. */
+
+:root {
+  --doke-index-section-title-tablet: 0.8125rem;
+  --doke-index-section-title-mobile: 0.78rem;
+  --doke-index-ad-card-tablet-height: 266px;
+  --doke-index-ad-media-tablet-height: 96px;
+  --doke-index-ad-body-tablet-height: 170px;
+  --doke-index-ad-card-tablet-radius: 24px;
+  --doke-index-ad-title-size: 0.96rem;
+  --doke-index-ad-title-line: 1;
+  --doke-index-publication-title-size: 0.98rem;
+  --doke-index-publication-title-line: 1.14;
+}
+
+@media (max-width: 900px) {
+  html body :where(
+    .section-heading__title,
+    .home-section-title,
+    .detail-section__header h2,
+    .detail-section__header h3,
+    .results-related__header h2,
+    .results-related__header h3,
+    .communities-v2-section__heading h2,
+    .wallet-section-heading h1,
+    .wallet-section-heading h2,
+    .profile-section-heading h2,
+    .doke-reviews-title
+  ) {
+    font-size: var(--doke-index-section-title-tablet);
+    line-height: 1.15;
+    letter-spacing: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  html body :where(
+    .section-heading__title,
+    .home-section-title,
+    .detail-section__header h2,
+    .detail-section__header h3,
+    .results-related__header h2,
+    .results-related__header h3,
+    .communities-v2-section__heading h2,
+    .wallet-section-heading h1,
+    .wallet-section-heading h2,
+    .profile-section-heading h2,
+    .doke-reviews-title
+  ) {
+    font-size: var(--doke-index-section-title-mobile);
+  }
+}
+
+html.home-index-root body.home-index-shell :is(
+  #featured-services-title,
+  #short-videos-title,
+  #home-publications-title,
+  #more-services-title,
+  #professional-showcase-title,
+  #featured-pros-title
+) {
+  color: var(--doke-section-title-color, #72839a);
+  font-size: var(--doke-index-section-title-tablet);
+  line-height: 1.15;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+html.home-index-root body.home-index-shell :is(
+  section.featured-services,
+  section.short-videos,
+  section.home-publications,
+  section.more-services,
+  section.professional-showcase,
+  section.featured-pros
+) > .section-heading.home-section-header > :first-child {
+  max-width: none;
+  min-width: 0;
+}
+
+html.home-index-root body.home-index-shell :is(#professional-showcase-title, #featured-pros-title) {
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  html.home-index-root body.home-index-shell :is(
+    #featured-services-title,
+    #short-videos-title,
+    #home-publications-title,
+    #more-services-title,
+    #professional-showcase-title,
+    #featured-pros-title
+  ) {
+    font-size: var(--doke-index-section-title-mobile);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+
+  html body[data-page="detalhe-anuncio"] .detail-section--similar-ads .detail-related-grid--ads {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--doke-card-grid-gap, 18px);
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detail-section--similar-ads .detail-related-grid--ads > .doke-ad-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+}
+
+/* Detail page must not keep legacy oversized anatomy for shared ad cards. */
+
+@media (max-width: 900px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section__header.detail-section__header--row h2,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section__header h2,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section__header h3,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .doke-reviews-title {
+    font-size: var(--doke-index-section-title-tablet);
+    line-height: 1.15;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* 2026-05-25 — detalhe-anuncio compact two-column similar ads.
+   Reason: the detail rail has a narrower content area than index; three columns make cards visually different and squeezed.
+   Page still owns rail composition; card internals keep shared compact anatomy. */
+@media (min-width: 600px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    gap: var(--doke-card-grid-gap, 18px);
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card--similar {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+}
+
+/* 2026-05-25 — detail generic section titles compactness.
+   Overrides old page CSS that oversized description/detail h2 outside related rails. */
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section__header h2, .detail-section__header h3, .detail-section__header--row h2, .detail-section__header--row h3) {
+  font-size: var(--doke-section-title-size, clamp(1.02rem, 1.28vw, 1.38rem));
+  line-height: var(--doke-section-title-line, 1.08);
+  letter-spacing: 0.04em;
+  max-width: none;
+}
+
+@media (max-width: 900px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section__header h2, .detail-section__header h3, .detail-section__header--row h2, .detail-section__header--row h3) {
+    font-size: 0.95rem;
+    line-height: 1.12;
+    letter-spacing: 0.08em;
+  }
+}
+
+@media (max-width: 900px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page #descricao-title,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page #detalhes-title {
+    font-size: 0.95rem;
+    line-height: 1.12;
+    letter-spacing: 0.08em;
+    max-width: none;
+  }
+}
+
+@media (min-width: 901px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page #descricao-title,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page #detalhes-title {
+    font-size: var(--doke-section-title-size, clamp(1.02rem, 1.28vw, 1.38rem));
+    line-height: var(--doke-section-title-line, 1.08);
+    letter-spacing: 0.04em;
+    max-width: none;
+  }
+}
+
+/* === Source: assets/css/components/cards/mobile-card-distribution-contract.css === */
+/* Doke mobile card distribution contract
+   Objective: keep shared marketplace cards readable on phones.
+   Component anatomy stays shared; this file owns only mobile distribution and clipping guards. */
+
+@media (max-width: 560px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  body.home-index-shell {
+    --doke-mobile-card-rail-gap: 14px;
+    --doke-mobile-card-width: min(82vw, 320px);
+    --doke-mobile-page-bottom-safe: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.home-index-shell :is(.featured-services, .home-publications, .more-services, .short-videos, .featured-pros) {
+    min-width: 0;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  body.home-index-shell :is(.featured-services, .home-publications, .more-services) > :is(.content-rail, .more-services__cards-rail) {
+    min-width: 0;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  /* Featured ads and publications are horizontal rails on phones. Never allow desktop/tablet columns here. */
+  body.home-index-shell #featured-services-track.service-grid,
+  body.home-index-shell #featured-services-track.doke-grid,
+  body.home-index-shell #home-publications-track.publication-grid,
+  body.home-index-shell #home-publications-track.doke-grid {
+    display: grid;
+    grid-template-columns: none;
+    grid-template-rows: none;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--doke-mobile-card-width);
+    align-items: stretch;
+    gap: var(--doke-mobile-card-rail-gap);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0 2px 8px 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell #featured-services-track::-webkit-scrollbar,
+  body.home-index-shell #home-publications-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.home-index-shell #featured-services-track > article.doke-ad-card,
+  body.home-index-shell #home-publications-track > article.publication-card {
+    width: var(--doke-mobile-card-width);
+    min-width: var(--doke-mobile-card-width);
+    max-width: var(--doke-mobile-card-width);
+    flex: 0 0 var(--doke-mobile-card-width);
+    justify-self: stretch;
+    scroll-snap-align: start;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  /* More ads are feed cards, not a many-column desktop grid. */
+  body.home-index-shell section.more-services .more-services__cards-rail,
+  body.home-index-shell section.more-services .content-rail.more-services__cards-rail {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell section.more-services [data-more-services-grid].service-grid,
+  body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card[hidden] {
+    display: none;
+  }
+
+  /* Mobile card anatomy guard: keep content readable and CTA visible inside narrow rails. */
+
+  body.home-index-shell .page__content-inner,
+  body.home-index-shell .shell-home__workspace,
+  body.home-index-shell main {
+    padding-bottom: var(--doke-mobile-page-bottom-safe);
+  }
+}
+
+@media (max-width: 560px) {
+  /* High-specificity mobile rail lock, placed last to beat legacy home files. */
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid,
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid.doke-grid,
+  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid.doke-grid,
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid.doke-grid,
+  html.home-index-root body.home-index-shell #home-publications-track.publication-grid.doke-grid {
+    display: grid;
+    grid-template-columns: none;
+    grid-template-rows: none;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--doke-mobile-card-width);
+    align-items: stretch;
+    gap: var(--doke-mobile-card-rail-gap);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0 2px 8px 0;
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid.doke-grid > article.doke-ad-card.doke-ad-card,
+  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card.doke-ad-card,
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid.doke-grid > article.publication-card.publication-card,
+  html.home-index-root body.home-index-shell #home-publications-track.publication-grid.doke-grid > article.publication-card.publication-card {
+    width: var(--doke-mobile-card-width);
+    min-width: var(--doke-mobile-card-width);
+    max-width: var(--doke-mobile-card-width);
+    flex: 0 0 var(--doke-mobile-card-width);
+    justify-self: stretch;
+    grid-column: auto;
+    grid-row: auto;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid],
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid].service-grid.doke-grid,
+  html.home-index-root body.home-index-shell [data-more-services-grid].service-grid.doke-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    align-items: stretch;
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+}
