@@ -1,0 +1,88 @@
+name: UX-CSS-IMPORTANT-039 Promotion Materialize R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-039-promotion-materialize-r3
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-039-promotion-materialize-r3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize039:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PARENT_SHA: b64024a143e6531c51263d7750ab00162cf7e772
+      PARENT_TREE: 64f556068e5dd89f3dfdda211b0f85b3e5a773e8
+      TARGET_FILE: assets/css/patterns/marketplace-responsive-stack.css
+      TARGET_BLOB: 0d284a91858a4e16ec5ac3edc48c9700982bac11
+      CANDIDATE_BLOB: fc8441182d1b3d909ced94ea984acbc657fc624a
+      CANDIDATE_SHA256: 5b899542a1e50344f17753119c938b4251503edb44a707ed69153b5eb065f45c
+      CANDIDATE_BYTES: 62002
+      R2_BRANCH: diag/ux-css-important-039-marketplace-responsive-stack-candidate-r2
+      R2_FILE: .diagnostics/ux-css-important-039-marketplace-responsive-stack-candidate-r2.json
+      R2_BLOB: 8cdc31cb4e0c5a5bfbc1f14d0378b84009c75166
+      OUTPUT_BRANCH: diag/ux-css-important-039-promotion-materialize-r3
+      MATERIALIZED_FILE: .diagnostics/ux-css-important-039-certified-candidate.css
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Verify R2 and rebuild exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch origin "refs/heads/$R2_BRANCH:refs/remotes/origin/$R2_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$R2_BRANCH:$R2_FILE")" = "$R2_BLOB"
+          git show "origin/$R2_BRANCH:$R2_FILE" >/tmp/r2.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r2.json','utf8'));
+          const c=r.candidate||{};
+          if(r.result!=='PASS'||r.parentSha!==process.env.PARENT_SHA||r.parentTree!==process.env.PARENT_TREE) throw new Error('R2 parent mismatch');
+          if(r.targetFile!==process.env.TARGET_FILE||r.parentTargetBlob!==process.env.TARGET_BLOB) throw new Error('R2 target mismatch');
+          if(c.importantBefore!==468||c.importantAfter!==0||c.removed!==468||c.markerOnly!==true) throw new Error('R2 marker contract mismatch');
+          if(c.gitBlob!==process.env.CANDIDATE_BLOB||c.sha256!==process.env.CANDIDATE_SHA256||c.bytes!==Number(process.env.CANDIDATE_BYTES)) throw new Error('R2 candidate identity mismatch');
+          if(c.importsPreserved!==true||c.importOrderPreserved!==true||c.importCount!==1) throw new Error('R2 import contract mismatch');
+          if(r.staticGateReconciliation?.introducedRegressions!==0||r.staticGateReconciliation?.criteriaRelaxed!==0) throw new Error('R2 governance mismatch');
+          NODE
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET_FILE;
+          const p=fs.readFileSync(f,'utf8');
+          if((p.match(/!important\b/gi)||[]).length!==468) throw new Error('parent important mismatch');
+          const imports=s=>[...s.matchAll(/@import\s+[^;]+;/gi)].map(m=>m[0]);
+          const beforeImports=imports(p);
+          const c=p.replace(/\s*!important\b/gi,'');
+          if((c.match(/!important\b/gi)||[]).length!==0) throw new Error('candidate important nonzero');
+          if(JSON.stringify(imports(c))!==JSON.stringify(beforeImports)) throw new Error('import order/text changed');
+          fs.writeFileSync('/tmp/candidate.css',c);
+          fs.writeFileSync(f,c);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha=crypto.createHash('sha256').update(c).digest('hex');
+          const bytes=Buffer.byteLength(c);
+          if(blob!==process.env.CANDIDATE_BLOB||sha!==process.env.CANDIDATE_SHA256||bytes!==Number(process.env.CANDIDATE_BYTES)) throw new Error(`candidate identity ${blob} ${sha} ${bytes}`);
+          NODE
+
+      - name: Publish exact candidate bytes diagnostically
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$MATERIALIZED_FILE")"
+          cp /tmp/candidate.css "$MATERIALIZED_FILE"
+          test "$(git hash-object "$MATERIALIZED_FILE")" = "$CANDIDATE_BLOB"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$MATERIALIZED_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: materialize UX-CSS-IMPORTANT-039 certified candidate [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
