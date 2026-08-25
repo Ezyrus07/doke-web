@@ -1,0 +1,71 @@
+name: TEMP UX-CSS-IMPORTANT-041 Promotion Materialize R3
+on:
+  push:
+    branches: [diag/ux-css-important-041-promotion-materialize-r3]
+    paths: [.github/workflows/0000-temp-ux-css-important-041-promotion-materialize-r3.yml]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT_SHA: d23744276157a2ea28ac8fa4e44a8d5095103260
+      PARENT_TREE: 40972482f565e3e9fac1b26291937c21c0b17f3c
+      TARGET_FILE: assets/css/components/shell/app-header.css
+      PARENT_BLOB: cafaf11c9607a319f790c1f855a1381eb2c7b17e
+      CANDIDATE_BLOB: f21bb85bf8bd19ec1016e579e77c4c81496c27ac
+      CANDIDATE_SHA256: d489b52e3e7fa9c057ca85ec1e17f2736e5eaf3315d492afdfe93b91b3ba7ef7
+      CANDIDATE_BYTES: '40324'
+      R2_BRANCH: diag/ux-css-important-041-app-header-candidate-r2
+      R2_FILE: .diagnostics/ux-css-important-041-app-header-candidate-r2.json
+      R2_BLOB: ca57aca2cc8fe88d76d6975f48ea9416affdb69d
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-041-promotion-materialize-r3.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Freeze parent and R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$WORKFLOW_FILE"
+          git fetch --no-tags origin "refs/heads/$R2_BRANCH:refs/remotes/origin/$R2_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$R2_BRANCH:$R2_FILE")" = "$R2_BLOB"
+          git show "refs/remotes/origin/$R2_BRANCH:$R2_FILE" >/tmp/r2.json
+          node <<'NODE'
+          const r=require('/tmp/r2.json');
+          if(r.result!=='PASS'||r.parent.sha!==process.env.PARENT_SHA||r.parent.tree!==process.env.PARENT_TREE||r.parent.targetBlob!==process.env.PARENT_BLOB)throw Error('R2 identity');
+          if(r.candidate.gitBlob!==process.env.CANDIDATE_BLOB||r.candidate.sha256!==process.env.CANDIDATE_SHA256||r.candidate.bytes!==Number(process.env.CANDIDATE_BYTES))throw Error('candidate identity');
+          if(r.candidate.importantBefore!==581||r.candidate.importantAfter!==0||!r.candidate.markerOnly||r.staticMatrix.introducedRegressions!==0||r.staticMatrix.criteriaRelaxed!==0||r.browserRequired!==false)throw Error('R2 gates');
+          NODE
+      - name: Reconstruct and materialize exact blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const p=fs.readFileSync('/tmp/parent.css','utf8');
+          if((p.match(/!important\b/gi)||[]).length!==581)throw Error('parent count');const c=p.replace(/\s*!important\b/gi,'');
+          if((c.match(/!important\b/gi)||[]).length||Buffer.byteLength(c)!==Number(process.env.CANDIDATE_BYTES)||crypto.createHash('sha256').update(c).digest('hex')!==process.env.CANDIDATE_SHA256)throw Error('candidate reconstruction');
+          fs.writeFileSync(process.env.TARGET_FILE,c);
+          NODE
+          test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          git diff --check "$PARENT_SHA" -- "$TARGET_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$TARGET_FILE"
+          git commit -m "diagnostic(ux-css-important-041): materialize certified target blob"
+          git push origin HEAD:diag/ux-css-important-041-promotion-materialize-r3
+      - name: Verify materialization isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$TARGET_FILE)" = "$CANDIDATE_BLOB"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 2
+          mapfile -t c < <(git diff --name-only "$PARENT_SHA"...HEAD); test "${#c[@]}" -eq 2
+          printf '%s\n' "${c[@]}"|grep -Fx "$WORKFLOW_FILE"; printf '%s\n' "${c[@]}"|grep -Fx "$TARGET_FILE"
+          test "$(git status --porcelain)" = ""
