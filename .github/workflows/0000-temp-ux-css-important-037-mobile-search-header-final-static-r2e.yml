@@ -1,0 +1,306 @@
+name: UX-CSS-IMPORTANT-037 Final Static Reconciliation R2E
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-037-mobile-search-header-final-static-r2e
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-037-mobile-search-header-final-static-r2e.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prove037r2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PARENT_SHA: d3d45498ca2e8889c50273fa82550f92d3b7af1f
+      PARENT_TREE: c44532c746318e9f82d59755c1d857abb346e5c6
+      TARGET_FILE: assets/css/components/navigation/mobile-search-header-shared.css
+      TARGET_BLOB: 946a1e094936900ca550442dead9a108fbf7221c
+      CANDIDATE_BLOB: d50e67fb65f2b675b8c1b29abd3ad94145dd7ec0
+      CANDIDATE_SHA256: fa927922ebe4c3d4a6ed9b9ad6f1bf9ec5892ebd836e9ac149ca52ba96515cbd
+      CANDIDATE_BYTES: 15950
+      PARENT_IMPORTANT: 348
+      PARENT_GLOBAL_IMPORTANT: 7053
+      CANDIDATE_GLOBAL_IMPORTANT: 6705
+      R1B_BRANCH: diag/ux-css-important-037-mobile-search-header-reach-r1b
+      R1B_FILE: .diagnostics/ux-css-important-037-mobile-search-header-reach-r1b.json
+      R1B_BLOB: cfe8d8352f1b455bc6f98c04bfd72d3099e04bd5
+      OUTPUT_BRANCH: diag/ux-css-important-037-mobile-search-header-final-static-r2e
+      RESULT_FILE: .diagnostics/ux-css-important-037-mobile-search-header-final-static-r2e.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact parent and certified dormancy evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch origin "refs/heads/$R1B_BRANCH:refs/remotes/origin/$R1B_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$R1B_BRANCH:$R1B_FILE")" = "$R1B_BLOB"
+          git show "origin/$R1B_BRANCH:$R1B_FILE" > /tmp/r1b.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r1b.json','utf8'));
+          const ok = r.result==='PASS'
+            && r.parentSha===process.env.PARENT_SHA
+            && r.parentTree===process.env.PARENT_TREE
+            && r.targetFile===process.env.TARGET_FILE
+            && r.targetBlob===process.env.TARGET_BLOB
+            && r.importantDeclarationCount===348
+            && r.reach?.canonicalLoaded===false
+            && r.reach?.wholeFileDormant===true
+            && (r.reach?.directHtmlRefs||[]).length===0
+            && (r.reach?.cssImporters||[]).length===0
+            && (r.reach?.runtimeJsRefs||[]).length===0;
+          if(!ok) throw new Error('R1B evidence mismatch');
+          NODE
+
+      - name: Build and verify exact marker-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          cp "$TARGET_FILE" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(f,'utf8');
+          const before=(parent.match(/!important\b/gi)||[]).length;
+          if(before!==Number(process.env.PARENT_IMPORTANT)) throw new Error(`parent important=${before}`);
+          const candidate=parent.replace(/\s*!important\b/gi,'');
+          const after=(candidate.match(/!important\b/gi)||[]).length;
+          if(after!==0) throw new Error(`candidate important=${after}`);
+          if(parent.replace(/\s*!important\b/gi,'')!==candidate) throw new Error('marker-only invariant failed');
+          fs.writeFileSync('/tmp/candidate.css',candidate);
+          fs.writeFileSync(f,candidate);
+          const gitBlob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes=Buffer.byteLength(candidate);
+          if(gitBlob!==process.env.CANDIDATE_BLOB) throw new Error(`candidate blob ${gitBlob}`);
+          if(sha256!==process.env.CANDIDATE_SHA256) throw new Error(`candidate sha256 ${sha256}`);
+          if(bytes!==Number(process.env.CANDIDATE_BYTES)) throw new Error(`candidate bytes ${bytes}`);
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile()&&e.name.endsWith('.css'))out.push(p)}return out}
+          const count=x=>(fs.readFileSync(x,'utf8').match(/!important\b/gi)||[]).length;
+          const candidateGlobal=walk('assets/css').reduce((n,x)=>n+count(x),0);
+          if(candidateGlobal!==Number(process.env.CANDIDATE_GLOBAL_IMPORTANT)) throw new Error(`candidate global=${candidateGlobal}`);
+          fs.writeFileSync('/tmp/candidate.json',JSON.stringify({importantBefore:before,importantAfter:after,removed:before-after,gitBlob,sha256,bytes,parentGlobal:Number(process.env.PARENT_GLOBAL_IMPORTANT),candidateGlobal,globalDelta:candidateGlobal-Number(process.env.PARENT_GLOBAL_IMPORTANT)},null,2)+'\n');
+          console.log(JSON.stringify({gitBlob,sha256,bytes,important:`${before}->${after}`,global:`${process.env.PARENT_GLOBAL_IMPORTANT}->${candidateGlobal}`}));
+          NODE
+          test "$(git diff --name-only "$PARENT_SHA" -- | wc -l)" -eq 1
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --numstat "$PARENT_SHA" -- "$TARGET_FILE" > /tmp/numstat.txt
+          awk 'NF==3 && $3==ENVIRON["TARGET_FILE"] { if ($1 != 348 || $2 != 348) exit 1; ok=1 } END { exit(ok?0:1) }' /tmp/numstat.txt
+
+      - name: Reconfirm canonical dormancy before and after candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT_SHA" -- .
+          node scripts/audit-css-dormant-debt-policy.js > /tmp/dorm-parent.txt
+          git checkout "$PARENT_SHA" -- .
+          cp /tmp/candidate.css "$TARGET_FILE"
+          node scripts/audit-css-dormant-debt-policy.js > /tmp/dorm-candidate.txt
+          node <<'NODE'
+          const fs=require('fs');
+          const target=process.env.TARGET_FILE;
+          const p=fs.readFileSync('/tmp/dorm-parent.txt','utf8');
+          const c=fs.readFileSync('/tmp/dorm-candidate.txt','utf8');
+          const section=(s,a,b)=>(s.split(a)[1]||'').split(b)[0]||'';
+          for(const [name,s] of [['parent',p],['candidate',c]]){
+            const active=section(s,'## Dívida ativa registrada','## Quarentena dormente registrada');
+            const dormant=section(s,'## Quarentena dormente registrada','## Violações');
+            if(active.includes(target)) throw new Error(`${name} target active`);
+            if(!dormant.includes(target)) throw new Error(`${name} target absent from dormant quarantine`);
+          }
+          const metric=(s,label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(esc+'[: ]+\\*?\\*?(\\d+)'));return m?Number(m[1]):null};
+          const labels=['CSS depreciado reativado','Arquivos registrados ausentes','CSS ativo com !important fora do registro'];
+          const metrics={};
+          for(const label of labels){
+            const a=metric(p,label),b=metric(c,label);
+            if(a===null||b===null||a!==b) throw new Error(`${label} changed ${a}->${b}`);
+            metrics[label]={parent:a,candidate:b};
+          }
+          fs.writeFileSync('/tmp/dormancy.json',JSON.stringify({parentDormant:true,candidateDormant:true,canonicalLoaded:false,runtimeRelevant:false,baselineUnchanged:true,metrics},null,2)+'\n');
+          NODE
+          git checkout "$PARENT_SHA" -- .
+
+      - name: Run exact parent candidate gate matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/gates.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"
+          use_candidate="$2"
+          : > "/tmp/${phase}.tsv"
+          restore(){
+            git checkout "$PARENT_SHA" -- . >/dev/null 2>&1 || exit 90
+            if [ "$use_candidate" = yes ]; then
+              cp /tmp/candidate.css "$TARGET_FILE"
+            fi
+            return 0
+          }
+          norm(){ sed -E -e 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?/<TIME>/g' -e 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$1"; }
+          gate(){
+            label="$1"; shift
+            restore
+            log="/tmp/${phase}-${label}.log"
+            set +e
+            "$@" >"$log" 2>&1
+            rc=$?
+            set -e
+            norm "$log" >"${log}.norm"
+            hash="$(sha256sum "${log}.norm"|awk '{print $1}')"
+            printf '%s\t%s\t%s\n' "$label" "$rc" "$hash" >> "/tmp/${phase}.tsv"
+            echo "$phase|$label|rc=$rc|hash=$hash"
+          }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/gates.sh
+          /tmp/gates.sh parent no
+          /tmp/gates.sh candidate yes
+
+      - name: Reconcile gates without criteria relaxation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const parse=f=>new Map(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [label,rc,hash]=x.split('\t');return [label,{rc:Number(rc),hash}]}));
+          const p=parse('/tmp/parent.tsv'),c=parse('/tmp/candidate.tsv');
+          const ordinary=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','important_reduction_plan','global_css_design_system','domain_completion_matrix'];
+          const rows=[]; let green=0,baselineEquivalent=0;
+          for(const label of ordinary){
+            const a=p.get(label),b=c.get(label); if(!a||!b) throw new Error('missing '+label);
+            let classification;
+            if(a.rc===0&&b.rc===0){classification='PASS_BOTH';green++;}
+            else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash){classification='BASELINE_EQUIVALENT_FAILURE';baselineEquivalent++;}
+            else if(a.rc!==0&&b.rc===0){classification='CANDIDATE_IMPROVES_BASELINE';green++;}
+            else throw new Error(`${label} regression/divergence parent=${a.rc}/${a.hash} candidate=${b.rc}/${b.hash}`);
+            rows.push({label,parent:a,candidate:b,classification});
+          }
+
+          const fa=p.get('frontend_strict'),fb=c.get('frontend_strict');
+          if(!fa||!fb||fa.rc!==1||fb.rc!==1) throw new Error(`frontend strict unexpected rc ${fa?.rc}->${fb?.rc}`);
+          const pl=fs.readFileSync('/tmp/parent-frontend_strict.log','utf8');
+          const cl=fs.readFileSync('/tmp/candidate-frontend_strict.log','utf8');
+          const extractNumber=(s,prefix)=>{const m=s.match(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*(\\d+)'));return m?Number(m[1]):null};
+          const criticalP=extractNumber(pl,'Críticos:'),criticalC=extractNumber(cl,'Críticos:');
+          const warningP=extractNumber(pl,'Avisos:'),warningC=extractNumber(cl,'Avisos:');
+          if(criticalP===null||criticalC===null||warningP===null||warningC===null||criticalP!==criticalC||warningP!==warningC) throw new Error(`frontend counts changed critical ${criticalP}->${criticalC} warnings ${warningP}->${warningC}`);
+          const criticalLines=s=>s.split('\n').filter(x=>x.includes('**CRITICAL**')).sort();
+          const warningLines=s=>s.split('\n').filter(x=>x.includes('**WARNING**')).sort();
+          if(JSON.stringify(criticalLines(pl))!==JSON.stringify(criticalLines(cl))) throw new Error('frontend critical set changed');
+          if(JSON.stringify(warningLines(pl))!==JSON.stringify(warningLines(cl))) throw new Error('frontend warning set changed');
+
+          const debtMetric=(s,label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(esc+'\\s*(\\d+) uso\\(s\\) em (\\d+) arquivo\\(s\\)'));return m?{uses:Number(m[1]),files:Number(m[2])}:null};
+          const totalP=debtMetric(pl,'Dívida !important registrada:'),totalC=debtMetric(cl,'Dívida !important registrada:');
+          const activeP=debtMetric(pl,'Dívida !important ativa carregada por HTML raiz:'),activeC=debtMetric(cl,'Dívida !important ativa carregada por HTML raiz:');
+          const dormantP=debtMetric(pl,'Dívida !important dormente no pacote:'),dormantC=debtMetric(cl,'Dívida !important dormente no pacote:');
+          if(!totalP||!totalC||!activeP||!activeC||!dormantP||!dormantC) throw new Error('frontend debt metrics missing');
+          if(totalC.uses!==totalP.uses-348||totalC.files!==totalP.files-1) throw new Error(`frontend total debt delta ${JSON.stringify(totalP)} -> ${JSON.stringify(totalC)}`);
+          if(activeC.uses!==activeP.uses||activeC.files!==activeP.files) throw new Error(`active debt changed ${JSON.stringify(activeP)} -> ${JSON.stringify(activeC)}`);
+          if(dormantC.uses!==dormantP.uses-348||dormantC.files!==dormantP.files-1) throw new Error(`dormant debt delta ${JSON.stringify(dormantP)} -> ${JSON.stringify(dormantC)}`);
+
+          const normalizeFrontend=s=>s.split('\n').filter(line=>
+            !/^Gerado em:/.test(line)
+            && !/^Dívida !important registrada:/.test(line)
+            && !/^Dívida !important ativa carregada por HTML raiz:/.test(line)
+            && !/^Dívida !important dormente no pacote:/.test(line)
+          ).join('\n');
+          const np=normalizeFrontend(pl),nc=normalizeFrontend(cl);
+          const hp=crypto.createHash('sha256').update(np).digest('hex'),hc=crypto.createHash('sha256').update(nc).digest('hex');
+          if(hp!==hc) throw new Error(`frontend semantic report differs ${hp} vs ${hc}`);
+          rows.push({label:'frontend_strict',parent:fa,candidate:fb,classification:'BASELINE_EQUIVALENT_FAILURE_WITH_EXPECTED_DEBT_METRIC_REDUCTION',criticalCount:criticalP,warningCount:warningP,semanticHash:hp,debt:{total:{parent:totalP,candidate:totalC},active:{parent:activeP,candidate:activeC},dormant:{parent:dormantP,candidate:dormantC}}});
+          baselineEquivalent++;
+          fs.writeFileSync('/tmp/gates.json',JSON.stringify({rows,green,baselineEquivalent,introducedRegressions:0,criteriaRelaxed:0},null,2)+'\n');
+          console.log(JSON.stringify({green,baselineEquivalent,introducedRegressions:0,frontendCritical:criticalP,frontendWarnings:warningP,totalDebt:`${totalP.uses}->${totalC.uses}`,activeDebt:`${activeP.uses}->${activeC.uses}`,dormantDebt:`${dormantP.uses}->${dormantC.uses}`}));
+          NODE
+
+      - name: Final diff hygiene and exact restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT_SHA" -- .
+          cp /tmp/candidate.css "$TARGET_FILE"
+          test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          test "$(grep -oi '!important' "$TARGET_FILE" | wc -l)" -eq 0
+          test "$(git diff --name-only "$PARENT_SHA" -- | wc -l)" -eq 1
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --numstat "$PARENT_SHA" -- "$TARGET_FILE" | awk 'NF==3 && $3==ENVIRON["TARGET_FILE"] { if ($1 != 348 || $2 != 348) exit 1; ok=1 } END { exit(ok?0:1) }'
+          node <<'NODE'
+          const fs=require('fs');
+          const p=fs.readFileSync('/tmp/parent.css','utf8');
+          const c=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          if(p.replace(/\s*!important\b/gi,'')!==c) throw new Error('non-marker final delta');
+          NODE
+          git checkout "$PARENT_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Build R2E receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const candidate=JSON.parse(fs.readFileSync('/tmp/candidate.json','utf8'));
+          const dormancy=JSON.parse(fs.readFileSync('/tmp/dormancy.json','utf8'));
+          const gates=JSON.parse(fs.readFileSync('/tmp/gates.json','utf8'));
+          const receipt={
+            proof:'UX-CSS-IMPORTANT-037 Final Static Reconciliation R2E',
+            historicalDiagnostics:[
+              {stage:'R2',runId:32791722050,jobId:97634431237,result:'FAIL',classification:'HARNESS_SCOPE',reason:'--strict dormant policy included unrelated baseline violations'},
+              {stage:'R2B',runId:32791848591,jobId:97634786761,result:'FAIL',classification:'OBSERVABILITY',reason:'gate runner aborted on first nonzero baseline gate'},
+              {stage:'R2C',runId:32792028249,jobId:97635321104,result:'FAIL',classification:'COMPARATOR',reason:'frontend_strict raw hash changed because expected dormant !important debt metrics changed'},
+              {stage:'R2D',runId:32792203046,jobId:97635851427,result:'FAIL',classification:'HARNESS_RETURN',reason:'restore helper returned status 1 for parent phase before any gate executed'}
+            ],
+            parentSha:process.env.PARENT_SHA,parentTree:process.env.PARENT_TREE,targetFile:process.env.TARGET_FILE,parentTargetBlob:process.env.TARGET_BLOB,
+            r1b:{blob:process.env.R1B_BLOB,result:'PASS',canonicalLoaded:false,wholeFileDormant:true,runtimeRelevant:false},
+            candidate:{...candidate,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,diffFiles:1,additions:348,deletions:348},
+            dormancyAfterCandidate:dormancy,
+            staticGateReconciliation:gates,
+            browserRequired:false,
+            browserReason:'Whole-file dormant under canonical loader before and after candidate; zero HTML/CSS-import/runtime-JS reach.',
+            restore:{targetParentExact:true,trackedWorkspaceClean:true},
+            result:'PASS'
+          };
+          fs.writeFileSync('/tmp/r2e.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify({candidateBlob:candidate.gitBlob,sha256:candidate.sha256,bytes:candidate.bytes,important:`${candidate.importantBefore}->${candidate.importantAfter}`,global:`${candidate.parentGlobal}->${candidate.candidateGlobal}`,green:gates.green,baselineEquivalent:gates.baselineEquivalent,introducedRegressions:gates.introducedRegressions,result:'PASS'}));
+          NODE
+
+      - name: Publish R2E receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          test -s /tmp/r2e.json && result="$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/r2e.json','utf8')).result||'FAIL')")" || true
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          if test -s /tmp/r2e.json; then cp /tmp/r2e.json "$RESULT_FILE"; else printf '{"proof":"UX-CSS-IMPORTANT-037 Final Static Reconciliation R2E","result":"FAIL","reason":"receipt missing"}\n' > "$RESULT_FILE"; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: publish UX-CSS-IMPORTANT-037 final static R2E [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
+          test "$result" = PASS
