@@ -1,0 +1,151 @@
+name: TEMP UX-CSS-IMPORTANT-041 App Header R1c
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-041-app-header-r1c
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-041-app-header-r1c.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reach-source-cascade-r1c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PRODUCT_SHA: d23744276157a2ea28ac8fa4e44a8d5095103260
+      PRODUCT_TREE: 40972482f565e3e9fac1b26291937c21c0b17f3c
+      TARGET: assets/css/components/shell/app-header.css
+      EXPECTED_IMPORTANT: '581'
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-css-important-041-app-header-r1c.yml
+      RECEIPT_PATH: .diagnostics/ux-css-important-041-app-header-r1c.json
+    steps:
+      - name: Checkout diagnostic branch with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Freeze diagnostic isolation and certified predecessor
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PRODUCT_SHA^{tree}")" = "$PRODUCT_TREE"
+          test "$(git merge-base "$PRODUCT_SHA" HEAD)" = "$PRODUCT_SHA"
+          test "$(git rev-list --count "$PRODUCT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PRODUCT_SHA" HEAD)" = "$WORKFLOW_PATH"
+          test "$(git status --porcelain)" = ""
+
+      - name: Install frozen dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Prove reach source ownership and cascade with PostCSS
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const cp=require('child_process');
+          const path=require('path').posix;
+          const crypto=require('crypto');
+          const postcss=require('postcss');
+          const SHA=process.env.PRODUCT_SHA, TREE=process.env.PRODUCT_TREE, TARGET=process.env.TARGET, EXPECTED=Number(process.env.EXPECTED_IMPORTANT), RECEIPT=process.env.RECEIPT_PATH;
+          const REL=[
+            'assets/css/components/layout/responsive-priority-contract.css',
+            'assets/css/components/navigation/app-mobile-header-contract.css',
+            'assets/css/components/shell/doke-shell-contract.css',
+            'assets/css/components/navigation/mobile-search-header-shared.css'
+          ];
+          const DOCS=['AGENTS.md','docs/CSS_AUTHORITY_MAP.md','docs/GLOBAL-LAYOUT-CONTRACT.md','docs/DESIGN-SYSTEM-GUIDE.md','docs/BASELINE-VISUAL-APPROVED.md','docs/DOKE-PLANO-MESTRE-CONCLUSAO-PLATAFORMA.md','docs/DOMAIN-COMPLETION-MATRIX.md'];
+          const sh=(...a)=>cp.execFileSync(a[0],a.slice(1),{encoding:'utf8'}).replace(/\n$/,'');
+          const files=sh('git','ls-tree','-r','--name-only',SHA).split('\n').filter(Boolean), fileSet=new Set(files);
+          const read=p=>cp.execFileSync('git',['show',`${SHA}:${p}`],{encoding:'utf8'});
+          const blob=p=>sh('git','rev-parse',`${SHA}:${p}`);
+          const target=read(TARGET), rawImportant=(target.match(/!important\b/gi)||[]).length;
+          if(rawImportant!==EXPECTED) throw new Error(`raw !important mismatch ${rawImportant} != ${EXPECTED}`);
+
+          function imports(p){
+            const out=[]; const src=read(p).replace(/\/\*[\s\S]*?\*\//g,'');
+            const rx=/@import\s+(?:url\(\s*)?["']?([^"')\s;]+\.css(?:\?[^"')\s;]*)?)["']?\s*\)?[^;]*;/gi;
+            let m;
+            while((m=rx.exec(src))){
+              const raw=m[1], x=raw.split('?')[0].split('#')[0];
+              let resolved=null;
+              if(!/^[a-z]+:\/\//i.test(x)) resolved=x.startsWith('/')?x.slice(1):path.normalize(path.join(path.dirname(p),x));
+              out.push({raw,resolved});
+            }
+            return out;
+          }
+          const css=files.filter(p=>p.endsWith('.css')), im=Object.fromEntries(css.map(p=>[p,imports(p)]));
+          const directImporters=css.filter(p=>im[p].some(x=>x.resolved===TARGET)).sort();
+          const html=files.filter(p=>p.endsWith('.html')&&!p.includes('/')).sort();
+          const linkRe=/<link\b[^>]*?href\s*=\s*["']([^"']+)["'][^>]*>/gis;
+          function starts(h){ const out=[]; const src=read(h); let m; while((m=linkRe.exec(src))){let x=m[1].split('?')[0].split('#')[0]; if(x.endsWith('.css')&&!/^[a-z]+:\/\//i.test(x)) out.push(path.normalize(x.replace(/^\//,'')));} return out; }
+          const hd=Object.fromEntries(html.map(h=>[h,starts(h)]));
+          const directHtml=html.filter(h=>hd[h].includes(TARGET));
+          function closure(xs){const seen=new Set(), stack=[...xs]; while(stack.length){const p=stack.pop(); if(seen.has(p)||!fileSet.has(p)||!p.endsWith('.css'))continue; seen.add(p); for(const x of im[p]||[]) if(x.resolved) stack.push(x.resolved);} return seen;}
+          const reach=Object.fromEntries(html.map(h=>[h,closure(hd[h])])), pages=html.filter(h=>reach[h].has(TARGET)), loaded=new Set(); for(const s of Object.values(reach)) for(const p of s) loaded.add(p);
+          const needle=path.basename(TARGET), runtime=[], tooling=[], other=[];
+          for(const p of files){
+            if(p===TARGET||!/(?:\.js|\.mjs|\.cjs|\.json|\.md|\.ya?ml|\.html|\.css)$/.test(p)) continue;
+            let t; try{t=read(p);}catch{continue;}
+            if(!t.includes(TARGET)&&!t.includes(needle)) continue;
+            if(p.startsWith('assets/js/')) runtime.push(p); else if(/^(?:scripts|tests|\.github|docs|config)\//.test(p)) tooling.push(p); else other.push(p);
+          }
+          runtime.sort(); tooling.sort(); other.sort();
+
+          function splitSelectors(s){
+            const out=[]; let start=0, par=0, br=0, quote=null, esc=false;
+            for(let i=0;i<s.length;i++){const c=s[i]; if(quote){if(esc)esc=false;else if(c==='\\')esc=true;else if(c===quote)quote=null;continue;} if(c==='"'||c==="'")quote=c; else if(c==='(')par++; else if(c===')')par=Math.max(0,par-1); else if(c==='[')br++; else if(c===']')br=Math.max(0,br-1); else if(c===','&&par===0&&br===0){out.push(s.slice(start,i).trim());start=i+1;}}
+            out.push(s.slice(start).trim()); return out.filter(Boolean);
+          }
+          function inventory(p){
+            const root=postcss.parse(read(p),{from:p}); let declarations=0, importantDeclarations=0; const selectors=new Set(), keys=new Set();
+            root.walkRules(rule=>{ const sels=splitSelectors(rule.selector||''); for(const s of sels) selectors.add(s); rule.nodes?.forEach(n=>{if(n.type!=='decl')return; declarations++; if(n.important)importantDeclarations++; for(const s of sels) keys.add(`${s}\u0000${String(n.prop).toLowerCase()}`);}); });
+            return {root,declarations,importantDeclarations,selectors,keys};
+          }
+          const ti=inventory(TARGET);
+          if(ti.importantDeclarations!==EXPECTED) throw new Error(`PostCSS !important mismatch ${ti.importantDeclarations} != ${EXPECTED}`);
+          const relations={};
+          for(const p of REL){if(!fileSet.has(p))continue; const ri=inventory(p), collisions=[...ti.keys].filter(k=>ri.keys.has(k)).sort(); relations[p]={blob:blob(p),importantDeclarations:ri.importantDeclarations,exactSelectorPropertyCollisions:collisions.length,collisionSamples:collisions.slice(0,50).map(k=>{const [selector,property]=k.split('\u0000');return {selector,property};}),targetImportsRelation:(im[TARGET]||[]).some(x=>x.resolved===p),relationImportsTarget:(im[p]||[]).some(x=>x.resolved===TARGET)};}
+          const whole=!loaded.has(TARGET)&&directHtml.length===0&&directImporters.length===0&&runtime.length===0;
+          const receipt={
+            proof:'UX-CSS-IMPORTANT-041 Reach / Source / Cascade R1c',result:'PASS',checkpoint:'UX-CSS-IMPORTANT-041',
+            historicalDiagnosticFailures:[
+              {run:32857025592,job:97831394473,classification:'DIAGNOSTIC_HARNESS_DECLARATION_DOUBLE_COUNT',productMutation:false,criteriaRelaxed:false},
+              {run:32857252380,job:97832143791,classification:'DIAGNOSTIC_HARNESS_HAND_PARSER_INCOMPLETE_579_OF_581',productMutation:false,criteriaRelaxed:false}
+            ],
+            product:{sha:SHA,tree:TREE},
+            target:{path:TARGET,blob:blob(TARGET),sha256:crypto.createHash('sha256').update(target).digest('hex'),bytes:Buffer.byteLength(target),important:rawImportant,postcssImportantDeclarations:ti.importantDeclarations,selectors:ti.selectors.size,declarations:ti.declarations,imports:im[TARGET]},
+            reach:{rootHtmlCount:html.length,loadedCssCount:loaded.size,canonicalLoaded:loaded.has(TARGET),wholeFileDormant:whole,targetPages:pages,directHtmlRefs:directHtml,directImporters,runtimeJsRefs:runtime,toolingRefs:tooling,otherRefs:other,browserReconciliationRequired:!whole},
+            authorityDocs:Object.fromEntries(DOCS.filter(p=>fileSet.has(p)).map(p=>[p,blob(p)])),authorityRelations:relations,
+            criteria:{expectedImportant:EXPECTED,parserAuthority:'postcss',criteriaRelaxed:0,markerRemovalAttempted:false,productMutation:false,staging:false,production:false,backend:false,supabase:false,rpc:false,migrations:false,credentials:false,runtimeRealtime:false,merge:false,readyForReview:false,forcePush:false,historyRewrite:false}
+          };
+          fs.mkdirSync(path.dirname(RECEIPT),{recursive:true}); fs.writeFileSync(RECEIPT,JSON.stringify(receipt,null,2)+'\n'); console.log(JSON.stringify(receipt,null,2));
+          NODE
+
+      - name: Publish R1c receipt on diagnostic branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RECEIPT_PATH"
+          test "$(git diff --cached --name-only)" = "$RECEIPT_PATH"
+          git commit -m "diagnostic(ux-css-important-041): publish PostCSS app header R1c receipt"
+          git push origin HEAD:diag/ux-css-important-041-app-header-r1c
+
+      - name: Verify certified predecessor unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PRODUCT_SHA^{tree}")" = "$PRODUCT_TREE"
+          test "$(git show "$PRODUCT_SHA:$TARGET" | grep -o '!important' | wc -l | tr -d ' ')" = "$EXPECTED_IMPORTANT"
+          test "$(git status --porcelain)" = ""
