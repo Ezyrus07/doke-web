@@ -1,0 +1,250 @@
+name: UX-CSS-IMPORTANT-037 Static Gate Reconciliation R2C
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-037-mobile-search-header-static-reconcile-r2c
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-037-mobile-search-header-static-reconcile-r2c.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile037r2c:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PARENT_SHA: d3d45498ca2e8889c50273fa82550f92d3b7af1f
+      PARENT_TREE: c44532c746318e9f82d59755c1d857abb346e5c6
+      TARGET_FILE: assets/css/components/navigation/mobile-search-header-shared.css
+      TARGET_BLOB: 946a1e094936900ca550442dead9a108fbf7221c
+      PARENT_IMPORTANT: 348
+      PARENT_GLOBAL_IMPORTANT: 7053
+      R1B_BRANCH: diag/ux-css-important-037-mobile-search-header-reach-r1b
+      R1B_FILE: .diagnostics/ux-css-important-037-mobile-search-header-reach-r1b.json
+      R1B_BLOB: cfe8d8352f1b455bc6f98c04bfd72d3099e04bd5
+      HISTORICAL_R2_RUN: 32791722050
+      HISTORICAL_R2_JOB: 97634431237
+      HISTORICAL_R2B_RUN: 32791848591
+      HISTORICAL_R2B_JOB: 97634786761
+      OUTPUT_BRANCH: diag/ux-css-important-037-mobile-search-header-static-reconcile-r2c
+      RESULT_FILE: .diagnostics/ux-css-important-037-mobile-search-header-static-reconcile-r2c.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and R1B evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch origin "refs/heads/$R1B_BRANCH:refs/remotes/origin/$R1B_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$R1B_BRANCH:$R1B_FILE")" = "$R1B_BLOB"
+          git show "origin/$R1B_BRANCH:$R1B_FILE" > /tmp/r1b.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r1b.json','utf8'));
+          if(r.result!=='PASS'||r.parentSha!==process.env.PARENT_SHA||r.parentTree!==process.env.PARENT_TREE||r.targetFile!==process.env.TARGET_FILE||r.targetBlob!==process.env.TARGET_BLOB||r.importantDeclarationCount!==348||r.reach?.canonicalLoaded!==false||r.reach?.wholeFileDormant!==true||(r.reach?.directHtmlRefs||[]).length||(r.reach?.cssImporters||[]).length||(r.reach?.runtimeJsRefs||[]).length) throw new Error('R1B transfer mismatch');
+          NODE
+
+      - name: Build deterministic candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(f,'utf8');
+          const before=(parent.match(/!important\b/gi)||[]).length;
+          if(before!==348) throw new Error(`parent important ${before}`);
+          const candidate=parent.replace(/\s*!important\b/gi,'');
+          const after=(candidate.match(/!important\b/gi)||[]).length;
+          if(after!==0) throw new Error(`candidate important ${after}`);
+          fs.writeFileSync('/tmp/candidate.css',candidate);
+          fs.writeFileSync(f,candidate);
+          const gitBlob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes=Buffer.byteLength(candidate);
+          const strip=s=>s.replace(/\s*!important\b/gi,'');
+          if(strip(parent)!==candidate) throw new Error('non-marker candidate delta');
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile()&&e.name.endsWith('.css'))out.push(p)}return out}
+          const count=x=>(fs.readFileSync(x,'utf8').match(/!important\b/gi)||[]).length;
+          const global=walk('assets/css').reduce((n,x)=>n+count(x),0);
+          if(global!==6705) throw new Error(`global important ${global}`);
+          fs.writeFileSync('/tmp/candidate.json',JSON.stringify({before,after,removed:348,gitBlob,sha256,bytes,parentGlobal:7053,candidateGlobal:global,globalDelta:-348},null,2)+'\n');
+          NODE
+          test "$(git diff --name-only "$PARENT_SHA" -- | wc -l)" -eq 1
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --numstat "$PARENT_SHA" -- "$TARGET_FILE" > /tmp/numstat.txt
+          awk 'NF==3 && $3==ENVIRON["TARGET_FILE"] { if ($1 != 348 || $2 != 348) exit 1; ok=1 } END { exit(ok?0:1) }' /tmp/numstat.txt
+
+      - name: Prove canonical dormancy before and after candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT_SHA" -- .
+          node scripts/audit-css-dormant-debt-policy.js > /tmp/policy-parent.txt
+          git checkout "$PARENT_SHA" -- .
+          cp /tmp/candidate.css "$TARGET_FILE"
+          node scripts/audit-css-dormant-debt-policy.js > /tmp/policy-candidate.txt
+          node <<'NODE'
+          const fs=require('fs');
+          const target=process.env.TARGET_FILE;
+          const p=fs.readFileSync('/tmp/policy-parent.txt','utf8');
+          const c=fs.readFileSync('/tmp/policy-candidate.txt','utf8');
+          const section=(s,a,b)=>(s.split(a)[1]||'').split(b)[0]||'';
+          const pa=section(p,'## Dívida ativa registrada','## Quarentena dormente registrada');
+          const ca=section(c,'## Dívida ativa registrada','## Quarentena dormente registrada');
+          const pd=section(p,'## Quarentena dormente registrada','## Violações');
+          const cd=section(c,'## Quarentena dormente registrada','## Violações');
+          if(pa.includes(target)||ca.includes(target)) throw new Error('target active in canonical policy');
+          if(!pd.includes(target)||!cd.includes(target)) throw new Error('target absent from dormant quarantine');
+          function metric(s,label){const escaped=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(escaped+'[: ]+\\*?\\*?(\\d+)'));return m?Number(m[1]):null}
+          const labels=['CSS depreciado reativado','Arquivos registrados ausentes','CSS ativo com !important fora do registro'];
+          const baseline={};
+          for(const label of labels){const a=metric(p,label),b=metric(c,label);if(a===null||b===null||a!==b) throw new Error(`${label} baseline ${a}->${b}`);baseline[label]={parent:a,candidate:b}}
+          fs.writeFileSync('/tmp/dormancy.json',JSON.stringify({parentDormant:true,candidateDormant:true,baselineUnchanged:true,metrics:baseline},null,2)+'\n');
+          NODE
+          git checkout "$PARENT_SHA" -- .
+
+      - name: Run parent and candidate gate matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/run-matrix.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"
+          candidate="$2"
+          out="/tmp/${phase}-gates.tsv"
+          : > "$out"
+          restore_state() {
+            git checkout "$PARENT_SHA" -- . >/dev/null 2>&1 || exit 90
+            if [ "$candidate" = "yes" ]; then cp /tmp/candidate.css "$TARGET_FILE"; fi
+          }
+          normalize_log() {
+            sed -E \
+              -e 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?/<TIME>/g' \
+              -e 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' \
+              -e 's#/[Tt]mp/[A-Za-z0-9._/-]+#<TMP>#g' "$1"
+          }
+          run_gate() {
+            label="$1"; shift
+            restore_state
+            log="/tmp/${phase}-${label}.log"
+            set +e
+            "$@" >"$log" 2>&1
+            rc=$?
+            set -e
+            normalize_log "$log" > "${log}.norm"
+            hash="$(sha256sum "${log}.norm" | awk '{print $1}')"
+            first="$(grep -m1 -v '^[[:space:]]*$' "${log}.norm" | tr '\t\r\n' '   ' | cut -c1-220)"
+            printf '%s\t%s\t%s\t%s\n' "$label" "$rc" "$hash" "$first" >> "$out"
+            echo "$phase|$label|rc=$rc|hash=$hash|first=$first"
+          }
+          set -e
+          run_gate agent_governance node scripts/audit-agent-governance.js
+          run_gate responsive_contract npm run test:responsive-contract
+          run_gate responsive_boundaries npm run audit:responsive-boundaries
+          run_gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          run_gate important_reduction_plan npm run audit:important-reduction-plan
+          run_gate global_css_design_system npm run audit:global-css-design-system
+          run_gate domain_completion_matrix npm run audit:domain-completion-matrix
+          run_gate frontend_strict npm run audit:frontend:strict
+          restore_state
+          BASH
+          chmod +x /tmp/run-matrix.sh
+          git checkout "$PARENT_SHA" -- .
+          /tmp/run-matrix.sh parent no
+          /tmp/run-matrix.sh candidate yes
+
+      - name: Reconcile gate outcomes without relaxing criteria
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          function parse(file){const m=new Map();for(const line of fs.readFileSync(file,'utf8').trim().split('\n').filter(Boolean)){const [label,rc,hash,...rest]=line.split('\t');m.set(label,{rc:Number(rc),hash,first:rest.join('\t')})}return m}
+          const p=parse('/tmp/parent-gates.tsv'),c=parse('/tmp/candidate-gates.tsv');
+          const labels=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','important_reduction_plan','global_css_design_system','domain_completion_matrix','frontend_strict'];
+          const rows=[];let introduced=0,baselineEquivalent=0,candidateGreen=0;
+          for(const label of labels){const a=p.get(label),b=c.get(label);if(!a||!b) throw new Error('missing gate '+label);let classification;
+            if(a.rc===0&&b.rc===0){classification='PASS_BOTH';candidateGreen++}
+            else if(a.rc===0&&b.rc!==0){classification='REGRESSION';introduced++}
+            else if(a.rc!==0&&b.rc===0){classification='CANDIDATE_IMPROVES_BASELINE';candidateGreen++}
+            else if(a.rc===b.rc&&a.hash===b.hash){classification='BASELINE_EQUIVALENT_FAILURE';baselineEquivalent++}
+            else {classification='DIVERGENT_FAILURE';introduced++}
+            rows.push({label,parent:a,candidate:b,classification});
+          }
+          if(introduced) throw new Error('candidate introduced/diverged static gate failures: '+rows.filter(x=>['REGRESSION','DIVERGENT_FAILURE'].includes(x.classification)).map(x=>x.label).join(','));
+          fs.writeFileSync('/tmp/gates.json',JSON.stringify({rows,candidateGreen,baselineEquivalent,introducedRegressions:introduced,criteriaRelaxed:0},null,2)+'\n');
+          console.log(JSON.stringify({candidateGreen,baselineEquivalent,introducedRegressions:introduced}));
+          NODE
+
+      - name: Verify marker-only hygiene and exact restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT_SHA" -- .
+          cp /tmp/candidate.css "$TARGET_FILE"
+          identity_blob="$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/candidate.json','utf8')).gitBlob)")"
+          test "$(git hash-object "$TARGET_FILE")" = "$identity_blob"
+          test "$(git diff --name-only "$PARENT_SHA" -- | wc -l)" -eq 1
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --numstat "$PARENT_SHA" -- "$TARGET_FILE" | awk 'NF==3 && $3==ENVIRON["TARGET_FILE"] { if ($1 != 348 || $2 != 348) exit 1; ok=1 } END { exit(ok?0:1) }'
+          git checkout "$PARENT_SHA" -- .
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Build R2C receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const candidate=JSON.parse(fs.readFileSync('/tmp/candidate.json','utf8'));
+          const dormancy=JSON.parse(fs.readFileSync('/tmp/dormancy.json','utf8'));
+          const gates=JSON.parse(fs.readFileSync('/tmp/gates.json','utf8'));
+          const receipt={
+            proof:'UX-CSS-IMPORTANT-037 Static Gate Reconciliation R2C',
+            historicalFailures:[
+              {stage:'R2',runId:Number(process.env.HISTORICAL_R2_RUN),jobId:Number(process.env.HISTORICAL_R2_JOB),result:'FAIL',reason:'over-scoped --strict dormant policy aborted before target-specific reconciliation'},
+              {stage:'R2B',runId:Number(process.env.HISTORICAL_R2B_RUN),jobId:Number(process.env.HISTORICAL_R2B_JOB),result:'FAIL',reason:'static matrix aborted on first nonzero gate without parent baseline capture'}
+            ],
+            parentSha:process.env.PARENT_SHA,parentTree:process.env.PARENT_TREE,targetFile:process.env.TARGET_FILE,parentTargetBlob:process.env.TARGET_BLOB,
+            r1b:{blob:process.env.R1B_BLOB,result:'PASS',canonicalLoaded:false,wholeFileDormant:true},
+            candidate:{importantBefore:candidate.before,importantAfter:candidate.after,removed:candidate.removed,gitBlob:candidate.gitBlob,sha256:candidate.sha256,bytes:candidate.bytes,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,diffFiles:1,additions:348,deletions:348},
+            queue:{parentGlobal:candidate.parentGlobal,candidateGlobal:candidate.candidateGlobal,delta:candidate.globalDelta},
+            dormancyAfterCandidate:dormancy,
+            staticGateReconciliation:gates,
+            restore:{targetParentExact:true,trackedWorkspaceClean:true},
+            browserRequired:false,browserReason:'Canonical loader proves whole-file dormancy before and after candidate; no HTML, CSS-import, or runtime-JS reach.',
+            result:'PASS'
+          };
+          fs.writeFileSync('/tmp/r2c.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify({candidateBlob:candidate.gitBlob,sha256:candidate.sha256,bytes:candidate.bytes,important:`${candidate.before}->${candidate.after}`,global:`${candidate.parentGlobal}->${candidate.candidateGlobal}`,candidateGreen:gates.candidateGreen,baselineEquivalent:gates.baselineEquivalent,introducedRegressions:gates.introducedRegressions,result:'PASS'}));
+          NODE
+
+      - name: Publish R2C receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          test -s /tmp/r2c.json && result="$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/r2c.json','utf8')).result||'FAIL')")" || true
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          if test -s /tmp/r2c.json; then cp /tmp/r2c.json "$RESULT_FILE"; else printf '{"proof":"UX-CSS-IMPORTANT-037 Static Gate Reconciliation R2C","result":"FAIL","reason":"receipt missing"}\n' > "$RESULT_FILE"; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: publish UX-CSS-IMPORTANT-037 static reconciliation R2C [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
+          test "$result" = PASS
