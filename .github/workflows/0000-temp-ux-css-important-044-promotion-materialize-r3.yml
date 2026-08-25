@@ -1,0 +1,78 @@
+name: TEMP UX-CSS-IMPORTANT-044 Promotion Materialize R3
+
+on:
+  push:
+    branches: [diag/ux-css-important-044-promotion-materialize-r3]
+    paths: [.github/workflows/0000-temp-ux-css-important-044-promotion-materialize-r3.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT_SHA: 69d7aa33b199ff6908c5f6244526d2fae31374ce
+      PARENT_TREE: 72119fd05d33a116ff342393f1711adf648e4b7c
+      TARGET_FILE: assets/css/components/shell/doke-shell-contract.css
+      PARENT_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
+      CANDIDATE_BLOB: 5000b0aa60f6d93e123bc17811887e57668d4988
+      CANDIDATE_SHA256: fa114edbfe30797719983d9f599b4efb589dd89f57cd332ecb779bbe9b1b9845
+      CANDIDATE_BYTES: '205262'
+      R2_BRANCH: diag/ux-css-important-044-doke-shell-contract-candidate-r2
+      R2_FILE: .diagnostics/ux-css-important-044-doke-shell-contract-candidate-r2.json
+      R2_BLOB: df0dae7d9bd0a9bdd13a14808c3fa0b4364f138c
+      OUTPUT_BRANCH: diag/ux-css-important-044-promotion-materialize-r3
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-044-promotion-materialize-r3.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+
+      - name: Freeze exact parent and R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$WORKFLOW_FILE"
+          git fetch --no-tags origin "refs/heads/$R2_BRANCH:refs/remotes/origin/$R2_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$R2_BRANCH:$R2_FILE")" = "$R2_BLOB"
+          git show "refs/remotes/origin/$R2_BRANCH:$R2_FILE" >/tmp/r2.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r2.json','utf8'));
+          if(r.result!=='PASS'||r.parent.sha!==process.env.PARENT_SHA||r.parent.tree!==process.env.PARENT_TREE||r.parent.targetBlob!==process.env.PARENT_BLOB)throw Error('R2 parent mismatch');
+          if(r.candidate.gitBlob!==process.env.CANDIDATE_BLOB||r.candidate.sha256!==process.env.CANDIDATE_SHA256||r.candidate.bytes!==Number(process.env.CANDIDATE_BYTES)||r.candidate.importantBefore!==2552||r.candidate.importantAfter!==0||r.candidate.candidateGlobal!==231||r.staticMatrix.introducedRegressions!==0||r.staticMatrix.criteriaRelaxed!==0)throw Error('R2 candidate mismatch');
+          NODE
+
+      - name: Reconstruct and materialize exact certified blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -B "$OUTPUT_BRANCH" "origin/$OUTPUT_BRANCH" >/dev/null
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const p=fs.readFileSync('/tmp/parent.css','utf8'),c=p.replace(/\s*!important\b/gi,'');
+          if((p.match(/!important\b/gi)||[]).length!==2552||(c.match(/!important\b/gi)||[]).length!==0)throw Error('marker reconstruction mismatch');
+          fs.writeFileSync(process.env.TARGET_FILE,c);
+          const sha=cp.execFileSync('git',['hash-object',process.env.TARGET_FILE],{encoding:'utf8'}).trim();
+          const h=crypto.createHash('sha256').update(c).digest('hex'),b=Buffer.byteLength(c);
+          if(sha!==process.env.CANDIDATE_BLOB||h!==process.env.CANDIDATE_SHA256||b!==Number(process.env.CANDIDATE_BYTES))throw Error(`candidate identity ${sha}/${h}/${b}`);
+          NODE
+          git diff --check "$PARENT_SHA" -- "$TARGET_FILE"
+          git config user.name doke;git config user.email bielantoniomma@gmail.com
+          git add "$TARGET_FILE"
+          test "$(git diff --cached --name-only)" = "$TARGET_FILE"
+          git commit -m 'diagnostic(ux-css-important-044): materialize certified doke shell candidate' >/dev/null
+          git push origin HEAD:"$OUTPUT_BRANCH" >/dev/null
+
+      - name: Verify materialization isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$TARGET_FILE)" = "$CANDIDATE_BLOB"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD | sort)" = $'.github/workflows/0000-temp-ux-css-important-044-promotion-materialize-r3.yml\nassets/css/components/shell/doke-shell-contract.css'
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
