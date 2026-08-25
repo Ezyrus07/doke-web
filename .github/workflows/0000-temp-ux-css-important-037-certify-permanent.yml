@@ -1,0 +1,241 @@
+name: UX-CSS-IMPORTANT-037 Permanent Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-037-certify-permanent
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-037-certify-permanent.yml
+
+permissions:
+  contents: write
+
+jobs:
+  certify037:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PARENT_SHA: d3d45498ca2e8889c50273fa82550f92d3b7af1f
+      PARENT_TREE: c44532c746318e9f82d59755c1d857abb346e5c6
+      HEAD_SHA: f0dff98b236eb189cc3864ae411f96f1ac6ba0bd
+      HEAD_TREE: c9a5daf5a77e5d247409bbb02d38ce83b55a2d20
+      PERMANENT_BRANCH: ux/ux-css-important-037-mobile-search-header-dormant-priority
+      TARGET_FILE: assets/css/components/navigation/mobile-search-header-shared.css
+      TARGET_PARENT_BLOB: 946a1e094936900ca550442dead9a108fbf7221c
+      TARGET_BLOB: d50e67fb65f2b675b8c1b29abd3ad94145dd7ec0
+      TARGET_SHA256: fa927922ebe4c3d4a6ed9b9ad6f1bf9ec5892ebd836e9ac149ca52ba96515cbd
+      TARGET_BYTES: 15950
+      R1B_BRANCH: diag/ux-css-important-037-mobile-search-header-reach-r1b
+      R1B_FILE: .diagnostics/ux-css-important-037-mobile-search-header-reach-r1b.json
+      R1B_BLOB: cfe8d8352f1b455bc6f98c04bfd72d3099e04bd5
+      R2E_BRANCH: diag/ux-css-important-037-mobile-search-header-final-static-r2e
+      R2E_FILE: .diagnostics/ux-css-important-037-mobile-search-header-final-static-r2e.json
+      R2E_BLOB: c3f93b9ee41e926474871f275d6bc270c715606d
+      OUTPUT_BRANCH: diag/ux-css-important-037-certify-permanent
+      RESULT_FILE: .diagnostics/ux-css-important-037-permanent-certification.txt
+      PR_NUM: 360
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Certify permanent candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          : >/tmp/summary
+          pass(){ echo "$1" | tee -a /tmp/summary; }
+
+          git fetch --no-tags origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null
+          git fetch --no-tags origin "refs/heads/$R1B_BRANCH:refs/remotes/origin/$R1B_BRANCH" >/dev/null
+          git fetch --no-tags origin "refs/heads/$R2E_BRANCH:refs/remotes/origin/$R2E_BRANCH" >/dev/null
+
+          test "$(git rev-parse "refs/remotes/origin/$PERMANENT_BRANCH")" = "$HEAD_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$HEAD_SHA^{tree}")" = "$HEAD_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_PARENT_BLOB"
+          test "$(git rev-parse "$HEAD_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git merge-base "$PARENT_SHA" "$HEAD_SHA")" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..$HEAD_SHA")" = 1
+          test "$(git rev-list --count "$HEAD_SHA..$PARENT_SHA")" = 0
+          test "$(git diff --name-only "$PARENT_SHA" "$HEAD_SHA" | wc -l | tr -d ' ')" = 1
+          test "$(git diff --name-only "$PARENT_SHA" "$HEAD_SHA")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" "$HEAD_SHA" -- "$TARGET_FILE")" = $'348\t348\t'"$TARGET_FILE"
+          git diff --check "$PARENT_SHA" "$HEAD_SHA" -- "$TARGET_FILE"
+          pass 'LINEAGE PASS|ahead=1|behind=0|mergeBase=parent|files=1|additions=348|deletions=348'
+
+          test "$(git rev-parse "refs/remotes/origin/$R1B_BRANCH:$R1B_FILE")" = "$R1B_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R2E_BRANCH:$R2E_FILE")" = "$R2E_BLOB"
+          git show "refs/remotes/origin/$R1B_BRANCH:$R1B_FILE" >/tmp/r1b.json
+          git show "refs/remotes/origin/$R2E_BRANCH:$R2E_FILE" >/tmp/r2e.json
+          node <<'NODE'
+          const fs=require('fs');
+          const r1=JSON.parse(fs.readFileSync('/tmp/r1b.json','utf8'));
+          const r2=JSON.parse(fs.readFileSync('/tmp/r2e.json','utf8'));
+          const c=r2.candidate||{}, g=r2.staticGateReconciliation||{};
+          const ok1=r1.result==='PASS' && r1.parentSha===process.env.PARENT_SHA && r1.parentTree===process.env.PARENT_TREE && r1.targetFile===process.env.TARGET_FILE && r1.targetBlob===process.env.TARGET_PARENT_BLOB && r1.importantDeclarationCount===348 && r1.reach?.canonicalLoaded===false && r1.reach?.wholeFileDormant===true && (r1.reach?.directHtmlRefs||[]).length===0 && (r1.reach?.cssImporters||[]).length===0 && (r1.reach?.runtimeJsRefs||[]).length===0;
+          const ok2=r2.result==='PASS' && r2.parentSha===process.env.PARENT_SHA && r2.parentTree===process.env.PARENT_TREE && r2.targetFile===process.env.TARGET_FILE && r2.parentTargetBlob===process.env.TARGET_PARENT_BLOB && c.importantBefore===348 && c.importantAfter===0 && c.removed===348 && c.gitBlob===process.env.TARGET_BLOB && c.sha256===process.env.TARGET_SHA256 && c.bytes===Number(process.env.TARGET_BYTES) && c.markerOnly===true && c.selectorsRemoved===0 && c.declarationsRemoved===0 && c.propertiesChanged===0 && c.valuesChanged===0 && c.diffFiles===1 && c.additions===348 && c.deletions===348 && r2.dormancyAfterCandidate?.candidateDormant===true && r2.dormancyAfterCandidate?.canonicalLoaded===false && r2.dormancyAfterCandidate?.runtimeRelevant===false && g.introducedRegressions===0 && g.criteriaRelaxed===0 && r2.browserRequired===false && r2.restore?.targetParentExact===true && r2.restore?.trackedWorkspaceClean===true;
+          if(!ok1||!ok2) throw new Error(`evidence mismatch r1=${ok1} r2=${ok2}`);
+          NODE
+          pass 'EVIDENCE TRANSFER PASS|r1bDormancy=PASS|r2eStaticReconciliation=PASS|introducedRegressions=0|criteriaRelaxed=0|browserRequired=0'
+
+          git checkout --detach "$HEAD_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs');
+          const parent=fs.readFileSync('/tmp/parent.css','utf8');
+          const head=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const before=(parent.match(/!important\b/gi)||[]).length;
+          const after=(head.match(/!important\b/gi)||[]).length;
+          const expected=parent.replace(/\s*!important\b/gi,'');
+          if(before!==348||after!==0) throw new Error(`important ${before}->${after}`);
+          if(expected!==head) throw new Error('permanent bytes differ from deterministic 348->0 candidate');
+          if(parent.replace(/\s*!important\b/gi,'')!==head.replace(/\s*!important\b/gi,'')) throw new Error('non-marker mutation');
+          NODE
+          pass 'PERMANENT IDENTITY PASS|important=348->0|removed=348|blob=exact|sha256=exact|bytes=15950|markerOnly=1'
+
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile()&&p.endsWith('.css'))out.push(p)}return out}
+          const count=f=>(fs.readFileSync(f,'utf8').match(/!important\b/gi)||[]).length;
+          const total=walk('assets/css').reduce((s,f)=>s+count(f),0);
+          const checks={
+            'assets/css/pages/home/mobile-composition.css':6,
+            'assets/css/components/cards/mobile-card-contract.css':2,
+            'assets/css/components/shell/mobile-base-stability.css':28,
+            'assets/css/pages/home/mobile-hero-feed.css':127,
+            'assets/css/components/shell/mobile-app-shell.css':6,
+            [process.env.TARGET_FILE]:0
+          };
+          if(total!==6705) throw new Error(`global important ${total}`);
+          for(const [f,n] of Object.entries(checks)){const got=count(f);if(got!==n)throw new Error(`${f}=${got} expected ${n}`)}
+          NODE
+          pass 'IMPORTANT FRESH PASS|global=6705|target=0|protected006=6|protected010=2|protected020=28|protected021=127|protected036=6'
+
+          npm ci --ignore-scripts >/dev/null
+
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/dorm-head.txt
+          node <<'NODE'
+          const fs=require('fs');
+          const s=fs.readFileSync('/tmp/dorm-head.txt','utf8'), target=process.env.TARGET_FILE;
+          const section=(a,b)=>(s.split(a)[1]||'').split(b)[0]||'';
+          const active=section('## Dívida ativa registrada','## Quarentena dormente registrada');
+          const dormant=section('## Quarentena dormente registrada','## Violações');
+          if(active.includes(target)) throw new Error('target active after promotion');
+          if(!dormant.includes(target)) throw new Error('target absent from dormant quarantine');
+          const metric=(label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(esc+'[: ]+\\*?\\*?(\\d+)'));return m?Number(m[1]):null};
+          if(metric('CSS depreciado reativado')!==0) throw new Error('deprecated CSS reactivated');
+          if(metric('CSS ativo com !important fora do registro')!==0) throw new Error('unregistered active important debt');
+          NODE
+          pass 'DORMANCY PASS|canonicalLoaded=0|runtimeRelevant=0|deprecatedReactivated=0'
+
+          cat >/tmp/gates.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; sha="$2"
+          : > "/tmp/${phase}.tsv"
+          restore(){ git checkout --detach "$sha" >/dev/null 2>&1 || exit 90; git restore --worktree -- . >/dev/null 2>&1 || exit 91; return 0; }
+          norm(){ sed -E -e 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?/<TIME>/g' -e 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$1"; }
+          gate(){ label="$1"; shift; restore; log="/tmp/${phase}-${label}.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; norm "$log" >"${log}.norm"; hash="$(sha256sum "${log}.norm"|awk '{print $1}')"; printf '%s\t%s\t%s\n' "$label" "$rc" "$hash" >> "/tmp/${phase}.tsv"; echo "$phase|$label|rc=$rc|hash=$hash"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate duplicate_assets npm run audit:duplicate-assets
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/gates.sh
+          /tmp/gates.sh parent "$PARENT_SHA"
+          /tmp/gates.sh permanent "$HEAD_SHA"
+
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const parse=f=>new Map(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [label,rc,hash]=x.split('\t');return [label,{rc:Number(rc),hash}]}));
+          const p=parse('/tmp/parent.tsv'),h=parse('/tmp/permanent.tsv');
+          const ordinary=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','important_reduction_plan','global_css_design_system','domain_completion_matrix','duplicate_assets'];
+          let green=0,baselineEquivalent=0,improved=0;
+          for(const label of ordinary){
+            const a=p.get(label),b=h.get(label); if(!a||!b) throw new Error('missing '+label);
+            if(a.rc===0&&b.rc===0){green++;continue;}
+            if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash){baselineEquivalent++;continue;}
+            if(a.rc!==0&&b.rc===0){improved++;continue;}
+            throw new Error(`${label} regression/divergence parent=${a.rc}/${a.hash} permanent=${b.rc}/${b.hash}`);
+          }
+          const fa=p.get('frontend_strict'),fb=h.get('frontend_strict');
+          if(!fa||!fb||fa.rc!==1||fb.rc!==1) throw new Error(`frontend strict unexpected rc ${fa?.rc}->${fb?.rc}`);
+          const pl=fs.readFileSync('/tmp/parent-frontend_strict.log','utf8');
+          const hl=fs.readFileSync('/tmp/permanent-frontend_strict.log','utf8');
+          const num=(s,prefix)=>{const m=s.match(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*(\\d+)'));return m?Number(m[1]):null};
+          const cp=num(pl,'Críticos:'),ch=num(hl,'Críticos:'),wp=num(pl,'Avisos:'),wh=num(hl,'Avisos:');
+          if(cp===null||ch===null||wp===null||wh===null||cp!==ch||wp!==wh) throw new Error(`frontend counts changed ${cp}/${wp}->${ch}/${wh}`);
+          const crit=s=>s.split('\n').filter(x=>x.includes('**CRITICAL**')).sort();
+          const warn=s=>s.split('\n').filter(x=>x.includes('**WARNING**')).sort();
+          if(JSON.stringify(crit(pl))!==JSON.stringify(crit(hl))) throw new Error('frontend critical set changed');
+          if(JSON.stringify(warn(pl))!==JSON.stringify(warn(hl))) throw new Error('frontend warning set changed');
+          const debt=(s,label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(esc+'\\s*(\\d+) uso\\(s\\) em (\\d+) arquivo\\(s\\)'));return m?{uses:Number(m[1]),files:Number(m[2])}:null};
+          const tp=debt(pl,'Dívida !important registrada:'),th=debt(hl,'Dívida !important registrada:');
+          const ap=debt(pl,'Dívida !important ativa carregada por HTML raiz:'),ah=debt(hl,'Dívida !important ativa carregada por HTML raiz:');
+          const dp=debt(pl,'Dívida !important dormente no pacote:'),dh=debt(hl,'Dívida !important dormente no pacote:');
+          if(!tp||!th||!ap||!ah||!dp||!dh) throw new Error('frontend debt metrics missing');
+          if(th.uses!==tp.uses-348||th.files!==tp.files-1) throw new Error(`total debt delta ${JSON.stringify(tp)} -> ${JSON.stringify(th)}`);
+          if(ah.uses!==ap.uses||ah.files!==ap.files) throw new Error(`active debt changed ${JSON.stringify(ap)} -> ${JSON.stringify(ah)}`);
+          if(dh.uses!==dp.uses-348||dh.files!==dp.files-1) throw new Error(`dormant debt delta ${JSON.stringify(dp)} -> ${JSON.stringify(dh)}`);
+          const normalize=s=>s.split('\n').filter(line=>!/^Gerado em:/.test(line)&&!/^Dívida !important registrada:/.test(line)&&!/^Dívida !important ativa carregada por HTML raiz:/.test(line)&&!/^Dívida !important dormente no pacote:/.test(line)).join('\n');
+          const a=crypto.createHash('sha256').update(normalize(pl)).digest('hex'), b=crypto.createHash('sha256').update(normalize(hl)).digest('hex');
+          if(a!==b) throw new Error(`frontend semantic hash changed ${a}->${b}`);
+          fs.writeFileSync('/tmp/gate-summary',`green=${green}|baselineEquivalent=${baselineEquivalent+1}|improved=${improved}|frontendCritical=${ch}|frontendWarnings=${wh}|introducedRegressions=0|criteriaRelaxed=0\n`);
+          NODE
+          pass "STATIC RECONCILIATION PASS|$(cat /tmp/gate-summary)"
+
+          git checkout --detach "$HEAD_SHA" >/dev/null
+          git restore --worktree -- .
+          npm audit --json >/tmp/npm-audit.json 2>/dev/null || true
+          node <<'NODE'
+          const v=JSON.parse(require('fs').readFileSync('/tmp/npm-audit.json','utf8')).metadata?.vulnerabilities||{};
+          const expected={total:13,critical:0,high:10,moderate:1,low:2};
+          for(const [k,n] of Object.entries(expected)) if(Number(v[k]||0)!==n) throw new Error(`${k}=${v[k]} expected ${n}`);
+          NODE
+          pass 'DEPENDENCIES PASS|total=13|critical=0|high=10|moderate=1|low=2'
+
+          git checkout --detach "$HEAD_SHA" >/dev/null
+          git restore --worktree -- .
+          git clean -fd >/dev/null
+          test -z "$(git status --short --untracked-files=no)"
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$HEAD_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          pass 'RESTORE PASS|head=permanent-exact|tree=permanent-exact|workspaceTrackedClean=1'
+          pass 'RESULT=PASS'
+
+      - name: Publish permanent certification receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          test -f /tmp/summary && grep -q '^RESULT=PASS$' /tmp/summary && result=PASS || true
+          { echo "RUN_ID=$GITHUB_RUN_ID"; echo "HEAD_SHA=$HEAD_SHA"; echo "HEAD_TREE=$HEAD_TREE"; echo "PR=$PR_NUM"; echo "TARGET_FILE=$TARGET_FILE"; test -f /tmp/summary && cat /tmp/summary || true; echo "PROOF_RESULT=$result"; } >/tmp/out
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/out "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: publish 037 permanent certification [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
+          test "$result" = PASS
