@@ -1,0 +1,55 @@
+name: TEMP UX-CSS-IMPORTANT-042 App Mobile Header Offset Probe
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-042-app-mobile-header-contract-offset-probe
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-042-app-mobile-header-offset-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  offset-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PRODUCT_SHA: bbcfa17c8fd5ea5070baf0f77b9e2451840209a9
+      PRODUCT_TREE: ebd6f2afd9b84f54f3a34763266d55e34a9451ac
+      TARGET: assets/css/components/navigation/app-mobile-header-contract.css
+      TARGET_BLOB: 87c1a677b3eb59b088063dbe8e7c7a4ed6d73f25
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-css-important-042-app-mobile-header-offset-probe.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Freeze isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PRODUCT_SHA^{tree}")" = "$PRODUCT_TREE"
+          test "$(git rev-parse "$PRODUCT_SHA:$TARGET")" = "$TARGET_BLOB"
+          test "$(git merge-base "$PRODUCT_SHA" HEAD)" = "$PRODUCT_SHA"
+          test "$(git rev-list --count "$PRODUCT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PRODUCT_SHA" HEAD)" = "$WORKFLOW_PATH"
+      - name: Print exact unresolved contexts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$PRODUCT_SHA:$TARGET" > /tmp/target.css
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/target.css').read_text()
+          for pos in (2350,36412):
+              assert s[pos:pos+10].lower().startswith('!important'), (pos,repr(s[pos:pos+30]))
+              line=s.count('\n',0,pos)+1
+              prev=s.rfind('\n',0,pos)
+              col=pos-(prev+1)+1
+              start=max(0,pos-420); end=min(len(s),pos+420)
+              print(f'=== OFFSET {pos} LINE {line} COL {col} ===')
+              print(repr(s[start:end]))
+              print('--- RAW ---')
+              print(s[start:end])
+          print('TOTAL_LITERAL_IMPORTANT',s.lower().count('!important'))
+          PY
