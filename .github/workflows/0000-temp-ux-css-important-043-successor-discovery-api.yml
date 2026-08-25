@@ -1,0 +1,62 @@
+name: TEMP UX-CSS-IMPORTANT-043 Successor Discovery API
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-043-successor-discovery-api
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-043-successor-discovery-api.yml
+
+permissions:
+  contents: read
+
+jobs:
+  successor-discovery-api:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PARENT_SHA: deb8aebc0235fda21f820d7dbfe1e0035f582111
+      PARENT_TREE: b3c52048119014a8c9b04b4355db7f92d6689239
+      PARENT_GLOBAL: '4045'
+      HOME_FILE: assets/css/pages/home-tablet-v2.css
+      HOME_BLOB: 91e01881f5a790675719a37ae81da6aba8ba940e
+      SHELL_FILE: assets/css/components/shell/doke-shell-contract.css
+      SHELL_BLOB: c167c0b747dbb4465cdaf096b5a9225fa3d69059
+    steps:
+      - name: Verify certified parent identity via GitHub API
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/commits/${PARENT_SHA}" >/tmp/commit.json
+          node <<'NODE'
+          const c=JSON.parse(require('fs').readFileSync('/tmp/commit.json','utf8'));
+          if(c.sha!==process.env.PARENT_SHA||c.tree?.sha!==process.env.PARENT_TREE) throw new Error(`parent mismatch ${c.sha}/${c.tree?.sha}`);
+          NODE
+
+      - name: Measure exact frozen candidate blobs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for spec in "home:$HOME_BLOB" "shell:$SHELL_BLOB"; do
+            name="${spec%%:*}"; blob="${spec#*:}"
+            curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/blobs/${blob}" >"/tmp/${name}.json"
+          done
+          node <<'NODE'
+          const fs=require('fs');
+          const decode=f=>{const j=JSON.parse(fs.readFileSync(f,'utf8'));return {sha:j.sha,bytes:j.size,text:Buffer.from(j.content.replace(/\n/g,''),'base64').toString('utf8')}};
+          const home=decode('/tmp/home.json'),shell=decode('/tmp/shell.json');
+          if(home.sha!==process.env.HOME_BLOB||shell.sha!==process.env.SHELL_BLOB) throw new Error('blob mismatch');
+          const count=x=>(x.match(/!important\b/gi)||[]).length;
+          const rows=[
+            {file:process.env.HOME_FILE,blob:home.sha,bytes:home.bytes,important:count(home.text)},
+            {file:process.env.SHELL_FILE,blob:shell.sha,bytes:shell.bytes,important:count(shell.text)}
+          ];
+          if(rows.some(x=>x.important<=0)) throw new Error('candidate unexpectedly empty');
+          const sorted=[...rows].sort((a,b)=>a.important-b.important||a.file.localeCompare(b.file));
+          const out={checkpoint:'UX-CSS-IMPORTANT-043 successor discovery API',result:'PASS',parent:{sha:process.env.PARENT_SHA,tree:process.env.PARENT_TREE,globalImportant:Number(process.env.PARENT_GLOBAL)},candidates:rows,canonicalNext:sorted[0],following:sorted[1],scope:{repositoryOnly:true,productMutation:false,staging:false,production:false,backend:false,supabase:false,rpc:false,migrations:false,credentials:false,runtimeRealtime:false,merge:false,readyForReview:false,forcePush:false,historyRewrite:false}};
+          console.log('DISCOVERY_JSON='+JSON.stringify(out));
+          NODE
