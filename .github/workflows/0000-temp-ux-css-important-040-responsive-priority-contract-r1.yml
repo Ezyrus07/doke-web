@@ -1,0 +1,270 @@
+name: TEMP UX-CSS-IMPORTANT-040 Responsive Priority Contract R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-040-responsive-priority-contract-r1
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-040-responsive-priority-contract-r1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reach-source-cascade-r1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PRODUCT_SHA: 901053a08cf702257ffc9551165dbb8183e6455c
+      PRODUCT_TREE: 773e7a18e354ffdae16abb7145c47a9de111b38f
+      TARGET: assets/css/components/layout/responsive-priority-contract.css
+      EXPECTED_IMPORTANT: '477'
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-css-important-040-responsive-priority-contract-r1.yml
+      RECEIPT_PATH: .diagnostics/ux-css-important-040-responsive-priority-contract-r1.json
+    steps:
+      - name: Checkout diagnostic branch with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze diagnostic isolation and certified predecessor
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PRODUCT_SHA^{tree}")" = "$PRODUCT_TREE"
+          test "$(git merge-base "$PRODUCT_SHA" HEAD)" = "$PRODUCT_SHA"
+          mapfile -t changed < <(git diff --name-only "$PRODUCT_SHA" HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          test "$(git status --porcelain)" = ""
+
+      - name: Prove reach source ownership and cascade inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, posixpath, re, subprocess
+          from pathlib import PurePosixPath
+
+          PRODUCT_SHA=os.environ['PRODUCT_SHA']
+          PRODUCT_TREE=os.environ['PRODUCT_TREE']
+          TARGET=os.environ['TARGET']
+          EXPECTED=int(os.environ['EXPECTED_IMPORTANT'])
+          RECEIPT=os.environ['RECEIPT_PATH']
+          PREV038='assets/css/components/cards/marketplace-responsive-card-stack.css'
+          PREV039='assets/css/patterns/marketplace-responsive-stack.css'
+
+          def sh(*args):
+              return subprocess.check_output(args, text=True).rstrip('\n')
+          def paths():
+              return sh('git','ls-tree','-r','--name-only',PRODUCT_SHA).splitlines()
+          ALL=paths(); ALLSET=set(ALL)
+          def read(path):
+              return subprocess.check_output(['git','show',f'{PRODUCT_SHA}:{path}']).decode('utf-8','replace')
+          def blob(path):
+              return sh('git','rev-parse',f'{PRODUCT_SHA}:{path}')
+
+          assert TARGET in ALLSET, TARGET
+          target=read(TARGET)
+          important=target.count('!important')
+          assert important==EXPECTED, (important,EXPECTED)
+
+          def strip_comments(s): return re.sub(r'/\*.*?\*/','',s,flags=re.S)
+
+          def imports(css_path, text):
+              out=[]
+              clean=strip_comments(text)
+              for m in re.finditer(r'@import\s+(?:url\(\s*)?(?:[\'\"])?([^\'\"\)\s;]+\.css(?:\?[^\'\"\)\s;]*)?)(?:[\'\"])?\s*\)?[^;]*;', clean, re.I):
+                  raw=m.group(1); noquery=raw.split('?',1)[0].split('#',1)[0]
+                  if re.match(r'^[a-z]+://',noquery,re.I):
+                      resolved=None
+                  elif noquery.startswith('/'):
+                      resolved=noquery.lstrip('/')
+                  else:
+                      resolved=posixpath.normpath(posixpath.join(posixpath.dirname(css_path),noquery))
+                  out.append({'raw':raw,'resolved':resolved})
+              return out
+
+          CSS=[p for p in ALL if p.endswith('.css')]
+          css_text={p:read(p) for p in CSS}
+          import_map={p:imports(p,t) for p,t in css_text.items()}
+          direct_importers=sorted(p for p,v in import_map.items() if any(i['resolved']==TARGET for i in v))
+
+          root_html=sorted(p for p in ALL if p.endswith('.html') and '/' not in p)
+          link_re=re.compile(r'<link\b[^>]*?href\s*=\s*[\'\"]([^\'\"]+)[\'\"][^>]*>',re.I|re.S)
+          def html_css(text):
+              out=[]
+              for href in link_re.findall(text):
+                  noquery=href.split('?',1)[0].split('#',1)[0]
+                  if not noquery.endswith('.css'): continue
+                  if re.match(r'^[a-z]+://',noquery,re.I): continue
+                  out.append(posixpath.normpath(noquery.lstrip('/')))
+              return out
+          page_direct={p:html_css(read(p)) for p in root_html}
+          direct_html_refs=sorted(p for p,links in page_direct.items() if TARGET in links)
+
+          def closure(starts):
+              seen=set(); stack=list(starts)
+              while stack:
+                  p=stack.pop()
+                  if p in seen or p not in ALLSET or not p.endswith('.css'): continue
+                  seen.add(p)
+                  for imp in import_map.get(p,[]):
+                      q=imp['resolved']
+                      if q: stack.append(q)
+              return seen
+          page_reach={p:closure(links) for p,links in page_direct.items()}
+          target_pages=sorted(p for p,s in page_reach.items() if TARGET in s)
+          loaded_css=sorted(set().union(*page_reach.values()) if page_reach else set())
+          canonical_loaded=TARGET in set(loaded_css)
+
+          needle=PurePosixPath(TARGET).name
+          runtime_js=[]; tooling=[]; other_refs=[]
+          for p in ALL:
+              if p==TARGET or not re.search(r'\.(?:js|mjs|cjs|json|md|yml|yaml|html|css)$',p): continue
+              try: txt=read(p)
+              except Exception: continue
+              if TARGET not in txt and needle not in txt: continue
+              if p.startswith('assets/js/'):
+                  runtime_js.append(p)
+              elif p.startswith(('scripts/','tests/','.github/','docs/','config/')):
+                  tooling.append(p)
+              else:
+                  other_refs.append(p)
+          runtime_js=sorted(runtime_js); tooling=sorted(tooling); other_refs=sorted(other_refs)
+
+          def parse_rules(text):
+              s=strip_comments(text)
+              n=len(s); rules=[]
+              def match_brace(i):
+                  depth=1; j=i+1; quote=None; esc=False
+                  while j<n:
+                      c=s[j]
+                      if quote:
+                          if esc: esc=False
+                          elif c=='\\': esc=True
+                          elif c==quote: quote=None
+                      else:
+                          if c in "'\"": quote=c
+                          elif c=='{': depth+=1
+                          elif c=='}':
+                              depth-=1
+                              if depth==0:return j
+                      j+=1
+                  raise AssertionError('unbalanced css')
+              def top_decls(body):
+                  vals=[]; start=0; par=0; quote=None; esc=False
+                  for i,c in enumerate(body+';'):
+                      if quote:
+                          if esc: esc=False
+                          elif c=='\\': esc=True
+                          elif c==quote: quote=None
+                          continue
+                      if c in "'\"": quote=c
+                      elif c=='(': par+=1
+                      elif c==')': par=max(0,par-1)
+                      elif c==';' and par==0:
+                          seg=body[start:i].strip(); start=i+1
+                          if ':' in seg and not seg.lstrip().startswith('@'):
+                              prop,val=seg.split(':',1)
+                              prop=prop.strip().lower(); val=val.strip()
+                              if re.match(r'^--?[a-zA-Z_]|^[a-zA-Z_]',prop): vals.append((prop,val))
+                  return vals
+              def walk(a,b,ctx=()):
+                  i=a
+                  while i<b:
+                      semi=s.find(';',i,b); brace=s.find('{',i,b)
+                      if brace<0: break
+                      if semi>=0 and semi<brace:
+                          i=semi+1; continue
+                      header=s[i:brace].strip(); close=match_brace(brace)
+                      body=s[brace+1:close]
+                      if header.startswith('@'):
+                          at=header.split(None,1)[0].lower()
+                          if at in ('@media','@supports','@layer','@container','@scope','@document'):
+                              walk(brace+1,close,ctx+(header,))
+                      else:
+                          decls=top_decls(body)
+                          if decls: rules.append({'selector':' '.join(header.split()),'context':list(ctx),'decls':decls})
+                      i=close+1
+              walk(0,n)
+              return rules
+
+          def inventory(path):
+              rs=parse_rules(css_text[path])
+              decls=sum(len(r['decls']) for r in rs)
+              imp=sum(1 for r in rs for _,v in r['decls'] if '!important' in v)
+              keys={(r['selector'],p) for r in rs for p,_ in r['decls']}
+              return {'rules':len(rs),'declarations':decls,'importantDeclarations':imp,'keys':keys}
+
+          tinv=inventory(TARGET)
+          assert tinv['importantDeclarations']==EXPECTED, tinv
+          prev={}
+          for p in (PREV038,PREV039):
+              if p in ALLSET:
+                  inv=inventory(p)
+                  prev[p]={
+                    'blob':blob(p),
+                    'importantDeclarations':inv['importantDeclarations'],
+                    'exactSelectorPropertyCollisions':len(tinv['keys'] & inv['keys']),
+                    'targetImportsPrevious':any(i['resolved']==p for i in import_map[TARGET]),
+                    'previousImportsTarget':any(i['resolved']==TARGET for i in import_map[p]),
+                  }
+
+          whole_dormant=(not canonical_loaded and not direct_html_refs and not runtime_js and not direct_importers)
+          browser_required=not whole_dormant
+          own_imports=import_map[TARGET]
+          receipt={
+            'proof':'UX-CSS-IMPORTANT-040 Reach / Source / Cascade R1',
+            'result':'PASS',
+            'checkpoint':'UX-CSS-IMPORTANT-040',
+            'product':{'sha':PRODUCT_SHA,'tree':PRODUCT_TREE},
+            'target':{
+              'path':TARGET,'blob':blob(TARGET),
+              'sha256':hashlib.sha256(target.encode()).hexdigest(),
+              'bytes':len(target.encode()),'important':important,
+              'rules':tinv['rules'],'declarations':tinv['declarations'],
+              'imports':own_imports,
+            },
+            'reach':{
+              'rootHtmlCount':len(root_html),'loadedCssCount':len(loaded_css),
+              'canonicalLoaded':canonical_loaded,'wholeFileDormant':whole_dormant,
+              'targetPages':target_pages,'directHtmlRefs':direct_html_refs,
+              'directImporters':direct_importers,'runtimeJsRefs':runtime_js,
+              'toolingRefs':tooling,'otherRefs':other_refs,
+              'browserReconciliationRequired':browser_required,
+            },
+            'predecessorRelations':prev,
+            'criteria':{
+              'expectedImportant':EXPECTED,
+              'markerRemovalAttempted':False,'productMutation':False,
+              'staging':False,'production':False,'backend':False,'supabase':False,
+              'rpc':False,'migrations':False,'credentials':False,'runtimeRealtime':False,
+            }
+          }
+          os.makedirs(os.path.dirname(RECEIPT),exist_ok=True)
+          with open(RECEIPT,'w') as f: json.dump(receipt,f,indent=2,sort_keys=True)
+          print(json.dumps(receipt,indent=2,sort_keys=True))
+          PY
+
+      - name: Publish R1 receipt on diagnostic branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RECEIPT_PATH"
+          git diff --cached --quiet && { echo 'receipt missing'; exit 1; }
+          mapfile -t staged < <(git diff --cached --name-only)
+          test "${#staged[@]}" -eq 1
+          test "${staged[0]}" = "$RECEIPT_PATH"
+          git commit -m "diagnostic(ux-css-important-040): publish R1 reach receipt"
+          git push origin HEAD:diag/ux-css-important-040-responsive-priority-contract-r1
+
+      - name: Verify product predecessor unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PRODUCT_SHA^{tree}")" = "$PRODUCT_TREE"
+          test "$(git show "$PRODUCT_SHA:$TARGET" | grep -o '!important' | wc -l | tr -d ' ')" = "$EXPECTED_IMPORTANT"
+          test "$(git status --porcelain)" = ""
