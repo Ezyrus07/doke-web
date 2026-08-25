@@ -1,0 +1,415 @@
+name: UX-CSS-IMPORTANT-038 Reach Source Cascade R1B
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-038-marketplace-card-reach-r1b
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-038-marketplace-card-reach-r1b.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prove038r1b:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT_SHA: f0dff98b236eb189cc3864ae411f96f1ac6ba0bd
+      PARENT_TREE: c9a5daf5a77e5d247409bbb02d38ce83b55a2d20
+      TARGET_FILE: assets/css/components/cards/marketplace-responsive-card-stack.css
+      TARGET_BLOB: ec63ebffb471979068e88d49e8f934e13e9658b3
+      TARGET_IMPORTANT: 434
+      OUTPUT_BRANCH: diag/ux-css-important-038-marketplace-card-reach-r1b
+      RESULT_FILE: .diagnostics/ux-css-important-038-marketplace-card-reach-r1b.json
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-038-marketplace-card-reach-r1b.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Prove corrected reach source and cascade
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$WORKFLOW_FILE"
+
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/policy.txt 2>&1 || true
+
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { getLoadedCssAssets } = require('./scripts/lib/css-assets');
+
+          const normalize = f => String(f).replace(/\\/g, '/').replace(/^\.\//, '');
+          const target = normalize(process.env.TARGET_FILE);
+          const expectedImportant = Number(process.env.TARGET_IMPORTANT);
+          const root = process.cwd();
+          const historicalR1 = {
+            runId: 32794787867,
+            jobId: 97643709734,
+            result: 'FAIL',
+            classification: 'HARNESS_REPRESENTATION',
+            observedRawMarkers: 434,
+            erroneousExpandedPairs: 446,
+            reason: 'selector-list expansion counted one physical declaration once per selector; preserved as non-product harness failure'
+          };
+
+          const receiptBase = {
+            proof: 'UX-CSS-IMPORTANT-038 Reach Source Cascade R1B',
+            historicalR1,
+            parentSha: process.env.PARENT_SHA,
+            parentTree: process.env.PARENT_TREE,
+            targetFile: target,
+            targetBlob: process.env.TARGET_BLOB
+          };
+
+          function writeFailure(err) {
+            const out = { ...receiptBase, result: 'FAIL', reason: String(err && err.message || err) };
+            fs.writeFileSync('/tmp/ux-css-important-038-r1b.json', JSON.stringify(out, null, 2) + '\n');
+          }
+
+          try {
+            function walk(dir, out = []) {
+              if (!fs.existsSync(dir)) return out;
+              for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+                if (['.git', 'node_modules', 'reports', '.diagnostics'].includes(e.name)) continue;
+                const p = path.join(dir, e.name);
+                if (e.isDirectory()) walk(p, out);
+                else if (e.isFile()) out.push(normalize(p));
+              }
+              return out;
+            }
+
+            function resolveImport(fromFile, raw) {
+              raw = String(raw).trim().split('#')[0].split('?')[0];
+              if (!raw || /^https?:\/\//i.test(raw) || /^data:/i.test(raw)) return null;
+              return raw.startsWith('/') ? normalize(raw.slice(1)) : normalize(path.join(path.dirname(fromFile), raw));
+            }
+
+            function imports(cssFile) {
+              if (!fs.existsSync(cssFile)) return [];
+              const text = fs.readFileSync(cssFile, 'utf8');
+              const out = [];
+              let m;
+              const re = /@import\s+(?:url\()?\s*['"]([^'")]+)['"]\s*\)?[^;]*;/gi;
+              while ((m = re.exec(text))) {
+                const p = resolveImport(cssFile, m[1]);
+                if (p) out.push(p);
+              }
+              return [...new Set(out)];
+            }
+
+            function splitTop(text, delimiter) {
+              const out = [];
+              let start = 0, quote = null, esc = false, paren = 0, bracket = 0, brace = 0;
+              for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                if (quote) {
+                  if (esc) { esc = false; continue; }
+                  if (ch === '\\') { esc = true; continue; }
+                  if (ch === quote) quote = null;
+                  continue;
+                }
+                if (ch === '"' || ch === "'") { quote = ch; continue; }
+                if (ch === '(') paren++;
+                else if (ch === ')') paren = Math.max(0, paren - 1);
+                else if (ch === '[') bracket++;
+                else if (ch === ']') bracket = Math.max(0, bracket - 1);
+                else if (ch === '{') brace++;
+                else if (ch === '}') brace = Math.max(0, brace - 1);
+                else if (ch === delimiter && paren === 0 && bracket === 0 && brace === 0) {
+                  out.push(text.slice(start, i));
+                  start = i + 1;
+                }
+              }
+              out.push(text.slice(start));
+              return out;
+            }
+
+            function matchingBrace(text, open) {
+              let depth = 1, quote = null, esc = false;
+              for (let i = open + 1; i < text.length; i++) {
+                const ch = text[i];
+                if (quote) {
+                  if (esc) { esc = false; continue; }
+                  if (ch === '\\') { esc = true; continue; }
+                  if (ch === quote) quote = null;
+                  continue;
+                }
+                if (ch === '"' || ch === "'") { quote = ch; continue; }
+                if (ch === '{') depth++;
+                else if (ch === '}' && --depth === 0) return i;
+              }
+              return -1;
+            }
+
+            function declarations(body) {
+              const out = [];
+              for (const part of splitTop(body, ';')) {
+                let quote = null, esc = false, paren = 0, bracket = 0, brace = 0, colon = -1;
+                for (let i = 0; i < part.length; i++) {
+                  const ch = part[i];
+                  if (quote) {
+                    if (esc) { esc = false; continue; }
+                    if (ch === '\\') { esc = true; continue; }
+                    if (ch === quote) quote = null;
+                    continue;
+                  }
+                  if (ch === '"' || ch === "'") { quote = ch; continue; }
+                  if (ch === '(') paren++;
+                  else if (ch === ')') paren = Math.max(0, paren - 1);
+                  else if (ch === '[') bracket++;
+                  else if (ch === ']') bracket = Math.max(0, bracket - 1);
+                  else if (ch === '{') brace++;
+                  else if (ch === '}') brace = Math.max(0, brace - 1);
+                  else if (ch === ':' && paren === 0 && bracket === 0 && brace === 0) { colon = i; break; }
+                }
+                if (colon < 1) continue;
+                const property = part.slice(0, colon).trim().toLowerCase();
+                const value = part.slice(colon + 1).trim();
+                if (!/^--[\w-]+$/.test(property) && !/^[a-z-]+$/i.test(property)) continue;
+                out.push({ property, value, important: /!important\b/i.test(value) });
+              }
+              return out;
+            }
+
+            function parseCss(text, file) {
+              text = text.replace(/\/\*[\s\S]*?\*\//g, '');
+              const blocks = [];
+              let ordinal = 0;
+              function parseRange(chunk, contexts = []) {
+                let pos = 0;
+                while (pos < chunk.length) {
+                  const open = chunk.indexOf('{', pos);
+                  if (open < 0) break;
+                  const prelude = chunk.slice(pos, open).trim();
+                  const close = matchingBrace(chunk, open);
+                  if (close < 0) throw new Error(`unbalanced CSS: ${file}`);
+                  const body = chunk.slice(open + 1, close);
+                  pos = close + 1;
+                  if (!prelude) continue;
+                  if (/^@(media|supports|container|layer|scope)\b/i.test(prelude)) {
+                    parseRange(body, contexts.concat(prelude.replace(/\s+/g, ' ')));
+                    continue;
+                  }
+                  if (/^@(keyframes|-webkit-keyframes|font-face|property|page|counter-style)\b/i.test(prelude)) continue;
+                  if (prelude.startsWith('@')) continue;
+                  const decls = declarations(body);
+                  if (!decls.length) continue;
+                  const selectors = splitTop(prelude, ',').map(s => s.trim().replace(/\s+/g, ' ')).filter(Boolean);
+                  blocks.push({ file, selectors, declarations: decls, contexts, ordinal: ordinal++ });
+                }
+              }
+              parseRange(text, []);
+              return blocks;
+            }
+
+            const rootHtml = fs.readdirSync(root).filter(f => f.endsWith('.html')).sort();
+            const pageOrders = new Map();
+            const loadedGlobal = new Set();
+
+            for (const page of rootHtml) {
+              const html = fs.readFileSync(page, 'utf8');
+              const direct = getLoadedCssAssets(html, root).map(normalize);
+              const order = [];
+              const emitted = new Set();
+              const visiting = new Set();
+              function emit(asset) {
+                asset = normalize(asset);
+                if (!asset || emitted.has(asset) || visiting.has(asset) || !fs.existsSync(asset)) return;
+                visiting.add(asset);
+                for (const imp of imports(asset)) emit(imp);
+                visiting.delete(asset);
+                if (!emitted.has(asset)) {
+                  emitted.add(asset);
+                  order.push(asset);
+                  loadedGlobal.add(asset);
+                }
+              }
+              for (const asset of direct) emit(asset);
+              pageOrders.set(page, order);
+            }
+
+            const allFiles = walk('.');
+            const allCss = allFiles.filter(f => f.endsWith('.css')).sort();
+            const allHtml = allFiles.filter(f => f.endsWith('.html')).sort();
+            const allJs = allFiles.filter(f => /\.(?:js|mjs|cjs|ts)$/i.test(f)).sort();
+            const targetText = fs.readFileSync(target, 'utf8');
+            const rawImportant = (targetText.match(/!important\b/gi) || []).length;
+            if (rawImportant !== expectedImportant) throw new Error(`raw important ${rawImportant} expected ${expectedImportant}`);
+
+            const targetBlocks = parseCss(targetText, target);
+            const parsedPhysicalImportant = targetBlocks.reduce((n, b) => n + b.declarations.filter(d => d.important).length, 0);
+            if (parsedPhysicalImportant !== expectedImportant) throw new Error(`physical parsed important ${parsedPhysicalImportant} expected ${expectedImportant}`);
+
+            const targetPages = [...pageOrders.entries()].filter(([, order]) => order.includes(target)).map(([page]) => page);
+            const canonicalLoaded = targetPages.length > 0;
+            const basename = path.posix.basename(target);
+            const directHtmlRefs = allHtml.filter(f => { const s = fs.readFileSync(f, 'utf8'); return s.includes(target) || s.includes(basename); });
+            const cssImporters = allCss.filter(f => f !== target && imports(f).includes(target));
+            const runtimeJsRefs = [], toolingJsRefs = [];
+            for (const f of allJs) {
+              const s = fs.readFileSync(f, 'utf8');
+              if (!(s.includes(target) || s.includes(basename))) continue;
+              (f.startsWith('scripts/') || f.startsWith('tests/') || f.startsWith('.github/') ? toolingJsRefs : runtimeJsRefs).push(f);
+            }
+
+            const policy = fs.readFileSync('/tmp/policy.txt', 'utf8');
+            const activeSection = (policy.split('## Dívida ativa registrada')[1] || '').split('## Quarentena dormente registrada')[0] || '';
+            const dormantSection = (policy.split('## Quarentena dormente registrada')[1] || '').split('## Violações')[0] || '';
+            const policyClassification = activeSection.includes(target) ? 'active' : dormantSection.includes(target) ? 'dormant' : 'unlisted';
+
+            const selectorTokens = new Set();
+            let m;
+            const tokenRe = /[.#]([A-Za-z_][\w-]*)/g;
+            while ((m = tokenRe.exec(targetText))) selectorTokens.add(m[1]);
+            const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const sourceText = [...allHtml, ...allJs].map(f => fs.readFileSync(f, 'utf8')).join('\n');
+            const referencedTokens = [...selectorTokens].filter(t => new RegExp(`(^|[^A-Za-z0-9_-])${esc(t)}([^A-Za-z0-9_-]|$)`).test(sourceText));
+            const unreferencedTokens = [...selectorTokens].filter(t => !referencedTokens.includes(t));
+
+            const targetPairs = [];
+            const importantByProperty = new Map();
+            let expandedPairCount = 0;
+            for (const b of targetBlocks) {
+              for (const d of b.declarations.filter(d => d.important)) {
+                importantByProperty.set(d.property, (importantByProperty.get(d.property) || 0) + 1);
+                for (const selector of b.selectors) {
+                  targetPairs.push({ key: `${selector}\u0000${d.property}`, selector, property: d.property, value: d.value, contexts: b.contexts, ordinal: b.ordinal });
+                  expandedPairCount++;
+                }
+              }
+            }
+            const targetKeys = new Set(targetPairs.map(x => x.key));
+
+            const runtimeFiles = [...new Set(targetPages.flatMap(p => pageOrders.get(p)))];
+            const runtimeParsed = new Map();
+            for (const f of runtimeFiles) runtimeParsed.set(f, parseCss(fs.readFileSync(f, 'utf8'), f));
+
+            const runtimeCollisions = [];
+            if (canonicalLoaded) {
+              for (const page of targetPages) {
+                const order = pageOrders.get(page);
+                const targetIndex = order.indexOf(target);
+                for (let fileIndex = 0; fileIndex < order.length; fileIndex++) {
+                  const file = order[fileIndex];
+                  for (const b of runtimeParsed.get(file) || []) {
+                    for (const selector of b.selectors) {
+                      for (const d of b.declarations) {
+                        const key = `${selector}\u0000${d.property}`;
+                        if (!targetKeys.has(key)) continue;
+                        const targetOwnImportant = file === target && d.important;
+                        if (targetOwnImportant) continue;
+                        runtimeCollisions.push({ page, file, selector, property: d.property, value: d.value, important: d.important, contexts: b.contexts, fileIndex, targetIndex, relation: fileIndex < targetIndex ? 'before-target' : fileIndex > targetIndex ? 'after-target' : 'same-file' });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            const internalCounts = new Map();
+            for (const p of targetPairs) internalCounts.set(p.key, (internalCounts.get(p.key) || 0) + 1);
+            const internalCollisionKeys = [...internalCounts.entries()].filter(([, count]) => count > 1).map(([key, count]) => ({ key, count }));
+
+            const producerScores = [];
+            for (const f of allCss) {
+              if (f === target) continue;
+              const text = fs.readFileSync(f, 'utf8');
+              let overlap = 0;
+              for (const token of selectorTokens) if (new RegExp(`(^|[^A-Za-z0-9_-])${esc(token)}([^A-Za-z0-9_-]|$)`).test(text)) overlap++;
+              if (overlap) producerScores.push({ file: f, selectorTokenOverlap: overlap, loadedOnTargetPage: targetPages.some(p => pageOrders.get(p).includes(f)), importantCount: (text.match(/!important\b/gi) || []).length });
+            }
+            producerScores.sort((a, b) => b.selectorTokenOverlap - a.selectorTokenOverlap || a.file.localeCompare(b.file));
+
+            const mediaHeaders = [...new Set(targetBlocks.flatMap(b => b.contexts.filter(c => /^@media\b/i.test(c))))];
+            const runtimeCollisionFiles = [...new Set(runtimeCollisions.map(c => c.file))].sort();
+
+            const result = {
+              ...receiptBase,
+              targetBytes: Buffer.byteLength(targetText),
+              rawImportantMarkerCount: rawImportant,
+              parsedPhysicalImportantDeclarationCount: parsedPhysicalImportant,
+              expandedSelectorPropertyPairCount: expandedPairCount,
+              representationInvariant: parsedPhysicalImportant === rawImportant,
+              diagnosticScope: { branch: process.env.OUTPUT_BRANCH, productCssModified: false, parentDetachedForProof: true },
+              reach: {
+                canonicalLoaded,
+                wholeFileDormant: !canonicalLoaded,
+                rootHtmlCount: rootHtml.length,
+                physicalCssCount: allCss.length,
+                canonicalLoadedCssCount: loadedGlobal.size,
+                targetPages,
+                targetPageCount: targetPages.length,
+                directHtmlRefs,
+                cssImporters,
+                runtimeJsRefs,
+                toolingJsRefs,
+                policyClassification,
+                perTargetPageCascadeOrder: Object.fromEntries(targetPages.map(p => [p, pageOrders.get(p)]))
+              },
+              source: {
+                selectorTokenCount: selectorTokens.size,
+                referencedSelectorTokenCount: referencedTokens.length,
+                unreferencedSelectorTokenCount: unreferencedTokens.length,
+                referencedSelectorTokens: referencedTokens.sort(),
+                unreferencedSelectorTokenSample: unreferencedTokens.sort().slice(0, 60),
+                competingProducerCount: producerScores.length,
+                competingProducerTop: producerScores.slice(0, 50)
+              },
+              cascade: {
+                physicalImportantDeclarationCount: parsedPhysicalImportant,
+                expandedImportantSelectorPropertyPairCount: expandedPairCount,
+                importantByProperty: [...importantByProperty.entries()].sort((a,b) => b[1]-a[1]).map(([property,count]) => ({ property, count })),
+                mediaHeaders,
+                internalExactSelectorPropertyCollisionKeyCount: internalCollisionKeys.length,
+                internalExactSelectorPropertyCollisionSample: internalCollisionKeys.slice(0, 50),
+                runtimeExactCollisionRelationCount: runtimeCollisions.length,
+                runtimeCollisionFiles,
+                runtimeCollisionSample: runtimeCollisions.slice(0, 120),
+                browserReconciliationRequired: canonicalLoaded
+              },
+              nextGate: canonicalLoaded
+                ? 'ACTIVE: candidate proof must include browser reconciliation plus static/governance before promotion'
+                : 'DORMANT: candidate proof may use dormant-reach preservation plus static/governance before promotion',
+              result: 'PASS'
+            };
+
+            fs.writeFileSync('/tmp/ux-css-important-038-r1b.json', JSON.stringify(result, null, 2) + '\n');
+            console.log(JSON.stringify({ result: 'PASS', canonicalLoaded, policyClassification, targetPages: targetPages.length, rawImportant, parsedPhysicalImportant, expandedPairCount, directHtmlRefs: directHtmlRefs.length, cssImporters: cssImporters.length, runtimeJsRefs: runtimeJsRefs.length, toolingJsRefs: toolingJsRefs.length, runtimeCollisions: runtimeCollisions.length, browserRequired: canonicalLoaded }));
+          } catch (err) {
+            writeFailure(err);
+            console.error(err && err.stack || err);
+            process.exit(1);
+          }
+          NODE
+
+      - name: Publish R1B receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test -s /tmp/ux-css-important-038-r1b.json; then
+            result="$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/ux-css-important-038-r1b.json','utf8')).result||'FAIL')")"
+          fi
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/ux-css-important-038-r1b.json "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: publish UX-CSS-IMPORTANT-038 reach source cascade R1B [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
+          test "$result" = PASS
