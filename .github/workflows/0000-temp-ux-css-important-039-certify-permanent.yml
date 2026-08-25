@@ -57,7 +57,7 @@ jobs:
           test "$(git rev-parse "$PERMANENT_SHA:$TARGET_FILE")" = "$PERMANENT_TARGET_BLOB"
           test "$(git rev-parse "$PERMANENT_SHA:$CHILD_FILE")" = "$CHILD_BLOB"
           test "$(git merge-base "$PERMANENT_SHA" HEAD)" = "$PERMANENT_SHA"
-          test "$(git rev-list --count "$PERMANENT_SHA..HEAD")" = 1
+          test "$(git rev-list --count "$PERMANENT_SHA..HEAD")" = 2
           test "$(git diff --name-only "$PERMANENT_SHA"...HEAD)" = "$WORKFLOW_FILE"
           test "$(git merge-base "$PARENT_SHA" "$PERMANENT_SHA")" = "$PARENT_SHA"
           test "$(git rev-list --count "$PARENT_SHA..$PERMANENT_SHA")" = 1
@@ -181,6 +181,7 @@ jobs:
         run: |
           set -euo pipefail
           git checkout --detach "$PERMANENT_SHA" >/dev/null
+          git checkout "$PERMANENT_SHA" -- . >/dev/null
           test "$(git rev-parse HEAD)" = "$PERMANENT_SHA"
           test "$(git rev-parse 'HEAD^{tree}')" = "$PERMANENT_TREE"
           test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$PERMANENT_TARGET_BLOB"
@@ -199,6 +200,7 @@ jobs:
             dormancy:JSON.parse(fs.readFileSync('/tmp/dormancy.json','utf8')),reach:JSON.parse(fs.readFileSync('/tmp/reach.json','utf8')),
             staticGateReconciliation:JSON.parse(fs.readFileSync('/tmp/gates.json','utf8')),
             dependencyBaseline:{packageJsonChanged:false,packageLockChanged:false},browserRequired:false,
+            historicalCertifierFailures:[{run:32800025112,job:97658911814,classification:'HARNESS_RESTORE',materialGatesPassed:true}],
             restore:{headExact:true,treeExact:true,targetBlobExact:true,trackedWorkspaceClean:true}
           };
           fs.writeFileSync('/tmp/receipt.json',JSON.stringify(out,null,2)+'\n');
