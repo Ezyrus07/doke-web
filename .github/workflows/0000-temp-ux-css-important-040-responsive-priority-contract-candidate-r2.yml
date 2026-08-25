@@ -1,0 +1,204 @@
+name: TEMP UX-CSS-IMPORTANT-040 Responsive Priority Contract Candidate R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-040-responsive-priority-contract-candidate-r2
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-040-responsive-priority-contract-candidate-r2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  candidate-r2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      PARENT_SHA: 901053a08cf702257ffc9551165dbb8183e6455c
+      PARENT_TREE: 773e7a18e354ffdae16abb7145c47a9de111b38f
+      TARGET_FILE: assets/css/components/layout/responsive-priority-contract.css
+      TARGET_BLOB: 386b850144d474e0322a13f60f68d9ff1aea9656
+      PARENT_IMPORTANT: '477'
+      PARENT_GLOBAL_IMPORTANT: '5803'
+      CANDIDATE_GLOBAL_IMPORTANT: '5326'
+      R1_BRANCH: diag/ux-css-important-040-responsive-priority-contract-r1
+      R1_FILE: .diagnostics/ux-css-important-040-responsive-priority-contract-r1.json
+      R1_BLOB: 8db3f326bc6c675bf177730d2e066ea6291e3986
+      OUTPUT_BRANCH: diag/ux-css-important-040-responsive-priority-contract-candidate-r2
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-040-responsive-priority-contract-candidate-r2.yml
+      RESULT_FILE: .diagnostics/ux-css-important-040-responsive-priority-contract-candidate-r2.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Freeze parent and R1 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$WORKFLOW_FILE"
+          git fetch --no-tags origin "refs/heads/$R1_BRANCH:refs/remotes/origin/$R1_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$R1_BRANCH:$R1_FILE")" = "$R1_BLOB"
+          git show "refs/remotes/origin/$R1_BRANCH:$R1_FILE" >/tmp/r1.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r1.json','utf8'));
+          if(r.result!=='PASS') throw new Error('R1 not PASS');
+          if(r.product?.sha!==process.env.PARENT_SHA||r.product?.tree!==process.env.PARENT_TREE) throw new Error('R1 product mismatch');
+          if(r.target?.path!==process.env.TARGET_FILE||r.target?.blob!==process.env.TARGET_BLOB||r.target?.important!==477) throw new Error('R1 target mismatch');
+          if(r.reach?.canonicalLoaded!==false||r.reach?.wholeFileDormant!==true||r.reach?.browserReconciliationRequired!==false) throw new Error('R1 dormancy mismatch');
+          if((r.reach?.targetPages||[]).length||(r.reach?.directHtmlRefs||[]).length||(r.reach?.directImporters||[]).length||(r.reach?.runtimeJsRefs||[]).length) throw new Error('R1 live reach exists');
+          NODE
+
+      - name: Build exact marker-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'), crypto=require('crypto'), cp=require('child_process'), path=require('path');
+          const f=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(f,'utf8');
+          const before=(parent.match(/!important\b/gi)||[]).length;
+          if(before!==477) throw new Error(`parent markers ${before}`);
+          const candidate=parent.replace(/\s*!important\b/gi,'');
+          if((candidate.match(/!important\b/gi)||[]).length!==0) throw new Error('candidate markers remain');
+          if(parent.replace(/\s*!important\b/gi,'')!==candidate) throw new Error('non-marker transform');
+          const strip=s=>s.replace(/\s*!important\b/gi,'');
+          if(strip(parent)!==candidate) throw new Error('marker equivalence failure');
+          fs.writeFileSync('/tmp/candidate.css',candidate);
+          fs.writeFileSync(f,candidate);
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile()&&p.endsWith('.css'))out.push(p)}return out}
+          const count=x=>(fs.readFileSync(x,'utf8').match(/!important\b/gi)||[]).length;
+          const global=walk('assets/css').reduce((n,x)=>n+count(x),0);
+          if(global!==5326) throw new Error(`global important ${global}`);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes=Buffer.byteLength(candidate);
+          const ns=cp.execFileSync('git',['diff','--numstat',process.env.PARENT_SHA,'--',f],{encoding:'utf8'}).trim().split(/\s+/);
+          const out={importantBefore:477,importantAfter:0,removed:477,parentGlobal:5803,candidateGlobal:global,globalDelta:global-5803,gitBlob:blob,sha256,bytes,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsBefore:(parent.match(/@import\b/gi)||[]).length,importsAfter:(candidate.match(/@import\b/gi)||[]).length,additions:Number(ns[0]),deletions:Number(ns[1]),diffFiles:1};
+          fs.writeFileSync('/tmp/candidate.json',JSON.stringify(out,null,2)+'\n');
+          console.log(JSON.stringify(out));
+          NODE
+          test "$(git diff --name-only "$PARENT_SHA" -- | wc -l | tr -d ' ')" = 1
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --check "$PARENT_SHA" -- "$TARGET_FILE"
+
+      - name: Reprove dormant candidate and policy stability
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/candidate.css "$TARGET_FILE"
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/dorm-candidate.txt 2>&1 || true
+          git checkout "$PARENT_SHA" -- .
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/dorm-parent.txt 2>&1 || true
+          node <<'NODE'
+          const fs=require('fs');
+          const p=fs.readFileSync('/tmp/dorm-parent.txt','utf8'), c=fs.readFileSync('/tmp/dorm-candidate.txt','utf8');
+          const labels=['CSS depreciado reativado','Arquivos registrados ausentes','CSS ativo com !important fora do registro'];
+          const metric=(s,label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(esc+'[: ]+\\*?\\*?(\\d+)'));return m?Number(m[1]):null};
+          const metrics={};
+          for(const label of labels){const a=metric(p,label),b=metric(c,label);if(a===null||b===null||a!==b)throw new Error(`${label} ${a}->${b}`);metrics[label]={parent:a,candidate:b};}
+          fs.writeFileSync('/tmp/dormancy.json',JSON.stringify({canonicalLoaded:false,wholeFileDormant:true,browserRequired:false,policyViolationMetricsStable:true,metrics},null,2)+'\n');
+          NODE
+          cp /tmp/candidate.css "$TARGET_FILE"
+
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT_SHA" -- package.json package-lock.json
+          npm ci --ignore-scripts >/dev/null
+
+      - name: Run parent and candidate static governance matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/gates.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; mode="$2"; : > "/tmp/${phase}.tsv"
+          restore(){ git checkout "$PARENT_SHA" -- . >/dev/null 2>&1 || exit 90; if [ "$mode" = candidate ]; then cp /tmp/candidate.css "$TARGET_FILE"; fi; return 0; }
+          norm(){ sed -E -e 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?/<TIME>/g' -e 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$1"; }
+          gate(){ label="$1"; shift; restore; log="/tmp/${phase}-${label}.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; norm "$log" >"${log}.norm"; hash="$(sha256sum "${log}.norm"|awk '{print $1}')"; printf '%s\t%s\t%s\n' "$label" "$rc" "$hash" >> "/tmp/${phase}.tsv"; echo "$phase|$label|rc=$rc|hash=$hash"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/gates.sh
+          /tmp/gates.sh parent parent
+          /tmp/gates.sh candidate candidate
+
+      - name: Reconcile matrix without criteria relaxation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const parse=f=>new Map(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [l,r,h]=x.split('\t');return[l,{rc:Number(r),hash:h}]}));
+          const p=parse('/tmp/parent.tsv'), c=parse('/tmp/candidate.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'];
+          const debt=['important_reduction_plan','global_css_design_system'];
+          const rows=[]; let introduced=0, relaxed=0;
+          for(const l of exact){const a=p.get(l),b=c.get(l);if(!a||!b)throw new Error('missing '+l);if(a.rc===0&&b.rc===0&&a.hash===b.hash)rows.push({label:l,classification:'PASS_BOTH_IDENTICAL',parent:a,candidate:b});else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash)rows.push({label:l,classification:'BASELINE_EQUIVALENT_FAILURE',parent:a,candidate:b});else{introduced++;throw new Error(`${l} divergence ${a.rc}/${a.hash}->${b.rc}/${b.hash}`);}}
+          for(const l of debt){const a=p.get(l),b=c.get(l);if(!a||!b)throw new Error('missing '+l);if(a.rc===0&&b.rc===0)rows.push({label:l,classification:'PASS_BOTH_EXPECTED_DEBT_DELTA',parent:a,candidate:b});else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash)rows.push({label:l,classification:'BASELINE_EQUIVALENT_FAILURE',parent:a,candidate:b});else if(a.rc!==0&&b.rc===0)rows.push({label:l,classification:'CANDIDATE_IMPROVES_BASELINE',parent:a,candidate:b});else{introduced++;throw new Error(`${l} regression ${a.rc}->${b.rc}`);}}
+          const a=p.get('frontend_strict'),b=c.get('frontend_strict');if(!a||!b||a.rc!==b.rc)throw new Error(`frontend rc ${a?.rc}->${b?.rc}`);
+          const pl=fs.readFileSync('/tmp/parent-frontend_strict.log','utf8'),cl=fs.readFileSync('/tmp/candidate-frontend_strict.log','utf8');
+          const sig=s=>s.split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();
+          if(JSON.stringify(sig(pl))!==JSON.stringify(sig(cl))) throw new Error('frontend critical/warning set changed');
+          rows.push({label:'frontend_strict',classification:a.rc===0?'PASS_BOTH_EXPECTED_DEBT_DELTA':'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA',parent:a,candidate:b});
+          fs.writeFileSync('/tmp/matrix.json',JSON.stringify({rows,introducedRegressions:introduced,criteriaRelaxed:relaxed},null,2)+'\n');
+          NODE
+
+      - name: Freeze R2 result and exact restoration
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const candidate=JSON.parse(fs.readFileSync('/tmp/candidate.json','utf8'));
+          const dormancy=JSON.parse(fs.readFileSync('/tmp/dormancy.json','utf8'));
+          const matrix=JSON.parse(fs.readFileSync('/tmp/matrix.json','utf8'));
+          const r1=JSON.parse(fs.readFileSync('/tmp/r1.json','utf8'));
+          const out={proof:'UX-CSS-IMPORTANT-040 Candidate Static Governance R2',result:'PASS',checkpoint:'UX-CSS-IMPORTANT-040',parent:{sha:process.env.PARENT_SHA,tree:process.env.PARENT_TREE,targetBlob:process.env.TARGET_BLOB,globalImportant:5803},r1:{branch:process.env.R1_BRANCH,receiptBlob:process.env.R1_BLOB,wholeFileDormant:r1.reach.wholeFileDormant,browserRequired:r1.reach.browserReconciliationRequired},target:process.env.TARGET_FILE,candidate,dormancy,staticMatrix:matrix,browserRequired:false,scope:{repositoryOnly:true,staging:false,production:false,backend:false,supabase:false,rpc:false,migrations:false,credentials:false,runtimeRealtime:false,merge:false,readyForReview:false,forcePush:false,historyRewrite:false}};
+          fs.writeFileSync('/tmp/result.json',JSON.stringify(out,null,2)+'\n');
+          console.log(JSON.stringify(out));
+          NODE
+          git reset --hard "$PARENT_SHA" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git status --porcelain)" = ""
+          git checkout -B "$OUTPUT_BRANCH" "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/result.json "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RESULT_FILE"
+          test "$(git diff --cached --name-only)" = "$RESULT_FILE"
+          git commit -m "diagnostic(ux-css-important-040): publish candidate R2 receipt"
+          git push origin HEAD:"$OUTPUT_BRANCH"
+          test "$(git status --porcelain)" = ""
