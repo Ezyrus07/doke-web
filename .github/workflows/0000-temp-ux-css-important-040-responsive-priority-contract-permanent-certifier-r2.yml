@@ -1,0 +1,274 @@
+name: TEMP UX-CSS-IMPORTANT-040 Permanent Certification R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-040-responsive-priority-contract-permanent-certifier-r2
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-040-responsive-priority-contract-permanent-certifier-r2.yml
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  permanent-certifier-r2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      DIAG_SHA: ${{ github.sha }}
+      OUTPUT_BRANCH: diag/ux-css-important-040-responsive-priority-contract-permanent-certifier-r2
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-040-responsive-priority-contract-permanent-certifier-r2.yml
+      RECEIPT_FILE: .diagnostics/ux-css-important-040-responsive-priority-contract-permanent-certification.json
+      PARENT_SHA: 901053a08cf702257ffc9551165dbb8183e6455c
+      PARENT_TREE: 773e7a18e354ffdae16abb7145c47a9de111b38f
+      PERM_SHA: d23744276157a2ea28ac8fa4e44a8d5095103260
+      PERM_TREE: 40972482f565e3e9fac1b26291937c21c0b17f3c
+      TARGET_FILE: assets/css/components/layout/responsive-priority-contract.css
+      PARENT_BLOB: 386b850144d474e0322a13f60f68d9ff1aea9656
+      PERM_BLOB: 0b17cd92942f7a77d26fd72f4a7fbc00907f332a
+      PERM_SHA256: 2ae59513f9030b3a7f40c79422e5817f2391296ec1caf144aab9bf794cab0f7d
+      PERM_BYTES: '32174'
+      PARENT_GLOBAL: '5803'
+      PERM_GLOBAL: '5326'
+      PR_NUMBER: '366'
+      BASE_BRANCH: ux/ux-css-important-039-marketplace-responsive-stack-dormant-priority
+      PERM_BRANCH: ux/ux-css-important-040-responsive-priority-contract-dormant-priority
+      R1_BRANCH: diag/ux-css-important-040-responsive-priority-contract-r1
+      R1_FILE: .diagnostics/ux-css-important-040-responsive-priority-contract-r1.json
+      R1_BLOB: 8db3f326bc6c675bf177730d2e066ea6291e3986
+      R2_BRANCH: diag/ux-css-important-040-responsive-priority-contract-candidate-r2
+      R2_FILE: .diagnostics/ux-css-important-040-responsive-priority-contract-candidate-r2.json
+      R2_BLOB: 28d9ce6e3501920565b1f016ea6958fc3b5d6139
+      FAILED_CERT_RUN: '32855946274'
+      FAILED_CERT_JOB: '97827830656'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Freeze diagnostic isolation permanent identity and PR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PERM_SHA^{tree}")" = "$PERM_TREE"
+          test "$(git rev-parse "$PERM_SHA^")" = "$PARENT_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git rev-parse "$PERM_SHA:$TARGET_FILE")" = "$PERM_BLOB"
+          test "$(git merge-base "$PARENT_SHA" "$PERM_SHA")" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..$PERM_SHA")" = 1
+          test "$(git merge-base "$PERM_SHA" "$DIAG_SHA")" = "$PERM_SHA"
+          test "$(git rev-list --count "$PERM_SHA..$DIAG_SHA")" = 1
+          test "$(git diff --name-only "$PERM_SHA"..."$DIAG_SHA")" = "$WORKFLOW_FILE"
+          test "$(git diff --name-only "$PARENT_SHA"..."$PERM_SHA")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA"..."$PERM_SHA")" = $'414\t414\t'"$TARGET_FILE"
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" > /tmp/pr.json
+          node <<'NODE'
+          const p=JSON.parse(require('fs').readFileSync('/tmp/pr.json','utf8'));
+          const ok=p.state==='open'&&p.draft===true&&p.merged_at===null&&p.head?.ref===process.env.PERM_BRANCH&&p.head?.sha===process.env.PERM_SHA&&p.base?.ref===process.env.BASE_BRANCH&&p.base?.sha===process.env.PARENT_SHA&&p.mergeable===true;
+          if(!ok) throw new Error(`PR freeze failed: state=${p.state} draft=${p.draft} merged=${p.merged_at} mergeable=${p.mergeable} head=${p.head?.ref}/${p.head?.sha} base=${p.base?.ref}/${p.base?.sha}`);
+          require('fs').writeFileSync('/tmp/pr-facts.json',JSON.stringify({number:p.number,state:p.state,draft:p.draft,merged:false,mergeable:p.mergeable,head:p.head.sha,base:p.base.sha},null,2)+'\n');
+          NODE
+
+      - name: Transfer exact R1 and R2 evidence blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/heads/$R1_BRANCH:refs/remotes/origin/$R1_BRANCH" "refs/heads/$R2_BRANCH:refs/remotes/origin/$R2_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$R1_BRANCH:$R1_FILE")" = "$R1_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R2_BRANCH:$R2_FILE")" = "$R2_BLOB"
+          git show "refs/remotes/origin/$R1_BRANCH:$R1_FILE" >/tmp/r1.json
+          git show "refs/remotes/origin/$R2_BRANCH:$R2_FILE" >/tmp/r2.json
+          node <<'NODE'
+          const fs=require('fs'),r1=JSON.parse(fs.readFileSync('/tmp/r1.json')),r2=JSON.parse(fs.readFileSync('/tmp/r2.json'));
+          if(r1.result!=='PASS'||r1.product?.sha!==process.env.PARENT_SHA||r1.target?.blob!==process.env.PARENT_BLOB||r1.reach?.wholeFileDormant!==true||r1.reach?.browserReconciliationRequired!==false) throw new Error('R1 transfer mismatch');
+          if(r2.result!=='PASS'||r2.parent?.sha!==process.env.PARENT_SHA||r2.candidate?.gitBlob!==process.env.PERM_BLOB||r2.candidate?.sha256!==process.env.PERM_SHA256||r2.candidate?.importantAfter!==0||r2.staticMatrix?.introducedRegressions!==0||r2.staticMatrix?.criteriaRelaxed!==0) throw new Error('R2 transfer mismatch');
+          NODE
+
+      - name: Independently reconstruct permanent candidate and lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          git show "$PERM_SHA:$TARGET_FILE" >/tmp/permanent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const parent=fs.readFileSync('/tmp/parent.css','utf8'),perm=fs.readFileSync('/tmp/permanent.css','utf8');
+          const rebuilt=parent.replace(/\s*!important\b/gi,'');
+          const before=(parent.match(/!important\b/gi)||[]).length, after=(perm.match(/!important\b/gi)||[]).length;
+          if(before!==477||after!==0||rebuilt!==perm) throw new Error(`reconstruction ${before}->${after} equality=${rebuilt===perm}`);
+          const sha256=crypto.createHash('sha256').update(perm).digest('hex');
+          if(sha256!==process.env.PERM_SHA256||Buffer.byteLength(perm)!==Number(process.env.PERM_BYTES)) throw new Error('permanent bytes/hash mismatch');
+          const cssPaths=cp.execFileSync('git',['ls-tree','-r','--name-only',process.env.PARENT_SHA,'assets/css'],{encoding:'utf8'}).trim().split('\n').filter(x=>x.endsWith('.css'));
+          const countAt=sha=>cssPaths.reduce((n,p)=>n+(cp.execFileSync('git',['show',`${sha}:${p}`],{encoding:'utf8'}).match(/!important\b/gi)||[]).length,0);
+          const pg=countAt(process.env.PARENT_SHA), cg=countAt(process.env.PERM_SHA);
+          if(pg!==Number(process.env.PARENT_GLOBAL)||cg!==Number(process.env.PERM_GLOBAL)) throw new Error(`global ${pg}->${cg}`);
+          fs.writeFileSync('/tmp/comparison.json',JSON.stringify({parent:process.env.PARENT_SHA,parentTree:process.env.PARENT_TREE,permanent:process.env.PERM_SHA,permanentTree:process.env.PERM_TREE,parentBlob:process.env.PARENT_BLOB,permanentBlob:process.env.PERM_BLOB,importantBefore:before,importantAfter:after,globalBefore:pg,globalAfter:cg,globalDelta:cg-pg,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,sha256,bytes:Buffer.byteLength(perm),additions:414,deletions:414,changedFiles:1,ahead:1,behind:0,mergeBase:process.env.PARENT_SHA},null,2)+'\n');
+          NODE
+
+      - name: Independently reprove permanent whole-file dormancy with corrected parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, posixpath, re, subprocess
+          SHA=os.environ['PERM_SHA']; TARGET=os.environ['TARGET_FILE']
+          def sh(*a): return subprocess.check_output(a,text=True).rstrip('\n')
+          paths=sh('git','ls-tree','-r','--name-only',SHA).splitlines(); S=set(paths)
+          def read(p): return subprocess.check_output(['git','show',f'{SHA}:{p}']).decode('utf8','replace')
+          def strip_comments(s): return re.sub(r'/\*.*?\*/','',s,flags=re.S)
+          css=[p for p in paths if p.endswith('.css')]
+          def imports(css_path, text):
+            out=[]
+            clean=strip_comments(text)
+            pattern=r'@import\s+(?:url\(\s*)?(?:[\'\"])?([^\'\"\)\s;]+\.css(?:\?[^\'\"\)\s;]*)?)(?:[\'\"])?\s*\)?[^;]*;'
+            for m in re.finditer(pattern, clean, re.I):
+              raw=m.group(1); noquery=raw.split('?',1)[0].split('#',1)[0]
+              if re.match(r'^[a-z]+://',noquery,re.I): resolved=None
+              elif noquery.startswith('/'): resolved=noquery.lstrip('/')
+              else: resolved=posixpath.normpath(posixpath.join(posixpath.dirname(css_path),noquery))
+              if resolved: out.append(resolved)
+            return out
+          css_text={p:read(p) for p in css}
+          imp={p:imports(p,t) for p,t in css_text.items()}
+          direct=sorted(p for p,v in imp.items() if TARGET in v)
+          html=sorted(p for p in paths if p.endswith('.html') and '/' not in p)
+          link_re=re.compile(r'<link\b[^>]*?href\s*=\s*[\'\"]([^\'\"]+)[\'\"][^>]*>',re.I|re.S)
+          starts={}
+          for h in html:
+            arr=[]
+            for href in link_re.findall(read(h)):
+              noquery=href.split('?',1)[0].split('#',1)[0]
+              if noquery.endswith('.css') and not re.match(r'^[a-z]+://',noquery,re.I): arr.append(posixpath.normpath(noquery.lstrip('/')))
+            starts[h]=arr
+          def closure(xs):
+            seen=set(); st=list(xs)
+            while st:
+              p=st.pop()
+              if p in seen or p not in S or not p.endswith('.css'): continue
+              seen.add(p); st.extend(imp.get(p,[]))
+            return seen
+          page_reach={h:closure(xs) for h,xs in starts.items()}
+          pages=sorted(h for h,s in page_reach.items() if TARGET in s)
+          loaded=set(); [loaded.update(s) for s in page_reach.values()]
+          runtime=[]
+          for p in paths:
+            if p.startswith('assets/js/') and p.endswith(('.js','.mjs','.cjs')):
+              t=read(p)
+              if TARGET in t or posixpath.basename(TARGET) in t: runtime.append(p)
+          direct_html=sorted(h for h,xs in starts.items() if TARGET in xs)
+          d={'rootHtmlCount':len(html),'loadedCssCount':len(loaded),'canonicalLoaded':TARGET in loaded,'wholeFileDormant':TARGET not in loaded and not direct and not runtime and not direct_html,'targetPages':pages,'directImporters':direct,'directHtmlRefs':direct_html,'runtimeJsRefs':sorted(runtime),'browserRequired':False,'parserCorrectionOnly':True,'criteriaRelaxed':0}
+          if not d['wholeFileDormant'] or d['canonicalLoaded'] or pages or direct or direct_html or runtime: raise SystemExit(json.dumps(d))
+          open('/tmp/dormancy.json','w').write(json.dumps(d,indent=2)+'\n'); print(json.dumps(d))
+          PY
+
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PERM_SHA" >/dev/null
+          git clean -fd >/dev/null
+          npm ci --ignore-scripts >/dev/null
+
+      - name: Reexecute parent-permanent static governance matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/gates.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; sha="$2"; : > "/tmp/${phase}.tsv"
+          restore(){ git reset --hard "$sha" >/dev/null 2>&1 || exit 90; git clean -fd >/dev/null 2>&1 || exit 91; }
+          norm(){ sed -E -e 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?/<TIME>/g' -e 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$1"; }
+          gate(){ label="$1"; shift; restore; log="/tmp/${phase}-${label}.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; norm "$log" >"${log}.norm"; hash="$(sha256sum "${log}.norm"|awk '{print $1}')"; printf '%s\t%s\t%s\n' "$label" "$rc" "$hash" >> "/tmp/${phase}.tsv"; echo "$phase|$label|rc=$rc|hash=$hash"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/gates.sh
+          /tmp/gates.sh parent "$PARENT_SHA"
+          /tmp/gates.sh permanent "$PERM_SHA"
+
+      - name: Reconcile permanent gates with unchanged criteria
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const parse=f=>new Map(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [l,r,h]=x.split('\t');return[l,{rc:Number(r),hash:h}]}));
+          const p=parse('/tmp/parent.tsv'), c=parse('/tmp/permanent.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'];
+          const debt=['important_reduction_plan','global_css_design_system']; const rows=[];
+          for(const l of exact){const a=p.get(l),b=c.get(l);if(!a||!b)throw new Error('missing '+l);if(a.rc===0&&b.rc===0&&a.hash===b.hash)rows.push({label:l,classification:'PASS_BOTH_IDENTICAL',parent:a,permanent:b});else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash)rows.push({label:l,classification:'BASELINE_EQUIVALENT_FAILURE',parent:a,permanent:b});else throw new Error(`${l} divergence ${a.rc}/${a.hash}->${b.rc}/${b.hash}`);}
+          for(const l of debt){const a=p.get(l),b=c.get(l);if(!a||!b)throw new Error('missing '+l);if(a.rc===0&&b.rc===0)rows.push({label:l,classification:'PASS_BOTH_EXPECTED_DEBT_DELTA',parent:a,permanent:b});else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash)rows.push({label:l,classification:'BASELINE_EQUIVALENT_FAILURE',parent:a,permanent:b});else if(a.rc!==0&&b.rc===0)rows.push({label:l,classification:'PERMANENT_IMPROVES_BASELINE',parent:a,permanent:b});else throw new Error(`${l} regression ${a.rc}->${b.rc}`);}
+          const a=p.get('frontend_strict'),b=c.get('frontend_strict'); if(!a||!b||a.rc!==b.rc)throw new Error('frontend rc divergence');
+          const sig=s=>s.split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();
+          if(JSON.stringify(sig(fs.readFileSync('/tmp/parent-frontend_strict.log','utf8')))!==JSON.stringify(sig(fs.readFileSync('/tmp/permanent-frontend_strict.log','utf8'))))throw new Error('frontend critical/warning changed');
+          rows.push({label:'frontend_strict',classification:a.rc===0?'PASS_BOTH_EXPECTED_DEBT_DELTA':'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA',parent:a,permanent:b});
+          fs.writeFileSync('/tmp/matrix.json',JSON.stringify({rows,introducedRegressions:0,criteriaRelaxed:0},null,2)+'\n');
+          NODE
+
+      - name: Restore exact permanent workspace and freeze certification receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PERM_SHA" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PERM_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PERM_TREE"
+          test "$(git rev-parse HEAD:$TARGET_FILE)" = "$PERM_BLOB"
+          test "$(git status --porcelain)" = ""
+          node <<'NODE'
+          const fs=require('fs');
+          const receipt={proof:'UX-CSS-IMPORTANT-040 Permanent Repository Certification',result:'PASS',checkpoint:'UX-CSS-IMPORTANT-040',pr:JSON.parse(fs.readFileSync('/tmp/pr-facts.json')),comparison:JSON.parse(fs.readFileSync('/tmp/comparison.json')),r1:{branch:process.env.R1_BRANCH,receiptBlob:process.env.R1_BLOB},r2:{branch:process.env.R2_BRANCH,receiptBlob:process.env.R2_BLOB},dormancy:JSON.parse(fs.readFileSync('/tmp/dormancy.json')),staticMatrix:JSON.parse(fs.readFileSync('/tmp/matrix.json')),browserRequired:false,permanentCandidateAltered:false,historicalCertificationFailure:{run:Number(process.env.FAILED_CERT_RUN),job:Number(process.env.FAILED_CERT_JOB),classification:'DIAGNOSTIC_HARNESS_REGEX_SYNTAX_ERROR',productMutation:false,criteriaRelaxed:false},restore:{headExact:true,treeExact:true,targetBlobExact:true,workspaceClean:true,head:process.env.PERM_SHA,tree:process.env.PERM_TREE,targetBlob:process.env.PERM_BLOB},scope:{repositoryOnly:true,staging:false,production:false,backend:false,supabase:false,rpc:false,migrations:false,credentials:false,runtimeRealtime:false,merge:false,readyForReview:false,forcePush:false,historyRewrite:false}};
+          fs.writeFileSync('/tmp/cert.json',JSON.stringify(receipt,null,2)+'\n'); console.log(JSON.stringify(receipt));
+          NODE
+
+      - name: Publish permanent certification receipt on isolated R2 diagnostic branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B "$OUTPUT_BRANCH" "refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          test "$(git merge-base "$PERM_SHA" HEAD)" = "$PERM_SHA"
+          test "$(git diff --name-only "$PERM_SHA"...HEAD)" = "$WORKFLOW_FILE"
+          mkdir -p "$(dirname "$RECEIPT_FILE")"
+          cp /tmp/cert.json "$RECEIPT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$RECEIPT_FILE"
+          test "$(git diff --cached --name-only)" = "$RECEIPT_FILE"
+          git commit -m "diagnostic(ux-css-important-040): publish permanent certification R2"
+          git push origin HEAD:"$OUTPUT_BRANCH"
+
+      - name: Verify post-publication permanent restoration and receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/heads/$PERM_BRANCH:refs/remotes/origin/$PERM_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$PERM_BRANCH")" = "$PERM_SHA"
+          test "$(git rev-parse "refs/remotes/origin/$PERM_BRANCH^{tree}")" = "$PERM_TREE"
+          test "$(git rev-parse "refs/remotes/origin/$PERM_BRANCH:$TARGET_FILE")" = "$PERM_BLOB"
+          test "$(git rev-parse HEAD:$RECEIPT_FILE)" != ""
+          test "$(git status --porcelain)" = ""
