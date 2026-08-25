@@ -1,0 +1,445 @@
+name: UX-CSS-IMPORTANT-038 Reach Source Cascade R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-038-marketplace-card-reach-r1
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-038-marketplace-card-reach-r1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prove038r1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT_SHA: f0dff98b236eb189cc3864ae411f96f1ac6ba0bd
+      PARENT_TREE: c9a5daf5a77e5d247409bbb02d38ce83b55a2d20
+      TARGET_FILE: assets/css/components/cards/marketplace-responsive-card-stack.css
+      TARGET_BLOB: ec63ebffb471979068e88d49e8f934e13e9658b3
+      TARGET_IMPORTANT: 434
+      OUTPUT_BRANCH: diag/ux-css-important-038-marketplace-card-reach-r1
+      RESULT_FILE: .diagnostics/ux-css-important-038-marketplace-card-reach-r1.json
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-038-marketplace-card-reach-r1.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Prove lineage scope reach source and cascade
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          changed="$(git diff --name-only "$PARENT_SHA"...HEAD)"
+          test "$changed" = "$WORKFLOW_FILE"
+
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/policy.txt 2>&1 || true
+
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { getLoadedCssAssets } = require('./scripts/lib/css-assets');
+
+          const normalize = f => String(f).replace(/\\/g, '/').replace(/^\.\//, '');
+          const target = normalize(process.env.TARGET_FILE);
+          const expectedImportant = Number(process.env.TARGET_IMPORTANT);
+          const root = process.cwd();
+
+          function walk(dir, out = []) {
+            if (!fs.existsSync(dir)) return out;
+            for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (['.git', 'node_modules', 'reports', '.diagnostics'].includes(e.name)) continue;
+              const p = path.join(dir, e.name);
+              if (e.isDirectory()) walk(p, out);
+              else if (e.isFile()) out.push(normalize(p));
+            }
+            return out;
+          }
+
+          function stripUrl(raw) {
+            return String(raw).trim().split('#')[0].split('?')[0];
+          }
+
+          function resolveImport(fromFile, raw) {
+            raw = stripUrl(raw);
+            if (!raw || /^https?:\/\//i.test(raw) || /^data:/i.test(raw)) return null;
+            if (raw.startsWith('/')) return normalize(raw.slice(1));
+            return normalize(path.join(path.dirname(fromFile), raw));
+          }
+
+          function imports(cssFile) {
+            if (!fs.existsSync(cssFile)) return [];
+            const text = fs.readFileSync(cssFile, 'utf8');
+            const out = [];
+            let m;
+            const re = /@import\s+(?:url\()?\s*['"]([^'")]+)['"]\s*\)?[^;]*;/gi;
+            while ((m = re.exec(text))) {
+              const resolved = resolveImport(cssFile, m[1]);
+              if (resolved) out.push(resolved);
+            }
+            return [...new Set(out)];
+          }
+
+          function stripComments(text) {
+            return text.replace(/\/\*[\s\S]*?\*\//g, '');
+          }
+
+          function matchingBrace(text, open) {
+            let depth = 1, quote = null, esc = false;
+            for (let i = open + 1; i < text.length; i++) {
+              const ch = text[i];
+              if (quote) {
+                if (esc) { esc = false; continue; }
+                if (ch === '\\') { esc = true; continue; }
+                if (ch === quote) quote = null;
+                continue;
+              }
+              if (ch === '"' || ch === "'") { quote = ch; continue; }
+              if (ch === '{') depth++;
+              else if (ch === '}') {
+                depth--;
+                if (depth === 0) return i;
+              }
+            }
+            return -1;
+          }
+
+          function splitTopLevel(text, delimiter) {
+            const out = [];
+            let start = 0, quote = null, esc = false, paren = 0, bracket = 0;
+            for (let i = 0; i < text.length; i++) {
+              const ch = text[i];
+              if (quote) {
+                if (esc) { esc = false; continue; }
+                if (ch === '\\') { esc = true; continue; }
+                if (ch === quote) quote = null;
+                continue;
+              }
+              if (ch === '"' || ch === "'") { quote = ch; continue; }
+              if (ch === '(') paren++;
+              else if (ch === ')') paren = Math.max(0, paren - 1);
+              else if (ch === '[') bracket++;
+              else if (ch === ']') bracket = Math.max(0, bracket - 1);
+              else if (ch === delimiter && paren === 0 && bracket === 0) {
+                out.push(text.slice(start, i));
+                start = i + 1;
+              }
+            }
+            out.push(text.slice(start));
+            return out;
+          }
+
+          function normalizeSelector(s) {
+            return s.trim().replace(/\s+/g, ' ');
+          }
+
+          function parseDeclarations(body) {
+            const declarations = [];
+            for (const part of splitTopLevel(body, ';')) {
+              let quote = null, esc = false, paren = 0, bracket = 0, colon = -1;
+              for (let i = 0; i < part.length; i++) {
+                const ch = part[i];
+                if (quote) {
+                  if (esc) { esc = false; continue; }
+                  if (ch === '\\') { esc = true; continue; }
+                  if (ch === quote) quote = null;
+                  continue;
+                }
+                if (ch === '"' || ch === "'") { quote = ch; continue; }
+                if (ch === '(') paren++;
+                else if (ch === ')') paren = Math.max(0, paren - 1);
+                else if (ch === '[') bracket++;
+                else if (ch === ']') bracket = Math.max(0, bracket - 1);
+                else if (ch === ':' && paren === 0 && bracket === 0) { colon = i; break; }
+              }
+              if (colon < 1) continue;
+              const property = part.slice(0, colon).trim().toLowerCase();
+              const value = part.slice(colon + 1).trim();
+              if (!/^--[\w-]+$/.test(property) && !/^[a-z-]+$/i.test(property)) continue;
+              declarations.push({ property, value, important: /!important\b/i.test(value) });
+            }
+            return declarations;
+          }
+
+          function specificity(selector) {
+            const s = selector
+              .replace(/:where\([^)]*\)/g, '')
+              .replace(/::[\w-]+/g, ' ELEM ');
+            const ids = (s.match(/#[\w-]+/g) || []).length;
+            const classes = (s.match(/\.[\w-]+/g) || []).length;
+            const attrs = (s.match(/\[[^\]]+\]/g) || []).length;
+            const pseudos = (s.match(/:(?!:)[\w-]+(?:\([^)]*\))?/g) || []).length;
+            const cleaned = s
+              .replace(/#[\w-]+/g, ' ')
+              .replace(/\.[\w-]+/g, ' ')
+              .replace(/\[[^\]]+\]/g, ' ')
+              .replace(/:(?!:)[\w-]+(?:\([^)]*\))?/g, ' ')
+              .replace(/[>+~,*()]/g, ' ');
+            const elements = (cleaned.match(/\b(?:[a-z][\w-]*|ELEM)\b/gi) || []).filter(x => !['not','is','has'].includes(x.toLowerCase())).length;
+            return [ids, classes + attrs + pseudos, elements];
+          }
+
+          function parseStylesheet(text, file) {
+            text = stripComments(text);
+            const rules = [];
+            let ordinal = 0;
+            function parseRange(chunk, contexts = []) {
+              let pos = 0;
+              while (pos < chunk.length) {
+                const open = chunk.indexOf('{', pos);
+                if (open < 0) break;
+                const prelude = chunk.slice(pos, open).trim();
+                const close = matchingBrace(chunk, open);
+                if (close < 0) throw new Error(`unbalanced CSS in ${file}`);
+                const body = chunk.slice(open + 1, close);
+                pos = close + 1;
+                if (!prelude) continue;
+                if (/^@(media|supports|container|layer)\b/i.test(prelude)) {
+                  parseRange(body, contexts.concat(prelude.replace(/\s+/g, ' ')));
+                  continue;
+                }
+                if (/^@(keyframes|-webkit-keyframes|font-face|property|page|counter-style)\b/i.test(prelude)) continue;
+                if (prelude.startsWith('@')) {
+                  parseRange(body, contexts.concat(prelude.replace(/\s+/g, ' ')));
+                  continue;
+                }
+                const declarations = parseDeclarations(body);
+                if (!declarations.length) continue;
+                const selectors = splitTopLevel(prelude, ',').map(normalizeSelector).filter(Boolean);
+                for (const selector of selectors) {
+                  rules.push({ file, selector, specificity: specificity(selector), contexts, declarations, ordinal: ordinal++ });
+                }
+              }
+            }
+            parseRange(text, []);
+            return rules;
+          }
+
+          const rootHtml = fs.readdirSync(root).filter(f => f.endsWith('.html')).sort();
+          const pageOrders = new Map();
+          const loadedGlobal = new Set();
+
+          for (const page of rootHtml) {
+            const htmlText = fs.readFileSync(page, 'utf8');
+            const direct = getLoadedCssAssets(htmlText, root).map(normalize);
+            const order = [];
+            const seen = new Set();
+            function visit(asset) {
+              asset = normalize(asset);
+              if (!asset || seen.has(asset) || !fs.existsSync(asset)) return;
+              seen.add(asset);
+              order.push(asset);
+              loadedGlobal.add(asset);
+              for (const imp of imports(asset)) visit(imp);
+            }
+            for (const asset of direct) visit(asset);
+            pageOrders.set(page, order);
+          }
+
+          const allFiles = walk('.');
+          const allCss = allFiles.filter(f => f.endsWith('.css')).sort();
+          const allHtml = allFiles.filter(f => f.endsWith('.html')).sort();
+          const allJs = allFiles.filter(f => /\.(?:js|mjs|cjs|ts)$/i.test(f)).sort();
+          const targetText = fs.readFileSync(target, 'utf8');
+          const importantCount = (targetText.match(/!important\b/gi) || []).length;
+          if (importantCount !== expectedImportant) throw new Error(`target important count ${importantCount} expected ${expectedImportant}`);
+
+          const directHtmlRefs = allHtml.filter(f => {
+            const s = fs.readFileSync(f, 'utf8');
+            return s.includes(target) || s.includes(path.posix.basename(target));
+          });
+          const cssImporters = allCss.filter(f => f !== target && imports(f).includes(target));
+          const runtimeJsRefs = [], toolingJsRefs = [];
+          for (const f of allJs) {
+            const s = fs.readFileSync(f, 'utf8');
+            if (!(s.includes(target) || s.includes(path.posix.basename(target)))) continue;
+            if (f.startsWith('scripts/') || f.startsWith('tests/') || f.startsWith('.github/')) toolingJsRefs.push(f);
+            else runtimeJsRefs.push(f);
+          }
+
+          const targetPages = [...pageOrders.entries()].filter(([,order]) => order.includes(target)).map(([p]) => p);
+          const canonicalLoaded = targetPages.length > 0;
+
+          const policy = fs.existsSync('/tmp/policy.txt') ? fs.readFileSync('/tmp/policy.txt', 'utf8') : '';
+          const activeSection = (policy.split('## Dívida ativa registrada')[1] || '').split('## Quarentena dormente registrada')[0] || '';
+          const dormantSection = (policy.split('## Quarentena dormente registrada')[1] || '').split('## Violações')[0] || '';
+          const policyClassification = activeSection.includes(target) ? 'active' : dormantSection.includes(target) ? 'dormant' : 'unlisted';
+
+          const targetRules = parseStylesheet(targetText, target);
+          const targetImportantDecls = [];
+          const importantByProperty = new Map();
+          const selectorTokens = new Set();
+          const tokenRe = /[.#]([A-Za-z_][\w-]*)/g;
+          let tm;
+          while ((tm = tokenRe.exec(targetText))) selectorTokens.add(tm[1]);
+
+          for (const rule of targetRules) {
+            for (const d of rule.declarations) {
+              if (!d.important) continue;
+              const key = `${rule.selector}\u0000${d.property}`;
+              targetImportantDecls.push({ key, selector: rule.selector, property: d.property, value: d.value, contexts: rule.contexts, specificity: rule.specificity, ordinal: rule.ordinal });
+              importantByProperty.set(d.property, (importantByProperty.get(d.property) || 0) + 1);
+            }
+          }
+          if (targetImportantDecls.length !== expectedImportant) throw new Error(`parsed important declarations ${targetImportantDecls.length} expected ${expectedImportant}`);
+
+          const targetKeyCounts = new Map();
+          for (const d of targetImportantDecls) targetKeyCounts.set(d.key, (targetKeyCounts.get(d.key) || 0) + 1);
+          const internalCollisionKeys = [...targetKeyCounts.entries()].filter(([,count]) => count > 1).map(([key,count]) => ({ key, count }));
+
+          const rulesByFile = new Map();
+          for (const f of allCss) {
+            try { rulesByFile.set(f, parseStylesheet(fs.readFileSync(f, 'utf8'), f)); }
+            catch (e) { throw new Error(`parse failed ${f}: ${e.message}`); }
+          }
+
+          const targetKeys = new Set(targetImportantDecls.map(d => d.key));
+          const physicalCollisions = [];
+          for (const [file, rules] of rulesByFile) {
+            for (const rule of rules) {
+              for (const d of rule.declarations) {
+                const key = `${rule.selector}\u0000${d.property}`;
+                if (!targetKeys.has(key)) continue;
+                if (file === target && d.important) continue;
+                physicalCollisions.push({ file, selector: rule.selector, property: d.property, value: d.value, important: d.important, contexts: rule.contexts, specificity: rule.specificity, ordinal: rule.ordinal });
+              }
+            }
+          }
+
+          const runtimeCollisionRelations = [];
+          if (canonicalLoaded) {
+            for (const page of targetPages) {
+              const order = pageOrders.get(page);
+              const targetIndex = order.indexOf(target);
+              for (const c of physicalCollisions) {
+                const idx = order.indexOf(c.file);
+                if (idx < 0) continue;
+                runtimeCollisionRelations.push({ page, file: c.file, selector: c.selector, property: c.property, important: c.important, relation: c.file === target ? (c.ordinal < 0 ? 'same' : 'internal') : idx < targetIndex ? 'before-target' : idx > targetIndex ? 'after-target' : 'same-file', targetIndex, competitorIndex: idx, contexts: c.contexts });
+              }
+            }
+          }
+
+          const sourceText = [...allHtml, ...allJs].map(f => fs.readFileSync(f, 'utf8')).join('\n');
+          const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const referencedTokens = [...selectorTokens].filter(t => new RegExp(`(^|[^A-Za-z0-9_-])${esc(t)}([^A-Za-z0-9_-]|$)`).test(sourceText));
+          const unreferencedTokens = [...selectorTokens].filter(t => !referencedTokens.includes(t));
+
+          const producerScores = [];
+          for (const f of allCss) {
+            if (f === target) continue;
+            const text = fs.readFileSync(f, 'utf8');
+            let overlap = 0;
+            for (const token of selectorTokens) if (new RegExp(`(^|[^A-Za-z0-9_-])${esc(token)}([^A-Za-z0-9_-]|$)`).test(text)) overlap++;
+            if (!overlap) continue;
+            producerScores.push({ file: f, selectorTokenOverlap: overlap, loadedOnTargetPage: targetPages.some(p => pageOrders.get(p).includes(f)), importantCount: (text.match(/!important\b/gi) || []).length });
+          }
+          producerScores.sort((a,b) => b.selectorTokenOverlap - a.selectorTokenOverlap || a.file.localeCompare(b.file));
+
+          const collisionFiles = [...new Set(physicalCollisions.map(c => c.file))].sort();
+          const runtimeCollisionFiles = [...new Set(runtimeCollisionRelations.map(c => c.file))].sort();
+          const mediaHeaders = [...new Set(targetRules.flatMap(r => r.contexts.filter(c => /^@media\b/i.test(c))))];
+
+          const result = {
+            proof: 'UX-CSS-IMPORTANT-038 Reach Source Cascade R1',
+            parentSha: process.env.PARENT_SHA,
+            parentTree: process.env.PARENT_TREE,
+            targetFile: target,
+            targetBlob: process.env.TARGET_BLOB,
+            targetBytes: Buffer.byteLength(targetText),
+            importantDeclarationCount: importantCount,
+            diagnosticScope: { branch: process.env.OUTPUT_BRANCH, workflowOnlyBeforeExecution: true, productCssModified: false },
+            reach: {
+              canonicalLoaded,
+              wholeFileDormant: !canonicalLoaded,
+              rootHtmlCount: rootHtml.length,
+              physicalCssCount: allCss.length,
+              canonicalLoadedCssCount: loadedGlobal.size,
+              targetPages,
+              targetPageCount: targetPages.length,
+              directHtmlRefs,
+              cssImporters,
+              runtimeJsRefs,
+              toolingJsRefs,
+              policyClassification,
+              perTargetPageOrder: Object.fromEntries(targetPages.map(p => [p, pageOrders.get(p)]))
+            },
+            source: {
+              selectorTokenCount: selectorTokens.size,
+              referencedSelectorTokenCount: referencedTokens.length,
+              unreferencedSelectorTokenCount: unreferencedTokens.length,
+              referencedSelectorTokens: referencedTokens.sort(),
+              unreferencedSelectorTokenSample: unreferencedTokens.sort().slice(0, 60),
+              competingProducerCount: producerScores.length,
+              competingProducerTop: producerScores.slice(0, 40)
+            },
+            cascade: {
+              parsedRuleSelectorCount: targetRules.length,
+              importantByProperty: [...importantByProperty.entries()].sort((a,b) => b[1] - a[1]).map(([property,count]) => ({ property, count })),
+              mediaHeaders,
+              internalExactSelectorPropertyCollisionKeys: internalCollisionKeys.length,
+              internalExactSelectorPropertyCollisionSample: internalCollisionKeys.slice(0, 40),
+              physicalExactSelectorPropertyCollisionCount: physicalCollisions.length,
+              physicalCollisionFiles: collisionFiles,
+              physicalCollisionSample: physicalCollisions.slice(0, 80),
+              runtimeExactCollisionRelationCount: runtimeCollisionRelations.length,
+              runtimeCollisionFiles,
+              runtimeCollisionRelationSample: runtimeCollisionRelations.slice(0, 100),
+              browserReconciliationRequired: canonicalLoaded
+            },
+            nextGate: canonicalLoaded
+              ? 'active target: marker candidate requires browser reconciliation plus static/governance before promotion'
+              : 'whole-file dormant target: marker candidate may proceed via dormant-reach preservation plus static/governance',
+            result: 'PASS'
+          };
+
+          fs.writeFileSync('/tmp/ux-css-important-038-r1.json', JSON.stringify(result, null, 2) + '\n');
+          console.log(JSON.stringify({
+            result: result.result,
+            canonicalLoaded,
+            targetPages: targetPages.length,
+            important: importantCount,
+            cssImporters: cssImporters.length,
+            directHtmlRefs: directHtmlRefs.length,
+            runtimeJsRefs: runtimeJsRefs.length,
+            selectorTokens: selectorTokens.size,
+            physicalCollisions: physicalCollisions.length,
+            runtimeCollisionRelations: runtimeCollisionRelations.length,
+            browserRequired: canonicalLoaded
+          }));
+          NODE
+
+      - name: Publish R1 receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=FAIL
+          if test -s /tmp/ux-css-important-038-r1.json; then
+            result="$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/ux-css-important-038-r1.json','utf8')).result||'FAIL')")"
+          fi
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          if test -s /tmp/ux-css-important-038-r1.json; then
+            cp /tmp/ux-css-important-038-r1.json "$RESULT_FILE"
+          else
+            printf '{"proof":"UX-CSS-IMPORTANT-038 Reach Source Cascade R1","result":"FAIL","reason":"proof step failed before receipt generation"}\n' > "$RESULT_FILE"
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m 'diag: publish UX-CSS-IMPORTANT-038 reach source cascade R1 [skip ci]' >/dev/null
+            git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
+          fi
+          test "$result" = PASS
