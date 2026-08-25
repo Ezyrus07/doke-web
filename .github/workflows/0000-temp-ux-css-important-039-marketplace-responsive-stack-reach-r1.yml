@@ -1,0 +1,203 @@
+name: UX-CSS-IMPORTANT-039 Reach Source Cascade R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-039-marketplace-responsive-stack-reach-r1
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-039-marketplace-responsive-stack-reach-r1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prove039r1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT_SHA: b64024a143e6531c51263d7750ab00162cf7e772
+      PARENT_TREE: 64f556068e5dd89f3dfdda211b0f85b3e5a773e8
+      TARGET_FILE: assets/css/patterns/marketplace-responsive-stack.css
+      TARGET_BLOB: 0d284a91858a4e16ec5ac3edc48c9700982bac11
+      TARGET_IMPORTANT: 468
+      CHILD_FILE: assets/css/components/cards/marketplace-responsive-card-stack.css
+      CHILD_BLOB: 4609bbb257194173d418ae608f2eca20bb8cbeff
+      OUTPUT_BRANCH: diag/ux-css-important-039-marketplace-responsive-stack-reach-r1
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-039-marketplace-responsive-stack-reach-r1.yml
+      RESULT_FILE: .diagnostics/ux-css-important-039-marketplace-responsive-stack-reach-r1.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Prove exact parent and diagnostic isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git rev-parse "$PARENT_SHA:$CHILD_FILE")" = "$CHILD_BLOB"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$WORKFLOW_FILE"
+          test "$(git show "$PARENT_SHA:$TARGET_FILE" | grep -o '!important' | wc -l | tr -d ' ')" = "$TARGET_IMPORTANT"
+
+      - name: Build reach source cascade inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),crypto=require('crypto'),cp=require('child_process');
+          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
+          const target=process.env.TARGET_FILE.replace(/\\/g,'/');
+          const child=process.env.CHILD_FILE.replace(/\\/g,'/');
+          const norm=p=>String(p).replace(/\\/g,'/').replace(/^\.\//,'');
+          function walk(dir, pred, out=[]){
+            if(!fs.existsSync(dir)) return out;
+            for(const e of fs.readdirSync(dir,{withFileTypes:true})){
+              const p=path.join(dir,e.name);
+              if(e.isDirectory()){
+                if(['node_modules','.git'].includes(e.name)) continue;
+                walk(p,pred,out);
+              } else if(e.isFile()&&pred(p)) out.push(norm(p));
+            }
+            return out;
+          }
+          function imports(cssFile){
+            if(!fs.existsSync(cssFile))return [];
+            const css=fs.readFileSync(cssFile,'utf8'),out=[];let m,index=0;
+            const re=/@import\s+(?:url\()?\s*['"]([^'")]+)['"]\s*\)?[^;]*;/gi;
+            while((m=re.exec(css))){
+              const raw=m[1].split('#')[0].split('?')[0];
+              if(!raw||/^https?:\/\//i.test(raw)||/^data:/i.test(raw))continue;
+              const resolved=norm(raw.startsWith('/')?raw.slice(1):path.join(path.dirname(cssFile),raw));
+              out.push({raw:m[1],resolved,index:index++,offset:m.index});
+            }
+            return out;
+          }
+          const cssFiles=walk('assets/css',p=>p.endsWith('.css')).sort();
+          const importGraph=new Map(cssFiles.map(f=>[f,imports(f)]));
+          const reverse=new Map();
+          for(const [from,imps] of importGraph){
+            for(const imp of imps){if(!reverse.has(imp.resolved))reverse.set(imp.resolved,[]);reverse.get(imp.resolved).push({from,index:imp.index,raw:imp.raw});}
+          }
+          const directImporters=(reverse.get(target)||[]).sort((a,b)=>a.from.localeCompare(b.from));
+          const targetImports=(importGraph.get(target)||[]);
+          if(!targetImports.some(x=>x.resolved===child)) throw new Error('target no longer imports certified 038 child');
+          const childBytes=fs.readFileSync(child);
+          const childBlob=cp.execFileSync('git',['hash-object',child],{encoding:'utf8'}).trim();
+          const childImportant=(childBytes.toString('utf8').match(/!important\b/gi)||[]).length;
+          if(childBlob!==process.env.CHILD_BLOB||childImportant!==0) throw new Error(`child identity/debt mismatch ${childBlob}/${childImportant}`);
+
+          const pages=fs.readdirSync('.').filter(f=>f.endsWith('.html')).sort();
+          const pageReach=[]; const loadedUnion=new Set(); const directHtmlRefs=[];
+          for(const page of pages){
+            const html=fs.readFileSync(page,'utf8');
+            if(html.includes(target)||html.includes(path.basename(target))) directHtmlRefs.push(page);
+            const roots=getLoadedCssAssets(html,process.cwd()).map(norm);
+            const seen=new Set(),queue=roots.map(r=>({file:r,chain:[r]})); let hit=null;
+            for(let i=0;i<queue.length;i++){
+              const cur=queue[i]; if(seen.has(cur.file)||!fs.existsSync(cur.file))continue; seen.add(cur.file); loadedUnion.add(cur.file);
+              if(cur.file===target){hit=cur.chain;break;}
+              for(const imp of (importGraph.get(cur.file)||[])) queue.push({file:imp.resolved,chain:[...cur.chain,imp.resolved]});
+            }
+            if(hit) pageReach.push({page,chain:hit});
+          }
+          const canonicalLoaded=pageReach.length>0;
+
+          const jsFiles=walk('.',p=>p.endsWith('.js')).filter(p=>!p.startsWith('node_modules/'));
+          const runtimeJsRefs=[],toolingJsRefs=[];
+          const needles=[target,path.basename(target)];
+          for(const f of jsFiles){
+            let s; try{s=fs.readFileSync(f,'utf8')}catch{continue}
+            if(!needles.some(n=>s.includes(n)))continue;
+            if(f.startsWith('assets/js/')||(!f.startsWith('scripts/')&&!f.startsWith('.github/'))) runtimeJsRefs.push(f); else toolingJsRefs.push(f);
+          }
+          const docFiles=walk('.',p=>/\.(md|json|yml|yaml|html)$/i.test(p)).filter(p=>!p.startsWith('node_modules/'));
+          const otherRefs=[];
+          for(const f of docFiles){
+            let s;try{s=fs.readFileSync(f,'utf8')}catch{continue}
+            if((s.includes(target)||s.includes(path.basename(target)))&&!directHtmlRefs.includes(f))otherRefs.push(f);
+          }
+
+          const css=fs.readFileSync(target,'utf8');
+          const rawImportant=(css.match(/!important\b/gi)||[]).length;
+          if(rawImportant!==Number(process.env.TARGET_IMPORTANT)) throw new Error(`important drift ${rawImportant}`);
+          const mediaQueries=[...css.matchAll(/@media\s*([^\{]+)\{/gi)].map(m=>m[1].trim());
+          const selectorBlocks=[];
+          const blockRe=/(^|\})\s*([^@{}][^{}]*)\{([^{}]*)\}/gms; let bm;
+          while((bm=blockRe.exec(css))){
+            const selector=bm[2].trim().replace(/\s+/g,' '); if(!selector||selector.startsWith('@'))continue;
+            const body=bm[3]; const props=[];
+            for(const d of body.split(';')){const idx=d.indexOf(':');if(idx<1)continue;const prop=d.slice(0,idx).trim().toLowerCase();if(prop&&/^[\w-]+$/.test(prop))props.push(prop);}
+            if(props.length)selectorBlocks.push({selector,properties:[...new Set(props)]});
+          }
+          const pairCount=new Map();
+          for(const b of selectorBlocks)for(const prop of b.properties){const k=b.selector+'||'+prop;pairCount.set(k,(pairCount.get(k)||0)+1)}
+          const internalExactCollisions=[...pairCount.entries()].filter(([,n])=>n>1).map(([key,count])=>({key,count})).slice(0,200);
+
+          // Runtime cascade relations are only meaningful when the target is canonically loaded.
+          const runtimeExactCollisionRelations=[];
+          if(canonicalLoaded){
+            const loaded=[...loadedUnion].filter(f=>f!==target&&fs.existsSync(f));
+            const targetPairs=new Set(pairCount.keys());
+            for(const f of loaded){
+              const s=fs.readFileSync(f,'utf8'); let m;
+              blockRe.lastIndex=0;
+              while((m=blockRe.exec(s))){
+                const sel=m[2].trim().replace(/\s+/g,' '); if(!sel||sel.startsWith('@'))continue;
+                for(const d of m[3].split(';')){const i=d.indexOf(':');if(i<1)continue;const prop=d.slice(0,i).trim().toLowerCase();const k=sel+'||'+prop;if(targetPairs.has(k))runtimeExactCollisionRelations.push({file:f,key:k});}
+              }
+            }
+          }
+
+          let policy={targetInActive:false,targetInDormant:false,deprecatedReactivated:null,unregisteredActive:null};
+          try{
+            const report=cp.execFileSync('node',['scripts/audit-css-dormant-debt-policy.js'],{encoding:'utf8'});
+            const section=(a,b)=>(report.split(a)[1]||'').split(b)[0]||'';
+            const active=section('## Dívida ativa registrada','## Quarentena dormente registrada');
+            const dormant=section('## Quarentena dormente registrada','## Violações');
+            policy.targetInActive=active.includes(target); policy.targetInDormant=dormant.includes(target);
+            const metric=label=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=report.match(new RegExp(esc+'[: ]+\\*?\\*?(\\d+)'));return m?Number(m[1]):null};
+            policy.deprecatedReactivated=metric('CSS depreciado reativado');
+            policy.unregisteredActive=metric('CSS ativo com !important fora do registro');
+          }catch(e){policy.auditExitCode=e.status??1;policy.auditOutput=String(e.stdout||'').slice(-4000)}
+
+          const wholeFileDormant=!canonicalLoaded && directHtmlRefs.length===0 && runtimeJsRefs.length===0;
+          const classification=canonicalLoaded?'runtime-active':wholeFileDormant?'whole-file-dormant':'noncanonical-reference-only';
+          if(classification==='whole-file-dormant'&&policy.targetInActive) throw new Error('reach says dormant but policy says active');
+          if(classification==='runtime-active'&&policy.targetInDormant) throw new Error('reach says active but policy says dormant');
+          const result={
+            result:'PASS',parentSha:process.env.PARENT_SHA,parentTree:process.env.PARENT_TREE,targetFile:target,targetBlob:process.env.TARGET_BLOB,
+            targetBytes:Buffer.byteLength(css),targetSha256:crypto.createHash('sha256').update(css).digest('hex'),rawImportantMarkerCount:rawImportant,
+            reach:{classification,canonicalLoaded,wholeFileDormant,rootHtmlCount:pages.length,loadedCssCount:loadedUnion.size,targetPageCount:pageReach.length,targetPages:pageReach,directHtmlRefs:[...new Set(directHtmlRefs)],runtimeJsRefs:[...new Set(runtimeJsRefs)],toolingJsRefs:[...new Set(toolingJsRefs)],otherRefs:[...new Set(otherRefs)].slice(0,100)},
+            imports:{targetImports,directImporters,certified038Child:{file:child,blob:childBlob,important:childImportant}},
+            inventory:{mediaQueryCount:mediaQueries.length,mediaQueries:[...new Set(mediaQueries)],selectorBlockCount:selectorBlocks.length,uniqueSelectorPropertyPairs:pairCount.size,internalExactCollisionKeyCount:internalExactCollisions.length,internalExactCollisions},
+            cascade:{runtimeExactCollisionRelationCount:runtimeExactCollisionRelations.length,runtimeExactCollisionRelations:runtimeExactCollisionRelations.slice(0,200),browserReconciliationRequired:canonicalLoaded},
+            policy
+          };
+          fs.writeFileSync('/tmp/result.json',JSON.stringify(result,null,2)+'\n');
+          console.log(JSON.stringify({classification,canonicalLoaded,targetPages:pageReach.length,directImporters:directImporters.length,targetImports:targetImports.length,runtimeJsRefs:runtimeJsRefs.length,important:rawImportant,runtimeExactCollisionRelations:runtimeExactCollisionRelations.length,browserRequired:canonicalLoaded}));
+          NODE
+
+      - name: Publish R1 receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f /tmp/result.json ]; then
+            printf '%s\n' '{"result":"FAIL","failureClass":"HARNESS_OR_PREFLIGHT","parentSha":"'"$PARENT_SHA"'","targetFile":"'"$TARGET_FILE"'"}' > /tmp/result.json
+          fi
+          git fetch origin "$OUTPUT_BRANCH" >/dev/null
+          git checkout -B "$OUTPUT_BRANCH" "origin/$OUTPUT_BRANCH"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/result.json "$RESULT_FILE"
+          git add "$RESULT_FILE"
+          if ! git diff --cached --quiet; then
+            git config user.name doke
+            git config user.email bielantoniomma@gmail.com
+            git commit -m 'diag: record UX-CSS-IMPORTANT-039 reach source cascade R1' >/dev/null
+            git push origin "HEAD:$OUTPUT_BRANCH"
+          fi
+          test "$(node -e "console.log(require('./$RESULT_FILE').result)")" = PASS
