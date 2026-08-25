@@ -1,0 +1,163 @@
+name: TEMP UX-CSS-IMPORTANT-043 Home Tablet V2 R1
+
+on:
+  push:
+    branches: [diag/ux-css-important-043-home-tablet-v2-r1]
+    paths: [.github/workflows/0000-temp-ux-css-important-043-home-tablet-v2-r1.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  reach-source-cascade-r1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PARENT_SHA: deb8aebc0235fda21f820d7dbfe1e0035f582111
+      PARENT_TREE: b3c52048119014a8c9b04b4355db7f92d6689239
+      TARGET_FILE: assets/css/pages/home-tablet-v2.css
+      TARGET_BLOB: 91e01881f5a790675719a37ae81da6aba8ba940e
+      TARGET_IMPORTANT: '1262'
+      TARGET_BYTES: '94960'
+      OUTPUT_BRANCH: diag/ux-css-important-043-home-tablet-v2-r1
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-043-home-tablet-v2-r1.yml
+      RESULT_FILE: .diagnostics/ux-css-important-043-home-tablet-v2-r1.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+
+      - name: Freeze diagnostic isolation and certified predecessor
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$WORKFLOW_FILE"
+
+      - name: Prove exact priority sites reach ownership and cascade
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),path=require('path'),posix=path.posix,crypto=require('crypto');
+          const TARGET=process.env.TARGET_FILE, SHA=process.env.PARENT_SHA;
+          const files=cp.execFileSync('git',['ls-tree','-r','--name-only',SHA],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+          const S=new Set(files);
+          const read=p=>cp.execFileSync('git',['show',`${SHA}:${p}`],{encoding:'utf8',maxBuffer:20*1024*1024});
+          const target=read(TARGET);
+          const raw=[...target.matchAll(/!important\b/gi)];
+          if(raw.length!==Number(process.env.TARGET_IMPORTANT)) throw Error(`target markers ${raw.length}`);
+          if(Buffer.byteLength(target)!==Number(process.env.TARGET_BYTES)) throw Error(`target bytes ${Buffer.byteLength(target)}`);
+          if(cp.execFileSync('git',['rev-parse',`${SHA}:${TARGET}`],{encoding:'utf8'}).trim()!==process.env.TARGET_BLOB) throw Error('target blob');
+
+          // dependency-free lexical classifier. Every literal must belong to a CSS declaration.
+          function maskCommentsStrings(s){
+            let a=[...s],state='code',q='';
+            for(let i=0;i<s.length;i++){
+              if(state==='comment'){a[i]=' ';if(s[i]==='*'&&s[i+1]==='/'){a[i+1]=' ';i++;state='code'}continue}
+              if(state==='string'){a[i]=' ';if(s[i]==='\\'){if(i+1<s.length){a[i+1]=' ';i++}continue}if(s[i]===q)state='code';continue}
+              if(s[i]==='/'&&s[i+1]==='*'){a[i]=a[i+1]=' ';i++;state='comment';continue}
+              if(s[i]==='"'||s[i]==="'"){q=s[i];a[i]=' ';state='string';continue}
+            }
+            return a.join('');
+          }
+          const masked=maskCommentsStrings(target);
+          const sites=[]; const unresolved=[];
+          for(const m of raw){
+            const off=m.index;
+            if(masked.slice(off,off+10).toLowerCase()!=='!important'){unresolved.push({offset:off,reason:'comment-or-string'});continue}
+            let start=off-1;
+            while(start>=0&&!';{}'.includes(masked[start])) start--;
+            const frag=masked.slice(start+1,off);
+            const colon=frag.indexOf(':');
+            if(colon<1){unresolved.push({offset:off,reason:'no-colon',frag:frag.slice(-120)});continue}
+            const prop=frag.slice(0,colon).trim();
+            if(!/^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9_-]*)$/.test(prop)){unresolved.push({offset:off,reason:'property-grammar',prop});continue}
+            let line=1,col=1; for(let i=0;i<off;i++){if(target[i]==='\n'){line++;col=1}else col++}
+            sites.push({offset:off,line,column:col,property:prop});
+          }
+          if(unresolved.length||sites.length!==raw.length) throw Error(`unresolved priority sites ${unresolved.length}: ${JSON.stringify(unresolved.slice(0,10))}`);
+
+          const strip=s=>maskCommentsStrings(s);
+          function imports(p){
+            const src=strip(read(p)); const out=[];
+            const rx=/@import\s+(?:url\(\s*)?['"]?([^'"\)\s;]+\.css(?:\?[^'"\)\s;]*)?)['"]?\s*\)?[^;]*;/gi;
+            for(const m of src.matchAll(rx)){
+              let x=m[1].split('?',1)[0].split('#',1)[0];
+              if(/^[a-z]+:\/\//i.test(x))continue;
+              out.push(x.startsWith('/')?x.slice(1):posix.normalize(posix.join(posix.dirname(p),x)));
+            }
+            return out;
+          }
+          const css=files.filter(p=>p.endsWith('.css'));
+          const im=new Map(css.map(p=>[p,imports(p)]));
+          const directImporters=css.filter(p=>(im.get(p)||[]).includes(TARGET)).sort();
+          const html=files.filter(p=>p.endsWith('.html')&&!/^(archive|reports|tools|test-results)\//.test(p));
+          const linkRx=/<link\b[^>]*?href\s*=\s*['"]([^'"]+)['"][^>]*>/gis;
+          const starts=new Map(); const directHtmlRefs=[];
+          for(const h of html){let arr=[];for(const m of read(h).matchAll(linkRx)){let x=m[1].split('?',1)[0].split('#',1)[0];if(!x.endsWith('.css')||/^[a-z]+:\/\//i.test(x))continue;x=x.startsWith('/')?x.slice(1):posix.normalize(posix.join(posix.dirname(h),x));arr.push(x);if(x===TARGET)directHtmlRefs.push(h)}starts.set(h,arr)}
+          function closure(xs){const seen=new Set(),st=[...xs];while(st.length){const p=st.pop();if(seen.has(p)||!S.has(p)||!p.endsWith('.css'))continue;seen.add(p);for(const q of im.get(p)||[])st.push(q)}return seen}
+          const targetPages=[];const loaded=new Set();
+          for(const [h,xs] of starts){const c=closure(xs);for(const x of c)loaded.add(x);if(c.has(TARGET))targetPages.push(h)}
+          const runtimeJsRefs=[];for(const p of files.filter(x=>x.startsWith('assets/js/')&&/\.(?:js|mjs|cjs)$/.test(x))){const t=read(p);if(t.includes(TARGET)||t.includes(posix.basename(TARGET)))runtimeJsRefs.push(p)}
+          const canonicalLoaded=loaded.has(TARGET);
+          const wholeFileDormant=!canonicalLoaded&&!directImporters.length&&!directHtmlRefs.length&&!runtimeJsRefs.length;
+
+          // Exact relation inventory to adjacent home/tablet/shell authorities.
+          const authorities=[
+            'assets/css/pages/home-foundation.css',
+            'assets/css/components/shell/doke-shell-contract.css',
+            'assets/css/components/shell/tablet-shell-contract.css',
+            'assets/css/components/shell/tablet-internal-rail-contract.css',
+            'assets/css/components/navigation/mobile-search-header-shared.css'
+          ].filter(p=>S.has(p));
+          const relations={};
+          for(const p of authorities){relations[p]={blob:cp.execFileSync('git',['rev-parse',`${SHA}:${p}`],{encoding:'utf8'}).trim(),literalImportantMarkers:(read(p).match(/!important\b/gi)||[]).length,relationImportsTarget:(im.get(p)||[]).includes(TARGET),targetImportsRelation:(im.get(TARGET)||[]).includes(p)}}
+          const docs=['AGENTS.md','PROJECT-RULES.md','ARCHITECTURE.md','docs/DOKE_AGENT_CONSTITUTION.md','docs/BASELINE-VISUAL-APPROVED.md','docs/CSS_AUTHORITY_MAP.md','docs/DESIGN-SYSTEM-GUIDE.md','docs/DOKE-PLANO-MESTRE-CONCLUSAO-PLATAFORMA.md','docs/DOMAIN-COMPLETION-MATRIX.md','docs/GLOBAL-LAYOUT-CONTRACT.md','docs/PAGE-ASSET-AUTHORITY-MATRIX.md'];
+          const authorityDocs={};for(const p of docs.filter(x=>S.has(x)))authorityDocs[p]=cp.execFileSync('git',['rev-parse',`${SHA}:${p}`],{encoding:'utf8'}).trim();
+          const textual=[];for(const p of files.filter(x=>!x.startsWith('.git/')&&x!==TARGET)){if(!/\.(?:md|json|js|mjs|cjs|html|css|yml|yaml)$/.test(p))continue;let t='';try{t=read(p)}catch{}if(t.includes(TARGET)||t.includes(posix.basename(TARGET)))textual.push(p)}
+          const toolingRefs=textual.filter(p=>p.startsWith('docs/')||p.startsWith('scripts/')||p.startsWith('config/'));
+          const otherRefs=textual.filter(p=>!toolingRefs.includes(p)&&!directImporters.includes(p)&&!directHtmlRefs.includes(p)&&!runtimeJsRefs.includes(p));
+          const out={
+            proof:'UX-CSS-IMPORTANT-043 Reach / Source / Cascade R1',result:wholeFileDormant?'PASS':'ACTIVE_REACH_BLOCK',checkpoint:'UX-CSS-IMPORTANT-043',
+            product:{sha:SHA,tree:process.env.PARENT_TREE},
+            target:{path:TARGET,blob:process.env.TARGET_BLOB,bytes:Buffer.byteLength(target),sha256:crypto.createHash('sha256').update(target).digest('hex'),important:raw.length,importantSites:sites.length,unresolvedImportantSites:unresolved.length,imports:im.get(TARGET)||[],prioritySiteSamples:sites.slice(0,20)},
+            reach:{rootHtmlCount:html.length,loadedCssCount:loaded.size,canonicalLoaded,wholeFileDormant,targetPages:targetPages.sort(),directHtmlRefs:[...new Set(directHtmlRefs)].sort(),directImporters,runtimeJsRefs:runtimeJsRefs.sort(),toolingRefs:toolingRefs.sort(),otherRefs:otherRefs.sort(),browserReconciliationRequired:!wholeFileDormant},
+            authorityDocs,authorityRelations:relations,
+            criteria:{expectedImportant:1262,allPrioritySitesResolved:true,parserAuthority:'dependency-free-lexical-priority-site-scanner-with-vendor-prefix-support',criteriaRelaxed:0,markerRemovalAttempted:false,productMutation:false,staging:false,production:false,backend:false,supabase:false,rpc:false,migrations:false,credentials:false,runtimeRealtime:false,merge:false,readyForReview:false,forcePush:false,historyRewrite:false}
+          };
+          fs.writeFileSync('/tmp/result.json',JSON.stringify(out,null,2)+'\n');
+          console.log(JSON.stringify({result:out.result,target:out.target,reach:out.reach,authorityRelations:out.authorityRelations}));
+          if(!wholeFileDormant) process.exitCode=42;
+          NODE
+
+      - name: Publish R1 receipt on diagnostic branch only
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PARENT_SHA" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          git checkout -B "$OUTPUT_BRANCH" "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/result.json "$RESULT_FILE"
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$RESULT_FILE"
+          test "$(git diff --cached --name-only)" = "$RESULT_FILE"
+          git commit -m 'diagnostic(ux-css-important-043): record home tablet reach proof' >/dev/null
+          git push origin HEAD:"$OUTPUT_BRANCH" >/dev/null
+
+      - name: Verify certified predecessor unchanged
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin ux/ux-css-important-042-app-mobile-header-contract-dormant-priority >/dev/null
+          test "$(git rev-parse FETCH_HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
