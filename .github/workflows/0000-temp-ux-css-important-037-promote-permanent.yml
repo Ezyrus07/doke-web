@@ -1,0 +1,191 @@
+name: UX-CSS-IMPORTANT-037 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-037-promote-permanent
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-037-promote-permanent.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote037:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT_SHA: d3d45498ca2e8889c50273fa82550f92d3b7af1f
+      PARENT_TREE: c44532c746318e9f82d59755c1d857abb346e5c6
+      TARGET_FILE: assets/css/components/navigation/mobile-search-header-shared.css
+      PARENT_TARGET_BLOB: 946a1e094936900ca550442dead9a108fbf7221c
+      R2E_BRANCH: diag/ux-css-important-037-mobile-search-header-final-static-r2e
+      R2E_FILE: .diagnostics/ux-css-important-037-mobile-search-header-final-static-r2e.json
+      R2E_BLOB: c3f93b9ee41e926474871f275d6bc270c715606d
+      CANDIDATE_BLOB: d50e67fb65f2b675b8c1b29abd3ad94145dd7ec0
+      CANDIDATE_SHA256: fa927922ebe4c3d4a6ed9b9ad6f1bf9ec5892ebd836e9ac149ca52ba96515cbd
+      CANDIDATE_BYTES: '15950'
+      PERMANENT_BRANCH: ux/ux-css-important-037-mobile-search-header-dormant-priority
+      OUTPUT_BRANCH: diag/ux-css-important-037-promote-permanent
+      RESULT_FILE: .diagnostics/ux-css-important-037-promotion.json
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze certified parent and R2E receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          git fetch origin "refs/heads/$R2E_BRANCH:refs/remotes/origin/$R2E_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$R2E_BRANCH:$R2E_FILE")" = "$R2E_BLOB"
+          git show "origin/$R2E_BRANCH:$R2E_FILE" > /tmp/r2e.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r2e.json','utf8'));
+          const c=r.candidate||{};
+          const g=r.staticGateReconciliation||{};
+          const ok=
+            r.result==='PASS' &&
+            r.parentSha===process.env.PARENT_SHA &&
+            r.parentTree===process.env.PARENT_TREE &&
+            r.targetFile===process.env.TARGET_FILE &&
+            r.parentTargetBlob===process.env.PARENT_TARGET_BLOB &&
+            c.importantBefore===348 && c.importantAfter===0 && c.removed===348 &&
+            c.gitBlob===process.env.CANDIDATE_BLOB &&
+            c.sha256===process.env.CANDIDATE_SHA256 &&
+            c.bytes===Number(process.env.CANDIDATE_BYTES) &&
+            c.markerOnly===true && c.selectorsRemoved===0 && c.declarationsRemoved===0 &&
+            c.propertiesChanged===0 && c.valuesChanged===0 &&
+            c.diffFiles===1 && c.additions===348 && c.deletions===348 &&
+            g.introducedRegressions===0 && g.criteriaRelaxed===0 &&
+            r.browserRequired===false &&
+            r.restore?.targetParentExact===true && r.restore?.trackedWorkspaceClean===true;
+          if(!ok) throw new Error('R2E receipt mismatch');
+          NODE
+
+      - name: Require permanent branch to be absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin "refs/heads/$PERMANENT_BRANCH" >/dev/null 2>&1; then
+            echo "Permanent branch already exists: $PERMANENT_BRANCH" >&2
+            exit 1
+          fi
+
+      - name: Rebuild exact certified marker-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(f,'utf8');
+          const before=(parent.match(/!important\b/gi)||[]).length;
+          if(before!==348) throw new Error(`parent important=${before}`);
+          const candidate=parent.replace(/\s*!important\b/gi,'');
+          const after=(candidate.match(/!important\b/gi)||[]).length;
+          if(after!==0) throw new Error(`candidate important=${after}`);
+          fs.writeFileSync(f,candidate);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes=Buffer.byteLength(candidate);
+          if(blob!==process.env.CANDIDATE_BLOB) throw new Error(`blob mismatch ${blob}`);
+          if(sha256!==process.env.CANDIDATE_SHA256) throw new Error(`sha256 mismatch ${sha256}`);
+          if(bytes!==Number(process.env.CANDIDATE_BYTES)) throw new Error(`bytes mismatch ${bytes}`);
+          NODE
+          test "$(git diff --name-only "$PARENT_SHA" -- | wc -l)" -eq 1
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --numstat "$PARENT_SHA" -- "$TARGET_FILE" | awk 'NF==3 && $3==ENVIRON["TARGET_FILE"] { if ($1 != 348 || $2 != 348) exit 1; ok=1 } END { exit(ok?0:1) }'
+
+      - name: Create one permanent commit from certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -c "$PERMANENT_BRANCH" "$PARENT_SHA" >/dev/null
+          test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$TARGET_FILE"
+          test "$(git diff --cached --name-only | wc -l)" -eq 1
+          test "$(git diff --cached --name-only)" = "$TARGET_FILE"
+          git commit -m 'UX-CSS-IMPORTANT-037: remove dormant mobile search header priorities' >/dev/null
+          permanent_head="$(git rev-parse HEAD)"
+          permanent_tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" -eq 1
+          test "$(git diff --name-only "$PARENT_SHA..HEAD" | wc -l)" -eq 1
+          test "$(git diff --name-only "$PARENT_SHA..HEAD")" = "$TARGET_FILE"
+          git diff --numstat "$PARENT_SHA..HEAD" -- "$TARGET_FILE" | awk 'NF==3 && $3==ENVIRON["TARGET_FILE"] { if ($1 != 348 || $2 != 348) exit 1; ok=1 } END { exit(ok?0:1) }'
+          test "$(grep -oi '!important' "$TARGET_FILE" | wc -l)" -eq 0
+          printf '%s\n' "$permanent_head" > /tmp/permanent_head
+          printf '%s\n' "$permanent_tree" > /tmp/permanent_tree
+          git push origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+
+      - name: Verify remote permanent branch and build receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          permanent_head="$(cat /tmp/permanent_head)"
+          permanent_tree="$(cat /tmp/permanent_tree)"
+          remote_head="$(git ls-remote --heads origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_head" = "$permanent_head"
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH" >/dev/null
+          test "$(git rev-parse "origin/$PERMANENT_BRANCH^")" = "$PARENT_SHA"
+          test "$(git rev-parse "origin/$PERMANENT_BRANCH^{tree}")" = "$permanent_tree"
+          test "$(git rev-parse "origin/$PERMANENT_BRANCH:$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          test "$(git rev-list --count "$PARENT_SHA..origin/$PERMANENT_BRANCH")" -eq 1
+          test "$(git merge-base "$PARENT_SHA" "origin/$PERMANENT_BRANCH")" = "$PARENT_SHA"
+          node <<'NODE'
+          const fs=require('fs');
+          const r2e=JSON.parse(fs.readFileSync('/tmp/r2e.json','utf8'));
+          const out={
+            proof:'UX-CSS-IMPORTANT-037 Promotion',
+            issue:359,
+            parentSha:process.env.PARENT_SHA,
+            parentTree:process.env.PARENT_TREE,
+            targetFile:process.env.TARGET_FILE,
+            parentTargetBlob:process.env.PARENT_TARGET_BLOB,
+            r2e:{blob:process.env.R2E_BLOB,result:r2e.result},
+            candidate:{
+              importantBefore:348,importantAfter:0,removed:348,
+              gitBlob:process.env.CANDIDATE_BLOB,
+              sha256:process.env.CANDIDATE_SHA256,
+              bytes:Number(process.env.CANDIDATE_BYTES),
+              markerOnly:true,
+              diffFiles:1,additions:348,deletions:348
+            },
+            permanent:{
+              branch:process.env.PERMANENT_BRANCH,
+              head:fs.readFileSync('/tmp/permanent_head','utf8').trim(),
+              tree:fs.readFileSync('/tmp/permanent_tree','utf8').trim(),
+              parent:process.env.PARENT_SHA,
+              commitsAhead:1,
+              behind:0,
+              mergeBase:process.env.PARENT_SHA,
+              targetBlob:process.env.CANDIDATE_BLOB
+            },
+            forcePush:false,
+            result:'PASS'
+          };
+          fs.writeFileSync('/tmp/promotion.json',JSON.stringify(out,null,2)+'\n');
+          NODE
+
+      - name: Publish promotion receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B diag-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/promotion.json "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          git commit -m 'diag: publish UX-CSS-IMPORTANT-037 promotion receipt [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$OUTPUT_BRANCH"
+          test "$(node -e "console.log(JSON.parse(require('fs').readFileSync('$RESULT_FILE','utf8')).result)")" = PASS
