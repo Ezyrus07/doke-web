@@ -1,0 +1,219 @@
+name: UX-CSS-IMPORTANT-039 Permanent Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-039-certify-permanent
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-039-certify-permanent.yml
+
+permissions:
+  contents: write
+
+jobs:
+  certify039:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PARENT_SHA: b64024a143e6531c51263d7750ab00162cf7e772
+      PARENT_TREE: 64f556068e5dd89f3dfdda211b0f85b3e5a773e8
+      PERMANENT_SHA: 901053a08cf702257ffc9551165dbb8183e6455c
+      PERMANENT_TREE: 773e7a18e354ffdae16abb7145c47a9de111b38f
+      TARGET_FILE: assets/css/patterns/marketplace-responsive-stack.css
+      PARENT_TARGET_BLOB: 0d284a91858a4e16ec5ac3edc48c9700982bac11
+      PERMANENT_TARGET_BLOB: fc8441182d1b3d909ced94ea984acbc657fc624a
+      PERMANENT_SHA256: 5b899542a1e50344f17753119c938b4251503edb44a707ed69153b5eb065f45c
+      PERMANENT_BYTES: 62002
+      PARENT_GLOBAL: 6271
+      PERMANENT_GLOBAL: 5803
+      CHILD_FILE: assets/css/components/cards/marketplace-responsive-card-stack.css
+      CHILD_BLOB: 4609bbb257194173d418ae608f2eca20bb8cbeff
+      R1_BRANCH: diag/ux-css-important-039-marketplace-responsive-stack-reach-r1
+      R1_FILE: .diagnostics/ux-css-important-039-marketplace-responsive-stack-reach-r1.json
+      R1_BLOB: 0d25b0d7f6530244e729558f38f503d2bdd558be
+      R2_BRANCH: diag/ux-css-important-039-marketplace-responsive-stack-candidate-r2
+      R2_FILE: .diagnostics/ux-css-important-039-marketplace-responsive-stack-candidate-r2.json
+      R2_BLOB: 8cdc31cb4e0c5a5bfbc1f14d0378b84009c75166
+      OUTPUT_BRANCH: diag/ux-css-important-039-certify-permanent
+      WORKFLOW_FILE: .github/workflows/0000-temp-ux-css-important-039-certify-permanent.yml
+      RESULT_FILE: .diagnostics/ux-css-important-039-permanent-certification.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify permanent lineage and diagnostic isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PERMANENT_SHA^{tree}")" = "$PERMANENT_TREE"
+          test "$(git rev-parse "$PERMANENT_SHA^")" = "$PARENT_SHA"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          test "$(git rev-parse "$PERMANENT_SHA:$TARGET_FILE")" = "$PERMANENT_TARGET_BLOB"
+          test "$(git rev-parse "$PERMANENT_SHA:$CHILD_FILE")" = "$CHILD_BLOB"
+          test "$(git merge-base "$PERMANENT_SHA" HEAD)" = "$PERMANENT_SHA"
+          test "$(git rev-list --count "$PERMANENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PERMANENT_SHA"...HEAD)" = "$WORKFLOW_FILE"
+          test "$(git merge-base "$PARENT_SHA" "$PERMANENT_SHA")" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..$PERMANENT_SHA")" = 1
+          test "$(git diff --name-only "$PARENT_SHA" "$PERMANENT_SHA")" = "$TARGET_FILE"
+          ns="$(git diff --numstat "$PARENT_SHA" "$PERMANENT_SHA" -- "$TARGET_FILE")"
+          test "$ns" = $'430\t430\tassets/css/patterns/marketplace-responsive-stack.css'
+          test -z "$(git diff --name-only "$PARENT_SHA" "$PERMANENT_SHA" -- package.json package-lock.json)"
+
+      - name: Transfer R1 and R2 evidence exactly
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/heads/$R1_BRANCH:refs/remotes/origin/$R1_BRANCH" >/dev/null
+          git fetch --no-tags origin "refs/heads/$R2_BRANCH:refs/remotes/origin/$R2_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$R1_BRANCH:$R1_FILE")" = "$R1_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R2_BRANCH:$R2_FILE")" = "$R2_BLOB"
+          git show "refs/remotes/origin/$R1_BRANCH:$R1_FILE" >/tmp/r1.json
+          git show "refs/remotes/origin/$R2_BRANCH:$R2_FILE" >/tmp/r2.json
+          node <<'NODE'
+          const fs=require('fs');
+          const r1=JSON.parse(fs.readFileSync('/tmp/r1.json','utf8'));
+          const r2=JSON.parse(fs.readFileSync('/tmp/r2.json','utf8'));
+          if(r1.result!=='PASS'||r1.parentSha!==process.env.PARENT_SHA||r1.parentTree!==process.env.PARENT_TREE||r1.targetBlob!==process.env.PARENT_TARGET_BLOB||r1.rawImportantMarkerCount!==468||r1.reach?.wholeFileDormant!==true||r1.reach?.canonicalLoaded!==false) throw new Error('R1 evidence mismatch');
+          const c=r2.candidate||{}, s=r2.staticGateReconciliation||{};
+          if(r2.result!=='PASS'||r2.parentSha!==process.env.PARENT_SHA||r2.parentTree!==process.env.PARENT_TREE||r2.parentTargetBlob!==process.env.PARENT_TARGET_BLOB) throw new Error('R2 lineage mismatch');
+          if(c.gitBlob!==process.env.PERMANENT_TARGET_BLOB||c.sha256!==process.env.PERMANENT_SHA256||c.bytes!==Number(process.env.PERMANENT_BYTES)||c.importantBefore!==468||c.importantAfter!==0||c.markerOnly!==true||c.importsPreserved!==true||c.importOrderPreserved!==true) throw new Error('R2 candidate mismatch');
+          if(s.introducedRegressions!==0||s.criteriaRelaxed!==0) throw new Error('R2 governance mismatch');
+          NODE
+
+      - name: Verify permanent identity and fresh dormancy
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PERMANENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET_FILE,s=fs.readFileSync(f,'utf8');
+          if((s.match(/!important\b/gi)||[]).length!==0) throw new Error('permanent target important nonzero');
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha=crypto.createHash('sha256').update(s).digest('hex');
+          const bytes=Buffer.byteLength(s);
+          if(blob!==process.env.PERMANENT_TARGET_BLOB||sha!==process.env.PERMANENT_SHA256||bytes!==Number(process.env.PERMANENT_BYTES)) throw new Error(`permanent identity ${blob} ${sha} ${bytes}`);
+          const imports=[...s.matchAll(/@import\s+(?:url\()?\s*['\"]([^'\")]+)['\"]\s*\)?[^;]*;/gi)].map(m=>m[1]);
+          if(imports.length!==1||!imports[0].includes('marketplace-responsive-card-stack.css')) throw new Error('import contract changed');
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(e.isFile()&&p.endsWith('.css'))out.push(p)}return out}
+          const global=walk('assets/css').reduce((n,x)=>n+(fs.readFileSync(x,'utf8').match(/!important\b/gi)||[]).length,0);
+          if(global!==Number(process.env.PERMANENT_GLOBAL)) throw new Error(`global important ${global}`);
+          NODE
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'); const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
+          const norm=f=>String(f).replace(/\\/g,'/').replace(/^\.\//,''); const target=norm(process.env.TARGET_FILE);
+          function imports(f){if(!fs.existsSync(f))return[];const s=fs.readFileSync(f,'utf8'),o=[];for(const m of s.matchAll(/@import\s+(?:url\()?\s*['\"]([^'\")]+)['\"]\s*\)?[^;]*;/gi)){const raw=m[1].split('#')[0].split('?')[0];if(!raw||/^https?:/i.test(raw)||/^data:/i.test(raw))continue;o.push(norm(raw.startsWith('/')?raw.slice(1):path.join(path.dirname(f),raw)));}return o;}
+          const pages=fs.readdirSync('.').filter(f=>f.endsWith('.html')).sort(),hits=[],loaded=new Set();
+          for(const page of pages){const html=fs.readFileSync(page,'utf8'),seen=new Set(),q=getLoadedCssAssets(html,process.cwd()).map(norm);for(let i=0;i<q.length;i++){const cur=norm(q[i]);if(seen.has(cur)||!fs.existsSync(cur))continue;seen.add(cur);loaded.add(cur);for(const x of imports(cur))q.push(x);}if(seen.has(target))hits.push(page);}
+          if(hits.length) throw new Error(`permanent target reactivated: ${hits.join(',')}`);
+          const ti=imports(process.env.TARGET_FILE); if(ti.length!==1||ti[0]!==process.env.CHILD_FILE) throw new Error('child import changed');
+          fs.writeFileSync('/tmp/reach.json',JSON.stringify({canonicalLoaded:false,wholeFileDormant:true,runtimeRelevant:false,targetPages:hits,rootHtmlCount:pages.length,loadedCssCount:loaded.size,targetImports:ti},null,2)+'\n');
+          NODE
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/dorm-permanent.txt 2>&1 || true
+          git checkout "$PARENT_SHA" -- .
+          node scripts/audit-css-dormant-debt-policy.js >/tmp/dorm-parent.txt 2>&1 || true
+          node <<'NODE'
+          const fs=require('fs');const p=fs.readFileSync('/tmp/dorm-parent.txt','utf8'),c=fs.readFileSync('/tmp/dorm-permanent.txt','utf8');
+          const labels=['CSS depreciado reativado','Arquivos registrados ausentes','CSS ativo com !important fora do registro'];
+          const metric=(s,label)=>{const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=s.match(new RegExp(esc+'[: ]+\\*?\\*?(\\d+)'));return m?Number(m[1]):null};
+          const metrics={};for(const label of labels){const a=metric(p,label),b=metric(c,label);if(a===null||b===null||a!==b)throw new Error(`${label} ${a}->${b}`);metrics[label]={parent:a,permanent:b};}
+          fs.writeFileSync('/tmp/dormancy.json',JSON.stringify({wholeFileDormant:true,canonicalLoaded:false,runtimeRelevant:false,policyViolationMetricsStable:true,metrics},null,2)+'\n');
+          NODE
+          git checkout --detach "$PERMANENT_SHA" >/dev/null
+
+      - name: Install dependencies and run parent permanent matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          cat >/tmp/gates.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; ref="$2"; : > "/tmp/${phase}.tsv"
+          norm(){ sed -E -e 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?/<TIME>/g' -e 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$1"; }
+          gate(){ label="$1"; shift; git checkout --detach "$ref" >/dev/null 2>&1; log="/tmp/${phase}-${label}.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; norm "$log" >"${log}.norm"; hash="$(sha256sum "${log}.norm"|awk '{print $1}')"; printf '%s\t%s\t%s\n' "$label" "$rc" "$hash" >> "/tmp/${phase}.tsv"; echo "$phase|$label|rc=$rc|hash=$hash"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          BASH
+          chmod +x /tmp/gates.sh
+          /tmp/gates.sh parent "$PARENT_SHA"
+          /tmp/gates.sh permanent "$PERMANENT_SHA"
+
+      - name: Reconcile permanent gates fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const parse=f=>new Map(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [l,r,h]=x.split('\t');return[l,{rc:Number(r),hash:h}]}));
+          const p=parse('/tmp/parent.tsv'),c=parse('/tmp/permanent.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'];
+          const debt=['important_reduction_plan','global_css_design_system']; const rows=[];let passBoth=0,baselineEquivalent=0,improved=0;
+          for(const l of exact){const a=p.get(l),b=c.get(l);if(!a||!b)throw new Error('missing '+l);if(a.rc===0&&b.rc===0&&a.hash===b.hash){passBoth++;rows.push({label:l,classification:'PASS_BOTH_IDENTICAL',parent:a,permanent:b});}else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash){baselineEquivalent++;rows.push({label:l,classification:'BASELINE_EQUIVALENT_FAILURE',parent:a,permanent:b});}else throw new Error(`${l} divergence ${a.rc}/${a.hash}->${b.rc}/${b.hash}`);}
+          for(const l of debt){const a=p.get(l),b=c.get(l);if(!a||!b)throw new Error('missing '+l);if(a.rc===0&&b.rc===0){passBoth++;rows.push({label:l,classification:'PASS_BOTH_EXPECTED_DEBT_DELTA',parent:a,permanent:b});}else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash){baselineEquivalent++;rows.push({label:l,classification:'BASELINE_EQUIVALENT_FAILURE',parent:a,permanent:b});}else if(a.rc!==0&&b.rc===0){improved++;rows.push({label:l,classification:'PERMANENT_IMPROVES_BASELINE',parent:a,permanent:b});}else throw new Error(`${l} regression ${a.rc}->${b.rc}`);}
+          const a=p.get('frontend_strict'),b=c.get('frontend_strict');if(!a||!b||a.rc!==b.rc)throw new Error(`frontend rc ${a?.rc}->${b?.rc}`);
+          baselineEquivalent++;rows.push({label:'frontend_strict',classification:'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA',parent:a,permanent:b});
+          fs.writeFileSync('/tmp/gates.json',JSON.stringify({rows,passBoth,baselineEquivalent,improved,introducedRegressions:0,criteriaRelaxed:0},null,2)+'\n');
+          NODE
+
+      - name: Freeze permanent receipt and exact restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PERMANENT_SHA" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PERMANENT_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PERMANENT_TREE"
+          test "$(git rev-parse "HEAD:$TARGET_FILE")" = "$PERMANENT_TARGET_BLOB"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          node <<'NODE'
+          const fs=require('fs');
+          const out={
+            proof:'UX-CSS-IMPORTANT-039 Permanent Certification',result:'PASS',proofResult:'PASS',
+            parentSha:process.env.PARENT_SHA,parentTree:process.env.PARENT_TREE,
+            permanentSha:process.env.PERMANENT_SHA,permanentTree:process.env.PERMANENT_TREE,
+            targetFile:process.env.TARGET_FILE,parentTargetBlob:process.env.PARENT_TARGET_BLOB,permanentTargetBlob:process.env.PERMANENT_TARGET_BLOB,
+            permanentSha256:process.env.PERMANENT_SHA256,permanentBytes:Number(process.env.PERMANENT_BYTES),importantBefore:468,importantAfter:0,
+            parentGlobal:Number(process.env.PARENT_GLOBAL),permanentGlobal:Number(process.env.PERMANENT_GLOBAL),markerOnly:true,importsPreserved:true,importOrderPreserved:true,
+            lineage:{ahead:1,behind:0,mergeBase:process.env.PARENT_SHA,changedFiles:1,additions:430,deletions:430},
+            evidence:{r1:{blob:process.env.R1_BLOB,result:'PASS'},r2:{blob:process.env.R2_BLOB,result:'PASS'}},
+            dormancy:JSON.parse(fs.readFileSync('/tmp/dormancy.json','utf8')),reach:JSON.parse(fs.readFileSync('/tmp/reach.json','utf8')),
+            staticGateReconciliation:JSON.parse(fs.readFileSync('/tmp/gates.json','utf8')),
+            dependencyBaseline:{packageJsonChanged:false,packageLockChanged:false},browserRequired:false,
+            restore:{headExact:true,treeExact:true,targetBlobExact:true,trackedWorkspaceClean:true}
+          };
+          fs.writeFileSync('/tmp/receipt.json',JSON.stringify(out,null,2)+'\n');
+          NODE
+
+      - name: Publish permanent certification receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$OUTPUT_BRANCH:refs/remotes/origin/$OUTPUT_BRANCH" >/dev/null
+          git checkout -B cert-output "origin/$OUTPUT_BRANCH" >/dev/null
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cp /tmp/receipt.json "$RESULT_FILE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- "$RESULT_FILE"
+          git commit -m 'diag: certify UX-CSS-IMPORTANT-039 permanent [skip ci]' >/dev/null
+          git push origin "HEAD:refs/heads/$OUTPUT_BRANCH" >/dev/null
