@@ -1,0 +1,87 @@
+name: TEMP UX-CSS-IMPORTANT-046 Residual Closure R2
+on:
+  push:
+    branches:
+      - diag/ux-css-important-046-residual-closure-r2
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Recompute residual reach with canonical path normalization
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=53e5733a4fb7cd293cc2ab17bd53f64338a72b8d
+          TREE=4958068fa2e44aee05e390fae0af5ad18c633947
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          git checkout --detach "$PARENT" >/dev/null
+          python3 - <<'PY'
+          import pathlib,re,json,subprocess,posixpath
+          def norm(base, ref):
+              ref=ref.split('?',1)[0].split('#',1)[0]
+              if ref.startswith('/'): return posixpath.normpath(ref[1:])
+              return posixpath.normpath(posixpath.join(posixpath.dirname(base),ref))
+
+          css=[p.as_posix() for p in pathlib.Path('assets/css').rglob('*.css')]
+          rows=[]; total=0
+          for p in css:
+              s=pathlib.Path(p).read_text(encoding='utf-8')
+              n=len(re.findall(r'!important\b',s,re.I)); total+=n
+              if n:
+                  rows.append({'path':p,'important':n,'blob':subprocess.check_output(['git','rev-parse',f'HEAD:{p}'],text=True).strip(),'bytes':len(s.encode())})
+          assert total==169,total
+          rows.sort(key=lambda r:(-r['important'],r['path']))
+
+          im={}
+          irx=re.compile(r'@import\s+(?:url\(\s*)?[\'\"]?([^\'\"\)\s;]+\.css(?:\?[^\'\"\)\s;]*)?)',re.I)
+          for p in css:
+              s=pathlib.Path(p).read_text(encoding='utf-8',errors='ignore')
+              out=[]
+              for m in irx.finditer(s):
+                  x=m.group(1)
+                  if re.match(r'^[a-z]+://',x,re.I): continue
+                  out.append(norm(p,x))
+              im[p]=out
+
+          html=[p for p in pathlib.Path('.').rglob('*.html') if not any(part in {'archive','reports','tools','test-results','node_modules'} for part in p.parts)]
+          starts={}
+          lrx=re.compile(r'<link\b[^>]*?href\s*=\s*[\'\"]([^\'\"]+)[\'\"][^>]*>',re.I|re.S)
+          for h in html:
+              hp=h.as_posix(); arr=[]; s=h.read_text(encoding='utf-8',errors='ignore')
+              for m in lrx.finditer(s):
+                  x=m.group(1)
+                  if not x.split('?',1)[0].split('#',1)[0].endswith('.css') or re.match(r'^[a-z]+://',x,re.I): continue
+                  arr.append(norm(hp,x))
+              starts[hp]=arr
+
+          def closure(xs):
+              seen=set()
+              def visit(p):
+                  if p in seen or p not in im:return
+                  seen.add(p)
+                  for q in im[p]:visit(q)
+              for x in xs:visit(x)
+              return seen
+          pageclosures={}; loaded=set()
+          for h,xs in starts.items():
+              c=closure(xs); pageclosures[h]=c; loaded|=c
+
+          for r in rows:
+              t=r['path']; base=pathlib.PurePosixPath(t).name
+              importers=sorted(p for p,v in im.items() if t in v)
+              pages=sorted(h for h,c in pageclosures.items() if t in c)
+              direct=sorted(h for h,v in starts.items() if t in v)
+              runtime=[]
+              for p in pathlib.Path('assets/js').rglob('*.js'):
+                  s=p.read_text(encoding='utf-8',errors='ignore')
+                  if t in s or base in s:runtime.append(p.as_posix())
+              r.update({'canonicalLoaded':t in loaded,'wholeFileDormant':t not in loaded and not direct and not importers and not runtime,'targetPages':pages,'directHtmlRefs':direct,'directImporters':importers,'runtimeJsRefs':sorted(runtime)})
+          out={'result':'PASS','checkpointBoundary':'post-UX-CSS-IMPORTANT-045','parent':'53e5733a4fb7cd293cc2ab17bd53f64338a72b8d','tree':'4958068fa2e44aee05e390fae0af5ad18c633947','globalImportant':169,'residualFileCount':len(rows),'rootHtmlCount':len(html),'loadedCssCount':len(loaded),'ranking':rows,'pathNormalization':'posixpath.normpath','productMutation':False,'criteriaRelaxed':0,'repositoryOnly':True}
+          print('UX_CSS_IMPORTANT_046_RESIDUAL_CLOSURE_R2='+json.dumps(out,separators=(',',':')))
+          PY
+          test -z "$(git status --porcelain)"
