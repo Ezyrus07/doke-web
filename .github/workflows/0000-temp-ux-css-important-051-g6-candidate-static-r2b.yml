@@ -1,0 +1,84 @@
+name: TEMP UX-CSS-IMPORTANT-051 G6 Candidate Static R2B
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-051-g6-candidate-static-r2b
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Reconstruct exact candidate
+        shell: bash
+        env:
+          PARENT: edff135ab5569e4cea54ce238723d0e17479fc3a
+          PARENT_TREE: 01615f2628679d1fc881d5d2556852a74c7498db
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          PARENT_BLOB: f7ffa8ead445a69ebdc8f801c46d70c852c041ae
+          EXPECTED_BLOB: d323fb51b817ce47bc316d04207853934a72b835
+          EXPECTED_SHA256: af61ee9a38ccffc11aa2ee7c4806383683fcf9421f0477a146f1acf149cc0176
+        run: |
+          set -euo pipefail
+          test "$(git rev-list --parents -n1 HEAD | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git show "$PARENT:$TARGET" > /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');const p=fs.readFileSync('/tmp/parent.css','utf8');let n=0,r=0;const set=new Set(Array.from({length:20},(_,i)=>i+2));const c=p.replace(/\s*!important\b/gi,m=>{n++;if(set.has(n)){r++;return ''}return m});if(n!==47||r!==20||(c.match(/!important\b/gi)||[]).length!==27)throw Error(`counts ${n}/${r}`);if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker drift');if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(c))throw Error('G3 guard lost');const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);if(blob!==process.env.EXPECTED_BLOB||sha!==process.env.EXPECTED_SHA256||bytes!==36097)throw Error(`identity ${blob}/${sha}/${bytes}`);fs.writeFileSync('/tmp/candidate.css',c);console.log('CANDIDATE_GIT_BLOB='+blob);console.log('CANDIDATE_SHA256='+sha);console.log('CANDIDATE_BYTES='+bytes);console.log('TARGET_MARKERS=47->27');console.log('REMOVED_ORDINALS=2-21');console.log('MARKER_ONLY=true');console.log('G3_GUARD_PRESERVED=true');
+          NODE
+          cp /tmp/candidate.css "$TARGET"
+          test "$(git diff --name-only --)" = "$TARGET"
+          git diff --check -- "$TARGET"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');const a=[];(function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?w(q):q.endsWith('.css')&&a.push(q)}})('assets/css');const n=a.reduce((s,q)=>s+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(n!==69)throw Error(`candidate global ${n}`);console.log('CANDIDATE_GLOBAL='+n);
+          NODE
+      - name: Install frozen dependencies
+        shell: bash
+        run: npm ci --ignore-scripts >/dev/null
+      - name: Reconcile 14 static gates
+        shell: bash
+        env:
+          PARENT: edff135ab5569e4cea54ce238723d0e17479fc3a
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+        run: |
+          set -euo pipefail
+          cat >/tmp/matrix.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; candidate="$2"; : > "/tmp/$phase.tsv"
+          restore(){ git checkout "$PARENT" -- . >/dev/null 2>&1 || exit 90; if [ "$candidate" = 1 ]; then cp /tmp/candidate.css "$TARGET"; fi; return 0; }
+          gate(){ label="$1"; shift; restore; log="/tmp/$phase-$label.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; sed -E 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$log" >"$log.n"; h=$(sha256sum "$log.n"|awk '{print $1}'); printf '%s\t%s\t%s\n' "$label" "$rc" "$h" >>"/tmp/$phase.tsv"; echo "$phase|$label|rc=$rc|hash=$h"; return 0; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/matrix.sh
+          /tmp/matrix.sh parent 0
+          /tmp/matrix.sh candidate 1
+          node <<'NODE'
+          const fs=require('fs'),read=f=>Object.fromEntries(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [k,rc,h]=x.split('\t');return[k,{rc:+rc,h}]}));const p=read('/tmp/parent.tsv'),c=read('/tmp/candidate.tsv');const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'],debt=['important_reduction_plan','global_css_design_system'],rows=[];for(const k of exact){const a=p[k],b=c[k];if(!a||!b||a.rc!==b.rc||(a.rc!==0&&a.h!==b.h))throw Error(`static regression ${k}`);rows.push({label:k,classification:a.rc===0?'PASS_BOTH':'BASELINE_EQUIVALENT_FAILURE'});}for(const k of debt){const a=p[k],b=c[k];if(!a||!b||b.rc>a.rc)throw Error(`debt regression ${k}`);rows.push({label:k,classification:b.rc<a.rc?'CANDIDATE_IMPROVES_BASELINE':'EXPECTED_DEBT_DELTA'});}if(p.frontend_strict.rc!==c.frontend_strict.rc)throw Error('frontend rc drift');const sig=f=>fs.readFileSync(f,'utf8').split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();if(JSON.stringify(sig('/tmp/parent-frontend_strict.log'))!==JSON.stringify(sig('/tmp/candidate-frontend_strict.log')))throw Error('frontend warning drift');rows.push({label:'frontend_strict',classification:'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA'});console.log('STATIC_RESULT=PASS');console.log('INTRODUCED_REGRESSIONS=0');console.log('CRITERIA_RELAXED=0');console.log(JSON.stringify(rows));
+          NODE
