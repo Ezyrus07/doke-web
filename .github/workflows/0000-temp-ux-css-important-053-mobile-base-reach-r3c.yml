@@ -1,0 +1,79 @@
+name: TEMP UX-CSS-IMPORTANT-053 Mobile Base Reach R3C
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-053-mobile-base-reach-r3c
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Enumerate exact parent reachability matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const target=process.env.TARGET;
+            const pages=['index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'];
+            const widths=[390,760,761],states=[];for(const page of pages)for(const width of widths)states.push({page,width});
+            const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+            const browser=await chromium.launch({headless:true});const rows=[];
+            for(const {page:pageName,width} of states){
+              const ctx=await browser.newContext({viewport:{width,height:1050},reducedMotion:'reduce'}),page=await ctx.newPage();let requested=false;const errors=[];
+              page.on('pageerror',e=>errors.push(String(e.message||e)));
+              page.on('request',r=>{try{if(new URL(r.url()).pathname===`/${target}`)requested=true}catch{}});
+              await page.route('**/*',route=>{const u=route.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return route.continue();if(/\.(?:png|jpe?g|webp|gif|svg)(?:\?|$)/i.test(u))return route.fulfill({status:200,contentType:'image/png',body:tiny});return route.abort();});
+              await page.goto(`http://127.0.0.1:4173/${pageName}?uxcss053reach=${width}`,{waitUntil:'domcontentloaded',timeout:15000});await page.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});await page.waitForTimeout(150);
+              const meta=await page.evaluate(target=>{
+                const clean=s=>{try{return new URL(s,location.href).pathname.replace(/^\//,'')}catch{return String(s||'')}};
+                const seen=new Set();let cssom=false;const chain=[];
+                function walk(sheet){if(!sheet||seen.has(sheet))return;seen.add(sheet);const href=sheet.href?clean(sheet.href):'';if(href)chain.push(href);if(href===target)cssom=true;let rules;try{rules=sheet.cssRules}catch{return}if(!rules)return;for(const r of rules){if(r.type===CSSRule.IMPORT_RULE){const h=r.href?clean(r.href):'';if(h)chain.push(h);if(h===target)cssom=true;walk(r.styleSheet)}}}
+                for(const s of document.styleSheets)walk(s);
+                const body=document.body,html=document.documentElement,shell=document.querySelector('.doke-mobile-shell'),nav=document.querySelector('.doke-mobile-bottom-nav');
+                const shape=e=>{if(!e)return null;const c=getComputedStyle(e),r=e.getBoundingClientRect();return{display:c.display,position:c.position,visibility:c.visibility,overflowX:c.overflowX,left:c.left,right:c.right,top:c.top,bottom:c.bottom,transform:c.transform,width:c.width,maxWidth:c.maxWidth,r:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*100)/100)}};
+                return{cssom,mounted:body.classList.contains('doke-mobile-shell-mounted'),bodyOverflowX:getComputedStyle(body).overflowX,htmlOverflowX:getComputedStyle(html).overflowX,shell:shape(shell),nav:shape(nav),chain:[...new Set(chain)].sort()};
+              },target);
+              rows.push({page:pageName,width,requested,cssom:meta.cssom,mounted:meta.mounted,bodyOverflowX:meta.bodyOverflowX,htmlOverflowX:meta.htmlOverflowX,shell:meta.shell,nav:meta.nav,errors:errors.sort(),chain:meta.chain});await ctx.close();
+            }
+            await browser.close();
+            const reachable=rows.filter(r=>r.requested||r.cssom).map(r=>`${r.page}|${r.width}`),requested=rows.filter(r=>r.requested).map(r=>`${r.page}|${r.width}`),cssom=rows.filter(r=>r.cssom).map(r=>`${r.page}|${r.width}`),mounted=rows.filter(r=>r.mounted).map(r=>`${r.page}|${r.width}`);
+            if(!reachable.length)throw Error('vacuous reach: zero reachable states');
+            const result={result:'PASS',states:rows.length,reachableCount:reachable.length,requestedCount:requested.length,cssomCount:cssom.length,mountedCount:mounted.length,reachable,requested,cssom,mounted,rows};console.log('REACH_RESULT='+JSON.stringify(result));
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
