@@ -1,0 +1,114 @@
+name: TEMP UX-CSS-IMPORTANT-046 Residual Closure
+on:
+  push:
+    branches:
+      - diag/ux-css-important-046-residual-closure
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Revalidate exact 045 and classify all remaining priority debt
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=53e5733a4fb7cd293cc2ab17bd53f64338a72b8d
+          TREE=4958068fa2e44aee05e390fae0af5ad18c633947
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          git checkout --detach "$PARENT" >/dev/null
+          python3 - <<'PY'
+          import pathlib,re,json,subprocess
+
+          css=[p.as_posix() for p in pathlib.Path('assets/css').rglob('*.css')]
+          rows=[]; total=0
+          for p in css:
+              s=pathlib.Path(p).read_text(encoding='utf-8')
+              n=len(re.findall(r'!important\b',s,re.I))
+              total+=n
+              if n:
+                  rows.append({
+                    'path':p,
+                    'important':n,
+                    'blob':subprocess.check_output(['git','rev-parse',f'HEAD:{p}'],text=True).strip(),
+                    'bytes':len(s.encode())
+                  })
+          rows.sort(key=lambda r:(-r['important'],r['path']))
+          assert total==169, total
+
+          def imports(p):
+              s=pathlib.Path(p).read_text(encoding='utf-8',errors='ignore')
+              out=[]
+              for m in re.finditer(r'@import\s+(?:url\(\s*)?[\'\"]?([^\'\"\)\s;]+\.css(?:\?[^\'\"\)\s;]*)?)',s,re.I):
+                  x=m.group(1).split('?',1)[0].split('#',1)[0]
+                  if re.match(r'^[a-z]+://',x,re.I): continue
+                  q=(pathlib.PurePosixPath(p).parent/x).as_posix() if not x.startswith('/') else x[1:]
+                  out.append(str(pathlib.PurePosixPath(q)))
+              return out
+          im={p:imports(p) for p in css}
+
+          html=[p for p in pathlib.Path('.').rglob('*.html') if not any(part in {'archive','reports','tools','test-results','node_modules'} for part in p.parts)]
+          starts={}
+          rx=re.compile(r'<link\b[^>]*?href\s*=\s*[\'\"]([^\'\"]+)[\'\"][^>]*>',re.I|re.S)
+          for h in html:
+              arr=[]; s=h.read_text(encoding='utf-8',errors='ignore')
+              for m in rx.finditer(s):
+                  x=m.group(1).split('?',1)[0].split('#',1)[0]
+                  if not x.endswith('.css') or re.match(r'^[a-z]+://',x,re.I): continue
+                  q=(pathlib.PurePosixPath(h.as_posix()).parent/x).as_posix() if not x.startswith('/') else x[1:]
+                  arr.append(str(pathlib.PurePosixPath(q)))
+              starts[h.as_posix()]=arr
+
+          def closure(xs):
+              seen=set()
+              def visit(p):
+                  if p in seen or p not in im: return
+                  seen.add(p)
+                  for q in im[p]: visit(q)
+              for x in xs: visit(x)
+              return seen
+
+          loaded=set(); page_closures={}
+          for h,xs in starts.items():
+              c=closure(xs); page_closures[h]=c; loaded|=c
+
+          for r in rows:
+              target=r['path']; base=pathlib.PurePosixPath(target).name
+              direct_html=[]; pages=[]
+              for h,xs in starts.items():
+                  if target in xs: direct_html.append(h)
+                  if target in page_closures[h]: pages.append(h)
+              importers=sorted([p for p,v in im.items() if target in v])
+              runtime=[]
+              for p in pathlib.Path('assets/js').rglob('*.js'):
+                  s=p.read_text(encoding='utf-8',errors='ignore')
+                  if target in s or base in s: runtime.append(p.as_posix())
+              r.update({
+                'canonicalLoaded':target in loaded,
+                'wholeFileDormant':target not in loaded and not direct_html and not importers and not runtime,
+                'targetPages':sorted(pages),
+                'directHtmlRefs':sorted(set(direct_html)),
+                'directImporters':importers,
+                'runtimeJsRefs':sorted(runtime)
+              })
+
+          out={
+            'result':'PASS',
+            'checkpointBoundary':'post-UX-CSS-IMPORTANT-045',
+            'parent':'53e5733a4fb7cd293cc2ab17bd53f64338a72b8d',
+            'tree':'4958068fa2e44aee05e390fae0af5ad18c633947',
+            'globalImportant':total,
+            'residualFileCount':len(rows),
+            'rootHtmlCount':len(html),
+            'loadedCssCount':len(loaded),
+            'ranking':rows,
+            'productMutation':False,
+            'criteriaRelaxed':0,
+            'repositoryOnly':True
+          }
+          print('UX_CSS_IMPORTANT_046_RESIDUAL_CLOSURE='+json.dumps(out,separators=(',',':')))
+          PY
+          test -z "$(git status --porcelain)"
