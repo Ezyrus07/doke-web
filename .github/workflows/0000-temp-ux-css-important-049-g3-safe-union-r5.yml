@@ -1,0 +1,90 @@
+name: TEMP UX-CSS-IMPORTANT-049 G3 Safe Union R5
+on:
+  push:
+    branches: [diag/ux-css-important-049-g3-safe-union-r5]
+permissions: {contents: read}
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      PARENT: ef3e232510efaab06cdcd789658952b7cf707825
+      TREE: fd683d88259f3d1e4c51d34ce3f9b5a7bd22eeb7
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 5de77463e9ff079de16f15f42c59600eed95e1cc
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - name: Freeze exact safe-union identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8');
+          if((p.match(/!important\b/gi)||[]).length!==77)throw Error('parent markers');
+          const ords=[1,2,...Array.from({length:12},(_,i)=>i+4)]; const set=new Set(ords);let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(set.has(n)){r++;return ''}return m});
+          if(n!==77||r!==14||(c.match(/!important\b/gi)||[]).length!==63)throw Error(`ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          fs.writeFileSync('/tmp/parent.css',p);fs.writeFileSync('/tmp/candidate.css',c);fs.writeFileSync(f,c);
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');
+          const global=css.reduce((s,q)=>s+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(global!==105)throw Error(`global ${global}`);
+          console.log('G3_SAFE_UNION_IDENTITY='+JSON.stringify({result:'PASS',parentSha:process.env.PARENT,parentTree:process.env.TREE,parentBlob:process.env.PARENT_BLOB,blockedOrdinal:3,blockedProperty:'overflow',removedOrdinals:ords,removed:14,blob,sha256,bytes,targetBefore:77,targetAfter:63,globalBefore:119,globalAfter:105,globalDelta:-14,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true}));
+          NODE
+          test "$(git diff --name-only "$PARENT" --)" = "$TARGET"
+          git diff --check "$PARENT" -- "$TARGET"
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT" -- package.json package-lock.json
+          npm ci --ignore-scripts >/dev/null
+          cp /tmp/candidate.css "$TARGET"
+      - name: Run and reconcile 14 static gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/matrix.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; candidate="$2"; : > "/tmp/$phase.tsv"
+          restore(){ git checkout "$PARENT" -- . >/dev/null 2>&1 || exit 90; if [ "$candidate" = 1 ]; then cp /tmp/candidate.css "$TARGET"; fi; return 0; }
+          gate(){ label="$1"; shift; restore; log="/tmp/$phase-$label.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; sed -E 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$log" >"$log.n"; h=$(sha256sum "$log.n"|awk '{print $1}'); printf '%s\t%s\t%s\n' "$label" "$rc" "$h" >>"/tmp/$phase.tsv"; echo "$phase|$label|rc=$rc|hash=$h"; return 0; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/matrix.sh
+          /tmp/matrix.sh parent 0
+          /tmp/matrix.sh candidate 1
+          node <<'NODE'
+          const fs=require('fs'),read=f=>Object.fromEntries(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [k,rc,h]=x.split('\t');return[k,{rc:+rc,h}]}));const p=read('/tmp/parent.tsv'),c=read('/tmp/candidate.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'],debt=['important_reduction_plan','global_css_design_system'],rows=[];
+          for(const k of exact){const a=p[k],b=c[k];if(!a||!b||a.rc!==b.rc||(a.rc!==0&&a.h!==b.h))throw Error(`static regression ${k}`);rows.push({label:k,classification:a.rc===0?'PASS_BOTH':'BASELINE_EQUIVALENT_FAILURE'});}
+          for(const k of debt){const a=p[k],b=c[k];if(!a||!b||b.rc>a.rc)throw Error(`debt regression ${k}`);rows.push({label:k,classification:b.rc<a.rc?'CANDIDATE_IMPROVES_BASELINE':'EXPECTED_DEBT_DELTA'});}
+          if(p.frontend_strict.rc!==c.frontend_strict.rc)throw Error('frontend rc drift');
+          const sig=f=>fs.readFileSync(f,'utf8').split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();
+          if(JSON.stringify(sig('/tmp/parent-frontend_strict.log'))!==JSON.stringify(sig('/tmp/candidate-frontend_strict.log')))throw Error('frontend warning drift');
+          rows.push({label:'frontend_strict',classification:'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA'});
+          console.log('G3_SAFE_UNION_STATIC='+JSON.stringify({result:'PASS',rows,introducedRegressions:0,criteriaRelaxed:0}));
+          NODE
