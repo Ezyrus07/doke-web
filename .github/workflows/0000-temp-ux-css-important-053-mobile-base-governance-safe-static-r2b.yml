@@ -1,0 +1,108 @@
+name: TEMP UX-CSS-IMPORTANT-053 Mobile Base Governance-Safe Static R2B
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-053-mobile-base-governance-safe-static-r2b
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Reconstruct governance-safe 25-marker candidate and freeze identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          cp "$TARGET" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8'),preserve=new Set([4,8,14]);let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(preserve.has(n))return m;r++;return ''});
+          if(n!==28||r!==25)throw Error(`ordinal reconstruction ${n}/${r}`);
+          if((c.match(/!important\b/gi)||[]).length!==3)throw Error('candidate marker count');
+          const markerless=s=>s.replace(/\s*!important\b/gi,'');if(markerless(p)!==markerless(c))throw Error('marker-only drift');
+          if(!/overflow-x:\s*hidden\s*!important/.test(c))throw Error('ordinal4 guard lost');
+          if(!/body\.doke-mobile-shell-mounted\s+\.doke-mobile-shell\s*\{[\s\S]*?position:\s*absolute\s*!important/m.test(c))throw Error('ordinal8 guard lost');
+          if(!/body\.doke-mobile-shell-mounted\s+\.doke-mobile-bottom-nav\s*\{[\s\S]*?position:\s*fixed\s*!important/m.test(c))throw Error('ordinal14 guard lost');
+          fs.writeFileSync('/tmp/candidate.css',c);fs.writeFileSync(f,c);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          const css=[];(function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?w(q):q.endsWith('.css')&&css.push(q)}})('assets/css');const global=css.reduce((sum,q)=>sum+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(global!==18)throw Error(`global ${global}`);
+          console.log('CANDIDATE_IDENTITY='+JSON.stringify({blob,sha256,bytes,target:'28->3',global:'43->18',removed:25,preservedOrdinals:[4,8,14],markerOnly:true}));
+          NODE
+          test "$(git diff --name-only)" = "$TARGET"
+          git diff --check
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          npm ci --ignore-scripts >/dev/null
+      - name: Prove dedicated mobile-base contract is preserved
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          npm run audit:mobile-base >/tmp/mobile-parent.log 2>&1
+          cp /tmp/candidate.css "$TARGET"
+          npm run audit:mobile-base >/tmp/mobile-candidate.log 2>&1
+          echo MOBILE_BASE_PARENT=PASS
+          echo MOBILE_BASE_CANDIDATE=PASS
+      - name: Reconcile 14 static gates parent vs candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/matrix.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; candidate="$2"; : >"/tmp/$phase.tsv"
+          restore(){ git checkout "$PARENT" -- . >/dev/null 2>&1 || exit 90; if [ "$candidate" = 1 ]; then cp /tmp/candidate.css "$TARGET"; fi; }
+          gate(){ label="$1"; shift; restore; log="/tmp/$phase-$label.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; sed -E 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$log" >"$log.n"; h=$(sha256sum "$log.n"|awk '{print $1}'); printf '%s\t%s\t%s\n' "$label" "$rc" "$h" >>"/tmp/$phase.tsv"; echo "$phase|$label|rc=$rc|hash=$h"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/matrix.sh
+          /tmp/matrix.sh parent 0
+          /tmp/matrix.sh candidate 1
+          node <<'NODE'
+          const fs=require('fs'),read=f=>Object.fromEntries(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [k,rc,h]=x.split('\t');return[k,{rc:+rc,h}]}));const p=read('/tmp/parent.tsv'),c=read('/tmp/candidate.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'],debt=['important_reduction_plan','global_css_design_system'];
+          for(const k of exact){const a=p[k],b=c[k];if(!a||!b||a.rc!==b.rc||(a.rc!==0&&a.h!==b.h))throw Error(`static regression ${k}`)}
+          for(const k of debt){const a=p[k],b=c[k];if(!a||!b||b.rc>a.rc)throw Error(`debt regression ${k}`)}
+          if(p.frontend_strict.rc!==c.frontend_strict.rc)throw Error('frontend rc drift');
+          const sig=f=>fs.readFileSync(f,'utf8').split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();if(JSON.stringify(sig('/tmp/parent-frontend_strict.log'))!==JSON.stringify(sig('/tmp/candidate-frontend_strict.log')))throw Error('frontend warning drift');
+          console.log('STATIC_RESULT=PASS');console.log('INTRODUCED_REGRESSIONS=0');console.log('CRITERIA_RELAXED=0');
+          NODE
