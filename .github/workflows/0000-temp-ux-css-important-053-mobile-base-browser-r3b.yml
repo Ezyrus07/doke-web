@@ -1,0 +1,115 @@
+name: TEMP UX-CSS-IMPORTANT-053 Mobile Base Browser R3B
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-053-mobile-base-browser-r3b
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        repeat: [1, 2, 3]
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+      CANDIDATE_BLOB: cc21f6a10b3b0364005be67f49c044f750909da1
+      CANDIDATE_SHA256: f0cc6543893b6f693af2adb90235b761ed9a19962a72d7970332d9e5d7ca6e18
+      CANDIDATE_BYTES: '5031'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Reconstruct exact governance-safe candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          cp "$TARGET" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8'),keep=new Set([4,8,14]);let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(keep.has(n))return m;r++;return ''});
+          if(n!==28||r!==25||(c.match(/!important\b/gi)||[]).length!==3)throw Error(`ordinal ${n}/${r}`);
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          if(blob!==process.env.CANDIDATE_BLOB||sha!==process.env.CANDIDATE_SHA256||String(bytes)!==process.env.CANDIDATE_BYTES)throw Error(`identity ${blob}/${sha}/${bytes}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          if(!/overflow-x:\s*hidden\s*!important/.test(c))throw Error('guard4');
+          if(!/body\.doke-mobile-shell-mounted\s+\.doke-mobile-shell\s*\{[\s\S]*?position:\s*absolute\s*!important/m.test(c))throw Error('guard8');
+          if(!/body\.doke-mobile-shell-mounted\s+\.doke-mobile-bottom-nav\s*\{[\s\S]*?position:\s*fixed\s*!important/m.test(c))throw Error('guard14');
+          fs.writeFileSync('/tmp/candidate.css',c);console.log(`CANDIDATE=PASS ${blob} ${sha} ${bytes}`);
+          NODE
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Multi-page canonical browser A B
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET" 2>/dev/null || true' EXIT
+          sleep 1
+          REPEAT='${{ matrix.repeat }}' NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const target=process.env.TARGET,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/candidate.css','utf8');
+            const pages=['index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'];
+            const widths=[390,760,761],states=[];for(const page of pages)for(const width of widths)states.push({page,width});
+            for(const page of pages)if(!fs.existsSync(page))throw Error(`missing page ${page}`);
+            const H=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+            const selectors=['html','body','.doke-mobile-shell','.doke-mobile-bottom-nav','.sidebar','.sidebar-card','.topbar','.desktop-only','.doke-desktop-search-panel','main','[role="main"]','.main-content','.content','.content-area','.page','.page-shell','.page-content'];
+            const browser=await chromium.launch({headless:true});
+            async function capture(pageName,width,phase){
+              const ctx=await browser.newContext({viewport:{width,height:1050},reducedMotion:'reduce'}),page=await ctx.newPage();
+              const errors=[];let targetLoaded=false;
+              page.on('pageerror',e=>errors.push(String(e.message||e)));
+              page.on('request',r=>{try{if(new URL(r.url()).pathname===`/${target}`)targetLoaded=true}catch{}});
+              await page.route('**/*',route=>{const u=route.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return route.continue();if(/\.(?:png|jpe?g|webp|gif|svg)(?:\?|$)/i.test(u))return route.fulfill({status:200,contentType:'image/png',body:tiny});return route.abort();});
+              await page.goto(`http://127.0.0.1:4173/${pageName}?uxcss053=${phase}-${process.env.REPEAT}-${width}`,{waitUntil:'domcontentloaded',timeout:15000});
+              await page.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});
+              if(width<=760)await page.waitForFunction(()=>document.body.classList.contains('doke-mobile-shell-mounted'),null,{timeout:5000}).catch(()=>{});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});
+              await page.waitForTimeout(150);
+              const meta=await page.evaluate(({selectors,width})=>{
+                const round=v=>Math.round(v*100)/100;
+                const one=e=>{const c=getComputedStyle(e),r=e.getBoundingClientRect();return{tag:e.tagName,id:e.id,cls:typeof e.className==='string'?e.className:'',hidden:e.hidden,aria:e.getAttribute('aria-hidden'),d:c.display,p:c.position,v:c.visibility,o:c.opacity,z:c.zIndex,w:c.width,h:c.height,minw:c.minWidth,maxw:c.maxWidth,minh:c.minHeight,maxh:c.maxHeight,t:c.top,ri:c.right,b:c.bottom,l:c.left,tr:c.transform,m:c.margin,mi:c.marginInline,pad:c.padding,ov:c.overflow,ovx:c.overflowX,ovy:c.overflowY,pe:c.pointerEvents,r:[round(r.x),round(r.y),round(r.width),round(r.height)],sw:e.scrollWidth,sh:e.scrollHeight,cw:e.clientWidth,ch:e.clientHeight}};
+                const pick=s=>[...document.querySelectorAll(s)].slice(0,8).map(one);
+                const html=document.documentElement,body=document.body;
+                const fixture=document.createElement('div');fixture.setAttribute('role','dialog');fixture.setAttribute('data-uxcss053-fixture','');fixture.style.cssText='width:1200px;height:2000px;position:absolute;left:-99999px;top:0;';body.appendChild(fixture);const fc=getComputedStyle(fixture),fr=fixture.getBoundingClientRect();const dialog={maxWidth:fc.maxWidth,maxHeight:fc.maxHeight,width:fc.width,height:fc.height,r:[round(fr.width),round(fr.height)]};fixture.remove();
+                return{width,bodyClass:body.className,htmlClass:html.className,doc:{sw:html.scrollWidth,sh:html.scrollHeight,cw:html.clientWidth,ch:html.clientHeight},mounted:body.classList.contains('doke-mobile-shell-mounted'),selectors:selectors.map(s=>[s,pick(s)]),dialog};
+              },{selectors,width});
+              const png=H(await page.screenshot({fullPage:true,animations:'disabled'}));
+              await ctx.close();return{meta,png,targetLoaded,errors:errors.sort()};
+            }
+            fs.writeFileSync(target,P);const baseline={};for(const s of states)baseline[`${s.page}|${s.width}`]=await capture(s.page,s.width,'parent');
+            fs.writeFileSync(target,C);let metadataDiffs=0,screenshotDiffs=0,loadDiffs=0,errorDiffs=0,unmountedMobile=0;const diffKeys=[];
+            for(const s of states){const k=`${s.page}|${s.width}`,a=baseline[k],b=await capture(s.page,s.width,'candidate');if(!a.targetLoaded||!b.targetLoaded)throw Error(`target not loaded ${k} ${a.targetLoaded}/${b.targetLoaded}`);if(s.width<=760&&(!a.meta.mounted||!b.meta.mounted))unmountedMobile++;
+              if(JSON.stringify(a.meta)!==JSON.stringify(b.meta)){metadataDiffs++;diffKeys.push('meta:'+k)}
+              if(a.png!==b.png){screenshotDiffs++;diffKeys.push('png:'+k)}
+              if(a.targetLoaded!==b.targetLoaded){loadDiffs++;diffKeys.push('load:'+k)}
+              if(JSON.stringify(a.errors)!==JSON.stringify(b.errors)){errorDiffs++;diffKeys.push('errors:'+k)}
+            }
+            fs.writeFileSync(target,P);await browser.close();
+            const result={result:!metadataDiffs&&!screenshotDiffs&&!loadDiffs&&!errorDiffs?'PASS':'FAIL',repeat:+process.env.REPEAT,pages:pages.length,widths,states:states.length,metadataDiffs,screenshotDiffs,loadDiffs,errorDiffs,unmountedMobile,diffKeys};console.log('BROWSER_RESULT='+JSON.stringify(result));if(result.result!=='PASS')process.exit(2);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
