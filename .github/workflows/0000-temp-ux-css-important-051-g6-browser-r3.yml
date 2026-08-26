@@ -1,0 +1,64 @@
+name: TEMP UX-CSS-IMPORTANT-051 G6 Browser R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-051-g6-browser-r3
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        repeat: [1, 2, 3]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Reconstruct frozen candidate
+        shell: bash
+        env:
+          PARENT: edff135ab5569e4cea54ce238723d0e17479fc3a
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          EXPECTED_BLOB: d323fb51b817ce47bc316d04207853934a72b835
+          EXPECTED_SHA256: af61ee9a38ccffc11aa2ee7c4806383683fcf9421f0477a146f1acf149cc0176
+        run: |
+          set -euo pipefail
+          test "$(git rev-list --parents -n1 HEAD | awk '{print $2}')" = "$PARENT"
+          git show "$PARENT:$TARGET" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),crypto=require('crypto');const p=fs.readFileSync('/tmp/parent.css','utf8');let n=0,r=0;const set=new Set(Array.from({length:20},(_,i)=>i+2));const c=p.replace(/\s*!important\b/gi,m=>{n++;if(set.has(n)){r++;return ''}return m});const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha=crypto.createHash('sha256').update(c).digest('hex');if(n!==47||r!==20||(c.match(/!important\b/gi)||[]).length!==27||blob!==process.env.EXPECTED_BLOB||sha!==process.env.EXPECTED_SHA256||Buffer.byteLength(c)!==36097)throw Error(`identity ${n}/${r}/${blob}/${sha}`);if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(c))throw Error('G3 guard lost');fs.writeFileSync('/tmp/candidate.css',c);console.log('BROWSER_CANDIDATE_IDENTITY=PASS');
+          NODE
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Canonical browser A B
+        shell: bash
+        env:
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          REPEAT: ${{ matrix.repeat }}
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET" 2>/dev/null || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{const f=process.env.TARGET,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/candidate.css','utf8'),widths=[359,379,380,381,390,430,560,561],filters=new Set([359,380,390,560]),states=[];for(const w of widths){states.push([w,'default']);if(filters.has(w))states.push([w,'filters'])}
+          const H=b=>crypto.createHash('sha256').update(b).digest('hex'),tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64'),items=Array.from({length:8},(_,i)=>({id:'c51-'+i,serviceId:'c51-'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
+          const sels=['[data-more-filters-panel]','[data-more-filters-panel] .home-filter-panel__card','.more-filters__header','.more-filters__header::before','.more-filters__header strong','.more-filters__header span','.more-filters__dismiss','.more-filters__content','.more-filters__footer','.featured-services .content-rail','#featured-services-track'];const browser=await chromium.launch({headless:true});
+          async function cap(w,state,phase){const c=await browser.newContext({viewport:{width:w,height:1050},reducedMotion:'reduce'}),p=await c.newPage(),errs=[];let loaded=false;p.on('pageerror',e=>errs.push(e.message));p.on('request',r=>{try{if(new URL(r.url()).pathname==='/'+f)loaded=true}catch{}});await p.route('**/*',r=>{const u=r.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return r.continue();if(u.startsWith('https://images.pexels.com/'))return r.fulfill({status:200,contentType:'image/png',body:tiny});return r.abort()});await p.goto(`http://127.0.0.1:4173/index.html?c51=${process.env.REPEAT}-${phase}-${w}-${state}`,{waitUntil:'domcontentloaded',timeout:15000});await p.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(!a||!b)throw Error('grids');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})))},items);if(state==='filters'){await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));await p.waitForFunction(()=>{const x=document.querySelector('[data-more-filters-panel]');return document.body.classList.contains('home-filter-sheet-open')&&Boolean(x&&!x.hidden&&x.getAttribute('aria-hidden')!=='true')},null,{timeout:4000})}await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});await p.waitForTimeout(150);const data=await p.evaluate(sels=>{const pick=s=>{let pseudo=null,base=s;if(s.endsWith('::before')){pseudo='::before';base=s.slice(0,-8)}const e=document.querySelector(base);if(!e)return null;const c=getComputedStyle(e,pseudo),r=e.getBoundingClientRect();return{hidden:e.hidden,aria:e.getAttribute('aria-hidden'),d:c.display,p:c.position,v:c.visibility,o:c.opacity,z:c.zIndex,w:c.width,h:c.height,minh:c.minHeight,maxh:c.maxHeight,maxw:c.maxWidth,t:c.top,l:c.left,ri:c.right,tr:c.transform,m:c.margin,pad:c.padding,bd:c.border,br:c.borderRadius,bg:c.backgroundColor,bs:c.boxShadow,ov:c.overflow,ovx:c.overflowX,ovy:c.overflowY,r:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*100)/100),sw:e.scrollWidth,sh:e.scrollHeight,cw:e.clientWidth,ch:e.clientHeight}};return{body:document.body.className,root:document.documentElement.className,dw:document.documentElement.scrollWidth,dh:document.documentElement.scrollHeight,styles:sels.map(pick)}},sels);const png=H(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{data,png,errs,loaded}}
+          fs.writeFileSync(f,P);const base={};for(const [w,s] of states)base[`${w}-${s}`]=await cap(w,s,'parent');fs.writeFileSync(f,C);let md=0,sd=0,ld=0,pe=0;const diffs=[];for(const [w,s] of states){const k=`${w}-${s}`,a=base[k],b=await cap(w,s,'candidate');pe+=a.errs.length+b.errs.length;if(JSON.stringify(a.data)!==JSON.stringify(b.data)){md++;diffs.push('meta:'+k)}if(a.png!==b.png){sd++;diffs.push('png:'+k)}if(a.loaded!==b.loaded){ld++;diffs.push('load:'+k)}}fs.writeFileSync(f,P);await browser.close();const result={result:!md&&!sd&&!ld&&!pe?'PASS':'FAIL',repeat:Number(process.env.REPEAT),states:states.length,filterStates:filters.size,metadataDiffs:md,screenshotDiffs:sd,loadDiffs:ld,pageErrors:pe,diffKeys:diffs};console.log('BROWSER_RESULT='+JSON.stringify(result));if(result.result!=='PASS')process.exit(2);})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
