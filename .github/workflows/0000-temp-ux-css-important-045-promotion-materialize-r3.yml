@@ -1,0 +1,90 @@
+name: TEMP UX-CSS-IMPORTANT-045 Promotion Materialize R3
+on:
+  push:
+    branches:
+      - diag/ux-css-important-045-promotion-materialize-r3
+    paths:
+      - .github/workflows/0000-temp-ux-css-important-045-promotion-materialize-r3.yml
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 03350507015579bfc60e413f1b3dfa97f4371f68
+      PARENT_TREE: fb684d8ec8e96cf1a2d0ada42f7415259e084650
+      TARGET_FILE: assets/css/components/cards/service-card-home-hero-feed.css
+      TARGET_BLOB: 5f1f57692ca30fdca1fc10c5f89418343f3c4d8d
+      CANDIDATE_BLOB: 01841edf1c93b35fd92a064e642c1353d9484130
+      CANDIDATE_SHA256: 852f25e93997b9b0dbc1293d83c4a2e291a8437f246db5dd1c8caf51f79efe5f
+      CANDIDATE_BYTES: '8130'
+      R1_BRANCH: diag/ux-css-important-045-service-card-home-hero-feed-r1
+      R1_FILE: .diagnostics/ux-css-important-045-service-card-home-hero-feed-r1.json
+      R1_BLOB: 86691dca7c3532129b610a916da9aa65086d18e7
+      R2_BRANCH: diag/ux-css-important-045-service-card-home-hero-feed-candidate-r2
+      R2_FILE: .diagnostics/ux-css-important-045-service-card-home-hero-feed-candidate-r2.json
+      R2_BLOB: 4e9feb01e3b7ad4a6ba000f2895115ddce5f4996
+      RESULT_FILE: .diagnostics/ux-css-important-045-promotion-materialize-r3.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Freeze certified evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch --no-tags origin "refs/heads/$R1_BRANCH:refs/remotes/origin/$R1_BRANCH" "refs/heads/$R2_BRANCH:refs/remotes/origin/$R2_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$R1_BRANCH:$R1_FILE")" = "$R1_BLOB"
+          test "$(git rev-parse "refs/remotes/origin/$R2_BRANCH:$R2_FILE")" = "$R2_BLOB"
+          git show "refs/remotes/origin/$R1_BRANCH:$R1_FILE" >/tmp/r1.json
+          git show "refs/remotes/origin/$R2_BRANCH:$R2_FILE" >/tmp/r2.json
+          node <<'NODE'
+          const fs=require('fs'),r1=JSON.parse(fs.readFileSync('/tmp/r1.json','utf8')),r2=JSON.parse(fs.readFileSync('/tmp/r2.json','utf8'));
+          if(r1.result!=='PASS'||r1.wholeFileDormant!==true||r1.importantSites!==62||r1.unresolvedImportantSites!==0)throw Error('R1 invalid');
+          if(r2.result!=='PASS'||r2.candidate.gitBlob!==process.env.CANDIDATE_BLOB||r2.candidate.sha256!==process.env.CANDIDATE_SHA256||r2.candidate.bytes!==8130||r2.candidate.importantBefore!==62||r2.candidate.importantAfter!==0||r2.candidate.candidateGlobal!==169||r2.candidate.markerOnly!==true)throw Error('R2 invalid');
+          if(r2.staticMatrix.introducedRegressions!==0||r2.staticMatrix.criteriaRelaxed!==0)throw Error('R2 governance invalid');
+          NODE
+      - name: Reconstruct exact candidate from certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET_FILE,parent=fs.readFileSync(f,'utf8');
+          if((parent.match(/!important\b/gi)||[]).length!==62)throw Error('parent marker drift');
+          const candidate=parent.replace(/\s*!important\b/gi,'');
+          fs.writeFileSync(f,candidate);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha=crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes=Buffer.byteLength(candidate);
+          if(blob!==process.env.CANDIDATE_BLOB||sha!==process.env.CANDIDATE_SHA256||String(bytes)!==process.env.CANDIDATE_BYTES)throw Error(`candidate mismatch ${blob} ${sha} ${bytes}`);
+          if((candidate.match(/!important\b/gi)||[]).length!==0)throw Error('candidate markers remain');
+          console.log(JSON.stringify({candidateBlob:blob,sha256:sha,bytes,importantBefore:62,importantAfter:0,markerOnly:true}));
+          NODE
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --check "$PARENT_SHA" -- "$TARGET_FILE"
+      - name: Materialize exact blob and receipt on diagnostic branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$TARGET_FILE" /tmp/candidate.css
+          git checkout -B diag/ux-css-important-045-promotion-materialize-r3 origin/diag/ux-css-important-045-promotion-materialize-r3 >/dev/null
+          cp /tmp/candidate.css "$TARGET_FILE"
+          mkdir -p "$(dirname "$RESULT_FILE")"
+          cat >"$RESULT_FILE" <<EOF
+          {"result":"PASS","checkpoint":"UX-CSS-IMPORTANT-045","parent":"$PARENT_SHA","parentTree":"$PARENT_TREE","target":"$TARGET_FILE","parentBlob":"$TARGET_BLOB","candidateBlob":"$CANDIDATE_BLOB","candidateSha256":"$CANDIDATE_SHA256","candidateBytes":8130,"importantBefore":62,"importantAfter":0,"parentGlobal":231,"candidateGlobal":169,"markerOnly":true,"r1ReceiptBlob":"$R1_BLOB","r2ReceiptBlob":"$R2_BLOB","repositoryOnly":true}
+          EOF
+          test "$(git hash-object "$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$TARGET_FILE" "$RESULT_FILE"
+          mapfile -t changed < <(git diff --cached --name-only)
+          test "${#changed[@]}" = 2
+          printf '%s\n' "${changed[@]}"
+          git commit -m 'diagnostic(ux-css-important-045): materialize certified service card candidate' >/dev/null
+          git push origin HEAD:diag/ux-css-important-045-promotion-materialize-r3 >/dev/null
+          echo "MATERIALIZED_HEAD=$(git rev-parse HEAD)"
+          echo "MATERIALIZED_TARGET_BLOB=$(git rev-parse HEAD:$TARGET_FILE)"
