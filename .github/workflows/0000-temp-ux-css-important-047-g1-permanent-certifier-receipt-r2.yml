@@ -1,0 +1,121 @@
+name: TEMP UX-CSS-IMPORTANT-047 G1 Permanent Certifier Receipt R2
+on:
+  push:
+    branches: [diag/ux-css-important-047-g1-permanent-certifier-receipt-r2]
+permissions:
+  contents: write
+  pull-requests: read
+  actions: read
+jobs:
+  persist-receipt:
+    if: "github.event.head_commit.message != 'diagnostic(ux-css-important-047): persist permanent certification receipt r2'"
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 526c113eb4c0f1b05b3558dcefcf44269406300f
+      PARENT_TREE: 142dff93c8d6b01a1096bd83bd4b3d9f697a4239
+      PERM: bb8644a4dcf6ebfbe4fd0de010f637b6b4d43cdc
+      PERM_TREE: c59180ef5d6e93b894a387d3efad85dff00c9b59
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 5c97346c40496a0b13e4ad1b509a91adcf7638e1
+      PERM_BLOB: 2f88bd5963ad0157283d322bc9bdb4d8f367e4ba
+      PERM_SHA256: e93afd19261be00bb300d26442af338e41c542dd047e5143580e8313f5bf7d83
+      MATERIAL_RECEIPT_BLOB: dcd25b749b43bfff7d4be867c16d40a3d795a63b
+      CERTIFIER_RUN: 32917706448
+      CERTIFIER_JOB: 98024775544
+      PR_NUMBER: 383
+      GH_TOKEN: "${{ github.token }}"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Verify original certifier result and classify receipt-only failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$CERTIFIER_RUN" > /tmp/run.json
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/jobs/$CERTIFIER_JOB" > /tmp/job.json
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" > /tmp/pr.json
+          curl -fsSL -L -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/jobs/$CERTIFIER_JOB/logs" > /tmp/job.log
+          node <<'NODE'
+          const fs=require('fs');
+          const run=JSON.parse(fs.readFileSync('/tmp/run.json'));
+          const job=JSON.parse(fs.readFileSync('/tmp/job.json'));
+          const pr=JSON.parse(fs.readFileSync('/tmp/pr.json'));
+          if(run.id!==Number(process.env.CERTIFIER_RUN)||run.status!=='completed'||run.conclusion!=='failure') throw Error(`certifier run ${run.status}/${run.conclusion}`);
+          if(run.head_sha!=='afd2b206462a9bdf8c2eb49169a5b648413999ab') throw Error(`certifier head ${run.head_sha}`);
+          if(job.id!==Number(process.env.CERTIFIER_JOB)||job.status!=='completed'||job.conclusion!=='failure') throw Error(`certifier job ${job.status}/${job.conclusion}`);
+          const steps=Object.fromEntries((job.steps||[]).map(s=>[s.name,{status:s.status,conclusion:s.conclusion}]));
+          const mustSuccess=['Verify permanent lineage PR and evidence identities','Install frozen dependencies','Independently rerun and reconcile 14 static gates','Install Chromium','Independently rerun permanent browser A B'];
+          for(const name of mustSuccess){const s=steps[name];if(!s||s.status!=='completed'||s.conclusion!=='success')throw Error(`step ${name}: ${JSON.stringify(s)}`)}
+          const receipt=steps['Record independent permanent certification receipt'];
+          if(!receipt||receipt.status!=='completed'||receipt.conclusion!=='failure')throw Error(`receipt step ${JSON.stringify(receipt)}`);
+          if(pr.state!=='open'||pr.draft!==true||pr.merged_at!==null||pr.mergeable!==true)throw Error(`pr state ${pr.state}/${pr.draft}/${pr.merged_at}/${pr.mergeable}`);
+          if(pr.base.sha!==process.env.PARENT||pr.head.sha!==process.env.PERM||pr.commits!==1||pr.changed_files!==1||pr.additions!==18||pr.deletions!==18)throw Error('pr identity drift');
+          const log=fs.readFileSync('/tmp/job.log','utf8');
+          const required=[
+            'PERMANENT_IDENTITY=PASS',
+            'PARENT_GLOBAL=159',
+            'PERM_GLOBAL=141',
+            'PERMANENT_STATIC=PASS',
+            'PERMANENT_BROWSER={"result":"PASS","states":12,"filterStates":4,"metadataDiffs":0,"screenshotDiffs":0,"loadDiffs":0,"pageErrors":0,"diffKeys":[]}',
+            'HEAD -> diag/ux-css-important-047-g1-permanent-certifier (non-fast-forward)'
+          ];
+          for(const needle of required)if(!log.includes(needle))throw Error(`missing log evidence: ${needle}`);
+          fs.writeFileSync('/tmp/steps.json',JSON.stringify({mustSuccess,receiptFailure:true}));
+          console.log('CERTIFIER_EVIDENCE=PASS');
+          console.log('FAILURE_CLASSIFICATION=RECEIPT_PERSISTENCE_ONLY_NON_FAST_FORWARD');
+          NODE
+      - name: Reprove immutable permanent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PERM^{tree}")" = "$PERM_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          test "$(git rev-parse "$PERM:$TARGET")" = "$PERM_BLOB"
+          test "$(git rev-list --parents -n1 "$PERM")" = "$PERM $PARENT"
+          test "$(git merge-base "$PARENT" "$PERM")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT..$PERM")" = 1
+          test "$(git rev-list --count "$PERM..$PARENT")" = 0
+          test "$(git diff --name-only "$PARENT" "$PERM")" = "$TARGET"
+          test "$(git diff --numstat "$PARENT" "$PERM" -- "$TARGET")" = $'18\t18\tassets/css/pages/home/mobile-hero-feed.css'
+          node <<'NODE'
+          const cp=require('child_process'),crypto=require('crypto');
+          const show=(rev,f)=>cp.execFileSync('git',['show',`${rev}:${f}`],{encoding:'utf8'}),f=process.env.TARGET,p=show(process.env.PARENT,f),q=show(process.env.PERM,f);let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=1&&n<=18){r++;return ''}return m});
+          if(n!==117||r!==18||c!==q||(q.match(/!important\b/gi)||[]).length!==99)throw Error(`ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==q.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          const sha=crypto.createHash('sha256').update(q).digest('hex');
+          if(sha!==process.env.PERM_SHA256||Buffer.byteLength(q)!==36889)throw Error(`sha/bytes ${sha}/${Buffer.byteLength(q)}`);
+          console.log('IMMUTABLE_PERMANENT_IDENTITY=PASS');
+          NODE
+      - name: Persist final permanent certification receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Stay on the diagnostic branch lineage. Do not detach to the permanent product commit.
+          test "$(git branch --show-current)" = 'diag/ux-css-important-047-g1-permanent-certifier-receipt-r2'
+          node <<'NODE'
+          const fs=require('fs');
+          const receipt={
+            result:'PASS',checkpoint:'UX-CSS-IMPORTANT-047',phase:'PERMANENT_CERTIFICATION_RECEIPT_R2',issue:382,pr:383,
+            parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,permanentSha:process.env.PERM,permanentTree:process.env.PERM_TREE,
+            target:process.env.TARGET,parentBlob:process.env.PARENT_BLOB,permanentBlob:process.env.PERM_BLOB,sha256:process.env.PERM_SHA256,bytes:36889,
+            importantBefore:117,importantAfter:99,parentGlobal:159,permanentGlobal:141,globalDelta:-18,removedOrdinals:Array.from({length:18},(_,i)=>i+1),
+            markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,
+            lineage:{oneParent:true,mergeBaseExact:true,ahead:1,behind:0,diffFiles:1,additions:18,deletions:18},
+            prState:{open:true,draft:true,unmerged:true,mergeable:true},
+            priorEvidence:{successorRun:32917053103,successorJob:98022841992,candidateRun:32917176415,staticJob:98023215231,browserJobs:[98023215430,98023215427,98023215408],materializationRun:32917549286,materializationJob:98024317956,materializationReceiptBlob:process.env.MATERIAL_RECEIPT_BLOB},
+            certifierEvidence:{run:Number(process.env.CERTIFIER_RUN),job:Number(process.env.CERTIFIER_JOB),overallRunConclusion:'failure',overallJobConclusion:'failure',functionalCertification:'PASS',identityStep:'success',staticStep:'success',browserStep:'success',receiptPersistenceStep:'failure',failureClassification:'RECEIPT_PERSISTENCE_ONLY_NON_FAST_FORWARD',originalRejectedTarget:'diag/ux-css-important-047-g1-permanent-certifier'},
+            static:{result:'PASS',introducedRegressions:0,criteriaRelaxed:0,sourceRun:Number(process.env.CERTIFIER_RUN),sourceJob:Number(process.env.CERTIFIER_JOB)},
+            browser:{result:'PASS',states:12,filterStates:4,metadataDiffs:0,screenshotDiffs:0,loadDiffs:0,pageErrors:0,diffKeys:[],sourceRun:Number(process.env.CERTIFIER_RUN),sourceJob:Number(process.env.CERTIFIER_JOB)},
+            introducedRegressions:0,criteriaRelaxed:0,repositoryOnly:true,staging:false,production:false,backend:false,supabase:false,rpc:false,migrations:false,credentials:false,runtimeRealtime:false,merge:false,readyForReview:false,forcePush:false,historyRewrite:false,
+            receiptRecoveryRun:Number(process.env.GITHUB_RUN_ID)
+          };
+          fs.mkdirSync('.diagnostics',{recursive:true});
+          fs.writeFileSync('.diagnostics/ux-css-important-047-g1-permanent-certification.json',JSON.stringify(receipt,null,2)+'\n');
+          NODE
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add .diagnostics/ux-css-important-047-g1-permanent-certification.json
+          git commit -m 'diagnostic(ux-css-important-047): persist permanent certification receipt r2'
+          git push origin HEAD:diag/ux-css-important-047-g1-permanent-certifier-receipt-r2
