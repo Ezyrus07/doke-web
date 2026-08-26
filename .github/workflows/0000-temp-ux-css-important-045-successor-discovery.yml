@@ -1,0 +1,35 @@
+name: TEMP UX-CSS-IMPORTANT-045 Successor Discovery
+on:
+  push:
+    branches: [diag/ux-css-important-045-successor-discovery]
+permissions:
+  contents: read
+jobs:
+  rank:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Rank residual priorities on certified 044
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=03350507015579bfc60e413f1b3dfa97f4371f68
+          test "$(git rev-parse "$PARENT^{tree}")" = "fb684d8ec8e96cf1a2d0ada42f7415259e084650"
+          git checkout --detach "$PARENT" >/dev/null
+          python3 - <<'PY'
+          import pathlib, subprocess, json
+          rows=[]
+          total=0
+          for p in sorted(pathlib.Path('assets/css').rglob('*.css')):
+              s=p.read_text(encoding='utf-8')
+              n=s.lower().count('!important')
+              total+=n
+              if n:
+                  blob=subprocess.check_output(['git','rev-parse',f'HEAD:{p.as_posix()}'],text=True).strip()
+                  rows.append({'path':p.as_posix(),'important':n,'blob':blob,'bytes':len(s.encode())})
+          rows.sort(key=lambda r:(-r['important'],r['path']))
+          assert total==231, total
+          print('UX_CSS_IMPORTANT_045_DISCOVERY='+json.dumps({'global':total,'files':len(rows),'ranking':rows},separators=(',',':')))
+          PY
