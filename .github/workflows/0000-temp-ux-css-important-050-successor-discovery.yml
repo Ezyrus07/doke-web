@@ -1,0 +1,54 @@
+name: TEMP UX-CSS-IMPORTANT-050 Successor Discovery
+on:
+  push:
+    branches: [diag/ux-css-important-050-successor-discovery]
+permissions: {contents: read}
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT: 4b32b8b88018560402ae5d67a26c126d0e65d942
+      TREE: d7f3580ac4406a0bcdd225cb405e882eb34dfa1c
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 54890bd4e2765364820796be64c62417d965ac65
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Freeze 049 parent and enumerate exact residual estate
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8');
+          const target=(p.match(/!important\b/gi)||[]).length;
+          if(target!==63) throw Error(`target markers ${target}`);
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');
+          const counts=css.map(q=>[q,(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+          const global=counts.reduce((s,x)=>s+x[1],0);
+          if(global!==105) throw Error(`global markers ${global}`);
+          console.log('ESTATE='+JSON.stringify({global,files:counts}));
+          const lines=p.split(/\n/); let ordinal=0, selector='';
+          const markers=[];
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i];
+            if(line.includes('{')) selector=line.trim();
+            const count=(line.match(/!important\b/gi)||[]).length;
+            for(let k=0;k<count;k++){
+              ordinal++;
+              const prop=(line.trim().match(/^([\w-]+)\s*:/)||[])[1]||'';
+              const rec={ordinal,line:i+1,property:prop,selector,text:line.trim()};
+              markers.push(rec);
+              console.log('MARKER='+JSON.stringify(rec));
+            }
+          }
+          if(ordinal!==63) throw Error(`enumerated ${ordinal}`);
+          console.log('FIRST_30='+JSON.stringify(markers.slice(0,30)));
+          console.log('SUCCESSOR_DISCOVERY='+JSON.stringify({result:'PASS',checkpoint:'UX-CSS-IMPORTANT-050',parentSha:process.env.PARENT,parentTree:process.env.TREE,parentBlob:process.env.PARENT_BLOB,targetMarkers:63,parentGlobal:105,firstMarker:markers[0],nextMarkers:markers.slice(1,21)}));
+          NODE
