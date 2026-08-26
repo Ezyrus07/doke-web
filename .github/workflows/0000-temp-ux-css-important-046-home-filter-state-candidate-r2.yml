@@ -1,0 +1,95 @@
+name: TEMP UX-CSS-IMPORTANT-046 Home Filter State Candidate R2
+on:
+  push:
+    branches: [diag/ux-css-important-046-home-filter-state-candidate-r2]
+permissions: {contents: read}
+jobs:
+  r2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      PARENT: 53e5733a4fb7cd293cc2ab17bd53f64338a72b8d
+      TREE: 4958068fa2e44aee05e390fae0af5ad18c633947
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: e3547c5ebeb6ddbcd5a934244c2d372eabcef9ba
+      EXPECTED_SHA256: 40705c0b40ca3ef4d6f0252b9119e709d6673d1e5738fe9b8813df115f76bfa0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - name: Build and freeze exact ordinal candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8');
+          if((p.match(/!important\b/gi)||[]).length!==127)throw Error('parent marker drift');
+          let n=0,r=0;const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=56&&n<=65){r++;return ''}return m});
+          if(n!==127||r!==10||(c.match(/!important\b/gi)||[]).length!==117)throw Error(`ordinal drift ${n}/${r}`);
+          const strip=s=>s.replace(/\s*!important\b/gi,'');if(strip(p)!==strip(c))throw Error('non-marker drift');
+          const imp=s=>[...s.matchAll(/@import\s+[^;]+;/gi)].map(x=>x[0]);if(JSON.stringify(imp(p))!==JSON.stringify(imp(c)))throw Error('import drift');
+          fs.writeFileSync('/tmp/candidate.css',c);fs.writeFileSync(f,c);
+          const sha=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c),blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          if(sha!==process.env.EXPECTED_SHA256||bytes!==37087)throw Error(`identity ${sha}/${bytes}`);
+          const files=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&files.push(q)}})('assets/css');
+          const global=files.reduce((a,q)=>a+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(global!==159)throw Error(`global ${global}`);
+          const ns=cp.execFileSync('git',['diff','--numstat',process.env.PARENT,'--',f],{encoding:'utf8'}).trim().split(/\s+/);
+          console.log('CANDIDATE='+JSON.stringify({importantBefore:127,importantAfter:117,removed:10,removedOrdinals:[56,57,58,59,60,61,62,63,64,65],parentGlobal:169,candidateGlobal:159,globalDelta:-10,gitBlob:blob,sha256:sha,bytes,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,additions:+ns[0],deletions:+ns[1],diffFiles:1}));
+          NODE
+          test "$(git diff --name-only "$PARENT" --)" = "$TARGET"
+          git diff --check "$PARENT" -- "$TARGET"
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT" -- package.json package-lock.json
+          npm ci --ignore-scripts >/dev/null
+          cp /tmp/candidate.css "$TARGET"
+      - name: Parent versus candidate static matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/matrix.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; candidate="$2"; : > "/tmp/$phase.tsv"
+          restore(){ git checkout "$PARENT" -- . >/dev/null 2>&1 || exit 90; [ "$candidate" = 1 ] && cp /tmp/candidate.css "$TARGET"; }
+          gate(){ label="$1"; shift; restore; log="/tmp/$phase-$label.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; sed -E 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$log" >"$log.n"; h=$(sha256sum "$log.n"|awk '{print $1}'); printf '%s\t%s\t%s\n' "$label" "$rc" "$h" >>"/tmp/$phase.tsv"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/matrix.sh
+          /tmp/matrix.sh parent 0
+          /tmp/matrix.sh candidate 1
+          node <<'NODE'
+          const fs=require('fs'),read=f=>Object.fromEntries(fs.readFileSync(f,'utf8').trim().split('\n').map(x=>{const [k,rc,h]=x.split('\t');return[k,{rc:+rc,h}]}));const p=read('/tmp/parent.tsv'),c=read('/tmp/candidate.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'];const debt=['important_reduction_plan','global_css_design_system'];const rows=[];
+          for(const k of exact){const a=p[k],b=c[k];if(!a||!b||a.rc!==b.rc||(a.rc!==0&&a.h!==b.h))throw Error(`regression ${k}`);rows.push({label:k,classification:a.rc===0?'PASS_BOTH':'BASELINE_EQUIVALENT_FAILURE'});}
+          for(const k of debt){const a=p[k],b=c[k];if(!a||!b||b.rc>a.rc)throw Error(`debt regression ${k}`);rows.push({label:k,classification:b.rc<a.rc?'CANDIDATE_IMPROVES_BASELINE':'EXPECTED_DEBT_DELTA'});}
+          if(p.frontend_strict.rc!==c.frontend_strict.rc)throw Error('frontend rc drift');
+          const sig=f=>fs.readFileSync(f,'utf8').split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();if(JSON.stringify(sig('/tmp/parent-frontend_strict.log'))!==JSON.stringify(sig('/tmp/candidate-frontend_strict.log')))throw Error('frontend warning drift');rows.push({label:'frontend_strict',classification:'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA'});
+          console.log('UX_CSS_IMPORTANT_046_R2='+JSON.stringify({result:'PASS',checkpoint:'UX-CSS-IMPORTANT-046',staticMatrix:{rows,introducedRegressions:0,criteriaRelaxed:0},activeTarget:true,browserRequired:true}));
+          NODE
+          git reset --hard "$PARENT" >/dev/null; git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$TREE"
+          test -z "$(git status --porcelain)"
