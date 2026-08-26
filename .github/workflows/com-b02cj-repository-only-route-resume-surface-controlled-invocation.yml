@@ -1,0 +1,125 @@
+name: COM-B02CJ Repository-Only Route Resume Surface Controlled Invocation
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - 'config/com-b02cj-repository-only-route-resume-surface-controlled-invocation.json'
+      - 'scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js'
+      - '.github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-controlled-resume-surface-invocation:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: ab18acc2eff8ccb896dc621b352dad092f326c33
+      PREDECESSOR_TREE: 589ba217e154bc581de2018cf6b79dcee7bf1a96
+      PREDECESSOR_RUN_ID: '32884951357'
+      PREDECESSOR_JOB_ID: '97923127212'
+      CONFIG: config/com-b02cj-repository-only-route-resume-surface-controlled-invocation.json
+      CONFIG_BLOB: 0c441b3327101d820c9ad3e06894a70007385912
+      TEST: scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js
+      TEST_BLOB: c4aa2abf9b22e9bb8fc0b1aa4bfb06f5f7fa4bf3
+      WORKFLOW: .github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml
+      B02CI_TARGET: backend/shared/http/repository-only-route-resume-dispatcher.js
+      B02CI_TARGET_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      B02CI_CONFIG: config/com-b02ci-repository-only-route-resume-dispatcher-implementation.json
+      B02CI_CONFIG_BLOB: e4a69aa36ad8eed7cef59b05eaaa9166c1637418
+      B02CI_WORKFLOW: .github/workflows/com-b02ci-repository-only-route-resume-dispatcher-implementation-v2.yml
+      B02CI_WORKFLOW_BLOB: 55abe799e35e8e23dd9c71fe30f9e548ff486a8f
+      B02T: backend/modules/communities/community-command-handler-repository-orchestration.js
+      B02T_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
+      B02S: backend/modules/communities/community-command-handler-repository-binding-surface.js
+      B02S_BLOB: 0778690aaaf428247159a08eac83a38796888f41
+      B02R: backend/modules/communities/community-command-runtime-repository-binding-composition.js
+      B02R_BLOB: cfc3bd8790d99b1ee61bf52fa93fd2bb2a6bf3bc
+      B02Q: backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js
+      B02Q_BLOB: 384c3a452b7e0e66d1bf2ddfeebb341c8b36f3c9
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CI certification and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$PREDECESSOR_RUN_ID" = '32884951357'
+          test "$PREDECESSOR_JOB_ID" = '97923127212'
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          test "$(git rev-list --count "$PREDECESSOR_HEAD..HEAD")" = '1'
+          expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02CI_TARGET)" = "$B02CI_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CI_CONFIG)" = "$B02CI_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02CI_WORKFLOW)" = "$B02CI_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$B02T)" = "$B02T_BLOB"
+          test "$(git rev-parse HEAD:$B02S)" = "$B02S_BLOB"
+          test "$(git rev-parse HEAD:$B02R)" = "$B02R_BLOB"
+          test "$(git rev-parse HEAD:$B02Q)" = "$B02Q_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '0000-temp-com-b02cj-*' -print -quit)"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify exactly one controlled resume surface invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TEST"
+          node "$TEST"
+          grep -F '"boundaryId": "COM-B02CJ"' "$CONFIG"
+          grep -F '"resumeSurfaceInvocationAuthority": true' "$CONFIG"
+          grep -F '"controlledInvocationCount": 1' "$CONFIG"
+          grep -F '"resumeSurfaceInvoked": true' "$CONFIG"
+          grep -F '"registryLookupUsedToResolveContinuation": false' "$CONFIG"
+          grep -F '"continuationStateStorageAuthority": false' "$CONFIG"
+          grep -F '"registryOperationInvocationAuthority": false' "$CONFIG"
+          grep -F '"repositoryOperationInvocationAuthority": false' "$CONFIG"
+          grep -F '"networkAuthority": false' "$CONFIG"
+          grep -F '"runtimeActivationAuthority": false' "$CONFIG"
+          grep -F '"realtimeActivationAuthority": false' "$CONFIG"
+          grep -F '"productionAuthority": false' "$CONFIG"
+          test "$(grep -F -c 'dispatchRepositoryOnlyRouteResume(' "$TEST")" = '1'
+          test "$(grep -F -c 'resumeSurfaceInvocationAuthority: true' "$TEST")" = '1'
+          ! grep -F 'beginRepositoryOnlyCommandHandlerOrchestration(' "$TEST"
+          ! grep -E 'registry\.(set|get|delete|register|resolve|release)\(' "$TEST"
+          ! grep -E 'execute(Membership|Governance|Content)Command\(' "$TEST"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TEST"
+
+      - name: Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD
