@@ -7,6 +7,8 @@ on:
     paths:
       - 'config/com-b02cj-repository-only-route-resume-surface-controlled-invocation.json'
       - 'scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml'
 
 permissions:
@@ -43,6 +45,8 @@ jobs:
       B02Q_BLOB: 384c3a452b7e0e66d1bf2ddfeebb341c8b36f3c9
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
       ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
       MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
       COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
@@ -68,8 +72,8 @@ jobs:
           test "$PREDECESSOR_RUN_ID" = '32884951357'
           test "$PREDECESSOR_JOB_ID" = '97923127212'
           git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
-          test "$(git rev-list --count "$PREDECESSOR_HEAD..HEAD")" = '3'
-          expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" | sort)"
+          test "$(git rev-list --count "$PREDECESSOR_HEAD..HEAD")" = '9'
+          expected="$(printf '%s\n' "$CONFIG" "$TEST" "$MATRIX_MD" "$MATRIX_REPORT" "$WORKFLOW" | sort)"
           actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
           test "$actual" = "$expected"
           test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
