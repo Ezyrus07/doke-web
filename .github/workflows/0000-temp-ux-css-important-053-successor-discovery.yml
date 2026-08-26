@@ -1,0 +1,51 @@
+name: TEMP UX-CSS-IMPORTANT-053 Successor Discovery
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-053-successor-discovery
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Verify certified parent and enumerate residual important estate
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const files=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);e.isDirectory()?walk(p):p.endsWith('.css')&&files.push(p)}})('assets/css');
+          const rows=[];let global=0;
+          for(const f of files){const s=fs.readFileSync(f,'utf8'),n=(s.match(/!important\b/gi)||[]).length;if(n){global+=n;rows.push({file:f,count:n,blob:cp.execFileSync('git',['rev-parse',`HEAD:${f}`],{encoding:'utf8'}).trim(),sha256:crypto.createHash('sha256').update(s).digest('hex'),bytes:Buffer.byteLength(s)})}}
+          rows.sort((a,b)=>b.count-a.count||a.file.localeCompare(b.file));
+          if(global!==43)throw Error(`global residual ${global}`);
+          console.log('RESIDUAL_RANKING='+JSON.stringify({global,rows}));
+          const target=rows[0];if(!target||target.count<1)throw Error('no successor');
+          const s=fs.readFileSync(target.file,'utf8');
+          let selector='';const occurrences=[];let ordinal=0;
+          const lines=s.split(/\n/);
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i];
+            if(line.includes('{')) selector=line.slice(0,line.indexOf('{')).trim()||selector;
+            const matches=[...line.matchAll(/!important\b/gi)];
+            for(const m of matches){ordinal++;const before=line.slice(0,m.index);const colon=before.lastIndexOf(':');const semi=before.lastIndexOf(';');const propStart=Math.max(before.lastIndexOf('{'),semi)+1;const property=colon>=0?before.slice(propStart,colon).trim():'';const value=colon>=0?before.slice(colon+1).trim():before.trim();occurrences.push({ordinal,line:i+1,selector,property,value,text:line.trim()})}
+          }
+          if(ordinal!==target.count)throw Error(`target count ${ordinal}/${target.count}`);
+          console.log('SUCCESSOR_TARGET='+JSON.stringify(target));
+          console.log('SUCCESSOR_OCCURRENCES='+JSON.stringify(occurrences));
+          console.log('DISCOVERY_RESULT=PASS');
+          NODE
