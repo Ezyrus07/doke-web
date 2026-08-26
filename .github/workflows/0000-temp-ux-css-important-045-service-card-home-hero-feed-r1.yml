@@ -1,0 +1,103 @@
+name: TEMP UX-CSS-IMPORTANT-045 Service Card R1
+on:
+  push:
+    branches:
+      - diag/ux-css-important-045-service-card-home-hero-feed-r1
+permissions:
+  contents: read
+jobs:
+  r1:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Prove reach source cascade and site closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=03350507015579bfc60e413f1b3dfa97f4371f68
+          TREE=fb684d8ec8e96cf1a2d0ada42f7415259e084650
+          TARGET=assets/css/components/cards/service-card-home-hero-feed.css
+          BLOB=5f1f57692ca30fdca1fc10c5f89418343f3c4d8d
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          python3 - <<'PY'
+          import pathlib,re,json,hashlib,subprocess
+          target='assets/css/components/cards/service-card-home-hero-feed.css'
+          data=pathlib.Path(target).read_bytes(); text=data.decode('utf-8')
+          markers=[m.start() for m in re.finditer(r'!important',text,re.I)]
+          assert len(markers)==62, len(markers)
+          assert len(data)==8812, len(data)
+          # Every marker must be inside a declaration block and after a property:value pair.
+          sites=[]
+          for i,pos in enumerate(markers,1):
+              op=text.rfind('{',0,pos); cl=text.rfind('}',0,pos)
+              assert op>cl, (i,pos)
+              seg=text[op+1:pos]
+              semi=max(seg.rfind(';'),0)
+              decl=seg[semi:]
+              assert ':' in decl, (i,decl[-120:])
+              prop=decl.split(':',1)[0].lstrip(';').strip()
+              assert re.match(r'^--?[A-Za-z0-9_-]+$|^[A-Za-z][A-Za-z0-9_-]*$',prop), (i,prop)
+              sites.append({'n':i,'property':prop,'offset':pos})
+          css=[p.as_posix() for p in pathlib.Path('assets/css').rglob('*.css')]
+          def imports(p):
+              s=pathlib.Path(p).read_text(encoding='utf-8')
+              out=[]
+              for m in re.finditer(r'@import\s+(?:url\(\s*)?[\'\"]?([^\'\"\)\s;]+\.css(?:\?[^\'\"\)\s;]*)?)',s,re.I):
+                  x=m.group(1).split('?',1)[0].split('#',1)[0]
+                  if re.match(r'^[a-z]+://',x,re.I): continue
+                  q=(pathlib.PurePosixPath(p).parent/x).as_posix() if not x.startswith('/') else x[1:]
+                  out.append(str(pathlib.PurePosixPath(q)))
+              return out
+          im={p:imports(p) for p in css}
+          html=[p for p in pathlib.Path('.').rglob('*.html') if not any(part in {'archive','reports','tools','test-results'} for part in p.parts)]
+          starts={}; direct=[]
+          rx=re.compile(r'<link\b[^>]*?href\s*=\s*[\'\"]([^\'\"]+)[\'\"][^>]*>',re.I|re.S)
+          for h in html:
+              arr=[]; s=h.read_text(encoding='utf-8')
+              for m in rx.finditer(s):
+                  x=m.group(1).split('?',1)[0].split('#',1)[0]
+                  if not x.endswith('.css') or re.match(r'^[a-z]+://',x,re.I): continue
+                  q=(pathlib.PurePosixPath(h.as_posix()).parent/x).as_posix() if not x.startswith('/') else x[1:]
+                  q=str(pathlib.PurePosixPath(q)); arr.append(q)
+                  if q==target: direct.append(h.as_posix())
+              starts[h.as_posix()]=arr
+          def closure(xs):
+              seen=set()
+              def visit(p):
+                  if p in seen or p not in im: return
+                  seen.add(p)
+                  for q in im[p]: visit(q)
+              for x in xs: visit(x)
+              return seen
+          loaded=set(); pages=[]
+          for h,xs in starts.items():
+              c=closure(xs); loaded|=c
+              if target in c: pages.append(h)
+          importers=sorted([p for p,v in im.items() if target in v])
+          runtime=[]; base=pathlib.PurePosixPath(target).name
+          for p in pathlib.Path('assets/js').rglob('*.js'):
+              s=p.read_text(encoding='utf-8',errors='ignore')
+              if target in s or base in s: runtime.append(p.as_posix())
+          refs=[]
+          for p in pathlib.Path('.').rglob('*'):
+              if not p.is_file() or '.git' in p.parts or p.as_posix()==target: continue
+              try: s=p.read_text(encoding='utf-8')
+              except: continue
+              if target in s or base in s: refs.append(p.as_posix())
+          out={
+            'result':'PASS','parent':'03350507015579bfc60e413f1b3dfa97f4371f68','tree':'fb684d8ec8e96cf1a2d0ada42f7415259e084650',
+            'target':target,'blob':'5f1f57692ca30fdca1fc10c5f89418343f3c4d8d','bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),
+            'importantSites':len(sites),'unresolvedImportantSites':0,'rootHtmlCount':len(html),'loadedCssCount':len(loaded),
+            'canonicalLoaded':target in loaded,'wholeFileDormant':target not in loaded and not direct and not importers and not runtime,
+            'targetPages':sorted(pages),'directHtmlRefs':sorted(set(direct)),'directImporters':importers,'runtimeJsRefs':sorted(runtime),
+            'repositoryRefs':sorted(refs),'browserReconciliationRequired':False,'productMutation':False,'criteriaRelaxed':0
+          }
+          assert out['wholeFileDormant'] is True, out
+          assert not out['targetPages'] and not out['directHtmlRefs'] and not out['directImporters'] and not out['runtimeJsRefs'], out
+          print('UX_CSS_IMPORTANT_045_R1='+json.dumps(out,separators=(',',':')))
+          PY
+          test -z "$(git status --porcelain)"
