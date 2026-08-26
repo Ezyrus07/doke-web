@@ -1,0 +1,70 @@
+name: TEMP UX-CSS-IMPORTANT-052 Successor Discovery
+on:
+  push:
+    branches:
+      - diag/ux-css-important-052-successor-discovery
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Verify parent and enumerate residual
+        env:
+          PARENT: f49f53eca5a742418fbf58c63e16cb94ac040d63
+          PARENT_TREE: 2948d69d17c0464edf0e77e6b65e581ecb6ada91
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          PARENT_BLOB: d323fb51b817ce47bc316d04207853934a72b835
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-list --parents -n1 HEAD | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET;
+          const css=fs.readFileSync(target,'utf8');
+          const count=s=>(s.match(/!important\b/gi)||[]).length;
+          if(count(css)!==27) throw Error(`target markers ${count(css)}`);
+          const files=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);e.isDirectory()?walk(p):p.endsWith('.css')&&files.push(p)}})('assets/css');
+          const global=files.reduce((n,f)=>n+count(fs.readFileSync(f,'utf8')),0);
+          if(global!==69) throw Error(`global markers ${global}`);
+          const stack=[]; const markers=[]; let ordinal=0;
+          const lines=css.split(/\n/);
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i];
+            const opens=(line.match(/\{/g)||[]).length, closes=(line.match(/\}/g)||[]).length;
+            if(opens){
+              const pre=line.slice(0,line.indexOf('{')).trim();
+              for(let k=0;k<opens;k++) stack.push(k===0?pre:'<nested>');
+            }
+            if(/!important\b/i.test(line)){
+              const m=line.match(/^\s*([\w-]+)\s*:\s*(.*?)\s*!important\b/i);
+              if(!m) throw Error(`unparsed marker line ${i+1}: ${line}`);
+              ordinal++;
+              const selector=[...stack].reverse().find(x=>x && !x.startsWith('@') && x!=='<nested>')||'<unknown>';
+              markers.push({ordinal,line:i+1,selector,property:m[1],value:m[2].trim()});
+            }
+            for(let k=0;k<closes;k++) stack.pop();
+          }
+          if(markers.length!==27) throw Error(`enumerated ${markers.length}`);
+          const first=markers[0];
+          if(!first.selector.includes('.featured-services .content-rail')||first.property!=='overflow'||first.value!=='visible') throw Error(`ordinal1 drift ${JSON.stringify(first)}`);
+          console.log('RESIDUAL_ENUMERATION='+JSON.stringify(markers));
+          const remove=new Set(Array.from({length:26},(_,i)=>i+2)); let n=0,r=0;
+          const candidate=css.replace(/\s*!important\b/gi,m=>{n++;if(remove.has(n)){r++;return ''}return m});
+          if(n!==27||r!==26||count(candidate)!==1) throw Error(`candidate counts ${n}/${r}/${count(candidate)}`);
+          if(css.replace(/\s*!important\b/gi,'')!==candidate.replace(/\s*!important\b/gi,'')) throw Error('marker-only drift');
+          if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(candidate)) throw Error('G3 guard lost');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:candidate,encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes=Buffer.byteLength(candidate);
+          const candidateGlobal=global-r;
+          if(candidateGlobal!==43) throw Error(`candidate global ${candidateGlobal}`);
+          console.log('DISCOVERY='+JSON.stringify({result:'PASS',parent:process.env.PARENT,parentTree:process.env.PARENT_TREE,target,parentBlob:process.env.PARENT_BLOB,targetMarkers:27,globalMarkers:69,preservedOrdinal:1,candidateRemovedOrdinals:[...remove],candidateTargetMarkers:1,candidateGlobalMarkers:candidateGlobal,candidateBlob:blob,candidateSha256:sha256,candidateBytes:bytes,markerOnly:true}));
+          NODE
