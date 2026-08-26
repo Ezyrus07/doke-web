@@ -1,0 +1,61 @@
+name: TEMP UX-CSS-IMPORTANT-046 Home Filter State Materialize R3
+on:
+  push:
+    branches:
+      - diag/ux-css-important-046-home-filter-state-materialize-r3
+permissions:
+  contents: write
+jobs:
+  materialize:
+    if: github.event.head_commit.message != 'diagnostic(ux-css-important-046): materialize certified G4 blob'
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 53e5733a4fb7cd293cc2ab17bd53f64338a72b8d
+      PARENT_TREE: 4958068fa2e44aee05e390fae0af5ad18c633947
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: e3547c5ebeb6ddbcd5a934244c2d372eabcef9ba
+      EXPECTED_BLOB: 5c97346c40496a0b13e4ad1b509a91adcf7638e1
+      EXPECTED_SHA256: 40705c0b40ca3ef4d6f0252b9119e709d6673d1e5738fe9b8813df115f76bfa0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Reconstruct exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          test "$(git hash-object "$TARGET")" = "$PARENT_BLOB"
+          git show "$PARENT:$TARGET" > /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET,p=fs.readFileSync('/tmp/parent.css','utf8');let n=0,r=0;
+          if((p.match(/!important\b/gi)||[]).length!==127)throw Error('parent markers');
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=56&&n<=65){r++;return ''}return m});
+          if(n!==127||r!==10||(c.match(/!important\b/gi)||[]).length!==117)throw Error(`ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('semantic drift');
+          fs.writeFileSync(f,c);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          if(blob!==process.env.EXPECTED_BLOB||sha256!==process.env.EXPECTED_SHA256||bytes!==37087)throw Error(`identity ${blob}/${sha256}/${bytes}`);
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');
+          const global=css.reduce((a,q)=>a+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);
+          if(global!==159)throw Error(`global ${global}`);
+          fs.mkdirSync('.diagnostics',{recursive:true});
+          const receipt={result:'PASS',checkpoint:'UX-CSS-IMPORTANT-046',phase:'R3_EXACT_MATERIALIZATION',parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,target:f,parentBlob:process.env.PARENT_BLOB,candidateBlob:blob,sha256,bytes,importantBefore:127,importantAfter:117,parentGlobal:169,candidateGlobal:159,globalDelta:-10,removedOrdinals:[56,57,58,59,60,61,62,63,64,65],markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,staticRun:32915721760,staticJob:98018905585,browserConfirmRun:32915875216,browserConfirmJobs:[98019368950,98019369003,98019368868],browserConfirmRepetitions:3,introducedRegressions:0,criteriaRelaxed:0,repositoryOnly:true};
+          fs.writeFileSync('.diagnostics/ux-css-important-046-home-filter-state-materialization.json',JSON.stringify(receipt,null,2)+'\n');
+          NODE
+          test "$(git hash-object "$TARGET")" = "$EXPECTED_BLOB"
+          git diff --check -- "$TARGET"
+          test "$(git diff --name-only -- "$TARGET")" = "$TARGET"
+      - name: Commit diagnostic materialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$TARGET" .diagnostics/ux-css-important-046-home-filter-state-materialization.json
+          git commit -m 'diagnostic(ux-css-important-046): materialize certified G4 blob'
+          test "$(git rev-parse HEAD:$TARGET)" = "$EXPECTED_BLOB"
+          git push origin HEAD:diag/ux-css-important-046-home-filter-state-materialize-r3
