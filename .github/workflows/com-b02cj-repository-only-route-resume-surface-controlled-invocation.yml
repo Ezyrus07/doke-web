@@ -25,7 +25,7 @@ jobs:
       CONFIG: config/com-b02cj-repository-only-route-resume-surface-controlled-invocation.json
       CONFIG_BLOB: 0c441b3327101d820c9ad3e06894a70007385912
       TEST: scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js
-      TEST_BLOB: 08026086883866b079ce5ed1365718e677a2953c
+      TEST_BLOB: e0e49ea5fd20b253921d67d51cf402b7426eb581
       WORKFLOW: .github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml
       B02CI_TARGET: backend/shared/http/repository-only-route-resume-dispatcher.js
       B02CI_TARGET_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
@@ -68,7 +68,7 @@ jobs:
           test "$PREDECESSOR_RUN_ID" = '32884951357'
           test "$PREDECESSOR_JOB_ID" = '97923127212'
           git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
-          test "$(git rev-list --count "$PREDECESSOR_HEAD..HEAD")" = '2'
+          test "$(git rev-list --count "$PREDECESSOR_HEAD..HEAD")" = '3'
           expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" | sort)"
           actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
           test "$actual" = "$expected"

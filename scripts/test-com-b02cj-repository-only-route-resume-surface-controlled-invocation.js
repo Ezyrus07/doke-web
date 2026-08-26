@@ -182,7 +182,7 @@ function main() {
     routeName: ROUTE_NAME,
     resumeSurfaceInvoked: result.resumeSurfaceInvoked,
     resumedOrchestrationDecision: result.orchestrationState.decision,
-    resumeSurfaceInvocationAuthority: true,
+    resumeSurfaceInvocationAuthority: result.resumeSurfaceInvoked,
     continuationStateStorageAuthority: false,
     registryOperationInvocationAuthority: false,
     registryLookupAuthority: false,
@@ -207,6 +207,7 @@ function main() {
   assert.strictEqual(certification.predecessor.repositoryCertified, true);
   assert.strictEqual(certification.controlledInvocationCount, 1);
   assert.strictEqual(certification.resumeSurfaceInvoked, true);
+  assert.strictEqual(certification.resumeSurfaceInvocationAuthority, true);
 
   console.log(JSON.stringify({
     contractId: CONTRACT_ID,
