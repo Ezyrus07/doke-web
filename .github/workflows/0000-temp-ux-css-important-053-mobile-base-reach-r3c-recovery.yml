@@ -1,0 +1,260 @@
+name: TEMP UX-CSS-IMPORTANT-053 Mobile Base Reach R3C Recovery
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-053-mobile-base-reach-r3c-recovery
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify exact diagnostic lineage and parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          CHANGED="$(git diff-tree --no-commit-id --name-only -r "$DIAG_HEAD")"
+          test "$CHANGED" = ".github/workflows/0000-temp-ux-css-important-053-mobile-base-reach-r3c-recovery.yml"
+          git checkout --detach "$PARENT" >/dev/null
+      - name: Verify canonical static target reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-mobile-base-stability.js
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Prove auth-neutral active media state space
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const { chromium } = require('@playwright/test');
+
+          (async () => {
+            const target = process.env.TARGET;
+            const pages = [
+              'index.html',
+              'resultados.html',
+              'pedidos.html',
+              'mensagens.html',
+              'comunidade.html',
+              'perfil.html',
+              'carteira.html',
+              'notificacoes.html',
+              'configuracoes.html',
+            ];
+            const widths = [390, 760, 761];
+            const expectedActive = pages.flatMap(page => [390, 760].map(width => `${page}|${width}`));
+            const expectedInactiveLoaded = pages.map(page => `${page}|761`);
+            const tiny = Buffer.from(
+              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+              'base64'
+            );
+            const browser = await chromium.launch({ headless: true });
+            const rows = [];
+
+            for (const pageName of pages) {
+              for (const width of widths) {
+                const ctx = await browser.newContext({
+                  viewport: { width, height: 1050 },
+                  reducedMotion: 'reduce',
+                });
+                const page = await ctx.newPage();
+                let requested = false;
+                const errors = [];
+
+                page.on('pageerror', e => errors.push(String(e.message || e)));
+                page.on('request', request => {
+                  try {
+                    if (new URL(request.url()).pathname === `/${target}`) requested = true;
+                  } catch {}
+                });
+
+                await page.route('**/*', async route => {
+                  const request = route.request();
+                  const url = request.url();
+                  if (url.startsWith('http://127.0.0.1:4173/')) {
+                    if (request.resourceType() === 'document') {
+                      const response = await route.fetch();
+                      let body = await response.text();
+                      body = body.replace(/<html\b([^>]*)>/i, (full, attrs) => {
+                        if (/\bdata-auth-guard-mode\s*=/.test(attrs)) {
+                          return `<html${attrs.replace(/\bdata-auth-guard-mode\s*=\s*(["']).*?\1/i, 'data-auth-guard-mode="observe"')}>`;
+                        }
+                        return `<html${attrs} data-auth-guard-mode="observe">`;
+                      });
+                      return route.fulfill({ response, body });
+                    }
+                    return route.continue();
+                  }
+                  if (/\.(?:png|jpe?g|webp|gif|svg)(?:\?|$)/i.test(url)) {
+                    return route.fulfill({ status: 200, contentType: 'image/png', body: tiny });
+                  }
+                  return route.abort();
+                });
+
+                await page.goto(`http://127.0.0.1:4173/${pageName}?uxcss053reach=${width}`, {
+                  waitUntil: 'domcontentloaded',
+                  timeout: 15000,
+                });
+                await page.waitForLoadState('networkidle', { timeout: 7000 }).catch(() => {});
+                await page.waitForTimeout(250);
+
+                const meta = await page.evaluate(target => {
+                  const clean = value => {
+                    try { return new URL(value, location.href).pathname.replace(/^\//, ''); }
+                    catch { return String(value || ''); }
+                  };
+                  const seen = new Set();
+                  let cssom = false;
+                  let targetSheet = null;
+                  const chain = [];
+
+                  function walk(sheet) {
+                    if (!sheet || seen.has(sheet)) return;
+                    seen.add(sheet);
+                    const href = sheet.href ? clean(sheet.href) : '';
+                    if (href) chain.push(href);
+                    if (href === target) {
+                      cssom = true;
+                      targetSheet = sheet;
+                    }
+                    let rules;
+                    try { rules = sheet.cssRules; } catch { return; }
+                    if (!rules) return;
+                    for (const rule of rules) {
+                      if (rule.type === CSSRule.IMPORT_RULE) {
+                        const importedHref = rule.href ? clean(rule.href) : '';
+                        if (importedHref) chain.push(importedHref);
+                        if (importedHref === target) cssom = true;
+                        walk(rule.styleSheet);
+                      }
+                    }
+                  }
+
+                  for (const sheet of document.styleSheets) walk(sheet);
+
+                  const media = [];
+                  let mediaActive = false;
+                  let nonMediaStyleRules = 0;
+                  if (targetSheet) {
+                    let rules = [];
+                    try { rules = [...targetSheet.cssRules]; } catch {}
+                    for (const rule of rules) {
+                      if (rule.type === CSSRule.MEDIA_RULE) {
+                        const text = rule.conditionText || rule.media?.mediaText || '';
+                        const matches = Boolean(text && matchMedia(text).matches);
+                        media.push({ text, matches });
+                        if (matches) mediaActive = true;
+                      } else if (rule.type === CSSRule.STYLE_RULE) {
+                        nonMediaStyleRules += 1;
+                      }
+                    }
+                  }
+
+                  return {
+                    cssom,
+                    finalPath: location.pathname.replace(/^\//, ''),
+                    authGuardMode: document.documentElement.dataset.authGuardMode || '',
+                    authDecision: document.documentElement.dataset.authRouteDecision || '',
+                    media,
+                    mediaActive,
+                    nonMediaStyleRules,
+                    chain: [...new Set(chain)].sort(),
+                  };
+                }, target);
+
+                const loaded = requested && meta.cssom;
+                const active = loaded && meta.mediaActive;
+                rows.push({
+                  page: pageName,
+                  width,
+                  requested,
+                  cssom: meta.cssom,
+                  loaded,
+                  active,
+                  finalPath: meta.finalPath,
+                  authGuardMode: meta.authGuardMode,
+                  authDecision: meta.authDecision,
+                  media: meta.media,
+                  nonMediaStyleRules: meta.nonMediaStyleRules,
+                  errors: errors.sort(),
+                  chain: meta.chain,
+                });
+                await ctx.close();
+              }
+            }
+
+            await browser.close();
+
+            const ids = rows => rows.map(r => `${r.page}|${r.width}`);
+            const active = ids(rows.filter(r => r.active));
+            const inactiveLoaded = ids(rows.filter(r => r.loaded && !r.active));
+            const unloaded = ids(rows.filter(r => !r.loaded));
+            const redirected = rows.filter(r => r.finalPath !== r.page).map(r => ({
+              state: `${r.page}|${r.width}`,
+              finalPath: r.finalPath,
+            }));
+            const wrongMode = rows.filter(r => r.authGuardMode !== 'observe').map(r => `${r.page}|${r.width}`);
+            const unexpectedMedia = rows.filter(r =>
+              r.nonMediaStyleRules !== 0 ||
+              r.media.length !== 1 ||
+              r.media[0].text.replace(/\s+/g, ' ').trim() !== '(max-width: 760px)'
+            ).map(r => ({ state: `${r.page}|${r.width}`, media: r.media, nonMediaStyleRules: r.nonMediaStyleRules }));
+
+            const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+            if (rows.length !== 27) throw new Error(`expected 27 states, got ${rows.length}`);
+            if (unloaded.length) throw new Error(`target not loaded in states: ${JSON.stringify(unloaded)}`);
+            if (redirected.length) throw new Error(`auth/navigation redirect contamination: ${JSON.stringify(redirected)}`);
+            if (wrongMode.length) throw new Error(`auth observe injection missing: ${JSON.stringify(wrongMode)}`);
+            if (unexpectedMedia.length) throw new Error(`unexpected target media topology: ${JSON.stringify(unexpectedMedia)}`);
+            if (!same(active, expectedActive)) {
+              throw new Error(`active state mismatch: expected=${JSON.stringify(expectedActive)} actual=${JSON.stringify(active)}`);
+            }
+            if (!same(inactiveLoaded, expectedInactiveLoaded)) {
+              throw new Error(`inactive control mismatch: expected=${JSON.stringify(expectedInactiveLoaded)} actual=${JSON.stringify(inactiveLoaded)}`);
+            }
+
+            const result = {
+              result: 'PASS',
+              states: rows.length,
+              activeCount: active.length,
+              inactiveLoadedCount: inactiveLoaded.length,
+              unloadedCount: unloaded.length,
+              redirectedCount: redirected.length,
+              active,
+              inactiveLoaded,
+              rows,
+            };
+            console.log('ACTIVE_REACH_RESULT=' + JSON.stringify(result));
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
