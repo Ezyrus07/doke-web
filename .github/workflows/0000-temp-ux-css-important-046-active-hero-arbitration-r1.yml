@@ -1,0 +1,139 @@
+name: TEMP UX-CSS-IMPORTANT-046 Active Hero Arbitration R1
+on:
+  push:
+    branches:
+      - diag/ux-css-important-046-active-hero-arbitration-r1
+permissions:
+  contents: read
+jobs:
+  arbitrate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Map all 127 active hero priority sites and conservative removal candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=53e5733a4fb7cd293cc2ab17bd53f64338a72b8d
+          TREE=4958068fa2e44aee05e390fae0af5ad18c633947
+          TARGET=assets/css/pages/home/mobile-hero-feed.css
+          BLOB=e3547c5ebeb6ddbcd5a934244c2d372eabcef9ba
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          python3 - <<'PY'
+          import pathlib,re,json,hashlib
+          target=pathlib.Path('assets/css/pages/home/mobile-hero-feed.css')
+          raw=target.read_text(encoding='utf-8')
+          assert len(re.findall(r'!important\b',raw,re.I))==127
+
+          def strip_comments(s):
+              return re.sub(r'/\*.*?\*/',lambda m:' '*(m.end()-m.start()),s,flags=re.S)
+          text=strip_comments(raw)
+
+          # Product-source corpus: conservative. If a token exists anywhere in product HTML/JS,
+          # it is treated as potentially live rather than dormant.
+          source_files=[]
+          for p in pathlib.Path('.').rglob('*'):
+              if not p.is_file() or '.git' in p.parts: continue
+              if p.suffix.lower() not in {'.html','.js','.mjs','.cjs','.ts','.tsx'}: continue
+              if any(x in p.parts for x in {'node_modules','.github','scripts','tools','docs','reports','archive','test-results'}): continue
+              source_files.append(p)
+          source='\n'.join(p.read_text(encoding='utf-8',errors='ignore') for p in source_files)
+
+          def split_selector_list(s):
+              out=[]; cur=[]; depth=0; quote=None
+              for ch in s:
+                  if quote:
+                      cur.append(ch)
+                      if ch==quote: quote=None
+                      continue
+                  if ch in "'\"": quote=ch;cur.append(ch);continue
+                  if ch in '([': depth+=1
+                  elif ch in ')]' and depth: depth-=1
+                  if ch==',' and depth==0:
+                      out.append(''.join(cur).strip());cur=[]
+                  else: cur.append(ch)
+              if cur:out.append(''.join(cur).strip())
+              return [x for x in out if x]
+
+          stack=[]; header_start=0; i=0; rules=[]
+          while i<len(text):
+              if text.startswith('/*',i):
+                  j=text.find('*/',i+2); i=len(text) if j<0 else j+2; continue
+              ch=text[i]
+              if ch=='{':
+                  header=text[header_start:i].strip()
+                  stack.append({'header':header,'open':i})
+                  header_start=i+1
+              elif ch=='}':
+                  if stack:
+                      block=stack.pop(); header=block['header'].strip(); body=text[block['open']+1:i]
+                      if header and not header.startswith('@') and '!important' in body.lower():
+                          contexts=[x['header'].strip() for x in stack if x['header'].strip().startswith('@')]
+                          rules.append({'selector':re.sub(r'\s+',' ',header).strip(),'context':contexts,'body':body,'start':block['open']+1})
+                  header_start=i+1
+              elif ch==';' and (not stack or stack[-1]['header'].strip().startswith('@')):
+                  header_start=i+1
+              i+=1
+
+          records=[]; n=0
+          declrx=re.compile(r'([A-Za-z_-][A-Za-z0-9_-]*)\s*:\s*([^;{}]+)',re.S)
+          for ri,r in enumerate(rules):
+              for dm in declrx.finditer(r['body']):
+                  val=dm.group(2).strip()
+                  ims=list(re.finditer(r'!important\b',val,re.I))
+                  if not ims: continue
+                  clean=re.sub(r'\s*!important\b','',val,flags=re.I).strip()
+                  for im in ims:
+                      n+=1
+                      abspos=r['start']+dm.start(2)+im.start()
+                      line=raw.count('\n',0,abspos)+1
+                      alts=split_selector_list(r['selector'])
+                      alt_details=[]
+                      for alt in alts:
+                          toks=[]
+                          for sig,tok in re.findall(r'([.#])([A-Za-z_][A-Za-z0-9_-]*)',alt):
+                              literal=(sig+tok)
+                              hits=source.count(tok)
+                              toks.append({'token':literal,'sourceHits':hits})
+                          impossible=bool(toks) and any(t['sourceHits']==0 for t in toks)
+                          alt_details.append({'selector':alt,'tokens':toks,'hasMissingToken':impossible})
+                      source_impossible=bool(alt_details) and all(a['hasMissingToken'] for a in alt_details)
+                      records.append({'index':n,'line':line,'selector':r['selector'],'context':r['context'],'property':dm.group(1),'value':clean,'sourceImpossible':source_impossible,'alternatives':alt_details,'ruleIndex':ri})
+          assert len(records)==127,len(records)
+
+          # Exact same selector + at-rule context + property + important value later in THIS FILE.
+          # Such an earlier priority is a conservative static redundancy candidate.
+          for x in records:
+              later=[y for y in records if y['ruleIndex']>x['ruleIndex'] and y['selector']==x['selector'] and y['context']==x['context'] and y['property']==x['property'] and y['value']==x['value']]
+              x['exactDuplicateImportantLater']=bool(later)
+              x['laterDuplicateIndices']=[y['index'] for y in later]
+
+          impossible=[x for x in records if x['sourceImpossible']]
+          duplicate=[x for x in records if x['exactDuplicateImportantLater']]
+          union={x['index']:x for x in impossible+duplicate}
+
+          # Group likely dead-source families by selector for controlled follow-up.
+          groups={}
+          for x in impossible:
+              groups.setdefault(x['selector'],[]).append(x['index'])
+          group_rows=sorted([{'selector':k,'indices':v,'count':len(v)} for k,v in groups.items()],key=lambda z:(-z['count'],z['selector']))
+
+          out={
+            'result':'PASS','checkpoint':'UX-CSS-IMPORTANT-046','phase':'ACTIVE_HERO_ARBITRATION_R1',
+            'parent':'53e5733a4fb7cd293cc2ab17bd53f64338a72b8d','tree':'4958068fa2e44aee05e390fae0af5ad18c633947',
+            'target':target.as_posix(),'blob':'e3547c5ebeb6ddbcd5a934244c2d372eabcef9ba',
+            'bytes':len(raw.encode()),'sha256':hashlib.sha256(raw.encode()).hexdigest(),'importantSites':127,
+            'productSourceFiles':len(source_files),'sourceImpossibleCount':len(impossible),'exactDuplicateImportantLaterCount':len(duplicate),'conservativeCandidateUnionCount':len(union),
+            'sourceImpossibleGroups':group_rows[:30],
+            'duplicateCandidates':[{'index':x['index'],'line':x['line'],'selector':x['selector'],'context':x['context'],'property':x['property'],'value':x['value'],'later':x['laterDuplicateIndices']} for x in duplicate],
+            'candidateRecords':[{'index':x['index'],'line':x['line'],'selector':x['selector'],'context':x['context'],'property':x['property'],'value':x['value'],'sourceImpossible':x['sourceImpossible'],'exactDuplicateImportantLater':x['exactDuplicateImportantLater'],'alternatives':x['alternatives']} for x in union.values()],
+            'allRecords':[{'index':x['index'],'line':x['line'],'selector':x['selector'],'context':x['context'],'property':x['property'],'value':x['value'],'sourceImpossible':x['sourceImpossible'],'exactDuplicateImportantLater':x['exactDuplicateImportantLater']} for x in records],
+            'decision':'NO_PRODUCT_MUTATION_FIND_NARROW_ACTIVE_FAMILY','productMutation':False,'criteriaRelaxed':0,'repositoryOnly':True
+          }
+          print('UX_CSS_IMPORTANT_046_ACTIVE_HERO_ARBITRATION_R1='+json.dumps(out,separators=(',',':')))
+          PY
+          test -z "$(git status --porcelain)"
