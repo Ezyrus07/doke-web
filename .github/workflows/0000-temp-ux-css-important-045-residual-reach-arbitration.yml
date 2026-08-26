@@ -1,0 +1,81 @@
+name: TEMP UX-CSS-IMPORTANT-045 Residual Reach Arbitration
+on:
+  push:
+    branches: [diag/ux-css-important-045-successor-discovery]
+permissions:
+  contents: read
+jobs:
+  arbitrate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Prove canonical reach for six residual files
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=03350507015579bfc60e413f1b3dfa97f4371f68
+          test "$(git rev-parse "$PARENT^{tree}")" = "fb684d8ec8e96cf1a2d0ada42f7415259e084650"
+          git checkout --detach "$PARENT" >/dev/null
+          python3 - <<'PY'
+          import pathlib,re,json
+          targets=[
+          'assets/css/pages/home/mobile-hero-feed.css',
+          'assets/css/components/cards/service-card-home-hero-feed.css',
+          'assets/css/components/shell/mobile-base-stability.css',
+          'assets/css/components/shell/mobile-app-shell.css',
+          'assets/css/pages/home/mobile-composition.css',
+          'assets/css/components/cards/mobile-card-contract.css']
+          root=pathlib.Path('.')
+          css=[p.as_posix() for p in pathlib.Path('assets/css').rglob('*.css')]
+          def imports(p):
+              s=pathlib.Path(p).read_text(encoding='utf-8')
+              out=[]
+              for m in re.finditer(r'@import\s+(?:url\(\s*)?[\'\"]?([^\'\"\)\s;]+\.css(?:\?[^\'\"\)\s;]*)?)',s,re.I):
+                  x=m.group(1).split('?',1)[0].split('#',1)[0]
+                  if re.match(r'^[a-z]+://',x,re.I): continue
+                  q=(pathlib.PurePosixPath(p).parent / x).as_posix() if not x.startswith('/') else x[1:]
+                  q=str(pathlib.PurePosixPath(q))
+                  out.append(q)
+              return out
+          im={p:imports(p) for p in css}
+          html=[p for p in pathlib.Path('.').rglob('*.html') if not any(part in {'archive','reports','tools','test-results'} for part in p.parts)]
+          starts={}
+          direct={t:[] for t in targets}
+          rx=re.compile(r'<link\b[^>]*?href\s*=\s*[\'\"]([^\'\"]+)[\'\"][^>]*>',re.I|re.S)
+          for h in html:
+              arr=[]; s=h.read_text(encoding='utf-8')
+              for m in rx.finditer(s):
+                  x=m.group(1).split('?',1)[0].split('#',1)[0]
+                  if not x.endswith('.css') or re.match(r'^[a-z]+://',x,re.I): continue
+                  q=(pathlib.PurePosixPath(h.as_posix()).parent/x).as_posix() if not x.startswith('/') else x[1:]
+                  q=str(pathlib.PurePosixPath(q)); arr.append(q)
+                  if q in direct: direct[q].append(h.as_posix())
+              starts[h.as_posix()]=arr
+          def closure(xs):
+              seen=set(); out=[]
+              def visit(p):
+                  if p in seen or p not in im: return
+                  seen.add(p); out.append(p)
+                  for q in im[p]: visit(q)
+              for x in xs: visit(x)
+              return out
+          pages={t:[] for t in targets}; loaded=set()
+          for h,xs in starts.items():
+              c=closure(xs); loaded.update(c)
+              for t in targets:
+                  if t in c: pages[t].append(h)
+          js=list(pathlib.Path('assets/js').rglob('*.js'))
+          rows=[]
+          for t in targets:
+              importers=sorted([p for p,v in im.items() if t in v])
+              runtime=[]
+              base=pathlib.PurePosixPath(t).name
+              for p in js:
+                  s=p.read_text(encoding='utf-8',errors='ignore')
+                  if t in s or base in s: runtime.append(p.as_posix())
+              dormant=t not in loaded and not direct[t] and not importers and not runtime
+              rows.append({'path':t,'important':pathlib.Path(t).read_text().lower().count('!important'),'canonicalLoaded':t in loaded,'wholeFileDormant':dormant,'targetPages':sorted(pages[t]),'directHtmlRefs':sorted(set(direct[t])),'directImporters':importers,'runtimeJsRefs':sorted(runtime)})
+          print('UX_CSS_IMPORTANT_045_REACH='+json.dumps(rows,separators=(',',':')))
+          PY
