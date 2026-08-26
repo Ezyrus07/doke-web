@@ -1,0 +1,61 @@
+name: TEMP UX-CSS-IMPORTANT-050 G5 Materialize R3
+on:
+  push:
+    branches: [diag/ux-css-important-050-g5-materialize-r3]
+permissions: {contents: write}
+jobs:
+  materialize:
+    if: "${{ github.event.head_commit.message != 'diagnostic(ux-css-important-050): materialize G5 candidate' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      DIAG_BRANCH: diag/ux-css-important-050-g5-materialize-r3
+      PARENT: 4b32b8b88018560402ae5d67a26c126d0e65d942
+      PARENT_TREE: d7f3580ac4406a0bcdd225cb405e882eb34dfa1c
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 54890bd4e2765364820796be64c62417d965ac65
+      EXPECTED_BLOB: f7ffa8ead445a69ebdc8f801c46d70c852c041ae
+      EXPECTED_SHA256: 398c28bc6d56e1cc8c0aa4d154aa6212ef470b73b119b0c8d65c647f58f47365
+      RECEIPT: .diagnostics/ux-css-important-050-g5-materialization.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Reconstruct exact G5 candidate and receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET,p=cp.execFileSync('git',['show',`${process.env.PARENT}:${f}`],{encoding:'utf8'});
+          if((p.match(/!important\b/gi)||[]).length!==63)throw Error('parent markers');
+          const ords=Array.from({length:16},(_,i)=>i+2),set=new Set(ords);let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(set.has(n)){r++;return ''}return m});
+          if(n!==63||r!==16||(c.match(/!important\b/gi)||[]).length!==47)throw Error(`ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(c))throw Error('G3 guard lost');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          if(blob!==process.env.EXPECTED_BLOB||sha256!==process.env.EXPECTED_SHA256||bytes!==36317)throw Error(`identity ${blob}/${sha256}/${bytes}`);
+          fs.writeFileSync(f,c);
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');
+          const global=css.reduce((s,q)=>s+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(global!==89)throw Error(`global ${global}`);
+          const receipt={result:'PASS',checkpoint:'UX-CSS-IMPORTANT-050',phase:'R3_EXACT_MATERIALIZATION',issue:388,parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,target:f,parentBlob:process.env.PARENT_BLOB,candidateBlob:blob,sha256,bytes,importantBefore:63,importantAfter:47,parentGlobal:105,candidateGlobal:89,globalDelta:-16,removedOrdinals:ords,preservedOrdinal:1,preservedGuard:'.featured-services .content-rail overflow: visible !important',markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,successorRun:32963913390,successorJob:98162107797,staticRun:32964013092,staticJob:98162416048,browserRun:32964190890,browserJobs:[98162965962,98162966175,98162965656],browserRepetitions:3,browserStatesPerRepeat:12,filterStatesPerRepeat:4,metadataDiffs:0,screenshotDiffs:0,loadDiffs:0,pageErrors:0,introducedRegressions:0,criteriaRelaxed:0,repositoryOnly:true,runId:Number(process.env.GITHUB_RUN_ID)};
+          fs.mkdirSync('.diagnostics',{recursive:true});fs.writeFileSync(process.env.RECEIPT,JSON.stringify(receipt,null,2)+'\n');
+          NODE
+          test "$(git diff --name-only HEAD --)" = "$TARGET"
+          git add "$TARGET" "$RECEIPT"
+          EXPECTED=$(printf '%s\n%s\n' "$RECEIPT" "$TARGET" | sort)
+          ACTUAL=$(git diff --cached --name-only | sort)
+          test "$ACTUAL" = "$EXPECTED"
+          git diff --cached --check
+      - name: Commit diagnostic materialization fast-forward
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git commit -m 'diagnostic(ux-css-important-050): materialize G5 candidate'
+          git push origin HEAD:"$DIAG_BRANCH"
