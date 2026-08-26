@@ -1,0 +1,38 @@
+name: TEMP UX-CSS-IMPORTANT-047 Successor Discovery
+on:
+  push:
+    branches: [diag/ux-css-important-047-successor-discovery]
+permissions: {contents: read}
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 526c113eb4c0f1b05b3558dcefcf44269406300f
+      TREE: 142dff93c8d6b01a1096bd83bd4b3d9f697a4239
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      TARGET_BLOB: 5c97346c40496a0b13e4ad1b509a91adcf7638e1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Prove residual estate and reconstruct conservative G1 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$TREE"
+          test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),crypto=require('crypto'),cp=require('child_process');
+          const files=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&files.push(q)}})('assets/css');
+          const rows=files.map(f=>({f,n:(fs.readFileSync(f,'utf8').match(/!important\b/gi)||[]).length})).filter(x=>x.n).sort((a,b)=>b.n-a.n);
+          const global=rows.reduce((a,x)=>a+x.n,0);if(global!==159)throw Error('global '+global);
+          console.log('RESIDUAL='+JSON.stringify({global,files:rows}));
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8');if((p.match(/!important\b/gi)||[]).length!==117)throw Error('target markers');
+          let idx=0;const lines=p.split('\n');const markers=[];let selector='';
+          for(let i=0;i<lines.length;i++){const line=lines[i];if(line.includes('{')) selector=line.trim(); const matches=[...line.matchAll(/!important\b/gi)]; for(const m of matches){idx++;const prop=(line.split(':')[0]||'').trim();markers.push({idx,line:i+1,prop,selector});}}
+          console.log('FIRST18='+JSON.stringify(markers.slice(0,18)));
+          let n=0,r=0;const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=1&&n<=18){r++;return ''}return m});if(n!==117||r!==18||(c.match(/!important\b/gi)||[]).length!==99)throw Error('ordinal');
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('semantic drift');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          console.log('G1_CANDIDATE='+JSON.stringify({removedOrdinals:[1,18],removed:18,targetBefore:117,targetAfter:99,parentGlobal:159,candidateGlobal:141,globalDelta:-18,blob,sha256,bytes,markerOnly:true}));
+          NODE
