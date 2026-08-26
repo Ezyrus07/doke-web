@@ -1,0 +1,55 @@
+name: TEMP UX-CSS-IMPORTANT-052 G7 Materialize R4B
+on:
+  push:
+    branches:
+      - diag/ux-css-important-052-g7-materialize-r4b
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Reconstruct exact G7 candidate and post-boundary receipt
+        shell: bash
+        env:
+          PARENT: f49f53eca5a742418fbf58c63e16cb94ac040d63
+          PARENT_TREE: 2948d69d17c0464edf0e77e6b65e581ecb6ada91
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          PARENT_BLOB: d323fb51b817ce47bc316d04207853934a72b835
+          EXPECTED_BLOB: 88423184a186ca12c7faf365df84543fd3e3a73a
+          EXPECTED_SHA256: c7dd56f5e0e90c2becb11f15059c35ed3bd189c0514ef0bb8b714f519c91084c
+        run: |
+          set -euo pipefail
+          test "$(git rev-list --parents -n1 HEAD | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git show "$PARENT:$TARGET" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),crypto=require('crypto');
+          const p=fs.readFileSync('/tmp/parent.css','utf8');let n=0,r=0;const set=new Set(Array.from({length:26},(_,i)=>i+2));
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(set.has(n)){r++;return ''}return m});
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim();const sha=crypto.createHash('sha256').update(c).digest('hex');
+          if(n!==27||r!==26||(c.match(/!important\b/gi)||[]).length!==1||blob!==process.env.EXPECTED_BLOB||sha!==process.env.EXPECTED_SHA256||Buffer.byteLength(c)!==35811)throw Error(`identity ${n}/${r}/${blob}/${sha}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(c))throw Error('G3 guard lost');
+          fs.writeFileSync(process.env.TARGET,c);
+          fs.mkdirSync('.diagnostics',{recursive:true});
+          const receipt={result:'PASS',checkpoint:'UX-CSS-IMPORTANT-052',phase:'R4B_POST_BOUNDARY_EXACT_MATERIALIZATION',issue:392,parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,target:process.env.TARGET,parentBlob:process.env.PARENT_BLOB,candidateBlob:blob,sha256:sha,bytes:Buffer.byteLength(c),importantBefore:27,importantAfter:1,parentGlobal:69,candidateGlobal:43,globalDelta:-26,removedOrdinals:Array.from({length:26},(_,i)=>i+2),preservedOrdinal:1,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,successorRun:32968648941,successorJob:98176907362,staticRun:32968754085,staticJob:98177248589,browserInitialRun:32968890666,browserInitialClassification:'HARNESS_ONLY / HIDDEN_DESKTOP_NAV_CLICK_ON_MOBILE_SHEET',browserRun:32969208922,browserJobs:[98178713528,98178713263,98178713517],browserRepetitions:3,browserStatesPerRepeat:12,metadataDiffs:0,screenshotDiffs:0,loadDiffs:0,pageErrors:0,introducedRegressions:0,criteriaRelaxed:0,repositoryOnly:true,postBoundary:true,runId:Number(process.env.GITHUB_RUN_ID)};
+          fs.writeFileSync('.diagnostics/ux-css-important-052-g7-materialization.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log('MATERIALIZATION='+JSON.stringify({result:'PASS',issue:392,blob,sha256:sha,bytes:Buffer.byteLength(c),target:'27->1',global:'69->43',preservedOrdinal:1,postBoundary:true}));
+          NODE
+          test "$(git status --porcelain --untracked-files=all | awk '{print $2}' | sort)" = $'.diagnostics/ux-css-important-052-g7-materialization.json\nassets/css/pages/home/mobile-hero-feed.css'
+          git diff --check
+          git add "$TARGET" .diagnostics/ux-css-important-052-g7-materialization.json
+          test "$(git diff --cached --name-only | sort)" = $'.diagnostics/ux-css-important-052-g7-materialization.json\nassets/css/pages/home/mobile-hero-feed.css'
+      - name: Commit diagnostic materialization fast-forward
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git commit -m 'diagnostic(ux-css-important-052): materialize exact G7 candidate after issue boundary'
+          git push origin HEAD:diag/ux-css-important-052-g7-materialize-r4b
