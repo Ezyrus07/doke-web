@@ -1,0 +1,52 @@
+name: TEMP UX-CSS-IMPORTANT-051 Successor Discovery R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-051-successor-discovery-r2
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Verify certified parent and enumerate residual families
+        shell: bash
+        env:
+          PARENT: edff135ab5569e4cea54ce238723d0e17479fc3a
+          PARENT_TREE: 01615f2628679d1fc881d5d2556852a74c7498db
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          TARGET_BLOB: f7ffa8ead445a69ebdc8f801c46d70c852c041ae
+        run: |
+          set -euo pipefail
+          test "$(git rev-list --parents -n1 HEAD | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET;
+          const css=cp.execFileSync('git',['show',`${process.env.PARENT}:${f}`],{encoding:'utf8'});
+          const markers=[...css.matchAll(/!important\b/gi)];
+          if(markers.length!==47) throw Error(`target markers ${markers.length}`);
+          const files=[];(function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?w(q):q.endsWith('.css')&&files.push(q)}})('assets/css');
+          let global=0;for(const q of files)global+=(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length;
+          if(global!==89) throw Error(`global markers ${global}`);
+          function lineOf(i){return css.slice(0,i).split('\n').length}
+          function context(i){const open=css.lastIndexOf('{',i),close=css.lastIndexOf('}',i);let selector='';if(open>close){const j=css.lastIndexOf('}',open-1);selector=css.slice(j+1,open).trim().replace(/\s+/g,' ')}const seg=css.slice(open+1,i);const m=seg.match(/([\w-]+)\s*:\s*([^;{}]*)$/s);return{selector,property:m?m[1]:'?',value:m?m[2].trim():'?'}}
+          const out=markers.map((m,i)=>({ordinal:i+1,line:lineOf(m.index),...context(m.index)}));
+          const one=out[0];if(!one.selector.endsWith('.featured-services .content-rail')||one.property!=='overflow'||one.value!=='visible')throw Error('ordinal1 guard drift');
+          const g6=out.slice(1,21),g7=out.slice(21);
+          if(g6.length!==20)throw Error('g6 length');
+          if(g6.some(x=>!x.selector.includes('.more-filters__header')&&!x.selector.includes('.more-filters__dismiss')))throw Error('g6 selector drift');
+          if(g7.length!==26||!g7[0].selector.includes('.more-filters__split-body'))throw Error('g7 boundary drift');
+          console.log('PARENT_SHA='+process.env.PARENT);console.log('PARENT_TREE='+process.env.PARENT_TREE);console.log('TARGET_BLOB='+process.env.TARGET_BLOB);console.log('TARGET_MARKERS='+markers.length);console.log('GLOBAL_MARKERS='+global);
+          console.log('PRESERVED_G3='+JSON.stringify(one));
+          console.log('G6_FILTER_HEADER_DISMISS='+JSON.stringify(g6,null,2));
+          console.log('G7_FILTER_CONTENT_ACTIONS_FIRST='+JSON.stringify(g7[0]));
+          console.log('G6_CURRENT_ORDINALS=2-21');console.log('G7_CURRENT_ORDINALS=22-47');console.log('DISCOVERY=PASS');
+          NODE
