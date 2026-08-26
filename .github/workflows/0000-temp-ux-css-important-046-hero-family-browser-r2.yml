@@ -1,0 +1,163 @@
+name: TEMP UX-CSS-IMPORTANT-046 Hero Family Browser R2
+on:
+  push:
+    branches:
+      - diag/ux-css-important-046-hero-family-browser-r2
+permissions:
+  contents: read
+jobs:
+  isolate:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 53e5733a4fb7cd293cc2ab17bd53f64338a72b8d
+      PARENT_TREE: 4958068fa2e44aee05e390fae0af5ad18c633947
+      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+      TARGET_BLOB: e3547c5ebeb6ddbcd5a934244c2d372eabcef9ba
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build seven exact marker-only family candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          cp "$TARGET_FILE" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const parent=fs.readFileSync('/tmp/parent.css','utf8');
+          const matches=[...parent.matchAll(/!important\b/gi)];
+          if(matches.length!==127) throw Error(`parent markers ${matches.length}`);
+          const groups={
+            G1_HERO_CATEGORY_PROFILE:[1,18],
+            G2_SEARCH_CONTROLS:[19,40],
+            G3_RAIL_SECTION_EDGE:[41,55],
+            G4_FILTER_STATE_GUARDS:[56,65],
+            G5_FILTER_PANEL_SHELL:[66,81],
+            G6_FILTER_HEADER_DISMISS:[82,101],
+            G7_FILTER_CONTENT_ACTIONS:[102,127]
+          };
+          const report={};
+          for(const [name,[lo,hi]] of Object.entries(groups)){
+            const remove=new Set(Array.from({length:hi-lo+1},(_,i)=>lo+i));
+            let n=0;
+            const c=parent.replace(/\s*!important\b/gi,m=>{n++;return remove.has(n)?'':m;});
+            if(n!==127) throw Error(`${name} scanned ${n}`);
+            const remain=(c.match(/!important\b/gi)||[]).length;
+            const expected=127-remove.size;
+            if(remain!==expected) throw Error(`${name} remain ${remain} expected ${expected}`);
+            const sha=crypto.createHash('sha256').update(Buffer.from(c)).digest('hex');
+            fs.writeFileSync(`/tmp/${name}.css`,c);
+            report[name]={lo,hi,removed:remove.size,remain,sha256:sha,bytes:Buffer.byteLength(c)};
+            console.log(`CANDIDATE|group=${name}|indices=${lo}-${hi}|removed=${remove.size}|important=127->${remain}|sha256=${sha}|bytes=${Buffer.byteLength(c)}|markerOnly=1`);
+          }
+          fs.writeFileSync('/tmp/groups.json',JSON.stringify(report,null,2));
+          NODE
+          git diff --exit-code -- "$TARGET_FILE"
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Run parent versus each family across default and real filter states
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
+          PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET_FILE" 2>/dev/null || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const target=process.env.TARGET_FILE;
+            const parent=fs.readFileSync('/tmp/parent.css','utf8');
+            const groups=JSON.parse(fs.readFileSync('/tmp/groups.json','utf8'));
+            const widths=[359,379,380,381,390,430,560,561];
+            const filterWidths=new Set([359,380,390,560]);
+            const states=[];
+            for(const w of widths){states.push({w,state:'default'});if(filterWidths.has(w))states.push({w,state:'filters'});}
+            const H=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+            const items=Array.from({length:8},(_,i)=>({id:'c46-'+i,serviceId:'c46-'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
+            const selectors={
+              heroLocation:'.home-mobile-hero__location', category:'.home-catégory', categoryIcon:'.home-catégory__icon', profile:'.home-mobile-hero__profile',
+              searchForm:'.doke-search-panel__form', searchField:'.home-search-hero__field', searchInput:'.doke-search-panel__input', submit:'.home-search-hero__mobile-submit', audio:'.home-search-hero__audio-button',
+              featured:'#featured-services-track', sectionHeader:'.featured-services .home-section-header', sectionTitle:'.featured-services .home-section-title',
+              panel:'[data-more-filters-panel]', filterHeader:'.more-filters__header', dismiss:'.more-filters__dismiss', splitBody:'.more-filters__split-body', splitNav:'.more-filters__split-nav', splitContent:'.more-filters__split-content', pane:'.more-filters__pane:not([hidden])', actions:'.more-filters__actions'
+            };
+            function styleScript(){return `*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}`}
+            async function cap(browser,w,state,phase){
+              const ctx=await browser.newContext({viewport:{width:w,height:1050},reducedMotion:'reduce'});
+              const page=await ctx.newPage(); const errors=[]; let targetLoaded=false;
+              page.on('pageerror',e=>errors.push(e.message));
+              page.on('request',r=>{try{if(new URL(r.url()).pathname==='/'+target)targetLoaded=true}catch{}});
+              await page.route('**/*',route=>{
+                const u=route.request().url();
+                if(u.startsWith('http://127.0.0.1:4173/')) return route.continue();
+                if(/^https:\/\/images\.pexels\.com\//.test(u)) return route.fulfill({status:200,contentType:'image/png',body:tiny});
+                return route.abort();
+              });
+              await page.goto(`http://127.0.0.1:4173/index.html?c46=${phase}-${w}-${state}`,{waitUntil:'domcontentloaded',timeout:15000});
+              await page.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});
+              await page.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});
+              await page.evaluate(items=>{
+                const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');
+                if(!a||!b) throw Error('service grids missing');
+                a.textContent='';b.textContent='';
+                items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));
+                items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})));
+              },items);
+              if(state==='filters'){
+                await page.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});
+                await page.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));
+                await page.waitForFunction(()=>{const p=document.querySelector('[data-more-filters-panel]');return document.body.classList.contains('home-filter-sheet-open')&&Boolean(p&&!p.hidden&&p.getAttribute('aria-hidden')!=='true')},null,{timeout:4000});
+              }
+              await page.addStyleTag({content:styleScript()});
+              await page.waitForTimeout(100);
+              const data=await page.evaluate(selectors=>{
+                const pick=s=>{const e=document.querySelector(s);if(!e)return null;const c=getComputedStyle(e),r=e.getBoundingClientRect();return{display:c.display,position:c.position,visibility:c.visibility,opacity:c.opacity,overflow:c.overflow,overflowX:c.overflowX,overflowY:c.overflowY,width:c.width,height:c.height,minHeight:c.minHeight,maxHeight:c.maxHeight,maxWidth:c.maxWidth,flex:c.flex,grid:c.gridTemplateColumns,gap:c.gap,inset:c.inset,top:c.top,right:c.right,bottom:c.bottom,left:c.left,transform:c.transform,zIndex:c.zIndex,rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*100)/100)}};
+                const out={bodyClass:document.body.className,rootClass:document.documentElement.className,docW:document.documentElement.scrollWidth,docH:document.documentElement.scrollHeight,filterOpen:document.body.classList.contains('home-filter-sheet-open'),cards:document.querySelectorAll('.doke-ad-card').length,workers:document.querySelectorAll('.video-card').length};
+                for(const [k,s] of Object.entries(selectors))out[k]=pick(s);
+                return out;
+              },selectors);
+              const png=H(await page.screenshot({fullPage:true,animations:'disabled'}));
+              await ctx.close();
+              return {data,png,errors,targetLoaded};
+            }
+            const browser=await chromium.launch({headless:true});
+            fs.writeFileSync(target,parent);
+            const base={};
+            for(const x of states)base[`${x.w}-${x.state}`]=await cap(browser,x.w,x.state,'parent');
+            const results={};
+            for(const name of Object.keys(groups)){
+              fs.copyFileSync(`/tmp/${name}.css`,target);
+              let metaDiffs=0,shotDiffs=0,loadDiffs=0,pageErrors=0;const keys=[];
+              for(const x of states){
+                const key=`${x.w}-${x.state}`,c=await cap(browser,x.w,x.state,name),p=base[key];
+                pageErrors+=p.errors.length+c.errors.length;
+                if(JSON.stringify(p.data)!==JSON.stringify(c.data)){metaDiffs++;keys.push(`meta:${key}`)}
+                if(p.png!==c.png){shotDiffs++;keys.push(`png:${key}`)}
+                if(p.targetLoaded!==c.targetLoaded){loadDiffs++;keys.push(`load:${key}`)}
+              }
+              const pass=!metaDiffs&&!shotDiffs&&!loadDiffs&&!pageErrors;
+              results[name]={...groups[name],states:states.length,realFilterStates:filterWidths.size,metaDiffs,shotDiffs,loadDiffs,pageErrors,pass,diffKeys:keys};
+              console.log(`FAMILY_RESULT|group=${name}|removed=${groups[name].removed}|states=${states.length}|filterStates=${filterWidths.size}|metadataDiffs=${metaDiffs}|screenshotDiffs=${shotDiffs}|loadDiffs=${loadDiffs}|pageErrors=${pageErrors}|pass=${pass?1:0}|diffKeys=${keys.join(',')}`);
+              fs.writeFileSync(target,parent);
+            }
+            await browser.close();
+            fs.writeFileSync('/tmp/results.json',JSON.stringify(results,null,2));
+            const passGroups=Object.entries(results).filter(([,x])=>x.pass).map(([k])=>k);
+            console.log(`ISOLATION_SUMMARY|passGroups=${passGroups.join(',')||'NONE'}|passCount=${passGroups.length}|criteriaRelaxed=0|syntheticDOM=0|productRenderer=1`);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          cp /tmp/parent.css "$TARGET_FILE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
