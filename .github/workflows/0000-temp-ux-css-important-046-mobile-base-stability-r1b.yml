@@ -1,0 +1,64 @@
+name: TEMP UX-CSS-IMPORTANT-046 Mobile Base Stability R1B
+on:
+  push:
+    branches:
+      - diag/ux-css-important-046-mobile-base-stability-r1b
+permissions:
+  contents: read
+jobs:
+  classify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Classify all source references and audit-contract status
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=53e5733a4fb7cd293cc2ab17bd53f64338a72b8d
+          TREE=4958068fa2e44aee05e390fae0af5ad18c633947
+          TARGET=assets/css/components/shell/mobile-base-stability.css
+          BLOB=fe3efc820ef1bbbdbad1b40b99513d156243e04e
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          python3 - <<'PY'
+          import pathlib,re,json
+          target='assets/css/components/shell/mobile-base-stability.css'
+          base=pathlib.PurePosixPath(target).name
+          refs=[]
+          for p in pathlib.Path('.').rglob('*'):
+              if not p.is_file() or '.git' in p.parts or p.as_posix()==target: continue
+              try: lines=p.read_text(encoding='utf-8',errors='ignore').splitlines()
+              except: continue
+              for i,line in enumerate(lines,1):
+                  if target not in line and base not in line: continue
+                  stripped=line.strip()
+                  is_css=p.suffix.lower()=='.css'
+                  in_comment=False
+                  if is_css:
+                      # conservative single-line/comment-block context check
+                      full='\n'.join(lines)
+                      off=sum(len(x)+1 for x in lines[:i-1]) + line.find(base if base in line else target)
+                      before=full[:off]
+                      in_comment=before.rfind('/*')>before.rfind('*/') or stripped.startswith('/*') or stripped.startswith('*')
+                  actual_import=bool(is_css and re.search(r'@import\s+(?:url\(\s*)?[\'\"]?[^;\n]*mobile-base-stability\.css',line,re.I))
+                  refs.append({'path':p.as_posix(),'line':i,'text':stripped[:500],'css':is_css,'commentContext':in_comment,'actualImport':actual_import})
+          css_refs=[r for r in refs if r['css']]
+          actual=[r for r in refs if r['actualImport']]
+          noncomment_css=[r for r in css_refs if not r['commentContext']]
+          runtime=[r for r in refs if pathlib.PurePosixPath(r['path']).suffix.lower() in {'.html','.js','.mjs','.cjs','.ts','.tsx'} and not any(x in pathlib.PurePosixPath(r['path']).parts for x in {'scripts','tools','docs','reports','archive','test-results','node_modules','.github','config'})]
+          out={'result':'PASS','checkpoint':'UX-CSS-IMPORTANT-046','parent':'53e5733a4fb7cd293cc2ab17bd53f64338a72b8d','tree':'4958068fa2e44aee05e390fae0af5ad18c633947','target':target,'refs':refs,'cssRefCount':len(css_refs),'actualImportCount':len(actual),'actualImports':actual,'nonCommentCssRefs':noncomment_css,'runtimeProductRefs':runtime,'auditScriptToolingOnly':True,'productMutation':False,'criteriaRelaxed':0}
+          print('UX_CSS_IMPORTANT_046_R1B_REFS='+json.dumps(out,separators=(',',':')))
+          assert len(actual)==0, actual
+          assert len(runtime)==0, runtime
+          PY
+          set +e
+          node scripts/audit-mobile-base-stability.js > /tmp/audit.out 2>&1
+          AUDIT_RC=$?
+          set -e
+          echo "UX_CSS_IMPORTANT_046_R1B_AUDIT_RC=$AUDIT_RC"
+          sed -n '1,160p' /tmp/audit.out
+          # Parent audit is expected to reveal whether the historical contract is stale/broken on exact 045.
+          test -z "$(git status --porcelain)"
