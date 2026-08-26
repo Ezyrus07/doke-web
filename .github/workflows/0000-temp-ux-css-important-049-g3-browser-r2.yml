@@ -1,0 +1,98 @@
+name: TEMP UX-CSS-IMPORTANT-049 G3 Browser R2
+on:
+  push:
+    branches: [diag/ux-css-important-049-g3-browser-r2]
+permissions: {contents: read}
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix: {repeat: [1,2,3]}
+    env:
+      PARENT: ef3e232510efaab06cdcd789658952b7cf707825
+      TREE: fd683d88259f3d1e4c51d34ce3f9b5a7bd22eeb7
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 5de77463e9ff079de16f15f42c59600eed95e1cc
+      EXPECTED_BLOB: 81adbeb0985c477305fadabcf0909b85863f2d03
+      EXPECTED_SHA256: e18576ab09b7b78042959e2cb171a5df979ccb73704ee7a9a5b8317f2f918e15
+      REPEAT: ${{ matrix.repeat }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - name: Reconstruct exact G3 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          cp "$TARGET" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8');let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=1&&n<=15){r++;return ''}return m});
+          if(n!==77||r!==15||(c.match(/!important\b/gi)||[]).length!==62)throw Error(`ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          if(blob!==process.env.EXPECTED_BLOB||sha256!==process.env.EXPECTED_SHA256||bytes!==36482)throw Error(`identity ${blob}/${sha256}/${bytes}`);
+          fs.writeFileSync('/tmp/candidate.css',c);
+          console.log(`G3_IDENTITY|repeat=${process.env.REPEAT}|blob=${blob}|sha256=${sha256}|bytes=${bytes}|important=77->62|global=119->104|ordinals=1-15`);
+          NODE
+      - name: Install browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Canonical 12-state parent versus G3 A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET" 2>/dev/null || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const f=process.env.TARGET,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/candidate.css','utf8');
+            const widths=[359,379,380,381,390,430,560,561],filters=new Set([359,380,390,560]),states=[];
+            for(const w of widths){states.push([w,'default']);if(filters.has(w))states.push([w,'filters'])}
+            const H=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+            const items=Array.from({length:8},(_,i)=>({id:'c49-'+i,serviceId:'c49-'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
+            const sels=['html.home-index-root body.home-index-shell','.featured-services .content-rail','#featured-services-track','.professional-showcase .home-section-header','.professional-showcase .home-section-title','[data-more-filters-panel]'];
+            const browser=await chromium.launch({headless:true});
+            async function cap(w,state,phase){
+              const c=await browser.newContext({viewport:{width:w,height:1050},reducedMotion:'reduce'}),p=await c.newPage(),errs=[];let loaded=false;
+              p.on('pageerror',e=>errs.push(e.message));p.on('request',r=>{try{if(new URL(r.url()).pathname==='/'+f)loaded=true}catch{}});
+              await p.route('**/*',r=>{const u=r.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return r.continue();if(u.startsWith('https://images.pexels.com/'))return r.fulfill({status:200,contentType:'image/png',body:tiny});return r.abort()});
+              await p.goto(`http://127.0.0.1:4173/index.html?c49=g3-r2-${process.env.REPEAT}-${phase}-${w}-${state}`,{waitUntil:'domcontentloaded',timeout:15000});
+              await p.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});
+              await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});
+              await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(!a||!b)throw Error('grids');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})))},items);
+              if(state==='filters'){
+                await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});
+                await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));
+                await p.waitForFunction(()=>{const x=document.querySelector('[data-more-filters-panel]');return document.body.classList.contains('home-filter-sheet-open')&&Boolean(x&&!x.hidden&&x.getAttribute('aria-hidden')!=='true')},null,{timeout:4000});
+              }
+              await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});
+              await p.waitForTimeout(150);
+              const data=await p.evaluate(sels=>{
+                const pick=s=>{const e=document.querySelector(s);if(!e)return null;const c=getComputedStyle(e),r=e.getBoundingClientRect();return{d:c.display,p:c.position,v:c.visibility,o:c.opacity,ov:c.overflow,ovx:c.overflowX,ovy:c.overflowY,w:c.width,h:c.height,minh:c.minHeight,maxh:c.maxHeight,minw:c.minWidth,maxw:c.maxWidth,f:c.flex,fw:c.flexWrap,ss:c.scrollSnapType,wos:c.webkitOverflowScrolling,edge:c.getPropertyValue('--home-mobile-edge').trim(),r:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*100)/100),sw:e.scrollWidth,sh:e.scrollHeight,cw:e.clientWidth,ch:e.clientHeight}};
+                return{body:document.body.className,root:document.documentElement.className,dw:document.documentElement.scrollWidth,dh:document.documentElement.scrollHeight,bw:document.body.scrollWidth,bh:document.body.scrollHeight,styles:sels.map(pick)};
+              },sels);
+              const png=H(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{data,png,errs,loaded};
+            }
+            fs.writeFileSync(f,P);const base={};for(const [w,s] of states)base[`${w}-${s}`]=await cap(w,s,'parent');
+            fs.writeFileSync(f,C);let md=0,sd=0,ld=0,pe=0;const diffs=[];
+            for(const [w,s] of states){const k=`${w}-${s}`,a=base[k],b=await cap(w,s,'candidate');pe+=a.errs.length+b.errs.length;if(JSON.stringify(a.data)!==JSON.stringify(b.data)){md++;diffs.push('meta:'+k)}if(a.png!==b.png){sd++;diffs.push('png:'+k)}if(a.loaded!==b.loaded){ld++;diffs.push('load:'+k)}}
+            fs.writeFileSync(f,P);await browser.close();
+            const result={result:!md&&!sd&&!ld&&!pe?'PASS':'FAIL',repeat:Number(process.env.REPEAT),states:states.length,filterStates:filters.size,metadataDiffs:md,screenshotDiffs:sd,loadDiffs:ld,pageErrors:pe,diffKeys:diffs};
+            console.log('G3_BROWSER_R2='+JSON.stringify(result));if(result.result!=='PASS')process.exit(2);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
