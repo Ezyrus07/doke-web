@@ -1,0 +1,143 @@
+name: TEMP UX-CSS-IMPORTANT-047 G1 Candidate R2
+on:
+  push:
+    branches: [diag/ux-css-important-047-g1-candidate-r2]
+permissions: {contents: read}
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      PARENT: 526c113eb4c0f1b05b3558dcefcf44269406300f
+      TREE: 142dff93c8d6b01a1096bd83bd4b3d9f697a4239
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 5c97346c40496a0b13e4ad1b509a91adcf7638e1
+      EXPECTED_BLOB: 2f88bd5963ad0157283d322bc9bdb4d8f367e4ba
+      EXPECTED_SHA256: e93afd19261be00bb300d26442af338e41c542dd047e5143580e8313f5bf7d83
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - name: Build exact G1 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$TREE"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');const f=process.env.TARGET,p=fs.readFileSync(f,'utf8');let n=0,r=0;
+          if((p.match(/!important\b/gi)||[]).length!==117)throw Error('parent markers');
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=1&&n<=18){r++;return ''}return m});
+          if(n!==117||r!==18||(c.match(/!important\b/gi)||[]).length!==99)throw Error(`ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('semantic drift');
+          fs.writeFileSync('/tmp/candidate.css',c);fs.writeFileSync(f,c);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          if(blob!==process.env.EXPECTED_BLOB||sha256!==process.env.EXPECTED_SHA256||bytes!==36889)throw Error(`identity ${blob}/${sha256}/${bytes}`);
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');const global=css.reduce((a,q)=>a+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(global!==141)throw Error('global '+global);
+          console.log('G1_IDENTITY='+JSON.stringify({blob,sha256,bytes,importantBefore:117,importantAfter:99,parentGlobal:159,candidateGlobal:141,globalDelta:-18,removedOrdinals:[1,18],markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true}));
+          NODE
+          test "$(git diff --name-only "$PARENT" --)" = "$TARGET"
+          git diff --check "$PARENT" -- "$TARGET"
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT" -- package.json package-lock.json
+          npm ci --ignore-scripts >/dev/null
+          cp /tmp/candidate.css "$TARGET"
+      - name: Run and reconcile 14 static gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/matrix.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; candidate="$2"; : > "/tmp/$phase.tsv"
+          restore(){ git checkout "$PARENT" -- . >/dev/null 2>&1 || exit 90; if [ "$candidate" = 1 ]; then cp /tmp/candidate.css "$TARGET"; fi; return 0; }
+          gate(){ label="$1"; shift; restore; log="/tmp/$phase-$label.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; sed -E 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$log" >"$log.n"; h=$(sha256sum "$log.n"|awk '{print $1}'); printf '%s\t%s\t%s\n' "$label" "$rc" "$h" >>"/tmp/$phase.tsv"; echo "$phase|$label|rc=$rc|hash=$h"; return 0; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/matrix.sh
+          /tmp/matrix.sh parent 0
+          /tmp/matrix.sh candidate 1
+          node <<'NODE'
+          const fs=require('fs'),read=f=>Object.fromEntries(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [k,rc,h]=x.split('\t');return[k,{rc:+rc,h}]}));const p=read('/tmp/parent.tsv'),c=read('/tmp/candidate.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'];const debt=['important_reduction_plan','global_css_design_system'];const rows=[];
+          for(const k of exact){const a=p[k],b=c[k];if(!a||!b||a.rc!==b.rc||(a.rc!==0&&a.h!==b.h))throw Error(`regression ${k} ${JSON.stringify(a)} -> ${JSON.stringify(b)}`);rows.push({label:k,classification:a.rc===0?'PASS_BOTH':'BASELINE_EQUIVALENT_FAILURE'});}
+          for(const k of debt){const a=p[k],b=c[k];if(!a||!b||b.rc>a.rc)throw Error(`debt regression ${k}`);rows.push({label:k,classification:b.rc<a.rc?'CANDIDATE_IMPROVES_BASELINE':'EXPECTED_DEBT_DELTA'});}
+          if(p.frontend_strict.rc!==c.frontend_strict.rc)throw Error('frontend rc drift');const sig=f=>fs.readFileSync(f,'utf8').split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();if(JSON.stringify(sig('/tmp/parent-frontend_strict.log'))!==JSON.stringify(sig('/tmp/candidate-frontend_strict.log')))throw Error('frontend warning drift');rows.push({label:'frontend_strict',classification:'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA'});
+          console.log('UX_CSS_IMPORTANT_047_STATIC='+JSON.stringify({result:'PASS',candidate:{blob:process.env.EXPECTED_BLOB,sha256:process.env.EXPECTED_SHA256,bytes:36889,importantBefore:117,importantAfter:99,parentGlobal:159,candidateGlobal:141,globalDelta:-18,removedOrdinals:[1,18],markerOnly:true},rows,introducedRegressions:0,criteriaRelaxed:0}));
+          NODE
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix: {repeat: [1,2,3]}
+    env:
+      PARENT: 526c113eb4c0f1b05b3558dcefcf44269406300f
+      TREE: 142dff93c8d6b01a1096bd83bd4b3d9f697a4239
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 5c97346c40496a0b13e4ad1b509a91adcf7638e1
+      EXPECTED_BLOB: 2f88bd5963ad0157283d322bc9bdb4d8f367e4ba
+      EXPECTED_SHA256: e93afd19261be00bb300d26442af338e41c542dd047e5143580e8313f5bf7d83
+      REPEAT: ${{ matrix.repeat }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - name: Reconstruct exact G1 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$TREE"
+          cp "$TARGET" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');const f=process.env.TARGET,p=fs.readFileSync(f,'utf8');let n=0,r=0;const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=1&&n<=18){r++;return ''}return m});if(n!==117||r!==18||(c.match(/!important\b/gi)||[]).length!==99)throw Error('ordinal');if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('semantic');const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);if(blob!==process.env.EXPECTED_BLOB||sha256!==process.env.EXPECTED_SHA256||bytes!==36889)throw Error(`identity ${blob}/${sha256}/${bytes}`);fs.writeFileSync('/tmp/candidate.css',c);console.log(`G1_IDENTITY|repeat=${process.env.REPEAT}|blob=${blob}|sha256=${sha256}|bytes=${bytes}|important=117->99|global=159->141|ordinals=1-18`);
+          NODE
+      - name: Install browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Deterministic parent versus G1 browser A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET" 2>/dev/null || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{const f=process.env.TARGET,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/candidate.css','utf8');const widths=[359,379,380,381,390,430,560,561],filter=new Set([359,380,390,560]),states=[];for(const w of widths){states.push([w,'default']);if(filter.has(w))states.push([w,'filters'])}const H=b=>crypto.createHash('sha256').update(b).digest('hex'),tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');const items=Array.from({length:8},(_,i)=>({id:'c47-'+i,serviceId:'c47-'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));const sels=['.home-mobile-hero__profile','.home-mobile-hero__location','.home-mobile-hero__identity strong','.home-catégory','.home-catégory__icon','.home-catégory__label','.home-search-hero__actions','.home-search-hero__panel','.home-search-hero__card','.home-mobile-hero__quick-actions','.home-mobile-hero__notification','.doke-search-panel__form','#featured-services-track','[data-more-filters-panel]'];const browser=await chromium.launch({headless:true});
+          async function cap(w,state,phase){const c=await browser.newContext({viewport:{width:w,height:1050},reducedMotion:'reduce'}),p=await c.newPage(),errs=[];let loaded=false;p.on('pageerror',e=>errs.push(e.message));p.on('request',r=>{try{if(new URL(r.url()).pathname==='/'+f)loaded=true}catch{}});await p.route('**/*',r=>{const u=r.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return r.continue();if(u.startsWith('https://images.pexels.com/'))return r.fulfill({status:200,contentType:'image/png',body:tiny});return r.abort()});await p.goto(`http://127.0.0.1:4173/index.html?c47=g1-r${process.env.REPEAT}-${phase}-${w}-${state}`,{waitUntil:'domcontentloaded',timeout:15000});await p.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(!a||!b)throw Error('grids');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})))},items);if(state==='filters'){await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));await p.waitForFunction(()=>{const x=document.querySelector('[data-more-filters-panel]');return document.body.classList.contains('home-filter-sheet-open')&&Boolean(x&&!x.hidden&&x.getAttribute('aria-hidden')!=='true')},null,{timeout:4000})}await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});await p.waitForTimeout(150);const data=await p.evaluate(sels=>{const pick=s=>{const e=document.querySelector(s);if(!e)return null;const c=getComputedStyle(e),r=e.getBoundingClientRect();return{d:c.display,p:c.position,v:c.visibility,o:c.opacity,ov:c.overflow,w:c.width,h:c.height,maxw:c.maxWidth,minw:c.minWidth,f:c.flex,fb:c.flexBasis,g:c.gridTemplateColumns,gap:c.gap,r:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*100)/100)}};return{body:document.body.className,root:document.documentElement.className,dw:document.documentElement.scrollWidth,dh:document.documentElement.scrollHeight,filterOpen:document.body.classList.contains('home-filter-sheet-open'),styles:sels.map(pick)}},sels);const png=H(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{data,png,errs,loaded}}
+          fs.writeFileSync(f,P);const base={};for(const [w,s] of states)base[`${w}-${s}`]=await cap(w,s,'parent');fs.writeFileSync(f,C);let md=0,sd=0,ld=0,pe=0;const diffs=[];for(const [w,s] of states){const k=`${w}-${s}`,a=base[k],b=await cap(w,s,'candidate');pe+=a.errs.length+b.errs.length;if(JSON.stringify(a.data)!==JSON.stringify(b.data)){md++;diffs.push('meta:'+k)}if(a.png!==b.png){sd++;diffs.push('png:'+k)}if(a.loaded!==b.loaded){ld++;diffs.push('load:'+k)}}fs.writeFileSync(f,P);await browser.close();const pass=!md&&!sd&&!ld&&!pe;console.log(`G1_CONFIRM|repeat=${process.env.REPEAT}|states=${states.length}|filterStates=${filter.size}|metadataDiffs=${md}|screenshotDiffs=${sd}|loadDiffs=${ld}|pageErrors=${pe}|pass=${pass?1:0}|diffKeys=${diffs.join(',')}`);if(!pass)process.exit(2);})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          cp /tmp/parent.css "$TARGET"
+          test "$(git hash-object "$TARGET")" = "$PARENT_BLOB"
+          test -z "$(git status --porcelain)"
