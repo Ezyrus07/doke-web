@@ -1,0 +1,124 @@
+name: TEMP UX-CSS-IMPORTANT-045 Service Card Candidate R2
+on:
+  push:
+    branches:
+      - diag/ux-css-important-045-service-card-home-hero-feed-candidate-r2
+permissions:
+  contents: read
+jobs:
+  r2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      PARENT_SHA: 03350507015579bfc60e413f1b3dfa97f4371f68
+      PARENT_TREE: fb684d8ec8e96cf1a2d0ada42f7415259e084650
+      TARGET_FILE: assets/css/components/cards/service-card-home-hero-feed.css
+      TARGET_BLOB: 5f1f57692ca30fdca1fc10c5f89418343f3c4d8d
+      R1_BRANCH: diag/ux-css-important-045-service-card-home-hero-feed-r1
+      R1_FILE: .diagnostics/ux-css-important-045-service-card-home-hero-feed-r1.json
+      R1_BLOB: 86691dca7c3532129b610a916da9aa65086d18e7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Freeze parent and R1
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch --no-tags origin "refs/heads/$R1_BRANCH:refs/remotes/origin/$R1_BRANCH" >/dev/null
+          test "$(git rev-parse "refs/remotes/origin/$R1_BRANCH:$R1_FILE")" = "$R1_BLOB"
+          git show "refs/remotes/origin/$R1_BRANCH:$R1_FILE" >/tmp/r1.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r1.json','utf8'));
+          if(r.result!=='PASS'||r.parent!==process.env.PARENT_SHA||r.tree!==process.env.PARENT_TREE)throw Error('R1 lineage');
+          if(r.target!==process.env.TARGET_FILE||r.blob!==process.env.TARGET_BLOB||r.importantSites!==62||r.unresolvedImportantSites!==0)throw Error('R1 target');
+          if(r.canonicalLoaded!==false||r.wholeFileDormant!==true||r.browserReconciliationRequired!==false||r.criteriaRelaxed!==0||r.productMutation!==false)throw Error('R1 governance');
+          if(r.targetPages.length||r.directHtmlRefs.length||r.directImporters.length||r.runtimeJsRefs.length)throw Error('R1 live reach');
+          NODE
+      - name: Build exact marker-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT_SHA" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET_FILE,parent=fs.readFileSync(f,'utf8');
+          const before=(parent.match(/!important\b/gi)||[]).length;if(before!==62)throw Error(`parent markers ${before}`);
+          const candidate=parent.replace(/\s*!important\b/gi,'');
+          if((candidate.match(/!important\b/gi)||[]).length!==0)throw Error('markers remain');
+          fs.writeFileSync('/tmp/candidate.css',candidate);fs.writeFileSync(f,candidate);
+          const walk=(d,o=[])=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,o);else if(e.isFile()&&p.endsWith('.css'))o.push(p)}return o};
+          const count=x=>(fs.readFileSync(x,'utf8').match(/!important\b/gi)||[]).length;
+          const global=walk('assets/css').reduce((n,x)=>n+count(x),0);if(global!==169)throw Error(`global ${global}`);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(candidate).digest('hex');
+          const bytes=Buffer.byteLength(candidate);
+          const ns=cp.execFileSync('git',['diff','--numstat',process.env.PARENT_SHA,'--',f],{encoding:'utf8'}).trim().split(/\s+/);
+          const imports=s=>[...s.matchAll(/@import\s+[^;]+;/gi)].map(m=>m[0]);if(JSON.stringify(imports(parent))!==JSON.stringify(imports(candidate)))throw Error('imports changed');
+          const out={importantBefore:62,importantAfter:0,removed:62,parentGlobal:231,candidateGlobal:global,globalDelta:global-231,gitBlob:blob,sha256,bytes,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,additions:Number(ns[0]),deletions:Number(ns[1]),diffFiles:1};
+          fs.writeFileSync('/tmp/candidate.json',JSON.stringify(out));console.log('CANDIDATE='+JSON.stringify(out));
+          NODE
+          test "$(git diff --name-only "$PARENT_SHA" --)" = "$TARGET_FILE"
+          git diff --check "$PARENT_SHA" -- "$TARGET_FILE"
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT_SHA" -- package.json package-lock.json
+          npm ci --ignore-scripts >/dev/null
+          cp /tmp/candidate.css "$TARGET_FILE"
+      - name: Run parent and candidate static governance matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/gates.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1";mode="$2";: >"/tmp/${phase}.tsv"
+          restore(){ git checkout "$PARENT_SHA" -- . >/dev/null 2>&1||exit 90;if [ "$mode" = candidate ];then cp /tmp/candidate.css "$TARGET_FILE";fi; }
+          norm(){ sed -E -e 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?/<TIME>/g' -e 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$1"; }
+          gate(){ label="$1";shift;restore;log="/tmp/${phase}-${label}.log";set +e;"$@">"$log" 2>&1;rc=$?;set -e;norm "$log">"${log}.norm";hash="$(sha256sum "${log}.norm"|awk '{print $1}')";printf '%s\t%s\t%s\n' "$label" "$rc" "$hash">>"/tmp/${phase}.tsv";echo "$phase|$label|rc=$rc|hash=$hash"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/gates.sh
+          /tmp/gates.sh parent parent
+          /tmp/gates.sh candidate candidate
+      - name: Reconcile without criteria relaxation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');const parse=f=>new Map(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [l,r,h]=x.split('\t');return[l,{rc:Number(r),hash:h}]}));const p=parse('/tmp/parent.tsv'),c=parse('/tmp/candidate.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'];const debt=['important_reduction_plan','global_css_design_system'];const rows=[];let introduced=0;
+          for(const l of exact){const a=p.get(l),b=c.get(l);if(!a||!b)throw Error('missing '+l);if(a.rc===0&&b.rc===0&&a.hash===b.hash)rows.push({label:l,classification:'PASS_BOTH_IDENTICAL',parent:a,candidate:b});else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash)rows.push({label:l,classification:'BASELINE_EQUIVALENT_FAILURE',parent:a,candidate:b});else{introduced++;throw Error(`${l} divergence ${a.rc}/${a.hash}->${b.rc}/${b.hash}`)}}
+          for(const l of debt){const a=p.get(l),b=c.get(l);if(!a||!b)throw Error('missing '+l);if(a.rc===0&&b.rc===0)rows.push({label:l,classification:'PASS_BOTH_EXPECTED_DEBT_DELTA',parent:a,candidate:b});else if(a.rc!==0&&b.rc!==0&&a.rc===b.rc&&a.hash===b.hash)rows.push({label:l,classification:'BASELINE_EQUIVALENT_FAILURE',parent:a,candidate:b});else if(a.rc!==0&&b.rc===0)rows.push({label:l,classification:'CANDIDATE_IMPROVES_BASELINE',parent:a,candidate:b});else{introduced++;throw Error(`${l} regression ${a.rc}->${b.rc}`)}}
+          const a=p.get('frontend_strict'),b=c.get('frontend_strict');if(!a||!b||a.rc!==b.rc)throw Error(`frontend rc ${a?.rc}->${b?.rc}`);const pl=fs.readFileSync('/tmp/parent-frontend_strict.log','utf8'),cl=fs.readFileSync('/tmp/candidate-frontend_strict.log','utf8');const sig=s=>s.split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();if(JSON.stringify(sig(pl))!==JSON.stringify(sig(cl)))throw Error('frontend critical/warning set changed');rows.push({label:'frontend_strict',classification:a.rc===0?'PASS_BOTH_EXPECTED_DEBT_DELTA':'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA',parent:a,candidate:b});
+          const out={result:'PASS',checkpoint:'UX-CSS-IMPORTANT-045',candidate:JSON.parse(fs.readFileSync('/tmp/candidate.json','utf8')),staticMatrix:{rows,introducedRegressions:introduced,criteriaRelaxed:0},browserRequired:false,wholeFileDormant:true};console.log('UX_CSS_IMPORTANT_045_R2='+JSON.stringify(out));
+          NODE
+          git reset --hard "$PARENT_SHA" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
