@@ -1,0 +1,65 @@
+name: TEMP UX-CSS-IMPORTANT-051 G6 Materialize R4
+
+on:
+  push:
+    branches:
+      - diag/ux-css-important-051-g6-materialize-r4
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Reconstruct exact G6 candidate and receipt
+        shell: bash
+        env:
+          PARENT: edff135ab5569e4cea54ce238723d0e17479fc3a
+          PARENT_TREE: 01615f2628679d1fc881d5d2556852a74c7498db
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          PARENT_BLOB: f7ffa8ead445a69ebdc8f801c46d70c852c041ae
+          CANDIDATE_BLOB: d323fb51b817ce47bc316d04207853934a72b835
+          CANDIDATE_SHA256: af61ee9a38ccffc11aa2ee7c4806383683fcf9421f0477a146f1acf149cc0176
+          ISSUE: '390'
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git show "$PARENT:$TARGET" > /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),crypto=require('crypto'),path=require('path');
+          const p=fs.readFileSync('/tmp/parent.css','utf8'); let n=0,r=0;
+          const selected=new Set(Array.from({length:20},(_,i)=>i+2));
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(selected.has(n)){r++;return ''}return m});
+          const count=s=>(s.match(/!important\b/gi)||[]).length;
+          if(n!==47||r!==20||count(c)!==27)throw Error(`counts ${n}/${r}/${count(c)}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(c))throw Error('G3 guard lost');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim();
+          const sha=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          if(blob!==process.env.CANDIDATE_BLOB||sha!==process.env.CANDIDATE_SHA256||bytes!==36097)throw Error(`identity ${blob}/${sha}/${bytes}`);
+          fs.writeFileSync(process.env.TARGET,c);
+          const cssFiles=[];(function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?w(q):q.endsWith('.css')&&cssFiles.push(q)}})('assets/css');
+          const global=cssFiles.reduce((s,q)=>s+count(fs.readFileSync(q,'utf8')),0); if(global!==69)throw Error(`global ${global}`);
+          const receipt={result:'PASS',checkpoint:'UX-CSS-IMPORTANT-051',phase:'R4_EXACT_MATERIALIZATION',issue:Number(process.env.ISSUE),parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,target:process.env.TARGET,parentBlob:process.env.PARENT_BLOB,candidateBlob:blob,sha256:sha,bytes,importantBefore:47,importantAfter:27,parentGlobal:89,candidateGlobal:69,globalDelta:-20,removedOrdinals:Array.from({length:20},(_,i)=>i+2),preservedOrdinal:1,preservedG7Markers:26,markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,successorRun:32965494577,successorJob:98166960321,staticRun:32965985606,staticJob:98168454341,browserRun:32966085557,browserJobs:[98168773160,98168772892,98168773065],browserRepetitions:3,browserStatesPerRepeat:12,filterStatesPerRepeat:4,metadataDiffs:0,screenshotDiffs:0,loadDiffs:0,pageErrors:0,introducedRegressions:0,criteriaRelaxed:0,initialDiscoveryFailure:{run:32965412300,job:98166702023,classification:'HARNESS_ONLY / SELECTOR_ASSERT_ABBREVIATION'},initialStaticFailure:{run:32965652905,job:98167431928,classification:'HARNESS_ONLY / PARENT_DIFF_INCLUDED_WORKFLOW'},repositoryOnly:true,runId:Number(process.env.GITHUB_RUN_ID)};
+          fs.mkdirSync('.diagnostics',{recursive:true});fs.writeFileSync('.diagnostics/ux-css-important-051-g6-materialization.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log('MATERIALIZATION_IDENTITY=PASS');
+          NODE
+          test "$(git diff --name-only --)" = "$TARGET"
+          git diff --check -- "$TARGET"
+          git add "$TARGET" .diagnostics/ux-css-important-051-g6-materialization.json
+          test "$(git diff --cached --name-only | sort)" = $'.diagnostics/ux-css-important-051-g6-materialization.json\nassets/css/pages/home/mobile-hero-feed.css'
+      - name: Commit diagnostic materialization fast-forward
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git commit -m 'diagnostic(ux-css-important-051): materialize exact G6 candidate'
+          git push origin HEAD:diag/ux-css-important-051-g6-materialize-r4
