@@ -1,0 +1,125 @@
+name: TEMP COM-B02CJ Matrix Derivative Materializer
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02cj-matrix-materializer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-b02cj-matrix-derivative:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CANDIDATE_HEAD: 003696632ca2633e03b6cfbfa3fd190492b0af08
+      PREDECESSOR_HEAD: ab18acc2eff8ccb896dc621b352dad092f326c33
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      PERMANENT_WORKFLOW: .github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml
+      PERMANENT_WORKFLOW_BLOB: bfdcefc7d42f7d0980b1a5111ecfb454f0ce73e4
+      TEST: scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js
+      TEST_BLOB: e0e49ea5fd20b253921d67d51cf402b7426eb581
+      CONFIG: config/com-b02cj-repository-only-route-resume-surface-controlled-invocation.json
+      CONFIG_BLOB: 0c441b3327101d820c9ad3e06894a70007385912
+      TEMP_WORKFLOW: .github/workflows/0000-temp-com-b02cj-matrix-materializer.yml
+      TARGET_BRANCH: com/com-001-baseline-audit
+
+    steps:
+      - name: Checkout exact TEMP install head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze install lineage and source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
+          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '1'
+          expected="$TEMP_WORKFLOW"
+          actual="$(git diff --name-only "$CANDIDATE_HEAD" HEAD)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$PERMANENT_WORKFLOW)" = "$PERMANENT_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test -f "$TEMP_WORKFLOW"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Materialize only the canonical Matrix derivative
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          actual_generated="$(git diff --name-only | sort)"
+          test "$actual_generated" = "$MATRIX_MD"
+
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml')
+          text = path.read_text()
+          replacements = [
+              (
+                  "      - 'scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js'\n      - '.github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml'",
+                  "      - 'scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js'\n      - 'docs/DOMAIN-COMPLETION-MATRIX.md'\n      - '.github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml'",
+              ),
+              (
+                  "      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623\n      ROUTE_REGISTRY_BLOB:",
+                  "      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623\n      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md\n      ROUTE_REGISTRY_BLOB:",
+              ),
+              (
+                  "          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '3'",
+                  "          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '5'",
+              ),
+              (
+                  "          expected=\"$(printf '%s\\n' \"$CONFIG\" \"$TEST\" \"$WORKFLOW\" | sort)\"",
+                  "          expected=\"$(printf '%s\\n' \"$CONFIG\" \"$TEST\" \"$MATRIX_MD\" \"$WORKFLOW\" | sort)\"",
+              ),
+          ]
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f'expected exactly one permanent-workflow replacement target: {old!r}')
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+
+          git rm "$TEMP_WORKFLOW"
+          git add "$MATRIX_MD" "$PERMANENT_WORKFLOW"
+
+          expected_final="$(printf '%s\n' "$CONFIG" "$MATRIX_MD" "$TEST" "$PERMANENT_WORKFLOW" | sort)"
+          actual_final="$(git diff --cached --name-only "$PREDECESSOR_HEAD" | sort)"
+          test "$actual_final" = "$expected_final"
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '0000-temp-com-b02cj-*' -print -quit)"
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TEST"
+          git diff --cached --check "$PREDECESSOR_HEAD"
+
+      - name: Commit final TEMP-free repository-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$TARGET_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse HEAD)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): materialize B02CJ matrix derivative'
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
