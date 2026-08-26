@@ -1,0 +1,167 @@
+name: TEMP UX-CSS-IMPORTANT-049 G3 Safe Union Permanent Certifier R2
+on:
+  push:
+    branches: [diag/ux-css-important-049-g3-safe-union-permanent-certifier-r2]
+permissions:
+  contents: write
+  pull-requests: read
+  actions: read
+jobs:
+  certify:
+    if: "${{ github.event.head_commit.message != 'diagnostic(ux-css-important-049): record permanent certification' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      DIAG_BRANCH: diag/ux-css-important-049-g3-safe-union-permanent-certifier-r2
+      MATERIAL_BRANCH: diag/ux-css-important-049-g3-safe-union-materialize-r6b
+      MATERIAL_RECEIPT: .diagnostics/ux-css-important-049-g3-safe-union-materialization.json
+      MATERIAL_RECEIPT_BLOB: 74060f8469406fb8f4a8c898d77edf92b6cc338e
+      PARENT: ef3e232510efaab06cdcd789658952b7cf707825
+      PARENT_TREE: fd683d88259f3d1e4c51d34ce3f9b5a7bd22eeb7
+      PERM: 4b32b8b88018560402ae5d67a26c126d0e65d942
+      PERM_TREE: d7f3580ac4406a0bcdd225cb405e882eb34dfa1c
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 5de77463e9ff079de16f15f42c59600eed95e1cc
+      PERM_BLOB: 54890bd4e2765364820796be64c62417d965ac65
+      PERM_SHA256: 898fd090a72bea1412e0f0483e3a4121d99e4da43c19f4a73d6434abbe891194
+      PR_NUMBER: 387
+      GH_TOKEN: "${{ github.token }}"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - name: Verify permanent lineage PR evidence and exact transformation
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PERM"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PERM^{tree}")" = "$PERM_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          test "$(git rev-parse "$PERM:$TARGET")" = "$PERM_BLOB"
+          test "$(git rev-list --parents -n1 "$PERM")" = "$PERM $PARENT"
+          test "$(git merge-base "$PARENT" "$PERM")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT..$PERM")" = 1
+          test "$(git rev-list --count "$PERM..$PARENT")" = 0
+          test "$(git diff --name-only "$PARENT" "$PERM")" = "$TARGET"
+          test "$(git diff --numstat "$PARENT" "$PERM" -- "$TARGET")" = $'14\t14\tassets/css/pages/home/mobile-hero-feed.css'
+          test "$(git rev-parse "origin/$MATERIAL_BRANCH:$MATERIAL_RECEIPT")" = "$MATERIAL_RECEIPT_BLOB"
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" > /tmp/pr.json
+          for id in 32922051556 32922180669 32961788433; do curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$id" > "/tmp/run-$id.json"; done
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/jobs/98036277036" > /tmp/blocker-job.json
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),crypto=require('crypto');
+          const pr=JSON.parse(fs.readFileSync('/tmp/pr.json'));
+          if(pr.state!=='open'||pr.draft!==true||pr.merged_at!==null||pr.mergeable!==true)throw Error(`pr ${pr.state}/${pr.draft}/${pr.merged_at}/${pr.mergeable}`);
+          if(pr.base.sha!==process.env.PARENT||pr.head.sha!==process.env.PERM||pr.commits!==1||pr.changed_files!==1||pr.additions!==14||pr.deletions!==14)throw Error('pr identity drift');
+          for(const id of [32922051556,32922180669,32961788433]){const r=JSON.parse(fs.readFileSync(`/tmp/run-${id}.json`));if(r.status!=='completed'||r.conclusion!=='success')throw Error(`evidence ${id}: ${r.status}/${r.conclusion}`)}
+          const bj=JSON.parse(fs.readFileSync('/tmp/blocker-job.json'));if(bj.status!=='completed'||bj.conclusion!=='success')throw Error(`blocker evidence ${bj.status}/${bj.conclusion}`);
+          const show=(rev,f)=>cp.execFileSync('git',['show',`${rev}:${f}`],{encoding:'utf8'}),f=process.env.TARGET,p=show(process.env.PARENT,f),q=show(process.env.PERM,f);
+          if((p.match(/!important\b/gi)||[]).length!==77||(q.match(/!important\b/gi)||[]).length!==63)throw Error('marker count drift');
+          const ords=[1,2,...Array.from({length:12},(_,i)=>i+4)],set=new Set(ords);let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(set.has(n)){r++;return ''}return m});
+          if(n!==77||r!==14||c!==q)throw Error(`ordinal reconstruction ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==q.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(q))throw Error('active overflow guard lost');
+          const sha=crypto.createHash('sha256').update(q).digest('hex'),bytes=Buffer.byteLength(q);if(sha!==process.env.PERM_SHA256||bytes!==36493)throw Error(`sha/bytes ${sha}/${bytes}`);
+          fs.writeFileSync('/tmp/parent.css',p);fs.writeFileSync('/tmp/permanent.css',q);
+          console.log('PERMANENT_IDENTITY=PASS');
+          NODE
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');const a=[];(function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?w(q):q.endsWith('.css')&&a.push(q)}})('assets/css');const n=a.reduce((s,q)=>s+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(n!==119)throw Error(`parent global ${n}`);console.log('PARENT_GLOBAL='+n);
+          NODE
+          git checkout --detach "$PERM" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');const a=[];(function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?w(q):q.endsWith('.css')&&a.push(q)}})('assets/css');const n=a.reduce((s,q)=>s+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(n!==105)throw Error(`perm global ${n}`);console.log('PERM_GLOBAL='+n);
+          NODE
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT" >/dev/null
+          npm ci --ignore-scripts >/dev/null
+      - name: Independently rerun and reconcile 14 static gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/matrix.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; candidate="$2"; : > "/tmp/$phase.tsv"
+          restore(){ git checkout "$PARENT" -- . >/dev/null 2>&1 || exit 90; if [ "$candidate" = 1 ]; then cp /tmp/permanent.css "$TARGET"; fi; return 0; }
+          gate(){ label="$1"; shift; restore; log="/tmp/$phase-$label.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; sed -E 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$log" >"$log.n"; h=$(sha256sum "$log.n"|awk '{print $1}'); printf '%s\t%s\t%s\n' "$label" "$rc" "$h" >>"/tmp/$phase.tsv"; echo "$phase|$label|rc=$rc|hash=$h"; return 0; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/matrix.sh
+          /tmp/matrix.sh parent 0
+          /tmp/matrix.sh permanent 1
+          node <<'NODE'
+          const fs=require('fs'),read=f=>Object.fromEntries(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [k,rc,h]=x.split('\t');return[k,{rc:+rc,h}]}));const p=read('/tmp/parent.tsv'),c=read('/tmp/permanent.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'],debt=['important_reduction_plan','global_css_design_system'],rows=[];
+          for(const k of exact){const a=p[k],b=c[k];if(!a||!b||a.rc!==b.rc||(a.rc!==0&&a.h!==b.h))throw Error(`static regression ${k}`);rows.push({label:k,classification:a.rc===0?'PASS_BOTH':'BASELINE_EQUIVALENT_FAILURE'});}
+          for(const k of debt){const a=p[k],b=c[k];if(!a||!b||b.rc>a.rc)throw Error(`debt regression ${k}`);rows.push({label:k,classification:b.rc<a.rc?'CANDIDATE_IMPROVES_BASELINE':'EXPECTED_DEBT_DELTA'});}
+          if(p.frontend_strict.rc!==c.frontend_strict.rc)throw Error('frontend rc drift');
+          const sig=f=>fs.readFileSync(f,'utf8').split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();if(JSON.stringify(sig('/tmp/parent-frontend_strict.log'))!==JSON.stringify(sig('/tmp/permanent-frontend_strict.log')))throw Error('frontend warning drift');rows.push({label:'frontend_strict',classification:'BASELINE_EQUIVALENT_EXPECTED_DEBT_DELTA'});
+          fs.writeFileSync('/tmp/static.json',JSON.stringify({result:'PASS',rows,introducedRegressions:0,criteriaRelaxed:0}));console.log('PERMANENT_STATIC=PASS');
+          NODE
+          git checkout "$PARENT" -- .
+          cp /tmp/parent.css "$TARGET"
+      - name: Install Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Independently rerun permanent browser A B
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT" >/dev/null
+          cp /tmp/parent.css "$TARGET"
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET" 2>/dev/null || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{const f=process.env.TARGET,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/permanent.css','utf8');const widths=[359,379,380,381,390,430,560,561],filters=new Set([359,380,390,560]),states=[];for(const w of widths){states.push([w,'default']);if(filters.has(w))states.push([w,'filters'])}
+          const H=b=>crypto.createHash('sha256').update(b).digest('hex'),tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64'),items=Array.from({length:8},(_,i)=>({id:'c49p-'+i,serviceId:'c49p-'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
+          const sels=['html.home-index-root body.home-index-shell','.featured-services .content-rail','#featured-services-track','.professional-showcase .home-section-header','.professional-showcase .home-section-title','[data-more-filters-panel]'];const browser=await chromium.launch({headless:true});
+          async function cap(w,state,phase){const c=await browser.newContext({viewport:{width:w,height:1050},reducedMotion:'reduce'}),p=await c.newPage(),errs=[];let loaded=false;p.on('pageerror',e=>errs.push(e.message));p.on('request',r=>{try{if(new URL(r.url()).pathname==='/'+f)loaded=true}catch{}});await p.route('**/*',r=>{const u=r.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return r.continue();if(u.startsWith('https://images.pexels.com/'))return r.fulfill({status:200,contentType:'image/png',body:tiny});return r.abort()});await p.goto(`http://127.0.0.1:4173/index.html?c49perm=${phase}-${w}-${state}`,{waitUntil:'domcontentloaded',timeout:15000});await p.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(!a||!b)throw Error('grids');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})))},items);if(state==='filters'){await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));await p.waitForFunction(()=>{const x=document.querySelector('[data-more-filters-panel]');return document.body.classList.contains('home-filter-sheet-open')&&Boolean(x&&!x.hidden&&x.getAttribute('aria-hidden')!=='true')},null,{timeout:4000})}await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});await p.waitForTimeout(150);const data=await p.evaluate(sels=>{const pick=s=>{const e=document.querySelector(s);if(!e)return null;const c=getComputedStyle(e),r=e.getBoundingClientRect();return{d:c.display,p:c.position,v:c.visibility,o:c.opacity,ov:c.overflow,ovx:c.overflowX,ovy:c.overflowY,w:c.width,h:c.height,minh:c.minHeight,maxh:c.maxHeight,minw:c.minWidth,maxw:c.maxWidth,f:c.flex,fw:c.flexWrap,ss:c.scrollSnapType,wos:c.webkitOverflowScrolling,edge:c.getPropertyValue('--home-mobile-edge').trim(),r:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*100)/100),sw:e.scrollWidth,sh:e.scrollHeight,cw:e.clientWidth,ch:e.clientHeight}};return{body:document.body.className,root:document.documentElement.className,dw:document.documentElement.scrollWidth,dh:document.documentElement.scrollHeight,bw:document.body.scrollWidth,bh:document.body.scrollHeight,styles:sels.map(pick)}},sels);const png=H(await p.screenshot({fullPage:true,animations:'disabled'}));await c.close();return{data,png,errs,loaded}}
+          fs.writeFileSync(f,P);const base={};for(const [w,s] of states)base[`${w}-${s}`]=await cap(w,s,'parent');fs.writeFileSync(f,C);let md=0,sd=0,ld=0,pe=0;const diffs=[];for(const [w,s] of states){const k=`${w}-${s}`,a=base[k],b=await cap(w,s,'permanent');pe+=a.errs.length+b.errs.length;if(JSON.stringify(a.data)!==JSON.stringify(b.data)){md++;diffs.push('meta:'+k)}if(a.png!==b.png){sd++;diffs.push('png:'+k)}if(a.loaded!==b.loaded){ld++;diffs.push('load:'+k)}}fs.writeFileSync(f,P);await browser.close();const result={result:!md&&!sd&&!ld&&!pe?'PASS':'FAIL',states:states.length,filterStates:filters.size,metadataDiffs:md,screenshotDiffs:sd,loadDiffs:ld,pageErrors:pe,diffKeys:diffs};fs.writeFileSync('/tmp/browser.json',JSON.stringify(result));console.log('PERMANENT_BROWSER='+JSON.stringify(result));if(result.result!=='PASS')process.exit(2);})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - name: Record independent permanent certification receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$PARENT" -- "$TARGET" >/dev/null 2>&1 || true
+          git switch "$DIAG_BRANCH"
+          test "$(git rev-parse "$PERM:$TARGET")" = "$PERM_BLOB"
+          node <<'NODE'
+          const fs=require('fs');const stat=JSON.parse(fs.readFileSync('/tmp/static.json')),browser=JSON.parse(fs.readFileSync('/tmp/browser.json'));if(stat.result!=='PASS'||browser.result!=='PASS')throw Error('missing certification pass');
+          const ords=[1,2,...Array.from({length:12},(_,i)=>i+4)];
+          const receipt={result:'PASS',checkpoint:'UX-CSS-IMPORTANT-049',phase:'PERMANENT_CERTIFICATION',issue:386,pr:387,parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,permanentSha:process.env.PERM,permanentTree:process.env.PERM_TREE,target:process.env.TARGET,parentBlob:process.env.PARENT_BLOB,permanentBlob:process.env.PERM_BLOB,sha256:process.env.PERM_SHA256,bytes:36493,importantBefore:77,importantAfter:63,parentGlobal:119,permanentGlobal:105,globalDelta:-14,removedOrdinals:ords,preservedOrdinal:3,preservedGuard:'.featured-services .content-rail overflow: visible !important',markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,lineage:{oneParent:true,mergeBaseExact:true,ahead:1,behind:0,diffFiles:1,additions:14,deletions:14},prState:{open:true,draft:true,unmerged:true,mergeable:true},priorEvidence:{successorRun:32920970860,fullG3StaticRun:32921059826,fullG3BrowserRun:32921102598,fullG3BrowserClassification:'REAL_FUNCTIONAL_DELTA',isolationRun:32921391160,railIsolationRun:32921663605,blockerJob:98036277036,blockerJobConclusion:'success',blockerEvidenceClassification:'FUNCTIONAL_DELTA_CAPTURED_JOB_SUCCESS',blockerOrdinal:3,blockerComputedDelta:'overflow visible -> hidden at <=560px',safeUnionStaticRun:32922051556,safeUnionStaticJob:98037397632,safeUnionBrowserRun:32922180669,safeUnionBrowserJobs:[98037764326,98037764304,98037764185],firstMaterializerRun:32922442599,firstMaterializerJob:98038506166,firstMaterializerFailureClassification:'HARNESS_ONLY_UNTRACKED_DIRECTORY_COLLAPSE',materializationRun:32961788433,materializationJob:98155515738,materializationReceiptBlob:process.env.MATERIAL_RECEIPT_BLOB,firstPermanentCertifierRun:32962082760,firstPermanentCertifierJob:98156452823,firstPermanentCertifierFailureClassification:'HARNESS_ONLY_BLOCKER_JOB_CONCLUSION_ASSUMPTION'},static:stat,browser,introducedRegressions:0,criteriaRelaxed:0,repositoryOnly:true,staging:false,production:false,backend:false,supabase:false,rpc:false,migrations:false,credentials:false,runtimeRealtime:false,merge:false,readyForReview:false,forcePush:false,historyRewrite:false,runId:Number(process.env.GITHUB_RUN_ID)};
+          fs.mkdirSync('.diagnostics',{recursive:true});fs.writeFileSync('.diagnostics/ux-css-important-049-g3-safe-union-permanent-certification.json',JSON.stringify(receipt,null,2)+'\n');
+          NODE
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add .diagnostics/ux-css-important-049-g3-safe-union-permanent-certification.json
+          git diff --cached --check
+          git commit -m 'diagnostic(ux-css-important-049): record permanent certification'
+          git push origin HEAD:"$DIAG_BRANCH"
