@@ -1,0 +1,44 @@
+name: TEMP UX-CSS-IMPORTANT-045 Service Card Hero Materialize R3c Verify
+on:
+  push:
+    branches: [diag/ux-css-important-045-service-card-hero-materialize-r3c-verify]
+permissions:
+  contents: read
+jobs:
+  verify-materialization:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 03350507015579bfc60e413f1b3dfa97f4371f68
+      PARENT_TREE: fb684d8ec8e96cf1a2d0ada42f7415259e084650
+      INITIAL_R3B: a491350f1d2bdb3ee8d1b0c64c80625d5ce71ebb
+      MATERIALIZED_COMMIT: 4183bd3e5a0c5583ba5dc7ee7e2f878c234d12e9
+      TARGET_FILE: assets/css/components/cards/service-card-home-hero-feed.css
+      CANDIDATE_BLOB: 01841edf1c93b35fd92a064e642c1353d9484130
+      RESULT_FILE: .diagnostics/ux-css-important-045-service-card-home-hero-feed-materialize-r3b.json
+      RESULT_BLOB: 83d71c640473be9e7f6564705abd9d4ba16a982f
+      R1_BLOB: d9d9d7d90073028dfb87503b9085a118b0111fa1
+      R2_BLOB: b98a02839d3302fb0c3976f350b50ff40f6780dd
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Verify exact R3b materialized object and evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin '+refs/heads/*:refs/remotes/origin/*' >/dev/null
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$MATERIALIZED_COMMIT^")" = "$INITIAL_R3B"
+          test "$(git rev-parse "$INITIAL_R3B^")" = "$PARENT_SHA"
+          test "$(git rev-parse "$MATERIALIZED_COMMIT:$TARGET_FILE")" = "$CANDIDATE_BLOB"
+          test "$(git rev-parse "$MATERIALIZED_COMMIT:$RESULT_FILE")" = "$RESULT_BLOB"
+          test "$(git diff --name-only "$INITIAL_R3B" "$MATERIALIZED_COMMIT" | sort)" = "$(printf '%s\n%s\n' "$RESULT_FILE" "$TARGET_FILE" | sort)"
+          git show "$MATERIALIZED_COMMIT:$RESULT_FILE" >/tmp/r3.json
+          node <<'NODE'
+          const r=JSON.parse(require('fs').readFileSync('/tmp/r3.json','utf8'));
+          if(r.result!=='PASS'||r.checkpoint!=='UX-CSS-IMPORTANT-045') throw Error('R3 receipt result');
+          if(r.parent!==process.env.PARENT_SHA||r.parentTree!==process.env.PARENT_TREE) throw Error('R3 parent');
+          if(r.target!==process.env.TARGET_FILE||r.candidateBlob!==process.env.CANDIDATE_BLOB) throw Error('R3 candidate');
+          if(r.r1ReceiptBlob!==process.env.R1_BLOB||r.r2ReceiptBlob!==process.env.R2_BLOB) throw Error('R3 evidence');
+          if(r.importantBefore!==62||r.importantAfter!==0||r.parentGlobal!==231||r.candidateGlobal!==169||r.markerOnly!==true||r.repositoryOnly!==true) throw Error('R3 contract');
+          NODE
+          echo 'UX-CSS-IMPORTANT-045 R3c MATERIALIZATION VERIFIED'
