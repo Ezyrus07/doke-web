@@ -15,7 +15,7 @@ const PREDECESSOR_TREE = '589ba217e154bc581de2018cf6b79dcee7bf1a96';
 const PREDECESSOR_RUN_ID = 32884951357;
 const PREDECESSOR_JOB_ID = 97923127212;
 const ROUTE_NAME = 'communities.membership.command';
-const OPAQUE_STATE_HANDLE = 'com_state_b02cjcontrolled001';
+const OPAQUE_STATE_HANDLE = 'repo-only-cont:b02cj-controlled-resume-0001';
 
 function freeze(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
