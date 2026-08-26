@@ -1,0 +1,57 @@
+name: TEMP UX-CSS-IMPORTANT-047 G1 Materialize R3
+on:
+  push:
+    branches: [diag/ux-css-important-047-g1-materialize-r3]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    if: "github.event.head_commit.message != 'diagnostic(ux-css-important-047): materialize certified G1 blob'"
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 526c113eb4c0f1b05b3558dcefcf44269406300f
+      PARENT_TREE: 142dff93c8d6b01a1096bd83bd4b3d9f697a4239
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 5c97346c40496a0b13e4ad1b509a91adcf7638e1
+      EXPECTED_BLOB: 2f88bd5963ad0157283d322bc9bdb4d8f367e4ba
+      EXPECTED_SHA256: e93afd19261be00bb300d26442af338e41c542dd047e5143580e8313f5bf7d83
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Reconstruct exact certified G1 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git show "$PARENT:$TARGET" > /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET,p=fs.readFileSync('/tmp/parent.css','utf8');let n=0,r=0;
+          if((p.match(/!important\b/gi)||[]).length!==117)throw Error('parent markers');
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=1&&n<=18){r++;return ''}return m});
+          if(n!==117||r!==18||(c.match(/!important\b/gi)||[]).length!==99)throw Error(`ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('semantic drift');
+          fs.writeFileSync(f,c);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          if(blob!==process.env.EXPECTED_BLOB||sha256!==process.env.EXPECTED_SHA256||bytes!==36889)throw Error(`identity ${blob}/${sha256}/${bytes}`);
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');
+          const global=css.reduce((a,q)=>a+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(global!==141)throw Error(`global ${global}`);
+          fs.mkdirSync('.diagnostics',{recursive:true});
+          const receipt={result:'PASS',checkpoint:'UX-CSS-IMPORTANT-047',phase:'R3_EXACT_MATERIALIZATION',issue:382,parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,target:f,parentBlob:process.env.PARENT_BLOB,candidateBlob:blob,sha256,bytes,importantBefore:117,importantAfter:99,parentGlobal:159,candidateGlobal:141,globalDelta:-18,removedOrdinals:Array.from({length:18},(_,i)=>i+1),markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,successorRun:32917053103,successorJob:98022841992,staticBrowserRun:32917176415,staticJob:98023215231,browserJobs:[98023215430,98023215427,98023215408],browserRepetitions:3,browserStatesPerRepeat:12,metadataDiffs:0,screenshotDiffs:0,loadDiffs:0,pageErrors:0,introducedRegressions:0,criteriaRelaxed:0,repositoryOnly:true};
+          fs.writeFileSync('.diagnostics/ux-css-important-047-g1-materialization.json',JSON.stringify(receipt,null,2)+'\n');
+          NODE
+          test "$(git hash-object "$TARGET")" = "$EXPECTED_BLOB"
+          test "$(grep -Eio '!important\b' "$TARGET" | wc -l)" -eq 99
+          git diff --check -- "$TARGET"
+          test "$(git diff --name-only "$PARENT" -- "$TARGET")" = "$TARGET"
+      - name: Commit diagnostic materialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$TARGET" .diagnostics/ux-css-important-047-g1-materialization.json
+          git commit -m 'diagnostic(ux-css-important-047): materialize certified G1 blob'
+          test "$(git rev-parse HEAD:$TARGET)" = "$EXPECTED_BLOB"
+          git push origin HEAD:diag/ux-css-important-047-g1-materialize-r3
