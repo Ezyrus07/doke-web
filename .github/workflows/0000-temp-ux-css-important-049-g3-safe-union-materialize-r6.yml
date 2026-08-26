@@ -1,0 +1,57 @@
+name: TEMP UX-CSS-IMPORTANT-049 G3 Safe Union Materialize R6
+on:
+  push:
+    branches: [diag/ux-css-important-049-g3-safe-union-materialize-r6]
+permissions: {contents: write}
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT: ef3e232510efaab06cdcd789658952b7cf707825
+      PARENT_TREE: fd683d88259f3d1e4c51d34ce3f9b5a7bd22eeb7
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 5de77463e9ff079de16f15f42c59600eed95e1cc
+      EXPECTED_BLOB: 54890bd4e2765364820796be64c62417d965ac65
+      EXPECTED_SHA256: 898fd090a72bea1412e0f0483e3a4121d99e4da43c19f4a73d6434abbe891194
+      RECEIPT: .diagnostics/ux-css-important-049-g3-safe-union-materialization.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Reconstruct exact safe-union candidate and receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET;
+          const p=cp.execFileSync('git',['show',`${process.env.PARENT}:${f}`],{encoding:'utf8'});
+          if((p.match(/!important\b/gi)||[]).length!==77) throw Error('parent marker drift');
+          const ords=[1,2,...Array.from({length:12},(_,i)=>i+4)],set=new Set(ords);let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(set.has(n)){r++;return ''}return m});
+          if(n!==77||r!==14||(c.match(/!important\b/gi)||[]).length!==63) throw Error(`ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,'')) throw Error('marker-only drift');
+          if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(c)) throw Error('active overflow guard was not preserved');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          if(blob!==process.env.EXPECTED_BLOB||sha256!==process.env.EXPECTED_SHA256||bytes!==36493) throw Error(`identity ${blob}/${sha256}/${bytes}`);
+          fs.writeFileSync(f,c);
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');
+          const global=css.reduce((s,q)=>s+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);if(global!==105)throw Error(`global ${global}`);
+          const receipt={result:'PASS',checkpoint:'UX-CSS-IMPORTANT-049',phase:'R6_EXACT_MATERIALIZATION',issue:386,parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,target:f,parentBlob:process.env.PARENT_BLOB,candidateBlob:blob,sha256,bytes,importantBefore:77,importantAfter:63,parentGlobal:119,candidateGlobal:105,globalDelta:-14,removedOrdinals:ords,preservedOrdinal:3,preservedGuard:'.featured-services .content-rail overflow: visible !important',markerOnly:true,selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,successorRun:32920970860,successorJob:98034331684,fullG3StaticRun:32921059826,fullG3StaticJob:98034583695,fullG3BrowserRun:32921102598,fullG3BrowserJobs:[98034696406,98034696488,98034696487],fullG3BrowserClassification:'REAL_FUNCTIONAL_DELTA',isolationRun:32921391160,railIsolationRun:32921663605,blockerJob:98036277036,blockerOrdinal:3,blockerProperty:'overflow',blockerComputedDelta:'visible -> hidden at <=560px',safeUnionStaticRun:32922051556,safeUnionStaticJob:98037397632,safeUnionBrowserRun:32922180669,safeUnionBrowserJobs:[98037764326,98037764304,98037764185],browserRepetitions:3,browserStatesPerRepeat:12,filterStatesPerRepeat:4,metadataDiffs:0,screenshotDiffs:0,loadDiffs:0,pageErrors:0,introducedRegressions:0,criteriaRelaxed:0,repositoryOnly:true,runId:Number(process.env.GITHUB_RUN_ID)};
+          fs.mkdirSync(path.dirname(process.env.RECEIPT),{recursive:true});fs.writeFileSync(process.env.RECEIPT,JSON.stringify(receipt,null,2)+'\n');
+          console.log('MATERIALIZATION='+JSON.stringify({result:'PASS',blob,sha256,bytes,target:'77->63',global:'119->105',preservedOrdinal:3}));
+          NODE
+          test "$(git status --porcelain | awk '{print $2}' | sort)" = $'.diagnostics/ux-css-important-049-g3-safe-union-materialization.json\nassets/css/pages/home/mobile-hero-feed.css'
+          git diff --check -- "$TARGET" "$RECEIPT"
+      - name: Commit diagnostic materialization fast-forward
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$TARGET" "$RECEIPT"
+          git commit -m "diagnostic(ux-css-important-049): materialize exact safe G3 union"
+          git push origin HEAD:diag/ux-css-important-049-g3-safe-union-materialize-r6
