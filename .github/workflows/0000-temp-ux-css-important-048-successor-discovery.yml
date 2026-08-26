@@ -1,0 +1,58 @@
+name: TEMP UX-CSS-IMPORTANT-048 Successor Discovery
+on:
+  push:
+    branches: [diag/ux-css-important-048-successor-discovery]
+permissions: {contents: read}
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT: bb8644a4dcf6ebfbe4fd0de010f637b6b4d43cdc
+      TREE: c59180ef5d6e93b894a387d3efad85dff00c9b59
+      TARGET: assets/css/pages/home/mobile-hero-feed.css
+      PARENT_BLOB: 2f88bd5963ad0157283d322bc9bdb4d8f367e4ba
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0}
+      - name: Freeze parent and enumerate residual estate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),crypto=require('crypto'),cp=require('child_process');
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8');
+          const target=(p.match(/!important\b/gi)||[]).length;
+          if(target!==99) throw Error(`target markers ${target}`);
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');
+          const global=css.reduce((s,q)=>s+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);
+          if(global!==141) throw Error(`global markers ${global}`);
+          const lines=p.split(/\n/); let ordinal=0, selector='';
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i];
+            if(line.includes('{')) selector=line.trim();
+            const count=(line.match(/!important\b/gi)||[]).length;
+            for(let k=0;k<count;k++){
+              ordinal++;
+              const prop=(line.trim().match(/^([\w-]+)\s*:/)||[])[1]||'';
+              console.log(`MARKER|ordinal=${ordinal}|line=${i+1}|property=${prop}|selector=${selector}|text=${line.trim()}`);
+            }
+          }
+          let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(n>=1&&n<=22){r++;return ''}return m});
+          if(n!==99||r!==22||(c.match(/!important\b/gi)||[]).length!==77) throw Error(`candidate ordinal ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,'')) throw Error('marker-only drift');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(c).digest('hex');
+          const bytes=Buffer.byteLength(c);
+          fs.writeFileSync('/tmp/candidate.css',c);
+          fs.writeFileSync(f,c);
+          const global2=css.reduce((s,q)=>s+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);
+          if(global2!==119) throw Error(`candidate global ${global2}`);
+          console.log('SUCCESSOR='+JSON.stringify({result:'PASS',parentSha:process.env.PARENT,parentTree:process.env.TREE,parentBlob:process.env.PARENT_BLOB,targetMarkers:99,parentGlobal:141,candidateFamily:'historical G2 SEARCH_CONTROLS',removedOrdinals:[1,22],removed:22,candidateBlob:blob,sha256,bytes,candidateTarget:77,candidateGlobal:119,globalDelta:-22,markerOnly:true}));
+          NODE
+          test "$(git diff --name-only "$PARENT" --)" = "$TARGET"
+          git diff --check "$PARENT" -- "$TARGET"
