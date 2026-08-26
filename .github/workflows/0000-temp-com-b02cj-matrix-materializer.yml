@@ -1,9 +1,9 @@
 name: TEMP COM-B02CJ Matrix Derivative Materializer
 
 on:
-  pull_request:
+  push:
     branches:
-      - rep/rep-001-baseline-audit
+      - com/com-001-baseline-audit
     paths:
       - '.github/workflows/0000-temp-com-b02cj-matrix-materializer.yml'
 
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   materialize-b02cj-matrix-derivative:
-    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    if: github.run_attempt == 1
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -35,7 +35,7 @@ jobs:
       - name: Checkout exact TEMP recovery head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -49,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
-          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '2'
+          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '3'
           expected="$TEMP_WORKFLOW"
           actual="$(git diff --name-only "$CANDIDATE_HEAD" HEAD)"
           test "$actual" = "$expected"
@@ -87,7 +87,7 @@ jobs:
               ),
               (
                   "          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '3'",
-                  "          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '6'",
+                  "          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '7'",
               ),
               (
                   "          expected=\"$(printf '%s\\n' \"$CONFIG\" \"$TEST\" \"$WORKFLOW\" | sort)\"",
