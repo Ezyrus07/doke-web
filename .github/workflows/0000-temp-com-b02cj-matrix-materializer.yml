@@ -21,6 +21,7 @@ jobs:
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
       PERMANENT_WORKFLOW: .github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml
       PERMANENT_WORKFLOW_BLOB: bfdcefc7d42f7d0980b1a5111ecfb454f0ce73e4
       TEST: scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js
@@ -31,7 +32,7 @@ jobs:
       TARGET_BRANCH: com/com-001-baseline-audit
 
     steps:
-      - name: Checkout exact TEMP install head
+      - name: Checkout exact TEMP recovery head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -43,12 +44,12 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze install lineage and source
+      - name: Freeze recovery lineage and source
         shell: bash
         run: |
           set -euo pipefail
           git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
-          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '1'
+          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '2'
           expected="$TEMP_WORKFLOW"
           actual="$(git diff --name-only "$CANDIDATE_HEAD" HEAD)"
           test "$actual" = "$expected"
@@ -61,14 +62,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Materialize only the canonical Matrix derivative
+      - name: Materialize canonical Matrix derivatives and final scope
         shell: bash
         run: |
           set -euo pipefail
           npm run write:domain-completion-matrix
           test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          expected_generated="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
           actual_generated="$(git diff --name-only | sort)"
-          test "$actual_generated" = "$MATRIX_MD"
+          test "$actual_generated" = "$expected_generated"
 
           python - <<'PY'
           from pathlib import Path
@@ -77,19 +79,19 @@ jobs:
           replacements = [
               (
                   "      - 'scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js'\n      - '.github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml'",
-                  "      - 'scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js'\n      - 'docs/DOMAIN-COMPLETION-MATRIX.md'\n      - '.github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml'",
+                  "      - 'scripts/test-com-b02cj-repository-only-route-resume-surface-controlled-invocation.js'\n      - 'docs/DOMAIN-COMPLETION-MATRIX.md'\n      - 'reports/generated/domain-completion-matrix-report.json'\n      - '.github/workflows/com-b02cj-repository-only-route-resume-surface-controlled-invocation.yml'",
               ),
               (
                   "      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623\n      ROUTE_REGISTRY_BLOB:",
-                  "      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623\n      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md\n      ROUTE_REGISTRY_BLOB:",
+                  "      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623\n      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md\n      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json\n      ROUTE_REGISTRY_BLOB:",
               ),
               (
                   "          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '3'",
-                  "          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '5'",
+                  "          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '6'",
               ),
               (
                   "          expected=\"$(printf '%s\\n' \"$CONFIG\" \"$TEST\" \"$WORKFLOW\" | sort)\"",
-                  "          expected=\"$(printf '%s\\n' \"$CONFIG\" \"$TEST\" \"$MATRIX_MD\" \"$WORKFLOW\" | sort)\"",
+                  "          expected=\"$(printf '%s\\n' \"$CONFIG\" \"$TEST\" \"$MATRIX_MD\" \"$MATRIX_REPORT\" \"$WORKFLOW\" | sort)\"",
               ),
           ]
           for old, new in replacements:
@@ -100,9 +102,9 @@ jobs:
           PY
 
           git rm "$TEMP_WORKFLOW"
-          git add "$MATRIX_MD" "$PERMANENT_WORKFLOW"
+          git add "$MATRIX_MD" "$MATRIX_REPORT" "$PERMANENT_WORKFLOW"
 
-          expected_final="$(printf '%s\n' "$CONFIG" "$MATRIX_MD" "$TEST" "$PERMANENT_WORKFLOW" | sort)"
+          expected_final="$(printf '%s\n' "$CONFIG" "$MATRIX_MD" "$MATRIX_REPORT" "$TEST" "$PERMANENT_WORKFLOW" | sort)"
           actual_final="$(git diff --cached --name-only "$PREDECESSOR_HEAD" | sort)"
           test "$actual_final" = "$expected_final"
           test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
@@ -113,13 +115,48 @@ jobs:
           node --check "$TEST"
           git diff --cached --check "$PREDECESSOR_HEAD"
 
-      - name: Commit final TEMP-free repository-only tree
+      - name: Prepare immutable TEMP-free commit without moving branch ref
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git fetch origin "$TARGET_BRANCH"
           test "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse HEAD)"
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'docs(com): materialize B02CJ matrix derivative'
-          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+
+          parent="$(git rev-parse HEAD)"
+          base_tree="$(git rev-parse HEAD^{tree})"
+          local_tree="$(git write-tree)"
+
+          md_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' "$MATRIX_MD" | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+          report_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' "$MATRIX_REPORT" | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+          permanent_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' "$PERMANENT_WORKFLOW" | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+
+          tree="$(jq -n \
+            --arg base "$base_tree" \
+            --arg md "$md_blob" \
+            --arg report "$report_blob" \
+            --arg permanent "$permanent_blob" \
+            --arg temp "$TEMP_WORKFLOW" \
+            --arg permanent_path "$PERMANENT_WORKFLOW" \
+            '{base_tree:$base,tree:[
+              {path:"docs/DOMAIN-COMPLETION-MATRIX.md",mode:"100644",type:"blob",sha:$md},
+              {path:"reports/generated/domain-completion-matrix-report.json",mode:"100644",type:"blob",sha:$report},
+              {path:$permanent_path,mode:"100644",type:"blob",sha:$permanent},
+              {path:$temp,mode:"100644",type:"blob",sha:null}
+            ]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/trees" --input - --jq .sha)"
+
+          test "$tree" = "$local_tree"
+
+          commit="$(jq -n \
+            --arg message 'docs(com): materialize B02CJ matrix derivatives' \
+            --arg tree "$tree" \
+            --arg parent "$parent" \
+            '{message:$message,tree:$tree,parents:[$parent]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/commits" --input - --jq .sha)"
+
+          test "$(git rev-parse HEAD)" = "$parent"
+          printf 'PREPARED_COMMIT_SHA=%s\n' "$commit"
+          printf 'PREPARED_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$md_blob"
+          printf 'REPORT_BLOB_SHA=%s\n' "$report_blob"
+          printf 'PERMANENT_WORKFLOW_BLOB_SHA=%s\n' "$permanent_blob"
