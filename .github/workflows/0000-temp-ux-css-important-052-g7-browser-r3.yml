@@ -1,0 +1,109 @@
+name: TEMP UX-CSS-IMPORTANT-052 G7 Browser R3
+on:
+  push:
+    branches:
+      - diag/ux-css-important-052-g7-browser-r3
+permissions:
+  contents: read
+jobs:
+  browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        repeat: [1, 2, 3]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Reconstruct frozen G7 candidate
+        shell: bash
+        env:
+          PARENT: f49f53eca5a742418fbf58c63e16cb94ac040d63
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          EXPECTED_BLOB: 88423184a186ca12c7faf365df84543fd3e3a73a
+          EXPECTED_SHA256: c7dd56f5e0e90c2becb11f15059c35ed3bd189c0514ef0bb8b714f519c91084c
+        run: |
+          set -euo pipefail
+          test "$(git rev-list --parents -n1 HEAD | awk '{print $2}')" = "$PARENT"
+          git show "$PARENT:$TARGET" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),crypto=require('crypto');
+          const p=fs.readFileSync('/tmp/parent.css','utf8');let n=0,r=0;const set=new Set(Array.from({length:26},(_,i)=>i+2));
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(set.has(n)){r++;return ''}return m});
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha=crypto.createHash('sha256').update(c).digest('hex');
+          if(n!==27||r!==26||(c.match(/!important\b/gi)||[]).length!==1||blob!==process.env.EXPECTED_BLOB||sha!==process.env.EXPECTED_SHA256||Buffer.byteLength(c)!==35811)throw Error(`identity ${n}/${r}/${blob}/${sha}`);
+          if(!/\.featured-services\s+\.content-rail\s*\{[\s\S]*?overflow:\s*visible\s*!important\s*;/m.test(c))throw Error('G3 guard lost');
+          fs.writeFileSync('/tmp/candidate.css',c);console.log('BROWSER_CANDIDATE_IDENTITY=PASS');
+          NODE
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Canonical browser A B with G7 interaction coverage
+        shell: bash
+        env:
+          TARGET: assets/css/pages/home/mobile-hero-feed.css
+          REPEAT: ${{ matrix.repeat }}
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET" 2>/dev/null || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const f=process.env.TARGET,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/candidate.css','utf8');
+            const widths=[359,379,380,381,390,430,560,561],filters=new Set([359,380,390,560]),states=[];
+            for(const w of widths){states.push([w,'default']);if(filters.has(w))states.push([w,'filters']);}
+            const H=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+            const items=Array.from({length:8},(_,i)=>({id:'c52-'+i,serviceId:'c52-'+i,status:'active',title:'Serviço '+i,category:'Reformas',providerName:'Prof '+i,providerHandle:'p'+i,rating:4.9,reviewsCount:20+i,price:120+i,location:'Salvador, BA',tags:['seguro']}));
+            const sels=['[data-more-filters-panel]','[data-more-filters-panel] .home-filter-panel__card','.more-filters__split-body','.more-filters__split-body::after','.more-filters__split-nav','.more-filters__nav-button','.more-filters__split-content','.more-filters__pane','.more-filters__pane[hidden]','.more-filters__quick-toggles','.filter-chip','.filter-field--compact','.more-filters__actions','.filter-action','.featured-services .content-rail'];
+            const browser=await chromium.launch({headless:true});
+            async function cap(w,state,phase){
+              const c=await browser.newContext({viewport:{width:w,height:1050},reducedMotion:'reduce'}),p=await c.newPage(),errs=[];let loaded=false;
+              p.on('pageerror',e=>errs.push(e.message));p.on('request',r=>{try{if(new URL(r.url()).pathname==='/'+f)loaded=true}catch{}});
+              await p.route('**/*',r=>{const u=r.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return r.continue();if(u.startsWith('https://images.pexels.com/'))return r.fulfill({status:200,contentType:'image/png',body:tiny});return r.abort();});
+              await p.goto(`http://127.0.0.1:4173/index.html?c52=${process.env.REPEAT}-${phase}-${w}-${state}`,{waitUntil:'domcontentloaded',timeout:15000});
+              await p.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});await p.waitForFunction(()=>Boolean(window.Doke?.publicServiceCard?.create),null,{timeout:7000});
+              await p.evaluate(items=>{const a=document.querySelector('#featured-services-track'),b=document.querySelector('[data-more-services-grid]');if(!a||!b)throw Error('grids');a.textContent='';b.textContent='';items.slice(0,6).forEach(x=>a.appendChild(window.Doke.publicServiceCard.create(x)));items.slice(6).forEach(x=>b.appendChild(window.Doke.publicServiceCard.create(x,{results:true})));},items);
+              if(state==='filters'){
+                await p.waitForFunction(()=>Boolean(window.DokeHomeFiltersApi?.open),null,{timeout:7000});await p.evaluate(()=>window.DokeHomeFiltersApi.open('tabs'));
+                await p.waitForFunction(()=>{const x=document.querySelector('[data-more-filters-panel]');return document.body.classList.contains('home-filter-sheet-open')&&Boolean(x&&!x.hidden&&x.getAttribute('aria-hidden')!=='true');},null,{timeout:4000});
+              }
+              await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});await p.waitForTimeout(120);
+              async function snap(label){
+                const data=await p.evaluate(sels=>{
+                  const one=(e,pseudo)=>{const c=getComputedStyle(e,pseudo),r=e.getBoundingClientRect();return{hidden:e.hidden,aria:e.getAttribute('aria-hidden'),cls:e.className,d:c.display,p:c.position,v:c.visibility,o:c.opacity,z:c.zIndex,w:c.width,h:c.height,minh:c.minHeight,maxh:c.maxHeight,t:c.top,l:c.left,ri:c.right,tr:c.transform,m:c.margin,pad:c.padding,bd:c.border,br:c.borderRadius,bg:c.backgroundColor,bs:c.boxShadow,ov:c.overflow,ovx:c.overflowX,ovy:c.overflowY,gtc:c.gridTemplateColumns,flex:c.flex,r:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*100)/100),sw:e.scrollWidth,sh:e.scrollHeight,cw:e.clientWidth,ch:e.clientHeight};};
+                  const pick=s=>{let pseudo=null,base=s;if(s.endsWith('::after')){pseudo='::after';base=s.slice(0,-7)}else if(s.endsWith('::before')){pseudo='::before';base=s.slice(0,-8)}const nodes=[...document.querySelectorAll(base)];return nodes.map(e=>one(e,pseudo));};
+                  return{body:document.body.className,root:document.documentElement.className,dw:document.documentElement.scrollWidth,dh:document.documentElement.scrollHeight,styles:sels.map(s=>[s,pick(s)])};
+                },sels);
+                return{label,data,png:H(await p.screenshot({fullPage:true,animations:'disabled'}))};
+              }
+              const views=[await snap('initial')];
+              if(state==='filters'){
+                const count=await p.locator('.more-filters__nav-button').count();
+                if(count<3)throw Error(`nav buttons ${count}`);
+                for(let i=0;i<count;i++){await p.locator('.more-filters__nav-button').nth(i).click();await p.waitForTimeout(80);views.push(await snap('nav-'+i));}
+              }
+              await c.close();return{views,errs,loaded};
+            }
+            fs.writeFileSync(f,P);const base={};for(const [w,s] of states)base[`${w}-${s}`]=await cap(w,s,'parent');
+            fs.writeFileSync(f,C);let md=0,sd=0,ld=0,pe=0;const diffs=[];
+            for(const [w,s] of states){const k=`${w}-${s}`,a=base[k],b=await cap(w,s,'candidate');pe+=a.errs.length+b.errs.length;
+              const ad=a.views.map(x=>({label:x.label,data:x.data})),bd=b.views.map(x=>({label:x.label,data:x.data}));
+              const ap=a.views.map(x=>x.png),bp=b.views.map(x=>x.png);
+              if(JSON.stringify(ad)!==JSON.stringify(bd)){md++;diffs.push('meta:'+k);}if(JSON.stringify(ap)!==JSON.stringify(bp)){sd++;diffs.push('png:'+k);}if(a.loaded!==b.loaded){ld++;diffs.push('load:'+k);}}
+            fs.writeFileSync(f,P);await browser.close();
+            const result={result:!md&&!sd&&!ld&&!pe?'PASS':'FAIL',repeat:Number(process.env.REPEAT),states:states.length,filterStates:filters.size,filterNavViewsPerState:4,metadataDiffs:md,screenshotDiffs:sd,loadDiffs:ld,pageErrors:pe,diffKeys:diffs};
+            console.log('BROWSER_RESULT='+JSON.stringify(result));if(result.result!=='PASS')process.exit(2);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
