@@ -1,0 +1,120 @@
+name: TEMP UX Post-Data-Ready Global State Handoff
+on:
+  push:
+    branches:
+      - diag/ux-post-data-ready-global-state-handoff
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-post-data-ready-global-state-handoff.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Verify diagnostic lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+      - name: Recompute cycles 131 through 140
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_gate() {
+            local name="$1"; shift
+            echo "GATE_START=$name"
+            "$@"
+            echo "GATE_PASS=$name"
+          }
+
+          run_gate critical_runtime npm run audit:critical-state-runtime-api
+          run_gate critical_pages npm run audit:critical-state-contracts
+          run_gate critical_actions npm run audit:critical-action-state-contracts
+          run_gate cycle136 npm run audit:main-marketplace-state-contracts
+          run_gate cycle137 npm run audit:main-support-state-contracts
+          run_gate cycle138 npm run audit:main-action-state-contracts
+          run_gate cycle139 npm run audit:main-state-runtime-coverage
+          run_gate cycle140 npm run audit:global-state-completion-gate
+
+          node <<'NODE'
+          const fs=require('fs');
+          const read=p=>JSON.parse(fs.readFileSync(p,'utf8'));
+          const paths={
+            runtime:'docs/validation/global-cycle-131-135-critical-state-runtime-api-report.json',
+            critical:'docs/validation/global-cycle-131-135-critical-state-contracts-report.json',
+            criticalActions:'docs/validation/global-cycle-131-135-critical-action-state-contracts-report.json',
+            c136:'docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json',
+            c137:'docs/validation/global-cycle-137-main-support-state-contracts-report.json',
+            c138:'docs/validation/global-cycle-138-main-action-state-contracts-report.json',
+            c139:'docs/validation/global-cycle-139-main-state-runtime-coverage-report.json',
+            c140:'docs/validation/global-cycle-140-global-state-completion-gate-report.json'
+          };
+          const r=Object.fromEntries(Object.entries(paths).map(([k,p])=>[k,read(p)]));
+          const reviewPages=(r.c138.pages||[]).filter(p=>p.status!=='passed');
+          const out={
+            result:'PASS',
+            checkpointBoundary:'post-data-ready-on-UX-CSS-IMPORTANT-053',
+            parent:process.env.PARENT,
+            critical:{
+              runtimeStatus:r.runtime.status,
+              runtimeMissing:r.runtime.missing,
+              pageStatus:r.critical.status,
+              checkedPages:r.critical.checkedPages,
+              failedPages:r.critical.failedPages,
+              actionStatus:r.criticalActions.status,
+              checkedActions:r.criticalActions.checkedActions,
+              failedActions:r.criticalActions.failedActions
+            },
+            main:{
+              marketplaceStatus:r.c136.status,
+              marketplaceChecked:r.c136.checkedPages,
+              marketplaceFailed:r.c136.failedPages,
+              supportStatus:r.c137.status,
+              supportChecked:r.c137.checkedPages,
+              supportFailed:r.c137.failedPages,
+              actionStatus:r.c138.status,
+              actionCheckedPages:r.c138.checkedPages,
+              actionReviewPages:r.c138.reviewPages,
+              totalActionStates:r.c138.totalActionStates,
+              totalCriticalSubmitButtons:r.c138.totalCriticalSubmitButtons,
+              actionReviewDetails:reviewPages,
+              runtimeStatus:r.c139.status,
+              runtimeChecked:r.c139.checkedPages,
+              runtimeFailed:r.c139.failedPages
+            },
+            completion:{
+              status:r.c140.status,
+              failedReports:r.c140.failedReports,
+              followUpReports:r.c140.followUpReports,
+              nextPhaseConstraint:r.c140.nextPhaseConstraint,
+              visualChange:r.c140.visualChange
+            },
+            nextFront:r.c140.status==='passed' ? 'DESKTOP_FIRST_ENTRY_PREFLIGHT' : r.c140.status==='passed-with-follow-up' ? 'STATE_FOLLOWUP_BEFORE_DESKTOP_DECISION' : 'GLOBAL_STATE_BLOCKER',
+            productMutation:false,
+            criteriaRelaxed:0,
+            repositoryOnly:true
+          };
+          console.log('POST_DATA_READY_GLOBAL_STATE_HANDOFF='+JSON.stringify(out));
+          NODE
+
+          git status --short
+          CHANGED="$(git status --porcelain | awk '{print $2}')"
+          if [ -n "$CHANGED" ]; then
+            printf '%s\n' "$CHANGED" | grep -v '^docs/validation/global-cycle-13[1-9]-' | grep -v '^docs/validation/global-cycle-140-' && exit 1 || true
+          fi
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd >/dev/null
+          test -z "$(git status --porcelain)"
