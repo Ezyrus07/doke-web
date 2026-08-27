@@ -12,13 +12,18 @@ on:
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/com-b02cn-repository-only-dispatcher-registry-lookup-integration.yml'
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/com-b02cn-repository-only-dispatcher-registry-lookup-integration.yml'
 
 permissions:
   contents: read
 
 jobs:
   certify-dispatcher-registry-lookup-integration:
-    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    if: github.event_name == 'push' || github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -62,10 +67,10 @@ jobs:
       COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
 
     steps:
-      - name: Checkout exact PR head
+      - name: Checkout exact certification head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Setup Node
