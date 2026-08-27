@@ -1,0 +1,220 @@
+name: TEMP UX-STATE-002 Settings Candidate A R2
+
+on:
+  push:
+    branches: [diag/ux-state-002-settings-action-state-candidate-a-r2]
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT: 0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2
+      PARENT_TREE: ee8f2c8bd6b22af3c5905f01785f47dee1caf52c
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-002-settings-action-state-candidate-a-r2.yml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify diagnostic lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse "$HEAD_SHA^")" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git diff --name-only "$PARENT" "$HEAD_SHA")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+
+      - name: Build ephemeral candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach /tmp/candidate "$PARENT" >/dev/null
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def one(text, before, after, label):
+              n = text.count(before)
+              if n != 1:
+                  raise SystemExit(f'{label}: expected 1, got {n}')
+              return text.replace(before, after, 1)
+
+          hp = Path('/tmp/candidate/configuracoes.html')
+          html = hp.read_text()
+          html = one(html,
+              'data-settings-save-panel="payments" data-action-state="idle" aria-busy="false"',
+              'data-settings-save-panel="payments" data-action-state="idle" data-action-loading-label="Salvando pagamentos" aria-busy="false"',
+              'payments label')
+          html = one(html,
+              'data-settings-save-panel="support" data-action-state="idle" aria-busy="false"',
+              'data-settings-save-panel="support" data-action-state="idle" data-action-loading-label="Salvando suporte" aria-busy="false"',
+              'support label')
+          hp.write_text(html)
+
+          jp = Path('/tmp/candidate/assets/js/pages/configuracoes.js')
+          js = jp.read_text()
+          helper = """  const pendingActionLabels = new WeakMap();
+
+  const setButtonSubmittingFeedback = (button) => {
+    if (!button || !button.hasAttribute('data-action-state')) return false;
+    if (!pendingActionLabels.has(button)) {
+      pendingActionLabels.set(button, button.getAttribute('aria-label'));
+    }
+    const loadingLabel = button.dataset.actionLoadingLabel || '';
+    const setActionState = window.Doke?.stateContracts?.setActionState;
+    if (typeof setActionState === 'function' && setActionState(button, 'submitting', loadingLabel)) {
+      return true;
+    }
+    button.setAttribute('data-action-state', 'submitting');
+    button.setAttribute('aria-busy', 'true');
+    button.disabled = true;
+    if (loadingLabel) button.setAttribute('aria-label', loadingLabel);
+    return true;
+  };
+
+  const restoreButtonPendingLabel = (button) => {
+    if (!button || !pendingActionLabels.has(button)) return;
+    const originalAriaLabel = pendingActionLabels.get(button);
+    pendingActionLabels.delete(button);
+    if (originalAriaLabel === null) button.removeAttribute('aria-label');
+    else button.setAttribute('aria-label', originalAriaLabel);
+  };
+
+"""
+          js = one(js, '  const setButtonSavedFeedback = (button) => {\n', helper + '  const setButtonSavedFeedback = (button) => {\n', 'helper')
+          js = one(js,
+              "  const setButtonSavedFeedback = (button) => {\n    if (!button) return;\n",
+              "  const setButtonSavedFeedback = (button) => {\n    if (!button) return;\n    restoreButtonPendingLabel(button);\n",
+              'success restore')
+          js = one(js,
+              "    if (profileError) profileError.textContent = '';\n    button.disabled = true;\n    button.setAttribute('aria-busy', 'true');\n    try {\n",
+              "    if (profileError) profileError.textContent = '';\n    setButtonSubmittingFeedback(button);\n    try {\n",
+              'profile pending')
+          js = one(js,
+              "    } catch (error) {\n      if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';\n      button.setAttribute('data-action-state', 'error');\n",
+              "    } catch (error) {\n      if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';\n      restoreButtonPendingLabel(button);\n      button.setAttribute('data-action-state', 'error');\n",
+              'profile error restore')
+          js = one(js,
+              "      if (!panelName) return;\n      button.disabled = true;\n      button.setAttribute('aria-busy', 'true');\n      try {\n",
+              "      if (!panelName) return;\n      if (button.hasAttribute('data-action-state')) {\n        setButtonSubmittingFeedback(button);\n      } else {\n        button.disabled = true;\n        button.setAttribute('aria-busy', 'true');\n      }\n      try {\n",
+              'panel pending')
+          js = one(js,
+              "      } catch (error) {\n        button.setAttribute('data-action-state', 'error');\n        button.setAttribute('aria-busy', 'false');\n",
+              "      } catch (error) {\n        restoreButtonPendingLabel(button);\n        button.setAttribute('data-action-state', 'error');\n        button.setAttribute('aria-busy', 'false');\n",
+              'panel error restore')
+          jp.write_text(js)
+          PY
+
+          mapfile -t files < <(git -C /tmp/candidate diff --name-only)
+          test "${#files[@]}" -eq 2
+          printf '%s\n' "${files[@]}" | sort > /tmp/actual
+          printf '%s\n' assets/js/pages/configuracoes.js configuracoes.html | sort > /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+          git -C /tmp/candidate diff --check
+          node --check /tmp/candidate/assets/js/pages/configuracoes.js
+          echo CANDIDATE_SCOPE_SYNTAX=PASS
+
+      - name: Source contract and negative proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/candidate
+          node - <<'NODE'
+          const fs=require('fs'), cp=require('child_process');
+          const html=fs.readFileSync('configuracoes.html','utf8');
+          const js=fs.readFileSync('assets/js/pages/configuracoes.js','utf8');
+          if(cp.execFileSync('git',['show','0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2:resultados.html'],{encoding:'utf8'})!==fs.readFileSync('resultados.html','utf8')) throw new Error('Resultados drift');
+          const buttons=[...html.matchAll(/<button\b[^>]*data-action-state="idle"[^>]*>/g)].map(m=>m[0]);
+          if(buttons.length!==3 || !buttons.every(x=>/data-action-loading-label="[^"]+"/.test(x))) throw new Error('Settings loading-label contract');
+          const profile=js.slice(js.indexOf('const saveProfile = async (button) =>'),js.indexOf('const syncPreferenceInputs'));
+          if(!(profile.indexOf('setButtonSubmittingFeedback(button);')>=0 && profile.indexOf('setButtonSubmittingFeedback(button);')<profile.indexOf('await service.updateCurrentProfile(payload)'))) throw new Error('profile transition ordering');
+          const panels=js.slice(js.indexOf('settingsSaveButtons.forEach((button) =>'),js.indexOf('settingsResetButtons.forEach'));
+          if(!(panels.indexOf('setButtonSubmittingFeedback(button);')>=0 && panels.indexOf('setButtonSubmittingFeedback(button);')<panels.indexOf('await savePanelSettings(panelName, button)'))) throw new Error('panel transition ordering');
+          if(!panels.includes("if (button.hasAttribute('data-action-state'))")) throw new Error('noncontract guard');
+          if(!js.includes("setActionState(button, 'submitting', loadingLabel)")) throw new Error('canonical action API delegation missing');
+          if((js.match(/restoreButtonPendingLabel\(button\);/g)||[]).length<3) throw new Error('pending aria-label restoration incomplete');
+          console.log('SOURCE_SEMANTIC_CONTRACT=PASS');
+          NODE
+
+          cp assets/js/pages/configuracoes.js /tmp/good.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/pages/configuracoes.js'); s=p.read_text()
+          needle='    setButtonSubmittingFeedback(button);\n    try {\n'
+          assert s.count(needle)==1
+          p.write_text(s.replace(needle,"    button.disabled = true;\n    button.setAttribute('aria-busy', 'true');\n    try {\n",1))
+          PY
+          set +e
+          node - <<'NODE'
+          const fs=require('fs'); const js=fs.readFileSync('assets/js/pages/configuracoes.js','utf8');
+          const p=js.slice(js.indexOf('const saveProfile = async (button) =>'),js.indexOf('const syncPreferenceInputs'));
+          process.exit(p.includes('setButtonSubmittingFeedback(button);') && p.indexOf('setButtonSubmittingFeedback(button);')<p.indexOf('await service.updateCurrentProfile(payload)') ? 0 : 1);
+          NODE
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          mv /tmp/good.js assets/js/pages/configuracoes.js
+          echo NEGATIVE_PENDING_TRANSITION=PASS
+
+      - name: Native state chain and governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/candidate
+          npm run audit:critical-states
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:main-action-state-contracts
+          npm run audit:main-state-runtime-coverage
+          npm run audit:global-state-completion-gate
+          node - <<'NODE'
+          const fs=require('fs');
+          const r138=JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json','utf8'));
+          const r139=JSON.parse(fs.readFileSync('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json','utf8'));
+          const r140=JSON.parse(fs.readFileSync('docs/validation/global-cycle-140-global-state-completion-gate-report.json','utf8'));
+          const review=r138.pages.filter(x=>x.status!=='passed');
+          if(r138.status!=='passed-with-follow-up' || review.length!==1 || review[0].file!=='resultados.html') throw new Error(`138 ${JSON.stringify(review)}`);
+          if(r139.status!=='passed' || r139.checkedPages!==12 || r139.failedPages!==0) throw new Error('139 regression');
+          const failed=Array.isArray(r140.failedReports)?r140.failedReports:[];
+          if(r140.status!=='passed-with-follow-up' || failed.length) throw new Error(`140 ${r140.status} ${JSON.stringify(failed)}`);
+          console.log('STATE_CHAIN=PASS '+JSON.stringify({review:review.map(x=>x.file),r139:r139.status,r140:r140.status,failedReports:failed.length}));
+          NODE
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          echo MATRIX_GOVERNANCE=PASS
+
+      - name: Freeze candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/candidate
+          git checkout -- docs/validation reports/generated docs/DOMAIN-COMPLETION-MATRIX.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          git clean -fd
+          mapfile -t files < <(git diff --name-only)
+          test "${#files[@]}" -eq 2
+          printf '%s\n' "${files[@]}" | sort > /tmp/final-actual
+          printf '%s\n' assets/js/pages/configuracoes.js configuracoes.html | sort > /tmp/final-expected
+          diff -u /tmp/final-expected /tmp/final-actual
+          echo "HTML_BLOB=$(git hash-object configuracoes.html)"
+          echo "JS_BLOB=$(git hash-object assets/js/pages/configuracoes.js)"
+          echo "HTML_SHA256=$(sha256sum configuracoes.html|awk '{print $1}')"
+          echo "JS_SHA256=$(sha256sum assets/js/pages/configuracoes.js|awk '{print $1}')"
+          echo "HTML_BYTES=$(wc -c < configuracoes.html|tr -d ' ')"
+          echo "JS_BYTES=$(wc -c < assets/js/pages/configuracoes.js|tr -d ' ')"
+          git diff --numstat
+          echo UX_STATE_002_CANDIDATE_A_STATIC=PASS
+          echo criteriaRelaxed=0
+          echo productMutation=false
+
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: |
+          git worktree remove --force /tmp/candidate 2>/dev/null || true
+          git reset --hard "$PARENT" >/dev/null 2>&1 || true
+          git clean -fd >/dev/null 2>&1 || true
