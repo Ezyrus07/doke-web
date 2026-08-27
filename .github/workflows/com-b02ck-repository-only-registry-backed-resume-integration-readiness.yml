@@ -8,6 +8,8 @@ on:
       - 'backend/shared/http/repository-only-registry-backed-resume-integration-readiness.js'
       - 'config/com-b02ck-repository-only-registry-backed-resume-integration-readiness.json'
       - 'scripts/test-com-b02ck-repository-only-registry-backed-resume-integration-readiness.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml'
 
 permissions:
@@ -46,6 +48,8 @@ jobs:
       OP_IMPL_BLOB: 99d804721a5d350dcf8e59dd935937e24561e094
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
       ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
       MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
       COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
@@ -67,11 +71,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          test "$(git rev-list --count "$PREDECESSOR_HEAD..HEAD")" = '6'
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
           test "$PREDECESSOR_RUN_ID" = '32967534682'
           test "$PREDECESSOR_JOB_ID" = '98173351054'
-          expected="$(printf '%s\n' "$TARGET" "$CONFIG" "$TEST" "$WORKFLOW" | sort)"
+          expected="$(printf '%s\n' "$TARGET" "$CONFIG" "$TEST" "$MATRIX_MD" "$MATRIX_REPORT" "$WORKFLOW" | sort)"
           actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
           test "$actual" = "$expected"
           test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
