@@ -1,0 +1,165 @@
+name: COM-B02CN Repository-Only Dispatcher Registry Lookup Integration
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - 'backend/shared/http/repository-only-route-resume-dispatcher-registry-lookup-integration.js'
+      - 'config/com-b02cn-repository-only-dispatcher-registry-lookup-integration.json'
+      - 'scripts/test-com-b02cn-repository-only-dispatcher-registry-lookup-integration.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/com-b02cn-repository-only-dispatcher-registry-lookup-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-dispatcher-registry-lookup-integration:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: dcf5618b5cffd4d6484b3141aaea9d23253815b2
+      PREDECESSOR_TREE: 09757b983d9dee7657e1fb51f767bde6d101ca3e
+      PREDECESSOR_RUN: '33092628509'
+      PREDECESSOR_JOB: '98589217618'
+      TARGET: backend/shared/http/repository-only-route-resume-dispatcher-registry-lookup-integration.js
+      TARGET_BLOB: 43ba780f17ef23790d03224955cafe49c454ac6c
+      CONFIG: config/com-b02cn-repository-only-dispatcher-registry-lookup-integration.json
+      CONFIG_BLOB: fb3de05bd8b2542cf5bf92cccb69f6824d80a294
+      TEST: scripts/test-com-b02cn-repository-only-dispatcher-registry-lookup-integration.js
+      TEST_BLOB: 7803b60448f48c083508ab9762ba273d8fadcd44
+      PERMANENT_WORKFLOW: .github/workflows/com-b02cn-repository-only-dispatcher-registry-lookup-integration.yml
+      FAILED_EXECUTION_HEAD: be95c9afdbfd468d512c35f80a2e6066b39ce6d1
+      FAILED_EXECUTION_TREE: 7d0e85d0a9689cc422ccb8637d6048254c6407d0
+      FAILED_EXECUTION_RUN: '33119845982'
+      FAILED_EXECUTION_JOB: '98683702872'
+      FAILED_EXECUTION_WORKFLOW_ID: '344147646'
+      FAILED_TEMP: .github/workflows/0000-temp-com-b02cn-dispatcher-registry-lookup-integration-proof.yml
+      FAILED_TEMP_BLOB: 1fa0393ea84f0a1398c1d72f689c9d9eadc266cd
+      RECOVERY_EXECUTION_HEAD: 583f2db2478ea0d6904f652622fe6226af4e2b62
+      RECOVERY_EXECUTION_TREE: 5e04e8a8aa14717395f19e34a565fe10609bdea2
+      RECOVERY_EXECUTION_RUN: '33120323069'
+      RECOVERY_EXECUTION_JOB: '98685305795'
+      RECOVERY_EXECUTION_WORKFLOW_ID: '344151687'
+      RECOVERY_TEMP: .github/workflows/0000-temp-com-b02cn-recovery-lookup-proof.yml
+      RECOVERY_TEMP_BLOB: 5dbcb31cac83a1886195cd13ac1d694689f60b71
+      B02CL_TARGET: backend/shared/http/repository-only-permanent-process-local-registry-storage-execution-implementation.js
+      B02CL_TARGET_BLOB: 9f1916f87db37a81045be897ae1c87e1341c4774
+      DISPATCHER: backend/shared/http/repository-only-route-resume-dispatcher.js
+      DISPATCHER_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      CARRIER: backend/shared/http/repository-only-route-continuation-carrier-contract.js
+      CARRIER_BLOB: fb7448f83fe385e94a2be61685f612d9e27d949f
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CM certification, historical B02CN execution, and exact final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+
+          git merge-base --is-ancestor "$FAILED_EXECUTION_HEAD" HEAD
+          test "$(git rev-parse "$FAILED_EXECUTION_HEAD^")" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$FAILED_EXECUTION_HEAD^{tree}")" = "$FAILED_EXECUTION_TREE"
+          test "$(git rev-parse "$FAILED_EXECUTION_HEAD:$FAILED_TEMP")" = "$FAILED_TEMP_BLOB"
+
+          git merge-base --is-ancestor "$RECOVERY_EXECUTION_HEAD" HEAD
+          test "$(git rev-parse "$RECOVERY_EXECUTION_HEAD^{tree}")" = "$RECOVERY_EXECUTION_TREE"
+          test "$(git rev-parse "$RECOVERY_EXECUTION_HEAD:$RECOVERY_TEMP")" = "$RECOVERY_TEMP_BLOB"
+
+          test ! -e "$FAILED_TEMP"
+          test ! -e "$RECOVERY_TEMP"
+          test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02CL_TARGET)" = "$B02CL_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$DISPATCHER)" = "$DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$CARRIER)" = "$CARRIER_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          for path in $actual; do
+            case "$path" in
+              "$TARGET"|"$CONFIG"|"$TEST"|"$PERMANENT_WORKFLOW"|"$MATRIX_MD"|"$MATRIX_REPORT") ;;
+              *) echo "Unexpected B02CN final-scope path: $path" >&2; exit 1 ;;
+            esac
+          done
+          for required in "$TARGET" "$CONFIG" "$TEST" "$PERMANENT_WORKFLOW"; do
+            printf '%s\n' "$actual" | grep -Fx "$required" >/dev/null
+          done
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify historical recovery proof without re-execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+
+          if grep -Eq 'createRepositoryOnlyPermanentProcessLocalRegistryStorageExecution[[:space:]]*\(' "$TEST" "$PERMANENT_WORKFLOW"; then
+            echo "B02CN permanent certification must not invoke the B02CL registry factory" >&2
+            exit 1
+          fi
+          if grep -Eq 'createRepositoryOnlyDispatcherRegistryLookupIntegration[[:space:]]*\(' "$TEST" "$PERMANENT_WORKFLOW"; then
+            echo "B02CN permanent certification must not instantiate the lookup adapter" >&2
+            exit 1
+          fi
+          if grep -Eq '\.(registerOpaqueContinuationState|resolveContinuationForDispatcher|resolveOpaqueContinuationState|releaseOpaqueContinuationState|dispatchRepositoryOnlyRouteResume)[[:space:]]*\(' "$TEST" "$PERMANENT_WORKFLOW"; then
+            echo "B02CN permanent certification must not re-execute registry, lookup, release, or dispatcher acceptance operations" >&2
+            exit 1
+          fi
+
+          node "$TEST"
+
+          grep -F '"authorizationConsumed": true' "$CONFIG" >/dev/null
+          grep -F '"recoveryExecutorRemoved": true' "$CONFIG" >/dev/null
+          grep -F '"reexecutionAllowed": false' "$CONFIG" >/dev/null
+          grep -F '"opaqueHandleCanonical": true' "$CONFIG" >/dev/null
+          grep -F '"sameRegistryExecutionInstanceInjected": true' "$CONFIG" >/dev/null
+          grep -F '"dispatcherRegistryLookupIntegrationPerformed": true' "$CONFIG" >/dev/null
+          grep -F '"dispatcherStoppedAtFreshResumeAuthorityGate": true' "$CONFIG" >/dev/null
+          grep -F '"registryReleaseExecuted": true' "$CONFIG" >/dev/null
+          grep -F '"entryCountAfterRelease": 0' "$CONFIG" >/dev/null
+          grep -F '"resumeSurfaceInvoked": false' "$CONFIG" >/dev/null
+          grep -F '"repositoryOperationInvoked": false' "$CONFIG" >/dev/null
+          grep -F '"networkExecuted": false' "$CONFIG" >/dev/null
+          grep -F '"runtimeActivated": false' "$CONFIG" >/dev/null
+          grep -F '"realtimeActivated": false' "$CONFIG" >/dev/null
+          grep -F '"productionChanged": false' "$CONFIG" >/dev/null
+
+      - name: Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD
