@@ -1,0 +1,61 @@
+name: TEMP UX post QA-DEBT-003 action follow-up
+
+on:
+  push:
+    branches:
+      - diag/ux-post-qa-debt-003-action-followup
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify diagnostic lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT='0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2'
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git diff --name-only "$PARENT" HEAD)" = '.github/workflows/0000-temp-ux-post-qa-debt-003-action-followup.yml'
+          git checkout --detach "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+      - name: Recompute action follow-up
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:critical-states
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:main-action-state-contracts
+          npm run audit:main-state-runtime-coverage
+          npm run audit:global-state-completion-gate
+          cat docs/validation/global-cycle-138-main-action-state-contracts-report.json
+          cat docs/validation/global-cycle-140-global-state-completion-gate-report.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const r138 = JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json','utf8'));
+          const r140 = JSON.parse(fs.readFileSync('docs/validation/global-cycle-140-global-state-completion-gate-report.json','utf8'));
+          const review = r138.pages.filter(p => p.status !== 'passed');
+          console.log('ACTION_FOLLOWUP=' + JSON.stringify({
+            parent: '0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2',
+            cycle138: r138.status,
+            reviewPages: review,
+            cycle140: r140.status,
+            failedReports: Array.isArray(r140.failedReports) ? r140.failedReports : [],
+            followUpReports: r140.followUpReports ?? null,
+            productMutation: false,
+            criteriaRelaxed: 0,
+            repositoryOnly: true
+          }));
+          NODE
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: |
+          git checkout -- . || true
+          git clean -fd || true
