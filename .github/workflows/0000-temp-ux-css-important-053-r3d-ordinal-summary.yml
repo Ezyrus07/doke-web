@@ -1,0 +1,48 @@
+name: TEMP UX-CSS-IMPORTANT-053 R3D Ordinal Summary
+
+on:
+  pull_request:
+    types: [reopened]
+    branches:
+      - diag/ux-css-important-053-r3d-ordinal-summary-base
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  summarize:
+    runs-on: ubuntu-24.04
+    env:
+      SOURCE_RUN: '33029188494'
+      EXPECTED_HEAD: f4985e48b2f477ad5000ab00451b547bac5d7166
+    steps:
+      - name: Consolidate immutable ordinal results
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+          run_json="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$api/actions/runs/$SOURCE_RUN")"
+          test "$(jq -r '.head_sha' <<<"$run_json")" = "$EXPECTED_HEAD"
+          test "$(jq -r '.status' <<<"$run_json")" = 'completed'
+          test "$(jq -r '.conclusion' <<<"$run_json")" = 'success'
+          jobs="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$api/actions/runs/$SOURCE_RUN/jobs?per_page=100")"
+          test "$(jq '.total_count' <<<"$jobs")" -eq 16
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          : > "$tmp/results.ndjson"
+          while IFS=$'\t' read -r id name conclusion; do
+            test "$conclusion" = 'success'
+            ordinal="$(sed -n 's/^isolate (\([0-9][0-9]*\))$/\1/p' <<<"$name")"
+            test -n "$ordinal"
+            curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$api/actions/jobs/$id/logs" -o "$tmp/$id.log"
+            line="$(grep -a 'ORDINAL_RESULT=' "$tmp/$id.log" | tail -n1 | sed 's/^.*ORDINAL_RESULT=//')"
+            test -n "$line"
+            test "$(jq -r '.ordinal' <<<"$line")" = "$ordinal"
+            jq -c . <<<"$line" >> "$tmp/results.ndjson"
+          done < <(jq -r '.jobs[] | [.id,.name,.conclusion] | @tsv' <<<"$jobs")
+          test "$(wc -l < "$tmp/results.ndjson")" -eq 16
+          summary="$(jq -sc 'sort_by(.ordinal) as $r | {sourceRun:33029188494,count:($r|length),causal:[$r[]|select(.causal)|.ordinal],safe:[$r[]|select(.causal|not)|.ordinal],results:$r}' "$tmp/results.ndjson")"
+          echo "ORDINAL_SUMMARY=$summary"
