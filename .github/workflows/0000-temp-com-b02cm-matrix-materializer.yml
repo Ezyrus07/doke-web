@@ -1,0 +1,152 @@
+name: TEMP COM-B02CM Matrix Derivative Materializer
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02cm-matrix-materializer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-b02cm-matrix-derivatives:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CANDIDATE_HEAD: b10b382664c7d067cbbff37b8c0b4e5ccd5099fb
+      PREDECESSOR_HEAD: 72404ef1300ffa977b92067f37d9f54bebecfa11
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      CONFIG: config/com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.json
+      CONFIG_BLOB: 7d2b576f28cb8ba0eb67f62f32cdc70d5addf698
+      TEST: scripts/test-com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.js
+      TEST_BLOB: d9b3e6ce4907b1ca1ac54db657b02d576e036099
+      PERMANENT_WORKFLOW: .github/workflows/com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.yml
+      PERMANENT_WORKFLOW_BLOB: b0422d2313aa8ff6afcc13349322ad5a653b37e4
+      B02CL_TARGET: backend/shared/http/repository-only-permanent-process-local-registry-storage-execution-implementation.js
+      B02CL_TARGET_BLOB: 9f1916f87db37a81045be897ae1c87e1341c4774
+      DISPATCHER: backend/shared/http/repository-only-route-resume-dispatcher.js
+      DISPATCHER_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      HISTORICAL_EXECUTION_HEAD: 621be7b0557876d670779c5cbc6ed5cf9ffdfdc0
+      HISTORICAL_EXECUTION_WORKFLOW: .github/workflows/0000-temp-com-b02cm-authorized-single-use-registry-cycle.yml
+      HISTORICAL_EXECUTION_WORKFLOW_BLOB: 2ac7587bffe003cab89082074461e4d106fcf2dc
+      TEMP_WORKFLOW: .github/workflows/0000-temp-com-b02cm-matrix-materializer.yml
+      TARGET_BRANCH: com/com-001-baseline-audit
+
+    steps:
+      - name: Checkout exact TEMP head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CM candidate and materializer-only installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE_HEAD"
+          test "$(git diff --name-only "$CANDIDATE_HEAD" HEAD)" = "$TEMP_WORKFLOW"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$PERMANENT_WORKFLOW)" = "$PERMANENT_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$B02CL_TARGET)" = "$B02CL_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$DISPATCHER)" = "$DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          git merge-base --is-ancestor "$HISTORICAL_EXECUTION_HEAD" HEAD
+          test "$(git rev-parse "$HISTORICAL_EXECUTION_HEAD:$HISTORICAL_EXECUTION_WORKFLOW")" = "$HISTORICAL_EXECUTION_WORKFLOW_BLOB"
+          test ! -e "$HISTORICAL_EXECUTION_WORKFLOW"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Generate and validate prospective TEMP-free final state
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq '\.createRepositoryOnlyPermanentProcessLocalRegistryStorageExecution[[:space:]]*\(' "$TEST"; then
+            echo "B02CM materialization must not permit factory re-execution through permanent test" >&2
+            exit 1
+          fi
+          if grep -Eq '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)[[:space:]]*\(' "$TEST"; then
+            echo "B02CM materialization must not permit registry operation re-execution" >&2
+            exit 1
+          fi
+
+          npm run write:domain-completion-matrix
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          expected_generated="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual_generated="$(git diff --name-only | sort)"
+          test "$actual_generated" = "$expected_generated"
+
+          save_dir="$RUNNER_TEMP/b02cm-generated"
+          mkdir -p "$save_dir/docs" "$save_dir/reports/generated"
+          cp "$MATRIX_MD" "$save_dir/docs/DOMAIN-COMPLETION-MATRIX.md"
+          cp "$MATRIX_REPORT" "$save_dir/reports/generated/domain-completion-matrix-report.json"
+
+          git rm "$TEMP_WORKFLOW"
+          git add "$MATRIX_MD"
+          git add -f "$MATRIX_REPORT"
+
+          expected_final="$(printf '%s\n' "$CONFIG" "$TEST" "$PERMANENT_WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual_final="$(git diff --cached --name-only "$PREDECESSOR_HEAD" | sort)"
+          test "$actual_final" = "$expected_final"
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '0000-temp-com-b02cm-*' -print -quit)"
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TEST"
+          node "$TEST"
+          git diff --cached --check "$PREDECESSOR_HEAD"
+
+          printf 'PROSPECTIVE_MARKDOWN_BLOB=%s\n' "$(git hash-object "$MATRIX_MD")"
+          printf 'PROSPECTIVE_REPORT_BLOB=%s\n' "$(git hash-object "$MATRIX_REPORT")"
+
+          git reset --hard HEAD
+          cp "$save_dir/docs/DOMAIN-COMPLETION-MATRIX.md" "$MATRIX_MD"
+          cp "$save_dir/reports/generated/domain-completion-matrix-report.json" "$MATRIX_REPORT"
+          git add "$MATRIX_MD"
+          git add -f "$MATRIX_REPORT"
+          expected_stage="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual_stage="$(git diff --cached --name-only | sort)"
+          test "$actual_stage" = "$expected_stage"
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          git diff --cached --check
+
+      - name: Commit and push Matrix derivatives only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$TARGET_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse HEAD)"
+          parent="$(git rev-parse HEAD)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): materialize B02CM matrix derivatives'
+          commit="$(git rev-parse HEAD)"
+          tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^)" = "$parent"
+          expected="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff-tree --no-commit-id --name-only -r HEAD | sort)"
+          test "$actual" = "$expected"
+          git push origin "HEAD:$TARGET_BRANCH"
+          printf 'DERIVATIVES_COMMIT_SHA=%s\n' "$commit"
+          printf 'DERIVATIVES_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$(git rev-parse HEAD:$MATRIX_MD)"
+          printf 'REPORT_BLOB_SHA=%s\n' "$(git rev-parse HEAD:$MATRIX_REPORT)"
