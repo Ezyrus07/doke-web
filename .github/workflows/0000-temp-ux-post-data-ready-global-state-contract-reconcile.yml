@@ -1,0 +1,82 @@
+name: TEMP UX Post-Data-Ready Global State Contract Reconcile
+on:
+  push:
+    branches:
+      - diag/ux-post-data-ready-global-state-contract-reconcile
+permissions:
+  contents: read
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-post-data-ready-global-state-contract-reconcile.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Verify diagnostic lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+      - name: Install dependencies
+        shell: bash
+        run: npm ci --ignore-scripts
+      - name: Collect original 136 through 140 without early abort
+        shell: bash
+        run: |
+          set -uo pipefail
+          run_capture() {
+            local name="$1"; shift
+            echo "ORIGINAL_GATE_START=$name"
+            set +e
+            "$@"
+            local rc=$?
+            set -e
+            echo "ORIGINAL_GATE_RC_${name}=$rc"
+          }
+          set -e
+          run_capture c136 npm run audit:main-marketplace-state-contracts
+          run_capture c137 npm run audit:main-support-state-contracts
+          run_capture c138 npm run audit:main-action-state-contracts
+          run_capture c139 npm run audit:main-state-runtime-coverage
+          run_capture c140 npm run audit:global-state-completion-gate
+
+          node <<'NODE'
+          const fs=require('fs');
+          const paths={
+            c136:'docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json',
+            c137:'docs/validation/global-cycle-137-main-support-state-contracts-report.json',
+            c138:'docs/validation/global-cycle-138-main-action-state-contracts-report.json',
+            c139:'docs/validation/global-cycle-139-main-state-runtime-coverage-report.json',
+            c140:'docs/validation/global-cycle-140-global-state-completion-gate-report.json'
+          };
+          const read=p=>fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):null;
+          const r=Object.fromEntries(Object.entries(paths).map(([k,p])=>[k,read(p)]));
+          const out={
+            parent:process.env.PARENT,
+            statuses:Object.fromEntries(Object.entries(r).map(([k,v])=>[k,v&&v.status])),
+            c136:r.c136,
+            c137:r.c137,
+            c138:r.c138,
+            c139:r.c139,
+            c140:r.c140,
+            productMutation:false,
+            criteriaRelaxed:0,
+            repositoryOnly:true
+          };
+          console.log('GLOBAL_STATE_ORIGINAL_RECONCILE='+JSON.stringify(out));
+          NODE
+
+          CHANGED="$(git status --porcelain | awk '{print $2}')"
+          if [ -n "$CHANGED" ]; then
+            printf '%s\n' "$CHANGED" | grep -v '^docs/validation/global-cycle-13[6-9]-' | grep -v '^docs/validation/global-cycle-140-' && exit 1 || true
+          fi
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd >/dev/null
+          test -z "$(git status --porcelain)"
