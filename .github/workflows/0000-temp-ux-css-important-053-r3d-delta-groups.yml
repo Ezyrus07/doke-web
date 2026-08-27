@@ -1,0 +1,130 @@
+name: TEMP UX-CSS-IMPORTANT-053 R3D Delta Groups
+
+on:
+  pull_request:
+    types: [reopened]
+    branches:
+      - diag/ux-css-important-053-mobile-base-r3d-delta-groups-base
+
+permissions:
+  contents: read
+
+jobs:
+  isolate:
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [G1, G2, G3, G4, G5, G6]
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+      CANDIDATE_BLOB: cc21f6a10b3b0364005be67f49c044f750909da1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify exact parent and build isolated group variant
+        shell: bash
+        env:
+          GROUP: ${{ matrix.group }}
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-list --parents -n1 "$BASE_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          test "$(git diff-tree --no-commit-id --name-only -r "$BASE_SHA")" = ".github/workflows/0000-temp-ux-css-important-053-r3d-delta-groups.yml"
+          git checkout --detach "$PARENT" >/dev/null
+          cp "$TARGET" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const p=fs.readFileSync(process.env.TARGET,'utf8');
+          const groups={G1:[1,2,3,5,6,7],G2:[9,10,11,12,13],G3:[15,16,17,18],G4:[19,20,21],G5:[22,23,24,25,26],G6:[27,28]};
+          const remove=new Set(groups[process.env.GROUP]); if(!remove.size) throw Error('unknown group');
+          let n=0; const v=p.replace(/\s*!important\b/gi,m=>{n++;return remove.has(n)?'':m});
+          if(n!==28) throw Error(`expected 28 markers, got ${n}`);
+          if((v.match(/!important\b/gi)||[]).length!==28-remove.size) throw Error('variant marker count');
+          let all=0; const full=p.replace(/\s*!important\b/gi,m=>{all++;return [4,8,14].includes(all)?m:''});
+          const fullBlob=cp.execFileSync('git',['hash-object','--stdin'],{input:full,encoding:'utf8'}).trim();
+          if(fullBlob!==process.env.CANDIDATE_BLOB) throw Error(`candidate identity ${fullBlob}`);
+          fs.writeFileSync('/tmp/variant.css',v);
+          console.log(`GROUP_VARIANT=PASS group=${process.env.GROUP} ordinals=${groups[process.env.GROUP].join(',')} remaining=${28-remove.size}`);
+          NODE
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Measure isolated parent to group delta
+        shell: bash
+        env:
+          GROUP: ${{ matrix.group }}
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET" 2>/dev/null || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const target=process.env.TARGET,group=process.env.GROUP,P=fs.readFileSync('/tmp/parent.css','utf8'),V=fs.readFileSync('/tmp/variant.css','utf8');
+            const ordinals={G1:[1,2,3,5,6,7],G2:[9,10,11,12,13],G3:[15,16,17,18],G4:[19,20,21],G5:[22,23,24,25,26],G6:[27,28]};
+            const states=[['resultados.html',390],['resultados.html',760],['mensagens.html',390],['comunidade.html',390],['comunidade.html',760],['perfil.html',390],['carteira.html',390],['notificacoes.html',390],['configuracoes.html',390]];
+            const fixtureId='uxcss053_delta_fixture';
+            const fixtureSession={provider:'mock',remember:true,accountStatus:'active',sessionStatus:'active',issuedAt:'2026-08-26T00:00:00.000Z',user:{id:fixtureId,name:'Delta Fixture',email:'delta-fixture@example.test',role:'client',type:'client',accountStatus:'active'}};
+            const selectorGroups={
+              G1:'html,body',
+              G2:'.doke-mobile-shell',
+              G3:'.doke-mobile-bottom-nav',
+              G4:'.sidebar,.app-sidebar,.desktop-sidebar,.doke-desktop-sidebar,.topbar,.desktop-topbar,.doke-desktop-topbar,.doke-desktop-search,.doke-desktop-search-panel,.home-search-hero,.home-side-meta,.desktop-only',
+              G5:'main,.main-content,.page,.page-content,.content,.app-content,.doke-page,.doke-page-shell',
+              G6:'.doke-modal,.doke-drawer,.doke-popover,[role="dialog"]'
+            };
+            const H=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+            const browser=await chromium.launch({headless:true});
+            async function capture(pageName,width){
+              const ctx=await browser.newContext({viewport:{width,height:1050},reducedMotion:'reduce'});
+              await ctx.addInitScript(({key,session})=>{try{localStorage.setItem(key,JSON.stringify(session))}catch{}},{key:'doke.auth.session.v1',session:fixtureSession});
+              const page=await ctx.newPage(),errors=[];let requested=false;
+              page.on('pageerror',e=>errors.push(String(e.message||e)));
+              page.on('request',r=>{try{if(new URL(r.url()).pathname===`/${target}`)requested=true}catch{}});
+              await page.route('**/*',route=>{const u=route.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return route.continue();if(/\.(?:png|jpe?g|webp|gif|svg)(?:\?|$)/i.test(u))return route.fulfill({status:200,contentType:'image/png',body:tiny});return route.abort();});
+              await page.goto(`http://127.0.0.1:4173/${pageName}?uxcss053delta=${group}-${width}`,{waitUntil:'domcontentloaded',timeout:15000});
+              await page.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});
+              await page.waitForFunction(()=>document.body.classList.contains('doke-mobile-shell-mounted'),null,{timeout:5000}).catch(()=>{});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});
+              await page.waitForTimeout(350);
+              const meta=await page.evaluate(({target,fixtureId,selectorGroups})=>{
+                const round=v=>Math.round(v*100)/100,clean=s=>{try{return new URL(s,location.href).pathname.replace(/^\//,'')}catch{return String(s||'')}};
+                const seen=new Set();let cssom=false;function walk(sheet){if(!sheet||seen.has(sheet))return;seen.add(sheet);if(sheet.href&&clean(sheet.href)===target)cssom=true;let rules;try{rules=sheet.cssRules}catch{return}if(!rules)return;for(const r of rules)if(r.type===CSSRule.IMPORT_RULE)walk(r.styleSheet)}for(const s of document.styleSheets)walk(s);
+                const style=e=>{const c=getComputedStyle(e),r=e.getBoundingClientRect();return{tag:e.tagName,id:e.id,cls:typeof e.className==='string'?e.className:'',display:c.display,visibility:c.visibility,pointerEvents:c.pointerEvents,position:c.position,width:c.width,maxWidth:c.maxWidth,minWidth:c.minWidth,height:c.height,maxHeight:c.maxHeight,minHeight:c.minHeight,margin:c.margin,marginInline:c.marginInline,overflow:c.overflow,overflowX:c.overflowX,top:c.top,right:c.right,bottom:c.bottom,left:c.left,transform:c.transform,boxSizing:c.boxSizing,rect:[round(r.x),round(r.y),round(r.width),round(r.height)],scroll:[e.scrollWidth,e.scrollHeight],client:[e.clientWidth,e.clientHeight]}};
+                const probes={};for(const [k,sel] of Object.entries(selectorGroups))probes[k]=[...document.querySelectorAll(sel)].map(style);
+                let stored=null;try{stored=JSON.parse(localStorage.getItem('doke.auth.session.v1')||'null')}catch{}
+                const h=document.documentElement,b=document.body;
+                return{finalPath:location.pathname.replace(/^\//,''),fixturePreserved:(stored?.user?.id||stored?.currentUser?.id||'')===fixtureId,cssom,bodyClass:b.className,htmlClass:h.className,doc:{sw:h.scrollWidth,sh:h.scrollHeight,cw:h.clientWidth,ch:h.clientHeight},probes};
+              },{target,fixtureId,selectorGroups});
+              const png=H(await page.screenshot({fullPage:true,animations:'disabled'}));
+              await ctx.close(); return{meta,png,requested,loaded:requested&&meta.cssom,errors:errors.sort()};
+            }
+            function deepDiff(a,b,path='',out=[]){if(Object.is(a,b))return out;const ao=a&&typeof a==='object',bo=b&&typeof b==='object';if(ao&&bo){const keys=[...new Set([...Object.keys(a),...Object.keys(b)])].sort();for(const k of keys)deepDiff(a[k],b[k],path?`${path}.${k}`:k,out);return out;}out.push({path,before:a,after:b});return out;}
+            fs.writeFileSync(target,P);const parent={};for(const [p,w] of states)parent[`${p}|${w}`]=await capture(p,w);
+            fs.writeFileSync(target,V);const variant={};for(const [p,w] of states)variant[`${p}|${w}`]=await capture(p,w);
+            const metaDiffStates=[],pngDiffStates=[],errorDiffStates=[],loadDiffStates=[],deltas=[];
+            for(const [p,w] of states){const k=`${p}|${w}`,a=parent[k],b=variant[k];if(a.loaded!==b.loaded)loadDiffStates.push(k);if(JSON.stringify(a.errors)!==JSON.stringify(b.errors))errorDiffStates.push(k);const ds=deepDiff(a.meta,b.meta);if(ds.length){metaDiffStates.push(k);deltas.push({state:k,changes:ds.slice(0,120)})}if(a.png!==b.png)pngDiffStates.push(k);if(a.meta.finalPath!==p||b.meta.finalPath!==p||!a.meta.fixturePreserved||!b.meta.fixturePreserved||!a.loaded||!b.loaded)throw Error(`invalid fixture/load ${k}`)}
+            fs.writeFileSync(target,P);await browser.close();
+            for(const d of deltas)console.log('DELTA_STATE='+JSON.stringify({group,...d}));
+            console.log('GROUP_RESULT='+JSON.stringify({group,ordinals:ordinals[group],states:states.length,metaDiffStates,pngDiffStates,errorDiffStates,loadDiffStates}));
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
