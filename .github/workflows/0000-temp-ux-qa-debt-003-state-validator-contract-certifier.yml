@@ -16,7 +16,7 @@ jobs:
       - name: Checkout diagnostic branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
 
       - name: Verify certifier lineage and checkout frozen candidate
         shell: bash
@@ -24,7 +24,8 @@ jobs:
           set -euo pipefail
           CANDIDATE='bfb77e3fa1bfd1694094b6270751aed2c6fda2e7'
           PARENT='bac1f3578166b0db96b6f70ca742e17fd1980c71'
-          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          git cat-file -e "$CANDIDATE^{commit}"
+          git cat-file -e "$PARENT^{commit}"
           test "$(git rev-parse "$CANDIDATE^")" = "$PARENT"
           git checkout --detach "$CANDIDATE"
           test "$(git rev-parse HEAD)" = "$CANDIDATE"
