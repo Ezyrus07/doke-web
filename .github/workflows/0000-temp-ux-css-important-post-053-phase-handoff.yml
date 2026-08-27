@@ -1,0 +1,110 @@
+name: TEMP UX-CSS-IMPORTANT Post-053 Phase Handoff
+on:
+  push:
+    branches:
+      - diag/ux-css-important-post-053-phase-handoff
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-css-important-post-053-phase-handoff.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Verify diagnostic lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+      - name: Recompute CSS design-system handoff and data-ready entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_gate() {
+            local name="$1"; shift
+            echo "GATE_START=$name"
+            "$@"
+            echo "GATE_PASS=$name"
+          }
+
+          run_gate cycle121 npm run audit:important-baseline-by-group
+          run_gate cycle122 npm run audit:important-low-risk-groups
+          run_gate cycle123 npm run audit:important-controlled-removal-gate
+          run_gate cycle124 npm run audit:css-import-consolidation-candidates
+          run_gate cycle125 npm run audit:css-design-system-entry-gate
+
+          run_gate cycle126 npm run audit:page-state-surfaces
+          run_gate cycle127 npm run audit:state-container-contracts
+          run_gate cycle128 npm run audit:form-button-state-readiness
+          run_gate cycle129 npm run audit:data-fallback-contract
+          run_gate cycle130 npm run audit:data-ready-final-gate
+
+          node <<'NODE'
+          const fs=require('fs');
+          const read=p=>JSON.parse(fs.readFileSync(p,'utf8'));
+          const paths={
+            c121:'docs/validation/global-cycle-121-important-baseline-by-group-report.json',
+            c122:'docs/validation/global-cycle-122-important-low-risk-groups-report.json',
+            c123:'docs/validation/global-cycle-123-important-controlled-removal-gate-report.json',
+            c124:'docs/validation/global-cycle-124-css-import-consolidation-candidates-report.json',
+            c125:'docs/validation/global-cycle-125-css-design-system-entry-gate-report.json',
+            c126:'docs/validation/global-cycle-126-page-state-surfaces-report.json',
+            c127:'docs/validation/global-cycle-127-state-container-contracts-report.json',
+            c128:'docs/validation/global-cycle-128-form-button-state-readiness-report.json',
+            c129:'docs/validation/global-cycle-129-data-fallback-contract-report.json',
+            c130:'docs/validation/global-cycle-130-data-ready-final-gate-report.json'
+          };
+          const r=Object.fromEntries(Object.entries(paths).map(([k,p])=>[k,read(p)]));
+          const out={
+            result:'PASS',
+            checkpointBoundary:'post-UX-CSS-IMPORTANT-053',
+            parent:process.env.PARENT,
+            cssDesignSystem:{
+              baseline:r.c121.summary,
+              lowRisk:r.c122.summary,
+              controlledRemoval:r.c123.summary,
+              imports:r.c124.summary,
+              entryStatus:r.c125.status,
+              phaseDecision:r.c125.phaseDecision,
+              entryKnownDebt:r.c125.summary.knownDebt,
+              policy:r.c125.policy
+            },
+            dataReady:{
+              pageStateSurfaces:r.c126.summary,
+              stateContainers:r.c127.summary,
+              formButtons:r.c128.summary,
+              fallback:r.c129.summary,
+              finalStatus:r.c130.status,
+              finalChecks:r.c130.checks,
+              warnings:r.c130.warnings,
+              decision:r.c130.decision
+            },
+            nextFront:r.c130.decision.desktopVisualPhaseAllowed ? 'POST_DATA_READY_PHASE_HANDOFF' : 'GLOBAL_DATA_READY_STATES',
+            productMutation:false,
+            criteriaRelaxed:0,
+            repositoryOnly:true
+          };
+          console.log('POST_053_PHASE_HANDOFF='+JSON.stringify(out));
+          NODE
+
+          git status --short
+          CHANGED="$(git status --porcelain | awk '{print $2}')"
+          if [ -n "$CHANGED" ]; then
+            printf '%s\n' "$CHANGED" | grep -v '^docs/validation/global-cycle-12[1-9]-' | grep -v '^docs/validation/global-cycle-130-' && exit 1 || true
+          fi
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd >/dev/null
+          test -z "$(git status --porcelain)"
