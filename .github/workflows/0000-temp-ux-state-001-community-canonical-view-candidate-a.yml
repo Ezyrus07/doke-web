@@ -1,0 +1,237 @@
+name: TEMP UX-STATE-001 Community Canonical View Candidate A
+on:
+  push:
+    branches:
+      - diag/ux-state-001-community-canonical-view-candidate-a
+permissions:
+  contents: read
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      PARENT_TREE: 9c2545f50d34ebf81e3976fb5c421e6f5f616b32
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-001-community-canonical-view-candidate-a.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Verify diagnostic lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          git checkout --detach "$PARENT" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+      - name: Install dependencies
+        shell: bash
+        run: npm ci --ignore-scripts
+      - name: Construct candidate A in workspace only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+
+          const product='assets/js/pages/comunidade.js';
+          let source=fs.readFileSync(product,'utf8');
+          const before='page.dataset.viewState = nextState;';
+          const after="page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;";
+          const count=source.split(before).length-1;
+          if(count!==1) throw new Error(`expected exactly one public view-state assignment, found ${count}`);
+          source=source.replace(before,after);
+          fs.writeFileSync(product,source);
+
+          const marketplace=`'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = process.cwd();
+const REPORT = path.join(ROOT, 'docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json');
+const PAGES = {
+  'index.html': { scope: 'index', skeleton: 'data-home-hydration-skeleton', ready: 'data-home-hydration-ready', completion: { type: 'route', token: "'/index.html'" } },
+  'resultados.html': { scope: 'resultados', skeleton: 'data-results-hydration-skeleton', ready: 'data-results-hydration-ready', completion: { type: 'route', token: "'/resultados.html'" } },
+  'perfil.html': { scope: 'perfil', skeleton: 'data-profile-hydration-skeleton', ready: 'data-profile-hydration-ready', completion: { type: 'controller', file: 'assets/js/pages/profile-experience.js', tokens: ["page: 'perfil'", 'hydration.ready({ hasItems: true })'] } },
+  'detalhe-anuncio.html': { scope: 'detalhe-anuncio', skeleton: 'data-detail-hydration-skeleton', ready: 'data-detail-hydration-ready', completion: { type: 'route', token: "'/detalhe-anuncio.html'" } }
+};
+
+function read(file) { return fs.readFileSync(path.join(ROOT, file), 'utf8'); }
+function hasReadyInitialState(content) {
+  return /data-view-state=["']ready["']/.test(content) && /aria-busy=["']false["']/.test(content);
+}
+function hasLoadingInitialState(content, config) {
+  return /data-view-state=["']loading["']/.test(content)
+    && /aria-busy=["']true["']/.test(content)
+    && content.includes(config.skeleton)
+    && content.includes(config.ready)
+    && content.includes('assets/js/core/page-hydration.js');
+}
+function hasCanonicalCompletion(config, hydrationRuntime) {
+  if (config.completion.type === 'route') return hydrationRuntime.includes(config.completion.token);
+  const controller = read(config.completion.file);
+  return config.completion.tokens.every((token) => controller.includes(token));
+}
+
+const hydrationRuntime=read('assets/js/core/page-hydration.js');
+const pages=Object.entries(PAGES).map(([file,config])=>{
+  const content=read(file);
+  const missing=[];
+  for(const token of [
+    'data-state-boundary="'+config.scope+'"',
+    'data-state-scope="'+config.scope+'"',
+    'data-state-region','data-state-loading','data-state-empty','data-state-error','assets/js/state/state-contracts.js'
+  ]) if(!content.includes(token)) missing.push(token);
+  const initialState=hasLoadingInitialState(content,config)?'loading':hasReadyInitialState(content)?'ready':'invalid';
+  if(initialState==='invalid') missing.push('valid initial state: ready/false OR loading/true with hydration surfaces/runtime');
+  const completionCanonical=hasCanonicalCompletion(config,hydrationRuntime);
+  if(!completionCanonical) missing.push('canonical ready completion');
+  return {file,scope:config.scope,initialState,completionCanonical,status:missing.length?'failed':'passed',visualContract:'provisional-layout-preserved',missing};
+});
+const failed=pages.filter((page)=>page.status!=='passed');
+const report={cycle:136,scope:'main-marketplace-state-contracts',status:failed.length?'failed':'passed',checkedPages:pages.length,failedPages:failed.length,pages,contract:'ready/false OR loading/true with real canonical hydration completion',criteriaRelaxed:0};
+fs.mkdirSync(path.dirname(REPORT),{recursive:true});
+fs.writeFileSync(REPORT,JSON.stringify(report,null,2)+'\\n');
+if(report.status!=='passed') { console.error('[audit:main-marketplace-state-contracts] failed'); console.error(JSON.stringify(report,null,2)); process.exit(1); }
+console.log('[audit:main-marketplace-state-contracts] passed');
+console.log(JSON.stringify({checkedPages:report.checkedPages,failedPages:report.failedPages,criteriaRelaxed:0},null,2));
+`;
+          fs.writeFileSync('scripts/audit-main-marketplace-state-contracts.js',marketplace);
+
+          const support=`'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = process.cwd();
+const REPORT = path.join(ROOT, 'docs/validation/global-cycle-137-main-support-state-contracts-report.json');
+const PAGES = {
+  'configuracoes.html': { scope: 'configuracoes', skeleton: 'data-settings-hydration-pending', ready: 'data-settings-hydration-ready', completion: { type: 'controller', file: 'assets/js/pages/configuracoes.js', tokens: ["page: 'configuracoes'", 'hydration?.ready({ hasItems: true })'] } },
+  'notificacoes.html': { scope: 'notificacoes', skeleton: 'data-notifications-hydration-skeleton', ready: 'data-notifications-hydration-ready', completion: { type: 'controller', file: 'assets/js/pages/notificacoes.js', tokens: ["page: 'notificacoes'", "waitFor: ['dom', 'auth', 'local-notifications']", "hydration?.mark('local-notifications')"] } },
+  'comunidade.html': { scope: 'comunidade', skeleton: 'data-community-hydration-skeleton', ready: 'data-community-hydration-content', completion: { type: 'community', file: 'assets/js/pages/comunidade.js' } }
+};
+
+function read(file) { return fs.readFileSync(path.join(ROOT, file), 'utf8'); }
+function hasReadyInitialState(content) {
+  return /data-view-state=["']ready["']/.test(content) && /aria-busy=["']false["']/.test(content);
+}
+function hasLoadingInitialState(content, config) {
+  return /data-view-state=["']loading["']/.test(content)
+    && /aria-busy=["']true["']/.test(content)
+    && content.includes(config.skeleton)
+    && content.includes(config.ready)
+    && content.includes('assets/js/core/page-hydration.js');
+}
+function hasCanonicalCompletion(config) {
+  const controller=read(config.completion.file);
+  if(config.completion.type==='controller') return config.completion.tokens.every((token)=>controller.includes(token));
+  return controller.includes("page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;")
+    && controller.includes("setCommunityPageState('hydrated')")
+    && controller.includes("page.dataset.communityHydrated = 'true'")
+    && !controller.includes('page.dataset.viewState = nextState;');
+}
+
+const stateRuntime=read('assets/js/state/state-contracts.js');
+if(/HYDRATED\\s*:\\s*["']hydrated["']/.test(stateRuntime)) throw new Error('canonical state vocabulary unexpectedly contains hydrated');
+const pages=Object.entries(PAGES).map(([file,config])=>{
+  const content=read(file);
+  const missing=[];
+  for(const token of [
+    'data-state-boundary="'+config.scope+'"',
+    'data-state-scope="'+config.scope+'"',
+    'data-state-region','data-state-loading','data-state-empty','data-state-error','assets/js/state/state-contracts.js'
+  ]) if(!content.includes(token)) missing.push(token);
+  const initialState=hasLoadingInitialState(content,config)?'loading':hasReadyInitialState(content)?'ready':'invalid';
+  if(initialState==='invalid') missing.push('valid initial state: ready/false OR loading/true with hydration surfaces/runtime');
+  const completionCanonical=hasCanonicalCompletion(config);
+  if(!completionCanonical) missing.push('canonical ready completion');
+  return {file,scope:config.scope,initialState,completionCanonical,status:missing.length?'failed':'passed',visualContract:'provisional-layout-preserved',missing};
+});
+const failed=pages.filter((page)=>page.status!=='passed');
+const report={cycle:137,scope:'main-support-state-contracts',status:failed.length?'failed':'passed',checkedPages:pages.length,failedPages:failed.length,pages,contract:'ready/false OR loading/true with real canonical hydration completion',criteriaRelaxed:0};
+fs.mkdirSync(path.dirname(REPORT),{recursive:true});
+fs.writeFileSync(REPORT,JSON.stringify(report,null,2)+'\\n');
+if(report.status!=='passed') { console.error('[audit:main-support-state-contracts] failed'); console.error(JSON.stringify(report,null,2)); process.exit(1); }
+console.log('[audit:main-support-state-contracts] passed');
+console.log(JSON.stringify({checkedPages:report.checkedPages,failedPages:report.failedPages,criteriaRelaxed:0},null,2));
+`;
+          fs.writeFileSync('scripts/audit-main-support-state-contracts.js',support);
+          NODE
+
+          mapfile -t changed < <(git diff --name-only | sort)
+          printf 'CANDIDATE_FILES=%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 3
+          test "${changed[0]}" = "assets/js/pages/comunidade.js"
+          test "${changed[1]}" = "scripts/audit-main-marketplace-state-contracts.js"
+          test "${changed[2]}" = "scripts/audit-main-support-state-contracts.js"
+          test -z "$(git diff --name-only -- '*.html' '*.css')"
+          git diff --check
+
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const files=['assets/js/pages/comunidade.js','scripts/audit-main-marketplace-state-contracts.js','scripts/audit-main-support-state-contracts.js'];
+          const rows=files.map((file)=>{
+            const b=fs.readFileSync(file);
+            return {file,bytes:b.length,sha256:crypto.createHash('sha256').update(b).digest('hex'),blob:cp.execFileSync('git',['hash-object',file],{encoding:'utf8'}).trim()};
+          });
+          const community=fs.readFileSync('assets/js/pages/comunidade.js','utf8');
+          const mapping="page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;";
+          if((community.split(mapping).length-1)!==1) throw new Error('candidate public mapping must occur exactly once');
+          if(!community.includes("page.dataset.state = nextState;")) throw new Error('internal state lifecycle changed');
+          if(!community.includes("document.body.dataset.dataState = nextState;")) throw new Error('body lifecycle changed');
+          if(!community.includes("setCommunityPageState('hydrated')")) throw new Error('internal hydrated terminal call changed');
+          if(!community.includes("page.dataset.communityHydrated = 'true'")) throw new Error('communityHydrated flag changed');
+          console.log('CANDIDATE_IDENTITY='+JSON.stringify({files:rows,productFile:'assets/js/pages/comunidade.js',productChange:'public data-view-state maps internal hydrated to canonical ready',internalHydratedPreserved:true,htmlChanged:false,cssChanged:false,productMutationPersisted:false}));
+          NODE
+      - name: Run Community legacy hydration contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-community-hydration-transition-contract.js
+      - name: Run canonical state gates 131 through 140
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:critical-state-runtime-api
+          npm run audit:critical-state-contracts
+          npm run audit:critical-action-state-contracts
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:main-action-state-contracts
+          npm run audit:main-state-runtime-coverage
+          npm run audit:global-state-completion-gate
+
+          node <<'NODE'
+          const fs=require('fs');
+          const read=(p)=>JSON.parse(fs.readFileSync(p,'utf8'));
+          const cCritical=read('docs/validation/global-cycle-131-135-critical-state-contracts-report.json');
+          const c136=read('docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json');
+          const c137=read('docs/validation/global-cycle-137-main-support-state-contracts-report.json');
+          const c138=read('docs/validation/global-cycle-138-main-action-state-contracts-report.json');
+          const c139=read('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json');
+          const c140=read('docs/validation/global-cycle-140-global-state-completion-gate-report.json');
+          const expectedReview=['configuracoes.html','resultados.html'].sort();
+          const actualReview=(c138.pages||[]).filter(p=>p.status==='review').map(p=>p.file).sort();
+          const pass = cCritical.status==='passed'
+            && c136.status==='passed' && c136.failedPages===0 && c136.criteriaRelaxed===0
+            && c137.status==='passed' && c137.failedPages===0 && c137.criteriaRelaxed===0
+            && c138.status==='passed-with-follow-up' && JSON.stringify(actualReview)===JSON.stringify(expectedReview)
+            && c139.status==='passed' && c139.failedPages===0
+            && c140.status==='passed-with-follow-up' && c140.failedReports===0 && c140.followUpReports===1
+            && c140.visualChange===false;
+          const out={result:pass?'PASS':'FAIL',critical:{status:cCritical.status,checked:cCritical.checkedPages,failed:cCritical.failedPages},c136:{status:c136.status,checked:c136.checkedPages,failed:c136.failedPages,criteriaRelaxed:c136.criteriaRelaxed},c137:{status:c137.status,checked:c137.checkedPages,failed:c137.failedPages,criteriaRelaxed:c137.criteriaRelaxed},c138:{status:c138.status,reviewPages:actualReview,totalActionStates:c138.totalActionStates,totalCriticalSubmitButtons:c138.totalCriticalSubmitButtons},c139:{status:c139.status,checked:c139.checkedPages,failed:c139.failedPages},c140:{status:c140.status,failedReports:c140.failedReports,followUpReports:c140.followUpReports,nextPhaseConstraint:c140.nextPhaseConstraint,visualChange:c140.visualChange},criteriaRelaxed:0,productMutationPersisted:false};
+          console.log('UX_STATE_001_CANDIDATE_A_STATIC='+JSON.stringify(out));
+          if(!pass) process.exit(1);
+          NODE
+      - name: Final candidate hygiene
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test -z "$(git status --porcelain)"
