@@ -1,0 +1,85 @@
+name: TEMP UX-CSS-IMPORTANT-053 Mobile Base Materialize R4
+
+on:
+  pull_request:
+    types: [reopened]
+    branches:
+      - diag/ux-css-important-053-mobile-base-materialize-r4
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+      EXPECTED_BLOB: e077a0a7f8217972e2d87da7462cadf0859b3a11
+      EXPECTED_SHA256: 00aa34c833122d20b395808e18d9f046e88f57d90c82067a04e52f0cd9c58183
+      MATERIALIZE_BRANCH: diag/ux-css-important-053-mobile-base-materialize-r4
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-css-important-053-mobile-base-materialize-r4.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: diag/ux-css-important-053-mobile-base-materialize-r4
+          fetch-depth: 0
+      - name: Reconstruct exact narrow candidate and post-boundary receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$BASE_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          test "$(git diff-tree --no-commit-id --name-only -r "$BASE_HEAD")" = "$WORKFLOW_PATH"
+          git show "$PARENT:$TARGET" >/tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),crypto=require('crypto'),path=require('path');
+          const p=fs.readFileSync('/tmp/parent.css','utf8');
+          const keep=new Set([3,4,8,14,20,21,22,23,25,26,27,28]);
+          const removed=[];let n=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(keep.has(n))return m;removed.push(n);return ''});
+          const expectedRemoved=[1,2,5,6,7,9,10,11,12,13,15,16,17,18,19,24];
+          if(n!==28||JSON.stringify(removed)!==JSON.stringify(expectedRemoved)||(c.match(/!important\b/gi)||[]).length!==12)throw Error(`ordinal/count drift ${n}/${removed}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim();
+          const sha256=crypto.createHash('sha256').update(c).digest('hex');
+          const bytes=Buffer.byteLength(c);
+          if(blob!==process.env.EXPECTED_BLOB||sha256!==process.env.EXPECTED_SHA256||bytes!==5130)throw Error(`candidate identity ${blob}/${sha256}/${bytes}`);
+          const media=[...c.matchAll(/@media\s*\(([^)]*)\)/gi)].map(m=>m[0].replace(/\s+/g,' ').trim());
+          if(media.length!==1||media[0]!=='@media (max-width: 760px)')throw Error(`media topology ${JSON.stringify(media)}`);
+          fs.writeFileSync(process.env.TARGET,c);
+          function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q,out):q.endsWith('.css')&&out.push(q)}return out}
+          const global=walk('assets/css').reduce((sum,f)=>sum+(fs.readFileSync(f,'utf8').match(/!important\b/gi)||[]).length,0);
+          if(global!==27)throw Error(`global residual ${global}`);
+          fs.mkdirSync('.diagnostics',{recursive:true});
+          const receipt={
+            result:'PASS',checkpoint:'UX-CSS-IMPORTANT-053',phase:'R4_POST_BOUNDARY_EXACT_MATERIALIZATION',issue:404,
+            parentSha:process.env.PARENT,parentTree:process.env.PARENT_TREE,target:process.env.TARGET,parentBlob:process.env.PARENT_BLOB,
+            candidateBlob:blob,sha256,bytes,importantBefore:28,importantAfter:12,parentGlobal:43,candidateGlobal:27,globalDelta:-16,
+            removedOrdinals:expectedRemoved,preservedOrdinals:[3,4,8,14,20,21,22,23,25,26,27,28],markerOnly:true,
+            selectorsRemoved:0,declarationsRemoved:0,propertiesChanged:0,valuesChanged:0,importsPreserved:true,
+            reach:{states:27,loaded:27,active:18,inactiveLoaded:9,redirects:0,media:'(max-width: 760px)'},
+            staticRun:33029609166,staticJob:98378822045,introducedRegressions:0,criteriaRelaxed:0,
+            browserRun:33029609166,browserJobs:[98378822158,98378822251,98378822156],browserRepetitions:3,browserStatesPerRepeat:27,
+            metadataDiffs:0,screenshotDiffs:0,loadDiffs:0,errorDiffs:0,redirectDiffs:0,fixtureLoss:0,badMedia:0,
+            repositoryOnly:true,postBoundary:true,runId:Number(process.env.GITHUB_RUN_ID)
+          };
+          fs.writeFileSync('.diagnostics/ux-css-important-053-mobile-base-materialization.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log('MATERIALIZATION='+JSON.stringify({result:'PASS',issue:404,blob,sha256,bytes,target:'28->12',global:'43->27',preservedOrdinals:receipt.preservedOrdinals,postBoundary:true}));
+          NODE
+          test "$(git status --porcelain --untracked-files=all | awk '{print $2}' | sort)" = $'.diagnostics/ux-css-important-053-mobile-base-materialization.json\nassets/css/components/shell/mobile-base-stability.css'
+          git diff --check
+          git add "$TARGET" .diagnostics/ux-css-important-053-mobile-base-materialization.json
+          test "$(git diff --cached --name-only | sort)" = $'.diagnostics/ux-css-important-053-mobile-base-materialization.json\nassets/css/components/shell/mobile-base-stability.css'
+      - name: Commit diagnostic materialization fast-forward
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git commit -m 'diagnostic(ux-css-important-053): materialize exact narrow candidate after issue boundary'
+          git push origin HEAD:"$MATERIALIZE_BRANCH"
