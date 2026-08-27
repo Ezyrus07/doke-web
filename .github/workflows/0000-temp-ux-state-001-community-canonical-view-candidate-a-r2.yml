@@ -1,0 +1,103 @@
+name: TEMP UX-STATE-001 Community Canonical View Candidate A R2
+on:
+  push:
+    branches:
+      - diag/ux-state-001-community-canonical-view-candidate-a-r2
+permissions:
+  contents: read
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      PARENT_TREE: 9c2545f50d34ebf81e3976fb5c421e6f5f616b32
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-001-community-canonical-view-candidate-a-r2.yml
+      TARGET: assets/js/pages/comunidade.js
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Qualify one-line public view-state normalization
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git diff-tree --no-commit-id --name-only -r "$DIAG_HEAD")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test -z "$(git status --porcelain)"
+
+          npm ci --ignore-scripts
+
+          PARENT_BLOB="$(git rev-parse HEAD:$TARGET)"
+          PARENT_SHA256="$(sha256sum "$TARGET" | awk '{print $1}')"
+          PARENT_BYTES="$(wc -c < "$TARGET" | tr -d ' ')"
+
+          node <<'NODE'
+          const fs=require('fs');
+          const target='assets/js/pages/comunidade.js';
+          let s=fs.readFileSync(target,'utf8');
+          const before='page.dataset.viewState = nextState;';
+          const after="page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;";
+          const count=s.split(before).length-1;
+          if(count!==1) throw new Error(`expected exactly one public view-state assignment, got ${count}`);
+          s=s.replace(before,after);
+          fs.writeFileSync(target,s);
+          NODE
+
+          test "$(git diff --name-only)" = "$TARGET"
+          test "$(git diff --numstat | awk '{print $1" "$2" "$3}')" = "1 1 $TARGET"
+          git diff --check
+          node --check "$TARGET"
+
+          node <<'NODE'
+          const fs=require('fs');
+          const s=fs.readFileSync('assets/js/pages/comunidade.js','utf8');
+          const authority=fs.readFileSync('assets/js/state/state-contracts.js','utf8');
+          const required=[
+            "page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;",
+            "setCommunityPageState('hydrated');",
+            "page.dataset.communityHydrated = 'true'",
+            "page.dataset.dataState = nextState",
+            "nextState === 'hydrated' && incomingCommunityTransition?.context?.listingState"
+          ];
+          for(const token of required) if(!s.includes(token)) throw new Error('missing preserved/normalized token: '+token);
+          if(s.includes('page.dataset.viewState = nextState;')) throw new Error('legacy public view-state assignment remains');
+          if(!/READY\s*:\s*['\"]ready['\"]/.test(authority)) throw new Error('canonical READY state missing');
+          if(/HYDRATED\s*:\s*['\"]hydrated['\"]/.test(authority)) throw new Error('HYDRATED unexpectedly became canonical');
+          console.log('SOURCE_CONTRACT=PASS');
+          NODE
+
+          node scripts/test-community-hydration-transition-contract.js
+          node scripts/test-first-paint-loading-contract.js
+          npm run audit:main-state-runtime-coverage
+
+          node <<'NODE'
+          const fs=require('fs');
+          const src=fs.readFileSync('assets/js/pages/comunidade.js','utf8');
+          const start=src.indexOf('function setCommunityPageState(state)');
+          if(start<0) throw new Error('setCommunityPageState not found');
+          const end=src.indexOf('\n  }', start);
+          const body=src.slice(start,end+4);
+          const checks={
+            normalizesPublicViewState:body.includes("page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;"),
+            preservesInternalDataState:body.includes('page.dataset.dataState = nextState'),
+            preservesAriaBusy:body.includes("page.setAttribute('aria-busy', nextState === 'loading' ? 'true' : 'false')"),
+            preservesHydratedTerminal:src.includes("setCommunityPageState('hydrated');"),
+            preservesHydrationMarker:src.includes("page.dataset.communityHydrated = 'true'")
+          };
+          if(Object.values(checks).some(v=>!v)) throw new Error('semantic source contract failed '+JSON.stringify(checks));
+          console.log('PUBLIC_STATE_SEMANTIC_PROOF='+JSON.stringify({result:'PASS',inputHydrated:{publicViewState:'ready',internalDataState:'hydrated',ariaBusy:'false'},checks}));
+          NODE
+
+          CANDIDATE_BLOB="$(git hash-object "$TARGET")"
+          CANDIDATE_SHA256="$(sha256sum "$TARGET" | awk '{print $1}')"
+          CANDIDATE_BYTES="$(wc -c < "$TARGET" | tr -d ' ')"
+          printf 'UX_STATE_001_CANDIDATE_A_R2={"result":"PASS","parent":"%s","parentTree":"%s","target":"%s","parentBlob":"%s","parentSha256":"%s","parentBytes":%s,"candidateBlob":"%s","candidateSha256":"%s","candidateBytes":%s,"changedFiles":1,"additions":1,"deletions":1,"canonicalPublicState":"ready","internalHydrationState":"hydrated","productMutation":false,"criteriaRelaxed":0,"repositoryOnly":true}\n' "$PARENT" "$PARENT_TREE" "$TARGET" "$PARENT_BLOB" "$PARENT_SHA256" "$PARENT_BYTES" "$CANDIDATE_BLOB" "$CANDIDATE_SHA256" "$CANDIDATE_BYTES"
+
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test -z "$(git status --porcelain)"
