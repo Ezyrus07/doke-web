@@ -1,0 +1,65 @@
+name: TEMP UX-CSS-IMPORTANT-054 Successor Discovery
+
+on:
+  pull_request:
+    types: [reopened]
+    branches:
+      - diag/ux-css-important-054-successor-discovery
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      PARENT_TREE: 9c2545f50d34ebf81e3976fb5c421e6f5f616b32
+      PROTECTED_TARGET: assets/css/components/shell/mobile-base-stability.css
+      PROTECTED_BLOB: e077a0a7f8217972e2d87da7462cadf0859b3a11
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-css-important-054-successor-discovery.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: diag/ux-css-important-054-successor-discovery
+          fetch-depth: 0
+      - name: Verify certified 053 and enumerate fresh residual estate
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$DIAG_HEAD")" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$PROTECTED_TARGET")" = "$PROTECTED_BLOB"
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const count=s=>(s.match(/!important\b/gi)||[]).length;
+          const files=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);e.isDirectory()?walk(p):p.endsWith('.css')&&files.push(p)}})('assets/css');
+          const rows=[];let global=0;
+          for(const f of files){const s=fs.readFileSync(f,'utf8'),n=count(s);if(!n)continue;global+=n;rows.push({file:f,count:n,blob:cp.execFileSync('git',['rev-parse',`HEAD:${f}`],{encoding:'utf8'}).trim(),sha256:crypto.createHash('sha256').update(s).digest('hex'),bytes:Buffer.byteLength(s),protected:f===process.env.PROTECTED_TARGET});}
+          rows.sort((a,b)=>b.count-a.count||a.file.localeCompare(b.file));
+          if(global!==27)throw Error(`global residual ${global}`);
+          const protectedRow=rows.find(r=>r.file===process.env.PROTECTED_TARGET);
+          if(!protectedRow||protectedRow.count!==12||protectedRow.blob!==process.env.PROTECTED_BLOB)throw Error(`protected residual drift ${JSON.stringify(protectedRow)}`);
+          const eligible=rows.filter(r=>!r.protected);
+          if(!eligible.length)throw Error('no eligible residual successor');
+          const target=eligible[0],s=fs.readFileSync(target.file,'utf8'),occurrences=[];let ordinal=0,selector='';
+          const lines=s.split(/\n/);
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i];
+            if(line.includes('{'))selector=line.slice(0,line.indexOf('{')).trim()||selector;
+            for(const m of line.matchAll(/!important\b/gi)){
+              ordinal++;
+              const before=line.slice(0,m.index),colon=before.lastIndexOf(':'),semi=before.lastIndexOf(';'),brace=before.lastIndexOf('{'),propStart=Math.max(semi,brace)+1;
+              occurrences.push({ordinal,line:i+1,selector,property:colon>=0?before.slice(propStart,colon).trim():'',value:colon>=0?before.slice(colon+1).trim():before.trim(),text:line.trim()});
+            }
+          }
+          if(ordinal!==target.count)throw Error(`target occurrence drift ${ordinal}/${target.count}`);
+          console.log('FRESH_RESIDUAL_RANKING='+JSON.stringify({result:'PASS',parent:process.env.PARENT,parentTree:process.env.PARENT_TREE,global,rows}));
+          console.log('CERTIFIED_PROTECTED='+JSON.stringify(protectedRow));
+          console.log('SUCCESSOR_TARGET='+JSON.stringify(target));
+          console.log('SUCCESSOR_OCCURRENCES='+JSON.stringify(occurrences));
+          console.log('DISCOVERY_RESULT='+JSON.stringify({result:'PASS',global,protectedResidual:protectedRow.count,eligibleResidual:global-protectedRow.count,successor:target.file,successorCount:target.count,successorBlob:target.blob,successorSha256:target.sha256,successorBytes:target.bytes}));
+          NODE
