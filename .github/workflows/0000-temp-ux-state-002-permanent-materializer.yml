@@ -1,0 +1,141 @@
+name: TEMP UX-STATE-002 Permanent Materializer
+
+on:
+  push:
+    branches:
+      - diag/ux-state-002-permanent-materializer
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PARENT: 0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2
+      PARENT_TREE: ee8f2c8bd6b22af3c5905f01785f47dee1caf52c
+      PERM_BRANCH: ux/ux-state-002-settings-action-state-lifecycle
+      HTML_BLOB: a7b129933aa3b901f820151d9a56e1949a775aff
+      HTML_SHA256: c2b62ef5319692a4c129df394639ceba0703a1b7075abdd3013c00a79f6a4183
+      HTML_BYTES: '63715'
+      JS_BLOB: e350a601f1f0b5e2764cca95e7cdbed1caa3bff7
+      JS_SHA256: 2243a14ec9bcb111cda86e1279a269e1d7fc033fb21d20fc752c1da7b338598d
+      JS_BYTES: '36309'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Materialize exact qualified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-parse "$H^")" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git diff --name-only "$PARENT" "$H")" = ".github/workflows/0000-temp-ux-state-002-permanent-materializer.yml"
+          git fetch origin "$PERM_BRANCH"
+          test "$(git rev-parse origin/$PERM_BRANCH)" = "$PARENT"
+          git checkout -B "$PERM_BRANCH" "origin/$PERM_BRANCH"
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def one(text, before, after, label):
+              count = text.count(before)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 occurrence, got {count}')
+              return text.replace(before, after, 1)
+
+          hp = Path('configuracoes.html')
+          h = hp.read_text()
+          h = one(h,
+              'data-settings-save-panel="payments" data-action-state="idle" aria-busy="false"',
+              'data-settings-save-panel="payments" data-action-state="idle" data-action-loading-label="Salvando pagamentos" aria-busy="false"',
+              'payments loading label')
+          h = one(h,
+              'data-settings-save-panel="support" data-action-state="idle" aria-busy="false"',
+              'data-settings-save-panel="support" data-action-state="idle" data-action-loading-label="Salvando suporte" aria-busy="false"',
+              'support loading label')
+          hp.write_text(h)
+
+          jp = Path('assets/js/pages/configuracoes.js')
+          s = jp.read_text()
+          helper = (
+              "  const pendingActionLabels = new WeakMap();\n\n"
+              "  const setButtonSubmittingFeedback = (button) => {\n"
+              "    if (!button || !button.hasAttribute('data-action-state')) return false;\n"
+              "    if (!pendingActionLabels.has(button)) {\n"
+              "      pendingActionLabels.set(button, button.getAttribute('aria-label'));\n"
+              "    }\n"
+              "    const loadingLabel = button.dataset.actionLoadingLabel || '';\n"
+              "    const setActionState = window.Doke?.stateContracts?.setActionState;\n"
+              "    if (typeof setActionState === 'function' && setActionState(button, 'submitting', loadingLabel)) {\n"
+              "      return true;\n"
+              "    }\n"
+              "    button.setAttribute('data-action-state', 'submitting');\n"
+              "    button.setAttribute('aria-busy', 'true');\n"
+              "    button.disabled = true;\n"
+              "    if (loadingLabel) button.setAttribute('aria-label', loadingLabel);\n"
+              "    return true;\n"
+              "  };\n\n"
+              "  const restoreButtonPendingLabel = (button) => {\n"
+              "    if (!button || !pendingActionLabels.has(button)) return;\n"
+              "    const originalAriaLabel = pendingActionLabels.get(button);\n"
+              "    pendingActionLabels.delete(button);\n"
+              "    if (originalAriaLabel === null) button.removeAttribute('aria-label');\n"
+              "    else button.setAttribute('aria-label', originalAriaLabel);\n"
+              "  };\n\n"
+          )
+          s = one(s,
+              '  const setButtonSavedFeedback = (button) => {\n',
+              helper + '  const setButtonSavedFeedback = (button) => {\n',
+              'helper insertion')
+          s = one(s,
+              "  const setButtonSavedFeedback = (button) => {\n    if (!button) return;\n",
+              "  const setButtonSavedFeedback = (button) => {\n    if (!button) return;\n    restoreButtonPendingLabel(button);\n",
+              'success restore')
+          s = one(s,
+              "    if (profileError) profileError.textContent = '';\n    button.disabled = true;\n    button.setAttribute('aria-busy', 'true');\n    try {\n",
+              "    if (profileError) profileError.textContent = '';\n    setButtonSubmittingFeedback(button);\n    try {\n",
+              'profile pending')
+          s = one(s,
+              "    } catch (error) {\n      if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';\n      button.setAttribute('data-action-state', 'error');\n",
+              "    } catch (error) {\n      if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';\n      restoreButtonPendingLabel(button);\n      button.setAttribute('data-action-state', 'error');\n",
+              'profile error restore')
+          s = one(s,
+              "      if (!panelName) return;\n      button.disabled = true;\n      button.setAttribute('aria-busy', 'true');\n      try {\n",
+              "      if (!panelName) return;\n      if (button.hasAttribute('data-action-state')) {\n        setButtonSubmittingFeedback(button);\n      } else {\n        button.disabled = true;\n        button.setAttribute('aria-busy', 'true');\n      }\n      try {\n",
+              'panel pending')
+          s = one(s,
+              "      } catch (error) {\n        button.setAttribute('data-action-state', 'error');\n        button.setAttribute('aria-busy', 'false');\n",
+              "      } catch (error) {\n        restoreButtonPendingLabel(button);\n        button.setAttribute('data-action-state', 'error');\n        button.setAttribute('aria-busy', 'false');\n",
+              'panel error restore')
+          jp.write_text(s)
+          PY
+
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 2
+          test "${changed[0]}" = "assets/js/pages/configuracoes.js"
+          test "${changed[1]}" = "configuracoes.html"
+          test "$(git diff --numstat assets/js/pages/configuracoes.js | awk '{print $1" "$2}')" = "37 4"
+          test "$(git diff --numstat configuracoes.html | awk '{print $1" "$2}')" = "2 2"
+          test "$(git hash-object configuracoes.html)" = "$HTML_BLOB"
+          test "$(sha256sum configuracoes.html | awk '{print $1}')" = "$HTML_SHA256"
+          test "$(wc -c < configuracoes.html | tr -d ' ')" = "$HTML_BYTES"
+          test "$(git hash-object assets/js/pages/configuracoes.js)" = "$JS_BLOB"
+          test "$(sha256sum assets/js/pages/configuracoes.js | awk '{print $1}')" = "$JS_SHA256"
+          test "$(wc -c < assets/js/pages/configuracoes.js | tr -d ' ')" = "$JS_BYTES"
+          git diff --check
+          node --check assets/js/pages/configuracoes.js
+
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add configuracoes.html assets/js/pages/configuracoes.js
+          git commit -m "ux(state-002): complete settings action-state lifecycle"
+          NEW_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$NEW_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff --name-only "$PARENT" "$NEW_HEAD" | wc -l | tr -d ' ')" = 2
+          git push origin "HEAD:$PERM_BRANCH"
+          echo "MATERIALIZATION={\"result\":\"PASS\",\"parent\":\"$PARENT\",\"head\":\"$NEW_HEAD\",\"htmlBlob\":\"$HTML_BLOB\",\"jsBlob\":\"$JS_BLOB\",\"diff\":\"2-files\",\"repositoryOnly\":true,\"matrixMutation\":false}"
