@@ -1,0 +1,236 @@
+name: TEMP UX-STATE-002 Settings Action-State Candidate A
+
+on:
+  push:
+    branches:
+      - diag/ux-state-002-settings-action-state-candidate-a
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT: 0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2
+      PARENT_TREE: ee8f2c8bd6b22af3c5905f01785f47dee1caf52c
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-002-settings-action-state-candidate-a.yml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify diagnostic lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-parse "$DIAG_HEAD^")" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git diff --name-only "$PARENT" "$DIAG_HEAD")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+
+      - name: Build exact ephemeral candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach /tmp/ux-state-002-candidate "$PARENT" >/dev/null
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, before, after, label):
+              count = text.count(before)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one occurrence, got {count}')
+              return text.replace(before, after, 1)
+
+          html_path = Path('/tmp/ux-state-002-candidate/configuracoes.html')
+          html = html_path.read_text()
+          html = replace_once(
+              html,
+              'data-settings-save-panel="payments" data-action-state="idle" aria-busy="false"',
+              'data-settings-save-panel="payments" data-action-state="idle" data-action-loading-label="Salvando pagamentos" aria-busy="false"',
+              'payments loading label'
+          )
+          html = replace_once(
+              html,
+              'data-settings-save-panel="support" data-action-state="idle" aria-busy="false"',
+              'data-settings-save-panel="support" data-action-state="idle" data-action-loading-label="Salvando suporte" aria-busy="false"',
+              'support loading label'
+          )
+          html_path.write_text(html)
+
+          js_path = Path('/tmp/ux-state-002-candidate/assets/js/pages/configuracoes.js')
+          js = js_path.read_text()
+          helper = r'''  const pendingActionLabels = new WeakMap();
+
+  const setButtonSubmittingFeedback = (button) => {
+    if (!button || !button.hasAttribute('data-action-state')) return false;
+    if (!pendingActionLabels.has(button)) {
+      pendingActionLabels.set(button, button.getAttribute('aria-label'));
+    }
+    const loadingLabel = button.dataset.actionLoadingLabel || '';
+    const setActionState = window.Doke?.stateContracts?.setActionState;
+    if (typeof setActionState === 'function' && setActionState(button, 'submitting', loadingLabel)) {
+      return true;
+    }
+    button.setAttribute('data-action-state', 'submitting');
+    button.setAttribute('aria-busy', 'true');
+    button.disabled = true;
+    if (loadingLabel) button.setAttribute('aria-label', loadingLabel);
+    return true;
+  };
+
+  const restoreButtonPendingLabel = (button) => {
+    if (!button || !pendingActionLabels.has(button)) return;
+    const originalAriaLabel = pendingActionLabels.get(button);
+    pendingActionLabels.delete(button);
+    if (originalAriaLabel === null) button.removeAttribute('aria-label');
+    else button.setAttribute('aria-label', originalAriaLabel);
+  };
+
+'''
+          js = replace_once(js, '  const setButtonSavedFeedback = (button) => {\n', helper + '  const setButtonSavedFeedback = (button) => {\n', 'pending helper insertion')
+          js = replace_once(js, "  const setButtonSavedFeedback = (button) => {\n    if (!button) return;\n", "  const setButtonSavedFeedback = (button) => {\n    if (!button) return;\n    restoreButtonPendingLabel(button);\n", 'success aria-label restore')
+
+          profile_before = """    if (profileError) profileError.textContent = '';\n    button.disabled = true;\n    button.setAttribute('aria-busy', 'true');\n    try {\n"""
+          profile_after = """    if (profileError) profileError.textContent = '';\n    setButtonSubmittingFeedback(button);\n    try {\n"""
+          js = replace_once(js, profile_before, profile_after, 'profile submitting transition')
+          js = replace_once(js, """    } catch (error) {\n      if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';\n      button.setAttribute('data-action-state', 'error');\n""", """    } catch (error) {\n      if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';\n      restoreButtonPendingLabel(button);\n      button.setAttribute('data-action-state', 'error');\n""", 'profile error aria-label restore')
+
+          panel_before = """      if (!panelName) return;\n      button.disabled = true;\n      button.setAttribute('aria-busy', 'true');\n      try {\n"""
+          panel_after = """      if (!panelName) return;\n      if (button.hasAttribute('data-action-state')) {\n        setButtonSubmittingFeedback(button);\n      } else {\n        button.disabled = true;\n        button.setAttribute('aria-busy', 'true');\n      }\n      try {\n"""
+          js = replace_once(js, panel_before, panel_after, 'panel submitting transition')
+          js = replace_once(js, """      } catch (error) {\n        button.setAttribute('data-action-state', 'error');\n        button.setAttribute('aria-busy', 'false');\n""", """      } catch (error) {\n        restoreButtonPendingLabel(button);\n        button.setAttribute('data-action-state', 'error');\n        button.setAttribute('aria-busy', 'false');\n""", 'panel error aria-label restore')
+          js_path.write_text(js)
+          PY
+
+          mapfile -t changed < <(git -C /tmp/ux-state-002-candidate diff --name-only)
+          test "${#changed[@]}" -eq 2
+          printf '%s\n' "${changed[@]}" | sort > /tmp/actual
+          printf '%s\n' configuracoes.html assets/js/pages/configuracoes.js | sort > /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+          git -C /tmp/ux-state-002-candidate diff --check
+          node --check /tmp/ux-state-002-candidate/assets/js/pages/configuracoes.js
+          echo CANDIDATE_SCOPE_AND_SYNTAX=PASS
+          git -C /tmp/ux-state-002-candidate diff --numstat
+
+      - name: Source contract and negative proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/ux-state-002-candidate
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('configuracoes.html','utf8');
+          const js = fs.readFileSync('assets/js/pages/configuracoes.js','utf8');
+          const parentResults = require('child_process').execFileSync('git',['show','0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2:resultados.html'],{encoding:'utf8'});
+          const currentResults = fs.readFileSync('resultados.html','utf8');
+          if (parentResults !== currentResults) throw new Error('Resultados product drift');
+          const contracted = [...html.matchAll(/<button\b[^>]*data-action-state="idle"[^>]*>/g)].map(m=>m[0]);
+          if (contracted.length !== 3) throw new Error(`Settings contracted action count ${contracted.length}`);
+          if (!contracted.every(tag=>/data-action-loading-label="[^"]+"/.test(tag))) throw new Error('Missing Settings loading label');
+          for (const token of [
+            "setActionState(button, 'submitting', loadingLabel)",
+            "button.setAttribute('data-action-state', 'submitting')",
+            'setButtonSubmittingFeedback(button);',
+            "button.hasAttribute('data-action-state')",
+            'restoreButtonPendingLabel(button);'
+          ]) if (!js.includes(token)) throw new Error(`missing source token ${token}`);
+          const profileStart = js.indexOf('const saveProfile = async (button) =>');
+          const profileEnd = js.indexOf('const syncPreferenceInputs', profileStart);
+          const profile = js.slice(profileStart, profileEnd);
+          if (!(profile.indexOf('setButtonSubmittingFeedback(button);') < profile.indexOf('await service.updateCurrentProfile(payload)'))) throw new Error('profile pending transition not before await');
+          const panelStart = js.indexOf('settingsSaveButtons.forEach((button) =>');
+          const panelEnd = js.indexOf('settingsResetButtons.forEach', panelStart);
+          const panel = js.slice(panelStart, panelEnd);
+          if (!(panel.indexOf('setButtonSubmittingFeedback(button);') < panel.indexOf('await savePanelSettings(panelName, button)'))) throw new Error('panel pending transition not before await');
+          if (!panel.includes("if (button.hasAttribute('data-action-state'))")) throw new Error('non-contracted panel guard missing');
+          console.log('SOURCE_SEMANTIC_CONTRACT=PASS');
+          NODE
+
+          cp assets/js/pages/configuracoes.js /tmp/configuracoes-candidate.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/pages/configuracoes.js')
+          s=p.read_text()
+          needle='    setButtonSubmittingFeedback(button);\n    try {\n'
+          assert s.count(needle)==1
+          p.write_text(s.replace(needle, '    button.disabled = true;\n    button.setAttribute(\'aria-busy\', \'true\');\n    try {\n', 1))
+          PY
+          set +e
+          node - <<'NODE'
+          const fs=require('fs'); const js=fs.readFileSync('assets/js/pages/configuracoes.js','utf8');
+          const start=js.indexOf('const saveProfile = async (button) =>');
+          const end=js.indexOf('const syncPreferenceInputs',start);
+          const part=js.slice(start,end);
+          if (!(part.indexOf('setButtonSubmittingFeedback(button);') >= 0 && part.indexOf('setButtonSubmittingFeedback(button);') < part.indexOf('await service.updateCurrentProfile(payload)'))) process.exit(1);
+          NODE
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          mv /tmp/configuracoes-candidate.js assets/js/pages/configuracoes.js
+          echo NEGATIVE_PENDING_TRANSITION=PASS
+
+      - name: Native cycles and governance on candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/ux-state-002-candidate
+          npm run audit:critical-states
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:main-action-state-contracts
+          npm run audit:main-state-runtime-coverage
+          npm run audit:global-state-completion-gate
+          node - <<'NODE'
+          const fs=require('fs');
+          const r138=JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json','utf8'));
+          const r139=JSON.parse(fs.readFileSync('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json','utf8'));
+          const r140=JSON.parse(fs.readFileSync('docs/validation/global-cycle-140-global-state-completion-gate-report.json','utf8'));
+          const review=r138.pages.filter(p=>p.status!=='passed');
+          if(r138.status!=='passed-with-follow-up') throw new Error(`cycle138 ${r138.status}`);
+          if(review.length!==1 || review[0].file!=='resultados.html') throw new Error(`unexpected cycle138 review ${JSON.stringify(review)}`);
+          if(r139.status!=='passed' || r139.checkedPages!==12 || r139.failedPages!==0) throw new Error('cycle139 regression');
+          if(r140.status!=='passed-with-follow-up') throw new Error(`cycle140 ${r140.status}`);
+          const failed=Array.isArray(r140.failedReports)?r140.failedReports:[];
+          if(failed.length!==0) throw new Error(`cycle140 failures ${JSON.stringify(failed)}`);
+          console.log('STATE_CHAIN=PASS');
+          console.log(JSON.stringify({cycle138:r138.status,reviewPages:review.map(x=>x.file),cycle139:r139.status,cycle140:r140.status,failedReports:failed.length}));
+          NODE
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          echo MATRIX_AND_GOVERNANCE=PASS
+
+      - name: Final candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/ux-state-002-candidate
+          git checkout -- docs/validation reports/generated docs/DOMAIN-COMPLETION-MATRIX.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md 2>/dev/null || true
+          git clean -fd
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 2
+          printf '%s\n' "${changed[@]}" | sort > /tmp/final-actual
+          printf '%s\n' configuracoes.html assets/js/pages/configuracoes.js | sort > /tmp/final-expected
+          diff -u /tmp/final-expected /tmp/final-actual
+          echo "HTML_BLOB=$(git hash-object configuracoes.html)"
+          echo "JS_BLOB=$(git hash-object assets/js/pages/configuracoes.js)"
+          echo "HTML_SHA256=$(sha256sum configuracoes.html | awk '{print $1}')"
+          echo "JS_SHA256=$(sha256sum assets/js/pages/configuracoes.js | awk '{print $1}')"
+          echo "HTML_BYTES=$(wc -c < configuracoes.html | tr -d ' ')"
+          echo "JS_BYTES=$(wc -c < assets/js/pages/configuracoes.js | tr -d ' ')"
+          echo "DIFF_NUMSTAT=$(git diff --numstat | tr '\n' ';')"
+          echo 'UX_STATE_002_CANDIDATE_A_STATIC=PASS'
+          echo 'productMutation=false'
+          echo 'criteriaRelaxed=0'
+
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: |
+          git worktree remove --force /tmp/ux-state-002-candidate 2>/dev/null || true
+          git reset --hard "$PARENT" >/dev/null 2>&1 || true
+          git clean -fd >/dev/null 2>&1 || true
