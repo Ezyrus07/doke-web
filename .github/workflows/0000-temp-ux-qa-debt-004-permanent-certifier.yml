@@ -1,0 +1,233 @@
+name: TEMP UX-QA-DEBT-004 Permanent Certifier
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-004-permanent-certifier
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PARENT: c74ce2990e697fc080cf0aad52ed7b0ca9b8bb07
+      PARENT_TREE: 67736d023f2da915219d4b416138d9773a333533
+      PERMANENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PERMANENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      PERMANENT_BRANCH: ux/ux-qa-debt-004-main-action-state-runtime-owner-contract
+      VALIDATOR: scripts/audit-main-action-state-contracts.js
+      VALIDATOR_BLOB: e2e32fea199908cf931f992d796cdde8fcf115ec
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-004-permanent-certifier.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Verify external certifier and frozen permanent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PERMANENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")" = "$WORKFLOW_PATH"
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$PERMANENT_BRANCH")" = "$PERMANENT"
+          test "$(git rev-list --parents -n1 "$PERMANENT" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PERMANENT^{tree}")" = "$PERMANENT_TREE"
+          mapfile -t changed < <(git diff --name-only "$PARENT" "$PERMANENT")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$VALIDATOR"
+          test "$(git rev-parse "$PERMANENT:$VALIDATOR")" = "$VALIDATOR_BLOB"
+          if printf '%s\n' "${changed[@]}" | grep -Eq '^(assets/|[^/]+\.html$|config/domain-completion-matrix\.json$|docs/DOMAIN-COMPLETION-MATRIX\.md$)'; then
+            echo 'Forbidden product or Matrix mutation' >&2
+            exit 1
+          fi
+          git diff --check "$PARENT" "$PERMANENT"
+          echo PERMANENT_IDENTITY=PASS
+          echo LINEAGE=PASS
+          echo SCOPE=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Reproduce parent residual exactly
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach /tmp/qa004-parent "$PARENT" >/dev/null
+          (
+            cd /tmp/qa004-parent
+            node scripts/audit-main-action-state-contracts.js
+            node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json'));
+          const review = report.pages.filter((page) => page.status !== 'passed');
+          if (report.status !== 'passed-with-follow-up') throw new Error(`parent status ${report.status}`);
+          if (review.length !== 1 || review[0].file !== 'resultados.html') throw new Error(`parent review ${JSON.stringify(review)}`);
+          if (review[0].actionStates !== 5 || review[0].loadingLabels !== 4) throw new Error(`parent resultados counts ${JSON.stringify(review[0])}`);
+          console.log('PARENT_RESIDUAL=PASS resultados=5/4');
+          NODE
+          )
+
+      - name: Verify permanent validator semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach /tmp/qa004-permanent "$PERMANENT" >/dev/null
+          (
+            cd /tmp/qa004-permanent
+            node --check scripts/audit-main-action-state-contracts.js
+            node scripts/audit-main-action-state-contracts.js
+            node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json'));
+          if (report.status !== 'passed' || report.reviewPages !== 0) throw new Error(`permanent report ${report.status}/${report.reviewPages}`);
+          const resultados = report.pages.find((page) => page.file === 'resultados.html');
+          if (!resultados) throw new Error('resultados missing');
+          const expected = { actionStates: 5, loadingLabels: 4, runtimeOwnedActions: 1, accountedActions: 5, unaccountedActions: 0, status: 'passed' };
+          for (const [key, value] of Object.entries(expected)) {
+            if (resultados[key] !== value) throw new Error(`resultados ${key}=${resultados[key]} expected=${value}`);
+          }
+          const foreignRuntimeOwners = report.pages.filter((page) => page.file !== 'resultados.html' && page.runtimeOwnedActions !== 0);
+          if (foreignRuntimeOwners.length) throw new Error(`unexpected runtime owners ${JSON.stringify(foreignRuntimeOwners)}`);
+          if (report.pages.some((page) => page.unaccountedActions !== 0)) throw new Error('unaccounted action remains');
+          console.log('PERMANENT_SEMANTICS=PASS runtimeOwned=1 criteriaRelaxed=0');
+          NODE
+          )
+
+      - name: Negative fixture action-state transition
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp -a /tmp/qa004-permanent /tmp/qa004-negative-action
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/qa004-negative-action/assets/js/pages/search/server-results-surface.js')
+          s = p.read_text()
+          old = "button.dataset.actionState = loading ? 'loading' : 'idle';"
+          if s.count(old) != 1:
+              raise SystemExit('negative action-state source drift')
+          p.write_text(s.replace(old, "button.dataset.actionState = 'idle';", 1))
+          PY
+          (
+            cd /tmp/qa004-negative-action
+            node scripts/audit-main-action-state-contracts.js
+            node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json'));
+          const resultados = report.pages.find((page) => page.file === 'resultados.html');
+          if (!resultados || resultados.status !== 'review' || resultados.runtimeOwnedActions !== 0 || resultados.unaccountedActions !== 1) {
+            throw new Error(`negative action-state not detected ${JSON.stringify(resultados)}`);
+          }
+          console.log('NEGATIVE_ACTION_STATE=PASS');
+          NODE
+          )
+
+      - name: Negative fixture aria-busy transition
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp -a /tmp/qa004-permanent /tmp/qa004-negative-busy
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/qa004-negative-busy/assets/js/pages/search/server-results-surface.js')
+          s = p.read_text()
+          old = "button.setAttribute('aria-busy', loading ? 'true' : 'false');"
+          if s.count(old) != 1:
+              raise SystemExit('negative aria-busy source drift')
+          p.write_text(s.replace(old, "button.setAttribute('aria-busy', 'false');", 1))
+          PY
+          (
+            cd /tmp/qa004-negative-busy
+            node scripts/audit-main-action-state-contracts.js
+            node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json'));
+          const resultados = report.pages.find((page) => page.file === 'resultados.html');
+          if (!resultados || resultados.status !== 'review' || resultados.runtimeOwnedActions !== 0 || resultados.unaccountedActions !== 1) {
+            throw new Error(`negative aria-busy not detected ${JSON.stringify(resultados)}`);
+          }
+          console.log('NEGATIVE_ARIA_BUSY=PASS');
+          NODE
+          )
+
+      - name: Negative fixture visible feedback transition
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp -a /tmp/qa004-permanent /tmp/qa004-negative-text
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/qa004-negative-text/assets/js/pages/search/server-results-surface.js')
+          s = p.read_text()
+          old = "button.textContent = loading ? 'Carregando mais...' : 'Carregar mais';"
+          if s.count(old) != 1:
+              raise SystemExit('negative text source drift')
+          p.write_text(s.replace(old, "button.textContent = 'Carregar mais';", 1))
+          PY
+          (
+            cd /tmp/qa004-negative-text
+            node scripts/audit-main-action-state-contracts.js
+            node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json'));
+          const resultados = report.pages.find((page) => page.file === 'resultados.html');
+          if (!resultados || resultados.status !== 'review' || resultados.runtimeOwnedActions !== 0 || resultados.unaccountedActions !== 1) {
+            throw new Error(`negative text not detected ${JSON.stringify(resultados)}`);
+          }
+          console.log('NEGATIVE_VISIBLE_FEEDBACK=PASS');
+          NODE
+          )
+
+      - name: Reconcile cycles 131 through 140 Matrix and governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/qa004-permanent
+          npm run audit:critical-states
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:main-action-state-contracts
+          npm run audit:main-state-runtime-coverage
+          npm run audit:global-state-completion-gate
+          node <<'NODE'
+          const fs = require('fs');
+          const read = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
+          const r131 = read('docs/validation/global-cycle-131-135-critical-state-contracts-report.json');
+          const r136 = read('docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json');
+          const r137 = read('docs/validation/global-cycle-137-main-support-state-contracts-report.json');
+          const r138 = read('docs/validation/global-cycle-138-main-action-state-contracts-report.json');
+          const r139 = read('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json');
+          const r140 = read('docs/validation/global-cycle-140-global-state-completion-gate-report.json');
+          if (!['passed','passed-with-follow-up'].includes(r131.status)) throw new Error(`cycle131 ${r131.status}`);
+          if (r136.status !== 'passed' || r136.checkedPages !== 4 || r136.failedPages !== 0) throw new Error(`cycle136 ${JSON.stringify(r136)}`);
+          if (r137.status !== 'passed' || r137.checkedPages !== 3 || r137.failedPages !== 0) throw new Error(`cycle137 ${JSON.stringify(r137)}`);
+          if (r138.status !== 'passed' || r138.reviewPages !== 0) throw new Error(`cycle138 ${JSON.stringify(r138)}`);
+          if (r139.status !== 'passed' || r139.checkedPages !== 12 || r139.failedPages !== 0) throw new Error(`cycle139 ${JSON.stringify(r139)}`);
+          const failedReports = Array.isArray(r140.failedReports) ? r140.failedReports.length : Number(r140.failedReports || 0);
+          const followUpReports = Array.isArray(r140.followUpReports) ? r140.followUpReports.length : Number(r140.followUpReports || 0);
+          if (r140.status !== 'passed' || failedReports !== 0 || followUpReports !== 0) throw new Error(`cycle140 ${JSON.stringify({status:r140.status,failedReports,followUpReports})}`);
+          console.log('STATE_CHAIN=PASS ' + JSON.stringify({r131:r131.status,r136:r136.status,r137:r137.status,r138:r138.status,reviewPages:r138.reviewPages,r139:r139.status,checkedPages:r139.checkedPages,failedPages:r139.failedPages,r140:r140.status,failedReports,followUpReports}));
+          NODE
+          npm run audit:domain-completion-matrix
+          echo MATRIX=PASS
+          npm run audit:agent-governance
+          echo AGENT_GOVERNANCE=PASS
+          git checkout -- .
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "$PERMANENT"
+          test "$(git rev-parse "$PERMANENT^{tree}")" = "$PERMANENT_TREE"
+          test -z "$(git status --porcelain)"
+          echo INTRODUCED_REGRESSIONS=0
+          echo CRITERIA_RELAXED=0
+
+      - name: Final permanent receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$PERMANENT_BRANCH:refs/remotes/origin/$PERMANENT_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$PERMANENT_BRANCH")" = "$PERMANENT"
+          echo 'UX_QA_DEBT_004_PERMANENT_CERTIFICATION={"result":"PASS","checkpoint":"UX-QA-DEBT-004","parent":"c74ce2990e697fc080cf0aad52ed7b0ca9b8bb07","head":"14bdb1af9cfefff4dfd27a78b937443975266001","tree":"32f449b165b8cb119600c702c0625cc7199f3416","qaFiles":1,"productMutation":false,"matrixMutation":false,"negativeFixtures":3,"criteriaRelaxed":0,"introducedRegressions":0,"repositoryOnly":true}'
