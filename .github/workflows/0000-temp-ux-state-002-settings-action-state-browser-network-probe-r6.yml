@@ -1,0 +1,137 @@
+name: TEMP UX-STATE-002 Settings Action-State Browser Network Probe R6
+
+on:
+  push:
+    branches:
+      - diag/ux-state-002-settings-action-state-browser-network-probe-r6
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PARENT: 0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2
+      PARENT_TREE: ee8f2c8bd6b22af3c5905f01785f47dee1caf52c
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-002-settings-action-state-browser-network-probe-r6.yml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify diagnostic-only lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-parse "$H^")" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git diff --name-only "$PARENT" "$H")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+          echo LINEAGE=PASS
+
+      - name: Install Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          node node_modules/@playwright/test/cli.js install --with-deps chromium >/dev/null 2>&1
+
+      - name: Parent-only network isolation probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/ux-state-002-r6-http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/configuracoes.html >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          test "$ok" = 1
+          cat >/tmp/ux-state-002-network-probe-r6.cjs <<'NODE'
+          const { chromium } = require(process.cwd() + '/node_modules/@playwright/test');
+          const tiny = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
+          const fixture = {
+            provider: 'mock', remember: true, accountStatus: 'active', sessionStatus: 'active',
+            issuedAt: '2026-08-27T12:00:00.000Z',
+            user: { id: 'ux-state-002-network-probe', name: 'Network Probe', email: 'ux-state-002-network@example.test', handle: 'network.probe', role: 'client', type: 'client', accountStatus: 'active' }
+          };
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            try {
+              const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+              await context.addInitScript(({ session }) => {
+                try { localStorage.setItem('doke.auth.session.v1', JSON.stringify(session)); } catch {}
+              }, { session: fixture });
+              const page = await context.newPage();
+              const requested = [], aborted = [], failed = [], pageErrors = [];
+              page.on('request', req => requested.push(req.url()));
+              page.on('requestfailed', req => failed.push({ url: req.url(), error: req.failure()?.errorText || null }));
+              page.on('pageerror', error => pageErrors.push(String(error.message || error)));
+              await page.route('**/*', route => {
+                const url = route.request().url();
+                if (url.startsWith('http://127.0.0.1:4173/')) return route.continue();
+                if (/\.(?:png|jpe?g|webp|gif|svg)(?:\?|$)/i.test(url)) return route.fulfill({ status: 200, contentType: 'image/png', body: tiny });
+                aborted.push(url);
+                return route.abort();
+              });
+              const response = await page.goto('http://127.0.0.1:4173/configuracoes.html?uxstate002NetworkProbeR6=1', { waitUntil: 'domcontentloaded', timeout: 30000 });
+              if (!response?.ok()) throw new Error(`navigation ${response?.status()}`);
+              await page.waitForTimeout(8000);
+              const snapshot = await page.evaluate(() => {
+                const html = document.documentElement;
+                const body = document.body;
+                const profile = document.querySelector('[data-settings-save-profile]');
+                const readyNodes = [...document.querySelectorAll('[data-settings-hydration-ready]')];
+                const resources = performance.getEntriesByType('resource').map(entry => new URL(entry.name, location.href).pathname);
+                const lifecycle = window.DokeNavigationLifecycle?.getSnapshot?.() || null;
+                const rect = profile?.getBoundingClientRect?.() || null;
+                return {
+                  authGuard: html.dataset.authGuard || null,
+                  bodyAuthGuard: body?.dataset.authGuard || null,
+                  authRouteDecision: html.dataset.authRouteDecision || null,
+                  fastAuthRedirect: html.dataset.fastAuthRedirect || null,
+                  authSurfaceReady: html.dataset.authSurfaceReady || null,
+                  lifecycleGuard: lifecycle?.guard?.state || null,
+                  boundaryViewState: document.querySelector('[data-state-boundary="configuracoes"]')?.dataset.viewState || null,
+                  boundaryBusy: document.querySelector('[data-state-boundary="configuracoes"]')?.getAttribute('aria-busy') || null,
+                  hydrationReadyVisibleCount: readyNodes.filter(el => !el.hidden).length,
+                  bodyVisibility: getComputedStyle(body).visibility,
+                  profileExists: Boolean(profile),
+                  profileRect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+                  profileVisibility: profile ? getComputedStyle(profile).visibility : null,
+                  routeGuardLoaded: resources.some(path => path.endsWith('/assets/js/core/route-guard.js')),
+                  authRouteMapLoaded: resources.some(path => path.endsWith('/assets/js/core/auth-route-map.js')),
+                  profileServiceLoaded: resources.some(path => path.endsWith('/assets/js/services/profile-service.js'))
+                };
+              });
+              console.log('UX_STATE_002_NETWORK_PROBE_R6=' + JSON.stringify({
+                result: 'PASS',
+                snapshot,
+                aborted,
+                failed,
+                requestedCount: requested.length,
+                pageErrors,
+                repositoryOnly: true,
+                productMutation: false,
+                criteriaRelaxed: 0
+              }));
+              await context.close();
+            } finally {
+              await browser.close();
+            }
+          })().catch(error => { console.error(error.stack || error); process.exit(1); });
+          NODE
+          node /tmp/ux-state-002-network-probe-r6.cjs
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "$PARENT" >/dev/null 2>&1 || true
+          git clean -fd >/dev/null 2>&1 || true
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test -z "$(git status --porcelain)"
