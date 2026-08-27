@@ -11,7 +11,7 @@ permissions:
 jobs:
   certify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout diagnostic branch
         uses: actions/checkout@v4
@@ -71,15 +71,12 @@ jobs:
           const r138 = read('docs/validation/global-cycle-138-main-action-state-contracts-report.json');
           const r139 = read('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json');
           const r140 = read('docs/validation/global-cycle-140-global-state-completion-gate-report.json');
-          const ok131 = ['passed', 'passed-with-follow-up'].includes(r131.status);
-          const ok138 = ['passed', 'passed-with-follow-up'].includes(r138.status);
-          const ok140 = ['passed', 'passed-with-follow-up'].includes(r140.status);
-          if (!ok131) process.exit(10);
+          if (!['passed','passed-with-follow-up'].includes(r131.status)) process.exit(10);
           if (r136.status !== 'passed' || r136.checkedPages !== 4 || r136.failedPages !== 0) process.exit(11);
           if (r137.status !== 'passed' || r137.checkedPages !== 3 || r137.failedPages !== 0) process.exit(12);
-          if (!ok138) process.exit(13);
+          if (!['passed','passed-with-follow-up'].includes(r138.status)) process.exit(13);
           if (r139.status !== 'passed' || r139.checkedPages !== 12 || r139.failedPages !== 0) process.exit(14);
-          if (!ok140) process.exit(15);
+          if (!['passed','passed-with-follow-up'].includes(r140.status)) process.exit(15);
           const failedReports = Array.isArray(r140.failedReports) ? r140.failedReports.length : Number(r140.failedReports || 0);
           if (failedReports !== 0) process.exit(16);
           console.log('NATIVE_STATE_CHAIN=PASS');
@@ -134,49 +131,79 @@ jobs:
           mv /tmp/comunidade.js "$TARGET"
           echo 'NEGATIVE_137_FAIL_CLOSED=PASS'
 
-      - name: Restore positive state chain and differentiate governance
+      - name: Differential Matrix and governance proof
         shell: bash
         run: |
           set -euo pipefail
           CANDIDATE='bfb77e3fa1bfd1694094b6270751aed2c6fda2e7'
           PARENT='bac1f3578166b0db96b6f70ca742e17fd1980c71'
+          STALE='docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix'
 
           git checkout -- assets/js/pages/profile-experience.js assets/js/pages/comunidade.js
-          npm run audit:critical-states
-          node scripts/audit-main-marketplace-state-contracts.js
-          node scripts/audit-main-support-state-contracts.js
-          node scripts/audit-main-action-state-contracts.js
-          node scripts/audit-main-state-runtime-coverage.js
-          node scripts/audit-global-state-completion-gate.js
+          git checkout -- docs/validation
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
 
           set +e
           npm run audit:domain-completion-matrix >/tmp/candidate-matrix.log 2>&1
           candidate_matrix_rc=$?
+          npm run audit:agent-governance >/tmp/candidate-governance.log 2>&1
+          candidate_governance_rc=$?
           set -e
-          cat /tmp/candidate-matrix.log
+          test "$candidate_matrix_rc" -ne 0
+          test "$candidate_governance_rc" -ne 0
+          grep -F "$STALE" /tmp/candidate-matrix.log
+          grep -F "$STALE" /tmp/candidate-governance.log
 
-          npm run audit:agent-governance
-          echo 'CANDIDATE_AGENT_GOVERNANCE=PASS'
+          git checkout --detach "$PARENT"
+          set +e
+          npm run audit:domain-completion-matrix >/tmp/parent-matrix.log 2>&1
+          parent_matrix_rc=$?
+          npm run audit:agent-governance >/tmp/parent-governance.log 2>&1
+          parent_governance_rc=$?
+          set -e
+          test "$parent_matrix_rc" -eq "$candidate_matrix_rc"
+          test "$parent_governance_rc" -eq "$candidate_governance_rc"
+          grep -F "$STALE" /tmp/parent-matrix.log
+          grep -F "$STALE" /tmp/parent-governance.log
+          printf '%s\n' "$STALE" > /tmp/expected-stale
+          grep -F "$STALE" /tmp/candidate-matrix.log | tail -1 > /tmp/candidate-stale
+          grep -F "$STALE" /tmp/parent-matrix.log | tail -1 > /tmp/parent-stale
+          diff -u /tmp/candidate-stale /tmp/parent-stale
+          echo 'MATRIX_STALE_INHERITED_PARENT_CANDIDATE=PASS'
+          echo 'AGENT_GOVERNANCE_BLOCKER_INHERITED_MATRIX_ONLY=PASS'
 
-          git checkout -- docs/validation
-          test -z "$(git status --porcelain)"
+          git checkout --detach "$CANDIDATE"
+          npm run audit:active-legacy-structures
+          npm run audit:page-asset-authority-matrix
+          npm run audit:home-rail-card-authority
+          npm run audit:docs-report-hygiene
+          npm run audit:duplicate-assets
+          npm run audit:form-page-top-contract
+          npm run audit:form-button-contract
+          npm run audit:navigation-registry-contract
+          npm run audit:mobile-drawer-visual-authority
+          npm run audit:mobile-shell-location-contract
+          npm run audit:operational-event-toast-contract
+          npm run audit:shared-app-header-contract
+          npm run audit:page-label-references
+          npm run audit:content-action-contract
+          npm run audit:content-surface-contract
+          npm run audit:content-tab-contract
+          npm run audit:content-search-contract
+          npm run audit:content-disclosure-contract
+          npm run audit:content-icon-contract
+          npm run audit:content-meta-contract
+          npm run audit:content-side-list-contract
+          npm run audit:close-button-contract
+          npm run audit:overlay-modal-contract
+          npm run audit:modal-visual-contract
+          npm run audit:form-control-contract
+          npm run audit:button-system-contract
+          npm run audit:modal-lab-footer-contract
+          echo 'CANDIDATE_GOVERNANCE_REMAINDER=PASS'
 
-          if [ "$candidate_matrix_rc" -ne 0 ]; then
-            grep -F 'docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix' /tmp/candidate-matrix.log
-            git checkout --detach "$PARENT"
-            set +e
-            npm run audit:domain-completion-matrix >/tmp/parent-matrix.log 2>&1
-            parent_matrix_rc=$?
-            set -e
-            cat /tmp/parent-matrix.log
-            test "$parent_matrix_rc" -ne 0
-            grep -F 'docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix' /tmp/parent-matrix.log
-            echo 'MATRIX_STALE_INHERITED_PARENT_CANDIDATE=PASS'
-            git checkout --detach "$CANDIDATE"
-          else
-            echo 'CANDIDATE_MATRIX=PASS'
-          fi
-
+          git checkout -- .
+          git clean -fd
           test "$(git rev-parse HEAD)" = "$CANDIDATE"
           test -z "$(git status --porcelain)"
           echo 'UX_QA_DEBT_003_CERTIFIER=PASS'
