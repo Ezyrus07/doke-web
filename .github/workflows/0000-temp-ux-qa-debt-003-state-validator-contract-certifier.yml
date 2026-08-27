@@ -1,4 +1,4 @@
-name: TEMP UX-QA-DEBT-003 Candidate B Matrix Gate
+name: TEMP UX-QA-DEBT-003 Candidate B Certifier
 
 on:
   push:
@@ -9,14 +9,15 @@ permissions:
   contents: read
 
 jobs:
-  matrix:
+  certify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify frozen candidate B and Matrix
+
+      - name: Verify frozen lineage and QA-only scope
         shell: bash
         run: |
           set -euo pipefail
@@ -24,18 +25,142 @@ jobs:
           CANDIDATE='0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2'
           test "$(git rev-parse "$CANDIDATE^")" = "$PARENT"
           git checkout --detach "$CANDIDATE"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
           mapfile -t changed < <(git diff --name-only "$PARENT" "$CANDIDATE")
           test "${#changed[@]}" -eq 2
           printf '%s\n' "${changed[@]}" | sort > /tmp/actual
           printf '%s\n' scripts/audit-main-marketplace-state-contracts.js scripts/audit-main-support-state-contracts.js | sort > /tmp/expected
           diff -u /tmp/expected /tmp/actual
+          if printf '%s\n' "${changed[@]}" | grep -Eq '^(assets/|[^/]+\.html$|config/domain-completion-matrix\.json$|docs/DOMAIN-COMPLETION-MATRIX\.md$)'; then
+            echo 'Forbidden product or Matrix mutation' >&2
+            exit 1
+          fi
+          echo 'SCOPE_GUARD=PASS'
+
+      - name: Syntax and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
           node --check scripts/audit-main-marketplace-state-contracts.js
           node --check scripts/audit-main-support-state-contracts.js
-          git diff --check "$PARENT" "$CANDIDATE"
+          git diff --check bac1f3578166b0db96b6f70ca742e17fd1980c71 0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2
+          echo 'STATIC_HYGIENE=PASS'
+
+      - name: Native cycles 131 through 140
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:critical-states
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:main-action-state-contracts
+          npm run audit:main-state-runtime-coverage
+          npm run audit:global-state-completion-gate
+          node - <<'NODE'
+          const fs = require('fs');
+          const read = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
+          const r131 = read('docs/validation/global-cycle-131-135-critical-state-contracts-report.json');
+          const r136 = read('docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json');
+          const r137 = read('docs/validation/global-cycle-137-main-support-state-contracts-report.json');
+          const r138 = read('docs/validation/global-cycle-138-main-action-state-contracts-report.json');
+          const r139 = read('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json');
+          const r140 = read('docs/validation/global-cycle-140-global-state-completion-gate-report.json');
+          if (!['passed','passed-with-follow-up'].includes(r131.status)) process.exit(10);
+          if (r136.status !== 'passed' || r136.checkedPages !== 4 || r136.failedPages !== 0) process.exit(11);
+          if (r137.status !== 'passed' || r137.checkedPages !== 3 || r137.failedPages !== 0) process.exit(12);
+          if (!['passed','passed-with-follow-up'].includes(r138.status)) process.exit(13);
+          if (r139.status !== 'passed' || r139.checkedPages !== 12 || r139.failedPages !== 0) process.exit(14);
+          if (!['passed','passed-with-follow-up'].includes(r140.status)) process.exit(15);
+          const failedReports = Array.isArray(r140.failedReports) ? r140.failedReports.length : Number(r140.failedReports || 0);
+          if (failedReports !== 0) process.exit(16);
+          console.log('NATIVE_STATE_CHAIN=PASS');
+          console.log(JSON.stringify({r131:r131.status,r136:r136.status,r137:r137.status,r138:r138.status,r139:r139.status,r140:r140.status,failedReports}));
+          NODE
+
+      - name: Negative fixture 136 must fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='assets/js/pages/profile-experience.js'
+          cp "$TARGET" /tmp/profile-experience.js
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('assets/js/pages/profile-experience.js')
+          s = p.read_text()
+          needle = 'hydration.ready({ hasItems: true })'
+          assert needle in s
+          p.write_text(s.replace(needle, 'hydration.ready({ hasItems: false })', 1))
+          PY
+          set +e
+          npm run audit:main-marketplace-state-contracts >/tmp/negative136.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/negative136.log
+          test "$rc" -ne 0
+          node - <<'NODE'
+          const r=require('./docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json');
+          if (r.failedPages !== 1) process.exit(21);
+          const failed=r.pages.filter(p=>p.status==='failed');
+          if (failed.length !== 1 || failed[0].file !== 'perfil.html') process.exit(22);
+          if (!failed[0].missing.some(x=>x.includes('completion:assets/js/pages/profile-experience.js:hydration.ready({ hasItems: true })'))) process.exit(23);
+          console.log('NEGATIVE_136_FAIL_CLOSED=PASS');
+          NODE
+          mv /tmp/profile-experience.js "$TARGET"
+
+      - name: Negative fixture 137 must fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='assets/js/pages/comunidade.js'
+          cp "$TARGET" /tmp/comunidade.js
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('assets/js/pages/comunidade.js')
+          s = p.read_text()
+          needle = "page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;"
+          assert needle in s
+          p.write_text(s.replace(needle, 'page.dataset.viewState = nextState;', 1))
+          PY
+          set +e
+          npm run audit:main-support-state-contracts >/tmp/negative137.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/negative137.log
+          test "$rc" -ne 0
+          node - <<'NODE'
+          const r=require('./docs/validation/global-cycle-137-main-support-state-contracts-report.json');
+          if (r.failedPages !== 1) process.exit(31);
+          const failed=r.pages.filter(p=>p.status==='failed');
+          if (failed.length !== 1 || failed[0].file !== 'comunidade.html') process.exit(32);
+          if (!failed[0].missing.some(x=>x.includes("completion:assets/js/pages/comunidade.js:page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;"))) process.exit(33);
+          console.log('NEGATIVE_137_FAIL_CLOSED=PASS');
+          NODE
+          mv /tmp/comunidade.js "$TARGET"
+
+      - name: Restore positive chain, Matrix and full governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE='0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2'
+          git checkout -- assets/js/pages/profile-experience.js assets/js/pages/comunidade.js
+          npm run audit:critical-states
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:main-action-state-contracts
+          npm run audit:main-state-runtime-coverage
+          npm run audit:global-state-completion-gate
           npm run audit:domain-completion-matrix
+          echo 'MATRIX=PASS'
+          npm run audit:agent-governance
+          echo 'AGENT_GOVERNANCE=PASS'
+          git checkout -- .
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
           test -z "$(git status --porcelain)"
-          echo 'UX_QA_DEBT_003_CANDIDATE_B_MATRIX=PASS'
+          echo 'UX_QA_DEBT_003_CANDIDATE_B_CERTIFIER=PASS'
           echo "candidate=$CANDIDATE"
           echo 'changedFiles=2'
+          echo 'negativeFixtures=2/2'
           echo 'productMutation=false'
           echo 'matrixMutation=false'
+          echo 'criteriaRelaxed=0'
