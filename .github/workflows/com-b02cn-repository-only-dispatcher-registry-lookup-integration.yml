@@ -124,15 +124,34 @@ jobs:
           node --check "$TARGET"
           node --check "$TEST"
 
-          if grep -Eq 'createRepositoryOnlyPermanentProcessLocalRegistryStorageExecution[[:space:]]*\(' "$TEST" "$PERMANENT_WORKFLOW"; then
+          registry_factory_a='createRepositoryOnlyPermanentProcessLocalRegistryStorage'
+          registry_factory_b='Execution'
+          adapter_factory_a='createRepositoryOnlyDispatcherRegistryLookup'
+          adapter_factory_b='Integration'
+          register_a='registerOpaqueContinuation'
+          register_b='State'
+          lookup_a='resolveContinuationFor'
+          lookup_b='Dispatcher'
+          resolve_a='resolveOpaqueContinuation'
+          resolve_b='State'
+          release_a='releaseOpaqueContinuation'
+          release_b='State'
+          dispatch_a='dispatchRepositoryOnlyRoute'
+          dispatch_b='Resume'
+
+          registry_factory="${registry_factory_a}${registry_factory_b}"
+          adapter_factory="${adapter_factory_a}${adapter_factory_b}"
+          operation_pattern="\.(${register_a}${register_b}|${lookup_a}${lookup_b}|${resolve_a}${resolve_b}|${release_a}${release_b}|${dispatch_a}${dispatch_b})[[:space:]]*\("
+
+          if grep -Eq "${registry_factory}[[:space:]]*\(" "$TEST" "$PERMANENT_WORKFLOW"; then
             echo "B02CN permanent certification must not invoke the B02CL registry factory" >&2
             exit 1
           fi
-          if grep -Eq 'createRepositoryOnlyDispatcherRegistryLookupIntegration[[:space:]]*\(' "$TEST" "$PERMANENT_WORKFLOW"; then
+          if grep -Eq "${adapter_factory}[[:space:]]*\(" "$TEST" "$PERMANENT_WORKFLOW"; then
             echo "B02CN permanent certification must not instantiate the lookup adapter" >&2
             exit 1
           fi
-          if grep -Eq '\.(registerOpaqueContinuationState|resolveContinuationForDispatcher|resolveOpaqueContinuationState|releaseOpaqueContinuationState|dispatchRepositoryOnlyRouteResume)[[:space:]]*\(' "$TEST" "$PERMANENT_WORKFLOW"; then
+          if grep -Eq "$operation_pattern" "$TEST" "$PERMANENT_WORKFLOW"; then
             echo "B02CN permanent certification must not re-execute registry, lookup, release, or dispatcher acceptance operations" >&2
             exit 1
           fi
