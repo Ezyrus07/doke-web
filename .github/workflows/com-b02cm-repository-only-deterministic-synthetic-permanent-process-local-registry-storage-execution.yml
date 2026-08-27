@@ -1,0 +1,148 @@
+name: COM-B02CM Repository-Only Deterministic Synthetic Permanent Process-Local Registry Storage Execution
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - 'config/com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.json'
+      - 'scripts/test-com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-deterministic-synthetic-permanent-process-local-registry-storage-execution:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 72404ef1300ffa977b92067f37d9f54bebecfa11
+      PREDECESSOR_TREE: 1d2e3431601b22240590194b0d9294066e22c90f
+      PREDECESSOR_RUN: '33090061746'
+      PREDECESSOR_JOB: '98580165521'
+      B02CL_TARGET: backend/shared/http/repository-only-permanent-process-local-registry-storage-execution-implementation.js
+      B02CL_TARGET_BLOB: 9f1916f87db37a81045be897ae1c87e1341c4774
+      B02CL_CONFIG: config/com-b02cl-repository-only-permanent-process-local-registry-storage-execution-implementation.json
+      B02CL_CONFIG_BLOB: e03f883851911382692f30823067e63a5740b753
+      B02CL_TEST: scripts/test-com-b02cl-repository-only-permanent-process-local-registry-storage-execution-implementation.js
+      B02CL_TEST_BLOB: 0102e6156b62f690d55829fb6f45b02ff56020b5
+      B02CL_WORKFLOW: .github/workflows/com-b02cl-repository-only-permanent-process-local-registry-storage-execution-implementation.yml
+      B02CL_WORKFLOW_BLOB: f9085e278162aa111d19dbdd6609ac94e1a5a1e7
+      CONFIG: config/com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.json
+      CONFIG_BLOB: 7d2b576f28cb8ba0eb67f62f32cdc70d5addf698
+      TEST: scripts/test-com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.js
+      TEST_BLOB: d9b3e6ce4907b1ca1ac54db657b02d576e036099
+      PERMANENT_WORKFLOW: .github/workflows/com-b02cm-repository-only-deterministic-synthetic-permanent-process-local-registry-storage-execution.yml
+      TEMP_EXECUTION_HEAD: 621be7b0557876d670779c5cbc6ed5cf9ffdfdc0
+      TEMP_EXECUTION_TREE: 59b791494084c2ea5985cbfc60d52d96e69c9815
+      TEMP_EXECUTION_RUN: '33091061504'
+      TEMP_EXECUTION_JOB: '98583689794'
+      TEMP_EXECUTION_WORKFLOW_ID: '343920022'
+      TEMP_WORKFLOW: .github/workflows/0000-temp-com-b02cm-authorized-single-use-registry-cycle.yml
+      TEMP_WORKFLOW_BLOB: 2ac7587bffe003cab89082074461e4d106fcf2dc
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      DISPATCHER: backend/shared/http/repository-only-route-resume-dispatcher.js
+      DISPATCHER_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      CARRIER: backend/shared/http/repository-only-route-continuation-carrier-contract.js
+      CARRIER_BLOB: fb7448f83fe385e94a2be61685f612d9e27d949f
+      OP_IMPL: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-methods-implementation.js
+      OP_IMPL_BLOB: 99d804721a5d350dcf8e59dd935937e24561e094
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CL certification, historical execution, and exact B02CM scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          git merge-base --is-ancestor "$TEMP_EXECUTION_HEAD" HEAD
+          test "$(git rev-parse "$TEMP_EXECUTION_HEAD^")" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$TEMP_EXECUTION_HEAD^{tree}")" = "$TEMP_EXECUTION_TREE"
+          test "$(git rev-parse "$TEMP_EXECUTION_HEAD:$TEMP_WORKFLOW")" = "$TEMP_WORKFLOW_BLOB"
+
+          test ! -e "$TEMP_WORKFLOW"
+          test "$(git rev-parse HEAD:$B02CL_TARGET)" = "$B02CL_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CL_CONFIG)" = "$B02CL_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02CL_TEST)" = "$B02CL_TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02CL_WORKFLOW)" = "$B02CL_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$DISPATCHER)" = "$DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$CARRIER)" = "$CARRIER_BLOB"
+          test "$(git rev-parse HEAD:$OP_IMPL)" = "$OP_IMPL_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          for path in $actual; do
+            case "$path" in
+              "$CONFIG"|"$TEST"|"$PERMANENT_WORKFLOW"|"$MATRIX_MD"|"$MATRIX_REPORT") ;;
+              *) echo "Unexpected B02CM final-scope path: $path" >&2; exit 1 ;;
+            esac
+          done
+          for required in "$CONFIG" "$TEST" "$PERMANENT_WORKFLOW"; do
+            printf '%s\n' "$actual" | grep -Fx "$required" >/dev/null
+          done
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify historical single-use execution without re-execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TEST"
+
+          if grep -Eq '\.createRepositoryOnlyPermanentProcessLocalRegistryStorageExecution[[:space:]]*\(' "$TEST"; then
+            echo "B02CM permanent test must not invoke the B02CL factory" >&2
+            exit 1
+          fi
+          if grep -Eq '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)[[:space:]]*\(' "$TEST"; then
+            echo "B02CM permanent test must not re-execute registry operations" >&2
+            exit 1
+          fi
+
+          node "$TEST"
+
+          grep -F '"authorizationConsumed": true' "$CONFIG" >/dev/null
+          grep -F '"singleUseExecutorRemoved": true' "$CONFIG" >/dev/null
+          grep -F '"reexecutionAllowed": false' "$CONFIG" >/dev/null
+          grep -F '"dispatcherRegistryLookupIntegrationPerformed": false' "$CONFIG" >/dev/null
+          grep -F '"resumeSurfaceInvoked": false' "$CONFIG" >/dev/null
+          grep -F '"networkExecuted": false' "$CONFIG" >/dev/null
+          grep -F '"runtimeActivated": false' "$CONFIG" >/dev/null
+          grep -F '"realtimeActivated": false' "$CONFIG" >/dev/null
+          grep -F '"productionChanged": false' "$CONFIG" >/dev/null
+
+      - name: Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD
