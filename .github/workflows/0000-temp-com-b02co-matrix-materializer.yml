@@ -1,0 +1,200 @@
+name: TEMP COM-B02CO Matrix Derivative Materializer
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02co-matrix-materializer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-b02co-matrix-derivatives:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CANDIDATE_HEAD: bea051199e98a16f77c3773fe4fedc5410add86f
+      PREDECESSOR_HEAD: f6dc1dd76e29bc92d666e40a8f3ccf107b0da65d
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      CONFIG: config/com-b02co-repository-only-registry-backed-resume-surface-controlled-invocation.json
+      CONFIG_BLOB: fdf4a5067f01291df738c5419539555c20c2d78c
+      TEST: scripts/test-com-b02co-repository-only-registry-backed-resume-surface-controlled-invocation.js
+      TEST_BLOB: 83154df8df805541d23420e821ad938f1e4f734d
+      PERMANENT_WORKFLOW: .github/workflows/com-b02co-repository-only-registry-backed-resume-surface-controlled-invocation.yml
+      PERMANENT_WORKFLOW_BLOB: 99ead7f8456eac1782dee3e836a97a27e9f47cf2
+      B02CL_TARGET: backend/shared/http/repository-only-permanent-process-local-registry-storage-execution-implementation.js
+      B02CL_TARGET_BLOB: 9f1916f87db37a81045be897ae1c87e1341c4774
+      B02CN_TARGET: backend/shared/http/repository-only-route-resume-dispatcher-registry-lookup-integration.js
+      B02CN_TARGET_BLOB: 43ba780f17ef23790d03224955cafe49c454ac6c
+      B02CN_CONFIG: config/com-b02cn-repository-only-dispatcher-registry-lookup-integration.json
+      B02CN_CONFIG_BLOB: fb3de05bd8b2542cf5bf92cccb69f6824d80a294
+      DISPATCHER: backend/shared/http/repository-only-route-resume-dispatcher.js
+      DISPATCHER_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      CARRIER: backend/shared/http/repository-only-route-continuation-carrier-contract.js
+      CARRIER_BLOB: fb7448f83fe385e94a2be61685f612d9e27d949f
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      EXECUTION_HEAD: 34e9720ee7b8249f8009a91a0aabdb804ebf5757
+      EXECUTION_TEMP: .github/workflows/0000-temp-com-b02co-authorized-single-use-registry-backed-resume-proof.yml
+      EXECUTION_TEMP_BLOB: 4ca10b41e60c28c338cffc43786886968daf9858
+      TEMP_WORKFLOW: .github/workflows/0000-temp-com-b02co-matrix-materializer.yml
+      TARGET_BRANCH: com/com-001-baseline-audit
+
+    steps:
+      - name: Checkout exact TEMP head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CO candidate and materializer-only installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE_HEAD"
+          test "$(git diff --name-only "$CANDIDATE_HEAD" HEAD)" = "$TEMP_WORKFLOW"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$PERMANENT_WORKFLOW)" = "$PERMANENT_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$B02CL_TARGET)" = "$B02CL_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CN_TARGET)" = "$B02CN_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CN_CONFIG)" = "$B02CN_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$DISPATCHER)" = "$DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$CARRIER)" = "$CARRIER_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          git merge-base --is-ancestor "$EXECUTION_HEAD" HEAD
+          test "$(git rev-parse "$EXECUTION_HEAD:$EXECUTION_TEMP")" = "$EXECUTION_TEMP_BLOB"
+          test ! -e "$EXECUTION_TEMP"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Generate and certify TEMP-free Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          registry_factory_a='createRepositoryOnlyPermanentProcessLocalRegistryStorage'
+          registry_factory_b='Execution'
+          integration_factory_a='createRepositoryOnlyDispatcherRegistryLookup'
+          integration_factory_b='Integration'
+          register_a='registerOpaqueContinuation'
+          register_b='State'
+          lookup_a='resolveContinuationFor'
+          lookup_b='Dispatcher'
+          resolve_a='resolveOpaqueContinuation'
+          resolve_b='State'
+          release_a='releaseOpaqueContinuation'
+          release_b='State'
+          dispatch_a='dispatchRepositoryOnlyRoute'
+          dispatch_b='Resume'
+          registry_factory="${registry_factory_a}${registry_factory_b}"
+          integration_factory="${integration_factory_a}${integration_factory_b}"
+          operation_pattern="\.(${register_a}${register_b}|${lookup_a}${lookup_b}|${resolve_a}${resolve_b}|${release_a}${release_b}|${dispatch_a}${dispatch_b})[[:space:]]*\("
+
+          if grep -Eq "${registry_factory}[[:space:]]*\(" "$TEST" "$PERMANENT_WORKFLOW"; then
+            echo "B02CO Matrix materialization must not permit registry factory re-execution" >&2
+            exit 1
+          fi
+          if grep -Eq "${integration_factory}[[:space:]]*\(" "$TEST" "$PERMANENT_WORKFLOW"; then
+            echo "B02CO Matrix materialization must not instantiate registry lookup integration" >&2
+            exit 1
+          fi
+          if grep -Eq "$operation_pattern" "$TEST" "$PERMANENT_WORKFLOW"; then
+            echo "B02CO Matrix materialization must not re-execute register, lookup, resolve, release, or dispatcher resume" >&2
+            exit 1
+          fi
+
+          npm run write:domain-completion-matrix
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+
+          actual_generated="$(git diff --name-only | sort)"
+          printf '%s\n' "$actual_generated" | grep -Fx "$MATRIX_MD" >/dev/null
+          for path in $actual_generated; do
+            case "$path" in
+              "$MATRIX_MD"|"$MATRIX_REPORT") ;;
+              *) echo "Unexpected generated path: $path" >&2; exit 1 ;;
+            esac
+          done
+
+          git rm "$TEMP_WORKFLOW"
+          git add "$MATRIX_MD"
+          if printf '%s\n' "$actual_generated" | grep -Fx "$MATRIX_REPORT" >/dev/null; then
+            git add -f "$MATRIX_REPORT"
+          fi
+
+          expected_final_required="$(printf '%s\n' "$CONFIG" "$TEST" "$PERMANENT_WORKFLOW" "$MATRIX_MD" | sort)"
+          actual_final="$(git diff --cached --name-only "$PREDECESSOR_HEAD" | sort)"
+          for required in $expected_final_required; do
+            printf '%s\n' "$actual_final" | grep -Fx "$required" >/dev/null
+          done
+          for path in $actual_final; do
+            case "$path" in
+              "$CONFIG"|"$TEST"|"$PERMANENT_WORKFLOW"|"$MATRIX_MD"|"$MATRIX_REPORT") ;;
+              *) echo "Unexpected B02CO final path after Matrix materialization: $path" >&2; exit 1 ;;
+            esac
+          done
+
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '0000-temp-com-b02co-*' ! -path "$TEMP_WORKFLOW" -print -quit)"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TEST"
+          node "$TEST"
+          git diff --cached --check "$PREDECESSOR_HEAD"
+
+          printf 'PROSPECTIVE_MARKDOWN_BLOB=%s\n' "$(git hash-object "$MATRIX_MD")"
+          if printf '%s\n' "$actual_generated" | grep -Fx "$MATRIX_REPORT" >/dev/null; then
+            printf 'PROSPECTIVE_REPORT_BLOB=%s\n' "$(git hash-object "$MATRIX_REPORT")"
+          else
+            printf 'REPORT_DERIVATIVE_ALREADY_CURRENT=true\n'
+          fi
+
+      - name: Commit and push TEMP removal plus Matrix derivatives only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$TARGET_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse HEAD)"
+          parent="$(git rev-parse HEAD)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): materialize B02CO matrix derivatives'
+          commit="$(git rev-parse HEAD)"
+          tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^)" = "$parent"
+
+          commit_paths="$(git diff-tree --no-commit-id --name-only -r HEAD | sort)"
+          printf '%s\n' "$commit_paths" | grep -Fx "$TEMP_WORKFLOW" >/dev/null
+          printf '%s\n' "$commit_paths" | grep -Fx "$MATRIX_MD" >/dev/null
+          for path in $commit_paths; do
+            case "$path" in
+              "$TEMP_WORKFLOW"|"$MATRIX_MD"|"$MATRIX_REPORT") ;;
+              *) echo "Unexpected B02CO materializer commit path: $path" >&2; exit 1 ;;
+            esac
+          done
+
+          test ! -e "$TEMP_WORKFLOW"
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '0000-temp-com-b02co-*' -print -quit)"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+
+          git push origin "HEAD:$TARGET_BRANCH"
+          printf 'FINAL_COMMIT_SHA=%s\n' "$commit"
+          printf 'FINAL_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$(git rev-parse HEAD:$MATRIX_MD)"
+          printf 'REPORT_BLOB_SHA=%s\n' "$(git rev-parse HEAD:$MATRIX_REPORT)"
