@@ -1,0 +1,179 @@
+name: TEMP UX post-STATE-001 global state reconcile
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - diag/ux-post-state-001-global-state-reconcile
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    env:
+      PERM: bac1f3578166b0db96b6f70ca742e17fd1980c71
+      PERM_TREE: bc485516a725749eeb6decd0699b7ac78519ada0
+      TARGET: assets/js/pages/comunidade.js
+      TARGET_BLOB: 32f472683cf33986f2b6b7802ba384de9fc25b3f
+      TARGET_SHA256: 816bc9acf0530dadfb01fd5011251f0cf4474696aaf1c6e918171c8c489a59fb
+      TARGET_BYTES: '98844'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze certified permanent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PERM"
+          test "$(git rev-parse HEAD)" = "$PERM"
+          test "$(git rev-parse HEAD^{tree})" = "$PERM_TREE"
+          test "$(git rev-parse "$PERM:$TARGET")" = "$TARGET_BLOB"
+          git show "$PERM:$TARGET" >/tmp/community.js
+          test "$(sha256sum /tmp/community.js | awk '{print $1}')" = "$TARGET_SHA256"
+          test "$(wc -c </tmp/community.js | tr -d ' ')" = "$TARGET_BYTES"
+          git diff --quiet
+          git diff --cached --quiet
+          echo PERMANENT_IDENTITY=PASS
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Execute current global state gates
+        shell: bash
+        run: |
+          set -uo pipefail
+          : >/tmp/rc.tsv
+          run_gate() {
+            local key="$1"
+            local cmd="$2"
+            set +e
+            npm run "$cmd" >"/tmp/${key}.log" 2>&1
+            local rc=$?
+            set -e
+            printf '%s\t%s\t%s\n' "$key" "$cmd" "$rc" >>/tmp/rc.tsv
+            echo "===== $key rc=$rc ====="
+            cat "/tmp/${key}.log"
+          }
+          set -e
+          run_gate critical_runtime audit:critical-state-runtime-api
+          run_gate critical_contracts audit:critical-state-contracts
+          run_gate critical_actions audit:critical-action-state-contracts
+          run_gate marketplace_136 audit:main-marketplace-state-contracts
+          run_gate support_137 audit:main-support-state-contracts
+          run_gate actions_138 audit:main-action-state-contracts
+          run_gate runtime_139 audit:main-state-runtime-coverage
+          run_gate global_140 audit:global-state-completion-gate
+          echo 'RC_VECTOR_BEGIN'
+          cat /tmp/rc.tsv
+          echo 'RC_VECTOR_END'
+
+      - name: Reconcile generated reports and source semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const reports = {
+            critical131_135: 'docs/validation/global-cycle-131-135-critical-state-contracts-report.json',
+            marketplace136: 'docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json',
+            support137: 'docs/validation/global-cycle-137-main-support-state-contracts-report.json',
+            actions138: 'docs/validation/global-cycle-138-main-action-state-contracts-report.json',
+            runtime139: 'docs/validation/global-cycle-139-main-state-runtime-coverage-report.json',
+            global140: 'docs/validation/global-cycle-140-global-state-completion-gate-report.json'
+          };
+          const parse = f => fs.existsSync(f) ? JSON.parse(fs.readFileSync(f,'utf8')) : null;
+          const loaded = Object.fromEntries(Object.entries(reports).map(([k,f])=>[k,parse(f)]));
+          const rcRows = fs.readFileSync('/tmp/rc.tsv','utf8').trim().split(/\n/).filter(Boolean).map(line=>{
+            const [key,cmd,rc]=line.split('\t'); return {key,cmd,rc:Number(rc)};
+          });
+          const rc = Object.fromEntries(rcRows.map(x=>[x.key,x.rc]));
+          const communityHtml = fs.readFileSync('comunidade.html','utf8');
+          const communityJs = fs.readFileSync('assets/js/pages/comunidade.js','utf8');
+          const stateContracts = fs.readFileSync('assets/js/state/state-contracts.js','utf8');
+          const support = loaded.support137;
+          const communitySupport = support?.pages?.find?.(p=>p.file==='comunidade.html') || null;
+          const source = {
+            htmlInitialLoading: communityHtml.includes('data-state-boundary="comunidade"') && communityHtml.includes('data-view-state="loading"'),
+            htmlLiteralReady: communityHtml.includes('data-view-state="ready"'),
+            runtimeMapsHydratedToReady: communityJs.includes("page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;"),
+            runtimeInternalHydratedPreserved: communityJs.includes("setCommunityPageState('hydrated');"),
+            canonicalReadyDefined: /READY\s*:\s*['\"]ready['\"]/.test(stateContracts),
+            canonicalHydratedDefined: /HYDRATED\s*:\s*['\"]hydrated['\"]/.test(stateContracts)
+          };
+          const statuses = Object.fromEntries(Object.entries(loaded).map(([k,j])=>[k,j?.status ?? null]));
+          const failedPages = Object.fromEntries(Object.entries(loaded).map(([k,j])=>[k,j?.failedPages ?? null]));
+          const supportMissing = communitySupport?.missing || [];
+          const supportStaticMismatch = Boolean(
+            rc.support_137 !== 0 &&
+            source.htmlInitialLoading &&
+            !source.htmlLiteralReady &&
+            source.runtimeMapsHydratedToReady &&
+            supportMissing.length === 1 &&
+            supportMissing[0] === 'data-view-state="ready"'
+          );
+          const globalStateClosed = rc.global_140 === 0 && statuses.global140 === 'passed';
+          const productBlocker = supportStaticMismatch ? null : (communitySupport?.status === 'failed' ? {file:'comunidade.html',missing:supportMissing} : null);
+          const auditContractCandidate = supportStaticMismatch ? {
+            script:'scripts/audit-main-support-state-contracts.js',
+            reason:'static gate requires terminal ready literal in HTML even though canonical page lifecycle starts loading and runtime publishes ready after hydration'
+          } : null;
+          const result = {
+            result:'PASS',
+            checkpoint:'post-UX-STATE-001',
+            permanent:process.env.PERM,
+            permanentTree:process.env.PERM_TREE,
+            target:process.env.TARGET,
+            rc,
+            statuses,
+            failedPages,
+            supportCommunity:communitySupport,
+            source,
+            supportStaticMismatch,
+            globalStateClosed,
+            productBlocker,
+            auditContractCandidate,
+            criteriaRelaxed:0,
+            productMutation:false,
+            repositoryOnly:true
+          };
+          fs.writeFileSync('/tmp/post-ux-state-001-global-reconcile.json',JSON.stringify(result,null,2)+'\n');
+          console.log('POST_UX_STATE_001_GLOBAL_RECONCILE='+JSON.stringify(result));
+          NODE
+
+      - name: Conditional next-phase handoff discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          closed="$(node -e "const j=require('/tmp/post-ux-state-001-global-reconcile.json');process.stdout.write(String(j.globalStateClosed))")"
+          if [ "$closed" != true ]; then
+            echo NEXT_PHASE_HANDOFF=SKIPPED_GLOBAL_STATE_NOT_CLOSED
+            exit 0
+          fi
+          set +e
+          npm run audit:global-phase-handoff >/tmp/global-phase-handoff.log 2>&1
+          handoff_rc=$?
+          npm run audit:global-final-readiness >/tmp/global-final-readiness.log 2>&1
+          final_rc=$?
+          set -e
+          cat /tmp/global-phase-handoff.log
+          cat /tmp/global-final-readiness.log
+          echo "NEXT_PHASE_HANDOFF_RC=$handoff_rc"
+          echo "GLOBAL_FINAL_READINESS_RC=$final_rc"
+
+      - name: Prove diagnostic-only mutation boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo GENERATED_DIFF_BEGIN
+          git status --short
+          git diff --stat || true
+          echo GENERATED_DIFF_END
+          test "$(git rev-parse HEAD)" = "$PERM"
+          test "$(git rev-parse HEAD^{tree})" = "$PERM_TREE"
+          echo PRODUCT_HEAD_UNCHANGED=PASS
+          echo CRITERIA_RELAXED=0
