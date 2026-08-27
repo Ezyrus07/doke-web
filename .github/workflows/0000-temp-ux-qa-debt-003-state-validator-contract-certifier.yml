@@ -1,4 +1,4 @@
-name: TEMP UX-QA-DEBT-003 Matrix Differential
+name: TEMP UX-QA-DEBT-003 Candidate B Matrix Gate
 
 on:
   push:
@@ -9,32 +9,33 @@ permissions:
   contents: read
 
 jobs:
-  diagnose:
+  matrix:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Compare parent and frozen candidate Matrix audit
+      - name: Verify frozen candidate B and Matrix
         shell: bash
         run: |
-          set -u
+          set -euo pipefail
           PARENT='bac1f3578166b0db96b6f70ca742e17fd1980c71'
-          CANDIDATE='bfb77e3fa1bfd1694094b6270751aed2c6fda2e7'
-          for ref in "$PARENT" "$CANDIDATE"; do
-            git checkout --detach "$ref"
-            git checkout -- .
-            git clean -fd
-            set +e
-            npm run audit:domain-completion-matrix >"/tmp/matrix-$ref.log" 2>&1
-            rc=$?
-            set -e
-            echo "MATRIX_REF=$ref RC=$rc"
-            cat "/tmp/matrix-$ref.log"
-            echo "MATRIX_STATUS_END=$ref"
-          done
+          CANDIDATE='0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2'
+          test "$(git rev-parse "$CANDIDATE^")" = "$PARENT"
           git checkout --detach "$CANDIDATE"
-          git checkout -- .
-          git clean -fd
-          echo 'MATRIX_DIFFERENTIAL_CAPTURE=PASS'
+          mapfile -t changed < <(git diff --name-only "$PARENT" "$CANDIDATE")
+          test "${#changed[@]}" -eq 2
+          printf '%s\n' "${changed[@]}" | sort > /tmp/actual
+          printf '%s\n' scripts/audit-main-marketplace-state-contracts.js scripts/audit-main-support-state-contracts.js | sort > /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+          node --check scripts/audit-main-marketplace-state-contracts.js
+          node --check scripts/audit-main-support-state-contracts.js
+          git diff --check "$PARENT" "$CANDIDATE"
+          npm run audit:domain-completion-matrix
+          test -z "$(git status --porcelain)"
+          echo 'UX_QA_DEBT_003_CANDIDATE_B_MATRIX=PASS'
+          echo "candidate=$CANDIDATE"
+          echo 'changedFiles=2'
+          echo 'productMutation=false'
+          echo 'matrixMutation=false'
