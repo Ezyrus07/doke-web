@@ -1,0 +1,182 @@
+name: TEMP UX-CSS-IMPORTANT-053 Mobile Base Narrow Full Qualification
+
+on:
+  pull_request:
+    types: [reopened]
+    branches:
+      - diag/ux-css-important-053-mobile-base-narrow-full-qualification-base
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Reconstruct and freeze narrow candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-list --parents -n1 "$BASE_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          test "$(git diff-tree --no-commit-id --name-only -r "$BASE_SHA")" = ".github/workflows/0000-temp-ux-css-important-053-mobile-base-narrow-full-qualification.yml"
+          git checkout --detach "$PARENT" >/dev/null
+          cp "$TARGET" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process'),path=require('path');
+          const f=process.env.TARGET,p=fs.readFileSync(f,'utf8'),keep=new Set([3,4,8,14,20,21,22,23,25,26,27,28]);let n=0,r=0;
+          const c=p.replace(/\s*!important\b/gi,m=>{n++;if(keep.has(n))return m;r++;return ''});
+          if(n!==28||r!==16||(c.match(/!important\b/gi)||[]).length!==12)throw Error(`ordinal reconstruction ${n}/${r}`);
+          if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');
+          fs.writeFileSync('/tmp/candidate.css',c);fs.writeFileSync(f,c);
+          const blob=cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);
+          const css=[];(function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?w(q):q.endsWith('.css')&&css.push(q)}})('assets/css');const global=css.reduce((sum,q)=>sum+(fs.readFileSync(q,'utf8').match(/!important\b/gi)||[]).length,0);
+          if(global!==27)throw Error(`global ${global}`);
+          console.log('NARROW_CANDIDATE_IDENTITY='+JSON.stringify({blob,sha256,bytes,target:'28->12',global:'43->27',removed:16,preservedOrdinals:[3,4,8,14,20,21,22,23,25,26,27,28],markerOnly:true}));
+          NODE
+          test "$(git diff --name-only)" = "$TARGET"
+          git diff --check
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          npm ci --ignore-scripts >/dev/null
+      - name: Prove dedicated mobile-base contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          npm run audit:mobile-base >/tmp/mobile-parent.log 2>&1
+          cp /tmp/candidate.css "$TARGET"
+          npm run audit:mobile-base >/tmp/mobile-candidate.log 2>&1
+          echo MOBILE_BASE_PARENT=PASS
+          echo MOBILE_BASE_CANDIDATE=PASS
+      - name: Reconcile canonical static gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/matrix.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -u
+          phase="$1"; candidate="$2"; : >"/tmp/$phase.tsv"
+          restore(){ git checkout "$PARENT" -- . >/dev/null 2>&1 || exit 90; if [ "$candidate" = 1 ]; then cp /tmp/candidate.css "$TARGET"; fi; }
+          gate(){ label="$1"; shift; restore; log="/tmp/$phase-$label.log"; set +e; "$@" >"$log" 2>&1; rc=$?; set -e; sed -E 's#/home/runner/work/doke-web/doke-web#<ROOT>#g' "$log" >"$log.n"; h=$(sha256sum "$log.n"|awk '{print $1}'); printf '%s\t%s\t%s\n' "$label" "$rc" "$h" >>"/tmp/$phase.tsv"; echo "$phase|$label|rc=$rc|hash=$h"; }
+          set -e
+          gate agent_governance node scripts/audit-agent-governance.js
+          gate responsive_contract npm run test:responsive-contract
+          gate responsive_boundaries npm run audit:responsive-boundaries
+          gate css_responsive_conflicts npm run audit:css-responsive-conflicts
+          gate shared_card_anatomy npm run audit:shared-card-anatomy
+          gate domain_cards npm run audit:domain
+          gate duplicate_assets node scripts/audit-duplicate-assets.js
+          gate domain_completion_matrix npm run audit:domain-completion-matrix
+          gate ad_card_required_info node scripts/test-ad-card-required-info-contract.js
+          gate card_loading_parity node scripts/test-card-loading-parity-contract.js
+          gate publication_card_narrow_tablet node scripts/test-publication-card-narrow-tablet-contract.js
+          gate important_reduction_plan npm run audit:important-reduction-plan
+          gate global_css_design_system npm run audit:global-css-design-system
+          gate frontend_strict npm run audit:frontend:strict
+          restore
+          BASH
+          chmod +x /tmp/matrix.sh
+          /tmp/matrix.sh parent 0
+          /tmp/matrix.sh candidate 1
+          node <<'NODE'
+          const fs=require('fs'),read=f=>Object.fromEntries(fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(x=>{const [k,rc,h]=x.split('\t');return[k,{rc:+rc,h}]}));const p=read('/tmp/parent.tsv'),c=read('/tmp/candidate.tsv');
+          const exact=['agent_governance','responsive_contract','responsive_boundaries','css_responsive_conflicts','shared_card_anatomy','domain_cards','duplicate_assets','domain_completion_matrix','ad_card_required_info','card_loading_parity','publication_card_narrow_tablet'],debt=['important_reduction_plan','global_css_design_system'];
+          for(const k of exact){const a=p[k],b=c[k];if(!a||!b||a.rc!==b.rc||(a.rc!==0&&a.h!==b.h))throw Error(`static regression ${k}`)}
+          for(const k of debt){const a=p[k],b=c[k];if(!a||!b||b.rc>a.rc)throw Error(`debt regression ${k}`)}
+          if(p.frontend_strict.rc!==c.frontend_strict.rc)throw Error('frontend rc drift');
+          const sig=f=>fs.readFileSync(f,'utf8').split('\n').filter(x=>x.includes('**CRITICAL**')||x.includes('**WARNING**')).sort();if(JSON.stringify(sig('/tmp/parent-frontend_strict.log'))!==JSON.stringify(sig('/tmp/candidate-frontend_strict.log')))throw Error('frontend warning drift');
+          console.log('STATIC_RESULT=PASS');console.log('INTRODUCED_REGRESSIONS=0');console.log('CRITERIA_RELAXED=0');
+          NODE
+
+  browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        repeat: [1, 2, 3]
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Reconstruct exact narrow candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-list --parents -n1 "$BASE_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          test "$(git diff-tree --no-commit-id --name-only -r "$BASE_SHA")" = ".github/workflows/0000-temp-ux-css-important-053-mobile-base-narrow-full-qualification.yml"
+          git checkout --detach "$PARENT" >/dev/null
+          cp "$TARGET" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');const f=process.env.TARGET,p=fs.readFileSync(f,'utf8'),keep=new Set([3,4,8,14,20,21,22,23,25,26,27,28]);let n=0,r=0;const c=p.replace(/\s*!important\b/gi,m=>{n++;if(keep.has(n))return m;r++;return ''});if(n!==28||r!==16||(c.match(/!important\b/gi)||[]).length!==12)throw Error(`ordinal ${n}/${r}`);if(p.replace(/\s*!important\b/gi,'')!==c.replace(/\s*!important\b/gi,''))throw Error('marker-only drift');const blob=cp.execFileSync('git',['hash-object','--stdin'],{input:c,encoding:'utf8'}).trim(),sha256=crypto.createHash('sha256').update(c).digest('hex'),bytes=Buffer.byteLength(c);fs.writeFileSync('/tmp/candidate.css',c);console.log('NARROW_CANDIDATE_IDENTITY='+JSON.stringify({blob,sha256,bytes,preservedOrdinals:[3,4,8,14,20,21,22,23,25,26,27,28]}));
+          NODE
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Full authenticated parent candidate A B
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET"
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true; cp /tmp/parent.css "$TARGET" 2>/dev/null || true' EXIT
+          sleep 1
+          REPEAT='${{ matrix.repeat }}' NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),{chromium}=require('@playwright/test');
+          (async()=>{
+            const target=process.env.TARGET,P=fs.readFileSync('/tmp/parent.css','utf8'),C=fs.readFileSync('/tmp/candidate.css','utf8');
+            const pages=['index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'];
+            const widths=[390,760,761],states=[];for(const page of pages)for(const width of widths)states.push({page,width});
+            const expectedActive=pages.flatMap(page=>[390,760].map(width=>`${page}|${width}`)),expectedInactive=pages.map(page=>`${page}|761`);
+            const fixtureId='uxcss053_narrow_fixture',fixtureSession={provider:'mock',remember:true,accountStatus:'active',sessionStatus:'active',issuedAt:'2026-08-26T00:00:00.000Z',user:{id:fixtureId,name:'Narrow Fixture',email:'narrow-fixture@example.test',role:'client',type:'client',accountStatus:'active'}};
+            const H=b=>crypto.createHash('sha256').update(b).digest('hex'),tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+            const selectors=['html','body','.doke-mobile-shell','.doke-mobile-bottom-nav','.sidebar','.sidebar-card','.topbar','.desktop-only','.doke-desktop-search-panel','main','[role="main"]','.main-content','.content','.content-area','.page','.page-shell','.page-content'];
+            const browser=await chromium.launch({headless:true});
+            async function capture(pageName,width,phase){
+              const ctx=await browser.newContext({viewport:{width,height:1050},reducedMotion:'reduce'});await ctx.addInitScript(({key,session})=>{try{localStorage.setItem(key,JSON.stringify(session))}catch{}},{key:'doke.auth.session.v1',session:fixtureSession});const page=await ctx.newPage(),errors=[];let requested=false;
+              page.on('pageerror',e=>errors.push(String(e.message||e)));page.on('request',r=>{try{if(new URL(r.url()).pathname===`/${target}`)requested=true}catch{}});await page.route('**/*',route=>{const u=route.request().url();if(u.startsWith('http://127.0.0.1:4173/'))return route.continue();if(/\.(?:png|jpe?g|webp|gif|svg)(?:\?|$)/i.test(u))return route.fulfill({status:200,contentType:'image/png',body:tiny});return route.abort();});
+              await page.goto(`http://127.0.0.1:4173/${pageName}?uxcss053narrow=${phase}-${process.env.REPEAT}-${width}`,{waitUntil:'domcontentloaded',timeout:15000});await page.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});if(width<=760)await page.waitForFunction(()=>document.body.classList.contains('doke-mobile-shell-mounted'),null,{timeout:5000}).catch(()=>{});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;}'});await page.waitForTimeout(350);
+              const meta=await page.evaluate(({selectors,width,target,fixtureId})=>{const round=v=>Math.round(v*100)/100,clean=s=>{try{return new URL(s,location.href).pathname.replace(/^\//,'')}catch{return String(s||'')}};const seen=new Set();let cssom=false,targetSheet=null;function walk(sheet){if(!sheet||seen.has(sheet))return;seen.add(sheet);const href=sheet.href?clean(sheet.href):'';if(href===target){cssom=true;targetSheet=sheet}let rules;try{rules=sheet.cssRules}catch{return}if(!rules)return;for(const r of rules)if(r.type===CSSRule.IMPORT_RULE)walk(r.styleSheet)}for(const s of document.styleSheets)walk(s);const media=[];let mediaActive=false,nonMediaStyleRules=0;if(targetSheet){let rules=[];try{rules=[...targetSheet.cssRules]}catch{}for(const r of rules){if(r.type===CSSRule.MEDIA_RULE){const text=r.conditionText||r.media?.mediaText||'',matches=Boolean(text&&matchMedia(text).matches);media.push({text,matches});if(matches)mediaActive=true}else if(r.type===CSSRule.STYLE_RULE)nonMediaStyleRules++}}const one=e=>{const c=getComputedStyle(e),r=e.getBoundingClientRect();return{tag:e.tagName,id:e.id,cls:typeof e.className==='string'?e.className:'',hidden:e.hidden,aria:e.getAttribute('aria-hidden'),d:c.display,p:c.position,v:c.visibility,o:c.opacity,z:c.zIndex,w:c.width,h:c.height,minw:c.minWidth,maxw:c.maxWidth,minh:c.minHeight,maxh:c.maxHeight,t:c.top,ri:c.right,b:c.bottom,l:c.left,tr:c.transform,m:c.margin,mi:c.marginInline,pad:c.padding,ov:c.overflow,ovx:c.overflowX,ovy:c.overflowY,pe:c.pointerEvents,r:[round(r.x),round(r.y),round(r.width),round(r.height)],sw:e.scrollWidth,sh:e.scrollHeight,cw:e.clientWidth,ch:e.clientHeight}};const pick=s=>[...document.querySelectorAll(s)].slice(0,8).map(one),html=document.documentElement,body=document.body;const fixture=document.createElement('div');fixture.setAttribute('role','dialog');fixture.style.cssText='width:1200px;height:2000px;position:absolute;left:-99999px;top:0;';body.appendChild(fixture);const fc=getComputedStyle(fixture),fr=fixture.getBoundingClientRect(),dialog={maxWidth:fc.maxWidth,maxHeight:fc.maxHeight,width:fc.width,height:fc.height,r:[round(fr.width),round(fr.height)]};fixture.remove();let stored=null;try{stored=JSON.parse(localStorage.getItem('doke.auth.session.v1')||'null')}catch{}return{width,finalPath:location.pathname.replace(/^\//,''),fixturePreserved:(stored?.user?.id||stored?.currentUser?.id||'')===fixtureId,cssom,media,mediaActive,nonMediaStyleRules,bodyClass:body.className,htmlClass:html.className,doc:{sw:html.scrollWidth,sh:html.scrollHeight,cw:html.clientWidth,ch:html.clientHeight},mounted:body.classList.contains('doke-mobile-shell-mounted'),selectors:selectors.map(s=>[s,pick(s)]),dialog};},{selectors,width,target,fixtureId});
+              const png=H(await page.screenshot({fullPage:true,animations:'disabled'}));await ctx.close();return{meta,png,requested,loaded:requested&&meta.cssom,errors:errors.sort()};
+            }
+            fs.writeFileSync(target,P);const baseline={};for(const s of states)baseline[`${s.page}|${s.width}`]=await capture(s.page,s.width,'parent');fs.writeFileSync(target,C);const candidate={};let metadataDiffs=0,screenshotDiffs=0,loadDiffs=0,errorDiffs=0,redirects=0,fixtureLoss=0,badMedia=0;const diffKeys=[];
+            for(const s of states){const k=`${s.page}|${s.width}`,a=baseline[k],b=await capture(s.page,s.width,'candidate');candidate[k]=b;for(const x of [a,b]){if(!x.loaded)throw Error(`target not loaded ${k}`);if(x.meta.finalPath!==s.page)redirects++;if(!x.meta.fixturePreserved)fixtureLoss++;if(x.meta.nonMediaStyleRules!==0||x.meta.media.length!==1||x.meta.media[0].text.replace(/\s+/g,' ').trim()!=='(max-width: 760px)')badMedia++;}if(JSON.stringify(a.meta)!==JSON.stringify(b.meta)){metadataDiffs++;diffKeys.push('meta:'+k)}if(a.png!==b.png){screenshotDiffs++;diffKeys.push('png:'+k)}if(a.loaded!==b.loaded){loadDiffs++;diffKeys.push('load:'+k)}if(JSON.stringify(a.errors)!==JSON.stringify(b.errors)){errorDiffs++;diffKeys.push('errors:'+k)}}
+            const ids=(obj,pred)=>states.filter(s=>pred(obj[`${s.page}|${s.width}`])).map(s=>`${s.page}|${s.width}`),pa=ids(baseline,x=>x.loaded&&x.meta.mediaActive),ca=ids(candidate,x=>x.loaded&&x.meta.mediaActive),pi=ids(baseline,x=>x.loaded&&!x.meta.mediaActive),ci=ids(candidate,x=>x.loaded&&!x.meta.mediaActive),same=(a,b)=>JSON.stringify(a)===JSON.stringify(b),topologyPass=same(pa,expectedActive)&&same(ca,expectedActive)&&same(pi,expectedInactive)&&same(ci,expectedInactive);fs.writeFileSync(target,P);await browser.close();const pass=!metadataDiffs&&!screenshotDiffs&&!loadDiffs&&!errorDiffs&&!redirects&&!fixtureLoss&&!badMedia&&topologyPass;const result={result:pass?'PASS':'FAIL',repeat:+process.env.REPEAT,states:27,metadataDiffs,screenshotDiffs,loadDiffs,errorDiffs,redirects,fixtureLoss,badMedia,parentActiveCount:pa.length,candidateActiveCount:ca.length,parentInactiveCount:pi.length,candidateInactiveCount:ci.length,topologyPass,diffKeys};console.log('NARROW_BROWSER_RESULT='+JSON.stringify(result));if(!pass)process.exit(2);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
