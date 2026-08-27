@@ -1,0 +1,135 @@
+name: TEMP UX-STATE-002 Settings Auth Prepaint Parent Proof R2
+
+on:
+  push:
+    branches:
+      - diag/ux-state-002-settings-auth-prepaint-parent-proof-r2
+
+permissions:
+  contents: read
+
+jobs:
+  prove:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PARENT: 0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2
+      PARENT_TREE: ee8f2c8bd6b22af3c5905f01785f47dee1caf52c
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-002-settings-auth-prepaint-parent-proof-r2.yml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify diagnostic-only lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-parse "$H^")" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git diff --name-only "$PARENT" "$H")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          echo LINEAGE=PASS
+
+      - name: Static authority proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const settings=fs.readFileSync('configuracoes.html','utf8');
+          const orders=fs.readFileSync('pedidos.html','utf8');
+          const account=fs.readFileSync('assets/js/services/account-access-service.js','utf8');
+          const lifecycle=fs.readFileSync('assets/js/core/navigation-lifecycle.js','utf8');
+          const prepaint=fs.readFileSync('assets/css/core/auth-prepaint-guard.css','utf8');
+          const app=fs.readFileSync('assets/js/core/app.js','utf8');
+          if(settings.includes('assets/js/core/route-guard.js')) throw new Error('Settings unexpectedly loads route-guard');
+          if(settings.includes('assets/js/core/auth-route-map.js')) throw new Error('Settings unexpectedly loads auth-route-map');
+          if(!settings.includes('assets/js/services/account-access-service.js')) throw new Error('Settings account access missing');
+          if(!orders.includes('assets/js/core/route-guard.js')||!orders.includes('assets/js/core/auth-route-map.js')) throw new Error('Orders comparison authority missing');
+          if(!account.includes("setGuardState('allowed')")||account.includes('authRouteDecision')) throw new Error('accountAccess authority shape drift');
+          const guardAllow=lifecycle.slice(lifecycle.indexOf('function guardAllow'),lifecycle.indexOf('function guardRedirect'));
+          if(!guardAllow.includes("state: 'allowed'")||guardAllow.includes('authRouteDecision')) throw new Error('lifecycle guard shape drift');
+          if(!prepaint.includes('html[data-auth-guard="authorized"]:not([data-auth-route-decision="authorized"]) body')) throw new Error('prepaint contract drift');
+          if(!prepaint.includes('html[data-auth-route-decision="authorized"] body')) throw new Error('authorized visibility contract missing');
+          if(app.includes('authRouteDecision')||app.includes('route-guard.js')) throw new Error('app unexpectedly closes auth route decision');
+          console.log('STATIC_AUTHORITY_PROOF=PASS');
+          NODE
+
+      - name: Install Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          node node_modules/@playwright/test/cli.js install --with-deps chromium >/dev/null 2>&1
+
+      - name: Parent-only browser proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/settings-auth-http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/configuracoes.html >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          test "$ok" = 1
+          cat >/tmp/settings-auth-proof-r2.cjs <<'NODE'
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const fixture={provider:'mock',remember:true,accountStatus:'active',sessionStatus:'active',issuedAt:'2026-08-27T12:00:00.000Z',user:{id:'settings-auth-proof',name:'Settings Auth Proof',email:'settings-auth-proof@example.test',role:'client',type:'client',accountStatus:'active'}};
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            try{
+              const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+              await context.addInitScript(({session})=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(session)),{session:fixture});
+              const page=await context.newPage();
+              const pageErrors=[];
+              page.on('pageerror',e=>pageErrors.push(String(e.message||e)));
+              const response=await page.goto('http://127.0.0.1:4173/configuracoes.html?settingsAuthProofR2=1',{waitUntil:'domcontentloaded',timeout:30000});
+              if(!response?.ok()) throw new Error(`navigation ${response?.status()}`);
+              await page.waitForFunction(()=>document.querySelector('[data-settings-hydration-ready]')&&!document.querySelector('[data-settings-hydration-ready]').hidden,null,{timeout:15000});
+              await page.waitForFunction(()=>window.DokeNavigationLifecycle?.getSnapshot?.()?.guard?.state!=='pending',null,{timeout:10000}).catch(()=>{});
+              await page.waitForTimeout(1000);
+              const result=await page.evaluate(()=>{
+                const html=document.documentElement,body=document.body,button=document.querySelector('[data-settings-save-profile]');
+                const lifecycle=window.DokeNavigationLifecycle?.getSnapshot?.()||null;
+                const resources=performance.getEntriesByType('resource').map(x=>new URL(x.name,location.href).pathname).filter(x=>x.endsWith('.js'));
+                return {
+                  pathname:location.pathname,
+                  authGuard:html.dataset.authGuard||null,
+                  bodyAuthGuard:body?.dataset.authGuard||null,
+                  authRouteDecision:html.dataset.authRouteDecision||null,
+                  fastAuthRedirect:html.dataset.fastAuthRedirect||null,
+                  authSurfaceReady:html.dataset.authSurfaceReady||null,
+                  lifecycleGuard:lifecycle?.guard?.state||null,
+                  hydrationReady:Boolean(document.querySelector('[data-settings-hydration-ready]')&&!document.querySelector('[data-settings-hydration-ready]').hidden),
+                  boundaryViewState:document.querySelector('[data-state-boundary="configuracoes"]')?.dataset.viewState||null,
+                  boundaryBusy:document.querySelector('[data-state-boundary="configuracoes"]')?.getAttribute('aria-busy')||null,
+                  bodyVisibility:getComputedStyle(body).visibility,
+                  bodyPointerEvents:getComputedStyle(body).pointerEvents,
+                  buttonVisible:Boolean(button&&button.getClientRects().length&&getComputedStyle(button).visibility!=='hidden'),
+                  routeGuardRequested:resources.some(x=>x.endsWith('/assets/js/core/route-guard.js')),
+                  authRouteMapRequested:resources.some(x=>x.endsWith('/assets/js/core/auth-route-map.js'))
+                };
+              });
+              result.pageErrors=pageErrors;
+              const defect=result.hydrationReady===true&&result.lifecycleGuard==='allowed'&&result.authRouteDecision===null&&result.bodyVisibility==='hidden'&&result.buttonVisible===false&&result.routeGuardRequested===false&&result.authRouteMapRequested===false;
+              console.log('SETTINGS_AUTH_PARENT_PROOF_R2='+JSON.stringify({...result,defectReproduced:defect,repositoryOnly:true,productMutation:false,criteriaRelaxed:0}));
+              if(!defect) throw new Error('Expected Settings auth/prepaint integration gap not reproduced: '+JSON.stringify(result));
+              await context.close();
+            } finally { await browser.close(); }
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/settings-auth-proof-r2.cjs
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "$PARENT" >/dev/null 2>&1 || true
+          git clean -fd >/dev/null 2>&1 || true
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test -z "$(git status --porcelain)"
