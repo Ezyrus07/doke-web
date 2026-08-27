@@ -74,7 +74,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
   const applyCommunityPageState = (nextState) => {
     page.dataset.state = nextState;
-    page.dataset.viewState = nextState;
+    page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;
     page.setAttribute('aria-busy', String(nextState === 'loading'));
     document.body.dataset.dataState = nextState;
     const stateRegion = page.querySelector('[data-state-region]');
