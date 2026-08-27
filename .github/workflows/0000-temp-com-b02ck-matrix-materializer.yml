@@ -1,0 +1,153 @@
+name: TEMP COM-B02CK Matrix Derivative Materializer
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02ck-matrix-materializer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-b02ck-matrix-derivative:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CANDIDATE_HEAD: 2b61ee6d5c2cf0b70b332fe7815475167b7165a1
+      PREDECESSOR_HEAD: c40b9dab87b2ce79d82543ea0c08ce78f99a1339
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      TARGET: backend/shared/http/repository-only-registry-backed-resume-integration-readiness.js
+      TARGET_BLOB: cc2ee3d27e193955801721e738015f71bdee40e6
+      PERMANENT_WORKFLOW: .github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml
+      PERMANENT_WORKFLOW_BLOB: 6ba5684fa9bd016601df1dd4ebf57410d09b3420
+      TEST: scripts/test-com-b02ck-repository-only-registry-backed-resume-integration-readiness.js
+      TEST_BLOB: 6579383de8c650615a4140b773cdd75ccd765218
+      CONFIG: config/com-b02ck-repository-only-registry-backed-resume-integration-readiness.json
+      CONFIG_BLOB: c05ada48908d7ec3c755313fd68d4fcccf1034d9
+      TEMP_WORKFLOW: .github/workflows/0000-temp-com-b02ck-matrix-materializer.yml
+      TARGET_BRANCH: com/com-001-baseline-audit
+
+    steps:
+      - name: Checkout exact TEMP recovery head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze recovery lineage and source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
+          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '1'
+          expected="$TEMP_WORKFLOW"
+          actual="$(git diff --name-only "$CANDIDATE_HEAD" HEAD)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
+          test "$(git rev-parse HEAD:$PERMANENT_WORKFLOW)" = "$PERMANENT_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test -f "$TEMP_WORKFLOW"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Materialize canonical Matrix derivatives and final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          expected_generated="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual_generated="$(git diff --name-only | sort)"
+          test "$actual_generated" = "$expected_generated"
+
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml')
+          text = path.read_text()
+          replacements = [
+              (
+                  "      - 'scripts/test-com-b02ck-repository-only-registry-backed-resume-integration-readiness.js'\n      - '.github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml'",
+                  "      - 'scripts/test-com-b02ck-repository-only-registry-backed-resume-integration-readiness.js'\n      - 'docs/DOMAIN-COMPLETION-MATRIX.md'\n      - 'reports/generated/domain-completion-matrix-report.json'\n      - '.github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml'",
+              ),
+              (
+                  "      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623\n      ROUTE_REGISTRY_BLOB:",
+                  "      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623\n      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md\n      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json\n      ROUTE_REGISTRY_BLOB:",
+              ),
+              (
+                  "          test \"$(git rev-parse HEAD^)\" = \"$PREDECESSOR_HEAD\"",
+                  "          git merge-base --is-ancestor \"$PREDECESSOR_HEAD\" HEAD\n          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '3'",
+              ),
+              (
+                  "          expected=\"$(printf '%s\\n' \"$TARGET\" \"$CONFIG\" \"$TEST\" \"$WORKFLOW\" | sort)\"",
+                  "          expected=\"$(printf '%s\\n' \"$TARGET\" \"$CONFIG\" \"$TEST\" \"$MATRIX_MD\" \"$MATRIX_REPORT\" \"$WORKFLOW\" | sort)\"",
+              ),
+          ]
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f'expected exactly one permanent-workflow replacement target: {old!r}')
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+
+          git rm "$TEMP_WORKFLOW"
+          git add "$MATRIX_MD" "$PERMANENT_WORKFLOW"
+          git add -f "$MATRIX_REPORT"
+
+          expected_final="$(printf '%s\n' "$TARGET" "$CONFIG" "$TEST" "$MATRIX_MD" "$MATRIX_REPORT" "$PERMANENT_WORKFLOW" | sort)"
+          actual_final="$(git diff --cached --name-only "$PREDECESSOR_HEAD" | sort)"
+          test "$actual_final" = "$expected_final"
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '0000-temp-com-b02ck-*' -print -quit)"
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          git diff --cached --check "$PREDECESSOR_HEAD"
+
+      - name: Export immutable TEMP-free commit through temporary tag only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$TARGET_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse HEAD)"
+
+          parent="$(git rev-parse HEAD)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): materialize B02CK matrix derivatives'
+
+          commit="$(git rev-parse HEAD)"
+          tree="$(git rev-parse HEAD^{tree})"
+          md_blob="$(git rev-parse HEAD:$MATRIX_MD)"
+          report_blob="$(git rev-parse HEAD:$MATRIX_REPORT)"
+          permanent_blob="$(git rev-parse HEAD:$PERMANENT_WORKFLOW)"
+          tag="temp-com-b02ck-prepared-${GITHUB_RUN_ID}"
+
+          test "$(git rev-parse HEAD^)" = "$parent"
+          git tag "$tag" "$commit"
+          git push origin "refs/tags/$tag:refs/tags/$tag"
+
+          test "$(git rev-parse HEAD^)" = "$parent"
+          printf 'PREPARED_COMMIT_SHA=%s\n' "$commit"
+          printf 'PREPARED_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$md_blob"
+          printf 'REPORT_BLOB_SHA=%s\n' "$report_blob"
+          printf 'PERMANENT_WORKFLOW_BLOB_SHA=%s\n' "$permanent_blob"
+          printf 'TEMP_EXPORT_TAG=%s\n' "$tag"
