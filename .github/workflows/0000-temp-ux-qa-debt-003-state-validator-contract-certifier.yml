@@ -1,0 +1,151 @@
+name: TEMP UX-QA-DEBT-003 State Validator Contract Certifier
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-003-state-validator-contract-certifier
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Verify certifier lineage and checkout frozen candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE='bfb77e3fa1bfd1694094b6270751aed2c6fda2e7'
+          PARENT='bac1f3578166b0db96b6f70ca742e17fd1980c71'
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          test "$(git rev-parse "$CANDIDATE^")" = "$PARENT"
+          git checkout --detach "$CANDIDATE"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          mapfile -t changed < <(git diff --name-only "$PARENT" "$CANDIDATE")
+          printf 'CANDIDATE_CHANGED=%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 3
+          printf '%s\n' "${changed[@]}" | sort > /tmp/actual-files
+          printf '%s\n' \
+            scripts/audit-main-marketplace-state-contracts.js \
+            scripts/audit-main-support-state-contracts.js \
+            scripts/lib/state-contract-audit.js | sort > /tmp/expected-files
+          diff -u /tmp/expected-files /tmp/actual-files
+          if git diff --name-only "$PARENT" "$CANDIDATE" | grep -Eq '^(assets/|[^/]+\.html$|config/domain-completion-matrix\.json$)'; then
+            echo 'Forbidden product/runtime change detected' >&2
+            exit 1
+          fi
+
+      - name: Syntax and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/lib/state-contract-audit.js
+          node --check scripts/audit-main-marketplace-state-contracts.js
+          node --check scripts/audit-main-support-state-contracts.js
+          git diff --check bac1f3578166b0db96b6f70ca742e17fd1980c71 bfb77e3fa1bfd1694094b6270751aed2c6fda2e7
+
+      - name: Native cycles 136 through 140
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-main-marketplace-state-contracts.js
+          node scripts/audit-main-support-state-contracts.js
+          node scripts/audit-main-action-state-contracts.js
+          node scripts/audit-main-state-runtime-coverage.js
+          node scripts/audit-global-state-completion-gate.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const read = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
+          const r136 = read('docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json');
+          const r137 = read('docs/validation/global-cycle-137-main-support-state-contracts-report.json');
+          const r138 = read('docs/validation/global-cycle-138-main-action-state-contracts-report.json');
+          const r139 = read('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json');
+          const r140 = read('docs/validation/global-cycle-140-global-state-completion-gate-report.json');
+          const ok138 = ['passed', 'passed-with-follow-up'].includes(r138.status);
+          const ok140 = ['passed', 'passed-with-follow-up'].includes(r140.status);
+          if (r136.status !== 'passed' || r136.checkedPages !== 4 || r136.failedPages !== 0) process.exit(11);
+          if (r137.status !== 'passed' || r137.checkedPages !== 3 || r137.failedPages !== 0) process.exit(12);
+          if (!ok138) process.exit(13);
+          if (r139.status !== 'passed' || r139.checkedPages !== 12 || r139.failedPages !== 0) process.exit(14);
+          if (!ok140) process.exit(15);
+          const failedReports = Array.isArray(r140.failedReports) ? r140.failedReports.length : Number(r140.failedReports || 0);
+          if (failedReports !== 0) process.exit(16);
+          console.log('NATIVE_STATE_CHAIN=PASS');
+          console.log(JSON.stringify({r136:r136.status,r137:r137.status,r138:r138.status,r139:r139.status,r140:r140.status,failedReports}));
+          NODE
+
+      - name: Fail-closed negative fixture - marketplace completion removed
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='assets/js/pages/profile-experience.js'
+          cp "$TARGET" /tmp/profile-experience.js
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/pages/profile-experience.js')
+          s=p.read_text()
+          needle='hydration.ready({ hasItems: true })'
+          assert needle in s
+          p.write_text(s.replace(needle, 'hydration.ready({ hasItems: false })', 1))
+          PY
+          set +e
+          node scripts/audit-main-marketplace-state-contracts.js >/tmp/negative136.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/negative136.log
+          test "$rc" -ne 0
+          grep -F 'completion:assets/js/pages/profile-experience.js:hydration.ready({ hasItems: true })' docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json
+          mv /tmp/profile-experience.js "$TARGET"
+          echo 'NEGATIVE_136_FAIL_CLOSED=PASS'
+
+      - name: Fail-closed negative fixture - Community public mapping removed
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='assets/js/pages/comunidade.js'
+          cp "$TARGET" /tmp/comunidade.js
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/pages/comunidade.js')
+          s=p.read_text()
+          needle="page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;"
+          assert needle in s
+          p.write_text(s.replace(needle, "page.dataset.viewState = nextState;", 1))
+          PY
+          set +e
+          node scripts/audit-main-support-state-contracts.js >/tmp/negative137.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/negative137.log
+          test "$rc" -ne 0
+          grep -F "completion:assets/js/pages/comunidade.js:page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;" docs/validation/global-cycle-137-main-support-state-contracts-report.json
+          mv /tmp/comunidade.js "$TARGET"
+          echo 'NEGATIVE_137_FAIL_CLOSED=PASS'
+
+      - name: Restore positive reports and run governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- assets/js/pages/profile-experience.js assets/js/pages/comunidade.js
+          node scripts/audit-main-marketplace-state-contracts.js
+          node scripts/audit-main-support-state-contracts.js
+          node scripts/audit-main-action-state-contracts.js
+          node scripts/audit-main-state-runtime-coverage.js
+          node scripts/audit-global-state-completion-gate.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git checkout -- docs/validation
+          test -z "$(git status --porcelain)"
+          echo 'UX_QA_DEBT_003_CERTIFIER=PASS'
+          echo 'candidate=bfb77e3fa1bfd1694094b6270751aed2c6fda2e7'
+          echo 'parent=bac1f3578166b0db96b6f70ca742e17fd1980c71'
+          echo 'productMutation=false'
+          echo 'criteriaRelaxed=0'
+          echo 'negativeFixtures=2/2'
