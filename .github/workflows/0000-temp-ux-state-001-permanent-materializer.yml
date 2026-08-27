@@ -1,0 +1,55 @@
+name: TEMP UX-STATE-001 Permanent Materializer
+
+on:
+  push:
+    branches:
+      - diag/ux-state-001-permanent-materializer
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Materialize exact qualified candidate
+        shell: bash
+        env:
+          PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+          PERM_BRANCH: ux/ux-state-001-community-canonical-view-state
+          TARGET: assets/js/pages/comunidade.js
+          CANDIDATE_BLOB: 32f472683cf33986f2b6b7802ba384de9fc25b3f
+          CANDIDATE_SHA256: 816bc9acf0530dadfb01fd5011251f0cf4474696aaf1c6e918171c8c489a59fb
+          CANDIDATE_BYTES: '98844'
+        run: |
+          set -euo pipefail
+          git fetch origin "$PERM_BRANCH"
+          test "$(git rev-parse origin/$PERM_BRANCH)" = "$PARENT"
+          git checkout -B "$PERM_BRANCH" "origin/$PERM_BRANCH"
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('assets/js/pages/comunidade.js')
+          s = p.read_text()
+          before = 'page.dataset.viewState = nextState;'
+          after = "page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;"
+          n = s.count(before)
+          if n != 1:
+              raise SystemExit(f'candidate assignment count {n}')
+          p.write_text(s.replace(before, after))
+          PY
+          test "$(git diff --name-only)" = "$TARGET"
+          test "$(git diff --numstat | awk '{print $1" "$2" "$3}')" = "1 1 $TARGET"
+          test "$(git hash-object "$TARGET")" = "$CANDIDATE_BLOB"
+          test "$(sha256sum "$TARGET" | awk '{print $1}')" = "$CANDIDATE_SHA256"
+          test "$(wc -c < "$TARGET" | tr -d ' ')" = "$CANDIDATE_BYTES"
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$TARGET"
+          git commit -m "ux(state-001): normalize community canonical view state"
+          NEW_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$NEW_HEAD" | awk '{print $2}')" = "$PARENT"
+          git push origin "HEAD:$PERM_BRANCH"
+          echo "MATERIALIZATION={\"result\":\"PASS\",\"parent\":\"$PARENT\",\"head\":\"$NEW_HEAD\",\"target\":\"$TARGET\",\"candidateBlob\":\"$CANDIDATE_BLOB\",\"candidateSha256\":\"$CANDIDATE_SHA256\",\"candidateBytes\":$CANDIDATE_BYTES,\"diff\":\"1/1\",\"repositoryOnly\":true}"
