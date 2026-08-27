@@ -1,0 +1,340 @@
+name: TEMP COM-B02CO Authorized Single-Use Registry-Backed Resume Proof
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/0000-temp-com-b02co-authorized-single-use-registry-backed-resume-proof.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  execute-single-use-registry-backed-resume:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT_HEAD: f6dc1dd76e29bc92d666e40a8f3ccf107b0da65d
+      PARENT_TREE: 8dc1329c99fa5b82a88e35b7f53af9fc54faf8e9
+      TEMP_PATH: .github/workflows/0000-temp-com-b02co-authorized-single-use-registry-backed-resume-proof.yml
+      B02CL_TARGET: backend/shared/http/repository-only-permanent-process-local-registry-storage-execution-implementation.js
+      B02CL_TARGET_BLOB: 9f1916f87db37a81045be897ae1c87e1341c4774
+      B02CN_TARGET: backend/shared/http/repository-only-route-resume-dispatcher-registry-lookup-integration.js
+      B02CN_TARGET_BLOB: 43ba780f17ef23790d03224955cafe49c454ac6c
+      B02CN_CONFIG: config/com-b02cn-repository-only-dispatcher-registry-lookup-integration.json
+      B02CN_CONFIG_BLOB: fb3de05bd8b2542cf5bf92cccb69f6824d80a294
+      DISPATCHER: backend/shared/http/repository-only-route-resume-dispatcher.js
+      DISPATCHER_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      CARRIER: backend/shared/http/repository-only-route-continuation-carrier-contract.js
+      CARRIER_BLOB: fb7448f83fe385e94a2be61685f612d9e27d949f
+      ROUTE_REGISTRY: backend/shared/http/route-registry.js
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER: backend/shared/http/module-route-loader.js
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS: backend/modules/communities/route-handlers.js
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+
+    steps:
+      - name: Checkout exact authorized installation head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CN certification and exact single-use installation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT_HEAD"
+          test "$(git rev-parse "$PARENT_HEAD^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse HEAD:$B02CL_TARGET)" = "$B02CL_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CN_TARGET)" = "$B02CN_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CN_CONFIG)" = "$B02CN_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$DISPATCHER)" = "$DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$CARRIER)" = "$CARRIER_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_REGISTRY)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:$MODULE_ROUTE_LOADER)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:$COMMUNITY_ROUTE_HANDLERS)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git diff --name-only "$PARENT_HEAD" HEAD)" = "$TEMP_PATH"
+          git diff --check "$PARENT_HEAD" HEAD
+
+      - name: Execute exactly one authorized registry-backed resume cycle
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          'use strict';
+          const assert = require('assert');
+          const registryImplementation = require('./backend/shared/http/repository-only-permanent-process-local-registry-storage-execution-implementation');
+          const lookupIntegration = require('./backend/shared/http/repository-only-route-resume-dispatcher-registry-lookup-integration');
+          const dispatcher = require('./backend/shared/http/repository-only-route-resume-dispatcher');
+          const carrierContract = require('./backend/shared/http/repository-only-route-continuation-carrier-contract');
+          const orchestration = require('./backend/modules/communities/community-command-handler-repository-orchestration');
+          const handlerSurface = require('./backend/modules/communities/community-command-handler-repository-binding-surface');
+          const runtimeRepositoryComposition = require('./backend/modules/communities/community-command-runtime-repository-binding-composition');
+
+          const CONTRACT_ID = 'com-b02co-repository-only-registry-backed-resume-surface-controlled-invocation-v1';
+          const BOUNDARY_ID = 'COM-B02CO';
+          const ROUTE_NAME = 'communities.membership.command';
+          const OPAQUE_STATE_HANDLE = 'repo-only-cont:COMB02CO_RESUME_PROOF_000001';
+          const suffix = OPAQUE_STATE_HANDLE.slice('repo-only-cont:'.length);
+
+          function freeze(value) {
+            if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+            Object.values(value).forEach(freeze);
+            return Object.freeze(value);
+          }
+
+          assert.strictEqual(suffix.length >= 24 && suffix.length <= 96, true);
+          assert.strictEqual(carrierContract.OPAQUE_HANDLE_PATTERN.test(OPAQUE_STATE_HANDLE), true);
+          assert.strictEqual(carrierContract.ROUTE_NAMES.includes(ROUTE_NAME), true);
+
+          const b02rState = freeze({
+            contractId: runtimeRepositoryComposition.CONTRACT_ID,
+            boundaryId: runtimeRepositoryComposition.BOUNDARY_ID,
+            decision: 'blocked_repository_only',
+            reason: 'B02CO_SYNTHETIC_INERT_REGISTRY_BACKED_RESUME',
+            repositoryOperationInvoked: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            migrationApplied: false,
+            runtimeActivated: false,
+            productionChanged: false
+          });
+
+          const b02sSurface = freeze({
+            contractId: handlerSurface.CONTRACT_ID,
+            boundaryId: handlerSurface.BOUNDARY_ID,
+            decision: 'repository_only_command_handler_surface_bound_to_b02r',
+            routeName: ROUTE_NAME,
+            b02rState,
+            repositoryOnlyResumeOptions: {},
+            handlerRepositorySurfaceBound: true,
+            activeExecuteHandlerPreserved: true,
+            moduleRouteLoaderPreserved: true,
+            credentialSourceBound: false,
+            credentialReadImplemented: false,
+            repositoryOperationInvoked: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            stagingReadExecuted: false,
+            stagingMutationExecuted: false,
+            migrationApplied: false,
+            runtimeActivated: false,
+            productionChanged: false
+          });
+
+          const orchestrationState = freeze({
+            contractId: orchestration.CONTRACT_ID,
+            boundaryId: orchestration.BOUNDARY_ID,
+            decision: 'repository_only_command_handler_repository_orchestration_awaiting_external_result',
+            routeName: ROUTE_NAME,
+            b02sContractId: handlerSurface.CONTRACT_ID,
+            b02rContractId: runtimeRepositoryComposition.CONTRACT_ID,
+            b02sSurface,
+            repositoryOnlyResumeOptions: {},
+            awaitingExternalRepositoryResult: true,
+            nextRepositoryOperation: null,
+            repositoryOrchestrationMaterialized: true,
+            activeExecuteHandlersPreserved: true,
+            moduleRouteLoaderPreserved: true,
+            credentialSourceBound: false,
+            credentialReadImplemented: false,
+            repositoryOperationInvoked: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            stagingReadExecuted: false,
+            stagingMutationExecuted: false,
+            migrationApplied: false,
+            runtimeActivated: false,
+            productionChanged: false
+          });
+
+          const registry = registryImplementation.createRepositoryOnlyPermanentProcessLocalRegistryStorageExecution();
+          assert.strictEqual(registry.contractId, registryImplementation.CONTRACT_ID);
+          assert.strictEqual(registry.boundaryId, registryImplementation.BOUNDARY_ID);
+          assert.strictEqual(registry.inspectProcessLocalRegistry().entryCount, 0);
+
+          const register = registry.registerOpaqueContinuationState({
+            routeName: ROUTE_NAME,
+            opaqueStateHandle: OPAQUE_STATE_HANDLE,
+            continuationState: orchestrationState
+          });
+          assert.strictEqual(register.decision, 'repository_only_permanent_process_local_continuation_state_registered');
+          assert.strictEqual(register.continuationStateStored, true);
+          assert.strictEqual(register.registryOperationInvoked, true);
+          assert.strictEqual(register.registryRegisterExecuted, true);
+          assert.strictEqual(register.entryCount, 1);
+          assert.strictEqual(register.resumeSurfaceInvoked, false);
+          assert.strictEqual(register.activeExecuteHandlerInvoked, false);
+          assert.strictEqual(register.repositoryOperationInvoked, false);
+          assert.strictEqual(register.credentialReadExecuted, false);
+          assert.strictEqual(register.rpcExecuted, false);
+          assert.strictEqual(register.networkExecuted, false);
+          assert.strictEqual(register.runtimeActivated, false);
+          assert.strictEqual(register.productionChanged, false);
+
+          let lookup;
+          let dispatch;
+          let release;
+          try {
+            const integration = lookupIntegration.createRepositoryOnlyDispatcherRegistryLookupIntegration(registry);
+            const integrationInspection = integration.inspectIntegration();
+            assert.strictEqual(integrationInspection.registryExecutionInstanceValid, true);
+            assert.strictEqual(integrationInspection.dispatcherContractReady, true);
+            assert.strictEqual(integrationInspection.sameRegistryExecutionInstanceRequired, true);
+            assert.strictEqual(integrationInspection.resumeSurfaceInvoked, false);
+
+            lookup = integration.resolveContinuationForDispatcher(ROUTE_NAME, OPAQUE_STATE_HANDLE);
+            assert.strictEqual(lookup.decision, 'repository_only_dispatcher_registry_lookup_resolved');
+            assert.strictEqual(lookup.registryOperationInvoked, true);
+            assert.strictEqual(lookup.registryLookupExecuted, true);
+            assert.strictEqual(lookup.registryResolveExecuted, true);
+            assert.strictEqual(lookup.dispatcherContinuationPrepared, true);
+            assert.strictEqual(lookup.sameRegistryExecutionInstanceInjected, true);
+            assert.strictEqual(lookup.resumeSurfaceInvoked, false);
+            assert.strictEqual(lookup.repositoryOperationInvoked, false);
+            assert.strictEqual(lookup.rpcExecuted, false);
+            assert.strictEqual(lookup.networkExecuted, false);
+            assert.strictEqual(lookup.runtimeActivated, false);
+            assert.strictEqual(lookup.productionChanged, false);
+            assert.strictEqual(registry.inspectProcessLocalRegistry().entryCount, 1);
+
+            const repositoryResult = freeze({
+              kind: 'synthetic_inert_repository_result',
+              consumedByBlockedComposition: false
+            });
+
+            dispatch = dispatcher.dispatchRepositoryOnlyRouteResume(
+              ROUTE_NAME,
+              lookup.resolvedContinuation,
+              repositoryResult,
+              { resumeSurfaceInvocationAuthority: true }
+            );
+
+            assert.strictEqual(dispatch.contractId, dispatcher.CONTRACT_ID);
+            assert.strictEqual(dispatch.boundaryId, dispatcher.BOUNDARY_ID);
+            assert.strictEqual(dispatch.decision, 'repository_only_route_resume_dispatched');
+            assert.strictEqual(dispatch.routeName, ROUTE_NAME);
+            assert.strictEqual(dispatch.opaqueStateHandle, OPAQUE_STATE_HANDLE);
+            assert.strictEqual(dispatch.resumeDispatcherImplemented, true);
+            assert.strictEqual(dispatch.resumeSurfaceInvocationImplemented, true);
+            assert.strictEqual(dispatch.resumeSurfaceInvoked, true);
+            assert.strictEqual(dispatch.rawContinuationStateReturned, false);
+            assert.strictEqual(dispatch.executableReferenceReturned, false);
+            assert.strictEqual(dispatch.orchestrationStateReturned, true);
+            assert.strictEqual(dispatch.orchestrationState.contractId, orchestration.CONTRACT_ID);
+            assert.strictEqual(dispatch.orchestrationState.boundaryId, orchestration.BOUNDARY_ID);
+            assert.strictEqual(dispatch.orchestrationState.decision, 'blocked_repository_only');
+            assert.strictEqual(dispatch.orchestrationState.repositoryOperationInvoked, false);
+            assert.strictEqual(dispatch.orchestrationState.rpcExecuted, false);
+            assert.strictEqual(dispatch.orchestrationState.networkExecuted, false);
+            assert.strictEqual(dispatch.orchestrationState.stagingReadExecuted, false);
+            assert.strictEqual(dispatch.orchestrationState.stagingMutationExecuted, false);
+            assert.strictEqual(dispatch.orchestrationState.migrationApplied, false);
+            assert.strictEqual(dispatch.orchestrationState.runtimeActivated, false);
+            assert.strictEqual(dispatch.orchestrationState.productionChanged, false);
+            assert.strictEqual(dispatch.activeExecuteHandlerInvoked, false);
+            assert.strictEqual(dispatch.repositoryOperationInvoked, false);
+            assert.strictEqual(dispatch.credentialReadExecuted, false);
+            assert.strictEqual(dispatch.rpcExecuted, false);
+            assert.strictEqual(dispatch.networkExecuted, false);
+            assert.strictEqual(dispatch.stagingReadExecuted, false);
+            assert.strictEqual(dispatch.stagingMutationExecuted, false);
+            assert.strictEqual(dispatch.migrationApplied, false);
+            assert.strictEqual(dispatch.runtimeActivated, false);
+            assert.strictEqual(dispatch.productionChanged, false);
+          } finally {
+            release = registry.releaseOpaqueContinuationState({
+              routeName: ROUTE_NAME,
+              opaqueStateHandle: OPAQUE_STATE_HANDLE
+            });
+            assert.strictEqual(release.decision, 'repository_only_permanent_process_local_continuation_state_released');
+            assert.strictEqual(release.registryOperationInvoked, true);
+            assert.strictEqual(release.registryReleaseExecuted, true);
+            assert.strictEqual(release.entryCount, 0);
+            assert.strictEqual(release.resumeSurfaceInvoked, false);
+            assert.strictEqual(release.activeExecuteHandlerInvoked, false);
+            assert.strictEqual(release.repositoryOperationInvoked, false);
+            assert.strictEqual(release.credentialReadExecuted, false);
+            assert.strictEqual(release.rpcExecuted, false);
+            assert.strictEqual(release.networkExecuted, false);
+            assert.strictEqual(release.runtimeActivated, false);
+            assert.strictEqual(release.productionChanged, false);
+            assert.strictEqual(registry.inspectProcessLocalRegistry().entryCount, 0);
+          }
+
+          console.log(JSON.stringify({
+            contractId: CONTRACT_ID,
+            boundaryId: BOUNDARY_ID,
+            predecessorBoundaryId: 'COM-B02CN',
+            predecessorHead: process.env.PARENT_HEAD,
+            routeName: ROUTE_NAME,
+            opaqueStateHandle: OPAQUE_STATE_HANDLE,
+            opaqueHandleLength: suffix.length,
+            opaqueHandleCanonical: true,
+            synthetic: true,
+            deterministic: true,
+            singleUseExecution: true,
+            sameRegistryExecutionInstanceInjected: true,
+            registryFactoryInvocationCount: 1,
+            registryRegisterExecuted: register.registryRegisterExecuted,
+            entryCountAfterRegister: register.entryCount,
+            registryLookupExecuted: lookup.registryLookupExecuted,
+            registryResolveExecuted: lookup.registryResolveExecuted,
+            entryCountAfterLookup: 1,
+            dispatcherContinuationPrepared: lookup.dispatcherContinuationPrepared,
+            resumeSurfaceInvocationAuthority: true,
+            resumeSurfaceInvoked: dispatch.resumeSurfaceInvoked,
+            resumedOrchestrationDecision: dispatch.orchestrationState.decision,
+            registryReleaseExecuted: release.registryReleaseExecuted,
+            entryCountAfterRelease: release.entryCount,
+            activeExecuteHandlerInvoked: false,
+            repositoryOperationInvoked: false,
+            credentialReadExecuted: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            supabaseOperationExecuted: false,
+            stagingReadExecuted: false,
+            stagingMutationExecuted: false,
+            migrationApplied: false,
+            runtimeActivated: false,
+            realtimeActivated: false,
+            productionChanged: false,
+            routeRegistryChanged: false,
+            moduleRouteLoaderChanged: false,
+            routeHandlersChanged: false,
+            rawContinuationStateReturned: false,
+            executableReferenceReturned: false,
+            processLocalOnly: true,
+            ephemeralRegistry: true,
+            stateEscapesExecutionProcess: false,
+            result: 'repository_only_registry_backed_resume_surface_controlled_invocation_proven'
+          }, null, 2));
+          NODE
+
+      - name: Re-freeze protected surfaces after authorized cycle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$B02CL_TARGET)" = "$B02CL_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CN_TARGET)" = "$B02CN_TARGET_BLOB"
+          test "$(git rev-parse HEAD:$B02CN_CONFIG)" = "$B02CN_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$DISPATCHER)" = "$DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$CARRIER)" = "$CARRIER_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_REGISTRY)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:$MODULE_ROUTE_LOADER)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:$COMMUNITY_ROUTE_HANDLERS)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git diff --name-only "$PARENT_HEAD" HEAD)" = "$TEMP_PATH"
+          git diff --check "$PARENT_HEAD" HEAD
