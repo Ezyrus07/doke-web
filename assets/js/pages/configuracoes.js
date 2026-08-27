@@ -585,14 +585,14 @@
     if (!service?.updateCurrentProfile || !profileForm) return;
     const payload = Object.fromEntries(new FormData(profileForm).entries());
     if (profileError) profileError.textContent = '';
-    button.disabled = true;
-    button.setAttribute('aria-busy', 'true');
+    setButtonSubmittingFeedback(button);
     try {
       persistedProfile = await service.updateCurrentProfile(payload);
       renderProfileMedia(persistedProfile);
       setButtonSavedFeedback(button);
     } catch (error) {
       if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';
+      restoreButtonPendingLabel(button);
       button.setAttribute('data-action-state', 'error');
       button.setAttribute('aria-busy', 'false');
     } finally {
@@ -699,8 +699,36 @@
     panel?.setAttribute('data-settings-dirty', 'true');
   };
 
+  const pendingActionLabels = new WeakMap();
+
+  const setButtonSubmittingFeedback = (button) => {
+    if (!button || !button.hasAttribute('data-action-state')) return false;
+    if (!pendingActionLabels.has(button)) {
+      pendingActionLabels.set(button, button.getAttribute('aria-label'));
+    }
+    const loadingLabel = button.dataset.actionLoadingLabel || '';
+    const setActionState = window.Doke?.stateContracts?.setActionState;
+    if (typeof setActionState === 'function' && setActionState(button, 'submitting', loadingLabel)) {
+      return true;
+    }
+    button.setAttribute('data-action-state', 'submitting');
+    button.setAttribute('aria-busy', 'true');
+    button.disabled = true;
+    if (loadingLabel) button.setAttribute('aria-label', loadingLabel);
+    return true;
+  };
+
+  const restoreButtonPendingLabel = (button) => {
+    if (!button || !pendingActionLabels.has(button)) return;
+    const originalAriaLabel = pendingActionLabels.get(button);
+    pendingActionLabels.delete(button);
+    if (originalAriaLabel === null) button.removeAttribute('aria-label');
+    else button.setAttribute('aria-label', originalAriaLabel);
+  };
+
   const setButtonSavedFeedback = (button) => {
     if (!button) return;
+    restoreButtonPendingLabel(button);
     const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
     button.dataset.settingsOriginalLabel = originalLabel;
     button.textContent = 'Salvo';
@@ -785,11 +813,16 @@
       event.preventDefault();
       const panelName = normalizePanelName(button.dataset.settingsSavePanel);
       if (!panelName) return;
-      button.disabled = true;
-      button.setAttribute('aria-busy', 'true');
+      if (button.hasAttribute('data-action-state')) {
+        setButtonSubmittingFeedback(button);
+      } else {
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+      }
       try {
         await savePanelSettings(panelName, button);
       } catch (error) {
+        restoreButtonPendingLabel(button);
         button.setAttribute('data-action-state', 'error');
         button.setAttribute('aria-busy', 'false');
         console.warn('[Doke] Não foi possível salvar a seção.', error);
