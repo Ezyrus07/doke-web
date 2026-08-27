@@ -8,7 +8,7 @@ on:
       - '.github/workflows/0000-temp-com-b02ck-matrix-materializer.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   materialize-b02ck-matrix-derivative:
@@ -18,7 +18,7 @@ jobs:
     env:
       CANDIDATE_HEAD: 2b61ee6d5c2cf0b70b332fe7815475167b7165a1
       PREDECESSOR_HEAD: c40b9dab87b2ce79d82543ea0c08ce78f99a1339
-      TEMP_V1_HEAD: 776e444c400798c50f8ad52c57f642dc31406cf2
+      TEMP_V2_HEAD: a482d4f7d5e161e58421c34381d4d4353d7069a6
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
@@ -32,9 +32,10 @@ jobs:
       CONFIG: config/com-b02ck-repository-only-registry-backed-resume-integration-readiness.json
       CONFIG_BLOB: c05ada48908d7ec3c755313fd68d4fcccf1034d9
       TEMP_WORKFLOW: .github/workflows/0000-temp-com-b02ck-matrix-materializer.yml
+      TARGET_BRANCH: com/com-001-baseline-audit
 
     steps:
-      - name: Checkout exact TEMP recovery head
+      - name: Checkout exact TEMP promotion head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -46,13 +47,13 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze recovery lineage and source
+      - name: Freeze promotion lineage and source
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$TEMP_V1_HEAD"
+          test "$(git rev-parse HEAD^)" = "$TEMP_V2_HEAD"
           git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
-          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '2'
+          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '3'
           expected="$TEMP_WORKFLOW"
           actual="$(git diff --name-only "$CANDIDATE_HEAD" HEAD)"
           test "$actual" = "$expected"
@@ -66,7 +67,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Materialize canonical Matrix derivatives and final scope
+      - name: Validate prospective TEMP-free final state
         shell: bash
         run: |
           set -euo pipefail
@@ -75,6 +76,11 @@ jobs:
           expected_generated="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
           actual_generated="$(git diff --name-only | sort)"
           test "$actual_generated" = "$expected_generated"
+
+          save_dir="$RUNNER_TEMP/b02ck-generated"
+          mkdir -p "$save_dir/docs" "$save_dir/reports/generated"
+          cp "$MATRIX_MD" "$save_dir/docs/DOMAIN-COMPLETION-MATRIX.md"
+          cp "$MATRIX_REPORT" "$save_dir/reports/generated/domain-completion-matrix-report.json"
 
           python - <<'PY'
           from pathlib import Path
@@ -91,7 +97,7 @@ jobs:
               ),
               (
                   "          test \"$(git rev-parse HEAD^)\" = \"$PREDECESSOR_HEAD\"",
-                  "          git merge-base --is-ancestor \"$PREDECESSOR_HEAD\" HEAD\n          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '4'",
+                  "          git merge-base --is-ancestor \"$PREDECESSOR_HEAD\" HEAD\n          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '6'",
               ),
               (
                   "          expected=\"$(printf '%s\\n' \"$TARGET\" \"$CONFIG\" \"$TEST\" \"$WORKFLOW\" | sort)\"",
@@ -121,35 +127,39 @@ jobs:
           node --check "$TEST"
           node "$TEST"
           git diff --cached --check "$PREDECESSOR_HEAD"
+          printf 'PROSPECTIVE_PERMANENT_WORKFLOW_BLOB=%s\n' "$(git hash-object "$PERMANENT_WORKFLOW")"
+          printf 'GENERATED_MARKDOWN_BLOB=%s\n' "$(git hash-object "$MATRIX_MD")"
+          printf 'GENERATED_REPORT_BLOB=%s\n' "$(git hash-object "$MATRIX_REPORT")"
 
-      - name: Build immutable recovery artifact
+          git reset --hard HEAD
+          cp "$save_dir/docs/DOMAIN-COMPLETION-MATRIX.md" "$MATRIX_MD"
+          cp "$save_dir/reports/generated/domain-completion-matrix-report.json" "$MATRIX_REPORT"
+          git add "$MATRIX_MD"
+          git add -f "$MATRIX_REPORT"
+          expected_stage="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual_stage="$(git diff --cached --name-only | sort)"
+          test "$actual_stage" = "$expected_stage"
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          git diff --cached --check
+
+      - name: Commit and push Matrix derivatives only
         shell: bash
         run: |
           set -euo pipefail
-          export_dir="$RUNNER_TEMP/b02ck-export"
-          mkdir -p "$export_dir/docs" "$export_dir/reports/generated" "$export_dir/.github/workflows"
-          cp "$MATRIX_MD" "$export_dir/docs/DOMAIN-COMPLETION-MATRIX.md"
-          cp "$MATRIX_REPORT" "$export_dir/reports/generated/domain-completion-matrix-report.json"
-          cp "$PERMANENT_WORKFLOW" "$export_dir/.github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml"
-          {
-            printf 'TEMP_V2_HEAD=%s\n' "$(git rev-parse HEAD)"
-            printf 'PREDECESSOR_HEAD=%s\n' "$PREDECESSOR_HEAD"
-            printf 'MATRIX_SOURCE_BLOB=%s\n' "$(git hash-object "$MATRIX_SOURCE")"
-            printf 'TARGET_BLOB=%s\n' "$(git hash-object "$TARGET")"
-            printf 'CONFIG_BLOB=%s\n' "$(git hash-object "$CONFIG")"
-            printf 'TEST_BLOB=%s\n' "$(git hash-object "$TEST")"
-            printf 'MARKDOWN_BLOB=%s\n' "$(git hash-object "$MATRIX_MD")"
-            printf 'REPORT_BLOB=%s\n' "$(git hash-object "$MATRIX_REPORT")"
-            printf 'PERMANENT_WORKFLOW_BLOB=%s\n' "$(git hash-object "$PERMANENT_WORKFLOW")"
-            printf 'EXPECTED_PREDECESSOR_DISTANCE=4\n'
-          } > "$export_dir/manifest.txt"
-          cat "$export_dir/manifest.txt"
-
-      - name: Upload exact B02CK recovery artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: com-b02ck-matrix-materialized
-          path: ${{ runner.temp }}/b02ck-export
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 1
+          git fetch origin "$TARGET_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse HEAD)"
+          parent="$(git rev-parse HEAD)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): materialize B02CK matrix derivatives'
+          commit="$(git rev-parse HEAD)"
+          tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^)" = "$parent"
+          expected="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff-tree --no-commit-id --name-only -r HEAD | sort)"
+          test "$actual" = "$expected"
+          git push origin "HEAD:$TARGET_BRANCH"
+          printf 'DERIVATIVES_COMMIT_SHA=%s\n' "$commit"
+          printf 'DERIVATIVES_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$(git rev-parse HEAD:$MATRIX_MD)"
+          printf 'REPORT_BLOB_SHA=%s\n' "$(git rev-parse HEAD:$MATRIX_REPORT)"
