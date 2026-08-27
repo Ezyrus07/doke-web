@@ -1,0 +1,121 @@
+name: TEMP UX-CSS-IMPORTANT-053 Mobile Base Reach R3C V2
+
+on:
+  pull_request:
+    branches:
+      - diag/ux-css-important-053-mobile-base-reach-r3c-v2-base
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 4f861d705eaf288eb3ea7a81ba8df2802464d2b1
+      PARENT_TREE: a302b917d63f9caa9212765ec6a02c4a807411b0
+      TARGET: assets/css/components/shell/mobile-base-stability.css
+      PARENT_BLOB: fe3efc820ef1bbbdbad1b40b99513d156243e04e
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify exact diagnostic lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-list --parents -n1 "$BASE_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$TARGET")" = "$PARENT_BLOB"
+          test "$(git diff-tree --no-commit-id --name-only -r "$BASE_SHA")" = ".github/workflows/0000-temp-ux-css-important-053-mobile-base-reach-r3c-v2.yml"
+          git checkout --detach "$PARENT" >/dev/null
+      - name: Verify static nine-page target reach
+        run: node scripts/audit-mobile-base-stability.js
+      - name: Install frozen dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts >/dev/null
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+      - name: Prove exact 18 active plus 9 inactive controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 & PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          NODE_PATH="$PWD/node_modules" node <<'NODE'
+          const {chromium}=require('@playwright/test');
+          (async()=>{
+            const target=process.env.TARGET;
+            const pages=['index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'];
+            const widths=[390,760,761];
+            const expectedActive=pages.flatMap(page=>[390,760].map(width=>`${page}|${width}`));
+            const expectedInactive=pages.map(page=>`${page}|761`);
+            const tiny=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+            const fastStub=`window.DokeHeaderProfileMount=Object.freeze({mount:function(){return 0},readSessionUser:function(){return null}});document.documentElement.dataset.authGuard='authorized';document.documentElement.dataset.fastAuthRedirect='false';`;
+            const guardStub=`(function(){var ns=window.DokeAuth=window.DokeAuth||{};var ok=function(){return Promise.resolve(Object.freeze({state:'authorized',mode:'observe',enforce:false,authenticated:false}))};ns.guard=Object.freeze({evaluate:ok,bind:ok,getMode:function(){return 'observe'},getAuthContext:function(){return {authenticated:false,role:'guest',accountStatus:'active',sessionStatus:'anonymous'}},normalizeAccessState:function(){return 'anonymous'},renderAccessState:function(){return null},buildLoginUrl:function(){return location.href}});document.documentElement.dataset.authGuard='authorized';document.documentElement.dataset.authGuardMode='observe';})();`;
+            const browser=await chromium.launch({headless:true});
+            const rows=[];
+            for(const pageName of pages)for(const width of widths){
+              const ctx=await browser.newContext({viewport:{width,height:1050},reducedMotion:'reduce'});
+              const page=await ctx.newPage(); let requested=false; const errors=[];
+              page.on('pageerror',e=>errors.push(String(e.message||e)));
+              page.on('request',r=>{try{if(new URL(r.url()).pathname===`/${target}`)requested=true}catch{}});
+              await page.route('**/*',async route=>{
+                const req=route.request(),url=req.url();
+                if(url.startsWith('http://127.0.0.1:4173/')){
+                  const pathname=new URL(url).pathname;
+                  if(pathname.endsWith('/assets/js/core/header-auth-surface-early.js')) return route.fulfill({status:200,contentType:'application/javascript',body:fastStub});
+                  if(pathname.endsWith('/assets/js/core/route-guard.js')) return route.fulfill({status:200,contentType:'application/javascript',body:guardStub});
+                  if(req.resourceType()==='document'){
+                    const response=await route.fetch(); let body=await response.text();
+                    body=body.replace(/<html\b([^>]*)>/i,(full,attrs)=>{
+                      let next=attrs.replace(/\bdata-auth-guard\s*=\s*(["']).*?\1/i,'data-auth-guard="authorized"');
+                      if(/\bdata-auth-guard-mode\s*=/.test(next)) next=next.replace(/\bdata-auth-guard-mode\s*=\s*(["']).*?\1/i,'data-auth-guard-mode="observe"');
+                      else next+=' data-auth-guard-mode="observe"';
+                      return `<html${next}>`;
+                    });
+                    return route.fulfill({response,body});
+                  }
+                  return route.continue();
+                }
+                if(/\.(?:png|jpe?g|webp|gif|svg)(?:\?|$)/i.test(url)) return route.fulfill({status:200,contentType:'image/png',body:tiny});
+                return route.abort();
+              });
+              await page.goto(`http://127.0.0.1:4173/${pageName}?uxcss053reach=${width}`,{waitUntil:'domcontentloaded',timeout:15000});
+              await page.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{}); await page.waitForTimeout(250);
+              const meta=await page.evaluate(target=>{
+                const clean=s=>{try{return new URL(s,location.href).pathname.replace(/^\//,'')}catch{return String(s||'')}};
+                const seen=new Set();let cssom=false,targetSheet=null;
+                function walk(sheet){if(!sheet||seen.has(sheet))return;seen.add(sheet);const href=sheet.href?clean(sheet.href):'';if(href===target){cssom=true;targetSheet=sheet}let rules;try{rules=sheet.cssRules}catch{return}if(!rules)return;for(const r of rules)if(r.type===CSSRule.IMPORT_RULE)walk(r.styleSheet)}
+                for(const s of document.styleSheets)walk(s);
+                const media=[];let mediaActive=false,nonMediaStyleRules=0;
+                if(targetSheet){let rules=[];try{rules=[...targetSheet.cssRules]}catch{}for(const r of rules){if(r.type===CSSRule.MEDIA_RULE){const text=r.conditionText||r.media?.mediaText||'';const matches=Boolean(text&&matchMedia(text).matches);media.push({text,matches});if(matches)mediaActive=true}else if(r.type===CSSRule.STYLE_RULE)nonMediaStyleRules++}}
+                return{cssom,finalPath:location.pathname.replace(/^\//,''),authGuard:document.documentElement.dataset.authGuard||'',authGuardMode:document.documentElement.dataset.authGuardMode||'',media,mediaActive,nonMediaStyleRules};
+              },target);
+              const loaded=requested&&meta.cssom,active=loaded&&meta.mediaActive;
+              rows.push({page:pageName,width,requested,cssom:meta.cssom,loaded,active,finalPath:meta.finalPath,authGuard:meta.authGuard,authGuardMode:meta.authGuardMode,media:meta.media,nonMediaStyleRules:meta.nonMediaStyleRules,errors:errors.sort()});
+              await ctx.close();
+            }
+            await browser.close();
+            const ids=rs=>rs.map(r=>`${r.page}|${r.width}`);
+            const active=ids(rows.filter(r=>r.active));
+            const inactiveLoaded=ids(rows.filter(r=>r.loaded&&!r.active));
+            const unloaded=ids(rows.filter(r=>!r.loaded));
+            const redirected=rows.filter(r=>r.finalPath!==r.page).map(r=>({state:`${r.page}|${r.width}`,finalPath:r.finalPath}));
+            const badMedia=rows.filter(r=>r.nonMediaStyleRules!==0||r.media.length!==1||r.media[0].text.replace(/\s+/g,' ').trim()!=='(max-width: 760px)').map(r=>`${r.page}|${r.width}`);
+            const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+            const pass=rows.length===27&&!unloaded.length&&!redirected.length&&!badMedia.length&&same(active,expectedActive)&&same(inactiveLoaded,expectedInactive);
+            const result={result:pass?'PASS':'FAIL',states:rows.length,activeCount:active.length,inactiveLoadedCount:inactiveLoaded.length,unloadedCount:unloaded.length,redirectedCount:redirected.length,badMediaCount:badMedia.length,active,inactiveLoaded,unloaded,redirected,badMedia,rows};
+            console.log('ACTIVE_REACH_RESULT='+JSON.stringify(result));
+            if(!pass)throw Error('R3C active reach contract failed');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
