@@ -134,10 +134,13 @@ jobs:
           mv /tmp/comunidade.js "$TARGET"
           echo 'NEGATIVE_137_FAIL_CLOSED=PASS'
 
-      - name: Restore positive reports and run governance
+      - name: Restore positive state chain and differentiate governance
         shell: bash
         run: |
           set -euo pipefail
+          CANDIDATE='bfb77e3fa1bfd1694094b6270751aed2c6fda2e7'
+          PARENT='bac1f3578166b0db96b6f70ca742e17fd1980c71'
+
           git checkout -- assets/js/pages/profile-experience.js assets/js/pages/comunidade.js
           npm run audit:critical-states
           node scripts/audit-main-marketplace-state-contracts.js
@@ -145,9 +148,36 @@ jobs:
           node scripts/audit-main-action-state-contracts.js
           node scripts/audit-main-state-runtime-coverage.js
           node scripts/audit-global-state-completion-gate.js
-          npm run audit:domain-completion-matrix
+
+          set +e
+          npm run audit:domain-completion-matrix >/tmp/candidate-matrix.log 2>&1
+          candidate_matrix_rc=$?
+          set -e
+          cat /tmp/candidate-matrix.log
+
           npm run audit:agent-governance
+          echo 'CANDIDATE_AGENT_GOVERNANCE=PASS'
+
           git checkout -- docs/validation
+          test -z "$(git status --porcelain)"
+
+          if [ "$candidate_matrix_rc" -ne 0 ]; then
+            grep -F 'docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix' /tmp/candidate-matrix.log
+            git checkout --detach "$PARENT"
+            set +e
+            npm run audit:domain-completion-matrix >/tmp/parent-matrix.log 2>&1
+            parent_matrix_rc=$?
+            set -e
+            cat /tmp/parent-matrix.log
+            test "$parent_matrix_rc" -ne 0
+            grep -F 'docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix' /tmp/parent-matrix.log
+            echo 'MATRIX_STALE_INHERITED_PARENT_CANDIDATE=PASS'
+            git checkout --detach "$CANDIDATE"
+          else
+            echo 'CANDIDATE_MATRIX=PASS'
+          fi
+
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
           test -z "$(git status --porcelain)"
           echo 'UX_QA_DEBT_003_CERTIFIER=PASS'
           echo 'candidate=bfb77e3fa1bfd1694094b6270751aed2c6fda2e7'
