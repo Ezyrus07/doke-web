@@ -1,0 +1,58 @@
+name: TEMP UX-CSS-IMPORTANT Post-053 Residual Closure
+
+on:
+  pull_request:
+    types: [reopened]
+    branches:
+      - diag/ux-css-important-post-053-residual-closure
+
+permissions:
+  contents: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      PARENT_TREE: 9c2545f50d34ebf81e3976fb5c421e6f5f616b32
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-css-important-post-053-residual-closure.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: diag/ux-css-important-post-053-residual-closure
+          fetch-depth: 0
+      - name: Prove all residual priorities are certified protected guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$DIAG_HEAD")" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          git checkout --detach "$PARENT" >/dev/null
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const expected=[
+            {file:'assets/css/components/shell/mobile-base-stability.css',count:12,blob:'e077a0a7f8217972e2d87da7462cadf0859b3a11',sha256:'00aa34c833122d20b395808e18d9f046e88f57d90c82067a04e52f0cd9c58183',bytes:5130,checkpoint:'UX-CSS-IMPORTANT-053',reason:'browser-and-ordinal-proven active mobile base guards'},
+            {file:'assets/css/components/shell/mobile-app-shell.css',count:6,blob:'14fb64c93777d606b07c0abbf2c6532aed134cc4',sha256:'8fb0e7919197559b37a2d2b3c348766cff38729792c13cfffcdcb9bada8ad097',bytes:37020,checkpoint:'UX-CSS-IMPORTANT-036',reason:'six proven active mobile app shell blockers'},
+            {file:'assets/css/pages/home/mobile-composition.css',count:6,blob:'2830b6a99e95fa30197341e718935edd5afd1c45',sha256:'2638bc50d228a872d81e9da91ebd76e07d084232d70593f06e9e05e1444717ed',bytes:9136,checkpoint:'UX-CSS-IMPORTANT-006',reason:'six runtime-required Home composition guards'},
+            {file:'assets/css/components/cards/mobile-card-contract.css',count:2,blob:'a18cf06e2eb719feec2d5d4fdbcc575ead35bad8',sha256:'9945b453b4326a9617bc2b1ec1aec757ef4d720f76bfa1a7bde9e868c2a804dc',bytes:9542,checkpoint:'UX-CSS-IMPORTANT-010',reason:'gap and min-height runtime-required guards'},
+            {file:'assets/css/pages/home/mobile-hero-feed.css',count:1,blob:'88423184a186ca12c7faf365df84543fd3e3a73a',sha256:'c7dd56f5e0e90c2becb11f15059c35ed3bd189c0514ef0bb8b714f519c91084c',bytes:35811,checkpoint:'UX-CSS-IMPORTANT-052',reason:'functional featured-services content-rail overflow guard'}
+          ];
+          const count=s=>(s.match(/!important\b/gi)||[]).length;
+          const css=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);e.isDirectory()?walk(q):q.endsWith('.css')&&css.push(q)}})('assets/css');
+          const actual=[];let global=0;
+          for(const f of css){const s=fs.readFileSync(f,'utf8'),n=count(s);if(!n)continue;global+=n;actual.push({file:f,count:n,blob:cp.execFileSync('git',['rev-parse',`HEAD:${f}`],{encoding:'utf8'}).trim(),sha256:crypto.createHash('sha256').update(s).digest('hex'),bytes:Buffer.byteLength(s)});}
+          actual.sort((a,b)=>a.file.localeCompare(b.file));expected.sort((a,b)=>a.file.localeCompare(b.file));
+          if(global!==27)throw Error(`global residual drift ${global}`);
+          if(actual.length!==expected.length)throw Error(`residual file count drift ${actual.length}/${expected.length}`);
+          for(let i=0;i<expected.length;i++){
+            const a=actual[i],e=expected[i];
+            for(const k of ['file','count','blob','sha256','bytes'])if(a[k]!==e[k])throw Error(`residual identity drift ${e.file} ${k}: ${a[k]} != ${e[k]}`);
+          }
+          const protectedTotal=expected.reduce((s,r)=>s+r.count,0),eligibleResidual=global-protectedTotal;
+          if(protectedTotal!==27||eligibleResidual!==0)throw Error(`closure arithmetic ${protectedTotal}/${eligibleResidual}`);
+          const out={result:'PASS',checkpointBoundary:'post-UX-CSS-IMPORTANT-053',parent:process.env.PARENT,parentTree:process.env.PARENT_TREE,globalImportant:global,residualFileCount:actual.length,protectedTotal,eligibleResidual,seriesClosed:true,noSuccessor:true,protectedResiduals:expected,discoveryRun:33075613383,discoveryJob:98528893465,productMutation:false,criteriaRelaxed:0,repositoryOnly:true};
+          console.log('UX_CSS_IMPORTANT_POST_053_RESIDUAL_CLOSURE='+JSON.stringify(out));
+          NODE
+          test -z "$(git status --porcelain)"
