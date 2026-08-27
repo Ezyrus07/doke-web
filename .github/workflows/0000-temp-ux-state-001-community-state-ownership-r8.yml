@@ -1,0 +1,91 @@
+name: TEMP UX-STATE-001 Community State Ownership R8
+on:
+  push:
+    branches: [diag/ux-state-001-community-state-ownership-r8]
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      PARENT_TREE: 9c2545f50d34ebf81e3976fb5c421e6f5f616b32
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-001-community-state-ownership-r8.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Trace state ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/server.log 2>&1 & SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4173/comunidade.html >/dev/null && break; sleep 1; done
+          cat >/tmp/trace.cjs <<'NODE'
+          const { chromium } = require(process.cwd() + '/node_modules/@playwright/test');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+            const page=await context.newPage();
+            await page.addInitScript(()=>{
+              window.__dokeStateTrace=[];
+              const snap=(node)=>({
+                viewState:node?.getAttribute?.('data-view-state')??null,
+                state:node?.getAttribute?.('data-state')??null,
+                experienceState:node?.getAttribute?.('data-experience-state')??null,
+                pageHydration:node?.getAttribute?.('data-page-hydration')??null,
+                communityHydrated:node?.getAttribute?.('data-community-hydrated')??null,
+                bodyDataState:document.body?.dataset?.dataState??null
+              });
+              const push=(kind,detail={})=>window.__dokeStateTrace.push({t:Math.round(performance.now()*10)/10,kind,...detail});
+              ['doke:experience-state','doke:page-hydration-state','doke:view-state-change','doke:view-state-rejected'].forEach(name=>{
+                document.addEventListener(name,e=>{
+                  const d=e.detail||{};
+                  const boundary=d.boundary instanceof Element?d.boundary:null;
+                  push('event',{name,state:d.state??null,from:d.from??null,to:d.to??null,domain:d.domain??null,source:d.source??null,target:e.target?.getAttribute?.('data-state-boundary')??null,boundary:boundary?.getAttribute?.('data-state-boundary')??null,snapshot:snap(boundary||e.target)});
+                },true);
+              });
+              new MutationObserver(records=>{
+                for(const r of records){
+                  const n=r.target;
+                  if(!(n instanceof Element)) continue;
+                  if(!n.matches('[data-communities-page]')) continue;
+                  push('mutation',{attribute:r.attributeName,oldValue:r.oldValue,newValue:n.getAttribute(r.attributeName),snapshot:snap(n)});
+                }
+              }).observe(document,{subtree:true,attributes:true,attributeOldValue:true,attributeFilter:['data-view-state','data-state','data-experience-state','data-page-hydration','data-community-hydrated','aria-busy']});
+            });
+            const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
+            const res=await page.goto('http://127.0.0.1:4173/comunidade.html',{waitUntil:'domcontentloaded',timeout:30000});
+            if(!res?.ok()) throw new Error('navigation '+res?.status());
+            await page.waitForFunction(()=>document.querySelector('[data-communities-page]')?.dataset.communityHydrated==='true',null,{timeout:20000});
+            await page.waitForTimeout(2000);
+            const out=await page.evaluate(()=>{
+              const root=document.querySelector('[data-communities-page]');
+              return {final:{viewState:root?.dataset.viewState??null,state:root?.dataset.state??null,experienceState:root?.dataset.experienceState??null,pageHydration:root?.dataset.pageHydration??null,communityHydrated:root?.dataset.communityHydrated??null,bodyDataState:document.body?.dataset.dataState??null},trace:window.__dokeStateTrace};
+            });
+            console.log('STATE_OWNERSHIP_TRACE='+JSON.stringify(out));
+            console.log('PAGE_ERRORS='+JSON.stringify(errors));
+            if(errors.length) throw new Error('page errors');
+            if(out.final.viewState!=='idle') throw new Error('unexpected final viewState '+out.final.viewState);
+            const expIdle=out.trace.filter(x=>x.kind==='event'&&x.name==='doke:experience-state'&&x.state==='idle');
+            const expMut=out.trace.filter(x=>x.kind==='mutation'&&x.attribute==='data-experience-state');
+            console.log('EXPERIENCE_IDLE_EVENTS='+JSON.stringify(expIdle));
+            console.log('EXPERIENCE_STATE_MUTATIONS='+JSON.stringify(expMut));
+            console.log('UX_STATE_001_OWNERSHIP_R8='+JSON.stringify({result:'PASS',final:out.final,experienceIdleEvents:expIdle.length,experienceStateMutations:expMut.length,traceEntries:out.trace.length,repositoryOnly:true,productMutation:false}));
+            await browser.close();
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/trace.cjs
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test -z "$(git status --porcelain)"
