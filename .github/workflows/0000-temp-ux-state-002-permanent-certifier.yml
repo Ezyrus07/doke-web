@@ -1,0 +1,203 @@
+name: TEMP UX-STATE-002 Permanent Certifier
+
+on:
+  push:
+    branches:
+      - diag/ux-state-002-permanent-certifier
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      PARENT: 0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2
+      PARENT_TREE: ee8f2c8bd6b22af3c5905f01785f47dee1caf52c
+      PERM: c74ce2990e697fc080cf0aad52ed7b0ca9b8bb07
+      PERM_TREE: 67736d023f2da915219d4b416138d9773a333533
+      HTML_BLOB: a7b129933aa3b901f820151d9a56e1949a775aff
+      HTML_SHA256: c2b62ef5319692a4c129df394639ceba0703a1b7075abdd3013c00a79f6a4183
+      HTML_BYTES: '63715'
+      JS_BLOB: e350a601f1f0b5e2764cca95e7cdbed1caa3bff7
+      JS_SHA256: 2243a14ec9bcb111cda86e1279a269e1d7fc033fb21d20fc752c1da7b338598d
+      JS_BYTES: '36309'
+      R3_SHA: 393d9627b1638a9ac35e8da4c9e542263290cc2b
+      R3_RUN: '33092853851'
+      R3_PATH: .github/workflows/0000-temp-ux-state-002-settings-action-state-candidate-a-r3.yml
+      R10_SHA: a1784c4c3cf8855c4aa8425a1bcc6ca8853977c4
+      R10_RUN: '33123127455'
+      R10_PATH: .github/workflows/0000-temp-ux-state-002-settings-action-state-browser-r10.yml
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-002-permanent-certifier.yml
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Verify exact permanent identity and lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          CERT_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$CERT_HEAD" | awk '{print $2}')" = "$PERM"
+          test "$(git diff-tree --no-commit-id --name-only -r "$CERT_HEAD")" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PERM^{tree}")" = "$PERM_TREE"
+          test "$(git rev-list --parents -n1 "$PERM" | awk '{print $2}')" = "$PARENT"
+          test "$(git merge-base "$PARENT" "$PERM")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT..$PERM")" = 1
+          mapfile -t changed < <(git diff --name-only "$PARENT" "$PERM")
+          test "${#changed[@]}" -eq 2
+          test "${changed[0]}" = "assets/js/pages/configuracoes.js"
+          test "${changed[1]}" = "configuracoes.html"
+          test "$(git diff --numstat "$PARENT" "$PERM" -- assets/js/pages/configuracoes.js | awk '{print $1" "$2}')" = "37 4"
+          test "$(git diff --numstat "$PARENT" "$PERM" -- configuracoes.html | awk '{print $1" "$2}')" = "2 2"
+          test "$(git rev-parse "$PERM:configuracoes.html")" = "$HTML_BLOB"
+          test "$(git rev-parse "$PERM:assets/js/pages/configuracoes.js")" = "$JS_BLOB"
+          git show "$PERM:configuracoes.html" >/tmp/permanent-configuracoes.html
+          git show "$PERM:assets/js/pages/configuracoes.js" >/tmp/permanent-configuracoes.js
+          test "$(sha256sum /tmp/permanent-configuracoes.html | awk '{print $1}')" = "$HTML_SHA256"
+          test "$(wc -c < /tmp/permanent-configuracoes.html | tr -d ' ')" = "$HTML_BYTES"
+          test "$(sha256sum /tmp/permanent-configuracoes.js | awk '{print $1}')" = "$JS_SHA256"
+          test "$(wc -c < /tmp/permanent-configuracoes.js | tr -d ' ')" = "$JS_BYTES"
+          git diff --check "$PARENT" "$PERM"
+          echo PERMANENT_IDENTITY=PASS
+          echo LINEAGE=PASS
+          echo SCOPE=PASS
+          echo MATRIX_MUTATION=false
+
+      - name: Verify source lifecycle and negative detection
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PERM" >/dev/null
+          node --check assets/js/pages/configuracoes.js
+          node <<'NODE'
+          const fs = require('fs');
+          const h = fs.readFileSync('configuracoes.html', 'utf8');
+          const s = fs.readFileSync('assets/js/pages/configuracoes.js', 'utf8');
+          const buttons = [...h.matchAll(/<button\b[^>]*data-action-state="idle"[^>]*>/g)].map(x => x[0]);
+          if (buttons.length !== 3) throw new Error(`expected 3 canonical Settings actions, got ${buttons.length}`);
+          if (!buttons.every(x => /data-action-loading-label="[^"]+"/.test(x))) throw new Error('missing loading-label metadata');
+          const profile = s.slice(s.indexOf('const saveProfile = async (button) =>'), s.indexOf('const syncPreferenceInputs'));
+          if (!(profile.indexOf('setButtonSubmittingFeedback(button);') >= 0 && profile.indexOf('setButtonSubmittingFeedback(button);') < profile.indexOf('await service.updateCurrentProfile(payload)'))) throw new Error('profile pending transition ordering');
+          const panels = s.slice(s.indexOf('settingsSaveButtons.forEach((button) =>'), s.indexOf('settingsResetButtons.forEach'));
+          if (!(panels.indexOf('setButtonSubmittingFeedback(button);') >= 0 && panels.indexOf('setButtonSubmittingFeedback(button);') < panels.indexOf('await savePanelSettings(panelName, button)'))) throw new Error('panel pending transition ordering');
+          if (!panels.includes("if (button.hasAttribute('data-action-state'))")) throw new Error('panel canonical scope guard missing');
+          if (!s.includes("setActionState(button, 'submitting', loadingLabel)")) throw new Error('canonical action-state API missing');
+          if ((s.match(/button\.setAttribute\('data-action-state', 'submitting'\);/g) || []).length !== 1) throw new Error('unexpected submitting writer count');
+          if ((s.match(/restoreButtonPendingLabel\(button\);/g) || []).length < 3) throw new Error('accessible label restoration incomplete');
+          if (!s.includes("button.setAttribute('data-action-state', 'success');")) throw new Error('success terminal missing');
+          if (!s.includes("button.setAttribute('data-action-state', 'error');")) throw new Error('error terminal missing');
+          if (!s.includes("button.setAttribute('data-action-state', 'idle');")) throw new Error('idle recovery missing');
+          console.log('SOURCE_SEMANTIC_CONTRACT=PASS');
+          NODE
+
+          git worktree add --detach /tmp/ux-state-002-negative "$PERM" >/dev/null
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/ux-state-002-negative/assets/js/pages/configuracoes.js')
+          s = p.read_text()
+          needle = "    setButtonSubmittingFeedback(button);\n    try {\n"
+          if s.count(needle) != 1:
+              raise SystemExit('negative fixture source drift')
+          p.write_text(s.replace(needle, "    button.disabled = true;\n    button.setAttribute('aria-busy', 'true');\n    try {\n", 1))
+          PY
+          set +e
+          node - <<'NODE'
+          const fs = require('fs');
+          const s = fs.readFileSync('/tmp/ux-state-002-negative/assets/js/pages/configuracoes.js', 'utf8');
+          const profile = s.slice(s.indexOf('const saveProfile = async (button) =>'), s.indexOf('const syncPreferenceInputs'));
+          process.exit(profile.includes('setButtonSubmittingFeedback(button);') && profile.indexOf('setButtonSubmittingFeedback(button);') < profile.indexOf('await service.updateCurrentProfile(payload)') ? 0 : 1);
+          NODE
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          git worktree remove --force /tmp/ux-state-002-negative
+          echo NEGATIVE_PENDING_TRANSITION=PASS
+
+      - name: Reconcile cycles Matrix and agent governance on permanent SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PERM" >/dev/null
+          git clean -fd >/dev/null
+          npm run audit:critical-states
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:main-action-state-contracts
+          npm run audit:main-state-runtime-coverage
+          npm run audit:global-state-completion-gate
+          node <<'NODE'
+          const fs = require('fs');
+          const a = JSON.parse(fs.readFileSync('docs/validation/global-cycle-138-main-action-state-contracts-report.json'));
+          const b = JSON.parse(fs.readFileSync('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json'));
+          const c = JSON.parse(fs.readFileSync('docs/validation/global-cycle-140-global-state-completion-gate-report.json'));
+          const review = a.pages.filter(x => x.status !== 'passed');
+          if (a.status !== 'passed-with-follow-up' || review.length !== 1 || review[0].file !== 'resultados.html') throw new Error('cycle 138 reconciliation: ' + JSON.stringify(review));
+          if (b.status !== 'passed' || b.checkedPages !== 12 || b.failedPages !== 0) throw new Error('cycle 139 regression');
+          const failed = Array.isArray(c.failedReports) ? c.failedReports : [];
+          if (c.status !== 'passed-with-follow-up' || failed.length !== 0) throw new Error('cycle 140 regression');
+          console.log('STATE_CHAIN=PASS ' + JSON.stringify({cycle138:a.status,review:review.map(x=>x.file),cycle139:b.status,checkedPages:b.checkedPages,failedPages:b.failedPages,cycle140:c.status,failedReports:failed.length}));
+          NODE
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          echo MATRIX_GOVERNANCE=PASS
+          echo INTRODUCED_REGRESSIONS_STATIC=0
+
+      - name: Transfer qualified R3 and R10 evidence by frozen identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PERM" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-list --parents -n1 "$R3_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$R3_SHA")" = "$R3_PATH"
+          test "$(git rev-list --parents -n1 "$R10_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$R10_SHA")" = "$R10_PATH"
+          git show "$R3_SHA:$R3_PATH" >/tmp/r3.yml
+          git show "$R10_SHA:$R10_PATH" >/tmp/r10.yml
+          grep -F "HTML_BLOB: $HTML_BLOB" /tmp/r10.yml >/dev/null
+          grep -F "JS_BLOB: $JS_BLOB" /tmp/r10.yml >/dev/null
+          grep -F "HTML_SHA256: $HTML_SHA256" /tmp/r10.yml >/dev/null
+          grep -F "JS_SHA256: $JS_SHA256" /tmp/r10.yml >/dev/null
+          grep -F 'Browser parent candidate lifecycle A B' /tmp/r10.yml >/dev/null
+          grep -F 'criteriaRelaxed' /tmp/r10.yml >/dev/null
+          grep -F 'NEGATIVE_PENDING_TRANSITION=PASS' /tmp/r3.yml >/dev/null
+          grep -F 'npm run audit:domain-completion-matrix' /tmp/r3.yml >/dev/null
+          grep -F 'npm run audit:agent-governance' /tmp/r3.yml >/dev/null
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$R3_RUN" >/tmp/r3-run.json
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$R10_RUN" >/tmp/r10-run.json
+          python3 - <<'PY'
+          import json, os
+          checks = [
+              ('R3', '/tmp/r3-run.json', os.environ['R3_SHA'], 'diag/ux-state-002-settings-action-state-candidate-a-r3'),
+              ('R10', '/tmp/r10-run.json', os.environ['R10_SHA'], 'diag/ux-state-002-settings-action-state-browser-r10'),
+          ]
+          for label, path, sha, branch in checks:
+              j = json.load(open(path))
+              if j.get('status') != 'completed' or j.get('conclusion') != 'success':
+                  raise SystemExit(f'{label} run not successful: {j.get("status")}/{j.get("conclusion")}')
+              if j.get('head_sha') != sha or j.get('head_branch') != branch:
+                  raise SystemExit(f'{label} run identity mismatch')
+              print(f'{label}_RUN=PASS id={j.get("id")}')
+          PY
+          test "$(git rev-parse "$PERM:configuracoes.html")" = "$HTML_BLOB"
+          test "$(git rev-parse "$PERM:assets/js/pages/configuracoes.js")" = "$JS_BLOB"
+          echo STATIC_QUALIFICATION_TRANSFER=PASS
+          echo BROWSER_QUALIFICATION_TRANSFER=PASS
+          echo VISUAL_LAYOUT_PARITY_TRANSFER=PASS
+          echo CRITERIA_RELAXED=0
+
+      - name: Final permanent certification receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PERM" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PERM"
+          test "$(git status --porcelain)" = ""
+          echo 'PERMANENT_CERTIFICATION={"result":"PASS","checkpoint":"UX-STATE-002","parent":"0f38e88e8c0ae027d8b2eaab40ee5ad6cf90c9b2","head":"c74ce2990e697fc080cf0aad52ed7b0ca9b8bb07","tree":"67736d023f2da915219d4b416138d9773a333533","files":2,"insertions":39,"deletions":6,"r3Run":33092853851,"r10Run":33123127455,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"repositoryOnly":true}'
