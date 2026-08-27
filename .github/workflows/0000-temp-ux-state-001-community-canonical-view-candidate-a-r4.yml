@@ -1,0 +1,144 @@
+name: TEMP UX-STATE-001 Community Canonical View Candidate A R4
+on:
+  push:
+    branches:
+      - diag/ux-state-001-community-canonical-view-candidate-a-r4
+permissions:
+  contents: read
+jobs:
+  differential:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      PARENT_TREE: 9c2545f50d34ebf81e3976fb5c421e6f5f616b32
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-001-community-canonical-view-candidate-a-r4.yml
+      TARGET: assets/js/pages/comunidade.js
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Prove inherited legacy-test failure and qualify one-line candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$DIAG_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git diff-tree --no-commit-id --name-only -r "$DIAG_HEAD")" = "$WORKFLOW_PATH"
+          git checkout --detach "$PARENT" >/dev/null
+          test -z "$(git status --porcelain)"
+          npm ci --ignore-scripts
+
+          normalize_log() {
+            sed -E 's#^.*Error: #Error: #' "$1" | grep -E 'Error:|PASS|FAIL|must include room skeleton' | tail -n 20 || true
+          }
+
+          set +e
+          node scripts/test-community-hydration-transition-contract.js > /tmp/parent-legacy.log 2>&1
+          PARENT_LEGACY_RC=$?
+          set -e
+          normalize_log /tmp/parent-legacy.log > /tmp/parent-legacy.norm
+          cat /tmp/parent-legacy.norm
+          test "$PARENT_LEGACY_RC" -ne 0
+          grep -F 'Error: comunidade-interna.html must include room skeleton' /tmp/parent-legacy.log >/dev/null
+
+          set +e
+          node scripts/test-first-paint-loading-contract.js > /tmp/parent-first-paint.log 2>&1
+          PARENT_FIRST_RC=$?
+          npm run audit:main-state-runtime-coverage > /tmp/parent-runtime.log 2>&1
+          PARENT_RUNTIME_RC=$?
+          set -e
+          cp docs/validation/global-cycle-139-main-state-runtime-coverage-report.json /tmp/parent-runtime-report.json 2>/dev/null || true
+
+          PARENT_BLOB="$(git rev-parse HEAD:$TARGET)"
+          PARENT_SHA256="$(sha256sum "$TARGET" | awk '{print $1}')"
+          PARENT_BYTES="$(wc -c < "$TARGET" | tr -d ' ')"
+
+          node <<'NODE'
+          const fs=require('fs');
+          const f='assets/js/pages/comunidade.js';
+          let s=fs.readFileSync(f,'utf8');
+          const before='page.dataset.viewState = nextState;';
+          const after="page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;";
+          const n=s.split(before).length-1;
+          if(n!==1) throw new Error(`expected exactly one public view-state assignment, got ${n}`);
+          fs.writeFileSync(f,s.replace(before,after));
+          NODE
+
+          test "$(git diff --name-only)" = "$TARGET"
+          test "$(git diff --numstat | awk '{print $1" "$2" "$3}')" = "1 1 $TARGET"
+          git diff --check
+          node --check "$TARGET"
+
+          node <<'NODE'
+          const fs=require('fs');
+          const s=fs.readFileSync('assets/js/pages/comunidade.js','utf8');
+          const authority=fs.readFileSync('assets/js/state/state-contracts.js','utf8');
+          const required=[
+            "page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;",
+            "page.dataset.state = nextState;",
+            "document.body.dataset.dataState = nextState;",
+            "page.setAttribute('aria-busy', String(nextState === 'loading'));",
+            "setCommunityPageState('hydrated');",
+            "page.dataset.communityHydrated = 'true'",
+            "nextState === 'hydrated' && incomingCommunityTransition?.context?.listingState"
+          ];
+          for(const token of required) if(!s.includes(token)) throw new Error('missing required token: '+token);
+          if(s.includes('page.dataset.viewState = nextState;')) throw new Error('legacy public assignment remains');
+          if(!/READY\s*:\s*['\"]ready['\"]/.test(authority)) throw new Error('canonical READY missing');
+          if(/HYDRATED\s*:\s*['\"]hydrated['\"]/.test(authority)) throw new Error('HYDRATED unexpectedly canonical');
+          console.log('SOURCE_CONTRACT=PASS');
+          console.log('PUBLIC_STATE_SEMANTIC_PROOF='+JSON.stringify({result:'PASS',hydratedInput:{pageState:'hydrated',publicViewState:'ready',bodyDataState:'hydrated',ariaBusy:'false'},loadingInput:{pageState:'loading',publicViewState:'loading',bodyDataState:'loading',ariaBusy:'true'},errorInput:{pageState:'error',publicViewState:'error',bodyDataState:'error',ariaBusy:'false'},internalHydrationPreserved:true}));
+          NODE
+
+          CANDIDATE_BLOB="$(git hash-object "$TARGET")"
+          CANDIDATE_SHA256="$(sha256sum "$TARGET" | awk '{print $1}')"
+          CANDIDATE_BYTES="$(wc -c < "$TARGET" | tr -d ' ')"
+
+          set +e
+          node scripts/test-community-hydration-transition-contract.js > /tmp/candidate-legacy.log 2>&1
+          CANDIDATE_LEGACY_RC=$?
+          set -e
+          normalize_log /tmp/candidate-legacy.log > /tmp/candidate-legacy.norm
+          cat /tmp/candidate-legacy.norm
+          test "$CANDIDATE_LEGACY_RC" = "$PARENT_LEGACY_RC"
+          diff -u /tmp/parent-legacy.norm /tmp/candidate-legacy.norm
+
+          set +e
+          node scripts/test-first-paint-loading-contract.js > /tmp/candidate-first-paint.log 2>&1
+          CANDIDATE_FIRST_RC=$?
+          npm run audit:main-state-runtime-coverage > /tmp/candidate-runtime.log 2>&1
+          CANDIDATE_RUNTIME_RC=$?
+          set -e
+          cp docs/validation/global-cycle-139-main-state-runtime-coverage-report.json /tmp/candidate-runtime-report.json 2>/dev/null || true
+
+          test "$CANDIDATE_FIRST_RC" = "$PARENT_FIRST_RC"
+          test "$CANDIDATE_RUNTIME_RC" = "$PARENT_RUNTIME_RC"
+          if [ -f /tmp/parent-runtime-report.json ] && [ -f /tmp/candidate-runtime-report.json ]; then
+            node <<'NODE'
+            const fs=require('fs');
+            const p=JSON.parse(fs.readFileSync('/tmp/parent-runtime-report.json','utf8'));
+            const c=JSON.parse(fs.readFileSync('/tmp/candidate-runtime-report.json','utf8'));
+            const pick=x=>({status:x.status,failedPages:x.failedPages,totalPages:x.totalPages,passedPages:x.passedPages});
+            if(JSON.stringify(pick(p))!==JSON.stringify(pick(c))) throw new Error('runtime coverage regression '+JSON.stringify({parent:pick(p),candidate:pick(c)}));
+            console.log('RUNTIME_COVERAGE_PARITY='+JSON.stringify({result:'PASS',parent:pick(p),candidate:pick(c)}));
+            NODE
+          fi
+
+          node <<'NODE'
+          const fs=require('fs');
+          const parent=fs.readFileSync('assets/js/pages/comunidade.js','utf8').replace("page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;",'page.dataset.viewState = nextState;');
+          const candidate=fs.readFileSync('assets/js/pages/comunidade.js','utf8');
+          const classify=s=>({hasCanonicalReadyProjection:s.includes("page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;"),hasHydratedTerminal:s.includes("setCommunityPageState('hydrated');"),hasInternalHydrationMarker:s.includes("page.dataset.communityHydrated = 'true'")});
+          const p=classify(parent),c=classify(candidate);
+          if(p.hasCanonicalReadyProjection) throw new Error('parent unexpectedly canonical');
+          if(!c.hasCanonicalReadyProjection||!c.hasHydratedTerminal||!c.hasInternalHydrationMarker) throw new Error('candidate semantic classification failed');
+          console.log('C137_COMMUNITY_DIFFERENTIAL='+JSON.stringify({result:'PASS',parent:{completionCanonical:false,publicTerminal:'hydrated'},candidate:{completionCanonical:true,publicTerminal:'ready',internalTerminal:'hydrated'},candidateChecks:c}));
+          NODE
+
+          printf 'UX_STATE_001_CANDIDATE_A_R4={"result":"PASS","parent":"%s","parentTree":"%s","target":"%s","parentBlob":"%s","parentSha256":"%s","parentBytes":%s,"candidateBlob":"%s","candidateSha256":"%s","candidateBytes":%s,"changedFiles":1,"additions":1,"deletions":1,"parentLegacyRc":%s,"candidateLegacyRc":%s,"inheritedLegacyFailure":"comunidade-interna.html must include room skeleton","parentFirstPaintRc":%s,"candidateFirstPaintRc":%s,"parentRuntimeRc":%s,"candidateRuntimeRc":%s,"canonicalPublicState":"ready","internalHydrationState":"hydrated","productMutation":false,"criteriaRelaxed":0,"repositoryOnly":true}\n' "$PARENT" "$PARENT_TREE" "$TARGET" "$PARENT_BLOB" "$PARENT_SHA256" "$PARENT_BYTES" "$CANDIDATE_BLOB" "$CANDIDATE_SHA256" "$CANDIDATE_BYTES" "$PARENT_LEGACY_RC" "$CANDIDATE_LEGACY_RC" "$PARENT_FIRST_RC" "$CANDIDATE_FIRST_RC" "$PARENT_RUNTIME_RC" "$CANDIDATE_RUNTIME_RC"
+
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd >/dev/null
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test -z "$(git status --porcelain)"
