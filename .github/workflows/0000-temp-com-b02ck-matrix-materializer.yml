@@ -8,7 +8,7 @@ on:
       - '.github/workflows/0000-temp-com-b02ck-matrix-materializer.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   materialize-b02ck-matrix-derivative:
@@ -18,6 +18,7 @@ jobs:
     env:
       CANDIDATE_HEAD: 2b61ee6d5c2cf0b70b332fe7815475167b7165a1
       PREDECESSOR_HEAD: c40b9dab87b2ce79d82543ea0c08ce78f99a1339
+      TEMP_V1_HEAD: 776e444c400798c50f8ad52c57f642dc31406cf2
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
@@ -31,7 +32,6 @@ jobs:
       CONFIG: config/com-b02ck-repository-only-registry-backed-resume-integration-readiness.json
       CONFIG_BLOB: c05ada48908d7ec3c755313fd68d4fcccf1034d9
       TEMP_WORKFLOW: .github/workflows/0000-temp-com-b02ck-matrix-materializer.yml
-      TARGET_BRANCH: com/com-001-baseline-audit
 
     steps:
       - name: Checkout exact TEMP recovery head
@@ -50,8 +50,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$TEMP_V1_HEAD"
           git merge-base --is-ancestor "$CANDIDATE_HEAD" HEAD
-          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '1'
+          test "$(git rev-list --count "$CANDIDATE_HEAD..HEAD")" = '2'
           expected="$TEMP_WORKFLOW"
           actual="$(git diff --name-only "$CANDIDATE_HEAD" HEAD)"
           test "$actual" = "$expected"
@@ -90,7 +91,7 @@ jobs:
               ),
               (
                   "          test \"$(git rev-parse HEAD^)\" = \"$PREDECESSOR_HEAD\"",
-                  "          git merge-base --is-ancestor \"$PREDECESSOR_HEAD\" HEAD\n          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '3'",
+                  "          git merge-base --is-ancestor \"$PREDECESSOR_HEAD\" HEAD\n          test \"$(git rev-list --count \"$PREDECESSOR_HEAD..HEAD\")\" = '4'",
               ),
               (
                   "          expected=\"$(printf '%s\\n' \"$TARGET\" \"$CONFIG\" \"$TEST\" \"$WORKFLOW\" | sort)\"",
@@ -121,33 +122,34 @@ jobs:
           node "$TEST"
           git diff --cached --check "$PREDECESSOR_HEAD"
 
-      - name: Export immutable TEMP-free commit through temporary tag only
+      - name: Build immutable recovery artifact
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin "$TARGET_BRANCH"
-          test "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse HEAD)"
+          export_dir="$RUNNER_TEMP/b02ck-export"
+          mkdir -p "$export_dir/docs" "$export_dir/reports/generated" "$export_dir/.github/workflows"
+          cp "$MATRIX_MD" "$export_dir/docs/DOMAIN-COMPLETION-MATRIX.md"
+          cp "$MATRIX_REPORT" "$export_dir/reports/generated/domain-completion-matrix-report.json"
+          cp "$PERMANENT_WORKFLOW" "$export_dir/.github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml"
+          {
+            printf 'TEMP_V2_HEAD=%s\n' "$(git rev-parse HEAD)"
+            printf 'PREDECESSOR_HEAD=%s\n' "$PREDECESSOR_HEAD"
+            printf 'MATRIX_SOURCE_BLOB=%s\n' "$(git hash-object "$MATRIX_SOURCE")"
+            printf 'TARGET_BLOB=%s\n' "$(git hash-object "$TARGET")"
+            printf 'CONFIG_BLOB=%s\n' "$(git hash-object "$CONFIG")"
+            printf 'TEST_BLOB=%s\n' "$(git hash-object "$TEST")"
+            printf 'MARKDOWN_BLOB=%s\n' "$(git hash-object "$MATRIX_MD")"
+            printf 'REPORT_BLOB=%s\n' "$(git hash-object "$MATRIX_REPORT")"
+            printf 'PERMANENT_WORKFLOW_BLOB=%s\n' "$(git hash-object "$PERMANENT_WORKFLOW")"
+            printf 'EXPECTED_PREDECESSOR_DISTANCE=4\n'
+          } > "$export_dir/manifest.txt"
+          cat "$export_dir/manifest.txt"
 
-          parent="$(git rev-parse HEAD)"
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'docs(com): materialize B02CK matrix derivatives'
-
-          commit="$(git rev-parse HEAD)"
-          tree="$(git rev-parse HEAD^{tree})"
-          md_blob="$(git rev-parse HEAD:$MATRIX_MD)"
-          report_blob="$(git rev-parse HEAD:$MATRIX_REPORT)"
-          permanent_blob="$(git rev-parse HEAD:$PERMANENT_WORKFLOW)"
-          tag="temp-com-b02ck-prepared-${GITHUB_RUN_ID}"
-
-          test "$(git rev-parse HEAD^)" = "$parent"
-          git tag "$tag" "$commit"
-          git push origin "refs/tags/$tag:refs/tags/$tag"
-
-          test "$(git rev-parse HEAD^)" = "$parent"
-          printf 'PREPARED_COMMIT_SHA=%s\n' "$commit"
-          printf 'PREPARED_TREE_SHA=%s\n' "$tree"
-          printf 'MARKDOWN_BLOB_SHA=%s\n' "$md_blob"
-          printf 'REPORT_BLOB_SHA=%s\n' "$report_blob"
-          printf 'PERMANENT_WORKFLOW_BLOB_SHA=%s\n' "$permanent_blob"
-          printf 'TEMP_EXPORT_TAG=%s\n' "$tag"
+      - name: Upload exact B02CK recovery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02ck-matrix-materialized
+          path: ${{ runner.temp }}/b02ck-export
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
