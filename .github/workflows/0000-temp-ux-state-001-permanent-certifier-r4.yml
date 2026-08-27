@@ -1,0 +1,253 @@
+name: TEMP UX-STATE-001 Permanent Certifier R4
+
+on:
+  push:
+    branches:
+      - diag/ux-state-001-permanent-certifier-r4
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT: 84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+      PARENT_TREE: 9c2545f50d34ebf81e3976fb5c421e6f5f616b32
+      PERM: bac1f3578166b0db96b6f70ca742e17fd1980c71
+      PERM_TREE: bc485516a725749eeb6decd0699b7ac78519ada0
+      TARGET: assets/js/pages/comunidade.js
+      CANDIDATE_BLOB: 32f472683cf33986f2b6b7802ba384de9fc25b3f
+      CANDIDATE_SHA256: 816bc9acf0530dadfb01fd5011251f0cf4474696aaf1c6e918171c8c489a59fb
+      CANDIDATE_BYTES: '98844'
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-state-001-permanent-certifier-r4.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Verify exact permanent identity and lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          CERT_HEAD="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$CERT_HEAD" | awk '{print $2}')" = "$PERM"
+          test "$(git diff-tree --no-commit-id --name-only -r "$CERT_HEAD")" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PERM^{tree}")" = "$PERM_TREE"
+          test "$(git rev-list --parents -n1 "$PERM" | awk '{print $2}')" = "$PARENT"
+          test "$(git merge-base "$PARENT" "$PERM")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT..$PERM")" = 1
+          test "$(git diff --name-only "$PARENT" "$PERM")" = "$TARGET"
+          test "$(git diff --numstat "$PARENT" "$PERM" | awk '{print $1" "$2" "$3}')" = "1 1 $TARGET"
+          test "$(git rev-parse "$PERM:$TARGET")" = "$CANDIDATE_BLOB"
+          git show "$PERM:$TARGET" >/tmp/permanent-target.js
+          test "$(sha256sum /tmp/permanent-target.js | awk '{print $1}')" = "$CANDIDATE_SHA256"
+          test "$(wc -c < /tmp/permanent-target.js | tr -d ' ')" = "$CANDIDATE_BYTES"
+          echo PERMANENT_IDENTITY=PASS
+          echo LINEAGE=PASS
+
+      - name: Compare canonical 131-140 baseline reports and command outcomes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT" >/dev/null
+          npm ci --ignore-scripts
+
+          collect_lane() {
+            label="$1"
+            ref="$2"
+            git reset --hard "$ref" >/dev/null
+            git clean -fd >/dev/null
+            : > "/tmp/${label}-rc.tsv"
+            for cmd in \
+              audit:critical-state-runtime-api \
+              audit:critical-state-contracts \
+              audit:critical-action-state-contracts \
+              audit:main-marketplace-state-contracts \
+              audit:main-support-state-contracts \
+              audit:main-action-state-contracts \
+              audit:main-state-runtime-coverage \
+              audit:global-state-completion-gate
+            do
+              set +e
+              npm run "$cmd" >"/tmp/${label}-${cmd//:/-}.log" 2>&1
+              rc=$?
+              set -e
+              printf '%s\t%s\n' "$cmd" "$rc" >> "/tmp/${label}-rc.tsv"
+            done
+            node - "$label" <<'NODE'
+          const fs=require('fs');
+          const label=process.argv[2];
+          const files=[
+            'docs/validation/global-cycle-131-135-critical-state-contracts-report.json',
+            'docs/validation/global-cycle-136-main-marketplace-state-contracts-report.json',
+            'docs/validation/global-cycle-137-main-support-state-contracts-report.json',
+            'docs/validation/global-cycle-138-main-action-state-contracts-report.json',
+            'docs/validation/global-cycle-139-main-state-runtime-coverage-report.json',
+            'docs/validation/global-cycle-140-global-state-completion-gate-report.json'
+          ];
+          const clean=v=>{
+            if(Array.isArray(v)) return v.map(clean);
+            if(v&&typeof v==='object'){
+              const o={};
+              for(const k of Object.keys(v).sort()){
+                if(['generatedAt','timestamp','updatedAt','createdAt'].includes(k)) continue;
+                o[k]=clean(v[k]);
+              }
+              return o;
+            }
+            return v;
+          };
+          const out={};
+          for(const f of files){
+            if(!fs.existsSync(f)) throw new Error(`required report missing: ${f}`);
+            out[f]=clean(JSON.parse(fs.readFileSync(f,'utf8')));
+          }
+          fs.writeFileSync(`/tmp/${label}-reports.json`,JSON.stringify(out,null,2)+'\n');
+          console.log(`${label.toUpperCase()}_REPORT_STATUS=`+JSON.stringify(Object.fromEntries(Object.entries(out).map(([f,j])=>[f,j.status??null]))));
+          NODE
+          }
+
+          collect_lane parent "$PARENT"
+          collect_lane permanent "$PERM"
+          echo PARENT_RC_VECTOR; cat /tmp/parent-rc.tsv
+          echo PERMANENT_RC_VECTOR; cat /tmp/permanent-rc.tsv
+          diff -u /tmp/parent-rc.tsv /tmp/permanent-rc.tsv
+          diff -u /tmp/parent-reports.json /tmp/permanent-reports.json
+          echo STATIC_BASELINE_PARITY=PASS
+
+      - name: Verify qualified public-state semantics and focused inherited parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PERM" >/dev/null
+          git clean -fd >/dev/null
+          node --check "$TARGET"
+          git diff --check "$PARENT" "$PERM"
+          node <<'NODE'
+          const fs=require('fs');
+          const s=fs.readFileSync(process.env.TARGET,'utf8');
+          const contract=fs.readFileSync('assets/js/state/state-contracts.js','utf8');
+          const required=[
+            "page.dataset.viewState = nextState === 'hydrated' ? 'ready' : nextState;",
+            'page.dataset.state = nextState;',
+            'document.body.dataset.dataState = nextState;',
+            "page.setAttribute('aria-busy', String(nextState === 'loading'));",
+            "setCommunityPageState('hydrated');",
+            "page.dataset.communityHydrated = 'true'"
+          ];
+          for(const token of required) if(!s.includes(token)) throw new Error(`missing:${token}`);
+          if(s.includes('page.dataset.viewState = nextState;')) throw new Error('legacy-public-view-state-writer-remains');
+          if(!/READY\s*:\s*['\"]ready['\"]/.test(contract)) throw new Error('canonical READY missing');
+          if(/HYDRATED\s*:\s*['\"]hydrated['\"]/.test(contract)) throw new Error('hydrated unexpectedly added to canonical vocabulary');
+          console.log('PUBLIC_STATE_SEMANTIC=PASS');
+          NODE
+
+          focused_lane() {
+            label="$1"
+            ref="$2"
+            git reset --hard "$ref" >/dev/null
+            git clean -fd >/dev/null
+            set +e
+            node scripts/test-community-hydration-transition-contract.js >"/tmp/${label}-legacy.log" 2>&1
+            legacy=$?
+            node scripts/test-first-paint-loading-contract.js >"/tmp/${label}-first.log" 2>&1
+            first=$?
+            npm run audit:main-state-runtime-coverage >"/tmp/${label}-runtime.log" 2>&1
+            runtime=$?
+            set -e
+            printf '%s\t%s\t%s\n' "$legacy" "$first" "$runtime" >"/tmp/${label}-focused.rc"
+            grep -E 'Error:|PASS|FAIL' "/tmp/${label}-legacy.log" | sed -E 's#^.*Error: #Error: #' | tail -n 20 >"/tmp/${label}-legacy.norm" || true
+            node - "$label" <<'NODE'
+          const fs=require('fs');
+          const label=process.argv[2];
+          const j=JSON.parse(fs.readFileSync('docs/validation/global-cycle-139-main-state-runtime-coverage-report.json','utf8'));
+          const out={status:j.status??null,totalPages:j.totalPages??null,passedPages:j.passedPages??null,failedPages:j.failedPages??null,pages:Array.isArray(j.pages)?j.pages.map(p=>({file:p.file??null,status:p.status??null,missing:p.missing??null})):null};
+          fs.writeFileSync(`/tmp/${label}-runtime-summary.json`,JSON.stringify(out,null,2)+'\n');
+          NODE
+          }
+          focused_lane parent "$PARENT"
+          focused_lane permanent "$PERM"
+          grep -F 'Error: comunidade-interna.html must include room skeleton' /tmp/parent-legacy.log >/dev/null
+          diff -u /tmp/parent-focused.rc /tmp/permanent-focused.rc
+          diff -u /tmp/parent-legacy.norm /tmp/permanent-legacy.norm
+          diff -u /tmp/parent-runtime-summary.json /tmp/permanent-runtime-summary.json
+          echo FOCUSED_INHERITED_PARITY=PASS
+          echo INTRODUCED_REGRESSIONS_STATIC=0
+
+      - name: Fresh browser parity at 390 760 761 and 1440
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$PERM" >/dev/null
+          git clean -fd >/dev/null
+          node node_modules/@playwright/test/cli.js install chromium
+          git worktree add --detach /tmp/ux-state-parent "$PARENT" >/dev/null
+          git worktree add --detach /tmp/ux-state-permanent "$PERM" >/dev/null
+          (cd /tmp/ux-state-parent && python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/parent-server.log 2>&1 & echo $! >/tmp/parent-server.pid)
+          (cd /tmp/ux-state-permanent && python3 -m http.server 4174 --bind 127.0.0.1 >/tmp/permanent-server.log 2>&1 & echo $! >/tmp/permanent-server.pid)
+          trap 'kill $(cat /tmp/parent-server.pid 2>/dev/null) $(cat /tmp/permanent-server.pid 2>/dev/null) 2>/dev/null || true' EXIT
+          for p in 4173 4174; do
+            ok=0
+            for i in $(seq 1 30); do
+              if curl -fsS "http://127.0.0.1:$p/comunidade.html" >/dev/null; then ok=1; break; fi
+              sleep 1
+            done
+            test "$ok" = 1
+          done
+          cat >/tmp/ux-state-browser-r4.cjs <<'NODE'
+          const crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const stable=s=>String(s||'').replace(/\s+/g,' ').trim();
+          async function capture(browser,label,port,width){
+            const context=await browser.newContext({viewport:{width,height:1000},deviceScaleFactor:1,colorScheme:'light',reducedMotion:'reduce'});
+            const page=await context.newPage();
+            const pageErrors=[],consoleErrors=[];
+            page.on('pageerror',e=>pageErrors.push(String(e.message||e)));
+            page.on('console',m=>{if(m.type()==='error') consoleErrors.push(m.text())});
+            const response=await page.goto(`http://127.0.0.1:${port}/comunidade.html`,{waitUntil:'domcontentloaded',timeout:30000});
+            if(!response?.ok()) throw new Error(`${label}/${width} navigation ${response?.status()}`);
+            await page.waitForFunction(()=>document.querySelector('[data-communities-page]')?.dataset.communityHydrated==='true',null,{timeout:20000});
+            await page.waitForTimeout(1800);
+            await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'});
+            await page.waitForTimeout(150);
+            const meta=await page.evaluate(()=>{
+              const root=document.querySelector('[data-communities-page]'),body=document.body;
+              const buttons=[...document.querySelectorAll('main button:not([hidden])')].filter(x=>getComputedStyle(x).display!=='none');
+              return {url:location.pathname,title:document.title,viewState:root?.dataset.viewState??null,state:root?.dataset.state??null,experienceState:root?.dataset.experienceState??null,pageHydration:root?.dataset.pageHydration??null,bodyDataState:body?.dataset.dataState??null,communityHydrated:root?.dataset.communityHydrated??null,ariaBusy:root?.getAttribute('aria-busy'),sectionCount:document.querySelectorAll('main section').length,visibleButtonCount:buttons.length,bodyClass:body.className,mainText:(document.querySelector('main')?.innerText||'').replace(/\s+/g,' ').trim()};
+            });
+            meta.mainTextHash=sha(Buffer.from(stable(meta.mainText))); delete meta.mainText;
+            const png=await page.screenshot({fullPage:true,animations:'disabled'});
+            await context.close();
+            return {meta,pageErrors,consoleErrors,screenshotSha256:sha(png),screenshotBytes:png.length};
+          }
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const rows=[];
+            try{
+              for(const width of [390,760,761,1440]){
+                const parent=await capture(browser,'parent',4173,width);
+                const permanent=await capture(browser,'permanent',4174,width);
+                if(parent.meta.viewState!=='idle') throw new Error(`parent/${width} expected idle got ${parent.meta.viewState}`);
+                if(permanent.meta.viewState!=='ready') throw new Error(`permanent/${width} expected ready got ${permanent.meta.viewState}`);
+                for(const [label,x] of [['parent',parent],['permanent',permanent]]){
+                  if(x.meta.state!=='hydrated'||x.meta.bodyDataState!=='hydrated'||x.meta.communityHydrated!=='true'||x.meta.ariaBusy!=='false') throw new Error(`${label}/${width} hydration mismatch ${JSON.stringify(x.meta)}`);
+                  if(x.meta.experienceState!==null||x.meta.pageHydration!==null) throw new Error(`${label}/${width} unexpected secondary state owner`);
+                  if(x.pageErrors.length) throw new Error(`${label}/${width} pageErrors ${JSON.stringify(x.pageErrors)}`);
+                }
+                const normalize=m=>{const x={...m};delete x.viewState;return x};
+                if(JSON.stringify(normalize(parent.meta))!==JSON.stringify(normalize(permanent.meta))) throw new Error(`metadata delta/${width}`);
+                if(JSON.stringify(parent.consoleErrors)!==JSON.stringify(permanent.consoleErrors)) throw new Error(`console delta/${width}`);
+                if(parent.screenshotSha256!==permanent.screenshotSha256||parent.screenshotBytes!==permanent.screenshotBytes) throw new Error(`screenshot delta/${width}`);
+                rows.push({width,parentViewState:'idle',permanentViewState:'ready',metadataParityExceptViewState:true,screenshotParity:true,pageErrors:0,consoleParity:true,screenshotSha256:parent.screenshotSha256,screenshotBytes:parent.screenshotBytes});
+              }
+              console.log('PERMANENT_BROWSER='+JSON.stringify({result:'PASS',states:rows.length,rows,criteriaRelaxed:0,repositoryOnly:true}));
+            }finally{await browser.close()}
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node /tmp/ux-state-browser-r4.cjs
+          echo INTRODUCED_REGRESSIONS=0
+          echo CRITERIA_RELAXED=0
+          echo PERMANENT_CERTIFICATION=PASS
