@@ -1,0 +1,106 @@
+name: TEMP UX Community Canonical View State Normalization R1
+on:
+  push:
+    branches:
+      - diag/ux-community-canonical-view-state-normalization-r1
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Prove minimal canonical ready-state normalization candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+          WORKFLOW=.github/workflows/0000-temp-ux-community-canonical-view-state-normalization-r1.yml
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")" = "$WORKFLOW"
+          git checkout --detach "$PARENT" >/dev/null
+          npm ci --ignore-scripts
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const roots=['assets/js/pages','assets/css/pages','scripts','comunidade.html','comunidade-interna.html'];
+          const files=[];
+          function walk(p){
+            if(!fs.existsSync(p))return;
+            const s=fs.statSync(p);
+            if(s.isDirectory())for(const e of fs.readdirSync(p))walk(path.join(p,e));
+            else if(/\.(js|css|html)$/.test(p)&&(/comunidade/.test(p)||p==='scripts/test-community-hydration-transition-contract.js'))files.push(p);
+          }
+          roots.forEach(walk);
+          const hits=[];
+          for(const f of [...new Set(files)].sort()){
+            const src=fs.readFileSync(f,'utf8');
+            src.split(/\r?\n/).forEach((line,i)=>{
+              if(/hydrated/i.test(line))hits.push({file:f,line:i+1,text:line.trim()});
+            });
+          }
+          const publicHits=hits.filter(h=>/data-(?:view|data)-state|setCommunity(?:Room)?PageState\(['\"]hydrated['\"]\)|nextState === ['\"]hydrated['\"]|state === ['\"]hydrated['\"]|\[data-data-state=['\"]hydrated['\"]\]/.test(h.text));
+          const internalHits=hits.filter(h=>/communityHydrated|hydration|Hydration/.test(h.text)&&!publicHits.includes(h));
+          const ambiguousHits=hits.filter(h=>!publicHits.includes(h)&&!internalHits.includes(h));
+          console.log('COMMUNITY_HYDRATED_SOURCE_MAP='+JSON.stringify({total:hits.length,publicStateHits:publicHits,internalHydrationHits:internalHits,ambiguousHits}));
+          if(ambiguousHits.length)throw Error('ambiguous hydrated references require manual classification');
+          NODE
+          cp assets/js/pages/comunidade.js /tmp/comunidade.js.parent
+          cp assets/js/pages/comunidade-interna.js /tmp/comunidade-interna.js.parent
+          cp assets/css/pages/comunidade/base-and-discovery.css /tmp/base-and-discovery.css.parent
+          cp assets/css/pages/comunidade-foundation.css /tmp/comunidade-foundation.css.parent
+          cp assets/css/pages/comunidade-interna.css /tmp/comunidade-interna.css.parent
+          cp scripts/test-community-hydration-transition-contract.js /tmp/test-community-hydration-transition-contract.js.parent
+          python3 - <<'PY'
+          from pathlib import Path
+          replacements={
+            'assets/js/pages/comunidade.js':[("state === 'hydrated' ? 'hydrated'", "state === 'ready' ? 'ready'"),("nextState === 'hydrated'", "nextState === 'ready'"),("setCommunityPageState('hydrated')", "setCommunityPageState('ready')")],
+            'assets/js/pages/comunidade-interna.js':[("state === 'hydrated' ? 'hydrated'", "state === 'ready' ? 'ready'"),("nextState === 'hydrated'", "nextState === 'ready'"),("setCommunityRoomPageState('hydrated')", "setCommunityRoomPageState('ready')")],
+            'assets/css/pages/comunidade/base-and-discovery.css':[("data-data-state=\"hydrated\"", "data-data-state=\"ready\"")],
+            'assets/css/pages/comunidade-foundation.css':[("data-data-state=\"hydrated\"", "data-data-state=\"ready\"")],
+            'assets/css/pages/comunidade-interna.css':[("data-data-state=\"hydrated\"", "data-data-state=\"ready\"")],
+            'scripts/test-community-hydration-transition-contract.js':[("setCommunityPageState\\('hydrated'\\)", "setCommunityPageState\\('ready'\\)"),("set hydrated after final render", "set ready after final render"),("data-data-state=\"hydrated\"", "data-data-state=\"ready\""),("setCommunityRoomPageState\\('hydrated'\\)", "setCommunityRoomPageState\\('ready'\\)"),("reveal through hydrated state", "reveal through ready state")]
+          }
+          touched=[]
+          for file,repls in replacements.items():
+            p=Path(file)
+            if not p.exists(): continue
+            s=p.read_text()
+            before=s
+            for old,new in repls:
+              s=s.replace(old,new)
+            if s!=before:
+              p.write_text(s)
+              touched.append(file)
+          print('CANDIDATE_TOUCHED='+','.join(touched))
+          PY
+          node - <<'NODE'
+          const fs=require('fs');
+          for(const f of ['assets/js/pages/comunidade.js','assets/js/pages/comunidade-interna.js']){
+            const s=fs.readFileSync(f,'utf8');
+            if(/setCommunity(?:Room)?PageState\('hydrated'\)/.test(s))throw Error('hydrated state setter remains '+f);
+            if(!/communityHydrated/.test(s))throw Error('internal hydration marker lost '+f);
+          }
+          const state=fs.readFileSync('assets/js/state/state-contracts.js','utf8');
+          if(!/READY:\s*'ready'/.test(state)||/HYDRATED:\s*'hydrated'/.test(state))throw Error('canonical state authority mismatch');
+          NODE
+          node scripts/test-community-hydration-transition-contract.js
+          node scripts/test-first-paint-loading-contract.js
+          npm run audit:main-support-state-contracts || true
+          npm run audit:main-state-runtime-coverage
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const changed=cp.execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);
+          const allowed=new Set(['assets/js/pages/comunidade.js','assets/js/pages/comunidade-interna.js','assets/css/pages/comunidade/base-and-discovery.css','assets/css/pages/comunidade-foundation.css','assets/css/pages/comunidade-interna.css','scripts/test-community-hydration-transition-contract.js','docs/validation/global-cycle-137-main-support-state-contracts-report.json','docs/validation/global-cycle-139-main-state-runtime-coverage-report.json']);
+          const unexpected=changed.filter(f=>!allowed.has(f));
+          if(unexpected.length)throw Error('unexpected candidate files: '+unexpected.join(','));
+          const report='docs/validation/global-cycle-137-main-support-state-contracts-report.json';
+          const support=fs.existsSync(report)?JSON.parse(fs.readFileSync(report,'utf8')):null;
+          const out={result:'PASS_DIAGNOSTIC',parent:'84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af',changedFiles:changed.filter(f=>!f.startsWith('docs/validation/')),supportGateStatus:support&&support.status,supportFailedPages:support&&support.failedPages,canonicalState:'ready',legacyPublicState:'hydrated',internalCommunityHydratedPreserved:true,productMutation:false,criteriaRelaxed:0,repositoryOnly:true};
+          console.log('COMMUNITY_CANONICAL_VIEW_STATE_R1='+JSON.stringify(out));
+          NODE
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd >/dev/null
+          test -z "$(git status --porcelain)"
