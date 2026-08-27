@@ -1,0 +1,60 @@
+name: TEMP Post UX-CSS-IMPORTANT Debt Program Discovery
+on:
+  push:
+    branches:
+      - diag/post-ux-css-important-debt-program-discovery
+permissions:
+  contents: read
+jobs:
+  discovery:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Inventory post-053 technical debt without product mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af
+          TREE=9c2545f50d34ebf81e3976fb5c421e6f5f616b32
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$TREE"
+          test "$(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")" = ".github/workflows/0000-temp-post-ux-css-important-debt-program-discovery.yml"
+          git checkout --detach "$PARENT" >/dev/null
+          node scripts/audit-css-responsive-conflicts.js > /tmp/css-conflicts.log
+          cat /tmp/css-conflicts.log
+          node <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('reports/css-responsive-conflicts-report.json','utf8'));
+          const topClasses=[...r.byClass].sort((a,b)=>b.conflicts-a.conflicts).slice(0,13).map(x=>({class:x.class,conflicts:x.conflicts,definitions:x.definitions,files:x.files.length,canonicalFile:x.canonicalFile}));
+          const candidateSites=[];
+          for(const c of r.conflicts){
+            for(const x of c.removableOrNeutralizable||[]) candidateSites.push({class:c.class,property:c.property,file:x.file,line:x.line,recommendation:x.recommendation});
+          }
+          const byFile={}; for(const x of candidateSites) byFile[x.file]=(byFile[x.file]||0)+1;
+          const topCandidateFiles=Object.entries(byFile).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,20).map(([file,sites])=>({file,sites}));
+          const out={
+            result:'PASS',
+            checkpointBoundary:'post-UX-CSS-IMPORTANT-053',
+            parent:'84dc170e5bcf8b04aaf7eaba6f46c1ae67b730af',
+            parentTree:'9c2545f50d34ebf81e3976fb5c421e6f5f616b32',
+            scannedCssFiles:r.scannedCssFiles,
+            totalDefinitions:r.totalDefinitions,
+            conflictPairs:r.totalConflictingClassProperties,
+            topClasses,
+            candidateSiteCount:candidateSites.length,
+            topCandidateFiles,
+            classification:'INVENTORY_ONLY_NOT_A_PRODUCT_BOUNDARY',
+            canonicalNextLineage:null,
+            productMutation:false,
+            criteriaRelaxed:0,
+            repositoryOnly:true
+          };
+          console.log('POST_UX_CSS_IMPORTANT_DEBT_DISCOVERY='+JSON.stringify(out));
+          NODE
+          git reset --hard "$PARENT" >/dev/null
+          git clean -fd reports >/dev/null || true
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test -z "$(git status --porcelain)"
