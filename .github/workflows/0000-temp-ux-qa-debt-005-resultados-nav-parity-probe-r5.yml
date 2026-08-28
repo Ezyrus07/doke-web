@@ -1,0 +1,277 @@
+name: TEMP UX-QA-DEBT-005 Resultados Nav Parity Probe R5
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-resultados-nav-parity-probe-r5
+
+permissions:
+  contents: read
+
+env:
+  PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+  PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+  WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-resultados-nav-parity-probe-r5.yml
+  CANDIDATE_BRANCH: diag/ux-qa-debt-005-resultados-win32-baseline-candidate
+  DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and prove read-only diagnostic scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          if git ls-remote --exit-code --heads origin "refs/heads/$CANDIDATE_BRANCH" >/dev/null 2>&1; then
+            echo "Candidate branch exists unexpectedly" >&2
+            exit 1
+          fi
+          echo LINEAGE=PASS
+          echo DIAGNOSTIC_SCOPE=PASS
+          echo CANDIDATE_ABSENT=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Prepare exact parent browser worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent_dir="$RUNNER_TEMP/qa005-parent-r5"
+          git worktree add --detach "$parent_dir" "$PARENT" >/dev/null
+          cd "$parent_dir"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          test -f node_modules/@playwright/test/cli.js
+          test -z "$(git status --porcelain)"
+          echo PARENT_WORKTREE=PASS
+
+      - name: Probe direct versus stable-shell navigation without early assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-r5"
+          node <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const { spawn } = require('child_process');
+          const http = require('http');
+
+          const server = spawn(process.execPath, ['scripts/serve-static-site.js', '--host=127.0.0.1', '--port=5500'], {
+            env: { ...process.env, DOKE_E2E_DISABLE_REMOTE_SERVICES: '1' },
+            stdio: ['ignore', 'pipe', 'pipe']
+          });
+
+          const waitForServer = () => new Promise((resolve, reject) => {
+            let attempts = 0;
+            const probe = () => {
+              attempts += 1;
+              const req = http.get('http://127.0.0.1:5500/index.html', (res) => {
+                res.resume();
+                if (res.statusCode === 200) return resolve();
+                if (attempts > 60) return reject(new Error(`server status ${res.statusCode}`));
+                setTimeout(probe, 250);
+              });
+              req.on('error', () => attempts > 60 ? reject(new Error('static server unavailable')) : setTimeout(probe, 250));
+            };
+            probe();
+          });
+
+          const routeExternal = async (page) => {
+            await page.route('https://unpkg.com/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ contentType: 'text/css', body: '' }));
+            await page.route('https://fonts.gstatic.com/**', (route) => route.abort());
+          };
+
+          const session = {
+            provider: 'mock',
+            sessionStatus: 'active',
+            accountStatus: 'active',
+            user: { id: 'qa005-client', role: 'client', name: 'QA005', email: 'qa005@example.test', accountStatus: 'active' }
+          };
+
+          const installSession = (page) => page.addInitScript((value) => {
+            localStorage.setItem('doke.auth.session.v1', JSON.stringify(value));
+          }, session);
+
+          const stabilize = async (page) => {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.addStyleTag({ content: '*,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important;transition-delay:0s!important;caret-color:transparent!important}' });
+            await page.waitForTimeout(650);
+          };
+
+          const signature = (page, label) => page.evaluate((probeLabel) => {
+            const round = (n) => Math.round(Number(n || 0) * 10) / 10;
+            const rect = (el) => {
+              if (!el) return null;
+              const r = el.getBoundingClientRect();
+              return { left: round(r.left), top: round(r.top), right: round(r.right), bottom: round(r.bottom), width: round(r.width), height: round(r.height) };
+            };
+            const style = (el, props) => {
+              if (!el) return null;
+              const s = getComputedStyle(el);
+              return Object.fromEntries(props.map((p) => [p, s[p]]));
+            };
+            const describe = (selector, props = []) => {
+              const el = document.querySelector(selector);
+              if (!el) return null;
+              return {
+                selector,
+                tag: el.tagName,
+                id: el.id || '',
+                className: typeof el.className === 'string' ? el.className : '',
+                hidden: Boolean(el.hidden),
+                attributes: Object.fromEntries(Array.from(el.attributes).filter((a) => /^data-|^(role|aria-|style)/.test(a.name)).map((a) => [a.name, a.value])),
+                rect: rect(el),
+                style: style(el, props)
+              };
+            };
+            const cssVars = {};
+            const root = getComputedStyle(document.documentElement);
+            for (const name of ['--doke-header-rail','--doke-current-page-rail','--doke-page-rail','--doke-shared-page-width','--doke-current-sidebar-width','--sidebar-width','--doke-desktop-sidebar-width','--doke-app-sidebar-width']) {
+              cssVars[name] = root.getPropertyValue(name).trim();
+            }
+            const sheets = Array.from(document.styleSheets).map((sheet) => {
+              try { return sheet.href ? new URL(sheet.href).pathname : 'inline'; } catch { return sheet.href || 'inline'; }
+            });
+            const outer = document.querySelector('[data-app-header]');
+            const inner = document.querySelector('[data-app-header] .app-header__inner');
+            return {
+              label: probeLabel,
+              url: location.href,
+              pathname: location.pathname,
+              scrollX: round(window.scrollX),
+              scrollY: round(window.scrollY),
+              viewport: { width: innerWidth, height: innerHeight },
+              bodyDataPage: document.body?.dataset.page || '',
+              bodyClass: document.body?.className || '',
+              htmlClass: document.documentElement.className || '',
+              bodyStyle: style(document.body, ['marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft','overflowX','overflowY']),
+              htmlStyle: style(document.documentElement, ['marginTop','paddingTop','overflowX','overflowY']),
+              cssVars,
+              headerOuter: describe('[data-app-header]', ['display','position','top','marginTop','marginBottom','paddingTop','paddingBottom','transform','height','minHeight','maxHeight','alignItems']),
+              headerInner: describe('[data-app-header] .app-header__inner', ['display','position','top','marginTop','marginBottom','paddingTop','paddingRight','paddingBottom','paddingLeft','transform','height','minHeight','maxHeight','alignItems','gridTemplateColumns','gap']),
+              page: describe('.page', ['display','position','top','marginTop','paddingTop','transform']),
+              pageContent: describe('.page__content', ['display','position','top','marginTop','paddingTop','transform']),
+              pageContentInner: describe('.page__content-inner', ['display','position','top','marginTop','paddingTop','paddingLeft','paddingRight','transform','maxWidth','width']),
+              workspace: describe('.search-results-workspace', ['display','position','top','marginTop','paddingTop','paddingLeft','paddingRight','transform','maxWidth','width','gridTemplateColumns','gap']),
+              searchbar: describe('.results-searchbar', ['display','position','top','marginTop','paddingTop','paddingLeft','paddingRight','transform','maxWidth','width']),
+              layout: describe('.results-layout', ['display','position','top','marginTop','paddingTop','paddingLeft','paddingRight','transform','maxWidth','width','gridTemplateColumns','gap']),
+              headerText: outer ? outer.innerText.replace(/\s+/g, ' ').trim().slice(0, 500) : '',
+              headerInnerText: inner ? inner.innerText.replace(/\s+/g, ' ').trim().slice(0, 500) : '',
+              stylesheetCount: sheets.length,
+              relevantStylesheets: sheets.filter((p) => /header|shell|rail|result|search|workspace|responsive|layout/i.test(p)),
+              overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+              scrollWidth: document.documentElement.scrollWidth,
+              clientWidth: document.documentElement.clientWidth,
+              adapter: document.body?.dataset.dokeNavigationAdapter || ''
+            };
+          }, label);
+
+          const delta = (direct, nav) => {
+            const get = (obj, path) => path.split('.').reduce((v, k) => v == null ? undefined : v[k], obj);
+            const paths = [
+              'scrollX','scrollY','bodyDataPage','bodyClass','htmlClass','adapter','overflow','scrollWidth','clientWidth',
+              'headerOuter.rect.top','headerOuter.rect.left','headerOuter.rect.width','headerOuter.rect.height',
+              'headerOuter.style.position','headerOuter.style.top','headerOuter.style.marginTop','headerOuter.style.paddingTop','headerOuter.style.transform',
+              'headerInner.rect.top','headerInner.rect.left','headerInner.rect.width','headerInner.rect.height',
+              'headerInner.style.position','headerInner.style.top','headerInner.style.marginTop','headerInner.style.paddingTop','headerInner.style.transform',
+              'page.rect.top','page.rect.left','page.rect.width',
+              'pageContent.rect.top','pageContent.rect.left','pageContent.rect.width',
+              'pageContentInner.rect.top','pageContentInner.rect.left','pageContentInner.rect.width',
+              'workspace.rect.top','workspace.rect.left','workspace.rect.width','workspace.rect.height',
+              'searchbar.rect.top','searchbar.rect.left','searchbar.rect.width','searchbar.rect.height',
+              'layout.rect.top','layout.rect.left','layout.rect.width','layout.rect.height',
+              'cssVars.--doke-header-rail','cssVars.--doke-current-page-rail','cssVars.--doke-page-rail','cssVars.--doke-shared-page-width','cssVars.--doke-current-sidebar-width'
+            ];
+            return paths.map((path) => ({ path, direct: get(direct, path), nav: get(nav, path) })).filter((row) => JSON.stringify(row.direct) !== JSON.stringify(row.nav));
+          };
+
+          (async () => {
+            let browser;
+            try {
+              await waitForServer();
+              browser = await chromium.launch();
+              const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+
+              const direct = await context.newPage();
+              const directErrors = [];
+              direct.on('pageerror', (e) => directErrors.push(String(e)));
+              await routeExternal(direct);
+              await installSession(direct);
+              await direct.goto('http://127.0.0.1:5500/resultados.html');
+              await stabilize(direct);
+              const directSig = await signature(direct, 'direct-resultados');
+
+              const nav = await context.newPage();
+              const navErrors = [];
+              nav.on('pageerror', (e) => navErrors.push(String(e)));
+              await routeExternal(nav);
+              await installSession(nav);
+              await nav.goto('http://127.0.0.1:5500/index.html');
+              await stabilize(nav);
+              await nav.waitForFunction(() => typeof window.DokeNavigate === 'function');
+              const initialHeader = await nav.evaluateHandle(() => document.querySelector('[data-app-header]'));
+              const indexSig = await signature(nav, 'index-before-nav');
+              await nav.evaluate(async () => {
+                const result = window.DokeNavigate('/resultados.html');
+                if (result && typeof result.then === 'function') await result;
+              });
+              await nav.waitForURL(/\/resultados\.html(?:$|[?#])/);
+              await stabilize(nav);
+              const navSig = await signature(nav, 'nav-resultados');
+              const headerPreserved = await nav.evaluate((node) => node === document.querySelector('[data-app-header]'), initialHeader);
+
+              const output = {
+                direct: directSig,
+                indexBeforeNav: indexSig,
+                nav: navSig,
+                headerPreserved,
+                directPageErrors: directErrors,
+                navPageErrors: navErrors,
+                directVsNavDelta: delta(directSig, navSig),
+                indexVsNavHeaderDelta: delta(indexSig, navSig).filter((row) => row.path.startsWith('header') || row.path.startsWith('cssVars') || row.path === 'scrollY')
+              };
+              console.log(`PARITY_PROBE=${JSON.stringify(output)}`);
+              console.log(`HEADER_PRESERVED=${headerPreserved}`);
+              console.log(`DIRECT_NAV_DELTA_COUNT=${output.directVsNavDelta.length}`);
+              console.log(`DIRECT_PAGE_ERRORS=${directErrors.length}`);
+              console.log(`NAV_PAGE_ERRORS=${navErrors.length}`);
+              console.log('R5_PROBE=PASS');
+            } finally {
+              if (browser) await browser.close().catch(() => {});
+              server.kill();
+            }
+          })().catch((error) => {
+            console.error(error);
+            server.kill();
+            process.exit(1);
+          });
+          NODE
+
+      - name: Prove repository remained untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-r5"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --exit-code --heads origin "refs/heads/$CANDIDATE_BRANCH" >/dev/null 2>&1; then
+            echo "Candidate branch appeared during read-only probe" >&2
+            exit 1
+          fi
+          echo READ_ONLY_PROBE=PASS
+          echo CANDIDATE_ABSENT=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
