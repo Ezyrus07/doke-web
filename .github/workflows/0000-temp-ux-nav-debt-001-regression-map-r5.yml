@@ -1,0 +1,170 @@
+name: TEMP UX-NAV-DEBT-001 Regression Map R5
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-regression-map-r5
+
+permissions:
+  contents: read
+
+jobs:
+  map:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      EXPECTED_ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
+      EXPECTED_CANDIDATE_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      EXPECTED_PATCH_SHA256: 5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-regression-map-r5.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          echo "TEMP_HEAD=$H"
+          echo LINEAGE=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Re-materialize exact candidate and install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/nav001-parent-r5"
+          C="$RUNNER_TEMP/nav001-candidate-r5"
+          git worktree add --detach "$P" "$PARENT" >/dev/null
+          git worktree add --detach "$C" "$PARENT" >/dev/null
+          cd "$C"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/stable-shell-router.js')
+          s=p.read_text()
+          a1="  var CORE_SCRIPT_RE = /assets\\/js\\/core\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\.js(?:\\?.*)?$/i;\n"
+          i1="  var PERSISTENT_RUNTIME_STYLE_CAPABILITIES = new Set([\n    'card-experience-style',\n    'accessibility-experience-style',\n    'responsive-experience-style'\n  ]);\n\n"+a1
+          a2="  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    try {\n"
+          i2="  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    var runtimeCapability = link.getAttribute('data-doke-auth-capability') || '';\n    if (PERSISTENT_RUNTIME_STYLE_CAPABILITIES.has(runtimeCapability)) return false;\n    try {\n"
+          if s.count(a1)!=1 or s.count(a2)!=1: raise SystemExit('candidate anchor drift')
+          p.write_text(s.replace(a1,i1,1).replace(a2,i2,1))
+          PY
+          node --check assets/js/core/stable-shell-router.js
+          git diff --check
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          git add assets/js/core/stable-shell-router.js
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --cached --name-only "$PARENT" | wc -l)" -eq 1
+          test "$(git diff --cached --name-only "$PARENT")" = 'assets/js/core/stable-shell-router.js'
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          npm --prefix "$P" ci --ignore-scripts
+          npm --prefix "$C" ci --ignore-scripts
+          node "$C/node_modules/@playwright/test/cli.js" install --with-deps chromium
+          echo "PARENT_DIR=$P" >> "$GITHUB_ENV"
+          echo "CANDIDATE_DIR=$C" >> "$GITHUB_ENV"
+          echo CANDIDATE_CONTENT_IDENTITY=PASS
+          echo DEPENDENCIES=PASS
+
+      - name: Build complete parent-vs-candidate gate map
+        shell: bash
+        run: |
+          set -euo pipefail
+          cleanup_root() {
+            local root="$1"
+            git -C "$root" restore --worktree -- docs/validation reports/generated 2>/dev/null || true
+            git -C "$root" clean -fd -- test-results playwright-report reports/generated docs/validation >/dev/null 2>&1 || true
+          }
+          passes=0
+          inherited=0
+          regressions=0
+          divergent=0
+          inherited_names=""
+          pass_names=""
+          compare_gate() {
+            local name="$1" cmd="$2"
+            local po="$RUNNER_TEMP/${name}-parent.out" co="$RUNNER_TEMP/${name}-candidate.out"
+            set +e
+            (cd "$PARENT_DIR" && bash -lc "$cmd") >"$po" 2>&1
+            local prc=$?
+            cleanup_root "$PARENT_DIR"
+            (cd "$CANDIDATE_DIR" && bash -lc "$cmd") >"$co" 2>&1
+            local crc=$?
+            cleanup_root "$CANDIDATE_DIR"
+            set -e
+            local ph ch
+            ph="$(sha256sum "$po" | awk '{print $1}')"
+            ch="$(sha256sum "$co" | awk '{print $1}')"
+            echo "GATE[$name] parent=$prc candidate=$crc parentOutput=$ph candidateOutput=$ch"
+            if [ "$prc" -eq 0 ] && [ "$crc" -ne 0 ]; then
+              regressions=$((regressions+1))
+              echo "INTRODUCED_REGRESSION[$name]"
+              cat "$co"
+            elif [ "$prc" -ne 0 ] && [ "$crc" -ne 0 ]; then
+              if [ "$ph" != "$ch" ]; then
+                divergent=$((divergent+1))
+                echo "DIVERGENT_INHERITED_FAILURE[$name]"
+                echo '--- parent ---'; cat "$po"; echo '--- candidate ---'; cat "$co"
+              else
+                inherited=$((inherited+1))
+                inherited_names="${inherited_names}${inherited_names:+,}$name"
+                echo "INHERITED_IDENTICAL_FAILURE[$name]"
+                cat "$po"
+              fi
+            else
+              passes=$((passes+1))
+              pass_names="${pass_names}${pass_names:+,}$name"
+              echo "GATE_PASS[$name]"
+            fi
+          }
+
+          compare_gate legacy_shell_scroll "node scripts/audit-shell-router-scroll-reset.js"
+          compare_gate nav_lifecycle_audit "node scripts/audit-navigation-lifecycle-contract.js --strict"
+          compare_gate stable_shell_base "node scripts/test-stable-shell-project-base-contract.js"
+          compare_gate nav_lifecycle_core "node scripts/test-navigation-lifecycle-core-contract.js"
+          compare_gate nav_lifecycle_finalization "node scripts/test-navigation-lifecycle-finalization-contract.js"
+          compare_gate responsive_boundaries "npm run audit:responsive-boundaries"
+          compare_gate desktop_base "npm run audit:desktop-base"
+          compare_gate shared_header "npm run audit:shared-app-header-contract"
+          compare_gate router_scroll_browser "npm run test:router-scroll"
+          compare_gate layout_contract_browser "npm run test:layout-contract"
+
+          echo "GATE_MAP_PASSES=$passes"
+          echo "GATE_MAP_INHERITED_IDENTICAL=$inherited"
+          echo "GATE_MAP_INTRODUCED_REGRESSIONS=$regressions"
+          echo "GATE_MAP_DIVERGENT_FAILURES=$divergent"
+          echo "GATE_MAP_PASS_NAMES=$pass_names"
+          echo "GATE_MAP_INHERITED_NAMES=$inherited_names"
+          test "$regressions" -eq 0
+          test "$divergent" -eq 0
+          test "$((passes+inherited))" -eq 10
+          echo "PASSES=$passes" >> "$GITHUB_ENV"
+          echo "INHERITED=$inherited" >> "$GITHUB_ENV"
+          echo "INHERITED_NAMES=$inherited_names" >> "$GITHUB_ENV"
+          echo REGRESSION_MAP=PASS
+          echo INTRODUCED_REGRESSIONS=0
+
+      - name: Freeze R5 diagnostic receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          echo 'UX_NAV_DEBT_001_R5_REGRESSION_MAP={"result":"PASS","checkpoint":"UX-NAV-DEBT-001-R5","parent":"14bdb1af9cfefff4dfd27a78b937443975266001","candidateTree":"d982dc7c0c7cd9b227f1543a83243dc76de08b9a","routerBlob":"453d9f1bdd6bda9690692117e1f42c0719535c06","patchSha256":"5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca","gateCount":10,"passedGates":'"$PASSES"',"inheritedIdenticalGates":'"$INHERITED"',"inheritedGateNames":"'"$INHERITED_NAMES"'","criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"remoteProductMutation":false,"repositoryOnly":true}'
+          echo R5_DIAGNOSTIC=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
