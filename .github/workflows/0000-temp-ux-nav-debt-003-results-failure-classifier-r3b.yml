@@ -1,0 +1,90 @@
+name: TEMP UX-NAV-DEBT-003 Results Failure Classifier R3b
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-003-results-failure-classifier-r3b
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-ux-nav-debt-003-results-failure-classifier-r3b.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "R3B_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: npm ci
+
+      - name: Install Chromium
+        shell: pwsh
+        run: npx playwright install chromium
+
+      - name: Probe inherited Resultados failures on exact parent
+        id: probe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = Join-Path $env:RUNNER_TEMP 'ux-nav-debt-003-r3b-probe.cjs'
+          @'
+          const fs = require('fs');
+          const http = require('http');
+          const path = require('path');
+          const pw = require(require.resolve('@playwright/test', { paths: [process.cwd()] }));
+          const { chromium } = pw;
+          const root = process.cwd();
+          const mime = new Map([['.css','text/css; charset=utf-8'],['.html','text/html; charset=utf-8'],['.js','application/javascript; charset=utf-8'],['.json','application/json; charset=utf-8'],['.png','image/png'],['.jpg','image/jpeg'],['.jpeg','image/jpeg'],['.svg','image/svg+xml'],['.webp','image/webp'],['.woff2','font/woff2']]);
+          function createServer(){return new Promise(resolve=>{const s=http.createServer((req,res)=>{let p=decodeURIComponent((req.url||'/').split('?')[0]);if(p.startsWith('/doke-web/'))p=p.slice('/doke-web'.length);if(p==='/'||p==='')p='/index.html';const f=path.normalize(path.join(root,p));if(!f.startsWith(root)){res.writeHead(403);res.end('Forbidden');return;}fs.stat(f,(e,st)=>{if(e||!st.isFile()){res.writeHead(404);res.end('Not found');return;}res.writeHead(200,{'content-type':mime.get(path.extname(f).toLowerCase())||'application/octet-stream'});fs.createReadStream(f).pipe(res);});});s.listen(0,'127.0.0.1',()=>resolve(s));});}
+          async function mockExternal(c){await c.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));await c.route('https://fonts.gstatic.com/**',r=>r.abort());await c.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:'window.supabase={createClient(){return {}}};'}));await c.route('https://unpkg.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:'window.lucide={createIcons(){}};'}));}
+          async function waitTerminal(page){await page.waitForFunction(()=>['ready','empty','error'].includes(document.body.dataset.pageHydration||''),null,{timeout:30000});await page.waitForTimeout(250);}
+          async function snap(page){return page.evaluate(()=>{const vis=n=>{if(!n)return false;const s=getComputedStyle(n),r=n.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;};const inline=document.querySelector('[data-results-inline-empty]'),grid=document.querySelector('[data-results-grid]'),boundary=document.querySelector('[data-state-boundary="resultados"]'),layout=document.querySelector('[data-results-layout]'),is=inline?getComputedStyle(inline):null,ir=inline?.getBoundingClientRect(),gs=grid?getComputedStyle(grid):null,gr=grid?.getBoundingClientRect();return{hydration:document.body.dataset.pageHydration||'',boundaryState:boundary?.dataset.viewState||'',layoutState:layout?.dataset.resultsState||'',presentationState:grid?.dataset.resultsState||'',countText:document.querySelector('[data-results-count]')?.textContent?.trim()||'',title:document.querySelector('[data-results-title]')?.textContent?.trim()||'',inlineEmpty:inline?{hiddenProp:inline.hidden,hasHiddenAttribute:inline.hasAttribute('hidden'),visible:vis(inline),display:is.display,visibility:is.visibility,height:Number((ir?.height||0).toFixed(2)),className:inline.className}:null,grid:grid?{hiddenProp:grid.hidden,visible:vis(grid),display:gs.display,height:Number((gr?.height||0).toFixed(2)),itemCount:grid.children.length}:null,stateEmptyHidden:document.querySelector('[data-state-empty]')?.hidden,stateErrorHidden:document.querySelector('[data-state-error]')?.hidden,server:window.Doke?.searchResultsServerSurface?.getSnapshot?.()||null,presentationEvents:window.__r3PresentationEvents||[],pageErrors:window.__r3PageErrors||[]};});}
+          (async()=>{const s=await createServer();const port=s.address().port;const browser=await chromium.launch({headless:true});const report={normal:{},rendererInjection:null};try{for(const [name,width,height] of [['desktop',1366,768],['tablet',820,1180],['mobile',390,844]]){const c=await browser.newContext({viewport:{width,height},deviceScaleFactor:1});await mockExternal(c);const p=await c.newPage();await p.addInitScript(()=>{window.__r3PresentationEvents=[];window.__r3PageErrors=[];document.addEventListener('doke:search-results-presentation-applied',e=>window.__r3PresentationEvents.push(e.detail));window.addEventListener('error',e=>window.__r3PageErrors.push(String(e.error?.message||e.message||e.error||'error')));});await p.goto(`http://127.0.0.1:${port}/resultados.html?q=limpeza&type=services`,{waitUntil:'domcontentloaded'});await waitTerminal(p);const st=await snap(p);report.normal[name]=st;if(st.hydration!=='ready')throw new Error(`${name}: hydration=${st.hydration}`);if(!(st.grid?.itemCount>0)||!st.grid?.visible)throw new Error(`${name}: expected visible ready grid`);if(!st.inlineEmpty?.visible)throw new Error(`${name}: inherited inline-empty contradiction did not reproduce`);await c.close();}
+          const c=await browser.newContext({viewport:{width:1366,height:768},deviceScaleFactor:1});await mockExternal(c);const p=await c.newPage();await p.addInitScript(()=>{window.__r3FaultCalls=0;window.__r3PageErrors=[];window.addEventListener('error',e=>window.__r3PageErrors.push(String(e.error?.message||e.message||'error')));});await p.route('**/assets/js/pages/search-data.js*',r=>r.fulfill({status:200,contentType:'application/javascript',body:`window.DokeSearchData={normalize:(v='')=>String(v).toLowerCase(),servicePool:[],userPool:[],shortVideoPool:[],beforeAfterPool:[],recommendations:[],categories:[],locationOptions:{},getServiceMatches:()=>{window.__r3FaultCalls=(window.__r3FaultCalls||0)+1;throw new Error('renderer failure');},getUserMatches:()=>[],getShortVideoMatches:()=>[],getBeforeAfterMatches:()=>[],getSearchHistory:()=>[],saveSearchHistory:()=>{},addSearchHistory:()=>{},getSuggestionMatches:()=>[]};`}));await p.goto(`http://127.0.0.1:${port}/resultados.html?q=falha&type=services`,{waitUntil:'domcontentloaded'});await waitTerminal(p);const inj=await snap(p);inj.faultCalls=await p.evaluate(()=>window.__r3FaultCalls||0);report.rendererInjection=inj;if(inj.faultCalls!==0)throw new Error(`getServiceMatches reached ${inj.faultCalls}`);if(inj.hydration==='error')throw new Error('stale renderer injection unexpectedly drove error');await c.close();
+          const states=Object.values(report.normal);const hiddenOverride=states.every(x=>x.inlineEmpty?.hiddenProp===true&&x.inlineEmpty?.hasHiddenAttribute===true&&x.inlineEmpty?.visible===true);const contradiction=states.every(x=>x.grid?.itemCount>0&&x.grid?.visible&&x.inlineEmpty?.visible);if(!contradiction)throw new Error('ready-grid + inline-empty contradiction not stable');report.classification={inlineEmpty:hiddenOverride?'PRODUCT_CSS_HIDDEN_OVERRIDE_DEBT':'PRODUCT_RESULTS_STATE_DEBT',rendererFailureTest:'STALE_FAULT_INJECTION_GETSERVICEMATCHES_NOT_ON_ACTIVE_SERVICES_PATH'};console.log('R3B_RESULTS_PROBE='+JSON.stringify(report));}finally{await browser.close();s.close();}})().catch(e=>{console.error(e.stack||e);process.exit(1);});
+          '@ | Set-Content -LiteralPath $script -Encoding UTF8
+          node $script
+
+      - name: Capture exact Resultados header-rail failure
+        if: always()
+        shell: pwsh
+        run: |
+          $output = & node scripts/test-results-header-rail-contract.js 2>&1
+          $rc = $LASTEXITCODE
+          $text = ($output | Out-String).Trim()
+          Write-Host 'R3B_RESULTS_HEADER_RAIL_OUTPUT_BEGIN'
+          Write-Host $text
+          Write-Host 'R3B_RESULTS_HEADER_RAIL_OUTPUT_END'
+          Write-Host "R3B_RESULTS_HEADER_RAIL_RC=$rc"
+          if ($rc -ne 1) { throw "expected inherited header-rail rc=1, got $rc" }
+          if ([string]::IsNullOrWhiteSpace($text)) { throw 'header-rail failure output is empty' }
+
+      - name: Final no-mutation receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree changed' }
+          $dirty = @(git status --porcelain)
+          if ($dirty.Count -ne 0) { throw "unexpected worktree mutation: $($dirty -join '; ')" }
+          Write-Host 'UX_NAV_DEBT_003_R3B_SAFETY={"result":"PASS","checkpoint":"UX-NAV-DEBT-003-R3B","parent":"00a034f90f7940e820fab1f74c27ade9a32d16d1","productMutation":false,"candidateMaterialized":false,"snapshotMutation":false,"matrixMutation":false,"permanentBranchCreated":false,"prCreated":false,"criteriaRelaxed":0,"repositoryOnly":true}'
