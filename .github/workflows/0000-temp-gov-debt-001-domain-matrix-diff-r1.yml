@@ -1,0 +1,215 @@
+name: TEMP GOV-DEBT-001 Domain Matrix Diff R1
+
+on:
+  push:
+    branches:
+      - diag/gov-debt-001-domain-matrix-diff-r1
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-gov-debt-001-domain-matrix-diff-r1.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "GOV_DEBT_001_R1_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Create detached parent diagnostic worktree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $worktree = Join-Path $env:RUNNER_TEMP 'gov-debt-001-r1-parent'
+          git worktree add --detach $worktree $parent
+          Set-Location $worktree
+          $configHash = (Get-FileHash -Algorithm SHA256 'config/domain-completion-matrix.json').Hash.ToLowerInvariant()
+          $snapshotHash = (Get-FileHash -Algorithm SHA256 'docs/validation/domain-completion-staging-snapshot.json').Hash.ToLowerInvariant()
+          $docHash = (Get-FileHash -Algorithm SHA256 'docs/DOMAIN-COMPLETION-MATRIX.md').Hash.ToLowerInvariant()
+          Copy-Item 'docs/DOMAIN-COMPLETION-MATRIX.md' (Join-Path $env:RUNNER_TEMP 'domain-matrix-before.md')
+          "WORKTREE=$worktree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CONFIG_HASH_BEFORE=$configHash" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SNAPSHOT_HASH_BEFORE=$snapshotHash" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "DOC_HASH_BEFORE=$docHash" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "GOV_DEBT_001_R1_INPUTS config=$configHash snapshot=$snapshotHash doc=$docHash"
+
+      - name: Reproduce audit failure without write
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $log = Join-Path $env:RUNNER_TEMP 'domain-matrix-audit-before.log'
+          & node scripts/audit-domain-completion-matrix.js 2>&1 | Tee-Object -FilePath $log
+          $rc = $LASTEXITCODE
+          $text = Get-Content -LiteralPath $log -Raw
+          if ($rc -eq 0) { throw 'parent audit unexpectedly green' }
+          $signature = 'docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix'
+          if (-not $text.Contains($signature)) { throw 'expected stale document signature missing' }
+          if (git status --porcelain) { throw "read-only audit mutated worktree: $(git status --porcelain)" }
+          Write-Host "GOV_DEBT_001_R1_PARENT_NEGATIVE=PASS rc=$rc signature=stale-domain-completion-matrix-md mutation=false"
+          $global:LASTEXITCODE = 0
+          exit 0
+
+      - name: Generate expected document only in detached worktree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          & node scripts/audit-domain-completion-matrix.js --write
+          if ($LASTEXITCODE -ne 0) { throw "diagnostic generator rc=$LASTEXITCODE" }
+          $configHash = (Get-FileHash -Algorithm SHA256 'config/domain-completion-matrix.json').Hash.ToLowerInvariant()
+          $snapshotHash = (Get-FileHash -Algorithm SHA256 'docs/validation/domain-completion-staging-snapshot.json').Hash.ToLowerInvariant()
+          $docHash = (Get-FileHash -Algorithm SHA256 'docs/DOMAIN-COMPLETION-MATRIX.md').Hash.ToLowerInvariant()
+          if ($configHash -ne $env:CONFIG_HASH_BEFORE) { throw 'config mutated during generation' }
+          if ($snapshotHash -ne $env:SNAPSHOT_HASH_BEFORE) { throw 'staging snapshot mutated during generation' }
+          Copy-Item 'docs/DOMAIN-COMPLETION-MATRIX.md' (Join-Path $env:RUNNER_TEMP 'domain-matrix-after.md')
+          $tracked = @(git diff --name-only)
+          $unexpectedTracked = @($tracked | Where-Object { $_ -ne 'docs/DOMAIN-COMPLETION-MATRIX.md' })
+          if ($unexpectedTracked.Count -ne 0) { throw "unexpected tracked generator delta: $($unexpectedTracked -join ', ')" }
+          if ($tracked.Count -ne 1 -or $tracked[0] -ne 'docs/DOMAIN-COMPLETION-MATRIX.md') { throw "tracked generator scope drift: $($tracked -join ', ')" }
+          $num = (git diff --numstat -- docs/DOMAIN-COMPLETION-MATRIX.md).Trim().Split("`t")
+          "DOC_HASH_AFTER=$docHash" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "DOC_INSERTIONS=$($num[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "DOC_DELETIONS=$($num[1])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "GOV_DEBT_001_R1_GENERATION=PASS configMutation=false snapshotMutation=false trackedFiles=1 docHashAfter=$docHash insertions=$($num[0]) deletions=$($num[1])"
+
+      - name: Classify document diff by section and semantic risk
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import difflib, json, os, re
+          from pathlib import Path
+
+          before = Path(os.environ['RUNNER_TEMP'], 'domain-matrix-before.md').read_text(encoding='utf-8').splitlines()
+          after = Path(os.environ['RUNNER_TEMP'], 'domain-matrix-after.md').read_text(encoding='utf-8').splitlines()
+          matrix = json.loads(Path(os.environ['WORKTREE'], 'config/domain-completion-matrix.json').read_text(encoding='utf-8'))
+
+          def section_map(lines):
+              current = '<preamble>'
+              out = []
+              for line in lines:
+                  if line.startswith('## '): current = line[3:].strip()
+                  elif line.startswith('### '): current = 'Detalhamento/' + line[4:].strip()
+                  out.append(current)
+              return out
+
+          bsec, asec = section_map(before), section_map(after)
+          matcher = difflib.SequenceMatcher(a=before, b=after, autojunk=False)
+          sections = {}
+          changed_old = []
+          changed_new = []
+          for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+              if tag == 'equal':
+                  continue
+              for i in range(i1, i2):
+                  sections.setdefault(bsec[i], {'removed':0,'added':0})['removed'] += 1
+                  changed_old.append(before[i])
+              for j in range(j1, j2):
+                  sections.setdefault(asec[j], {'removed':0,'added':0})['added'] += 1
+                  changed_new.append(after[j])
+
+          semantic_patterns = [
+              r'Maturidade média atual', r'Bloqueadores críticos explícitos', r'Domínios prontos para produção',
+              r'^\| \d+ \| [A-Z0-9-]+ \|', r'^\*\*Estado:\*\*', r'^\| [A-Z0-9-]+ \| .* \| .* \| .* \|',
+              r'^- \*\*[A-Z0-9-]+ · (?:CRITICAL|HIGH|MEDIUM|LOW)', r'^\*\*Gate de saída:\*\*',
+          ]
+          semantic_rx = re.compile('|'.join(f'(?:{p})' for p in semantic_patterns), re.I)
+          old_sem = [x for x in changed_old if semantic_rx.search(x)]
+          new_sem = [x for x in changed_new if semantic_rx.search(x)]
+
+          # Compare canonical domain state encoded in config with generated overview rows.
+          expected = {
+              d['id']: {
+                  'maturity': str(d['maturity']),
+                  'ui': str(d['userFacingAuthority']),
+                  'server': str(d['serverAuthority']),
+                  'staging': str(d['stagingEvidence']),
+                  'security': str(d['securityGate']),
+                  'production': str(d['productionGate']),
+              } for d in matrix['domains']
+          }
+
+          def parse_overview(lines):
+              result = {}
+              for line in lines:
+                  if not line.startswith('|'):
+                      continue
+                  cells = [c.strip() for c in line.strip().strip('|').split('|')]
+                  if len(cells) != 9 or not cells[0].isdigit() or cells[1] not in expected:
+                      continue
+                  result[cells[1]] = {
+                      'maturity': cells[3].split('/')[0],
+                      'ui': cells[4].replace(' ', '_'),
+                      'server': cells[5].replace(' ', '_'),
+                      'staging': cells[6].replace(' ', '_'),
+                      'security': cells[7].replace(' ', '_'),
+                      'production': cells[8].replace(' ', '_'),
+                  }
+              return result
+
+          old_overview = parse_overview(before)
+          new_overview = parse_overview(after)
+          overview_changes = []
+          for did in expected:
+              if old_overview.get(did) != new_overview.get(did):
+                  overview_changes.append({'id':did,'before':old_overview.get(did),'after':new_overview.get(did),'config':expected[did]})
+              if new_overview.get(did) != expected[did]:
+                  raise SystemExit(f'generated overview disagrees with config for {did}: {new_overview.get(did)} != {expected[did]}')
+
+          classification = {
+              'changedSections': sections,
+              'semanticChangedLinesRemoved': len(old_sem),
+              'semanticChangedLinesAdded': len(new_sem),
+              'overviewDomainStateChanges': overview_changes,
+              'overviewStateChanged': bool(overview_changes),
+              'configDomains': len(expected),
+          }
+          print('GOV_DEBT_001_R1_DIFF_CLASSIFICATION=' + json.dumps(classification, ensure_ascii=False, separators=(',',':')))
+          for line in old_sem[:60]: print('SEMANTIC_REMOVED=' + line)
+          for line in new_sem[:60]: print('SEMANTIC_ADDED=' + line)
+          Path(os.environ['RUNNER_TEMP'], 'domain-matrix-diff.patch').write_text('\n'.join(difflib.unified_diff(before, after, fromfile='tracked', tofile='generated', lineterm='')) + '\n', encoding='utf-8')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "diff classifier rc=$LASTEXITCODE" }
+          Write-Host 'GOV_DEBT_001_R1_CLASSIFIER=PASS generatedOverviewMatchesConfig=true'
+
+      - name: Prove generated document closes audit in temp copy
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          & node scripts/audit-domain-completion-matrix.js
+          if ($LASTEXITCODE -ne 0) { throw "post-generation audit rc=$LASTEXITCODE" }
+          Write-Host 'GOV_DEBT_001_R1_POST_GENERATION_AUDIT=PASS'
+
+      - name: Restore detached worktree and final no-persistence receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:WORKTREE -and (Test-Path $env:WORKTREE)) {
+            Set-Location $env:WORKTREE
+            git reset --hard '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+            git clean -fd
+            if (git status --porcelain) { throw "diagnostic worktree dirty after restore: $(git status --porcelain)" }
+          }
+          Set-Location $env:GITHUB_WORKSPACE
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-gov-debt-001-domain-matrix-diff-r1.yml') { throw 'remote TEMP scope changed' }
+          Write-Host "GOV_DEBT_001_R1_SAFETY=PASS parent=00a034f90f7940e820fab1f74c27ade9a32d16d1 remoteProductMutation=false trackedMatrixMutation=false configMutation=false stagingSnapshotMutation=false permanentBranchCreated=false prCreated=false repositoryOnly=true"
