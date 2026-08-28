@@ -1,0 +1,77 @@
+name: TEMP UX-NAV-DEBT-003 Results Failure Classifier R3c
+
+on:
+  push:
+    branches: [diag/ux-nav-debt-003-results-failure-classifier-r3c]
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze lineage
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $p='00a034f90f7940e820fab1f74c27ade9a32d16d1'; $t='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse HEAD^).Trim() -ne $p) { throw 'parent drift' }
+          if ((git rev-parse "$p^{tree}").Trim() -ne $t) { throw 'tree drift' }
+          $f=@(git diff --name-only HEAD^ HEAD)
+          if ($f.Count -ne 1 -or $f[0] -ne '.github/workflows/0000-temp-ux-nav-debt-003-results-failure-classifier-r3c.yml') { throw "scope drift: $($f -join ',')" }
+          Write-Host "R3C_LINEAGE=PASS parent=$p tree=$t"
+
+      - name: Install dependencies and Chromium
+        shell: pwsh
+        run: |
+          npm ci
+          npx playwright install chromium
+
+      - name: Canonical Playwright Resultados classifier
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $spec='tests/e2e/0000-temp-ux-nav-debt-003-r3c.spec.js'
+          @'
+          const { test, expect } = require('@playwright/test');
+          const viewports=[['desktop',1366,768],['tablet',820,1180],['mobile',390,844]];
+          async function external(page){
+            await page.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));
+          }
+          async function terminal(page){await expect.poll(()=>page.evaluate(()=>document.body.dataset.pageHydration||''),{timeout:30000}).toMatch(/^(ready|empty|error)$/);await page.waitForTimeout(150);}
+          async function state(page){return page.evaluate(()=>{const v=n=>{if(!n||n.hidden)return false;const s=getComputedStyle(n),r=n.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0};const i=document.querySelector('[data-results-inline-empty]'),g=document.querySelector('[data-results-grid]'),is=i?getComputedStyle(i):null,ir=i?.getBoundingClientRect();return{hydration:document.body.dataset.pageHydration||'',boundary:document.querySelector('[data-state-boundary="resultados"]')?.dataset.viewState||'',resultsState:document.querySelector('[data-results-layout]')?.dataset.resultsState||'',inline:{hidden:i?.hidden,attr:i?.hasAttribute('hidden'),visible:v(i),display:is?.display||'',height:Number((ir?.height||0).toFixed(2))},grid:{hidden:g?.hidden,visible:v(g),items:g?.children.length||0},count:document.querySelector('[data-results-count]')?.textContent?.trim()||'',repositoryState:window.Doke?.resultadosDataController?.getRoot?.()?.dataset.resultsRepositoryState||'',pageErrors:window.__r3cErrors||[]};});}
+          for(const [name,width,height] of viewports){test(`normal ${name}`,async({page})=>{await external(page);await page.addInitScript(()=>{window.__r3cErrors=[];window.addEventListener('error',e=>window.__r3cErrors.push(String(e.error?.message||e.message||'error')))});await page.setViewportSize({width,height});await page.goto('/resultados.html?q=limpeza&type=services');await terminal(page);const s=await state(page);console.log(`R3C_NORMAL_${name.toUpperCase()}=${JSON.stringify(s)}`);expect(s.hydration).toBe('ready');expect(s.grid.items).toBeGreaterThan(0);expect(s.grid.visible).toBe(true);expect(s.inline.visible).toBe(true);});}
+          test('renderer injection classification',async({page})=>{await external(page);await page.addInitScript(()=>{window.__r3cFaultCalls=0});await page.route('**/assets/js/pages/search-data.js*',r=>r.fulfill({contentType:'application/javascript',body:`window.DokeSearchData={normalize:(v='')=>String(v).toLowerCase(),servicePool:[],userPool:[],shortVideoPool:[],beforeAfterPool:[],recommendations:[],categories:[],locationOptions:{},getServiceMatches:()=>{window.__r3cFaultCalls++;throw new Error('renderer failure')},getUserMatches:()=>[],getShortVideoMatches:()=>[],getBeforeAfterMatches:()=>[]};`}));await page.goto('/resultados.html?q=falha&type=services');await terminal(page);const s=await state(page);s.faultCalls=await page.evaluate(()=>window.__r3cFaultCalls||0);console.log(`R3C_RENDERER_INJECTION=${JSON.stringify(s)}`);expect(s.faultCalls).toBe(0);expect(s.hydration).not.toBe('error');});
+          test('repository failure classification',async({page})=>{await external(page);await page.route('**/assets/js/services/page-data-orchestrator.js*',r=>r.fulfill({contentType:'application/javascript',body:`window.Doke=window.Doke||{};window.Doke.pageDataOrchestrator={peekPageData:()=>null,getPageData:()=>Promise.reject(new Error('repository failure'))};`}));await page.goto('/resultados.html?q=limpeza&type=services');await terminal(page);expect((await state(page)).hydration).toBe('ready');await page.evaluate(()=>window.Doke.resultadosDataController.load(window.Doke.resultadosDataController.getRoot()));await expect.poll(()=>page.evaluate(()=>window.Doke.resultadosDataController.getRoot()?.dataset.resultsRepositoryState),{timeout:30000}).toBe('error');const s=await state(page);console.log(`R3C_REPOSITORY_FAILURE=${JSON.stringify(s)}`);expect(s.grid.items).toBeGreaterThan(0);expect(s.inline.visible).toBe(true);});
+          '@ | Set-Content -LiteralPath $spec -Encoding UTF8
+          try {
+            node node_modules/@playwright/test/cli.js test $spec --reporter=line
+            if ($LASTEXITCODE -ne 0) { throw "classifier tests rc=$LASTEXITCODE" }
+          } finally {
+            Remove-Item -LiteralPath $spec -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Capture header rail raw assertion
+        shell: pwsh
+        run: |
+          $out=& node scripts/test-results-header-rail-contract.js 2>&1; $rc=$LASTEXITCODE; $txt=($out|Out-String).Trim()
+          Write-Host 'R3C_HEADER_RAIL_BEGIN'; Write-Host $txt; Write-Host 'R3C_HEADER_RAIL_END'; Write-Host "R3C_HEADER_RAIL_RC=$rc"
+          if ($rc -ne 1) { throw "expected inherited rc1 got $rc" }
+          if ($txt -notmatch '820x1180: results layout is not visible') { throw "unexpected header-rail signature: $txt" }
+          exit 0
+
+      - name: Final safety receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'; $p='00a034f90f7940e820fab1f74c27ade9a32d16d1'; $t='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse "$p^{tree}").Trim() -ne $t) { throw 'tree changed' }
+          $dirty=@(git status --porcelain); if($dirty.Count){throw "dirty: $($dirty -join '; ')"}
+          Write-Host 'UX_NAV_DEBT_003_R3C_SAFETY={"result":"PASS","checkpoint":"UX-NAV-DEBT-003-R3C","parent":"00a034f90f7940e820fab1f74c27ade9a32d16d1","candidateMaterialized":false,"productMutation":false,"snapshotMutation":false,"matrixMutation":false,"permanentBranchCreated":false,"prCreated":false,"criteriaRelaxed":0,"repositoryOnly":true}'
