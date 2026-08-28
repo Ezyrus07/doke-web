@@ -1,0 +1,343 @@
+name: TEMP UX-STATE-003 State Contract Bootstrap R1
+
+on:
+  push:
+    branches:
+      - diag/ux-state-003-state-contract-bootstrap-r1
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-ux-state-003-state-contract-bootstrap-r1.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "UX_STATE_003_R1_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Materialize runner-only one-file product candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $candidatePath = Join-Path $env:RUNNER_TEMP 'ux-state-003-r1-candidate'
+          git worktree add --detach $candidatePath $parent
+          Set-Location $candidatePath
+          git config user.name 'doke-diagnostic'
+          git config user.email 'doke-diagnostic@users.noreply.github.com'
+
+          @'
+          from pathlib import Path
+          path = Path('assets/js/state/state-contracts.js')
+          source = path.read_text(encoding='utf-8')
+          old_apply = """    syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"""
+          new_apply = """    if (options.preserveRegion !== true) syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"""
+          old_boot = """      applyBoundaryState(boundary, initialState, { announce: false });"""
+          new_boot = """      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });"""
+          if source.count(old_apply) != 1:
+              raise SystemExit(f'applyBoundaryState anchor count={source.count(old_apply)}')
+          if source.count(old_boot) != 1:
+              raise SystemExit(f'initializeBoundaries anchor count={source.count(old_boot)}')
+          source = source.replace(old_apply, new_apply).replace(old_boot, new_boot)
+          path.write_text(source, encoding='utf-8', newline='\n')
+          '@ | python -
+
+          $changed = @(git diff --name-only)
+          if ($changed.Count -ne 1 -or $changed[0] -ne 'assets/js/state/state-contracts.js') { throw "candidate scope drift: $($changed -join ', ')" }
+          git add assets/js/state/state-contracts.js
+          git commit -m 'fix(state): preserve established region during bootstrap'
+          $candidate = (git rev-parse HEAD).Trim()
+          $candidateTree = (git rev-parse 'HEAD^{tree}').Trim()
+          $stateBlob = (git rev-parse 'HEAD:assets/js/state/state-contracts.js').Trim()
+          $files = @(git diff --name-only $parent $candidate)
+          if ($files.Count -ne 1 -or $files[0] -ne 'assets/js/state/state-contracts.js') { throw "committed scope drift: $($files -join ', ')" }
+          $num = (git diff --numstat $parent $candidate -- assets/js/state/state-contracts.js).Trim().Split("`t")
+          "CANDIDATE_PATH=$candidatePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_SHA=$candidate" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_TREE=$candidateTree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "STATE_BLOB=$stateBlob" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INSERTIONS=$($num[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "DELETIONS=$($num[1])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "UX_STATE_003_R1_CANDIDATE parent=$parent candidate=$candidate tree=$candidateTree stateBlob=$stateBlob files=1 insertions=$($num[0]) deletions=$($num[1]) remoteProductMutation=false"
+
+      - name: Verify one-file owner scope and static contract
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $files = @(git diff --name-only $parent $env:CANDIDATE_SHA)
+          if ($files.Count -ne 1 -or $files[0] -ne 'assets/js/state/state-contracts.js') { throw 'candidate escaped one-file state owner scope' }
+          if (@(git diff --name-only $parent $env:CANDIDATE_SHA -- 'resultados.html' 'assets/css/**' 'assets/js/core/page-hydration.js' 'assets/js/pages/search-results-dom-adapter.js' 'assets/js/pages/search-results.js' 'config/domain-completion-matrix.json' 'docs/DOMAIN-COMPLETION-MATRIX.md' 'tests/visual/**').Count -ne 0) { throw 'forbidden product/matrix/snapshot mutation detected' }
+          node --check assets/js/state/state-contracts.js
+          git diff --check $parent $env:CANDIDATE_SHA
+          $source = Get-Content -LiteralPath 'assets/js/state/state-contracts.js' -Raw
+          if ($source -notmatch 'options\.preserveRegion !== true') { throw 'missing non-destructive bootstrap fence' }
+          if ($source -notmatch 'announce: false, preserveRegion: true') { throw 'bootstrap does not opt into preserveRegion' }
+          Write-Host 'UX_STATE_003_R1_SCOPE=PASS files=1 owner=assets/js/state/state-contracts.js forbiddenFiles=0 snapshotMutation=false matrixMutation=false criteriaRelaxed=0'
+
+      - name: Install dependencies and Chromium
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          npm ci
+          npx playwright install chromium
+
+      - name: Parent negative and candidate bootstrap semantics
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          $spec = 'tests/e2e/ux-state-003-bootstrap-diagnostic.spec.js'
+          @'
+          const { test, expect } = require('@playwright/test');
+          const stateContractPath = process.env.STATE_CONTRACT_PATH;
+          const expectPreserve = process.env.EXPECT_PRESERVE === '1';
+
+          const markup = (state, visibleState = '') => `<!doctype html><html><body>
+            <main data-state-boundary="probe" data-view-state="${state}" aria-busy="false">
+              <div data-state-region aria-live="polite">
+                <p data-state-loading ${visibleState === 'loading' ? '' : 'hidden'}>Loading probe</p>
+                <p data-state-empty ${visibleState === 'empty' ? '' : 'hidden'}>Empty probe</p>
+                <p data-state-error ${visibleState === 'error' ? '' : 'hidden'}>Specific error probe</p>
+              </div>
+            </main>
+          </body></html>`;
+
+          test('bootstrap adoption preserves or reproduces established terminal region deterministically', async ({ page }) => {
+            await page.setContent(markup('error', 'error'));
+            await page.addScriptTag({ path: stateContractPath });
+            const state = await page.evaluate(() => {
+              const boundary = document.querySelector('[data-state-boundary="probe"]');
+              const region = document.querySelector('[data-state-region]');
+              const error = document.querySelector('[data-state-error]');
+              return {
+                viewState: boundary.dataset.viewState,
+                ariaBusy: boundary.getAttribute('aria-busy'),
+                regionHidden: region.hidden,
+                errorHidden: error.hidden,
+                errorText: error.textContent,
+              };
+            });
+            expect(state.viewState).toBe('error');
+            expect(state.ariaBusy).toBe('false');
+            expect(state.errorHidden).toBe(!expectPreserve);
+            if (expectPreserve) {
+              expect(state.regionHidden).toBe(false);
+              expect(state.errorText).toBe('Specific error probe');
+            }
+          });
+
+          test('candidate bootstrap does not invent a visual state and normal transitions still settle', async ({ page }) => {
+            test.skip(!expectPreserve, 'candidate-only semantic guard');
+            await page.setContent(markup('loading'));
+            await page.addScriptTag({ path: stateContractPath });
+            let state = await page.evaluate(() => ({
+              ariaBusy: document.querySelector('[data-state-boundary="probe"]').getAttribute('aria-busy'),
+              loadingHidden: document.querySelector('[data-state-loading]').hidden,
+              emptyHidden: document.querySelector('[data-state-empty]').hidden,
+              errorHidden: document.querySelector('[data-state-error]').hidden,
+            }));
+            expect(state).toEqual({ ariaBusy: 'true', loadingHidden: true, emptyHidden: true, errorHidden: true });
+
+            state = await page.evaluate(() => {
+              const boundary = document.querySelector('[data-state-boundary="probe"]');
+              const toError = window.Doke.stateContracts.setBoundaryState(boundary, 'error');
+              const errorSnapshot = {
+                accepted: toError,
+                errorHidden: document.querySelector('[data-state-error]').hidden,
+                emptyHidden: document.querySelector('[data-state-empty]').hidden,
+                loadingHidden: document.querySelector('[data-state-loading]').hidden,
+                viewState: boundary.dataset.viewState,
+              };
+              const toReady = window.Doke.stateContracts.setBoundaryState(boundary, 'ready');
+              return {
+                errorSnapshot,
+                readyAccepted: toReady,
+                readyState: boundary.dataset.viewState,
+                readyErrorHidden: document.querySelector('[data-state-error]').hidden,
+                readyEmptyHidden: document.querySelector('[data-state-empty]').hidden,
+                readyLoadingHidden: document.querySelector('[data-state-loading]').hidden,
+              };
+            });
+            expect(state.errorSnapshot).toEqual({ accepted: true, errorHidden: false, emptyHidden: true, loadingHidden: true, viewState: 'error' });
+            expect(state.readyAccepted).toBe(true);
+            expect(state.readyState).toBe('ready');
+            expect(state.readyErrorHidden).toBe(true);
+            expect(state.readyEmptyHidden).toBe(true);
+            expect(state.readyLoadingHidden).toBe(true);
+          });
+          '@ | Set-Content -LiteralPath $spec -Encoding UTF8
+
+          $parentPath = Join-Path $env:RUNNER_TEMP 'ux-state-003-r1-parent'
+          git worktree add --detach $parentPath '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $parentContract = Join-Path $parentPath 'assets/js/state/state-contracts.js'
+          $candidateContract = Join-Path $env:CANDIDATE_PATH 'assets/js/state/state-contracts.js'
+
+          $env:STATE_CONTRACT_PATH = $parentContract
+          $env:EXPECT_PRESERVE = '0'
+          node node_modules/@playwright/test/cli.js test $spec --reporter=line
+          if ($LASTEXITCODE -ne 0) { throw "parent negative mechanism proof rc=$LASTEXITCODE" }
+          Write-Host 'UX_STATE_003_R1_PARENT_NEGATIVE=PASS terminalErrorHiddenByBootstrap=true'
+
+          $env:STATE_CONTRACT_PATH = $candidateContract
+          $env:EXPECT_PRESERVE = '1'
+          node node_modules/@playwright/test/cli.js test $spec --reporter=line
+          if ($LASTEXITCODE -ne 0) { throw "candidate bootstrap semantics rc=$LASTEXITCODE" }
+          Remove-Item -LiteralPath $spec -Force
+          if (git status --porcelain) { throw "ephemeral harness cleanup drift: $(git status --porcelain)" }
+          Write-Host 'UX_STATE_003_R1_BOOTSTRAP=PASS preserveEstablishedTerminal=true unsolicitedInitialSurface=false errorToReadyTransition=true'
+
+      - name: Candidate real Resultados renderer-error surface
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          $spec = 'tests/e2e/ux-state-003-resultados-error-diagnostic.spec.js'
+          @'
+          const { test, expect } = require('@playwright/test');
+          const READY_QUERY = '__ux_state_003_ready__';
+
+          test.beforeEach(async ({ page }) => {
+            await page.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ contentType: 'text/css', body: '' }));
+            await page.route('https://fonts.gstatic.com/**', (route) => route.abort());
+            await page.route('**/assets/js/repositories/search-repository.js*', async (route) => {
+              const response = await route.fetch();
+              const originalBody = await response.text();
+              const harness = `\n;(function () {
+                var Doke = window.Doke || (window.Doke = {});
+                var repositories = Doke.repositories || (Doke.repositories = {});
+                var original = repositories.search;
+                if (!original || original.__uxState003Harness) return;
+                var item = Object.freeze({
+                  id: 'ux-state-003-service', remoteId: 'ux-state-003-service', serviceId: 'ux-state-003-service',
+                  title: 'UX STATE 003 deterministic service', description: 'Synthetic contract fixture', category: 'qa-contract',
+                  providerName: 'QA Provider', providerHandle: '@qa-provider', city: 'Sao Paulo', state: 'SP', location: 'Sao Paulo, SP',
+                  rating: 5, reviews: '1 avaliação', reviewsCount: 1, tags: ['qa'], priceValue: 100, price: 100,
+                  updatedAt: '2026-08-28T00:00:00.000Z'
+                });
+                function responseFor(request) {
+                  var contract = original.getContract();
+                  return { authority: contract.expectedAuthority, contractVersion: contract.version, request: Object.assign({}, request || {}), items: [item], page: { pageSize: 12, hasNext: false, nextCursor: null } };
+                }
+                repositories.search = Object.freeze({
+                  __uxState003Harness: true,
+                  queryPage: function (request) { return request && request.query === '${READY_QUERY}' ? Promise.resolve(responseFor(request)) : original.queryPage(request); },
+                  normalizeRequest: function (request) { return original.normalizeRequest(request); },
+                  getLastError: function () { return original.getLastError(); },
+                  getContract: function () { return original.getContract(); }
+                });
+              }());`;
+              await route.fulfill({ response, body: originalBody + harness });
+            });
+            await page.route('**/assets/js/components/public-service-card.js*', async (route) => {
+              const response = await route.fetch();
+              const originalBody = await response.text();
+              const harness = `\n;(function () {
+                var Doke = window.Doke || (window.Doke = {});
+                var original = Doke.publicServiceCard || {};
+                Doke.publicServiceCard = Object.freeze(Object.assign({}, original, {
+                  create: function () { var error = new Error('renderer failure'); error.code = 'DOKE_UX_STATE_003_RENDERER_FAILURE'; throw error; }
+                }));
+              }());`;
+              await route.fulfill({ response, body: originalBody + harness });
+            });
+          });
+
+          test('renderer failure keeps exactly one visible recoverable Resultados error surface', async ({ page }) => {
+            await page.goto(`/resultados.html?q=${READY_QUERY}&type=services`);
+            await expect.poll(() => page.evaluate(() => document.querySelector('[data-results-layout]')?.dataset.resultsState || 'missing'), { timeout: 30000 }).toBe('error');
+            await expect.poll(() => page.evaluate(() => document.body.dataset.pageHydration || 'missing'), { timeout: 30000 }).toBe('error');
+            const snapshot = await page.evaluate(() => {
+              const visible = (node) => {
+                if (!node || node.hidden) return false;
+                const style = getComputedStyle(node);
+                if (style.display === 'none' || style.visibility === 'hidden') return false;
+                const box = node.getBoundingClientRect();
+                return box.width > 0 && box.height > 0;
+              };
+              const errors = [...document.querySelectorAll('[data-state-error]')];
+              const boundary = document.querySelector('[data-state-boundary="resultados"]');
+              return {
+                hydration: document.body.dataset.pageHydration || '',
+                resultsState: document.querySelector('[data-results-layout]')?.dataset.resultsState || '',
+                boundaryState: boundary?.dataset.viewState || '',
+                visibleErrors: errors.filter(visible).length,
+                errorHidden: errors[0]?.hidden ?? true,
+                retryCount: document.querySelectorAll('[data-page-hydration-retry]').length,
+                overflow: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) - innerWidth,
+              };
+            });
+            expect(snapshot.hydration).toBe('error');
+            expect(snapshot.resultsState).toBe('error');
+            expect(snapshot.boundaryState).toBe('error');
+            expect(snapshot.visibleErrors).toBe(1);
+            expect(snapshot.errorHidden).toBe(false);
+            expect(snapshot.retryCount).toBe(1);
+            expect(snapshot.overflow).toBeLessThanOrEqual(1);
+          });
+          '@ | Set-Content -LiteralPath $spec -Encoding UTF8
+          node node_modules/@playwright/test/cli.js test $spec --reporter=line
+          if ($LASTEXITCODE -ne 0) { throw "candidate Resultados renderer-error rc=$LASTEXITCODE" }
+          Remove-Item -LiteralPath $spec -Force
+          if (git status --porcelain) { throw "ephemeral Resultados harness cleanup drift: $(git status --porcelain)" }
+          Write-Host 'UX_STATE_003_R1_RESULTADOS_ERROR=PASS visibleErrors=1 retry=1 overflow<=1'
+
+      - name: Preserve existing Resultados and search semantics
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          node node_modules/@playwright/test/cli.js test tests/e2e/ux-results-001-browser-acceptance.spec.js tests/e2e/search-flow.spec.js --reporter=line
+          if ($LASTEXITCODE -ne 0) { throw "existing Resultados/search regression rc=$LASTEXITCODE" }
+          Write-Host 'UX_STATE_003_R1_RESULTS_REGRESSION=PASS'
+
+      - name: Shared state and governance gates
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          npm run audit:critical-states
+          npm run audit:main-marketplace-state-contracts
+          npm run audit:main-support-state-contracts
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          if (git status --porcelain) { throw "audit mutation detected: $(git status --porcelain)" }
+          Write-Host 'UX_STATE_003_R1_GOVERNANCE=PASS matrixMutation=false criteriaRelaxed=0'
+
+      - name: Final no-promotion safety receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree changed' }
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-ux-state-003-state-contract-bootstrap-r1.yml') { throw 'remote TEMP scope changed' }
+          Write-Host 'R1_REMOTE_PRODUCT_MUTATION=false'
+          Write-Host 'R1_SNAPSHOT_MUTATION=false'
+          Write-Host 'R1_MATRIX_MUTATION=false'
+          Write-Host 'R1_PERMANENT_BRANCH_CREATED=false'
+          Write-Host 'R1_PR_CREATED=false'
+          if ($env:CANDIDATE_SHA) {
+            Write-Host "UX_STATE_003_R1_SAFETY=PASS parent=$parent candidate=$env:CANDIDATE_SHA candidateTree=$env:CANDIDATE_TREE stateBlob=$env:STATE_BLOB productFiles=1 candidateOwner=assets/js/state/state-contracts.js criteriaRelaxed=0 snapshotMutation=false matrixMutation=false remoteProductMutation=false permanentBranchCreated=false prCreated=false repositoryOnly=true"
+          }
