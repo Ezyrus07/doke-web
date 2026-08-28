@@ -1,0 +1,235 @@
+name: TEMP UX-NAV-DEBT-003 Results Failure Classifier R3
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-003-results-failure-classifier-r3
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-ux-nav-debt-003-results-failure-classifier-r3.yml'
+          $actualParent = (git rev-parse HEAD^).Trim()
+          if ($actualParent -ne $parent) { throw "parent drift: $actualParent" }
+          $actualTree = (git rev-parse "$parent^{tree}").Trim()
+          if ($actualTree -ne $tree) { throw "parent tree drift: $actualTree" }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) {
+            throw "TEMP scope drift: $($changed -join ', ')"
+          }
+          Write-Host "R3_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: npm ci
+
+      - name: Install Chromium
+        shell: pwsh
+        run: npx playwright install chromium
+
+      - name: Probe inherited Resultados failures on exact parent
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = Join-Path $env:RUNNER_TEMP 'ux-nav-debt-003-r3-probe.cjs'
+          @'
+          const fs = require('fs');
+          const http = require('http');
+          const path = require('path');
+          const { chromium } = require('@playwright/test');
+
+          const root = process.cwd();
+          const mime = new Map([
+            ['.css','text/css; charset=utf-8'],['.html','text/html; charset=utf-8'],
+            ['.js','application/javascript; charset=utf-8'],['.json','application/json; charset=utf-8'],
+            ['.png','image/png'],['.jpg','image/jpeg'],['.jpeg','image/jpeg'],['.svg','image/svg+xml'],
+            ['.webp','image/webp'],['.woff2','font/woff2']
+          ]);
+
+          function server() {
+            return new Promise((resolve) => {
+              const s = http.createServer((req,res) => {
+                let urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
+                if (urlPath.startsWith('/doke-web/')) urlPath = urlPath.slice('/doke-web'.length);
+                if (urlPath === '/' || urlPath === '') urlPath = '/index.html';
+                const file = path.normalize(path.join(root, urlPath));
+                if (!file.startsWith(root)) { res.writeHead(403); res.end('Forbidden'); return; }
+                fs.stat(file, (err,stat) => {
+                  if (err || !stat.isFile()) { res.writeHead(404); res.end('Not found'); return; }
+                  res.writeHead(200, {'content-type': mime.get(path.extname(file).toLowerCase()) || 'application/octet-stream'});
+                  fs.createReadStream(file).pipe(res);
+                });
+              });
+              s.listen(0,'127.0.0.1',() => resolve(s));
+            });
+          }
+
+          async function mockExternal(context) {
+            await context.route('https://fonts.googleapis.com/**', r => r.fulfill({status:200,contentType:'text/css',body:''}));
+            await context.route('https://fonts.gstatic.com/**', r => r.abort());
+            await context.route('https://cdn.jsdelivr.net/**', r => r.fulfill({status:200,contentType:'application/javascript',body:'window.supabase={createClient(){return {}}};'}));
+            await context.route('https://unpkg.com/**', r => r.fulfill({status:200,contentType:'application/javascript',body:'window.lucide={createIcons(){}};'}));
+          }
+
+          async function waitTerminal(page) {
+            await page.waitForFunction(() => ['ready','empty','error'].includes(document.body.dataset.pageHydration || ''), null, {timeout:30000});
+            await page.waitForTimeout(250);
+          }
+
+          async function state(page) {
+            return page.evaluate(() => {
+              const visible = (node) => {
+                if (!node) return false;
+                const style = getComputedStyle(node);
+                const r = node.getBoundingClientRect();
+                return style.display !== 'none' && style.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+              };
+              const inline = document.querySelector('[data-results-inline-empty]');
+              const grid = document.querySelector('[data-results-grid]');
+              const boundary = document.querySelector('[data-state-boundary="resultados"]');
+              const layout = document.querySelector('[data-results-layout]');
+              const inlineStyle = inline ? getComputedStyle(inline) : null;
+              const inlineRect = inline?.getBoundingClientRect();
+              const gridStyle = grid ? getComputedStyle(grid) : null;
+              const gridRect = grid?.getBoundingClientRect();
+              return {
+                hydration: document.body.dataset.pageHydration || '',
+                boundaryState: boundary?.dataset.viewState || '',
+                layoutState: layout?.dataset.resultsState || '',
+                presentationState: grid?.dataset.resultsState || '',
+                countText: document.querySelector('[data-results-count]')?.textContent?.trim() || '',
+                title: document.querySelector('[data-results-title]')?.textContent?.trim() || '',
+                inlineEmpty: inline ? {
+                  hiddenProp: inline.hidden,
+                  hasHiddenAttribute: inline.hasAttribute('hidden'),
+                  visible: visible(inline),
+                  display: inlineStyle.display,
+                  visibility: inlineStyle.visibility,
+                  height: Number((inlineRect?.height || 0).toFixed(2)),
+                  className: inline.className
+                } : null,
+                grid: grid ? {
+                  hiddenProp: grid.hidden,
+                  visible: visible(grid),
+                  display: gridStyle.display,
+                  height: Number((gridRect?.height || 0).toFixed(2)),
+                  itemCount: grid.children.length
+                } : null,
+                stateEmptyHidden: document.querySelector('[data-state-empty]')?.hidden,
+                stateErrorHidden: document.querySelector('[data-state-error]')?.hidden,
+                server: window.Doke?.searchResultsServerSurface?.getSnapshot?.() || null,
+                presentationEvents: window.__r3PresentationEvents || [],
+                pageErrors: window.__r3PageErrors || []
+              };
+            });
+          }
+
+          (async () => {
+            const s = await server();
+            const port = s.address().port;
+            const browser = await chromium.launch({headless:true});
+            const report = {normal:{}, rendererInjection:null};
+            try {
+              for (const [name,width,height] of [['desktop',1366,768],['tablet',820,1180],['mobile',390,844]]) {
+                const context = await browser.newContext({viewport:{width,height}, deviceScaleFactor:1});
+                await mockExternal(context);
+                const page = await context.newPage();
+                await page.addInitScript(() => {
+                  window.__r3PresentationEvents = [];
+                  window.__r3PageErrors = [];
+                  document.addEventListener('doke:search-results-presentation-applied', e => window.__r3PresentationEvents.push(e.detail));
+                  window.addEventListener('error', e => window.__r3PageErrors.push(String(e.error?.message || e.message || e.error || 'error')));
+                });
+                await page.goto(`http://127.0.0.1:${port}/resultados.html?q=limpeza&type=services`, {waitUntil:'domcontentloaded'});
+                await waitTerminal(page);
+                const snap = await state(page);
+                report.normal[name] = snap;
+                if (snap.hydration !== 'ready') throw new Error(`${name}: expected hydration ready, got ${snap.hydration}`);
+                if (!(snap.grid?.itemCount > 0)) throw new Error(`${name}: expected ready result items`);
+                if (!snap.grid?.visible) throw new Error(`${name}: expected results grid visible`);
+                if (!snap.inlineEmpty?.visible) throw new Error(`${name}: inherited inline-empty contradiction did not reproduce`);
+                await context.close();
+              }
+
+              const context = await browser.newContext({viewport:{width:1366,height:768}, deviceScaleFactor:1});
+              await mockExternal(context);
+              const page = await context.newPage();
+              await page.addInitScript(() => { window.__r3FaultCalls = 0; window.__r3PageErrors = []; window.addEventListener('error', e => window.__r3PageErrors.push(String(e.error?.message || e.message || 'error'))); });
+              await page.route('**/assets/js/pages/search-data.js*', route => route.fulfill({
+                status:200,
+                contentType:'application/javascript',
+                body:`window.DokeSearchData={
+                  normalize:(v='')=>String(v).toLowerCase(),
+                  servicePool:[],userPool:[],shortVideoPool:[],beforeAfterPool:[],recommendations:[],categories:[],locationOptions:{},
+                  getServiceMatches:()=>{window.__r3FaultCalls=(window.__r3FaultCalls||0)+1;throw new Error('renderer failure');},
+                  getUserMatches:()=>[],getShortVideoMatches:()=>[],getBeforeAfterMatches:()=>[],
+                  getSearchHistory:()=>[],saveSearchHistory:()=>{},addSearchHistory:()=>{},getSuggestionMatches:()=>[]
+                };`
+              }));
+              await page.goto(`http://127.0.0.1:${port}/resultados.html?q=falha&type=services`, {waitUntil:'domcontentloaded'});
+              await waitTerminal(page);
+              const injected = await state(page);
+              injected.faultCalls = await page.evaluate(() => window.__r3FaultCalls || 0);
+              report.rendererInjection = injected;
+              if (injected.faultCalls !== 0) throw new Error(`stale injection unexpectedly reached getServiceMatches: ${injected.faultCalls}`);
+              if (injected.hydration === 'error') throw new Error('stale renderer injection unexpectedly drives current service path to error');
+              await context.close();
+
+              const hiddenOverride = Object.values(report.normal).every(s => s.inlineEmpty?.hiddenProp === true && s.inlineEmpty?.hasHiddenAttribute === true && s.inlineEmpty?.visible === true);
+              const contradictoryState = Object.values(report.normal).every(s => s.grid?.itemCount > 0 && s.grid?.visible && s.inlineEmpty?.visible);
+              if (!contradictoryState) throw new Error('ready-grid + visible-inline-empty contradiction not stable across viewports');
+
+              report.classification = {
+                inlineEmpty: hiddenOverride ? 'PRODUCT_CSS_HIDDEN_OVERRIDE_DEBT' : 'PRODUCT_RESULTS_STATE_DEBT',
+                rendererFailureTest: 'STALE_FAULT_INJECTION_GETSERVICEMATCHES_NOT_ON_ACTIVE_SERVICES_PATH'
+              };
+              console.log('R3_RESULTS_PROBE=' + JSON.stringify(report));
+            } finally {
+              await browser.close();
+              s.close();
+            }
+          })().catch(err => { console.error(err.stack || err); process.exit(1); });
+          '@ | Set-Content -LiteralPath $script -Encoding UTF8
+          node $script
+
+      - name: Capture exact Resultados header-rail failure
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $output = & node scripts/test-results-header-rail-contract.js 2>&1
+          $rc = $LASTEXITCODE
+          $text = ($output | Out-String).Trim()
+          Write-Host 'R3_RESULTS_HEADER_RAIL_OUTPUT_BEGIN'
+          Write-Host $text
+          Write-Host 'R3_RESULTS_HEADER_RAIL_OUTPUT_END'
+          Write-Host "R3_RESULTS_HEADER_RAIL_RC=$rc"
+          if ($rc -ne 1) { throw "expected inherited header-rail rc=1, got $rc" }
+          if ([string]::IsNullOrWhiteSpace($text)) { throw 'header-rail failure output is empty' }
+
+      - name: Final no-mutation receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree changed' }
+          $dirty = @(git status --porcelain | Where-Object { $_ -notmatch 'ux-nav-debt-003-r3-probe' })
+          if ($dirty.Count -ne 0) { throw "unexpected worktree mutation: $($dirty -join '; ')" }
+          Write-Host 'UX_NAV_DEBT_003_R3_SAFETY={"result":"PASS","checkpoint":"UX-NAV-DEBT-003-R3","parent":"00a034f90f7940e820fab1f74c27ade9a32d16d1","productMutation":false,"candidateMaterialized":false,"snapshotMutation":false,"matrixMutation":false,"permanentBranchCreated":false,"prCreated":false,"criteriaRelaxed":0,"repositoryOnly":true}'
