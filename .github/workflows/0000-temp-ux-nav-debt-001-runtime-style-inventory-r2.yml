@@ -1,0 +1,132 @@
+name: TEMP UX-NAV-DEBT-001 Runtime Style Inventory R2
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-runtime-style-inventory-r2
+
+permissions:
+  contents: read
+
+env:
+  PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+  PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+  WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-runtime-style-inventory-r2.yml
+  DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and diagnostic-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          echo LINEAGE=PASS
+          echo DIAGNOSTIC_ONLY=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Prepare exact parent browser worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="$RUNNER_TEMP/nav001-parent-r2"
+          git worktree add --detach "$d" "$PARENT" >/dev/null
+          cd "$d"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          test -z "$(git status --porcelain)"
+
+      - name: Freeze runtime style producers and reconciler source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/nav001-parent-r2"
+          node <<'NODE'
+          const fs=require('fs');
+          const src=fs.readFileSync('assets/js/core/page-bootstrap.js','utf8');
+          const styles=[...src.matchAll(/ensureStyle\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)/g)].map(m=>({path:m[1],marker:m[2]}));
+          const expected=[
+            {path:'assets/css/components/auth/password-dialog.css',marker:'settings-password-style'},
+            {path:'assets/css/core/card-experience.css',marker:'card-experience-style'},
+            {path:'assets/css/core/accessibility-experience.css',marker:'accessibility-experience-style'},
+            {path:'assets/css/core/responsive-experience.css',marker:'responsive-experience-style'}
+          ];
+          if(JSON.stringify(styles)!==JSON.stringify(expected)) throw new Error('runtime style producer set drifted: '+JSON.stringify(styles));
+          const router=fs.readFileSync('assets/js/core/stable-shell-router.js','utf8');
+          for(const token of ['function isRouteManagedStylesheet(link)','function collectStylesheetKeys(doc)','function removeObsoleteRouteStyles(nextDoc)',"link.media = 'not all'","link.setAttribute('data-doke-route-style-inactive', 'true')"]){
+            if(!router.includes(token)) throw new Error('router token missing: '+token);
+          }
+          console.log('RUNTIME_STYLE_PRODUCERS='+JSON.stringify(styles));
+          console.log('SOURCE_OWNER_MAP=PASS');
+          NODE
+
+      - name: Prove cross-route runtime style deactivation and route-specific retirement
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/nav001-parent-r2"
+          node <<'NODE'
+          const {chromium}=require('@playwright/test');
+          const {spawn}=require('child_process');
+          const http=require('http');
+          const server=spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'},stdio:'ignore'});
+          const waitServer=()=>new Promise((resolve,reject)=>{let n=0;const p=()=>{n++;const r=http.get('http://127.0.0.1:5500/index.html',res=>{res.resume();if(res.statusCode===200)return resolve();return n>80?reject(new Error('server timeout')):setTimeout(p,250)});r.on('error',()=>n>80?reject(new Error('server timeout')):setTimeout(p,250));};p();});
+          const intercept=async p=>{await p.route('https://unpkg.com/**',r=>r.fulfill({contentType:'application/javascript',body:''}));await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:''}));await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));await p.route('https://fonts.gstatic.com/**',r=>r.abort());};
+          const session={provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'nav001-r2',role:'client',name:'NAV001',email:'nav001-r2@example.test',accountStatus:'active'}};
+          const init=p=>p.addInitScript(v=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(v)),session);
+          const settle=async p=>{await p.waitForLoadState('domcontentloaded');await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(900);};
+          const snap=(p,label)=>p.evaluate(label=>{
+            const q=n=>Math.round(Number(n||0)*10)/10;
+            const links=Array.from(document.querySelectorAll('link[rel="stylesheet"][href]')).map(link=>{const u=new URL(link.href,location.href);return{href:u.pathname,cap:link.getAttribute('data-doke-auth-capability')||'',media:link.media||'all',inactive:link.getAttribute('data-doke-route-style-inactive')==='true'};});
+            const skip=document.querySelector('[data-doke-skip-link]');const s=skip?getComputedStyle(skip):null;const r=skip?skip.getBoundingClientRect():null;const shell=document.querySelector('.app-shell');const page=document.querySelector('.page');
+            return{label,url:location.pathname,scrollY:q(scrollY),links,skip:skip?{display:s.display,position:s.position,height:q(r.height),top:q(r.top)}:null,shellTop:shell?q(shell.getBoundingClientRect().top):null,pageTop:page?q(page.getBoundingClientRect().top):null,skipCount:document.querySelectorAll('[data-doke-skip-link]').length,mainCount:document.querySelectorAll('main,[role="main"]').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth};
+          },label);
+          const cap=(s,k)=>s.links.find(x=>x.cap===k);const path=(s,k)=>s.links.find(x=>x.href===k);
+          const globalCaps=['card-experience-style','accessibility-experience-style','responsive-experience-style'];
+          const active=x=>x&&!x.inactive&&x.media!=='not all'; const retired=x=>x&&x.inactive&&x.media==='not all';
+          (async()=>{let b;try{
+            await waitServer();b=await chromium.launch();const c=await b.newContext({viewport:{width:1366,height:768}});const p=await c.newPage();await intercept(p);await init(p);
+            await p.goto('http://127.0.0.1:5500/index.html');await settle(p);const homeDirect=await snap(p,'home-direct');
+            for(const k of globalCaps)if(!active(cap(homeDirect,k)))throw new Error(k+' not active on Home direct load');
+            if(!homeDirect.skip||homeDirect.skip.position!=='fixed'||Math.abs(homeDirect.shellTop)>0.6||Math.abs(homeDirect.pageTop)>0.6)throw new Error('Home direct shell control invalid');
+            await p.waitForFunction(()=>typeof window.DokeNavigate==='function');
+            await p.evaluate(async()=>{const x=window.DokeNavigate('/resultados.html');if(x&&typeof x.then==='function')await x;});await p.waitForURL(/\/resultados\.html/);await settle(p);const resultsNav=await snap(p,'results-via-nav');
+            for(const k of globalCaps)if(!retired(cap(resultsNav,k)))throw new Error(k+' not deactivated after Home -> Resultados');
+            if(!retired(path(resultsNav,'/assets/css/pages/home.css')))throw new Error('home.css route-specific negative control did not retire');
+            if(!active(path(resultsNav,'/assets/css/pages/search-results.css')))throw new Error('search-results.css not active after navigation');
+            if(!resultsNav.skip||resultsNav.skip.position!=='static')throw new Error('skip-link did not lose fixed positioning');
+            if(!(resultsNav.shellTop>0&&resultsNav.pageTop>0))throw new Error('global flow displacement not reproduced');
+            if(resultsNav.scrollY!==0||resultsNav.overflow||resultsNav.skipCount!==1||resultsNav.mainCount!==1)throw new Error('navigation confounder detected');
+            await p.evaluate(async()=>{const x=window.DokeNavigate('/index.html');if(x&&typeof x.then==='function')await x;});await p.waitForURL(/\/index\.html/);await settle(p);const homeReturn=await snap(p,'home-return-via-nav');
+            for(const k of globalCaps)if(!retired(cap(homeReturn,k)))throw new Error(k+' unexpectedly recovered without runtime ownership reconciliation');
+            if(!active(path(homeReturn,'/assets/css/pages/home.css')))throw new Error('home.css did not reactivate on return route');
+            if(!retired(path(homeReturn,'/assets/css/pages/search-results.css')))throw new Error('search-results.css did not retire on return route');
+            if(!homeReturn.skip||homeReturn.skip.position!=='static'||!(homeReturn.shellTop>0&&homeReturn.pageTop>0))throw new Error('runtime-style defect did not persist on return route');
+            if(homeReturn.scrollY!==0||homeReturn.overflow||homeReturn.skipCount!==1||homeReturn.mainCount!==1)throw new Error('return-route confounder detected');
+            const receipt={result:'PASS',checkpoint:'UX-NAV-DEBT-001-R2',parent:'14bdb1af9cfefff4dfd27a78b937443975266001',runtimeOwnedStylesObserved:3,deactivatedRuntimeOwnedStyles:globalCaps.map(k=>({marker:k,href:cap(resultsNav,k).href})),homeToResultsFlowOffset:resultsNav.shellTop,resultsToHomeFlowOffset:homeReturn.shellTop,routeSpecificRetirementPreserved:true,directNavParity:false,criteriaRelaxed:0,productMutation:false,matrixMutation:false,repositoryOnly:true};
+            console.log('HOME_DIRECT='+JSON.stringify(homeDirect));console.log('RESULTS_VIA_NAV='+JSON.stringify(resultsNav));console.log('HOME_RETURN='+JSON.stringify(homeReturn));console.log('UX_NAV_DEBT_001_R2_INVENTORY='+JSON.stringify(receipt));
+          }finally{if(b)await b.close().catch(()=>{});server.kill();}})().catch(e=>{console.error(e);server.kill();process.exit(1)});
+          NODE
+
+      - name: Prove detached parent stayed clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/nav001-parent-r2"
+          test -z "$(git status --porcelain)"
+          echo READ_ONLY_DIAGNOSTIC=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
