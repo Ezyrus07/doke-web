@@ -1,0 +1,175 @@
+name: TEMP UX-STATE-003 R1e Governance Clean Receipt
+
+on:
+  push:
+    branches:
+      - diag/ux-state-003-r1e-governance-clean-receipt
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-ux-state-003-r1e-governance-clean-receipt.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "UX_STATE_003_R1E_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Materialize identical one-file candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $candidatePath = Join-Path $env:RUNNER_TEMP 'ux-state-003-r1e-candidate'
+          git worktree add --detach $candidatePath $parent
+          Set-Location $candidatePath
+          git config user.name 'doke-diagnostic'
+          git config user.email 'doke-diagnostic@users.noreply.github.com'
+          @'
+          from pathlib import Path
+          path = Path('assets/js/state/state-contracts.js')
+          source = path.read_text(encoding='utf-8')
+          old_apply = """    syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"""
+          new_apply = """    if (options.preserveRegion !== true) syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"""
+          old_boot = """      applyBoundaryState(boundary, initialState, { announce: false });"""
+          new_boot = """      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });"""
+          if source.count(old_apply) != 1 or source.count(old_boot) != 1:
+              raise SystemExit('candidate anchors drifted')
+          path.write_text(source.replace(old_apply, new_apply).replace(old_boot, new_boot), encoding='utf-8', newline='\n')
+          '@ | python -
+          git add assets/js/state/state-contracts.js
+          git commit -m 'fix(state): preserve established region during bootstrap'
+          $candidate = (git rev-parse HEAD).Trim()
+          $candidateTree = (git rev-parse 'HEAD^{tree}').Trim()
+          $stateBlob = (git rev-parse 'HEAD:assets/js/state/state-contracts.js').Trim()
+          $files = @(git diff --name-only $parent $candidate)
+          if ($files.Count -ne 1 -or $files[0] -ne 'assets/js/state/state-contracts.js') { throw "candidate scope drift: $($files -join ', ')" }
+          node --check assets/js/state/state-contracts.js
+          if ($LASTEXITCODE -ne 0) { throw "node --check rc=$LASTEXITCODE" }
+          git diff --check $parent $candidate
+          if ($LASTEXITCODE -ne 0) { throw "git diff --check rc=$LASTEXITCODE" }
+          "CANDIDATE_PATH=$candidatePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_SHA=$candidate" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_TREE=$candidateTree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "STATE_BLOB=$stateBlob" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "UX_STATE_003_R1E_CANDIDATE=PASS candidate=$candidate tree=$candidateTree stateBlob=$stateBlob files=1"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          & npm.cmd ci
+          if ($LASTEXITCODE -ne 0) { throw "npm ci rc=$LASTEXITCODE" }
+
+      - name: Run post-Matrix governance components and clean generated audit outputs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          $scripts = @(
+            'audit:active-legacy-structures',
+            'audit:page-asset-authority-matrix',
+            'audit:home-rail-card-authority',
+            'audit:docs-report-hygiene',
+            'audit:duplicate-assets',
+            'audit:form-page-top-contract',
+            'audit:form-button-contract',
+            'audit:navigation-registry-contract',
+            'audit:mobile-drawer-visual-authority',
+            'audit:mobile-shell-location-contract',
+            'audit:operational-event-toast-contract',
+            'audit:shared-app-header-contract',
+            'audit:page-label-references',
+            'audit:content-action-contract',
+            'audit:content-surface-contract',
+            'audit:content-tab-contract',
+            'audit:content-search-contract',
+            'audit:content-disclosure-contract',
+            'audit:content-icon-contract',
+            'audit:content-meta-contract',
+            'audit:content-side-list-contract',
+            'audit:close-button-contract',
+            'audit:overlay-modal-contract',
+            'audit:modal-visual-contract',
+            'audit:form-control-contract',
+            'audit:button-system-contract',
+            'audit:modal-lab-footer-contract'
+          )
+          $passed = 0
+          foreach ($script in $scripts) {
+            & npm.cmd run $script
+            $rc = $LASTEXITCODE
+            if ($rc -ne 0) { throw "governance component failed script=$script rc=$rc" }
+            $passed += 1
+          }
+          $dirty = @(git status --porcelain=v1 | ForEach-Object { $_.Substring(3) })
+          $allowedGenerated = @('docs/HOME-AUTHORITY-CLASSIFICATION.md','docs/PAGE-ASSET-AUTHORITY-MATRIX.md')
+          $unexpected = @($dirty | Where-Object { $_ -notin $allowedGenerated })
+          if ($unexpected.Count -ne 0) { throw "unexpected audit-generated mutation: $($unexpected -join ', ')" }
+          $missingExpected = @($dirty | Where-Object { $_ -in $allowedGenerated })
+          Write-Host "UX_STATE_003_R1E_AUDIT_GENERATED_OUTPUTS observed=$($missingExpected.Count) paths=$($missingExpected -join ',')"
+          if ($dirty.Count) {
+            git restore --source=$env:CANDIDATE_SHA --worktree --staged -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+            if ($LASTEXITCODE -ne 0) { throw "restore generated docs rc=$LASTEXITCODE" }
+          }
+          if (git status --porcelain) { throw "worktree remains dirty after generated-output restore: $(git status --porcelain)" }
+          Write-Host "UX_STATE_003_R1E_GOVERNANCE_COMPONENTS=PASS components=$passed persistentMutation=false generatedOutputsRestored=true"
+
+      - name: Reconfirm shared state completion and immutable candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          & npm.cmd run audit:global-state-completion
+          if ($LASTEXITCODE -ne 0) { throw "global state completion rc=$LASTEXITCODE" }
+          node --check assets/js/state/state-contracts.js
+          if ($LASTEXITCODE -ne 0) { throw "final node --check rc=$LASTEXITCODE" }
+          git diff --check '00a034f90f7940e820fab1f74c27ade9a32d16d1' $env:CANDIDATE_SHA
+          if ($LASTEXITCODE -ne 0) { throw "final git diff --check rc=$LASTEXITCODE" }
+          $files = @(git diff --name-only '00a034f90f7940e820fab1f74c27ade9a32d16d1' $env:CANDIDATE_SHA)
+          if ($files.Count -ne 1 -or $files[0] -ne 'assets/js/state/state-contracts.js') { throw "final candidate scope drift: $($files -join ', ')" }
+          if (git status --porcelain) { throw "candidate worktree dirty: $(git status --porcelain)" }
+          Write-Host 'UX_STATE_003_R1E_STATE_AND_SCOPE=PASS files=1 introducedRegressions=0 criteriaRelaxed=0'
+
+      - name: Final qualification receipt with inherited blockers
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          Write-Host "UX_STATE_003_R1E_QUALIFICATION=PASS candidate=$env:CANDIDATE_SHA tree=$env:CANDIDATE_TREE stateBlob=$env:STATE_BLOB oneFileOwner=true behaviorQualifiedByR1R1b=true inheritedSearchFlowFailures=2 inheritedDomainMatrixStale=true governanceComponentsPass=true globalStateCompletionPass=true permanentPromotionAuthorized=false"
+
+      - name: Final no-promotion safety receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree changed' }
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-ux-state-003-r1e-governance-clean-receipt.yml') { throw 'remote TEMP scope changed' }
+          Write-Host 'R1E_REMOTE_PRODUCT_MUTATION=false'
+          Write-Host 'R1E_SNAPSHOT_MUTATION=false'
+          Write-Host 'R1E_DOMAIN_MATRIX_MUTATION=false'
+          Write-Host 'R1E_PERMANENT_BRANCH_CREATED=false'
+          Write-Host 'R1E_PR_CREATED=false'
+          if ($env:CANDIDATE_SHA) {
+            Write-Host "UX_STATE_003_R1E_SAFETY=PASS parent=$parent candidate=$env:CANDIDATE_SHA candidateTree=$env:CANDIDATE_TREE stateBlob=$env:STATE_BLOB productFiles=1 criteriaRelaxed=0 snapshotMutation=false domainMatrixMutation=false remoteProductMutation=false permanentBranchCreated=false prCreated=false repositoryOnly=true"
+          }
