@@ -177,6 +177,12 @@
     'width'
   ];
 
+  var PERSISTENT_RUNTIME_STYLE_CAPABILITIES = new Set([
+    'card-experience-style',
+    'accessibility-experience-style',
+    'responsive-experience-style'
+  ]);
+
   var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
   var routeCache = new Map();
   var routeWarmCache = new Map();
@@ -237,6 +243,8 @@
 
   function isRouteManagedStylesheet(link) {
     if (!link || !link.href) return false;
+    var runtimeCapability = link.getAttribute('data-doke-auth-capability') || '';
+    if (PERSISTENT_RUNTIME_STYLE_CAPABILITIES.has(runtimeCapability)) return false;
     try {
       var url = new URL(link.href, window.location.href);
       if (url.origin === window.location.origin && /\/assets\/css\//i.test(url.pathname)) return true;
