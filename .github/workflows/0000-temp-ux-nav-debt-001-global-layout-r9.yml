@@ -1,0 +1,216 @@
+name: TEMP UX-NAV-DEBT-001 Global Layout R9
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-global-layout-r9
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      EXPECTED_ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
+      EXPECTED_CANDIDATE_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      EXPECTED_PATCH_SHA256: 5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-global-layout-r9.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          echo "TEMP_HEAD=$H"
+          echo LINEAGE=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Re-materialize exact frozen candidate and install browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/nav001-parent-r9"
+          C="$RUNNER_TEMP/nav001-candidate-r9"
+          git worktree add --detach "$P" "$PARENT" >/dev/null
+          git worktree add --detach "$C" "$PARENT" >/dev/null
+          cd "$C"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/stable-shell-router.js')
+          s=p.read_text()
+          a1="  var CORE_SCRIPT_RE = /assets\\/js\\/core\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\.js(?:\\?.*)?$/i;\n"
+          i1="  var PERSISTENT_RUNTIME_STYLE_CAPABILITIES = new Set([\n    'card-experience-style',\n    'accessibility-experience-style',\n    'responsive-experience-style'\n  ]);\n\n"+a1
+          a2="  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    try {\n"
+          i2="  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    var runtimeCapability = link.getAttribute('data-doke-auth-capability') || '';\n    if (PERSISTENT_RUNTIME_STYLE_CAPABILITIES.has(runtimeCapability)) return false;\n    try {\n"
+          if s.count(a1)!=1 or s.count(a2)!=1: raise SystemExit('candidate anchor drift')
+          p.write_text(s.replace(a1,i1,1).replace(a2,i2,1))
+          PY
+          node --check assets/js/core/stable-shell-router.js
+          git diff --check
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          git add assets/js/core/stable-shell-router.js
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --cached --name-only "$PARENT")" = 'assets/js/core/stable-shell-router.js'
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          npm --prefix "$P" ci --ignore-scripts
+          npm --prefix "$C" ci --ignore-scripts
+          node "$C/node_modules/@playwright/test/cli.js" install --with-deps chromium
+          echo "PARENT_DIR=$P" >> "$GITHUB_ENV"
+          echo "CANDIDATE_DIR=$C" >> "$GITHUB_ENV"
+          echo CANDIDATE_CONTENT_IDENTITY=PASS
+
+      - name: Run canonical global-layout contract to JSON in parent and candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_json() {
+            local root="$1" out="$2" err="$3"
+            set +e
+            (cd "$root" && CI=1 DOKE_E2E_DISABLE_REMOTE_SERVICES=1 node node_modules/@playwright/test/cli.js test tests/e2e/global-layout-contract.spec.js --project=desktop-chrome --reporter=json) >"$out" 2>"$err"
+            local rc=$?
+            set -e
+            git -C "$root" restore --worktree -- reports/generated docs/validation 2>/dev/null || true
+            git -C "$root" clean -fd -- test-results playwright-report reports/generated docs/validation >/dev/null 2>&1 || true
+            echo "$rc"
+          }
+          PRC="$(run_json "$PARENT_DIR" "$RUNNER_TEMP/r9-parent.json" "$RUNNER_TEMP/r9-parent.err")"
+          CRC="$(run_json "$CANDIDATE_DIR" "$RUNNER_TEMP/r9-candidate.json" "$RUNNER_TEMP/r9-candidate.err")"
+          echo "PARENT_RC=$PRC" >> "$GITHUB_ENV"
+          echo "CANDIDATE_RC=$CRC" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_PARENT_RC=$PRC"
+          echo "PLAYWRIGHT_CANDIDATE_RC=$CRC"
+          test -s "$RUNNER_TEMP/r9-parent.json"
+          test -s "$RUNNER_TEMP/r9-candidate.json"
+          echo PLAYWRIGHT_JSON_CAPTURE=PASS
+
+      - name: Compare Playwright test-status semantics fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const pFile=process.env.RUNNER_TEMP+'/r9-parent.json';
+          const cFile=process.env.RUNNER_TEMP+'/r9-candidate.json';
+          const parse=(f)=>{try{return JSON.parse(fs.readFileSync(f,'utf8'));}catch(e){console.error('JSON_PARSE_FAIL '+f+' '+e.message);process.exit(2)}};
+          const normalize=s=>String(s||'')
+            .replace(/\u001b\[[0-9;]*m/g,'')
+            .replaceAll(process.env.RUNNER_TEMP||'', '<TMP>')
+            .replace(/\/home\/runner\/work\/[^\s:]+/g,'<WORK>')
+            .replace(/nav001-(?:parent|candidate)-r9/g,'<TREE>')
+            .replace(/127\.0\.0\.1:\d+/g,'127.0.0.1:<PORT>')
+            .replace(/\s+/g,' ')
+            .trim();
+          function collect(report){
+            const out=[];
+            function walkSuite(s,prefix=[]){
+              const pre=[...prefix,...(s.title?[s.title]:[])];
+              for(const spec of s.specs||[]){
+                for(const test of spec.tests||[]){
+                  const title=[...pre,spec.title].filter(Boolean).join(' > ');
+                  const status=test.status;
+                  if(!['expected','unexpected','skipped'].includes(status)) throw new Error('unknown Playwright test.status '+String(status)+' for '+title);
+                  const results=test.results||[];
+                  const last=results.at(-1)||{};
+                  const errors=(last.errors||[]).map(e=>normalize(e.message||e.value||e.stack||'')).filter(Boolean);
+                  out.push({title,status,error:errors[0]||''});
+                }
+              }
+              for(const child of s.suites||[])walkSuite(child,pre);
+            }
+            for(const s of report.suites||[])walkSuite(s,[]);
+            return out;
+          }
+          function counts(rows){
+            return {
+              expected: rows.filter(x=>x.status==='expected').length,
+              unexpected: rows.filter(x=>x.status==='unexpected').length,
+              skipped: rows.filter(x=>x.status==='skipped').length
+            };
+          }
+          function verifyStats(report, rows, label){
+            const c=counts(rows);
+            const st=report.stats||{};
+            for(const k of ['expected','unexpected','skipped']){
+              if(typeof st[k] !== 'number') throw new Error(label+' reporter stats missing numeric '+k);
+              if(st[k] !== c[k]) throw new Error(label+' reporter stats mismatch '+k+' report='+st[k]+' collected='+c[k]);
+            }
+            if(typeof st.flaky === 'number' && st.flaky !== 0) throw new Error(label+' has flaky='+st.flaky+'; fail closed');
+            return c;
+          }
+          const pReport=parse(pFile), cReport=parse(cFile);
+          const p=collect(pReport), c=collect(cReport);
+          const pc=verifyStats(pReport,p,'parent'), cc=verifyStats(cReport,c,'candidate');
+          const key=x=>x.title;
+          const pm=new Map(p.map(x=>[key(x),x])); const cm=new Map(c.map(x=>[key(x),x]));
+          if(pm.size!==p.length || cm.size!==c.length) throw new Error('duplicate test titles detected');
+          if(p.length!==c.length) throw new Error('test inventory differs parent='+p.length+' candidate='+c.length);
+          if([...pm.keys()].some(k=>!cm.has(k))) throw new Error('candidate test inventory missing parent title');
+          const pFailed=p.filter(x=>x.status==='unexpected');
+          const cFailed=c.filter(x=>x.status==='unexpected');
+          if(p.some(x=>x.status==='expected' && x.error)) throw new Error('parent expected test unexpectedly carries error');
+          if(c.some(x=>x.status==='expected' && x.error)) throw new Error('candidate expected test unexpectedly carries error');
+          const candidateOnly=[]; const parentOnly=[]; const sharedChanged=[];
+          for(const x of cFailed){
+            const y=pm.get(key(x));
+            if(!y || y.status!=='unexpected') candidateOnly.push(x);
+            else if(normalize(y.error)!==normalize(x.error)) sharedChanged.push({title:x.title,parentError:y.error,candidateError:x.error});
+          }
+          for(const x of pFailed){
+            const y=cm.get(key(x));
+            if(y && y.status!=='unexpected') parentOnly.push(x);
+          }
+          const summary={
+            parentTotal:p.length,candidateTotal:c.length,
+            parentExpected:pc.expected,parentUnexpected:pc.unexpected,parentSkipped:pc.skipped,
+            candidateExpected:cc.expected,candidateUnexpected:cc.unexpected,candidateSkipped:cc.skipped,
+            candidateOnlyFailures:candidateOnly.length,parentOnlyFailures:parentOnly.length,
+            sharedFailureSignatureChanges:sharedChanged.length
+          };
+          console.log('PLAYWRIGHT_OUTCOME_MAP_R9='+JSON.stringify(summary));
+          if(candidateOnly.length) throw new Error('candidate introduced failing tests: '+candidateOnly.map(x=>x.title).join(' | '));
+          if(sharedChanged.length) throw new Error('shared failure signatures changed: '+sharedChanged.map(x=>x.title).join(' | '));
+          if(cc.unexpected>pc.unexpected) throw new Error('candidate unexpected count increased parent='+pc.unexpected+' candidate='+cc.unexpected);
+          fs.appendFileSync(process.env.GITHUB_ENV,
+            'PARENT_EXPECTED='+pc.expected+'\nPARENT_UNEXPECTED='+pc.unexpected+'\nPARENT_SKIPPED='+pc.skipped+'\n'+
+            'CANDIDATE_EXPECTED='+cc.expected+'\nCANDIDATE_UNEXPECTED='+cc.unexpected+'\nCANDIDATE_SKIPPED='+cc.skipped+'\n'+
+            'CANDIDATE_ONLY_FAILURES='+candidateOnly.length+'\nPARENT_ONLY_FAILURES='+parentOnly.length+'\nSHARED_FAILURE_SIGNATURE_CHANGES='+sharedChanged.length+'\n');
+          console.log('PLAYWRIGHT_TEST_STATUS_SEMANTICS=PASS');
+          console.log('REPORTER_STATS_CROSSCHECK=PASS');
+          console.log('NO_CANDIDATE_ONLY_FAILURES=PASS');
+          console.log('SHARED_FAILURE_SIGNATURES_STABLE=PASS');
+          NODE
+
+      - name: Freeze R9 receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          test "$(git diff --cached --name-only "$PARENT")" = 'assets/js/core/stable-shell-router.js'
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          printf 'UX_NAV_DEBT_001_R9_GLOBAL_LAYOUT={"result":"PASS","checkpoint":"UX-NAV-DEBT-001-R9","parent":"%s","candidateTree":"%s","routerBlob":"%s","patchSha256":"%s","parentRc":%s,"candidateRc":%s,"parentExpected":%s,"parentUnexpected":%s,"parentSkipped":%s,"candidateExpected":%s,"candidateUnexpected":%s,"candidateSkipped":%s,"candidateOnlyFailures":%s,"parentOnlyFailures":%s,"sharedFailureSignatureChanges":%s,"parserSemantics":"playwright-test-status","criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"remoteProductMutation":false,"repositoryOnly":true}\n' \
+            "$PARENT" "$EXPECTED_CANDIDATE_TREE" "$EXPECTED_ROUTER_BLOB" "$EXPECTED_PATCH_SHA256" \
+            "$PARENT_RC" "$CANDIDATE_RC" "$PARENT_EXPECTED" "$PARENT_UNEXPECTED" "$PARENT_SKIPPED" \
+            "$CANDIDATE_EXPECTED" "$CANDIDATE_UNEXPECTED" "$CANDIDATE_SKIPPED" \
+            "$CANDIDATE_ONLY_FAILURES" "$PARENT_ONLY_FAILURES" "$SHARED_FAILURE_SIGNATURE_CHANGES"
+          echo R9_DIAGNOSTIC=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
