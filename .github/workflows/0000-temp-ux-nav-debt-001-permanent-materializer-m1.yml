@@ -1,0 +1,111 @@
+name: TEMP UX-NAV-DEBT-001 Permanent Materializer M1
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-permanent-materializer-m1
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      EXPECTED_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      EXPECTED_ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
+      EXPECTED_PATCH_SHA256: 5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca
+      PERMANENT_BRANCH: ux/ux-nav-debt-001-runtime-style-persistence
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-permanent-materializer-m1.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze TEMP lineage and permanent-branch absence
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          if git ls-remote --exit-code --heads origin "refs/heads/$PERMANENT_BRANCH" >/dev/null 2>&1; then
+            echo "Permanent branch already exists; refusing to mutate it."
+            exit 1
+          fi
+          echo LINEAGE=PASS
+          echo PERMANENT_BRANCH_ABSENT=PASS
+          echo MATRIX_MUTATION=false
+
+      - name: Reproduce frozen one-file candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('assets/js/core/stable-shell-router.js')
+          s = p.read_text()
+          anchor1 = "  var CORE_SCRIPT_RE = /assets\\/js\\/core\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\.js(?:\\?.*)?$/i;\n"
+          insertion1 = "  var PERSISTENT_RUNTIME_STYLE_CAPABILITIES = new Set([\n    'card-experience-style',\n    'accessibility-experience-style',\n    'responsive-experience-style'\n  ]);\n\n" + anchor1
+          if s.count(anchor1) != 1:
+              raise SystemExit('CORE_SCRIPT_RE anchor drifted')
+          s = s.replace(anchor1, insertion1, 1)
+          anchor2 = "  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    try {\n"
+          insertion2 = "  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    var runtimeCapability = link.getAttribute('data-doke-auth-capability') || '';\n    if (PERSISTENT_RUNTIME_STYLE_CAPABILITIES.has(runtimeCapability)) return false;\n    try {\n"
+          if s.count(anchor2) != 1:
+              raise SystemExit('isRouteManagedStylesheet anchor drifted')
+          s = s.replace(anchor2, insertion2, 1)
+          p.write_text(s)
+          PY
+          node --check assets/js/core/stable-shell-router.js
+          git diff --check
+          mapfile -t changed < <(git diff --name-only "$PARENT")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "assets/js/core/stable-shell-router.js"
+          test -z "$(git diff --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          PATCH_SHA256="$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')"
+          ROUTER_BLOB="$(git hash-object assets/js/core/stable-shell-router.js)"
+          test "$PATCH_SHA256" = "$EXPECTED_PATCH_SHA256"
+          test "$ROUTER_BLOB" = "$EXPECTED_ROUTER_BLOB"
+          git add assets/js/core/stable-shell-router.js
+          git -c user.name='Doke' -c user.email='doke@users.noreply.github.com' commit -m 'fix(nav): preserve persistent runtime styles' >/dev/null
+          HEAD_SHA="$(git rev-parse HEAD)"
+          TREE="$(git rev-parse 'HEAD^{tree}')"
+          test "$TREE" = "$EXPECTED_TREE"
+          test "$(git rev-list --parents -n1 HEAD | awk '{print $2}')" = "$PARENT"
+          mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
+          test "${#committed[@]}" -eq 1
+          test "${committed[0]}" = 'assets/js/core/stable-shell-router.js'
+          echo "PERMANENT_HEAD=$HEAD_SHA" >> "$GITHUB_ENV"
+          echo "PERMANENT_TREE=$TREE" >> "$GITHUB_ENV"
+          echo "ROUTER_BLOB=$ROUTER_BLOB" >> "$GITHUB_ENV"
+          echo "PATCH_SHA256=$PATCH_SHA256" >> "$GITHUB_ENV"
+          echo FROZEN_IDENTITY=PASS
+          echo PRODUCT_FILES=1
+          echo MATRIX_MUTATION=false
+
+      - name: Publish permanent branch without force
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin "refs/heads/$PERMANENT_BRANCH" >/dev/null 2>&1; then
+            echo "Permanent branch appeared concurrently; refusing to overwrite."
+            exit 1
+          fi
+          git push origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$PERMANENT_HEAD"
+          echo PERMANENT_BRANCH_PUBLISHED=PASS
+
+      - name: Emit receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'UX_NAV_DEBT_001_PERMANENT_MATERIALIZATION={"result":"PASS","checkpoint":"UX-NAV-DEBT-001","parent":"%s","head":"%s","tree":"%s","routerBlob":"%s","patchSha256":"%s","files":1,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"repositoryOnly":true,"prCreated":false,"readyForReview":false,"merged":false}\n' "$PARENT" "$PERMANENT_HEAD" "$PERMANENT_TREE" "$ROUTER_BLOB" "$PATCH_SHA256"
