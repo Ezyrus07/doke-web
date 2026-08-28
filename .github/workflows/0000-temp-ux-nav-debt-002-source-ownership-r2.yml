@@ -1,0 +1,85 @@
+name: TEMP UX-NAV-DEBT-002 Source Ownership R2
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-source-ownership-r2
+
+permissions:
+  contents: read
+
+jobs:
+  source-ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PARENT: 00a034f90f7940e820fab1f74c27ade9a32d16d1
+      PARENT_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-source-ownership-r2.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact parent and diagnostic-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          echo 'LINEAGE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'PARENT_TREE=PASS'
+
+      - name: Map filter-state authority source and route initializer ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== FILTER AUTHORITY MARKER HITS ==='
+          git grep -n -I -E '20260805-ux-filters-001-v1|data-results-filter-status|data-filter-authority|Filtros aplicados\.' "$PARENT" -- '*.js' '*.html' '*.md' || true
+
+          echo '=== FILTER CONTRACT / DIRTY STATE HITS ==='
+          git grep -n -I -E 'search-filter-state-v1|data-filter-contract|data-filter-dirty|filterState|filter-state' "$PARENT" -- 'assets/js/**/*.js' 'resultados.html' 'index.html' || true
+
+          echo '=== RESULTADOS FILTER-RELATED SCRIPT TAGS ==='
+          git show "$PARENT:resultados.html" | grep -nEi 'script .*filter|filter.*\.js|filters.*\.js|filter-state|applied-draft' || true
+
+          echo '=== STABLE SHELL ROUTE INIT MAP ==='
+          git show "$PARENT:assets/js/core/stable-shell-router.js" | grep -nE -C 8 'ROUTE_INIT|resultados|runInitializers' || true
+
+          echo '=== GLOBAL INITIALIZER EXPORTS AROUND FILTER AUTHORITY ==='
+          mapfile -t owner_files < <(git grep -l -I -E '20260805-ux-filters-001-v1|data-results-filter-status|data-filter-authority|search-filter-state-v1' "$PARENT" -- 'assets/js/**/*.js' || true)
+          printf 'FILTER_OWNER_FILES=%s\n' "${owner_files[*]:-NONE}"
+          for file in "${owner_files[@]}"; do
+            echo "--- OWNER FILE: $file ---"
+            git show "$PARENT:$file" | grep -nE -C 10 '20260805-ux-filters-001-v1|data-results-filter-status|data-filter-authority|search-filter-state-v1|window\.|init|DOMContentLoaded|doke:route|stable-route' || true
+          done
+
+          echo '=== PAGE CHILD RECONCILIATION OWNER ==='
+          git show "$PARENT:assets/js/core/stable-shell-router.js" | grep -nE -C 12 'function replaceShell|currentContent\.replaceWith|syncStandaloneUi|currentPage|nextPage' || true
+
+          if [[ ${#owner_files[@]} -eq 0 ]]; then
+            echo 'FILTER_OWNER_RESOLVED=false'
+            exit 2
+          fi
+          echo 'FILTER_OWNER_RESOLVED=true'
+          echo 'PAGE_SIBLING_OWNER=assets/js/core/stable-shell-router.js'
+          echo 'UX_NAV_DEBT_002_R2_SOURCE={"result":"PASS","checkpoint":"UX-NAV-DEBT-002-R2","parent":"00a034f90f7940e820fab1f74c27ade9a32d16d1","filterOwnerResolved":true,"pageSiblingOwner":"assets/js/core/stable-shell-router.js","criteriaRelaxed":0,"productMutation":false,"snapshotMutation":false,"matrixMutation":false,"repositoryOnly":true}'
+
+      - name: Freeze no-mutation receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git restore --worktree -- reports/generated docs/validation 2>/dev/null || true
+          git clean -fd -- test-results playwright-report reports/generated docs/validation 2>/dev/null || true
+          [[ -z "$(git status --porcelain)" ]] || { git status --porcelain; exit 1; }
+          echo 'PRODUCT_MUTATION=false'
+          echo 'SNAPSHOT_MUTATION=false'
+          echo 'MATRIX_MUTATION=false'
+          echo 'CRITERIA_RELAXED=0'
+          echo 'REPOSITORY_ONLY=true'
