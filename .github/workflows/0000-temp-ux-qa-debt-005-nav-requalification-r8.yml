@@ -1,0 +1,163 @@
+name: TEMP UX-QA-DEBT-005 Nav Requalification R8
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-nav-requalification-r8
+
+permissions:
+  contents: read
+
+jobs:
+  win32-direct-nav:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      PARENT: 00a034f90f7940e820fab1f74c27ade9a32d16d1
+      PARENT_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-nav-requalification-r8.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and immutable snapshot identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $head = (git rev-parse HEAD).Trim()
+          $parents = ((git rev-list --parents -n1 $head).Trim() -split ' ')
+          if ($parents.Count -ne 2 -or $parents[1] -ne $env:PARENT) { throw 'TEMP lineage mismatch' }
+          $changed = @(git diff-tree --no-commit-id --name-only -r $head)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $env:WORKFLOW_PATH) { throw "TEMP scope mismatch: $($changed -join ',')" }
+          $tree = (git rev-parse "$env:PARENT^{tree}").Trim()
+          if ($tree -ne $env:PARENT_TREE) { throw 'Parent TREE mismatch' }
+          $snapshotBlob = ((git ls-tree $env:PARENT -- $env:SNAPSHOT) -split '\s+')[2]
+          if (-not $snapshotBlob) { throw 'Snapshot blob missing' }
+          $snapshotHash = (Get-FileHash -Algorithm SHA256 $env:SNAPSHOT).Hash.ToLowerInvariant()
+          "SNAPSHOT_BLOB=$snapshotBlob" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SNAPSHOT_SHA256=$snapshotHash" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "LINEAGE=PASS"
+          Write-Host "TEMP_SCOPE=PASS"
+          Write-Host "PARENT_TREE=PASS"
+          Write-Host "SNAPSHOT_BLOB=$snapshotBlob"
+          Write-Host "SNAPSHOT_SHA256=$snapshotHash"
+          Write-Host "SNAPSHOT_MUTATION=false"
+
+      - name: Install dependencies and Chromium
+        shell: pwsh
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install chromium
+
+      - name: Prove Resultados direct-load vs DokeNavigate parity
+        shell: pwsh
+        run: |
+          @'
+          const { chromium } = require('@playwright/test');
+          const { spawn } = require('child_process');
+          const http = require('http');
+          const port = 4329;
+          const base = `http://127.0.0.1:${port}`;
+          const session = {provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'qa005-r8',role:'client',name:'QA005 R8',email:'qa005-r8@example.test',accountStatus:'active'}};
+          const globalCaps = ['card-experience-style','accessibility-experience-style','responsive-experience-style'];
+          const selectors = {
+            shell: '.app-shell',
+            page: '.page',
+            header: '[data-app-header], .app-header',
+            content: '.page__content',
+            workspace: '.search-results-workspace',
+            searchbar: '.results-searchbar',
+            layout: '.results-layout'
+          };
+          const styleKeys = ['display','position','boxSizing','width','maxWidth','paddingLeft','paddingRight','marginLeft','marginRight'];
+          const q = n => Math.round(Number(n || 0) * 10) / 10;
+          const waitServer = () => new Promise((resolve,reject) => {
+            let tries=0;
+            const ping=()=>{tries++;const req=http.get(base+'/index.html',res=>{res.resume();if(res.statusCode===200)return resolve();if(tries>100)return reject(new Error('server timeout'));setTimeout(ping,200)});req.on('error',()=>tries>100?reject(new Error('server timeout')):setTimeout(ping,200));};
+            ping();
+          });
+          async function intercept(page){
+            await page.route('https://unpkg.com/**', r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await page.route('https://cdn.jsdelivr.net/**', r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await page.route('https://fonts.googleapis.com/**', r=>r.fulfill({contentType:'text/css',body:''}));
+            await page.route('https://fonts.gstatic.com/**', r=>r.abort());
+          }
+          async function init(page){ await page.addInitScript(v=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(v)),session); }
+          async function settle(page){ await page.waitForLoadState('domcontentloaded'); await page.waitForLoadState('networkidle').catch(()=>{}); await page.waitForTimeout(1000); }
+          async function snap(page,label){
+            return page.evaluate(({label,selectors,styleKeys,globalCaps})=>{
+              const q=n=>Math.round(Number(n||0)*10)/10;
+              const nodes={};
+              for(const [name,sel] of Object.entries(selectors)){
+                const el=document.querySelector(sel);
+                if(!el){nodes[name]=null;continue;}
+                const r=el.getBoundingClientRect(); const cs=getComputedStyle(el); const styles={};
+                for(const k of styleKeys) styles[k]=cs[k];
+                nodes[name]={rect:{top:q(r.top),left:q(r.left),width:q(r.width),height:q(r.height)},styles};
+              }
+              const skip=document.querySelector('[data-doke-skip-link]'); const ss=skip?getComputedStyle(skip):null;
+              const links=Array.from(document.querySelectorAll('link[rel="stylesheet"][href]')).map(link=>({cap:link.getAttribute('data-doke-auth-capability')||'',media:link.media||'all',inactive:link.getAttribute('data-doke-route-style-inactive')==='true',href:new URL(link.href,location.href).pathname}));
+              const active=document.activeElement;
+              const activeMain=Boolean(active && (active.matches?.('main,[role="main"]') || active.closest?.('main,[role="main"]')));
+              return {label,url:location.pathname,scrollY:q(scrollY),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,skip:skip?{display:ss.display,position:ss.position}:null,skipCount:document.querySelectorAll('[data-doke-skip-link]').length,mainCount:document.querySelectorAll('main,[role="main"]').length,activeMain,nodes,globalStyles:globalCaps.map(cap=>{const x=links.find(v=>v.cap===cap);return{cap,active:Boolean(x&&!x.inactive&&x.media!=='not all'),media:x?.media||null,inactive:x?.inactive??null};})};
+            },{label,selectors,styleKeys,globalCaps});
+          }
+          function common(s){
+            if(s.scrollY!==0) throw new Error(`${s.label}: scrollY=${s.scrollY}`);
+            if(s.overflow) throw new Error(`${s.label}: horizontal overflow`);
+            if(s.skipCount!==1||s.mainCount!==1) throw new Error(`${s.label}: landmark counts skip=${s.skipCount} main=${s.mainCount}`);
+            if(!s.skip||s.skip.position!=='fixed') throw new Error(`${s.label}: skip-link not fixed`);
+            for(const g of s.globalStyles) if(!g.active) throw new Error(`${s.label}: ${g.cap} inactive`);
+            for(const [name,node] of Object.entries(s.nodes)) if(!node) throw new Error(`${s.label}: missing ${name}`);
+          }
+          function compare(a,b){
+            const diffs=[];
+            for(const name of Object.keys(selectors)){
+              const ar=a.nodes[name], br=b.nodes[name];
+              for(const k of ['top','left','width','height']) if(Math.abs(ar.rect[k]-br.rect[k])>0.6) diffs.push(`${name}.rect.${k}:${ar.rect[k]}!=${br.rect[k]}`);
+              for(const k of styleKeys) if(ar.styles[k]!==br.styles[k]) diffs.push(`${name}.style.${k}:${ar.styles[k]}!=${br.styles[k]}`);
+            }
+            if(a.skip.display!==b.skip.display||a.skip.position!==b.skip.position) diffs.push(`skip-style:${JSON.stringify(a.skip)}!=${JSON.stringify(b.skip)}`);
+            return diffs;
+          }
+          (async()=>{
+            let browser; const server=spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port='+port],{env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'},stdio:'ignore'});
+            try{
+              await waitServer(); browser=await chromium.launch();
+              const directCtx=await browser.newContext({viewport:{width:1366,height:768}}); const directPage=await directCtx.newPage(); await intercept(directPage); await init(directPage); await directPage.goto(base+'/resultados.html'); await settle(directPage); const direct=await snap(directPage,'direct'); common(direct);
+              const navCtx=await browser.newContext({viewport:{width:1366,height:768}}); const navPage=await navCtx.newPage(); await intercept(navPage); await init(navPage); await navPage.goto(base+'/index.html'); await settle(navPage); await navPage.waitForFunction(()=>typeof window.DokeNavigate==='function'); await navPage.evaluate(async()=>{const x=window.DokeNavigate('/resultados.html');if(x&&typeof x.then==='function')await x;}); await navPage.waitForURL(/\/resultados\.html/); await settle(navPage); const nav=await snap(navPage,'via-nav'); common(nav);
+              if(!nav.activeMain) throw new Error('via-nav: canonical main did not receive route focus');
+              const diffs=compare(direct,nav); if(diffs.length) throw new Error('direct/nav parity drift: '+diffs.join(' | '));
+              console.log('QA005_R8_DIRECT='+JSON.stringify(direct));
+              console.log('QA005_R8_NAV='+JSON.stringify(nav));
+              console.log('DIRECT_NAV_GEOMETRY_PARITY=PASS');
+              console.log('DIRECT_NAV_COMPUTED_STYLE_PARITY=PASS');
+              console.log('GLOBAL_RUNTIME_STYLES_ACTIVE=3');
+              console.log('A11Y_LANDMARK_FOCUS=PASS');
+              console.log('HORIZONTAL_OVERFLOW=false');
+              console.log('UX_QA_DEBT_005_R8_NAV_REQUALIFICATION='+JSON.stringify({result:'PASS',checkpoint:'UX-QA-DEBT-005-R8',parent:process.env.PARENT,viewport:'1366x768',platform:'windows-latest',directNavGeometryParity:true,directNavComputedStyleParity:true,persistentRuntimeStyles:3,skipLinkFixed:true,routeFocusMain:true,horizontalOverflow:false,criteriaRelaxed:0,productMutation:false,snapshotMutation:false,matrixMutation:false,repositoryOnly:true}));
+              await directCtx.close(); await navCtx.close();
+            } finally { if(browser)await browser.close().catch(()=>{}); server.kill(); }
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          '@ | Set-Content -Encoding utf8 $env:RUNNER_TEMP\qa005-r8.js
+          node $env:RUNNER_TEMP\qa005-r8.js
+
+      - name: Freeze no-mutation receipt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $currentHash = (Get-FileHash -Algorithm SHA256 $env:SNAPSHOT).Hash.ToLowerInvariant()
+          if ($currentHash -ne $env:SNAPSHOT_SHA256) { throw 'Snapshot bytes changed' }
+          git restore --worktree -- reports/generated docs/validation 2>$null
+          git clean -fd -- test-results playwright-report reports/generated docs/validation 2>$null
+          $status = @(git status --porcelain)
+          if ($status.Count -ne 0) { throw "Worktree dirty: $($status -join '; ')" }
+          Write-Host "SNAPSHOT_IDENTITY=PASS"
+          Write-Host "SNAPSHOT_MUTATION=false"
+          Write-Host "PRODUCT_MUTATION=false"
+          Write-Host "MATRIX_MUTATION=false"
+          Write-Host "CRITERIA_RELAXED=0"
+          Write-Host "REPOSITORY_ONLY=true"
