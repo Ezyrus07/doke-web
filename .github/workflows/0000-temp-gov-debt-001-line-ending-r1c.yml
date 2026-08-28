@@ -1,0 +1,129 @@
+name: TEMP GOV-DEBT-001 Line Ending R1c
+
+on:
+  push:
+    branches:
+      - diag/gov-debt-001-line-ending-r1c
+
+permissions:
+  contents: read
+
+jobs:
+  linux-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Freeze lineage and run read-only audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          tree='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          workflow='.github/workflows/0000-temp-gov-debt-001-line-ending-r1c.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "$parent^{tree}")" = "$tree"
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$workflow"
+          node scripts/audit-domain-completion-matrix.js
+          test -z "$(git status --porcelain)"
+          python - <<'PY'
+          from pathlib import Path
+          b=Path('docs/DOMAIN-COMPLETION-MATRIX.md').read_bytes()
+          print(f'GOV_DEBT_001_R1C_LINUX=PASS bytes={len(b)} crlf={b.count(bytes([13,10]))} lf={b.count(bytes([10]))}')
+          PY
+
+  windows-byte-proof:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Freeze lineage and raw parent bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow='.github/workflows/0000-temp-gov-debt-001-line-ending-r1c.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'tree drift' }
+          $changed=@(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw 'TEMP scope drift' }
+          $worktree=Join-Path $env:RUNNER_TEMP 'gov-debt-001-r1c-parent'
+          git worktree add --detach $worktree $parent
+          Set-Location $worktree
+          Copy-Item 'docs/DOMAIN-COMPLETION-MATRIX.md' (Join-Path $env:RUNNER_TEMP 'matrix-before.md')
+          Copy-Item 'reports/generated/domain-completion-matrix-report.json' (Join-Path $env:RUNNER_TEMP 'report-before.json')
+          "WORKTREE=$worktree" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "CONFIG_HASH=$((Get-FileHash -Algorithm SHA256 'config/domain-completion-matrix.json').Hash.ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "SNAPSHOT_HASH=$((Get-FileHash -Algorithm SHA256 'docs/validation/domain-completion-staging-snapshot.json').Hash.ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          @'
+          from pathlib import Path
+          import os, hashlib
+          p=Path(os.environ['RUNNER_TEMP'])/'matrix-before.md'
+          b=p.read_bytes()
+          print(f"GOV_DEBT_001_R1C_WINDOWS_BEFORE sha256={hashlib.sha256(b).hexdigest()} bytes={len(b)} crlf={b.count(bytes([13,10]))} lf={b.count(bytes([10]))}")
+          '@ | python -
+      - name: Prove Windows audit false-positive and normalized equality
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Set-Location $env:WORKTREE
+          $log=Join-Path $env:RUNNER_TEMP 'audit-windows.log'
+          & node scripts/audit-domain-completion-matrix.js 2>&1 | Tee-Object -FilePath $log
+          $rc=$LASTEXITCODE
+          $text=Get-Content $log -Raw
+          if ($rc -ne 1 -or -not $text.Contains('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix')) { throw "unexpected Windows audit signature rc=$rc" }
+          if (git status --porcelain) { throw 'read-only audit mutated worktree' }
+          $global:LASTEXITCODE=0
+
+          & node scripts/audit-domain-completion-matrix.js --write
+          if ($LASTEXITCODE -ne 0) { throw "write diagnostic rc=$LASTEXITCODE" }
+          if ((Get-FileHash -Algorithm SHA256 'config/domain-completion-matrix.json').Hash.ToLowerInvariant() -ne $env:CONFIG_HASH) { throw 'config mutated' }
+          if ((Get-FileHash -Algorithm SHA256 'docs/validation/domain-completion-staging-snapshot.json').Hash.ToLowerInvariant() -ne $env:SNAPSHOT_HASH) { throw 'snapshot mutated' }
+          Copy-Item 'docs/DOMAIN-COMPLETION-MATRIX.md' (Join-Path $env:RUNNER_TEMP 'matrix-after.md')
+          Copy-Item 'reports/generated/domain-completion-matrix-report.json' (Join-Path $env:RUNNER_TEMP 'report-after.json')
+          @'
+          from pathlib import Path
+          import os, hashlib, json
+          tmp=Path(os.environ['RUNNER_TEMP'])
+          before=(tmp/'matrix-before.md').read_bytes()
+          after=(tmp/'matrix-after.md').read_bytes()
+          def norm(b): return b.replace(b'\r\n',b'\n')
+          if norm(before) != norm(after):
+              raise SystemExit('normalized Matrix Markdown differs; not line-ending-only')
+          rb=json.loads((tmp/'report-before.json').read_text(encoding='utf-8'))
+          ra=json.loads((tmp/'report-after.json').read_text(encoding='utf-8'))
+          print('GOV_DEBT_001_R1C_WINDOWS_NORMALIZED=PASS '
+                f'beforeSha={hashlib.sha256(before).hexdigest()} afterSha={hashlib.sha256(after).hexdigest()} '
+                f'beforeCRLF={before.count(bytes([13,10]))} afterCRLF={after.count(bytes([13,10]))} '
+                f'beforeLF={before.count(bytes([10]))} afterLF={after.count(bytes([10]))} '
+                f'normalizedEqual=true reportSummaryEqual={rb.get("summary")==ra.get("summary")}')
+          if rb.get('summary') != ra.get('summary'):
+              print('REPORT_SUMMARY_BEFORE='+json.dumps(rb.get('summary'),separators=(',',':')))
+              print('REPORT_SUMMARY_AFTER='+json.dumps(ra.get('summary'),separators=(',',':')))
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "normalized classifier rc=$LASTEXITCODE" }
+          $tracked=@(git diff --name-only)
+          Write-Host "GOV_DEBT_001_R1C_WINDOWS_TRACKED_AFTER_WRITE=$($tracked -join ',')"
+          & node scripts/audit-domain-completion-matrix.js
+          if ($LASTEXITCODE -ne 0) { throw "post-write audit rc=$LASTEXITCODE" }
+          Write-Host 'GOV_DEBT_001_R1C_WINDOWS_POSTWRITE_AUDIT=PASS'
+      - name: Restore and safety receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if ($env:WORKTREE -and (Test-Path $env:WORKTREE)) {
+            Set-Location $env:WORKTREE
+            git reset --hard '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+            git clean -fd
+            if (git status --porcelain) { throw 'worktree dirty after restore' }
+          }
+          Set-Location $env:GITHUB_WORKSPACE
+          Write-Host 'GOV_DEBT_001_R1C_SAFETY=PASS matrixWritePersisted=false configMutation=false snapshotMutation=false productMutation=false repositoryOnly=true'
