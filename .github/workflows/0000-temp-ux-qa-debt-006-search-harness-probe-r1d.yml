@@ -1,0 +1,107 @@
+name: TEMP UX-QA-DEBT-006 Search Harness Probe R1d
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-006-search-harness-probe-r1d
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze lineage
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $p='00a034f90f7940e820fab1f74c27ade9a32d16d1'; $t='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse HEAD^).Trim() -ne $p) { throw 'parent drift' }
+          if ((git rev-parse "$p^{tree}").Trim() -ne $t) { throw 'tree drift' }
+          $f=@(git diff --name-only HEAD^ HEAD)
+          if($f.Count -ne 1 -or $f[0] -ne '.github/workflows/0000-temp-ux-qa-debt-006-search-harness-probe-r1d.yml'){throw 'TEMP scope drift'}
+          Write-Host 'R1D_LINEAGE=PASS'
+
+      - name: Install browser
+        shell: pwsh
+        run: |
+          npm ci
+          npx playwright install chromium
+
+      - name: Canonical harness probe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $spec='tests/e2e/0000-temp-ux-qa-debt-006-r1d.spec.js'
+          @'
+          const { test, expect } = require('@playwright/test');
+          test('probe canonical repository wrapper and terminal owner', async ({ page }) => {
+            await page.route('https://cdn.jsdelivr.net/**', r => r.fulfill({contentType:'application/javascript',body:''}));
+            await page.route('https://fonts.googleapis.com/**', r => r.fulfill({contentType:'text/css',body:''}));
+            await page.route('**/assets/js/repositories/search-repository.js*', async route => {
+              const response = await route.fetch();
+              const body = await response.text();
+              const appended = `
+          ;(function(){
+            var Doke=window.Doke||(window.Doke={});
+            var repos=Doke.repositories||(Doke.repositories={});
+            var original=repos.search;
+            window.__qaRepoHarness={installed:false,calls:[]};
+            if(!original){window.__qaRepoHarness.reason='original-missing';return;}
+            var item={id:'qa-service-001',remoteId:'qa-service-001',serviceId:'qa-service-001',title:'QA deterministic service',description:'Synthetic contract fixture',category:'qa-contract',providerName:'QA Provider',providerHandle:'@qa-provider',city:'Sao Paulo',state:'SP',location:'Sao Paulo, SP',rating:5,reviewsCount:1,tags:['qa'],priceValue:100,updatedAt:'2026-08-28T00:00:00.000Z'};
+            function synthetic(request){var contract=original.getContract();return {authority:contract.expectedAuthority,contractVersion:contract.version,request:Object.assign({},request),items:[item],page:{pageSize:Number(request.pageSize||12),hasNext:false,nextCursor:null}};}
+            repos.search=Object.freeze({
+              __qaResultsLifecycleHarness:true,
+              queryPage:function(request){window.__qaRepoHarness.calls.push(JSON.parse(JSON.stringify(request||{})));if((request||{}).query==='__qa_ready__')return Promise.resolve(synthetic(request||{}));return original.queryPage(request||{});},
+              normalizeRequest:function(request){return original.normalizeRequest(request||{});},
+              getLastError:function(){return original.getLastError();},
+              getContract:function(){return original.getContract();}
+            });
+            window.__qaRepoHarness.installed=repos.search.__qaResultsLifecycleHarness===true;
+          }());`;
+              await route.fulfill({response,body:body+'\n'+appended});
+            });
+            await page.addInitScript(()=>{window.__qaPageErrors=[];window.addEventListener('error',e=>window.__qaPageErrors.push(String(e.error?.message||e.message||'error')));window.__qaSearchEvents=[];document.addEventListener('doke:search-server-page-rendered',e=>window.__qaSearchEvents.push({type:'rendered',detail:e.detail}));document.addEventListener('doke:search-server-error',e=>window.__qaSearchEvents.push({type:'error',detail:e.detail}));});
+            await page.goto('/resultados.html?q=__qa_ready__&type=services');
+            await expect.poll(()=>page.evaluate(()=>document.body.dataset.pageHydration||''),{timeout:30000}).toMatch(/^(ready|empty|error)$/);
+            await page.waitForTimeout(1500);
+            const out=await page.evaluate(()=>({
+              harness:window.__qaRepoHarness||null,
+              repoMarker:window.Doke?.repositories?.search?.__qaResultsLifecycleHarness===true,
+              contract:window.Doke?.services?.search?.getContract?.()||null,
+              request:window.Doke?.services?.search?.pageRequestFromLocationSearch?.()||null,
+              surface:window.Doke?.searchResultsServerSurface?.getSnapshot?.()||null,
+              hydration:document.body.dataset.pageHydration||'',
+              repositoryState:window.Doke?.resultadosDataController?.getRoot?.()?.dataset.resultsRepositoryState||'',
+              resultsState:document.querySelector('[data-results-layout]')?.dataset.resultsState||'',
+              gridItems:document.querySelector('[data-results-grid]')?.children.length||0,
+              inlineEmptyHidden:document.querySelector('[data-results-inline-empty]')?.hidden,
+              searchEvents:window.__qaSearchEvents||[],
+              pageErrors:window.__qaPageErrors||[]
+            }));
+            console.log('UX_QA_DEBT_006_R1D_PROBE='+JSON.stringify(out));
+            expect(out.harness?.installed).toBe(true);
+            expect(out.repoMarker).toBe(true);
+            expect(out.harness?.calls?.length||0).toBeGreaterThan(0);
+          });
+          '@ | Set-Content -LiteralPath $spec -Encoding UTF8
+          try {
+            node node_modules/@playwright/test/cli.js test $spec --reporter=line
+            if($LASTEXITCODE -ne 0){throw "probe rc=$LASTEXITCODE"}
+          } finally {
+            Remove-Item -LiteralPath $spec -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Safety receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if(@(git status --porcelain).Count){throw 'worktree mutation remains'}
+          Write-Host 'UX_QA_DEBT_006_R1D_SAFETY={"result":"PASS","checkpoint":"UX-QA-DEBT-006-R1D","candidateMaterialized":false,"productMutation":false,"snapshotMutation":false,"matrixMutation":false,"permanentBranchCreated":false,"prCreated":false,"criteriaRelaxed":0,"repositoryOnly":true}'
