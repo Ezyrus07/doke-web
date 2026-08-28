@@ -1,0 +1,164 @@
+name: TEMP UX-STATE-003 R1b Inherited Regression Reconcile
+
+on:
+  push:
+    branches:
+      - diag/ux-state-003-r1b-inherited-regression-reconcile
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze parent and remote TEMP scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-ux-state-003-r1b-inherited-regression-reconcile.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "UX_STATE_003_R1B_LINEAGE=PASS parent=$parent tree=$tree"
+
+      - name: Materialize frozen parent and identical one-file candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $parentPath = Join-Path $env:RUNNER_TEMP 'ux-state-003-r1b-parent'
+          $candidatePath = Join-Path $env:RUNNER_TEMP 'ux-state-003-r1b-candidate'
+          git worktree add --detach $parentPath $parent
+          git worktree add --detach $candidatePath $parent
+          Set-Location $candidatePath
+          git config user.name 'doke-diagnostic'
+          git config user.email 'doke-diagnostic@users.noreply.github.com'
+          @'
+          from pathlib import Path
+          path = Path('assets/js/state/state-contracts.js')
+          source = path.read_text(encoding='utf-8')
+          old_apply = """    syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"""
+          new_apply = """    if (options.preserveRegion !== true) syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"""
+          old_boot = """      applyBoundaryState(boundary, initialState, { announce: false });"""
+          new_boot = """      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });"""
+          if source.count(old_apply) != 1 or source.count(old_boot) != 1:
+              raise SystemExit('candidate anchors drifted')
+          path.write_text(source.replace(old_apply, new_apply).replace(old_boot, new_boot), encoding='utf-8', newline='\n')
+          '@ | python -
+          git add assets/js/state/state-contracts.js
+          git commit -m 'fix(state): preserve established region during bootstrap'
+          $candidate = (git rev-parse HEAD).Trim()
+          $candidateTree = (git rev-parse 'HEAD^{tree}').Trim()
+          $stateBlob = (git rev-parse 'HEAD:assets/js/state/state-contracts.js').Trim()
+          $files = @(git diff --name-only $parent $candidate)
+          if ($files.Count -ne 1 -or $files[0] -ne 'assets/js/state/state-contracts.js') { throw "candidate scope drift: $($files -join ', ')" }
+          node --check assets/js/state/state-contracts.js
+          git diff --check $parent $candidate
+          "PARENT_PATH=$parentPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_PATH=$candidatePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_SHA=$candidate" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_TREE=$candidateTree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "STATE_BLOB=$stateBlob" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "UX_STATE_003_R1B_CANDIDATE=PASS candidate=$candidate tree=$candidateTree stateBlob=$stateBlob files=1"
+
+      - name: Install dependencies in both frozen worktrees
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:PARENT_PATH
+          npm ci
+          npx playwright install chromium
+          Set-Location $env:CANDIDATE_PATH
+          npm ci
+
+      - name: UX-RESULTS-001 must be green on parent and candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:PARENT_PATH
+          node node_modules/@playwright/test/cli.js test tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=line
+          if ($LASTEXITCODE -ne 0) { throw "parent UX-RESULTS-001 rc=$LASTEXITCODE" }
+          Set-Location $env:CANDIDATE_PATH
+          node node_modules/@playwright/test/cli.js test tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=line
+          if ($LASTEXITCODE -ne 0) { throw "candidate UX-RESULTS-001 rc=$LASTEXITCODE" }
+          Write-Host 'UX_STATE_003_R1B_UX_RESULTS=PASS parentUnexpected=0 candidateUnexpected=0'
+
+      - name: Differentiate inherited search-flow failure signatures
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          function Invoke-SearchFlow($path, $label) {
+            Set-Location $path
+            $outputPath = Join-Path $env:RUNNER_TEMP "search-flow-$label.log"
+            & node node_modules/@playwright/test/cli.js test tests/e2e/search-flow.spec.js --reporter=line 2>&1 | Tee-Object -FilePath $outputPath
+            $rc = $LASTEXITCODE
+            $text = Get-Content -LiteralPath $outputPath -Raw
+            if ($rc -ne 1) { throw "$label search-flow expected inherited rc=1, got $rc" }
+            if ($text -notmatch '2 failed') { throw "$label search-flow failure count drift" }
+            if ($text -notmatch 'home search shell accepts typing without layout regression') { throw "$label missing home failure signature" }
+            if ($text -notmatch 'results page keeps search flow contract') { throw "$label missing results failure signature" }
+            if ($text -notmatch 'doke-mobile-shell__search') { throw "$label missing stale mobile-shell selector signature" }
+            return [ordered]@{ label=$label; rc=$rc; failed=2; signature='missing-.doke-mobile-shell__search' }
+          }
+          try {
+            $parentResult = Invoke-SearchFlow $env:PARENT_PATH 'parent'
+            $candidateResult = Invoke-SearchFlow $env:CANDIDATE_PATH 'candidate'
+          } catch {
+            Write-Error $_
+            exit 1
+          }
+          $parentJson = $parentResult | ConvertTo-Json -Compress
+          $candidateJson = $candidateResult | ConvertTo-Json -Compress
+          Write-Host "UX_STATE_003_R1B_SEARCH_FLOW_PARENT=$parentJson"
+          Write-Host "UX_STATE_003_R1B_SEARCH_FLOW_CANDIDATE=$candidateJson"
+          Write-Host 'UX_STATE_003_R1B_SEARCH_FLOW_RECONCILIATION=PASS inheritedFailures=2 candidateOnlyFailures=0 sharedSignatureChanges=0'
+          exit 0
+
+      - name: Shared state completion gates on candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          npm run audit:critical-states
+          npm run audit:global-state-completion
+          if (git status --porcelain) { throw "state audit mutation detected: $(git status --porcelain)" }
+          Write-Host 'UX_STATE_003_R1B_STATE_GATES=PASS introducedRegressions=0'
+
+      - name: Required Matrix and agent governance gates
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          if (git status --porcelain) { throw "governance mutation detected: $(git status --porcelain)" }
+          Write-Host 'UX_STATE_003_R1B_GOVERNANCE=PASS matrixMutation=false criteriaRelaxed=0'
+
+      - name: Final no-promotion safety receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree changed' }
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-ux-state-003-r1b-inherited-regression-reconcile.yml') { throw 'remote TEMP scope changed' }
+          Write-Host 'R1B_REMOTE_PRODUCT_MUTATION=false'
+          Write-Host 'R1B_SNAPSHOT_MUTATION=false'
+          Write-Host 'R1B_MATRIX_MUTATION=false'
+          Write-Host 'R1B_PERMANENT_BRANCH_CREATED=false'
+          Write-Host 'R1B_PR_CREATED=false'
+          if ($env:CANDIDATE_SHA) {
+            Write-Host "UX_STATE_003_R1B_SAFETY=PASS parent=$parent candidate=$env:CANDIDATE_SHA candidateTree=$env:CANDIDATE_TREE stateBlob=$env:STATE_BLOB productFiles=1 criteriaRelaxed=0 snapshotMutation=false matrixMutation=false remoteProductMutation=false permanentBranchCreated=false prCreated=false repositoryOnly=true"
+          }
