@@ -1,0 +1,83 @@
+name: TEMP UX-QA-DEBT-005 Nav Height Composition R10
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-nav-height-composition-r10
+
+permissions:
+  contents: read
+
+jobs:
+  win32-composition:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      PARENT: 00a034f90f7940e820fab1f74c27ade9a32d16d1
+      PARENT_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-nav-height-composition-r10.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and snapshot identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $head=(git rev-parse HEAD).Trim()
+          $parents=((git rev-list --parents -n1 $head).Trim() -split ' ')
+          if($parents.Count -ne 2 -or $parents[1] -ne $env:PARENT){throw 'TEMP lineage mismatch'}
+          $changed=@(git diff-tree --no-commit-id --name-only -r $head)
+          if($changed.Count -ne 1 -or $changed[0] -ne $env:WORKFLOW_PATH){throw 'TEMP scope mismatch'}
+          if((git rev-parse "$env:PARENT^{tree}").Trim() -ne $env:PARENT_TREE){throw 'Parent TREE mismatch'}
+          $blob=((git ls-tree $env:PARENT -- $env:SNAPSHOT) -split '\s+')[2]
+          $hash=(Get-FileHash -Algorithm SHA256 $env:SNAPSHOT).Hash.ToLowerInvariant()
+          "SNAPSHOT_BLOB=$blob" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "SNAPSHOT_SHA256=$hash" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'LINEAGE=PASS'
+          Write-Host 'TEMP_SCOPE=PASS'
+          Write-Host "SNAPSHOT_BLOB=$blob"
+          Write-Host "SNAPSHOT_SHA256=$hash"
+
+      - name: Install dependencies and Chromium
+        shell: pwsh
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install chromium
+
+      - name: Probe direct vs navigation vertical composition
+        shell: pwsh
+        run: |
+          @'
+          const {spawn}=require('child_process');
+          const http=require('http');
+          const {chromium}=require(require.resolve('@playwright/test',{paths:[process.cwd()]}));
+          const port=4333, base=`http://127.0.0.1:${port}`;
+          const session={provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'qa005-r10',role:'client',name:'QA005 R10',email:'qa005-r10@example.test',accountStatus:'active'}};
+          const waitServer=()=>new Promise((resolve,reject)=>{let n=0;const ping=()=>{n++;const req=http.get(base+'/index.html',r=>{r.resume();if(r.statusCode===200)return resolve();if(n>100)return reject(new Error('server timeout'));setTimeout(ping,200)});req.on('error',()=>n>100?reject(new Error('server timeout')):setTimeout(ping,200));};ping();});
+          async function prep(p){await p.route('https://unpkg.com/**',r=>r.fulfill({contentType:'application/javascript',body:''}));await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:''}));await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));await p.route('https://fonts.gstatic.com/**',r=>r.abort());await p.addInitScript(v=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(v)),session);}
+          async function settle(p){await p.waitForLoadState('domcontentloaded');await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(1200);}
+          async function probe(p,label){return p.evaluate(label=>{const q=n=>Math.round(Number(n||0)*10)/10;const desc=e=>{const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{tag:e.tagName.toLowerCase(),id:e.id||'',class:e.className||'',hidden:Boolean(e.hidden),display:cs.display,position:cs.position,top:q(r.top),bottom:q(r.bottom),height:q(r.height),childCount:e.children.length};};const page=document.querySelector('.page'),content=document.querySelector('.page__content'),workspace=document.querySelector('.search-results-workspace'),layout=document.querySelector('.results-layout'),grid=document.querySelector('[data-results-grid]');const pageKids=page?Array.from(page.children).map(desc):[];const contentKids=content?Array.from(content.children).map(desc):[];const workspaceKids=workspace?Array.from(workspace.children).map(desc):[];const footerMatches=Array.from(document.querySelectorAll('footer,.doke-public-footer,.home-footer,[data-app-footer]')).map(desc);const cards=grid?Array.from(grid.children).map(desc):[];const stateBoundary=document.querySelector('[data-state-boundary="resultados"]');return{label,url:location.pathname,scrollY:q(scrollY),bodyScrollHeight:document.body.scrollHeight,docScrollHeight:document.documentElement.scrollHeight,page:page?desc(page):null,content:content?desc(content):null,workspace:workspace?desc(workspace):null,layout:layout?desc(layout):null,pageKids,contentKids,workspaceKids,footerMatches,footerCount:footerMatches.length,resultsGrid:grid?desc(grid):null,resultCardCount:grid?grid.children.length:0,resultCardHeights:cards.map(x=>x.height),hydrationSkeletonHidden:Boolean(document.querySelector('[data-results-hydration-skeleton]')?.hidden),layoutHidden:Boolean(layout?.hidden),viewState:stateBoundary?.getAttribute('data-view-state')||null,ariaBusy:stateBoundary?.getAttribute('aria-busy')||null,countText:document.querySelector('[data-results-count]')?.textContent?.trim()||'',loadingDisplay:getComputedStyle(document.querySelector('[data-results-loading]')||document.body).display,paginationHidden:Boolean(document.querySelector('[data-results-pagination]')?.hidden),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth};},label);}
+          (async()=>{let browser;const server=spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port='+port],{cwd:process.cwd(),env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'},stdio:'ignore'});try{await waitServer();browser=await chromium.launch();const dc=await browser.newContext({viewport:{width:1366,height:768}}),d=await dc.newPage();await prep(d);await d.goto(base+'/resultados.html');await settle(d);const direct=await probe(d,'direct');const nc=await browser.newContext({viewport:{width:1366,height:768}}),n=await nc.newPage();await prep(n);await n.goto(base+'/index.html');await settle(n);await n.waitForFunction(()=>typeof window.DokeNavigate==='function');await n.evaluate(async()=>{const x=window.DokeNavigate('/resultados.html');if(x&&typeof x.then==='function')await x;});await n.waitForURL(/\/resultados\.html/);await settle(n);const nav=await probe(n,'via-nav');console.log('QA005_R10_DIRECT='+JSON.stringify(direct));console.log('QA005_R10_NAV='+JSON.stringify(nav));console.log('QA005_R10_CLASSIFICATION='+JSON.stringify({directFooterCount:direct.footerCount,navFooterCount:nav.footerCount,directPageHeight:direct.page?.height,navPageHeight:nav.page?.height,directContentHeight:direct.content?.height,navContentHeight:nav.content?.height,directResultCardCount:direct.resultCardCount,navResultCardCount:nav.resultCardCount,directViewState:direct.viewState,navViewState:nav.viewState,directLayoutHidden:direct.layoutHidden,navLayoutHidden:nav.layoutHidden,overflowDirect:direct.overflow,overflowNav:nav.overflow}));if(direct.footerCount<1)throw new Error('direct Resultados footer unexpectedly absent');if(nav.footerCount!==0)throw new Error('via-nav footer was unexpectedly present; source hypothesis invalid');if(direct.pageKids.some(x=>x.class.includes('doke-public-footer'))!==true)throw new Error('direct footer is not page child');console.log('DIRECT_RESULTADOS_FOOTER_PRESENT=PASS');console.log('NAV_RESULTADOS_FOOTER_ABSENT=PROVEN');console.log('HEIGHT_ROOT_CAUSE_FOOTER_RECONCILIATION=PROVEN');console.log('READ_ONLY_DIAGNOSTIC=PASS');await dc.close();await nc.close();}finally{if(browser)await browser.close().catch(()=>{});server.kill();}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          '@ | Set-Content -Encoding utf8 $env:RUNNER_TEMP\qa005-r10.js
+          node $env:RUNNER_TEMP\qa005-r10.js
+
+      - name: Freeze no-mutation receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if((Get-FileHash -Algorithm SHA256 $env:SNAPSHOT).Hash.ToLowerInvariant() -ne $env:SNAPSHOT_SHA256){throw 'Snapshot bytes changed'}
+          git restore --worktree -- reports/generated docs/validation 2>$null
+          git clean -fd -- test-results playwright-report reports/generated docs/validation 2>$null
+          $status=@(git status --porcelain)
+          if($status.Count -ne 0){throw "Worktree dirty: $($status -join '; ')"}
+          Write-Host 'SNAPSHOT_IDENTITY=PASS'
+          Write-Host 'SNAPSHOT_MUTATION=false'
+          Write-Host 'PRODUCT_MUTATION=false'
+          Write-Host 'MATRIX_MUTATION=false'
+          Write-Host 'CRITERIA_RELAXED=0'
+          Write-Host 'REPOSITORY_ONLY=true'
