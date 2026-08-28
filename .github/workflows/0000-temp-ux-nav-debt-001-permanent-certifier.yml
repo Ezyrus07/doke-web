@@ -1,0 +1,248 @@
+name: TEMP UX-NAV-DEBT-001 Permanent Certifier
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-permanent-certifier
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      PERMANENT_BRANCH: ux/ux-nav-debt-001-runtime-style-persistence
+      PERMANENT_HEAD: 00a034f90f7940e820fab1f74c27ade9a32d16d1
+      PERMANENT_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
+      PATCH_SHA256: 5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-permanent-certifier.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze external certifier lineage and permanent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PERMANENT_HEAD"
+          mapfile -t temp_changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#temp_changed[@]}" -eq 1
+          test "${temp_changed[0]}" = "$WORKFLOW_PATH"
+
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$PERMANENT_HEAD"
+          test "$(git rev-parse "$PERMANENT_HEAD^{tree}")" = "$PERMANENT_TREE"
+          test "$(git rev-list --parents -n1 "$PERMANENT_HEAD" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+
+          mapfile -t product_changed < <(git diff --name-only "$PARENT" "$PERMANENT_HEAD")
+          test "${#product_changed[@]}" -eq 1
+          test "${product_changed[0]}" = 'assets/js/core/stable-shell-router.js'
+          test -z "$(git diff --name-only "$PARENT" "$PERMANENT_HEAD" -- config/domain-completion-matrix.json)"
+          test "$(git rev-parse "$PERMANENT_HEAD:assets/js/core/stable-shell-router.js")" = "$ROUTER_BLOB"
+          test "$(git diff --binary "$PARENT" "$PERMANENT_HEAD" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$PATCH_SHA256"
+          read -r adds dels file <<<"$(git diff --numstat "$PARENT" "$PERMANENT_HEAD" -- assets/js/core/stable-shell-router.js)"
+          test "$adds" = '8'
+          test "$dels" = '0'
+          test "$file" = 'assets/js/core/stable-shell-router.js'
+
+          echo EXTERNAL_CERTIFIER=PASS
+          echo PERMANENT_REF_IDENTITY=PASS
+          echo LINEAGE=PASS
+          echo SCOPE=PASS
+          echo PRODUCT_FILES=1
+          echo INSERTIONS=8
+          echo DELETIONS=0
+          echo MATRIX_MUTATION=false
+
+      - name: Prepare parent and permanent worktrees with browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/nav001-parent-cert"
+          C="$RUNNER_TEMP/nav001-permanent-cert"
+          git worktree add --detach "$P" "$PARENT" >/dev/null
+          git worktree add --detach "$C" "$PERMANENT_HEAD" >/dev/null
+          npm --prefix "$P" ci --ignore-scripts
+          npm --prefix "$C" ci --ignore-scripts
+          node "$C/node_modules/@playwright/test/cli.js" install --with-deps chromium
+          test "$(git -C "$C" rev-parse 'HEAD^{tree}')" = "$PERMANENT_TREE"
+          test "$(git -C "$C" hash-object assets/js/core/stable-shell-router.js)" = "$ROUTER_BLOB"
+          echo "PARENT_DIR=$P" >> "$GITHUB_ENV"
+          echo "PERMANENT_DIR=$C" >> "$GITHUB_ENV"
+          echo DEPENDENCIES=PASS
+
+      - name: Prove permanent runtime-style ownership in browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/nav001-permanent-browser.js" <<'NODE'
+          const { spawn } = require('child_process');
+          const http = require('http');
+          const path = require('path');
+          const root = process.argv[2];
+          const port = 4327;
+          const { chromium } = require(path.join(root, 'node_modules', '@playwright', 'test'));
+          const base = `http://127.0.0.1:${port}`;
+          const globals = ['card-experience-style','accessibility-experience-style','responsive-experience-style'];
+          const session = {provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'nav001-cert',role:'client',name:'NAV001',email:'nav001-cert@example.test',accountStatus:'active'}};
+          const waitServer = () => new Promise((resolve,reject) => {
+            let n=0;
+            const ping=()=>{n++;const req=http.get(base+'/index.html',res=>{res.resume();if(res.statusCode===200)return resolve();if(n>100)return reject(new Error('server timeout'));setTimeout(ping,200)});req.on('error',()=>n>100?reject(new Error('server timeout')):setTimeout(ping,200));};
+            ping();
+          });
+          const intercept = async p => {
+            await p.route('https://unpkg.com/**', r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await p.route('https://cdn.jsdelivr.net/**', r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await p.route('https://fonts.googleapis.com/**', r=>r.fulfill({contentType:'text/css',body:''}));
+            await p.route('https://fonts.gstatic.com/**', r=>r.abort());
+          };
+          const init = p => p.addInitScript(v=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(v)),session);
+          const settle = async p => { await p.waitForLoadState('domcontentloaded'); await p.waitForLoadState('networkidle').catch(()=>{}); await p.waitForTimeout(900); };
+          const injectFixture = (p, marker, suffix) => p.evaluate(({marker,suffix}) => new Promise(resolve => {
+            const link=document.createElement('link');
+            link.rel='stylesheet';
+            link.href='/assets/css/components/auth/password-dialog.css?'+suffix;
+            link.dataset.dokeAuthCapability=marker;
+            const done=()=>resolve();
+            link.addEventListener('load',done,{once:true});link.addEventListener('error',done,{once:true});
+            document.head.appendChild(link);setTimeout(done,700);
+          }), {marker,suffix});
+          const snap = (p,label) => p.evaluate(label => {
+            const q=n=>Math.round(Number(n||0)*10)/10;
+            const links=Array.from(document.querySelectorAll('link[rel="stylesheet"][href]')).map(link=>{const u=new URL(link.href,location.href);return{href:u.pathname,cap:link.getAttribute('data-doke-auth-capability')||'',media:link.media||'all',inactive:link.getAttribute('data-doke-route-style-inactive')==='true'};});
+            const skip=document.querySelector('[data-doke-skip-link]'); const ss=skip?getComputedStyle(skip):null;
+            const shell=document.querySelector('.app-shell'); const page=document.querySelector('.page'); const header=document.querySelector('[data-app-header], .app-header'); const content=document.querySelector('.page__content');
+            const active=document.activeElement; const activeMain=Boolean(active && (active.matches('main,[role="main"]') || active.closest && active.closest('main,[role="main"]')));
+            return {label,url:location.pathname,scrollY:q(scrollY),links,skip:skip?{display:ss.display,position:ss.position}:null,shellTop:shell?q(shell.getBoundingClientRect().top):null,pageTop:page?q(page.getBoundingClientRect().top):null,headerTop:header?q(header.getBoundingClientRect().top):null,contentTop:content?q(content.getBoundingClientRect().top):null,skipCount:document.querySelectorAll('[data-doke-skip-link]').length,mainCount:document.querySelectorAll('main,[role="main"]').length,activeMain,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth};
+          },label);
+          const cap=(s,k)=>s.links.find(x=>x.cap===k); const asset=(s,k)=>s.links.find(x=>x.href===k && !x.cap); const active=x=>x&&!x.inactive&&x.media!=='not all'; const retired=x=>x&&x.inactive&&x.media==='not all';
+          const common=s=>{if(s.scrollY!==0||s.overflow||s.skipCount!==1||s.mainCount!==1)throw new Error(s.label+': navigation/a11y confounder');};
+          const geom=s=>[s.shellTop,s.pageTop,s.headerTop,s.contentTop];
+          const sameGeom=(a,b)=>geom(a).every((v,i)=>v===null||geom(b)[i]===null||Math.abs(v-geom(b)[i])<=0.6);
+          (async()=>{
+            let browser; const server=spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port='+port],{cwd:root,env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'},stdio:'ignore'});
+            try {
+              await waitServer(); browser=await chromium.launch();
+              const ctx=await browser.newContext({viewport:{width:1366,height:768}}); const p=await ctx.newPage(); await intercept(p); await init(p);
+              await p.goto(base+'/index.html'); await settle(p); const homeDirect=await snap(p,'home-direct'); common(homeDirect);
+              for(const k of globals)if(!active(cap(homeDirect,k)))throw new Error(k+' not active on Home direct');
+              if(!homeDirect.skip||homeDirect.skip.position!=='fixed'||Math.abs(homeDirect.shellTop)>0.6||Math.abs(homeDirect.pageTop)>0.6)throw new Error('Home direct zero-flow control invalid');
+              await injectFixture(p,'settings-password-style','settings-fixture=cert');
+              await injectFixture(p,'future-unknown-runtime-style','unknown-fixture=cert');
+              await p.waitForFunction(()=>typeof window.DokeNavigate==='function');
+              await p.evaluate(async()=>{const x=window.DokeNavigate('/resultados.html');if(x&&typeof x.then==='function')await x;}); await p.waitForURL(/\/resultados\.html/); await settle(p); const resultsNav=await snap(p,'results-via-nav'); common(resultsNav);
+              for(const k of globals)if(!active(cap(resultsNav,k)))throw new Error(k+' was not preserved');
+              if(!retired(cap(resultsNav,'settings-password-style')))throw new Error('settings-password-style was not route-retired');
+              if(!retired(cap(resultsNav,'future-unknown-runtime-style')))throw new Error('unknown runtime style was not fail-closed retired');
+              if(!retired(asset(resultsNav,'/assets/css/pages/home.css')))throw new Error('home.css did not retire');
+              if(!active(asset(resultsNav,'/assets/css/pages/search-results.css')))throw new Error('search-results.css not active');
+              if(!resultsNav.skip||resultsNav.skip.position!=='fixed'||Math.abs(resultsNav.shellTop)>0.6||Math.abs(resultsNav.pageTop)>0.6||!resultsNav.activeMain)throw new Error('Resultados navigation zero-flow/focus contract failed');
+
+              const dc=await browser.newContext({viewport:{width:1366,height:768}}); const d=await dc.newPage(); await intercept(d); await init(d); await d.goto(base+'/resultados.html'); await settle(d); const resultsDirect=await snap(d,'results-direct'); common(resultsDirect);
+              if(!sameGeom(resultsNav,resultsDirect))throw new Error('Resultados direct/navigation geometry parity failed');
+              await dc.close();
+
+              await p.evaluate(async()=>{const x=window.DokeNavigate('/index.html');if(x&&typeof x.then==='function')await x;}); await p.waitForURL(/\/index\.html/); await settle(p); const homeReturn=await snap(p,'home-return'); common(homeReturn);
+              for(const k of globals)if(!active(cap(homeReturn,k)))throw new Error(k+' not persistent on return');
+              if(!active(asset(homeReturn,'/assets/css/pages/home.css')))throw new Error('home.css did not reactivate');
+              if(!retired(asset(homeReturn,'/assets/css/pages/search-results.css')))throw new Error('search-results.css did not retire on return');
+              if(!homeReturn.skip||homeReturn.skip.position!=='fixed'||Math.abs(homeReturn.shellTop)>0.6||Math.abs(homeReturn.pageTop)>0.6)throw new Error('Home return zero-flow contract failed');
+              console.log('PERMANENT_BROWSER='+JSON.stringify({homeDirect,resultsNav,resultsDirect,homeReturn}));
+              console.log('PERSISTENT_GLOBAL_STYLES=3');
+              console.log('ROUTE_SCOPED_NEGATIVE_CONTROLS=2');
+              console.log('DIRECT_NAV_PARITY=PASS');
+              console.log('A11Y_FOCUS_LANDMARK=PASS');
+              console.log('PERMANENT_BROWSER_CONTRACT=PASS');
+            } finally { if(browser)await browser.close().catch(()=>{}); server.kill(); }
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node "$RUNNER_TEMP/nav001-permanent-browser.js" "$PERMANENT_DIR"
+
+      - name: Run green static navigation and desktop gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PERMANENT_DIR"
+          node scripts/audit-navigation-lifecycle-contract.js --strict
+          node scripts/test-navigation-lifecycle-core-contract.js
+          npm run audit:responsive-boundaries
+          npm run audit:desktop-base
+          npm run audit:shared-app-header-contract
+          npm run test:results-card-density-contract
+          npm run audit:desktop-phase-entry-gate
+          npm run audit:desktop-phase-entry-contract
+          npm run audit:visual-baseline
+          git restore --worktree -- docs/validation reports/generated 2>/dev/null || true
+          git clean -fd -- test-results playwright-report reports/generated docs/validation >/dev/null 2>&1 || true
+          test -z "$(git status --porcelain)"
+          echo STATIC_GATES=PASS
+          echo STATIC_GATE_COUNT=9
+
+      - name: Compare canonical Playwright contracts parent vs permanent
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_json() {
+            local root="$1" spec="$2" out="$3" err="$4"
+            set +e
+            (cd "$root" && CI=1 DOKE_E2E_DISABLE_REMOTE_SERVICES=1 node node_modules/@playwright/test/cli.js test "$spec" --reporter=json) >"$out" 2>"$err"
+            local rc=$?
+            set -e
+            git -C "$root" restore --worktree -- reports/generated docs/validation 2>/dev/null || true
+            git -C "$root" clean -fd -- test-results playwright-report reports/generated docs/validation >/dev/null 2>&1 || true
+            echo "$rc"
+          }
+          for suite in scroll layout; do
+            if [ "$suite" = scroll ]; then spec='tests/e2e/stable-shell-scroll-contract.spec.js'; else spec='tests/e2e/global-layout-contract.spec.js'; fi
+            PRC="$(run_json "$PARENT_DIR" "$spec" "$RUNNER_TEMP/${suite}-parent.json" "$RUNNER_TEMP/${suite}-parent.err")"
+            CRC="$(run_json "$PERMANENT_DIR" "$spec" "$RUNNER_TEMP/${suite}-permanent.json" "$RUNNER_TEMP/${suite}-permanent.err")"
+            echo "${suite^^}_PARENT_RC=$PRC" >> "$GITHUB_ENV"
+            echo "${suite^^}_PERMANENT_RC=$CRC" >> "$GITHUB_ENV"
+            test -s "$RUNNER_TEMP/${suite}-parent.json"
+            test -s "$RUNNER_TEMP/${suite}-permanent.json"
+          done
+          echo PLAYWRIGHT_JSON_CAPTURE=PASS
+
+      - name: Classify Playwright outcomes semantically
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const normalize=s=>String(s||'').replace(/\u001b\[[0-9;]*m/g,'').replaceAll(process.env.RUNNER_TEMP||'','<TMP>').replace(/nav001-(?:parent|permanent)-cert/g,'<TREE>').replace(/127\.0\.0\.1:\d+/g,'127.0.0.1:<PORT>').replace(/\s+/g,' ').trim();
+          function parse(name,side){return JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/${name}-${side}.json`,'utf8'));}
+          function collect(report){const out=[];function walk(s,p=[]){const pre=[...p,...(s.title?[s.title]:[])];for(const spec of s.specs||[])for(const test of spec.tests||[]){const title=[...pre,spec.title].filter(Boolean).join(' > ');if(!['expected','unexpected','skipped'].includes(test.status))throw new Error('unknown status '+test.status+' '+title);const last=(test.results||[]).at(-1)||{};const err=(last.errors||[]).map(e=>normalize(e.message||e.value||e.stack||'')).filter(Boolean)[0]||'';out.push({title,status:test.status,error:err});}for(const c of s.suites||[])walk(c,pre)}for(const s of report.suites||[])walk(s,[]);return out;}
+          function counts(rows){return{expected:rows.filter(x=>x.status==='expected').length,unexpected:rows.filter(x=>x.status==='unexpected').length,skipped:rows.filter(x=>x.status==='skipped').length};}
+          function verify(name,expectedTotal,expectedPass,expectedFail){const pr=parse(name,'parent'),cr=parse(name,'permanent');const p=collect(pr),c=collect(cr),pc=counts(p),cc=counts(c);for(const [label,r,rows,cnt] of [['parent',pr,p,pc],['permanent',cr,c,cc]]){for(const k of ['expected','unexpected','skipped'])if(r.stats?.[k]!==cnt[k])throw new Error(`${name} ${label} stats mismatch ${k}`);if((r.stats?.flaky||0)!==0)throw new Error(`${name} ${label} flaky`);}if(p.length!==expectedTotal||c.length!==expectedTotal)throw new Error(`${name} inventory drift parent=${p.length} permanent=${c.length}`);if(pc.expected!==expectedPass||cc.expected!==expectedPass||pc.unexpected!==expectedFail||cc.unexpected!==expectedFail)throw new Error(`${name} known outcome drift`);const pm=new Map(p.map(x=>[x.title,x])),cm=new Map(c.map(x=>[x.title,x]));if(pm.size!==p.length||cm.size!==c.length||[...pm.keys()].some(k=>!cm.has(k)))throw new Error(`${name} title inventory differs`);const candidateOnly=[],parentOnly=[],changed=[];for(const x of c.filter(x=>x.status==='unexpected')){const y=pm.get(x.title);if(!y||y.status!=='unexpected')candidateOnly.push(x.title);else if(normalize(y.error)!==normalize(x.error))changed.push(x.title);}for(const x of p.filter(x=>x.status==='unexpected')){const y=cm.get(x.title);if(!y||y.status!=='unexpected')parentOnly.push(x.title);}if(candidateOnly.length||parentOnly.length||changed.length)throw new Error(`${name} semantic regression candidateOnly=${candidateOnly.join('|')} parentOnly=${parentOnly.join('|')} changed=${changed.join('|')}`);console.log(`${name.toUpperCase()}_OUTCOMES=`+JSON.stringify({total:p.length,expected:pc.expected,unexpected:pc.unexpected,skipped:pc.skipped,candidateOnlyFailures:0,parentOnlyFailures:0,sharedFailureSignatureChanges:0}));return{pc,cc};}
+          verify('scroll',25,12,13);
+          verify('layout',28,27,1);
+          console.log('REPORTER_STATS_CROSSCHECK=PASS');
+          console.log('NO_INTRODUCED_PLAYWRIGHT_REGRESSIONS=PASS');
+          NODE
+
+      - name: Freeze permanent certification receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$PERMANENT_HEAD"
+          test "$(git rev-parse "$PERMANENT_HEAD^{tree}")" = "$PERMANENT_TREE"
+          test "$(git rev-parse "$PERMANENT_HEAD:assets/js/core/stable-shell-router.js")" = "$ROUTER_BLOB"
+          test "$(git diff --binary "$PARENT" "$PERMANENT_HEAD" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$PATCH_SHA256"
+          test -z "$(git diff --name-only "$PARENT" "$PERMANENT_HEAD" -- config/domain-completion-matrix.json)"
+          printf 'UX_NAV_DEBT_001_PERMANENT_CERTIFICATION={"result":"PASS","checkpoint":"UX-NAV-DEBT-001","parent":"%s","head":"%s","tree":"%s","routerBlob":"%s","patchSha256":"%s","productFiles":1,"insertions":8,"deletions":0,"persistentRuntimeStyles":3,"routeScopedNegativeControls":2,"staticGates":9,"scrollExpected":12,"scrollUnexpectedInherited":13,"layoutExpected":27,"layoutUnexpectedInherited":1,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"repositoryOnly":true}\n' "$PARENT" "$PERMANENT_HEAD" "$PERMANENT_TREE" "$ROUTER_BLOB" "$PATCH_SHA256"
+          echo PERMANENT_IDENTITY=PASS
+          echo PERMANENT_CERTIFICATION=PASS
+          echo CRITERIA_RELAXED=0
+          echo INTRODUCED_REGRESSIONS=0
+          echo MATRIX_MUTATION=false
+          echo REPOSITORY_ONLY=true
