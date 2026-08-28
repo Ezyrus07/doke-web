@@ -1,0 +1,234 @@
+name: TEMP GOV-DEBT-001 Line Ending Candidate R2
+
+on:
+  push:
+    branches:
+      - diag/gov-debt-001-line-ending-candidate-r2
+
+permissions:
+  contents: read
+
+jobs:
+  windows-qualify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-gov-debt-001-line-ending-candidate-r2.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "GOV_DEBT_001_R2_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Materialize frozen parent and one-file audit candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $parentPath = Join-Path $env:RUNNER_TEMP 'gov-debt-001-r2-parent'
+          $candidatePath = Join-Path $env:RUNNER_TEMP 'gov-debt-001-r2-candidate'
+          git worktree add --detach $parentPath $parent
+          git worktree add --detach $candidatePath $parent
+          Set-Location $candidatePath
+          git config user.name 'doke-diagnostic'
+          git config user.email 'doke-diagnostic@users.noreply.github.com'
+          @'
+          from pathlib import Path
+          path = Path('scripts/audit-domain-completion-matrix.js')
+          source = path.read_text(encoding='utf-8')
+          anchor = "const WRITE = process.argv.includes('--write');\n"
+          comparison = "if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');"
+          if source.count(anchor) != 1:
+              raise SystemExit(f'WRITE anchor count={source.count(anchor)}')
+          if source.count(comparison) != 1:
+              raise SystemExit(f'comparison anchor count={source.count(comparison)}')
+          source = source.replace(anchor, anchor + "const normalizeLineEndings = (value) => String(value ?? '').replace(/\\r\\n?/g, '\\n');\n")
+          source = source.replace(comparison, "if (!fs.existsSync(DOC_PATH) || normalizeLineEndings(fs.readFileSync(DOC_PATH, 'utf8')) !== normalizeLineEndings(markdown)) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');")
+          path.write_text(source, encoding='utf-8', newline='\n')
+          '@ | python -
+          $changed = @(git diff --name-only)
+          if ($changed.Count -ne 1 -or $changed[0] -ne 'scripts/audit-domain-completion-matrix.js') { throw "candidate scope drift: $($changed -join ', ')" }
+          git add scripts/audit-domain-completion-matrix.js
+          git commit -m 'fix(gov): normalize Matrix audit line endings'
+          $candidate = (git rev-parse HEAD).Trim()
+          $candidateTree = (git rev-parse 'HEAD^{tree}').Trim()
+          $scriptBlob = (git rev-parse 'HEAD:scripts/audit-domain-completion-matrix.js').Trim()
+          $files = @(git diff --name-only $parent $candidate)
+          if ($files.Count -ne 1 -or $files[0] -ne 'scripts/audit-domain-completion-matrix.js') { throw "committed scope drift: $($files -join ', ')" }
+          node --check scripts/audit-domain-completion-matrix.js
+          if ($LASTEXITCODE -ne 0) { throw "node --check rc=$LASTEXITCODE" }
+          git diff --check $parent $candidate
+          if ($LASTEXITCODE -ne 0) { throw "git diff --check rc=$LASTEXITCODE" }
+          "PARENT_PATH=$parentPath" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_PATH=$candidatePath" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_SHA=$candidate" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_TREE=$candidateTree" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "SCRIPT_BLOB=$scriptBlob" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "GOV_DEBT_001_R2_CANDIDATE=PASS candidate=$candidate tree=$candidateTree scriptBlob=$scriptBlob files=1 criteriaRelaxed=0"
+
+      - name: Windows parent negative and candidate positive without write
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $signature = 'docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix'
+          Set-Location $env:PARENT_PATH
+          $parentLog = Join-Path $env:RUNNER_TEMP 'r2-parent-matrix.log'
+          & node scripts/audit-domain-completion-matrix.js 2>&1 | Tee-Object -FilePath $parentLog
+          $parentRc = $LASTEXITCODE
+          $parentText = Get-Content $parentLog -Raw
+          if ($parentRc -ne 1 -or -not $parentText.Contains($signature)) { throw "parent negative drift rc=$parentRc" }
+          if (git status --porcelain) { throw 'parent read-only audit mutated worktree' }
+          $global:LASTEXITCODE = 0
+
+          Set-Location $env:CANDIDATE_PATH
+          & node scripts/audit-domain-completion-matrix.js
+          if ($LASTEXITCODE -ne 0) { throw "candidate Windows audit rc=$LASTEXITCODE" }
+          $files = @(git diff --name-only '00a034f90f7940e820fab1f74c27ade9a32d16d1' $env:CANDIDATE_SHA)
+          if ($files.Count -ne 1 -or $files[0] -ne 'scripts/audit-domain-completion-matrix.js') { throw 'candidate scope changed during read-only audit' }
+          if (git status --porcelain) { throw "candidate read-only audit mutated worktree: $(git status --porcelain)" }
+          Write-Host 'GOV_DEBT_001_R2_WINDOWS=PASS parentFalsePositiveReproduced=true candidateReadOnlyGreen=true matrixMutation=false'
+
+      - name: Fail-closed semantic and whitespace negatives
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          $doc = 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          function Assert-Matrix-Fails($label) {
+            $log = Join-Path $env:RUNNER_TEMP "r2-negative-$label.log"
+            & node scripts/audit-domain-completion-matrix.js 2>&1 | Tee-Object -FilePath $log
+            $rc = $LASTEXITCODE
+            $text = Get-Content $log -Raw
+            if ($rc -ne 1 -or -not $text.Contains('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix')) { throw "$label negative did not fail closed rc=$rc" }
+            $global:LASTEXITCODE = 0
+          }
+
+          Add-Content -LiteralPath $doc -Value '<!-- GOV-DEBT-001 semantic-drift-probe -->' -Encoding utf8
+          Assert-Matrix-Fails 'semantic'
+          git restore --source=$env:CANDIDATE_SHA --worktree -- $doc
+          if ($LASTEXITCODE -ne 0) { throw 'semantic restore failed' }
+
+          [System.IO.File]::AppendAllText((Resolve-Path $doc), ' ', [System.Text.UTF8Encoding]::new($false))
+          Assert-Matrix-Fails 'whitespace'
+          git restore --source=$env:CANDIDATE_SHA --worktree -- $doc
+          if ($LASTEXITCODE -ne 0) { throw 'whitespace restore failed' }
+
+          & node scripts/audit-domain-completion-matrix.js
+          if ($LASTEXITCODE -ne 0) { throw "post-negative candidate audit rc=$LASTEXITCODE" }
+          if (git status --porcelain) { throw "negative tests left dirty worktree: $(git status --porcelain)" }
+          Write-Host 'GOV_DEBT_001_R2_FAIL_CLOSED=PASS semanticDriftRejected=true whitespaceDriftRejected=true lineEndingOnlyIgnored=true'
+
+      - name: Preserve write behavior without persistent generated outputs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          $configHash = (Get-FileHash -Algorithm SHA256 'config/domain-completion-matrix.json').Hash.ToLowerInvariant()
+          $snapshotHash = (Get-FileHash -Algorithm SHA256 'docs/validation/domain-completion-staging-snapshot.json').Hash.ToLowerInvariant()
+          & node scripts/audit-domain-completion-matrix.js --write
+          if ($LASTEXITCODE -ne 0) { throw "candidate --write rc=$LASTEXITCODE" }
+          if ((Get-FileHash -Algorithm SHA256 'config/domain-completion-matrix.json').Hash.ToLowerInvariant() -ne $configHash) { throw 'config mutated by --write' }
+          if ((Get-FileHash -Algorithm SHA256 'docs/validation/domain-completion-staging-snapshot.json').Hash.ToLowerInvariant() -ne $snapshotHash) { throw 'snapshot mutated by --write' }
+          $dirty = @(git status --porcelain=v1 | ForEach-Object { $_.Substring(3) })
+          $allowed = @('docs/DOMAIN-COMPLETION-MATRIX.md','reports/generated/domain-completion-matrix-report.json')
+          $unexpected = @($dirty | Where-Object { $_ -notin $allowed })
+          if ($unexpected.Count -ne 0) { throw "unexpected --write output: $($unexpected -join ', ')" }
+          git restore --source=$env:CANDIDATE_SHA --worktree --staged -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          if ($LASTEXITCODE -ne 0) { throw 'generated-output restore failed' }
+          if (git status --porcelain) { throw "candidate dirty after --write restore: $(git status --porcelain)" }
+          Write-Host "GOV_DEBT_001_R2_WRITE_BEHAVIOR=PASS configMutation=false snapshotMutation=false outputsObserved=$($dirty.Count) persistentGeneratedMutation=false"
+
+      - name: Aggregate agent governance must pass Matrix gate on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          & npm.cmd run audit:agent-governance
+          $rc = $LASTEXITCODE
+          if ($rc -ne 0) { throw "candidate aggregate agent-governance rc=$rc" }
+          $dirty = @(git status --porcelain=v1 | ForEach-Object { $_.Substring(3) })
+          $allowedGenerated = @('docs/HOME-AUTHORITY-CLASSIFICATION.md','docs/PAGE-ASSET-AUTHORITY-MATRIX.md')
+          $unexpected = @($dirty | Where-Object { $_ -notin $allowedGenerated })
+          if ($unexpected.Count -ne 0) { throw "unexpected governance-generated mutation: $($unexpected -join ', ')" }
+          if ($dirty.Count) {
+            git restore --source=$env:CANDIDATE_SHA --worktree --staged -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+            if ($LASTEXITCODE -ne 0) { throw 'governance generated-output restore failed' }
+          }
+          if (git status --porcelain) { throw "candidate dirty after governance restore: $(git status --porcelain)" }
+          Write-Host 'GOV_DEBT_001_R2_AGENT_GOVERNANCE=PASS matrixGateCrossed=true laterFailures=0 generatedOutputsRestored=true'
+
+      - name: Final Windows scope and no-promotion receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:CANDIDATE_PATH -and (Test-Path $env:CANDIDATE_PATH)) {
+            Set-Location $env:CANDIDATE_PATH
+            git reset --hard $env:CANDIDATE_SHA
+            git clean -fd
+            $files = @(git diff --name-only '00a034f90f7940e820fab1f74c27ade9a32d16d1' $env:CANDIDATE_SHA)
+            if ($files.Count -ne 1 -or $files[0] -ne 'scripts/audit-domain-completion-matrix.js') { throw "final candidate scope drift: $($files -join ', ')" }
+          }
+          Set-Location $env:GITHUB_WORKSPACE
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-gov-debt-001-line-ending-candidate-r2.yml') { throw 'remote TEMP scope changed' }
+          Write-Host "GOV_DEBT_001_R2_WINDOWS_SAFETY=PASS candidate=$env:CANDIDATE_SHA candidateTree=$env:CANDIDATE_TREE scriptBlob=$env:SCRIPT_BLOB productMutation=false matrixMutation=false snapshotMutation=false reportMutation=false permanentBranchCreated=false prCreated=false criteriaRelaxed=0 repositoryOnly=true"
+
+  linux-qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Materialize same one-file candidate and keep Linux green
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          tree='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          workflow='.github/workflows/0000-temp-gov-debt-001-line-ending-candidate-r2.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "$parent^{tree}")" = "$tree"
+          mapfile -t remote_changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#remote_changed[@]}" -eq 1
+          test "${remote_changed[0]}" = "$workflow"
+          candidate="$RUNNER_TEMP/gov-debt-001-r2-linux-candidate"
+          git worktree add --detach "$candidate" "$parent"
+          cd "$candidate"
+          git config user.name doke-diagnostic
+          git config user.email doke-diagnostic@users.noreply.github.com
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('scripts/audit-domain-completion-matrix.js')
+          source=path.read_text(encoding='utf-8')
+          anchor="const WRITE = process.argv.includes('--write');\n"
+          comparison="if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');"
+          assert source.count(anchor)==1
+          assert source.count(comparison)==1
+          source=source.replace(anchor, anchor+"const normalizeLineEndings = (value) => String(value ?? '').replace(/\\r\\n?/g, '\\n');\n")
+          source=source.replace(comparison,"if (!fs.existsSync(DOC_PATH) || normalizeLineEndings(fs.readFileSync(DOC_PATH, 'utf8')) !== normalizeLineEndings(markdown)) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');")
+          path.write_text(source,encoding='utf-8',newline='\n')
+          PY
+          git add scripts/audit-domain-completion-matrix.js
+          git commit -m 'fix(gov): normalize Matrix audit line endings'
+          node --check scripts/audit-domain-completion-matrix.js
+          git diff --check "$parent" HEAD
+          mapfile -t files < <(git diff --name-only "$parent" HEAD)
+          test "${#files[@]}" -eq 1
+          test "${files[0]}" = 'scripts/audit-domain-completion-matrix.js'
+          node scripts/audit-domain-completion-matrix.js
+          test -z "$(git status --porcelain)"
+          echo "GOV_DEBT_001_R2_LINUX=PASS candidateTree=$(git rev-parse 'HEAD^{tree}') scriptBlob=$(git rev-parse 'HEAD:scripts/audit-domain-completion-matrix.js') files=1 criteriaRelaxed=0"
