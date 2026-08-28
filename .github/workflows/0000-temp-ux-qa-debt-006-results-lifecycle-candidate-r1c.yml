@@ -1,0 +1,202 @@
+name: TEMP UX-QA-DEBT-006 Results Lifecycle Candidate R1c
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-006-results-lifecycle-candidate-r1c
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1c.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "UX_QA_DEBT_006_R1C_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Reproduce R1 candidate with matcher-only correction
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $r1Sha = '3a8fd799b121b66a28074e7b2c1b4ec1e853bd66'
+          $r1Workflow = '.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1.yml'
+          $candidatePath = Join-Path $env:RUNNER_TEMP 'qa006-r1c-candidate'
+          git fetch --no-tags --depth=1 origin $r1Sha
+          $sourceLines = @(git show "$r1Sha`:$r1Workflow")
+          $start = -1
+          $end = -1
+          for ($i = 0; $i -lt $sourceLines.Count; $i++) {
+            if ($start -lt 0 -and $sourceLines[$i].Trim() -eq "@'" -and $i + 1 -lt $sourceLines.Count -and $sourceLines[$i + 1] -match "const \{ test, expect \} = require\('@playwright/test'\);") {
+              $start = $i + 1
+              continue
+            }
+            if ($start -ge 0 -and $sourceLines[$i] -match "'@ \| Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js'") {
+              $end = $i - 1
+              break
+            }
+          }
+          if ($start -lt 0 -or $end -lt $start) { throw 'could not extract R1 candidate spec' }
+          $spec = ($sourceLines[$start..$end] -join "`n") + "`n"
+          $oldHelperPattern = '(?s)const waitForRepositoryState = async \(page, expected\) => \{\s+const accepted = Array\.isArray\(expected\) \? expected : \[expected\];\s+await expect\.poll\(\s+\(\) => page\.evaluate\(\(\) => window\.Doke\?\.resultadosDataController\?\.getRoot\?\.\(\)\?\.dataset\.resultsRepositoryState \|\| ''missing''\),\s+\{ timeout: 30_000 \},\s+\)\.toSatisfy\(\(value\) => accepted\.includes\(value\)\);\s+\};'
+          $newHelper = "const waitForRepositoryState = async (page, expected) => {`n  const accepted = Array.isArray(expected) ? expected : [expected];`n  await expect.poll(async () => accepted.includes(`n    await page.evaluate(() => window.Doke?.resultadosDataController?.getRoot?.()?.dataset.resultsRepositoryState || 'missing'),`n  ), { timeout: 30_000 }).toBe(true);`n};"
+          $corrected = [regex]::Replace($spec, $oldHelperPattern, $newHelper, 1)
+          if ($corrected -eq $spec) { throw 'matcher-only correction did not apply' }
+          if ($corrected -match '\.toSatisfy\(') { throw 'unsupported matcher remains' }
+          git worktree add --detach $candidatePath $parent
+          Set-Location $candidatePath
+          git config user.name 'doke-diagnostic'
+          git config user.email 'doke-diagnostic@users.noreply.github.com'
+          Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js' -Value $corrected -Encoding UTF8
+          $changed = @(git diff --name-only)
+          if ($changed.Count -ne 1 -or $changed[0] -ne 'tests/e2e/results-entry-lifecycle.spec.js') { throw "candidate scope drift: $($changed -join ', ')" }
+          git add tests/e2e/results-entry-lifecycle.spec.js
+          git commit -m 'test(qa): align Resultados lifecycle with canonical search authority'
+          $candidate = (git rev-parse HEAD).Trim()
+          $candidateTree = (git rev-parse 'HEAD^{tree}').Trim()
+          $testBlob = (git rev-parse 'HEAD:tests/e2e/results-entry-lifecycle.spec.js').Trim()
+          $files = @(git diff --name-only $parent $candidate)
+          if ($files.Count -ne 1 -or $files[0] -ne 'tests/e2e/results-entry-lifecycle.spec.js') { throw "committed scope drift: $($files -join ', ')" }
+          $num = (git diff --numstat $parent $candidate -- tests/e2e/results-entry-lifecycle.spec.js).Trim().Split("`t")
+          $patch = Join-Path $env:RUNNER_TEMP 'qa006-r1c.patch'
+          git diff --binary $parent $candidate | Set-Content -LiteralPath $patch -Encoding utf8NoBOM
+          $patchSha = (Get-FileHash -Algorithm SHA256 $patch).Hash.ToLowerInvariant()
+          "CANDIDATE_PATH=$candidatePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_SHA=$candidate" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CANDIDATE_TREE=$candidateTree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "TEST_BLOB=$testBlob" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "PATCH_SHA256=$patchSha" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INSERTIONS=$($num[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "DELETIONS=$($num[1])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "UX_QA_DEBT_006_R1C_CANDIDATE={\"parent\":\"$parent\",\"candidate\":\"$candidate\",\"tree\":\"$candidateTree\",\"testBlob\":\"$testBlob\",\"patchSha256\":\"$patchSha\",\"files\":1,\"insertions\":$($num[0]),\"deletions\":$($num[1]),\"r1SemanticDelta\":\"matcher-only\",\"remoteProductMutation\":false}"
+
+      - name: Verify candidate QA-only scope before execution
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $files = @(git diff --name-only $parent $env:CANDIDATE_SHA)
+          if ($files.Count -ne 1 -or $files[0] -ne 'tests/e2e/results-entry-lifecycle.spec.js') { throw 'candidate escaped QA-only scope' }
+          if (@(git diff --name-only $parent $env:CANDIDATE_SHA -- 'assets/**' 'config/domain-completion-matrix.json' 'tests/visual/**').Count -ne 0) { throw 'product/matrix/snapshot mutation detected' }
+          Write-Host 'R1C_QA_SCOPE=PASS files=1 productFiles=0 snapshotMutation=false matrixMutation=false'
+
+      - name: Install dependencies and Chromium in candidate worktree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          npm ci
+          npx playwright install chromium
+
+      - name: Candidate Resultados lifecycle contract must be green
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          node node_modules/@playwright/test/cli.js test tests/e2e/results-entry-lifecycle.spec.js --reporter=line
+          if ($LASTEXITCODE -ne 0) { throw "candidate lifecycle rc=$LASTEXITCODE" }
+          Write-Host 'UX_QA_DEBT_006_R1C_LIFECYCLE=PASS tests=5 expected=5 unexpected=0'
+
+      - name: Parent versus QA candidate semantic map
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:CANDIDATE_PATH
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $candidate = $env:CANDIDATE_SHA
+          $parentJson = Join-Path $env:RUNNER_TEMP 'qa006-r1c-parent.json'
+          $candidateJson = Join-Path $env:RUNNER_TEMP 'qa006-r1c-candidate.json'
+          $suiteArgs = @('tests/e2e/results-entry-lifecycle.spec.js','tests/e2e/ux-results-001-browser-acceptance.spec.js','tests/e2e/search-flow.spec.js')
+          git checkout $parent -- tests/e2e/results-entry-lifecycle.spec.js
+          & node node_modules/@playwright/test/cli.js test @suiteArgs --reporter=json > $parentJson
+          $parentRc = $LASTEXITCODE
+          git checkout $candidate -- tests/e2e/results-entry-lifecycle.spec.js
+          & node node_modules/@playwright/test/cli.js test @suiteArgs --reporter=json > $candidateJson
+          $candidateRc = $LASTEXITCODE
+          $parser = Join-Path $env:RUNNER_TEMP 'qa006-r1c-compare.cjs'
+          @'
+          const fs = require('fs');
+          function read(p) { return JSON.parse(fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, '')); }
+          function norm(v) { return String(v || '').replace(/\\/g, '/').replace(/[A-Za-z]:\/[^\n:]+/g, '<PATH>').replace(/:\d+:\d+/g, ':<L>:<C>').replace(/\s+/g, ' ').trim(); }
+          function collect(report) {
+            const rows = [];
+            function walk(suites, parents = []) {
+              for (const suite of suites || []) {
+                const next = parents.concat(suite.title || '').filter(Boolean);
+                for (const spec of suite.specs || []) {
+                  for (const test of spec.tests || []) {
+                    const key = [spec.file || '', ...next, spec.title || ''].join(' > ');
+                    const messages = (test.results || []).flatMap(r => r.errors || []).map(e => norm(e.message || e.value || e.stack)).filter(Boolean);
+                    rows.push({ key, status: test.status || '', message: messages.join(' || ') });
+                  }
+                }
+                walk(suite.suites || [], next);
+              }
+            }
+            walk(report.suites || []);
+            return rows;
+          }
+          const p = collect(read(process.argv[2]));
+          const c = collect(read(process.argv[3]));
+          const pm = new Map(p.map(x => [x.key, x]));
+          const cm = new Map(c.map(x => [x.key, x]));
+          const keys = [...new Set([...pm.keys(), ...cm.keys()])].sort();
+          const candidateOnly = [], parentOnly = [], signatureChanges = [];
+          for (const key of keys) {
+            const a = pm.get(key), b = cm.get(key);
+            if (!a || !b) throw new Error('test inventory drift: ' + key);
+            if (a.status !== 'unexpected' && b.status === 'unexpected') candidateOnly.push(key);
+            if (a.status === 'unexpected' && b.status !== 'unexpected') parentOnly.push(key);
+            if (a.status === 'unexpected' && b.status === 'unexpected' && a.message !== b.message) signatureChanges.push(key);
+          }
+          const count = (rows, status) => rows.filter(x => x.status === status).length;
+          const lifecycle = (rows, status) => rows.filter(x => x.key.includes('results-entry-lifecycle.spec.js') && x.status === status).length;
+          const out = {parentTotal:p.length,candidateTotal:c.length,parentExpected:count(p,'expected'),parentUnexpected:count(p,'unexpected'),candidateExpected:count(c,'expected'),candidateUnexpected:count(c,'unexpected'),parentLifecycleUnexpected:lifecycle(p,'unexpected'),candidateLifecycleUnexpected:lifecycle(c,'unexpected'),candidateOnlyFailures:candidateOnly.length,parentOnlyFailures:parentOnly.length,sharedFailureSignatureChanges:signatureChanges.length,parentOnlyTitles:parentOnly};
+          console.log('UX_QA_DEBT_006_R1C_SEMANTIC_MAP=' + JSON.stringify(out));
+          if (out.parentTotal !== out.candidateTotal) throw new Error('test count drift');
+          if (out.parentLifecycleUnexpected !== 5) throw new Error('expected 5 inherited lifecycle failures, got ' + out.parentLifecycleUnexpected);
+          if (out.candidateLifecycleUnexpected !== 0) throw new Error('candidate lifecycle remains red');
+          if (out.candidateOnlyFailures !== 0) throw new Error('candidate-only regressions');
+          if (out.parentOnlyFailures !== 5) throw new Error('expected exactly 5 repaired parent-only failures, got ' + out.parentOnlyFailures);
+          if (out.sharedFailureSignatureChanges !== 0) throw new Error('shared failure signature changed');
+          '@ | Set-Content -LiteralPath $parser -Encoding UTF8
+          node $parser $parentJson $candidateJson
+          if ($LASTEXITCODE -ne 0) { throw 'semantic comparison failed' }
+          Write-Host "R1C_PARENT_RC=$parentRc R1C_CANDIDATE_RC=$candidateRc"
+
+      - name: Final no-mutation and R1c receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree changed' }
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1c.yml') { throw 'remote TEMP scope changed' }
+          Write-Host 'R1C_REMOTE_PRODUCT_MUTATION=false'
+          Write-Host 'R1C_SNAPSHOT_MUTATION=false'
+          Write-Host 'R1C_MATRIX_MUTATION=false'
+          Write-Host 'R1C_PERMANENT_BRANCH_CREATED=false'
+          Write-Host 'R1C_PR_CREATED=false'
+          if ($env:CANDIDATE_SHA) {
+            Write-Host "UX_QA_DEBT_006_R1C_SAFETY={\"result\":\"PASS\",\"checkpoint\":\"UX-QA-DEBT-006-R1C-SAFETY\",\"parent\":\"$parent\",\"candidate\":\"$env:CANDIDATE_SHA\",\"candidateTree\":\"$env:CANDIDATE_TREE\",\"testBlob\":\"$env:TEST_BLOB\",\"patchSha256\":\"$env:PATCH_SHA256\",\"qaFiles\":1,\"productFiles\":0,\"criteriaRelaxed\":0,\"snapshotMutation\":false,\"matrixMutation\":false,\"remoteProductMutation\":false,\"permanentBranchCreated\":false,\"prCreated\":false,\"repositoryOnly\":true}"
+          }
