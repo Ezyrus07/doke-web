@@ -1,0 +1,53 @@
+name: TEMP UX-NAV-DEBT-003 Results Failure Classifier R3d
+on:
+  push:
+    branches: [diag/ux-nav-debt-003-results-failure-classifier-r3d]
+permissions:
+  contents: read
+jobs:
+  classify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2}
+      - name: Freeze lineage
+        shell: pwsh
+        run: |
+          $p='00a034f90f7940e820fab1f74c27ade9a32d16d1'; $t='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          if((git rev-parse HEAD^).Trim() -ne $p){throw 'parent drift'}
+          if((git rev-parse "$p^{tree}").Trim() -ne $t){throw 'tree drift'}
+          $f=@(git diff --name-only HEAD^ HEAD); if($f.Count-ne 1){throw 'scope drift'}
+          Write-Host "R3D_LINEAGE=PASS parent=$p tree=$t"
+      - name: Install
+        shell: pwsh
+        run: |
+          npm ci
+          npx playwright install chromium
+      - name: Canonical semantic classifier
+        shell: pwsh
+        run: |
+          $spec='tests/e2e/0000-temp-r3d.spec.js'
+          @'
+          const {test,expect}=require('@playwright/test');
+          async function ext(p){await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:''}));await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));}
+          async function terminal(p){await expect.poll(()=>p.evaluate(()=>document.body.dataset.pageHydration||''),{timeout:30000}).toMatch(/^(ready|empty|error)$/);await p.waitForTimeout(150);}
+          async function read(p){return p.evaluate(async()=>{const vis=n=>{if(!n||n.hidden)return false;const s=getComputedStyle(n),r=n.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0};const l=document.querySelector('.results-layout'),i=document.querySelector('[data-results-inline-empty]'),g=document.querySelector('[data-results-grid]');let active=[],query=null,contract=null;try{active=await window.Doke.repositories.services.list({status:'active',sort:'updated_desc'});query=await window.Doke.services.search.queryPage(window.Doke.services.search.normalizeRequest({query:'limpeza',pageSize:12}));contract=window.Doke.services.search.getContract();}catch(e){contract={error:String(e.message||e)}}return{hydration:document.body.dataset.pageHydration||'',resultsState:document.querySelector('[data-results-layout]')?.dataset.resultsState||'',layoutVisible:vis(l),layoutDisplay:l?getComputedStyle(l).display:'',inlineVisible:vis(i),gridVisible:vis(g),gridItems:g?.children.length||0,activeFixtureCount:active.length,matchingFixtureCount:query?.items?.length??null,searchContract:contract,provider:document.documentElement.getAttribute('data-doke-services-provider')||''};});}
+          for(const [name,w,h] of [['desktop',1366,768],['tablet',820,1180],['mobile',390,844]])test(`coherent empty ${name}`,async({page})=>{await ext(page);await page.setViewportSize({width:w,height:h});await page.goto('/resultados.html?q=limpeza&type=services');await terminal(page);const s=await read(page);console.log(`R3D_EMPTY_${name.toUpperCase()}=${JSON.stringify(s)}`);expect(s.hydration).toBe('ready');expect(s.resultsState).toBe('empty');expect(s.inlineVisible).toBe(true);expect(s.gridItems).toBe(0);expect(s.matchingFixtureCount).toBe(0);});
+          test('stale renderer fault injection is unreachable',async({page})=>{await ext(page);await page.addInitScript(()=>window.__faultCalls=0);await page.route('**/assets/js/pages/search-data.js*',r=>r.fulfill({contentType:'application/javascript',body:`window.DokeSearchData={normalize:(v='')=>String(v).toLowerCase(),servicePool:[],userPool:[],shortVideoPool:[],beforeAfterPool:[],recommendations:[],categories:[],locationOptions:{},getServiceMatches:()=>{window.__faultCalls++;throw new Error('renderer failure')},getUserMatches:()=>[],getShortVideoMatches:()=>[],getBeforeAfterMatches:()=>[]};`}));await page.goto('/resultados.html?q=falha&type=services');await terminal(page);const out={faultCalls:await page.evaluate(()=>window.__faultCalls||0),hydration:await page.evaluate(()=>document.body.dataset.pageHydration||''),state:await page.evaluate(()=>document.querySelector('[data-results-layout]')?.dataset.resultsState||'')};console.log('R3D_RENDERER='+JSON.stringify(out));expect(out.faultCalls).toBe(0);expect(out.hydration).not.toBe('error');});
+          test('820 layout becomes visible after terminal state',async({page})=>{await ext(page);await page.setViewportSize({width:820,height:1180});await page.goto('/resultados.html?q=sSAS');await page.waitForTimeout(650);const early=await read(page);await terminal(page);const settled=await read(page);console.log('R3D_820_TIMING='+JSON.stringify({early,settled}));expect(settled.layoutVisible).toBe(true);});
+          '@ | Set-Content $spec -Encoding UTF8
+          try { node node_modules/@playwright/test/cli.js test $spec --reporter=line; if($LASTEXITCODE-ne 0){throw "semantic rc=$LASTEXITCODE"} } finally { Remove-Item $spec -Force -ErrorAction SilentlyContinue }
+      - name: Confirm inherited header-rail raw failure
+        shell: pwsh
+        run: |
+          $out=& node scripts/test-results-header-rail-contract.js 2>&1; $rc=$LASTEXITCODE; $txt=($out|Out-String).Trim(); $global:LASTEXITCODE=0
+          Write-Host "R3D_HEADER_RAIL_RC=$rc"; Write-Host $txt
+          if($rc-ne 1){throw "expected rc1 got $rc"}
+          if($txt-notmatch '820x1180: results layout is not visible'){throw 'signature drift'}
+      - name: Safety receipt
+        if: always()
+        shell: pwsh
+        run: |
+          if((git status --porcelain).Count){throw 'dirty worktree'}
+          Write-Host 'UX_NAV_DEBT_003_R3D_SAFETY={"result":"PASS","checkpoint":"UX-NAV-DEBT-003-R3D","parent":"00a034f90f7940e820fab1f74c27ade9a32d16d1","candidateMaterialized":false,"productMutation":false,"snapshotMutation":false,"matrixMutation":false,"permanentBranchCreated":false,"prCreated":false,"criteriaRelaxed":0,"repositoryOnly":true}'
