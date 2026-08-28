@@ -1,0 +1,146 @@
+name: TEMP UX-QA-DEBT-005 Resultados Win32 Baseline Materializer
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-resultados-win32-baseline-materializer
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      MATERIALIZER_PATH: .github/workflows/0000-temp-ux-qa-debt-005-resultados-win32-baseline-materializer.yml
+      CANDIDATE_BRANCH: diag/ux-qa-debt-005-resultados-win32-baseline-candidate
+      SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+      OLD_SNAPSHOT_BLOB: 1580b5410bcce1ea5424d5528356291a0f288c4e
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze diagnostic lineage and target
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$MATERIALIZER_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+          if git ls-remote --exit-code --heads origin "refs/heads/$CANDIDATE_BRANCH" >/dev/null 2>&1; then
+            echo "Candidate branch already exists" >&2
+            exit 1
+          fi
+          echo LINEAGE=PASS
+          echo OLD_BASELINE_IDENTITY=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Install locked Playwright Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+
+      - name: Generate exact replacement baseline from certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent_dir="$RUNNER_TEMP/qa005-parent"
+          git worktree add --detach "$parent_dir" "$PARENT" >/dev/null
+          cp "$parent_dir/$SNAPSHOT" "$RUNNER_TEMP/qa005-old-baseline.png"
+          cd "$parent_dir"
+          node "$GITHUB_WORKSPACE/node_modules/@playwright/test/cli.js" test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" --update-snapshots
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$SNAPSHOT"
+          test -s "$SNAPSHOT"
+          test "$(git hash-object "$SNAPSHOT")" != "$OLD_SNAPSHOT_BLOB"
+          echo "CANDIDATE_BLOB=$(git hash-object "$SNAPSHOT")"
+          echo "CANDIDATE_SHA256=$(sha256sum "$SNAPSHOT" | awk '{print $1}')"
+          echo "CANDIDATE_BYTES=$(wc -c < "$SNAPSHOT" | tr -d ' ')"
+          echo ONE_FILE_BINARY_CANDIDATE=PASS
+
+      - name: Candidate required visual test passes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent"
+          node "$GITHUB_WORKSPACE/node_modules/@playwright/test/cli.js" test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768"
+          echo CANDIDATE_VISUAL_TEST=PASS
+
+      - name: Negative proof old June baseline still fails
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent"
+          cp "$SNAPSHOT" "$RUNNER_TEMP/qa005-candidate-baseline.png"
+          cp "$RUNNER_TEMP/qa005-old-baseline.png" "$SNAPSHOT"
+          set +e
+          node "$GITHUB_WORKSPACE/node_modules/@playwright/test/cli.js" test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" > "$RUNNER_TEMP/qa005-negative.log" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/qa005-negative.log"
+          test "$rc" -ne 0
+          grep -Eqi "Screenshot comparison failed|pixels .* different|exceeded" "$RUNNER_TEMP/qa005-negative.log"
+          cp "$RUNNER_TEMP/qa005-candidate-baseline.png" "$SNAPSHOT"
+          node "$GITHUB_WORKSPACE/node_modules/@playwright/test/cli.js" test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768"
+          echo NEGATIVE_OLD_BASELINE=PASS
+          echo CRITERIA_RELAXED=0
+
+      - name: Reconfirm Resultados desktop structural gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent"
+          npm run audit:desktop-base
+          npm run audit:desktop-phase-entry-gate
+          npm run audit:desktop-phase-entry-contract
+          npm run audit:visual-baseline
+          npm run audit:shared-app-header-contract
+          npm run test:results-card-density-contract
+          npm run audit:section-header-contract
+          npm run audit:overflow-text-clipping
+          echo RESULTADOS_DESKTOP_STATIC_GATES=PASS
+
+      - name: Materialize diagnostic candidate branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent"
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$SNAPSHOT"
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git checkout -b "$CANDIDATE_BRANCH"
+          git add -- "$SNAPSHOT"
+          git commit -m "test(ux-qa-debt-005): refresh Resultados Win32 visual baseline candidate"
+          CANDIDATE_SHA="$(git rev-parse HEAD)"
+          CANDIDATE_TREE="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^1)" = "$PARENT"
+          mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
+          test "${#committed[@]}" -eq 1
+          test "${committed[0]}" = "$SNAPSHOT"
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" != "$OLD_SNAPSHOT_BLOB"
+          git push origin "HEAD:refs/heads/$CANDIDATE_BRANCH"
+          test "$(git ls-remote origin "refs/heads/$CANDIDATE_BRANCH" | awk '{print $1}')" = "$CANDIDATE_SHA"
+          echo "CANDIDATE_SHA=$CANDIDATE_SHA"
+          echo "CANDIDATE_TREE=$CANDIDATE_TREE"
+          echo "CANDIDATE_BLOB=$(git rev-parse "HEAD:$SNAPSHOT")"
+          echo "CANDIDATE_SHA256=$(sha256sum "$SNAPSHOT" | awk '{print $1}')"
+          echo "CANDIDATE_BYTES=$(wc -c < "$SNAPSHOT" | tr -d ' ')"
+          echo 'UX_QA_DEBT_005_DIAGNOSTIC_MATERIALIZATION=PASS'
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+          echo CRITERIA_RELAXED=0
