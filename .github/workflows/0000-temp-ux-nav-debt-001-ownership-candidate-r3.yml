@@ -1,0 +1,243 @@
+name: TEMP UX-NAV-DEBT-001 Ownership Candidate R3
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-ownership-candidate-r3
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-ownership-candidate-r3.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          echo "TEMP_HEAD=$H"
+          echo LINEAGE=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Prepare exact parent and local candidate worktrees
+        shell: bash
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/nav001-parent-r3"
+          C="$RUNNER_TEMP/nav001-candidate-r3"
+          git worktree add --detach "$P" "$PARENT" >/dev/null
+          git worktree add --detach "$C" "$PARENT" >/dev/null
+          test -z "$(git -C "$P" status --porcelain)"
+          test -z "$(git -C "$C" status --porcelain)"
+          cd "$C"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          echo "PARENT_DIR=$P" >> "$GITHUB_ENV"
+          echo "CANDIDATE_DIR=$C" >> "$GITHUB_ENV"
+
+      - name: Materialize one-file local ownership candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('assets/js/core/stable-shell-router.js')
+          s = p.read_text()
+          anchor1 = "  var CORE_SCRIPT_RE = /assets\\/js\\/core\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\.js(?:\\?.*)?$/i;\n"
+          insertion1 = "  var PERSISTENT_RUNTIME_STYLE_CAPABILITIES = new Set([\n    'card-experience-style',\n    'accessibility-experience-style',\n    'responsive-experience-style'\n  ]);\n\n" + anchor1
+          if s.count(anchor1) != 1:
+              raise SystemExit('CORE_SCRIPT_RE anchor drifted')
+          s = s.replace(anchor1, insertion1, 1)
+          anchor2 = "  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    try {\n"
+          insertion2 = "  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    var runtimeCapability = link.getAttribute('data-doke-auth-capability') || '';\n    if (PERSISTENT_RUNTIME_STYLE_CAPABILITIES.has(runtimeCapability)) return false;\n    try {\n"
+          if s.count(anchor2) != 1:
+              raise SystemExit('isRouteManagedStylesheet anchor drifted')
+          s = s.replace(anchor2, insertion2, 1)
+          p.write_text(s)
+          PY
+          node --check assets/js/core/stable-shell-router.js
+          git diff --check
+          mapfile -t changed < <(git diff --name-only "$PARENT")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "assets/js/core/stable-shell-router.js"
+          test -z "$(git diff --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          echo '--- CANDIDATE DIFF ---'
+          git diff -- assets/js/core/stable-shell-router.js
+          echo '--- END CANDIDATE DIFF ---'
+          PATCH_SHA256="$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')"
+          ROUTER_BLOB="$(git hash-object assets/js/core/stable-shell-router.js)"
+          git add assets/js/core/stable-shell-router.js
+          git -c user.name='Doke Diagnostic' -c user.email='diagnostic@invalid.local' commit -m 'diag: preserve proven persistent runtime styles' >/dev/null
+          CANDIDATE="$(git rev-parse HEAD)"
+          CANDIDATE_TREE="$(git rev-parse 'HEAD^{tree}')"
+          test "$(git rev-list --parents -n1 HEAD | awk '{print $2}')" = "$PARENT"
+          mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
+          test "${#committed[@]}" -eq 1
+          test "${committed[0]}" = 'assets/js/core/stable-shell-router.js'
+          echo "CANDIDATE=$CANDIDATE" >> "$GITHUB_ENV"
+          echo "CANDIDATE_TREE=$CANDIDATE_TREE" >> "$GITHUB_ENV"
+          echo "CANDIDATE_ROUTER_BLOB=$ROUTER_BLOB" >> "$GITHUB_ENV"
+          echo "CANDIDATE_PATCH_SHA256=$PATCH_SHA256" >> "$GITHUB_ENV"
+          echo "LOCAL_CANDIDATE=$CANDIDATE"
+          echo "LOCAL_CANDIDATE_TREE=$CANDIDATE_TREE"
+          echo "LOCAL_CANDIDATE_ROUTER_BLOB=$ROUTER_BLOB"
+          echo "LOCAL_CANDIDATE_PATCH_SHA256=$PATCH_SHA256"
+          echo CANDIDATE_SCOPE=PASS
+          echo PRODUCT_FILES=1
+          echo MATRIX_MUTATION=false
+
+      - name: Create browser A/B harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/nav001-r3-browser.js" <<'NODE'
+          const { spawn } = require('child_process');
+          const http = require('http');
+          const path = require('path');
+          const root = process.argv[2];
+          const port = Number(process.argv[3]);
+          const mode = process.argv[4];
+          const { chromium } = require(path.join(process.env.CANDIDATE_DIR, 'node_modules', '@playwright', 'test'));
+          const base = `http://127.0.0.1:${port}`;
+          const globals = ['card-experience-style','accessibility-experience-style','responsive-experience-style'];
+          const session = {provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'nav001-r3',role:'client',name:'NAV001',email:'nav001-r3@example.test',accountStatus:'active'}};
+          const waitServer = () => new Promise((resolve,reject) => {
+            let n=0;
+            const ping=()=>{n++;const req=http.get(base+'/index.html',res=>{res.resume();if(res.statusCode===200)return resolve();if(n>100)return reject(new Error('server timeout'));setTimeout(ping,200)});req.on('error',()=>n>100?reject(new Error('server timeout')):setTimeout(ping,200));};
+            ping();
+          });
+          const intercept = async p => {
+            await p.route('https://unpkg.com/**', r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await p.route('https://cdn.jsdelivr.net/**', r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await p.route('https://fonts.googleapis.com/**', r=>r.fulfill({contentType:'text/css',body:''}));
+            await p.route('https://fonts.gstatic.com/**', r=>r.abort());
+          };
+          const init = p => p.addInitScript(v=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(v)),session);
+          const settle = async p => { await p.waitForLoadState('domcontentloaded'); await p.waitForLoadState('networkidle').catch(()=>{}); await p.waitForTimeout(900); };
+          const injectFixture = (p, marker, suffix) => p.evaluate(({marker,suffix}) => new Promise(resolve => {
+            const link=document.createElement('link');
+            link.rel='stylesheet';
+            link.href='/assets/css/components/auth/password-dialog.css?'+suffix;
+            link.dataset.dokeAuthCapability=marker;
+            const done=()=>resolve();
+            link.addEventListener('load',done,{once:true});link.addEventListener('error',done,{once:true});
+            document.head.appendChild(link);setTimeout(done,700);
+          }), {marker,suffix});
+          const snap = (p,label) => p.evaluate(label => {
+            const q=n=>Math.round(Number(n||0)*10)/10;
+            const links=Array.from(document.querySelectorAll('link[rel="stylesheet"][href]')).map(link=>{const u=new URL(link.href,location.href);return{href:u.pathname,search:u.search,cap:link.getAttribute('data-doke-auth-capability')||'',media:link.media||'all',inactive:link.getAttribute('data-doke-route-style-inactive')==='true'};});
+            const skip=document.querySelector('[data-doke-skip-link]'); const ss=skip?getComputedStyle(skip):null; const sr=skip?skip.getBoundingClientRect():null;
+            const shell=document.querySelector('.app-shell'); const page=document.querySelector('.page'); const header=document.querySelector('[data-app-header], .app-header'); const content=document.querySelector('.page__content');
+            const active=document.activeElement; const activeMain=Boolean(active && (active.matches('main,[role="main"]') || active.closest && active.closest('main,[role="main"]')));
+            return {label,url:location.pathname,scrollY:q(scrollY),links,skip:skip?{display:ss.display,position:ss.position,height:q(sr.height),top:q(sr.top)}:null,shellTop:shell?q(shell.getBoundingClientRect().top):null,pageTop:page?q(page.getBoundingClientRect().top):null,headerTop:header?q(header.getBoundingClientRect().top):null,contentTop:content?q(content.getBoundingClientRect().top):null,skipCount:document.querySelectorAll('[data-doke-skip-link]').length,mainCount:document.querySelectorAll('main,[role="main"]').length,activeMain,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth};
+          },label);
+          const cap=(s,k)=>s.links.find(x=>x.cap===k); const asset=(s,k)=>s.links.find(x=>x.href===k && !x.cap); const active=x=>x&&!x.inactive&&x.media!=='not all'; const retired=x=>x&&x.inactive&&x.media==='not all';
+          const assertCommon = s => { if(s.scrollY!==0||s.overflow||s.skipCount!==1||s.mainCount!==1)throw new Error(s.label+': navigation confounder'); };
+          const geometry = s => [s.shellTop,s.pageTop,s.headerTop,s.contentTop];
+          const sameGeometry = (a,b) => geometry(a).every((v,i)=>v===null||geometry(b)[i]===null||Math.abs(v-geometry(b)[i])<=0.6);
+          (async()=>{
+            let browser; const server=spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port='+port],{cwd:root,env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'},stdio:'ignore'});
+            try {
+              await waitServer(); browser=await chromium.launch();
+              const ctx=await browser.newContext({viewport:{width:1366,height:768}}); const p=await ctx.newPage(); await intercept(p); await init(p);
+              await p.goto(base+'/index.html'); await settle(p); const homeDirect=await snap(p,mode+'-home-direct');
+              for(const k of globals)if(!active(cap(homeDirect,k)))throw new Error(mode+': '+k+' not active on Home direct');
+              if(!homeDirect.skip||homeDirect.skip.position!=='fixed'||Math.abs(homeDirect.shellTop)>0.6||Math.abs(homeDirect.pageTop)>0.6)throw new Error(mode+': Home direct control invalid');
+              await injectFixture(p,'settings-password-style','settings-fixture=1');
+              await injectFixture(p,'future-unknown-runtime-style','unknown-fixture=1');
+              await p.waitForFunction(()=>typeof window.DokeNavigate==='function');
+              await p.evaluate(async()=>{const x=window.DokeNavigate('/resultados.html');if(x&&typeof x.then==='function')await x;}); await p.waitForURL(/\/resultados\.html/); await settle(p); const resultsNav=await snap(p,mode+'-results-via-nav'); assertCommon(resultsNav);
+              if(!retired(cap(resultsNav,'settings-password-style')))throw new Error(mode+': settings runtime style was not retired');
+              if(!retired(cap(resultsNav,'future-unknown-runtime-style')))throw new Error(mode+': unknown runtime style was not fail-closed retired');
+              if(!retired(asset(resultsNav,'/assets/css/pages/home.css')))throw new Error(mode+': home.css did not retire');
+              if(!active(asset(resultsNav,'/assets/css/pages/search-results.css')))throw new Error(mode+': search-results.css not active');
+              const directCtx=await browser.newContext({viewport:{width:1366,height:768}}); const direct=await directCtx.newPage(); await intercept(direct); await init(direct); await direct.goto(base+'/resultados.html'); await settle(direct); const resultsDirect=await snap(direct,mode+'-results-direct'); assertCommon(resultsDirect);
+              if(mode==='parent') {
+                for(const k of globals)if(!retired(cap(resultsNav,k)))throw new Error('parent: '+k+' defect not reproduced');
+                if(!resultsNav.skip||resultsNav.skip.position!=='static'||!(resultsNav.shellTop>0&&resultsNav.pageTop>0))throw new Error('parent: flow displacement not reproduced');
+                if(sameGeometry(resultsNav,resultsDirect))throw new Error('parent: direct/nav geometry unexpectedly converged');
+              } else {
+                for(const k of globals)if(!active(cap(resultsNav,k)))throw new Error('candidate: '+k+' was not preserved');
+                if(!resultsNav.skip||resultsNav.skip.position!=='fixed'||Math.abs(resultsNav.shellTop)>0.6||Math.abs(resultsNav.pageTop)>0.6)throw new Error('candidate: zero-flow contract failed');
+                if(!sameGeometry(resultsNav,resultsDirect))throw new Error('candidate: direct/nav geometry parity failed');
+                if(!resultsNav.activeMain)throw new Error('candidate: main landmark focus lifecycle failed');
+              }
+              await directCtx.close();
+              await p.evaluate(async()=>{const x=window.DokeNavigate('/index.html');if(x&&typeof x.then==='function')await x;}); await p.waitForURL(/\/index\.html/); await settle(p); const homeReturn=await snap(p,mode+'-home-return'); assertCommon(homeReturn);
+              if(!active(asset(homeReturn,'/assets/css/pages/home.css')))throw new Error(mode+': home.css did not reactivate');
+              if(!retired(asset(homeReturn,'/assets/css/pages/search-results.css')))throw new Error(mode+': search-results.css did not retire on return');
+              if(mode==='parent') {
+                for(const k of globals)if(!retired(cap(homeReturn,k)))throw new Error('parent: '+k+' unexpectedly recovered');
+                if(!homeReturn.skip||homeReturn.skip.position!=='static'||!(homeReturn.shellTop>0&&homeReturn.pageTop>0))throw new Error('parent: return defect not persistent');
+              } else {
+                for(const k of globals)if(!active(cap(homeReturn,k)))throw new Error('candidate: '+k+' not persistent on return');
+                if(!homeReturn.skip||homeReturn.skip.position!=='fixed'||Math.abs(homeReturn.shellTop)>0.6||Math.abs(homeReturn.pageTop)>0.6)throw new Error('candidate: return zero-flow contract failed');
+              }
+              console.log(mode.toUpperCase()+'_HOME_DIRECT='+JSON.stringify(homeDirect));
+              console.log(mode.toUpperCase()+'_RESULTS_DIRECT='+JSON.stringify(resultsDirect));
+              console.log(mode.toUpperCase()+'_RESULTS_NAV='+JSON.stringify(resultsNav));
+              console.log(mode.toUpperCase()+'_HOME_RETURN='+JSON.stringify(homeReturn));
+              console.log(mode.toUpperCase()+'_BROWSER_CONTRACT=PASS');
+            } finally { if(browser)await browser.close().catch(()=>{}); server.kill(); }
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - name: Reproduce parent and prove local candidate browser parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE_DIR="$CANDIDATE_DIR" node "$RUNNER_TEMP/nav001-r3-browser.js" "$PARENT_DIR" 5500 parent
+          CANDIDATE_DIR="$CANDIDATE_DIR" node "$RUNNER_TEMP/nav001-r3-browser.js" "$CANDIDATE_DIR" 5501 candidate
+          echo BROWSER_AB=PASS
+          echo GLOBAL_RUNTIME_STYLES_PRESERVED=3
+          echo ROUTE_SCOPED_RUNTIME_NEGATIVE_FIXTURES=2
+          echo ROUTE_SPECIFIC_RETIREMENT=PASS
+          echo DIRECT_NAV_GEOMETRY_PARITY=PASS
+
+      - name: Run relevant static and browser regression gates on local candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          node --check assets/js/core/stable-shell-router.js
+          npm run audit:shell-router-scroll-reset
+          npm run audit:responsive-boundaries
+          npm run audit:desktop-base
+          npm run audit:shared-app-header-contract
+          npm run test:router-scroll
+          npm run test:layout-contract
+          echo REGRESSION_GATES=PASS
+
+      - name: Freeze receipt and prove repository stayed diagnostic-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$CANDIDATE_TREE"
+          test "$(git rev-parse HEAD:assets/js/core/stable-shell-router.js)" = "$CANDIDATE_ROUTER_BLOB"
+          test -z "$(git status --porcelain)"
+          test -z "$(git diff --name-only "$PARENT"..HEAD -- config/domain-completion-matrix.json)"
+          echo 'UX_NAV_DEBT_001_R3_CANDIDATE={"result":"PASS","checkpoint":"UX-NAV-DEBT-001-R3","parent":"'"$PARENT"'","candidate":"'"$CANDIDATE"'","candidateTree":"'"$CANDIDATE_TREE"'","routerBlob":"'"$CANDIDATE_ROUTER_BLOB"'","patchSha256":"'"$CANDIDATE_PATCH_SHA256"'","productFiles":1,"persistentRuntimeStyles":3,"routeScopedRuntimeNegativeFixtures":2,"routeSpecificRetirementPreserved":true,"directNavGeometryParity":true,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"remoteProductMutation":false,"repositoryOnly":true}'
+          echo READ_ONLY_PARENT=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
