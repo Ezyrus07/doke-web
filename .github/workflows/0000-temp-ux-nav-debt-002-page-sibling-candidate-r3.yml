@@ -1,0 +1,351 @@
+name: TEMP UX-NAV-DEBT-002 Page Sibling Candidate R3
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-page-sibling-candidate-r3
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      PARENT: 00a034f90f7940e820fab1f74c27ade9a32d16d1
+      PARENT_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-page-sibling-candidate-r3.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          echo "TEMP_SHA=$head"
+          echo 'LINEAGE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'PARENT_TREE=PASS'
+
+      - name: Materialize parent and exact one-file candidate locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../nav002-parent "$PARENT"
+          git worktree add --detach ../nav002-candidate "$PARENT"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('../nav002-candidate/assets/js/core/stable-shell-router.js')
+          text = path.read_text(encoding='utf-8')
+          old = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                currentContent.replaceWith(nextContent.cloneNode(true));
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          new = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                var replacementContent = nextContent.cloneNode(true);
+                currentContent.replaceWith(replacementContent);
+                var replacementPageNodes = Array.prototype.map.call(nextPage.childNodes, function (node) {
+                  if (node === nextHeader) return currentHeader;
+                  if (node === nextContent) return replacementContent;
+                  return node.cloneNode(true);
+                });
+                currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          if old not in text:
+              raise SystemExit('Expected replaceShell fast-path block not found exactly')
+          if text.count(old) != 1:
+              raise SystemExit('Expected replaceShell block is not unique')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+          PY
+          mapfile -t product_changed < <(git -C ../nav002-candidate diff --name-only "$PARENT")
+          [[ ${#product_changed[@]} -eq 1 && "${product_changed[0]}" == 'assets/js/core/stable-shell-router.js' ]] || { printf 'Candidate scope mismatch: %s\n' "${product_changed[*]}"; exit 1; }
+          if git -C ../nav002-candidate diff -U0 "$PARENT" -- assets/js/core/stable-shell-router.js | grep '^+' | grep -Eiq 'resultados|doke-public-footer'; then
+            echo 'Candidate contains route/footer hardcoding in added lines'
+            exit 1
+          fi
+          [[ -z "$(git -C ../nav002-candidate diff --name-only "$PARENT" -- config/domain-completion-matrix.json tests/visual)" ]] || { echo 'Forbidden Matrix/snapshot mutation'; exit 1; }
+          git -C ../nav002-candidate config user.name doke-diagnostic
+          git -C ../nav002-candidate config user.email doke-diagnostic@users.noreply.github.com
+          git -C ../nav002-candidate add assets/js/core/stable-shell-router.js
+          git -C ../nav002-candidate commit -m 'test(ux): qualify generic page sibling reconciliation'
+          candidate_commit="$(git -C ../nav002-candidate rev-parse HEAD)"
+          candidate_tree="$(git -C ../nav002-candidate rev-parse HEAD^{tree})"
+          router_blob="$(git -C ../nav002-candidate rev-parse HEAD:assets/js/core/stable-shell-router.js)"
+          patch_sha="$(git -C ../nav002-candidate diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+          echo "CANDIDATE_COMMIT=$candidate_commit"
+          echo "CANDIDATE_TREE=$candidate_tree"
+          echo "ROUTER_BLOB=$router_blob"
+          echo "PATCH_SHA256=$patch_sha"
+          echo 'CANDIDATE_SCOPE=PASS'
+          echo 'HARDCODED_ROUTE_OR_FOOTER=false'
+          echo 'MATRIX_MUTATION=false'
+          echo 'SNAPSHOT_MUTATION=false'
+
+      - name: Install candidate dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../nav002-candidate
+          npm ci
+          npx playwright install chromium
+
+      - name: Run relevant static regression gates on candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../nav002-candidate
+          npm run audit:responsive-boundaries
+          npm run audit:desktop-base
+          npm run audit:shared-app-header-contract
+          npm run test:results-card-density-contract
+          echo 'STATIC_REGRESSION_GATES=PASS'
+
+      - name: Run parent-vs-candidate browser composition qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m http.server 4173 --directory ../nav002-parent > "$RUNNER_TEMP/nav002-parent-server.log" 2>&1 &
+          p1=$!
+          python -m http.server 4174 --directory ../nav002-candidate > "$RUNNER_TEMP/nav002-candidate-server.log" 2>&1 &
+          p2=$!
+          cleanup() { kill "$p1" "$p2" 2>/dev/null || true; }
+          trap cleanup EXIT
+          for port in 4173 4174; do
+            ok=0
+            for i in {1..30}; do
+              if curl -fsS "http://127.0.0.1:${port}/index.html" >/dev/null; then ok=1; break; fi
+              sleep 1
+            done
+            [[ "$ok" == 1 ]] || { echo "Server $port did not become ready"; exit 1; }
+          done
+          cd ../nav002-candidate
+          node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const assert = require('node:assert/strict');
+
+          const bases = {
+            parent: 'http://127.0.0.1:4173',
+            candidate: 'http://127.0.0.1:4174'
+          };
+
+          function round(value) {
+            return Math.round(Number(value || 0) * 10) / 10;
+          }
+
+          async function waitStable(page) {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForTimeout(900);
+          }
+
+          async function snapshot(page) {
+            return page.evaluate(() => {
+              const pageNode = document.querySelector('.page');
+              const footer = pageNode && pageNode.querySelector(':scope > .doke-public-footer');
+              const header = pageNode && pageNode.querySelector(':scope > [data-app-header], :scope > .app-header');
+              const main = pageNode && pageNode.querySelector(':scope > .page__content');
+              const footerRect = footer && footer.getBoundingClientRect();
+              const pageRect = pageNode && pageNode.getBoundingClientRect();
+              const keyFor = (node) => {
+                if (node === header) return 'HEADER';
+                if (node === main) return 'CONTENT';
+                const id = node.id ? `#${node.id}` : '';
+                const cls = typeof node.className === 'string' && node.className.trim()
+                  ? '.' + node.className.trim().split(/\s+/).sort().join('.')
+                  : '';
+                return `${node.tagName}${id}${cls}`;
+              };
+              const persistentStyles = ['card-experience-style', 'accessibility-experience-style', 'responsive-experience-style'].map((marker) => {
+                const link = document.querySelector(`link[data-doke-auth-capability="${marker}"]`);
+                return {
+                  marker,
+                  present: Boolean(link),
+                  media: link && (link.media || link.getAttribute('media') || ''),
+                  inactive: Boolean(link && link.getAttribute('data-doke-route-style-inactive') === 'true')
+                };
+              });
+              return {
+                path: location.pathname,
+                pageChildren: pageNode ? Array.from(pageNode.children).map(keyFor) : [],
+                footer: footerRect ? {
+                  present: true,
+                  left: footerRect.left,
+                  top: footerRect.top,
+                  width: footerRect.width,
+                  height: footerRect.height
+                } : { present: false },
+                pageHeight: pageRect ? pageRect.height : 0,
+                scrollY: window.scrollY,
+                noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+                filterStatus: Boolean(document.querySelector('[data-results-filter-status]')),
+                filterAuthority: document.querySelector('[data-results-filters-form]')?.getAttribute('data-filter-authority') || '',
+                resultLikeCount: document.querySelectorAll('[data-service-card], .service-card, .ad-card').length,
+                mainFocused: document.activeElement === main,
+                routeFocusTemporary: Boolean(main && main.getAttribute('data-doke-route-focus-temporary') === 'true'),
+                mobileDrawerCount: document.querySelectorAll('[data-mobile-drawer-authority="canonical"], .doke-global-mobile-drawer').length,
+                preloaderCount: document.querySelectorAll('[data-orders-document-preloader], [data-messages-document-preloader], [data-notifications-document-preloader], .orders-document-preloader, .doke-document-preloader').length,
+                persistentStyles
+              };
+            });
+          }
+
+          async function direct(base, path) {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+            const errors = [];
+            page.on('pageerror', (error) => errors.push(String(error && error.message || error)));
+            await page.goto(base + path, { waitUntil: 'domcontentloaded' });
+            await waitStable(page);
+            const state = await snapshot(page);
+            await browser.close();
+            return { state, errors };
+          }
+
+          async function routeRoundTrip(base) {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+            const errors = [];
+            page.on('pageerror', (error) => errors.push(String(error && error.message || error)));
+            await page.goto(base + '/index.html', { waitUntil: 'domcontentloaded' });
+            await waitStable(page);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function');
+            const homeBefore = await snapshot(page);
+            await page.evaluate(() => {
+              window.__nav002Header = document.querySelector('.page > [data-app-header], .page > .app-header');
+              window.__nav002Sidebar = document.querySelector('.app-shell > .sidebar, [data-shell-sidebar]');
+            });
+            await page.evaluate(() => window.DokeNavigate('/resultados.html'));
+            await page.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+            await waitStable(page);
+            const identityAtResults = await page.evaluate(() => ({
+              headerPreserved: window.__nav002Header === document.querySelector('.page > [data-app-header], .page > .app-header'),
+              sidebarPreserved: window.__nav002Sidebar === document.querySelector('.app-shell > .sidebar, [data-shell-sidebar]')
+            }));
+            const results = await snapshot(page);
+            await page.evaluate(() => window.DokeNavigate('/index.html'));
+            await page.waitForFunction(() => location.pathname.endsWith('/index.html'));
+            await waitStable(page);
+            const identityAtHome = await page.evaluate(() => ({
+              headerPreserved: window.__nav002Header === document.querySelector('.page > [data-app-header], .page > .app-header'),
+              sidebarPreserved: window.__nav002Sidebar === document.querySelector('.app-shell > .sidebar, [data-shell-sidebar]')
+            }));
+            const homeAfter = await snapshot(page);
+            await browser.close();
+            return { homeBefore, results, homeAfter, identityAtResults, identityAtHome, errors };
+          }
+
+          (async () => {
+            const parentDirectResults = await direct(bases.parent, '/resultados.html');
+            const parentRoundTrip = await routeRoundTrip(bases.parent);
+            const candidateDirectResults = await direct(bases.candidate, '/resultados.html');
+            const candidateDirectHome = await direct(bases.candidate, '/index.html');
+            const candidateRoundTrip = await routeRoundTrip(bases.candidate);
+
+            assert.equal(parentDirectResults.state.footer.present, true, 'Parent direct Resultados must contain footer');
+            assert.equal(parentRoundTrip.results.footer.present, false, 'Parent navigation must reproduce missing footer');
+
+            assert.equal(candidateDirectResults.state.footer.present, true, 'Candidate direct Resultados must contain footer');
+            assert.equal(candidateRoundTrip.results.footer.present, true, 'Candidate navigation must preserve route-owned footer');
+            assert.deepEqual(candidateRoundTrip.results.pageChildren, candidateDirectResults.state.pageChildren, 'Candidate Resultados page child set/order must converge');
+            assert.deepEqual(candidateRoundTrip.homeAfter.pageChildren, candidateDirectHome.state.pageChildren, 'Candidate return Home page child set/order must converge');
+            assert.deepEqual(candidateRoundTrip.homeBefore.pageChildren, candidateDirectHome.state.pageChildren, 'Candidate Home negative-control child set must match direct Home');
+
+            assert.equal(candidateRoundTrip.identityAtResults.headerPreserved, true, 'Live header identity must be preserved into Resultados');
+            assert.equal(candidateRoundTrip.identityAtResults.sidebarPreserved, true, 'Live sidebar identity must be preserved into Resultados');
+            assert.equal(candidateRoundTrip.identityAtHome.headerPreserved, true, 'Live header identity must remain preserved on return Home');
+            assert.equal(candidateRoundTrip.identityAtHome.sidebarPreserved, true, 'Live sidebar identity must remain preserved on return Home');
+
+            const directFooter = candidateDirectResults.state.footer;
+            const navFooter = candidateRoundTrip.results.footer;
+            assert.ok(Math.abs(directFooter.width - navFooter.width) <= 0.6, 'Footer width must converge');
+            assert.ok(Math.abs(directFooter.height - navFooter.height) <= 0.6, 'Footer height must converge');
+            assert.ok(Math.abs(directFooter.left - navFooter.left) <= 0.6, 'Footer horizontal geometry must converge');
+
+            assert.equal(candidateRoundTrip.results.noOverflow, true, 'Candidate Resultados must have no horizontal overflow');
+            assert.equal(candidateRoundTrip.homeAfter.noOverflow, true, 'Candidate Home return must have no horizontal overflow');
+            assert.equal(candidateRoundTrip.results.scrollY, 0, 'Candidate route must reset scroll to zero');
+            assert.ok(candidateRoundTrip.results.mainFocused || candidateRoundTrip.results.routeFocusTemporary, 'Candidate must preserve route focus handoff');
+            assert.equal(candidateRoundTrip.errors.length, 0, 'Candidate route round-trip must have no page errors');
+
+            candidateRoundTrip.results.persistentStyles.forEach((entry) => {
+              assert.equal(entry.present, true, `${entry.marker} must remain mounted`);
+              assert.notEqual(entry.media, 'not all', `${entry.marker} must remain active`);
+              assert.equal(entry.inactive, false, `${entry.marker} must not be route-inactive`);
+            });
+
+            assert.equal(candidateRoundTrip.results.mobileDrawerCount <= 1, true, 'No duplicate mobile drawer allowed');
+            assert.equal(candidateRoundTrip.homeAfter.mobileDrawerCount <= 1, true, 'No duplicate mobile drawer allowed on return');
+            assert.equal(candidateRoundTrip.results.preloaderCount <= 1, true, 'No duplicate document preloader allowed');
+
+            const absoluteFooterTopDelta = round(Math.abs(directFooter.top - navFooter.top));
+            const pageHeightDelta = round(Math.abs(candidateDirectResults.state.pageHeight - candidateRoundTrip.results.pageHeight));
+            const filterLifecycleStillSeparate = candidateDirectResults.state.filterStatus !== candidateRoundTrip.results.filterStatus ||
+              candidateDirectResults.state.filterAuthority !== candidateRoundTrip.results.filterAuthority;
+
+            const receipt = {
+              result: 'PASS',
+              checkpoint: 'UX-NAV-DEBT-002-R3',
+              parent: process.env.PARENT,
+              viewport: '1366x768',
+              platform: 'windows-latest',
+              parentReproducedMissingFooter: !parentRoundTrip.results.footer.present,
+              candidateFooterPresentViaNav: candidateRoundTrip.results.footer.present,
+              resultadosChildSetConverged: JSON.stringify(candidateRoundTrip.results.pageChildren) === JSON.stringify(candidateDirectResults.state.pageChildren),
+              homeNegativeControlConverged: JSON.stringify(candidateRoundTrip.homeAfter.pageChildren) === JSON.stringify(candidateDirectHome.state.pageChildren),
+              headerIdentityPreserved: candidateRoundTrip.identityAtResults.headerPreserved && candidateRoundTrip.identityAtHome.headerPreserved,
+              sidebarIdentityPreserved: candidateRoundTrip.identityAtResults.sidebarPreserved && candidateRoundTrip.identityAtHome.sidebarPreserved,
+              footerWidthDelta: round(Math.abs(directFooter.width - navFooter.width)),
+              footerHeightDelta: round(Math.abs(directFooter.height - navFooter.height)),
+              footerLeftDelta: round(Math.abs(directFooter.left - navFooter.left)),
+              footerTopDelta: absoluteFooterTopDelta,
+              pageHeightDelta,
+              filterLifecycleStillSeparate,
+              noOverflow: candidateRoundTrip.results.noOverflow && candidateRoundTrip.homeAfter.noOverflow,
+              routeFocusPreserved: candidateRoundTrip.results.mainFocused || candidateRoundTrip.results.routeFocusTemporary,
+              nav001RuntimeStylesActive: candidateRoundTrip.results.persistentStyles.every((entry) => entry.present && entry.media !== 'not all' && !entry.inactive),
+              criteriaRelaxed: 0,
+              introducedRegressions: 0,
+              snapshotMutation: false,
+              matrixMutation: false,
+              repositoryOnly: true
+            };
+            console.log('UX_NAV_DEBT_002_R3_BROWSER=' + JSON.stringify(receipt));
+            console.log('UX_NAV_DEBT_002_R3_PARENT_RESULTS=' + JSON.stringify(parentRoundTrip.results));
+            console.log('UX_NAV_DEBT_002_R3_CANDIDATE_DIRECT=' + JSON.stringify(candidateDirectResults.state));
+            console.log('UX_NAV_DEBT_002_R3_CANDIDATE_NAV=' + JSON.stringify(candidateRoundTrip.results));
+          })().catch((error) => {
+            console.error(error && error.stack || error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Freeze R3 no-remote-product-mutation receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -z "$(git status --porcelain)" ]] || { git status --porcelain; exit 1; }
+          remote_head="$(git rev-parse HEAD)"
+          mapfile -t remote_changed < <(git diff-tree --no-commit-id --name-only -r "$remote_head")
+          [[ ${#remote_changed[@]} -eq 1 && "${remote_changed[0]}" == "$WORKFLOW_PATH" ]] || { echo 'Remote branch ceased to be TEMP-only'; exit 1; }
+          echo 'PRODUCT_REMOTE_MUTATION=false'
+          echo 'PERMANENT_BRANCH_CREATED=false'
+          echo 'PR_CREATED=false'
+          echo 'SNAPSHOT_MUTATION=false'
+          echo 'MATRIX_MUTATION=false'
+          echo 'CRITERIA_RELAXED=0'
+          echo 'REPOSITORY_ONLY=true'
