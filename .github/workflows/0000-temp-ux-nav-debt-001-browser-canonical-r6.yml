@@ -1,0 +1,197 @@
+name: TEMP UX-NAV-DEBT-001 Canonical Browser R6
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-browser-canonical-r6
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      EXPECTED_ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
+      EXPECTED_CANDIDATE_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      EXPECTED_PATCH_SHA256: 5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-browser-canonical-r6.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          echo "TEMP_HEAD=$H"
+          echo LINEAGE=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Re-materialize exact one-file candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/nav001-parent-r6"
+          C="$RUNNER_TEMP/nav001-candidate-r6"
+          git worktree add --detach "$P" "$PARENT" >/dev/null
+          git worktree add --detach "$C" "$PARENT" >/dev/null
+          cd "$C"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/stable-shell-router.js')
+          s=p.read_text()
+          a1="  var CORE_SCRIPT_RE = /assets\\/js\\/core\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\.js(?:\\?.*)?$/i;\n"
+          i1="  var PERSISTENT_RUNTIME_STYLE_CAPABILITIES = new Set([\n    'card-experience-style',\n    'accessibility-experience-style',\n    'responsive-experience-style'\n  ]);\n\n"+a1
+          a2="  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    try {\n"
+          i2="  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    var runtimeCapability = link.getAttribute('data-doke-auth-capability') || '';\n    if (PERSISTENT_RUNTIME_STYLE_CAPABILITIES.has(runtimeCapability)) return false;\n    try {\n"
+          if s.count(a1)!=1 or s.count(a2)!=1: raise SystemExit('candidate anchor drift')
+          p.write_text(s.replace(a1,i1,1).replace(a2,i2,1))
+          PY
+          node --check assets/js/core/stable-shell-router.js
+          git diff --check
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          git add assets/js/core/stable-shell-router.js
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --cached --name-only "$PARENT" | wc -l)" -eq 1
+          test "$(git diff --cached --name-only "$PARENT")" = 'assets/js/core/stable-shell-router.js'
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          npm --prefix "$P" ci --ignore-scripts
+          npm --prefix "$C" ci --ignore-scripts
+          node "$C/node_modules/@playwright/test/cli.js" install --with-deps chromium
+          echo "PARENT_DIR=$P" >> "$GITHUB_ENV"
+          echo "CANDIDATE_DIR=$C" >> "$GITHUB_ENV"
+          echo CANDIDATE_CONTENT_IDENTITY=PASS
+
+      - name: Prove obsolete named-project scripts are baseline tooling debt
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq -- '--project=desktop-chrome' "$PARENT_DIR/package.json"
+          if grep -Eq 'projects\s*:' "$PARENT_DIR/playwright.config.js"; then
+            echo 'playwright config unexpectedly defines projects' >&2
+            exit 1
+          fi
+          node - <<'NODE'
+          const cfg=require(process.env.PARENT_DIR + '/playwright.config.js');
+          if (Object.prototype.hasOwnProperty.call(cfg,'projects')) throw new Error('projects unexpectedly defined');
+          console.log('PLAYWRIGHT_DEFAULT_PROJECT_ONLY=PASS');
+          NODE
+          echo NAMED_PROJECT_SCRIPT_MISMATCH=PROVEN_INHERITED
+
+      - name: Run stable-shell scroll spec with canonical current config A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_spec() {
+            local root="$1" out="$2"
+            set +e
+            (cd "$root" && CI=1 DOKE_E2E_DISABLE_REMOTE_SERVICES=1 node node_modules/@playwright/test/cli.js test tests/e2e/stable-shell-scroll-contract.spec.js --reporter=line) >"$out" 2>&1
+            local rc=$?
+            set -e
+            git -C "$root" restore --worktree -- reports/generated 2>/dev/null || true
+            git -C "$root" clean -fd -- test-results playwright-report reports/generated >/dev/null 2>&1 || true
+            echo "$rc"
+          }
+          POUT="$RUNNER_TEMP/router-scroll-parent.out"
+          COUT="$RUNNER_TEMP/router-scroll-candidate.out"
+          PRC="$(run_spec "$PARENT_DIR" "$POUT")"
+          CRC="$(run_spec "$CANDIDATE_DIR" "$COUT")"
+          echo "ROUTER_SCROLL_PARENT_RC=$PRC"
+          echo "ROUTER_SCROLL_CANDIDATE_RC=$CRC"
+          if [ "$PRC" -eq 0 ]; then echo ROUTER_SCROLL_PARENT=PASS; else cat "$POUT"; fi
+          if [ "$CRC" -ne 0 ]; then echo 'candidate router-scroll failed' >&2; cat "$COUT" >&2; exit 1; fi
+          echo ROUTER_SCROLL_CANDIDATE=PASS
+          echo ROUTER_SCROLL_INTRODUCED_REGRESSION=false
+
+      - name: Run global layout spec with canonical current config A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_spec() {
+            local root="$1" out="$2"
+            set +e
+            (cd "$root" && CI=1 DOKE_E2E_DISABLE_REMOTE_SERVICES=1 node node_modules/@playwright/test/cli.js test tests/e2e/global-layout-contract.spec.js --reporter=line) >"$out" 2>&1
+            local rc=$?
+            set -e
+            git -C "$root" restore --worktree -- reports/generated 2>/dev/null || true
+            git -C "$root" clean -fd -- test-results playwright-report reports/generated >/dev/null 2>&1 || true
+            echo "$rc"
+          }
+          POUT="$RUNNER_TEMP/layout-parent.out"
+          COUT="$RUNNER_TEMP/layout-candidate.out"
+          PRC="$(run_spec "$PARENT_DIR" "$POUT")"
+          CRC="$(run_spec "$CANDIDATE_DIR" "$COUT")"
+          echo "LAYOUT_PARENT_RC=$PRC"
+          echo "LAYOUT_CANDIDATE_RC=$CRC"
+          if [ "$PRC" -eq 0 ]; then echo LAYOUT_PARENT=PASS; else cat "$POUT"; fi
+          if [ "$CRC" -ne 0 ]; then echo 'candidate layout-contract failed' >&2; cat "$COUT" >&2; exit 1; fi
+          echo LAYOUT_CANDIDATE=PASS
+          echo LAYOUT_INTRODUCED_REGRESSION=false
+
+      - name: Reconfirm current green static gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          node scripts/audit-navigation-lifecycle-contract.js --strict
+          node scripts/test-navigation-lifecycle-core-contract.js
+          npm run audit:responsive-boundaries
+          npm run audit:desktop-base
+          npm run audit:shared-app-header-contract
+          echo CURRENT_GREEN_STATIC_GATES=PASS
+
+      - name: Reconfirm inherited unrelated static failures parent equals candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          compare_fail() {
+            local name="$1" cmd="$2" expected="$3"
+            local po="$RUNNER_TEMP/${name}-p.out" co="$RUNNER_TEMP/${name}-c.out"
+            set +e
+            (cd "$PARENT_DIR" && bash -lc "$cmd") >"$po" 2>&1; local prc=$?
+            (cd "$CANDIDATE_DIR" && bash -lc "$cmd") >"$co" 2>&1; local crc=$?
+            set -e
+            git -C "$PARENT_DIR" restore --worktree -- docs/validation reports/generated 2>/dev/null || true
+            git -C "$CANDIDATE_DIR" restore --worktree -- docs/validation reports/generated 2>/dev/null || true
+            git -C "$PARENT_DIR" clean -fd -- docs/validation reports/generated >/dev/null 2>&1 || true
+            git -C "$CANDIDATE_DIR" clean -fd -- docs/validation reports/generated >/dev/null 2>&1 || true
+            test "$prc" -ne 0
+            test "$crc" -eq "$prc"
+            test "$(sha256sum "$po" | awk '{print $1}')" = "$(sha256sum "$co" | awk '{print $1}')"
+            grep -Fq "$expected" "$po"
+            echo "INHERITED_IDENTICAL[$name]=PASS"
+          }
+          compare_fail legacy_shell_scroll "node scripts/audit-shell-router-scroll-reset.js" 'app.js check failed: hasScrollResetFunction'
+          compare_fail stable_shell_base "node scripts/test-stable-shell-project-base-contract.js" 'home warm-up must use the project-aware route URL'
+          compare_fail nav_lifecycle_finalization "node scripts/test-navigation-lifecycle-finalization-contract.js" 'auth/esqueci-senha.html: lifecycle must load before auth controller'
+          echo INHERITED_STATIC_FAILURES=3
+          echo INHERITED_STATIC_FAILURES_INTRODUCED=false
+
+      - name: Freeze R6 receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          test "$(git diff --cached --name-only "$PARENT")" = 'assets/js/core/stable-shell-router.js'
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          echo 'UX_NAV_DEBT_001_R6_CANONICAL_BROWSER={"result":"PASS","checkpoint":"UX-NAV-DEBT-001-R6","parent":"14bdb1af9cfefff4dfd27a78b937443975266001","candidateTree":"d982dc7c0c7cd9b227f1543a83243dc76de08b9a","routerBlob":"453d9f1bdd6bda9690692117e1f42c0719535c06","patchSha256":"5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca","canonicalBrowserSpecs":2,"candidateBrowserSpecsPassed":2,"greenStaticGates":5,"inheritedStaticFailures":3,"obsoleteNamedProjectScripts":2,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"remoteProductMutation":false,"repositoryOnly":true}'
+          echo R6_CANONICAL_BROWSER=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
