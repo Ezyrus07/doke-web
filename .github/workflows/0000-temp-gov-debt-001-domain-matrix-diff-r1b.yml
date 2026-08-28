@@ -1,0 +1,215 @@
+name: TEMP GOV-DEBT-001 Domain Matrix Diff R1b
+
+on:
+  push:
+    branches:
+      - diag/gov-debt-001-domain-matrix-diff-r1b
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-gov-debt-001-domain-matrix-diff-r1b.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "GOV_DEBT_001_R1B_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Create detached parent worktree and freeze source hashes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $worktree = Join-Path $env:RUNNER_TEMP 'gov-debt-001-r1b-parent'
+          git worktree add --detach $worktree '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          Set-Location $worktree
+          Copy-Item 'docs/DOMAIN-COMPLETION-MATRIX.md' (Join-Path $env:RUNNER_TEMP 'matrix-before.md')
+          Copy-Item 'reports/generated/domain-completion-matrix-report.json' (Join-Path $env:RUNNER_TEMP 'report-before.json')
+          "WORKTREE=$worktree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CONFIG_HASH_BEFORE=$((Get-FileHash -Algorithm SHA256 'config/domain-completion-matrix.json').Hash.ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SNAPSHOT_HASH_BEFORE=$((Get-FileHash -Algorithm SHA256 'docs/validation/domain-completion-staging-snapshot.json').Hash.ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "DOC_HASH_BEFORE=$((Get-FileHash -Algorithm SHA256 'docs/DOMAIN-COMPLETION-MATRIX.md').Hash.ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "REPORT_HASH_BEFORE=$((Get-FileHash -Algorithm SHA256 'reports/generated/domain-completion-matrix-report.json').Hash.ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host 'GOV_DEBT_001_R1B_INPUT_FREEZE=PASS'
+
+      - name: Reproduce stale audit then generate expected tracked outputs in temp only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $beforeLog = Join-Path $env:RUNNER_TEMP 'matrix-before-audit.log'
+          & node scripts/audit-domain-completion-matrix.js 2>&1 | Tee-Object -FilePath $beforeLog
+          $beforeRc = $LASTEXITCODE
+          $beforeText = Get-Content -LiteralPath $beforeLog -Raw
+          if ($beforeRc -ne 1 -or -not $beforeText.Contains('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix')) { throw "unexpected parent audit signature rc=$beforeRc" }
+          if (git status --porcelain) { throw "read-only audit mutated parent: $(git status --porcelain)" }
+          $global:LASTEXITCODE = 0
+
+          & node scripts/audit-domain-completion-matrix.js --write
+          if ($LASTEXITCODE -ne 0) { throw "generator rc=$LASTEXITCODE" }
+          if ((Get-FileHash -Algorithm SHA256 'config/domain-completion-matrix.json').Hash.ToLowerInvariant() -ne $env:CONFIG_HASH_BEFORE) { throw 'config mutated' }
+          if ((Get-FileHash -Algorithm SHA256 'docs/validation/domain-completion-staging-snapshot.json').Hash.ToLowerInvariant() -ne $env:SNAPSHOT_HASH_BEFORE) { throw 'snapshot mutated' }
+          $tracked = @(git diff --name-only)
+          $allowed = @('docs/DOMAIN-COMPLETION-MATRIX.md','reports/generated/domain-completion-matrix-report.json')
+          $unexpected = @($tracked | Where-Object { $_ -notin $allowed })
+          if ($unexpected.Count -ne 0) { throw "unexpected tracked output: $($unexpected -join ', ')" }
+          foreach ($required in $allowed) { if ($required -notin $tracked) { throw "expected generated output absent: $required" } }
+          Copy-Item 'docs/DOMAIN-COMPLETION-MATRIX.md' (Join-Path $env:RUNNER_TEMP 'matrix-after.md')
+          Copy-Item 'reports/generated/domain-completion-matrix-report.json' (Join-Path $env:RUNNER_TEMP 'report-after.json')
+          $docNum = (git diff --numstat -- docs/DOMAIN-COMPLETION-MATRIX.md).Trim().Split("`t")
+          $reportNum = (git diff --numstat -- reports/generated/domain-completion-matrix-report.json).Trim().Split("`t")
+          Write-Host "GOV_DEBT_001_R1B_GENERATION=PASS sourceMutation=false trackedOutputs=2 docInsertions=$($docNum[0]) docDeletions=$($docNum[1]) reportInsertions=$($reportNum[0]) reportDeletions=$($reportNum[1])"
+
+      - name: Classify semantic delta against canonical config
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import difflib, json, os, re
+          from pathlib import Path
+
+          tmp = Path(os.environ['RUNNER_TEMP'])
+          root = Path(os.environ['WORKTREE'])
+          old = (tmp/'matrix-before.md').read_text(encoding='utf-8').splitlines()
+          new = (tmp/'matrix-after.md').read_text(encoding='utf-8').splitlines()
+          config = json.loads((root/'config/domain-completion-matrix.json').read_text(encoding='utf-8'))
+          report_old = json.loads((tmp/'report-before.json').read_text(encoding='utf-8'))
+          report_new = json.loads((tmp/'report-after.json').read_text(encoding='utf-8'))
+
+          expected = {d['id']:{
+              'maturity': int(d['maturity']),
+              'ui': str(d['userFacingAuthority']),
+              'server': str(d['serverAuthority']),
+              'staging': str(d['stagingEvidence']),
+              'security': str(d['securityGate']),
+              'production': str(d['productionGate']),
+          } for d in config['domains']}
+
+          def parse_overview(lines):
+              out = {}
+              for line in lines:
+                  if not line.startswith('|'): continue
+                  cells = [c.strip() for c in line.strip().strip('|').split('|')]
+                  if len(cells) != 9 or not cells[0].isdigit() or cells[1] not in expected: continue
+                  out[cells[1]] = {
+                      'maturity': int(cells[3].split('/')[0]),
+                      'ui': cells[4].replace(' ', '_'),
+                      'server': cells[5].replace(' ', '_'),
+                      'staging': cells[6].replace(' ', '_'),
+                      'security': cells[7].replace(' ', '_'),
+                      'production': cells[8].replace(' ', '_'),
+                  }
+              return out
+
+          old_state, new_state = parse_overview(old), parse_overview(new)
+          if set(new_state) != set(expected):
+              raise SystemExit(f'generated overview domain set mismatch generated={len(new_state)} config={len(expected)}')
+          config_mismatches = {k:{'generated':new_state[k],'config':expected[k]} for k in expected if new_state[k] != expected[k]}
+          if config_mismatches:
+              raise SystemExit('generated overview disagrees with config: ' + json.dumps(config_mismatches, ensure_ascii=False))
+
+          state_changes = []
+          promotions = []
+          for did in expected:
+              before = old_state.get(did)
+              after = new_state[did]
+              if before != after:
+                  state_changes.append({'id':did,'before':before,'after':after})
+                  if before and after['maturity'] > before['maturity']:
+                      promotions.append({'id':did,'type':'maturity','before':before['maturity'],'after':after['maturity']})
+                  if before and before['production'] != 'ready' and after['production'] == 'ready':
+                      promotions.append({'id':did,'type':'production-ready','before':before['production'],'after':'ready'})
+
+          # Determine changed headings/sections and isolate static-evidence-only lines.
+          def sections(lines):
+              current = '<preamble>'
+              result=[]
+              for line in lines:
+                  if line.startswith('## '): current=line[3:].strip()
+                  elif line.startswith('### '): current='Detalhamento/'+line[4:].strip()
+                  result.append(current)
+              return result
+          osmap, nsmap = sections(old), sections(new)
+          matcher = difflib.SequenceMatcher(a=old,b=new,autojunk=False)
+          changed_sections={}
+          removed=[]; added=[]
+          for tag,i1,i2,j1,j2 in matcher.get_opcodes():
+              if tag=='equal': continue
+              for i in range(i1,i2):
+                  changed_sections.setdefault(osmap[i],{'removed':0,'added':0})['removed']+=1
+                  removed.append(old[i])
+              for j in range(j1,j2):
+                  changed_sections.setdefault(nsmap[j],{'removed':0,'added':0})['added']+=1
+                  added.append(new[j])
+
+          static_prefix='**Evidência estática observada:**'
+          static_removed=[x for x in removed if x.startswith(static_prefix)]
+          static_added=[x for x in added if x.startswith(static_prefix)]
+          non_static_removed=[x for x in removed if x and not x.startswith(static_prefix)]
+          non_static_added=[x for x in added if x and not x.startswith(static_prefix)]
+
+          summary_old = report_old.get('summary',{})
+          summary_new = report_new.get('summary',{})
+          report_summary_change = summary_old != summary_new
+
+          result={
+              'domainStateChanges':state_changes,
+              'promotionSignals':promotions,
+              'domainStateChangeCount':len(state_changes),
+              'promotionSignalCount':len(promotions),
+              'changedSections':changed_sections,
+              'staticEvidenceLinesRemoved':len(static_removed),
+              'staticEvidenceLinesAdded':len(static_added),
+              'nonStaticNonBlankRemoved':len(non_static_removed),
+              'nonStaticNonBlankAdded':len(non_static_added),
+              'reportSummaryChanged':report_summary_change,
+              'reportSummaryBefore':summary_old,
+              'reportSummaryAfter':summary_new,
+          }
+          print('GOV_DEBT_001_R1B_CLASSIFICATION='+json.dumps(result,ensure_ascii=False,separators=(',',':')))
+          for change in state_changes: print('DOMAIN_STATE_CHANGE='+json.dumps(change,ensure_ascii=False,separators=(',',':')))
+          for line in non_static_removed[:80]: print('NONSTATIC_REMOVED='+line)
+          for line in non_static_added[:80]: print('NONSTATIC_ADDED='+line)
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "semantic classifier rc=$LASTEXITCODE" }
+          Write-Host 'GOV_DEBT_001_R1B_CLASSIFIER=PASS generatedOverviewMatchesConfig=true'
+
+      - name: Generated temp state must pass canonical audit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          & node scripts/audit-domain-completion-matrix.js
+          if ($LASTEXITCODE -ne 0) { throw "post-generation audit rc=$LASTEXITCODE" }
+          Write-Host 'GOV_DEBT_001_R1B_POST_GENERATION_AUDIT=PASS'
+
+      - name: Restore temp outputs and final no-persistence receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:WORKTREE -and (Test-Path $env:WORKTREE)) {
+            Set-Location $env:WORKTREE
+            git reset --hard '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+            git clean -fd
+            if (git status --porcelain) { throw "worktree dirty after restore: $(git status --porcelain)" }
+          }
+          Set-Location $env:GITHUB_WORKSPACE
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-gov-debt-001-domain-matrix-diff-r1b.yml') { throw 'remote TEMP scope changed' }
+          Write-Host 'GOV_DEBT_001_R1B_SAFETY=PASS remoteProductMutation=false trackedMatrixMutation=false configMutation=false stagingSnapshotMutation=false permanentBranchCreated=false prCreated=false repositoryOnly=true'
