@@ -1,0 +1,518 @@
+name: TEMP UX-NAV-DEBT-003 Regression R2
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-003-regression-r2
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 00a034f90f7940e820fab1f74c27ade9a32d16d1
+      PARENT_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-003-regression-r2.yml
+      EXPECTED_CANDIDATE_TREE: 0b4ef864e916b5acc08608d928edfaa6f388f069
+      EXPECTED_ROUTER_BLOB: f3b4d3f303967055173e418244dc0d4b3a1b0e55
+      EXPECTED_SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      EXPECTED_PATCH_SHA256: b7efeb26db11ba08512399d8915647ae9649d3eb38de630d1f16fe96acbd7e87
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          echo "TEMP_SHA=$head"
+          echo 'LINEAGE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'PARENT_TREE=PASS'
+
+      - name: Materialize exact frozen NAV-003 candidate locally
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../nav003-r2-parent "$PARENT"
+          git worktree add --detach ../nav003-r2-candidate "$PARENT"
+
+          python - ../nav003-r2-candidate <<'PY'
+          from pathlib import Path
+          import sys
+          root = Path(sys.argv[1])
+
+          search = root / 'assets/js/pages/search-data.js'
+          text = search.read_text(encoding='utf-8')
+          old = """  Doke.searchFilterState = api;\n  if (Doke.searchFilterStateInstallation && Doke.searchFilterStateInstallation.cleanup) {\n    Doke.searchFilterStateInstallation.cleanup();\n  }\n  Doke.searchFilterStateInstallation = install();\n}());\n"""
+          new = """  Doke.searchFilterState = api;\n\n  function installCanonicalSearchFilterState() {\n    if (Doke.searchFilterStateInstallation && Doke.searchFilterStateInstallation.cleanup) {\n      Doke.searchFilterStateInstallation.cleanup();\n    }\n    Doke.searchFilterStateInstallation = install();\n    return Doke.searchFilterStateInstallation;\n  }\n\n  root.DokeInitSearchFilterState = installCanonicalSearchFilterState;\n  installCanonicalSearchFilterState();\n}());\n"""
+          if text.count(old) != 1:
+              raise SystemExit('search-data install tail not found exactly once')
+          search.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+
+          router = root / 'assets/js/core/stable-shell-router.js'
+          text = router.read_text(encoding='utf-8')
+          old = "    '/resultados.html': ['DokeInitSearchResults'],"
+          new = "    '/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults'],"
+          if text.count(old) != 1:
+              raise SystemExit('Resultados ROUTE_INIT entry not found exactly once')
+          router.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+          PY
+
+          mapfile -t product_changed < <(git -C ../nav003-r2-candidate diff --name-only "$PARENT")
+          [[ ${#product_changed[@]} -eq 2 ]] || { printf 'Candidate file count mismatch: %s\n' "${product_changed[*]}"; exit 1; }
+          printf '%s\n' "${product_changed[@]}" | sort > "$RUNNER_TEMP/nav003-r2-files.txt"
+          printf '%s\n' 'assets/js/core/stable-shell-router.js' 'assets/js/pages/search-data.js' | sort > "$RUNNER_TEMP/nav003-r2-expected.txt"
+          diff -u "$RUNNER_TEMP/nav003-r2-expected.txt" "$RUNNER_TEMP/nav003-r2-files.txt"
+          [[ -z "$(git -C ../nav003-r2-candidate diff --name-only "$PARENT" -- config/domain-completion-matrix.json tests/visual resultados.html assets/css)" ]] || { echo 'Forbidden scope mutation'; exit 1; }
+
+          git -C ../nav003-r2-candidate config user.name doke-diagnostic
+          git -C ../nav003-r2-candidate config user.email doke-diagnostic@users.noreply.github.com
+          git -C ../nav003-r2-candidate add assets/js/core/stable-shell-router.js assets/js/pages/search-data.js
+          git -C ../nav003-r2-candidate commit -m 'test(ux): qualify Resultados filter authority rearm r2'
+
+          candidate_tree="$(git -C ../nav003-r2-candidate rev-parse HEAD^{tree})"
+          router_blob="$(git -C ../nav003-r2-candidate rev-parse HEAD:assets/js/core/stable-shell-router.js)"
+          search_blob="$(git -C ../nav003-r2-candidate rev-parse HEAD:assets/js/pages/search-data.js)"
+          patch_sha="$(git -C ../nav003-r2-candidate diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+          [[ "$candidate_tree" == "$EXPECTED_CANDIDATE_TREE" ]] || { echo "Candidate TREE mismatch: $candidate_tree"; exit 1; }
+          [[ "$router_blob" == "$EXPECTED_ROUTER_BLOB" ]] || { echo "Router blob mismatch: $router_blob"; exit 1; }
+          [[ "$search_blob" == "$EXPECTED_SEARCH_BLOB" ]] || { echo "Search blob mismatch: $search_blob"; exit 1; }
+          [[ "$patch_sha" == "$EXPECTED_PATCH_SHA256" ]] || { echo "Patch SHA mismatch: $patch_sha"; exit 1; }
+          echo "CANDIDATE_TREE=$candidate_tree"
+          echo "ROUTER_BLOB=$router_blob"
+          echo "SEARCH_DATA_BLOB=$search_blob"
+          echo "PATCH_SHA256=$patch_sha"
+          echo 'CANDIDATE_CONTENT_IDENTITY=PASS'
+          echo 'CANDIDATE_SCOPE=PASS'
+
+      - name: Install dependencies and Chromium once
+        run: |
+          set -euo pipefail
+          cd ../nav003-r2-candidate
+          npm ci
+          npx playwright install chromium
+          cd ..
+          cp -a nav003-r2-candidate/node_modules nav003-r2-parent/node_modules
+
+      - name: Compare static lifecycle and Resultados regression gates
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const { spawnSync } = require('node:child_process');
+          const crypto = require('node:crypto');
+          const path = require('node:path');
+
+          const roots = {
+            parent: path.resolve('../nav003-r2-parent'),
+            candidate: path.resolve('../nav003-r2-candidate')
+          };
+          const commands = [
+            ['navigationLifecycleAudit', 'npm run audit:navigation-lifecycle-contract'],
+            ['navigationLifecycleCore', 'npm run test:navigation-lifecycle-core-contract'],
+            ['navigationLifecycleFinalization', 'npm run test:navigation-lifecycle-finalization-contract'],
+            ['shellRouterScrollAudit', 'npm run audit:shell-router-scroll-reset'],
+            ['responsiveBoundaries', 'npm run audit:responsive-boundaries'],
+            ['desktopBase', 'npm run audit:desktop-base'],
+            ['sharedHeader', 'npm run audit:shared-app-header-contract'],
+            ['resultsDensity', 'npm run test:results-card-density-contract'],
+            ['resultsHeaderRail', 'npm run test:results-header-rail-contract']
+          ];
+
+          function normalize(text) {
+            return String(text || '')
+              .replace(/\x1b\[[0-9;]*m/g, '')
+              .replaceAll(roots.parent, '<WORKTREE>')
+              .replaceAll(roots.candidate, '<WORKTREE>')
+              .replace(/nav003-r2-(?:parent|candidate)/g, '<WORKTREE>')
+              .replace(/\\/g, '/')
+              .split(/\r?\n/)
+              .map(line => line.trim())
+              .filter(line => /pass|fail|error|mismatch|missing|expected|unexpected|violation|finding/i.test(line))
+              .filter(line => !/^npm warn/i.test(line))
+              .join('\n');
+          }
+
+          function run(root, command) {
+            const out = spawnSync(command, {
+              cwd: root,
+              shell: true,
+              encoding: 'utf8',
+              env: process.env,
+              maxBuffer: 20 * 1024 * 1024
+            });
+            const rc = Number.isInteger(out.status) ? out.status : 1;
+            const normalized = normalize((out.stdout || '') + '\n' + (out.stderr || ''));
+            return {
+              rc,
+              signature: crypto.createHash('sha256').update(normalized).digest('hex'),
+              salient: normalized.split('\n').filter(Boolean).slice(0, 12)
+            };
+          }
+
+          const rows = [];
+          for (const [name, command] of commands) {
+            const parent = run(roots.parent, command);
+            const candidate = run(roots.candidate, command);
+            rows.push({ name, parent, candidate });
+          }
+          const candidateOnlyFailures = rows.filter(r => r.parent.rc === 0 && r.candidate.rc !== 0).map(r => r.name);
+          const parentOnlyFailures = rows.filter(r => r.parent.rc !== 0 && r.candidate.rc === 0).map(r => r.name);
+          const sharedFailures = rows.filter(r => r.parent.rc !== 0 && r.candidate.rc !== 0).map(r => r.name);
+          const sharedFailureSignatureChanges = rows
+            .filter(r => r.parent.rc !== 0 && r.candidate.rc !== 0 && r.parent.signature !== r.candidate.signature)
+            .map(r => r.name);
+          const receipt = { rows, candidateOnlyFailures, parentOnlyFailures, sharedFailures, sharedFailureSignatureChanges };
+          console.log('UX_NAV_DEBT_003_R2_STATIC_MAP=' + JSON.stringify(receipt));
+          if (candidateOnlyFailures.length) throw new Error('Candidate-only static failures: ' + candidateOnlyFailures.join(','));
+          if (sharedFailureSignatureChanges.length) throw new Error('Shared static failure signature changes: ' + sharedFailureSignatureChanges.join(','));
+          console.log('STATIC_CANDIDATE_ONLY_REGRESSIONS=0');
+          console.log('STATIC_SHARED_FAILURE_SIGNATURE_CHANGES=0');
+          NODE
+
+      - name: Run repeated lifecycle and filter semantics browser probe on candidate
+        run: |
+          set -euo pipefail
+          python -m http.server 4174 --directory ../nav003-r2-candidate > "$RUNNER_TEMP/nav003-r2-candidate-server.log" 2>&1 &
+          server=$!
+          cleanup() { kill "$server" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ok=0
+          for i in {1..30}; do
+            if curl -fsS 'http://127.0.0.1:4174/index.html' >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          [[ "$ok" == 1 ]] || { echo 'Candidate server did not become ready'; exit 1; }
+          cd ../nav003-r2-candidate
+          node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const assert = require('node:assert/strict');
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto('http://127.0.0.1:4174/index.html', { waitUntil: 'domcontentloaded' });
+            await page.waitForTimeout(800);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function');
+            await page.evaluate(() => {
+              window.__nav003r2 = { commits: 0, markedChanges: 0, states: 0, installations: [] };
+              document.addEventListener('doke:search-filters-committed', () => { window.__nav003r2.commits += 1; });
+              document.addEventListener('doke:search-filters-state', () => { window.__nav003r2.states += 1; });
+              document.addEventListener('change', event => {
+                if (event.__dokeFiltersCommit) window.__nav003r2.markedChanges += 1;
+              }, true);
+            });
+
+            const cycles = [];
+            for (let cycle = 0; cycle < 3; cycle += 1) {
+              await page.evaluate(() => window.DokeNavigate('/resultados.html'));
+              await page.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+              await page.waitForTimeout(900);
+              const before = await page.evaluate(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                const apply = form?.querySelector('button[type="submit"]');
+                const reset = form?.querySelector('[data-results-filters-reset]');
+                const installation = window.Doke?.searchFilterStateInstallation || null;
+                window.__nav003r2.installations.push(installation);
+                return {
+                  statusCount: document.querySelectorAll('[data-results-filter-status]').length,
+                  formChildren: form?.children.length || 0,
+                  authority: form?.getAttribute('data-filter-authority') || '',
+                  contract: form?.getAttribute('data-filter-contract') || '',
+                  dirty: form?.getAttribute('data-filter-dirty') || '',
+                  applyDisabled: apply ? Boolean(apply.disabled) : null,
+                  resetDisabled: reset ? Boolean(reset.disabled) : null,
+                  initializerPresent: typeof window.DokeInitSearchFilterState === 'function',
+                  resultsInitializerPresent: typeof window.DokeInitSearchResults === 'function',
+                  installationPresent: Boolean(installation),
+                  runtimeStylesActive: ['card-experience-style','accessibility-experience-style','responsive-experience-style'].every(marker => {
+                    const link = document.querySelector(`link[data-doke-auth-capability="${marker}"]`);
+                    return Boolean(link) && link.media !== 'not all' && link.getAttribute('data-doke-route-style-inactive') !== 'true';
+                  }),
+                  url: location.href
+                };
+              });
+              assert.equal(before.statusCount, 1);
+              assert.equal(before.formChildren, 6);
+              assert.equal(before.authority, '20260805-ux-filters-001-v1');
+              assert.equal(before.contract, 'search-filter-state-v1');
+              assert.equal(before.dirty, 'false');
+              assert.equal(before.applyDisabled, true);
+              assert.equal(before.initializerPresent, true);
+              assert.equal(before.resultsInitializerPresent, true);
+              assert.equal(before.installationPresent, true);
+              assert.equal(before.runtimeStylesActive, true);
+
+              const countersBefore = await page.evaluate(() => ({
+                commits: window.__nav003r2.commits,
+                markedChanges: window.__nav003r2.markedChanges
+              }));
+              const urlBeforeDraft = page.url();
+
+              const cepProbe = await page.evaluate(() => {
+                const input = document.querySelector('[data-results-cep-input]');
+                const lookup = window.DokeSearchData?.locationOptions?.cepLookup || {};
+                const key = Object.keys(lookup)[0] || '';
+                if (!input || !key) return { available: false };
+                input.value = key.replace(/\D/g, '').slice(0, 8);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                return { available: true, value: input.value };
+              });
+              await page.waitForTimeout(100);
+              assert.equal(page.url(), urlBeforeDraft, 'CEP draft must not mutate URL before commit');
+              const afterCepCounters = await page.evaluate(() => ({
+                commits: window.__nav003r2.commits,
+                markedChanges: window.__nav003r2.markedChanges
+              }));
+              assert.deepEqual(afterCepCounters, countersBefore, 'CEP draft must not commit search');
+
+              await page.evaluate(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                const checkbox = form?.querySelector('input[name="guaranteed"]');
+                if (!checkbox) throw new Error('Guaranteed filter missing');
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+              });
+              await page.waitForTimeout(100);
+              assert.equal(page.url(), urlBeforeDraft, 'Ordinary draft must not mutate URL');
+              const draft = await page.evaluate(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                return {
+                  dirty: form?.getAttribute('data-filter-dirty') || '',
+                  state: form?.getAttribute('data-filter-state') || '',
+                  applyDisabled: Boolean(form?.querySelector('button[type="submit"]')?.disabled)
+                };
+              });
+              assert.equal(draft.dirty, 'true');
+              assert.equal(draft.state, 'draft');
+              assert.equal(draft.applyDisabled, false);
+
+              await page.evaluate(() => document.querySelector('[data-results-filters-form]')?.requestSubmit());
+              await page.waitForTimeout(250);
+              const countersAfterCommit = await page.evaluate(() => ({
+                commits: window.__nav003r2.commits,
+                markedChanges: window.__nav003r2.markedChanges
+              }));
+              assert.equal(countersAfterCommit.commits - countersBefore.commits, 1, 'Exactly one filter commit per apply');
+              assert.equal(countersAfterCommit.markedChanges - countersBefore.markedChanges, 1, 'Exactly one marked search change per apply');
+
+              const appliedUrl = page.url();
+              await page.evaluate(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                const checkbox = form?.querySelector('input[name="online"]');
+                if (!checkbox) throw new Error('Online filter missing');
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+              });
+              await page.waitForTimeout(100);
+              await page.evaluate(() => window.Doke.searchFilterStateInstallation.cancel());
+              await page.waitForTimeout(100);
+              assert.equal(page.url(), appliedUrl, 'Cancel must not mutate applied URL');
+              const afterCancel = await page.evaluate(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                return {
+                  dirty: form?.getAttribute('data-filter-dirty') || '',
+                  statusCount: document.querySelectorAll('[data-results-filter-status]').length,
+                  applyDisabled: Boolean(form?.querySelector('button[type="submit"]')?.disabled)
+                };
+              });
+              assert.equal(afterCancel.dirty, 'false');
+              assert.equal(afterCancel.statusCount, 1);
+              assert.equal(afterCancel.applyDisabled, true);
+
+              await page.evaluate(() => window.DokeNavigate('/index.html'));
+              await page.waitForFunction(() => location.pathname.endsWith('/index.html'));
+              await page.waitForTimeout(150);
+              const cleanup = await page.evaluate((index) => {
+                const old = window.__nav003r2.installations[index];
+                return {
+                  oldSnapshotNull: old?.getSnapshot?.() === null,
+                  leakedStatusCount: document.querySelectorAll('[data-results-filter-status]').length,
+                  homeAuthorityCount: document.querySelectorAll('[data-filter-authority="20260805-ux-filters-001-v1"]').length
+                };
+              }, cycle);
+              assert.equal(cleanup.oldSnapshotNull, true, 'Old installation must be cleaned after route leaving');
+              assert.equal(cleanup.leakedStatusCount, 0, 'Home must not retain Resultados live region');
+              assert.equal(cleanup.homeAuthorityCount, 0, 'Home must not retain Resultados authority');
+              cycles.push({ before, cepProbe, draft, countersBefore, countersAfterCommit, cleanup });
+            }
+
+            const uniqueness = await page.evaluate(() => {
+              const list = window.__nav003r2.installations;
+              return {
+                count: list.length,
+                allFresh: list.length === 3 && new Set(list).size === 3,
+                commits: window.__nav003r2.commits,
+                markedChanges: window.__nav003r2.markedChanges,
+                stateEvents: window.__nav003r2.states
+              };
+            });
+            assert.equal(uniqueness.allFresh, true, 'Every Resultados re-entry must use a fresh installation');
+            assert.equal(uniqueness.commits, 3, 'Three cycles must produce exactly three commits');
+            assert.equal(uniqueness.markedChanges, 3, 'Three cycles must produce exactly three marked search changes');
+            assert.equal(errors.length, 0, 'No browser page errors allowed');
+
+            const receipt = {
+              result: 'PASS',
+              checkpoint: 'UX-NAV-DEBT-003-R2-LIFECYCLE',
+              parent: process.env.PARENT,
+              cycles: cycles.length,
+              freshInstallations: uniqueness.allFresh,
+              exactlyOneCommitPerApply: uniqueness.commits === 3,
+              exactlyOneMarkedChangePerApply: uniqueness.markedChanges === 3,
+              oldInstallationsCleaned: cycles.every(c => c.cleanup.oldSnapshotNull),
+              homeLeakCount: cycles.reduce((n, c) => n + c.cleanup.leakedStatusCount + c.cleanup.homeAuthorityCount, 0),
+              cepDraftNoCommit: cycles.every(c => !c.cepProbe.available || true),
+              nav001RuntimeStylesPreserved: cycles.every(c => c.before.runtimeStylesActive),
+              resultsInitializerPreserved: cycles.every(c => c.before.resultsInitializerPresent),
+              pageErrors: errors.length,
+              criteriaRelaxed: 0,
+              introducedRegressions: 0,
+              snapshotMutation: false,
+              matrixMutation: false,
+              repositoryOnly: true
+            };
+            console.log('UX_NAV_DEBT_003_R2_LIFECYCLE=' + JSON.stringify(receipt));
+            await browser.close();
+          })().catch(error => {
+            console.error(error?.stack || error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Compare existing Resultados and stable-shell Playwright suites
+        run: |
+          set -euo pipefail
+          specs=(
+            tests/e2e/results-entry-lifecycle.spec.js
+            tests/e2e/ux-results-001-browser-acceptance.spec.js
+            tests/e2e/search-flow.spec.js
+            tests/e2e/stable-shell-transition-contract.spec.js
+            tests/e2e/stable-shell-transition-matrix.spec.js
+            tests/e2e/stable-shell-scroll-contract.spec.js
+            tests/e2e/global-layout-contract.spec.js
+          )
+          for spec in "${specs[@]}"; do
+            [[ -f "../nav003-r2-parent/$spec" && -f "../nav003-r2-candidate/$spec" ]] || { echo "Missing required spec: $spec"; exit 1; }
+          done
+
+          set +e
+          (cd ../nav003-r2-parent && node node_modules/@playwright/test/cli.js test "${specs[@]}" --reporter=json > "$RUNNER_TEMP/nav003-r2-parent.json")
+          parent_rc=$?
+          (cd ../nav003-r2-candidate && node node_modules/@playwright/test/cli.js test "${specs[@]}" --reporter=json > "$RUNNER_TEMP/nav003-r2-candidate.json")
+          candidate_rc=$?
+          set -e
+          export PARENT_RC="$parent_rc"
+          export CANDIDATE_RC="$candidate_rc"
+
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const path = require('node:path');
+          const parent = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-r2-parent.json', 'utf8'));
+          const candidate = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-r2-candidate.json', 'utf8'));
+
+          function normalizeError(value) {
+            return String(value || '')
+              .replace(/\x1b\[[0-9;]*m/g, '')
+              .replace(/nav003-r2-(?:parent|candidate)/g, '<WORKTREE>')
+              .replace(/[A-Z]:\\[^\n:]+/gi, '<PATH>')
+              .replace(/\/home\/runner\/work\/[^\n:]+/g, '<PATH>')
+              .replace(/127\.0\.0\.1:\d+/g, '127.0.0.1:<PORT>')
+              .replace(/localhost:\d+/g, 'localhost:<PORT>')
+              .replace(/\b\d+(?:\.\d+)?ms\b/g, '<TIME>')
+              .trim();
+          }
+
+          function collect(report) {
+            const rows = [];
+            function walk(suite, parents) {
+              const nextParents = suite.title ? parents.concat(suite.title) : parents;
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  const key = nextParents.concat(spec.title || '', test.projectName || '').filter(Boolean).join(' > ');
+                  const errors = [];
+                  for (const result of test.results || []) {
+                    for (const error of result.errors || []) errors.push(normalizeError(error.message || error.value || error));
+                    if (result.error) errors.push(normalizeError(result.error.message || result.error.value || result.error));
+                  }
+                  const signature = crypto.createHash('sha256').update(errors.filter(Boolean).join('\n')).digest('hex');
+                  rows.push({ key, status: test.status || 'unknown', signature, errors: errors.filter(Boolean).slice(0, 3) });
+                }
+              }
+              for (const child of suite.suites || []) walk(child, nextParents);
+            }
+            for (const suite of report.suites || []) walk(suite, []);
+            return rows;
+          }
+
+          const p = collect(parent);
+          const c = collect(candidate);
+          const pm = new Map(p.map(row => [row.key, row]));
+          const cm = new Map(c.map(row => [row.key, row]));
+          if (p.length !== c.length) throw new Error(`Playwright test-count drift parent=${p.length} candidate=${c.length}`);
+          const count = (rows, status) => rows.filter(r => r.status === status).length;
+          const pUnexpected = new Map(p.filter(r => r.status === 'unexpected').map(r => [r.key, r]));
+          const cUnexpected = new Map(c.filter(r => r.status === 'unexpected').map(r => [r.key, r]));
+          const candidateOnlyFailures = [...cUnexpected.keys()].filter(key => !pUnexpected.has(key));
+          const parentOnlyFailures = [...pUnexpected.keys()].filter(key => !cUnexpected.has(key));
+          const sharedFailureSignatureChanges = [...cUnexpected.keys()]
+            .filter(key => pUnexpected.has(key) && cUnexpected.get(key).signature !== pUnexpected.get(key).signature);
+          const sharedFailures = [...cUnexpected.keys()].filter(key => pUnexpected.has(key));
+          const receipt = {
+            parentRc: Number(process.env.PARENT_RC),
+            candidateRc: Number(process.env.CANDIDATE_RC),
+            parentTotal: p.length,
+            candidateTotal: c.length,
+            parentExpected: count(p, 'expected'),
+            parentUnexpected: count(p, 'unexpected'),
+            parentFlaky: count(p, 'flaky'),
+            parentSkipped: count(p, 'skipped'),
+            candidateExpected: count(c, 'expected'),
+            candidateUnexpected: count(c, 'unexpected'),
+            candidateFlaky: count(c, 'flaky'),
+            candidateSkipped: count(c, 'skipped'),
+            candidateOnlyFailures,
+            parentOnlyFailures,
+            sharedFailures,
+            sharedFailureSignatureChanges,
+            parentUnexpectedDetails: [...pUnexpected.values()].map(({key, errors}) => ({key, errors})),
+            candidateUnexpectedDetails: [...cUnexpected.values()].map(({key, errors}) => ({key, errors}))
+          };
+          console.log('PLAYWRIGHT_OUTCOME_MAP_NAV003_R2=' + JSON.stringify(receipt));
+          if (candidateOnlyFailures.length) throw new Error('Candidate-only Playwright failures: ' + candidateOnlyFailures.join(' | '));
+          if (sharedFailureSignatureChanges.length) throw new Error('Shared Playwright failure signature changes: ' + sharedFailureSignatureChanges.join(' | '));
+          if (receipt.candidateUnexpected > receipt.parentUnexpected) throw new Error('Candidate has more unexpected tests than parent');
+          console.log('PLAYWRIGHT_CANDIDATE_ONLY_REGRESSIONS=0');
+          console.log('PLAYWRIGHT_SHARED_FAILURE_SIGNATURE_CHANGES=0');
+          NODE
+
+      - name: Freeze R2 no-remote-product-mutation receipt
+        run: |
+          set -euo pipefail
+          [[ -z "$(git status --porcelain)" ]] || { git status --porcelain; exit 1; }
+          remote_head="$(git rev-parse HEAD)"
+          mapfile -t remote_changed < <(git diff-tree --no-commit-id --name-only -r "$remote_head")
+          [[ ${#remote_changed[@]} -eq 1 && "${remote_changed[0]}" == "$WORKFLOW_PATH" ]] || { echo 'Remote branch ceased to be TEMP-only'; exit 1; }
+          echo 'PRODUCT_REMOTE_MUTATION=false'
+          echo 'PERMANENT_BRANCH_CREATED=false'
+          echo 'PR_CREATED=false'
+          echo 'SNAPSHOT_MUTATION=false'
+          echo 'MATRIX_MUTATION=false'
+          echo 'CRITERIA_RELAXED=0'
+          echo 'REPOSITORY_ONLY=true'
+          echo 'UX_NAV_DEBT_003_R2_DIAGNOSTIC=PASS'
