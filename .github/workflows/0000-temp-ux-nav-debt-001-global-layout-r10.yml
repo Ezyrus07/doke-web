@@ -1,0 +1,181 @@
+name: TEMP UX-NAV-DEBT-001 Global Layout R10
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-global-layout-r10
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      EXPECTED_ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
+      EXPECTED_CANDIDATE_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      EXPECTED_PATCH_SHA256: 5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-global-layout-r10.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          echo "TEMP_HEAD=$H"
+          echo LINEAGE=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Re-materialize exact frozen candidate and install browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/nav001-parent-r10"
+          C="$RUNNER_TEMP/nav001-candidate-r10"
+          git worktree add --detach "$P" "$PARENT" >/dev/null
+          git worktree add --detach "$C" "$PARENT" >/dev/null
+          cd "$C"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/stable-shell-router.js')
+          s=p.read_text()
+          a1="  var CORE_SCRIPT_RE = /assets\\/js\\/core\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\.js(?:\\?.*)?$/i;\n"
+          i1="  var PERSISTENT_RUNTIME_STYLE_CAPABILITIES = new Set([\n    'card-experience-style',\n    'accessibility-experience-style',\n    'responsive-experience-style'\n  ]);\n\n"+a1
+          a2="  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    try {\n"
+          i2="  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    var runtimeCapability = link.getAttribute('data-doke-auth-capability') || '';\n    if (PERSISTENT_RUNTIME_STYLE_CAPABILITIES.has(runtimeCapability)) return false;\n    try {\n"
+          if s.count(a1)!=1 or s.count(a2)!=1: raise SystemExit('candidate anchor drift')
+          p.write_text(s.replace(a1,i1,1).replace(a2,i2,1))
+          PY
+          node --check assets/js/core/stable-shell-router.js
+          git diff --check
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          git add assets/js/core/stable-shell-router.js
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --cached --name-only "$PARENT")" = 'assets/js/core/stable-shell-router.js'
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          npm --prefix "$P" ci --ignore-scripts
+          npm --prefix "$C" ci --ignore-scripts
+          node "$C/node_modules/@playwright/test/cli.js" install --with-deps chromium
+          echo "PARENT_DIR=$P" >> "$GITHUB_ENV"
+          echo "CANDIDATE_DIR=$C" >> "$GITHUB_ENV"
+          echo CANDIDATE_CONTENT_IDENTITY=PASS
+
+      - name: Run global-layout spec to JSON in parent and candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_json() {
+            local root="$1" out="$2" err="$3"
+            set +e
+            (cd "$root" && CI=1 DOKE_E2E_DISABLE_REMOTE_SERVICES=1 node node_modules/@playwright/test/cli.js test tests/e2e/global-layout-contract.spec.js --reporter=json) >"$out" 2>"$err"
+            local rc=$?
+            set -e
+            git -C "$root" restore --worktree -- reports/generated docs/validation 2>/dev/null || true
+            git -C "$root" clean -fd -- test-results playwright-report reports/generated docs/validation >/dev/null 2>&1 || true
+            echo "$rc"
+          }
+          PRC="$(run_json "$PARENT_DIR" "$RUNNER_TEMP/r10-parent.json" "$RUNNER_TEMP/r10-parent.err")"
+          CRC="$(run_json "$CANDIDATE_DIR" "$RUNNER_TEMP/r10-candidate.json" "$RUNNER_TEMP/r10-candidate.err")"
+          echo "PARENT_RC=$PRC" >> "$GITHUB_ENV"
+          echo "CANDIDATE_RC=$CRC" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_PARENT_RC=$PRC"
+          echo "PLAYWRIGHT_CANDIDATE_RC=$CRC"
+          test -s "$RUNNER_TEMP/r10-parent.json"
+          test -s "$RUNNER_TEMP/r10-candidate.json"
+          echo PLAYWRIGHT_JSON_CAPTURE=PASS
+
+      - name: Reveal and compare the single inherited failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const path=require('path');
+          const parse=f=>JSON.parse(fs.readFileSync(f,'utf8'));
+          const normalize=s=>String(s||'')
+            .replace(/\u001b\[[0-9;]*m/g,'')
+            .replaceAll(process.env.RUNNER_TEMP||'', '<TMP>')
+            .replace(/\/home\/runner\/work\/[^\s:]+/g,'<WORK>')
+            .replace(/nav001-(?:parent|candidate)-r10/g,'<TREE>')
+            .replace(/127\.0\.0\.1:\d+/g,'127.0.0.1:<PORT>')
+            .replace(/\s+/g,' ').trim();
+          function collectUnexpected(report){
+            const out=[];
+            function walk(s,prefix=[]){
+              const pre=[...prefix,...(s.title?[s.title]:[])];
+              for(const spec of s.specs||[]) for(const test of spec.tests||[]){
+                if(test.status!=='unexpected') continue;
+                const title=[...pre,spec.title].filter(Boolean).join(' > ');
+                const last=(test.results||[]).at(-1)||{};
+                const err=(last.errors||[])[0]||last.error||{};
+                const message=normalize(err.message||err.value||err.stack||'');
+                const loc=err.location||{};
+                out.push({
+                  title,
+                  specFile: spec.file ? path.basename(spec.file) : '',
+                  specLine: spec.line||0,
+                  specColumn: spec.column||0,
+                  errorFile: loc.file ? path.basename(loc.file) : '',
+                  errorLine: loc.line||0,
+                  errorColumn: loc.column||0,
+                  message
+                });
+              }
+              for(const child of s.suites||[]) walk(child,pre);
+            }
+            for(const s of report.suites||[]) walk(s,[]);
+            return out;
+          }
+          const parent=collectUnexpected(parse(process.env.RUNNER_TEMP+'/r10-parent.json'));
+          const candidate=collectUnexpected(parse(process.env.RUNNER_TEMP+'/r10-candidate.json'));
+          if(parent.length!==1) throw new Error('expected exactly one parent failure; got '+parent.length);
+          if(candidate.length!==1) throw new Error('expected exactly one candidate failure; got '+candidate.length);
+          const p=parent[0], c=candidate[0];
+          console.log('R10_PARENT_INHERITED_FAILURE='+JSON.stringify(p));
+          console.log('R10_CANDIDATE_INHERITED_FAILURE='+JSON.stringify(c));
+          if(p.title!==c.title) throw new Error('failure title changed');
+          if(p.message!==c.message) throw new Error('failure signature changed');
+          if(p.specFile!==c.specFile||p.specLine!==c.specLine||p.specColumn!==c.specColumn) throw new Error('failure source location changed');
+          const relationHaystack=(p.title+' '+p.message).toLowerCase();
+          const navTerms=['dokenavigate','stable shell','stable-shell','navigation','history','route','stylesheet','skip link','skip-link','accessibility-experience'];
+          const matched=navTerms.filter(t=>relationHaystack.includes(t));
+          console.log('R10_NAV_RELATED_TERMS='+JSON.stringify(matched));
+          fs.appendFileSync(process.env.GITHUB_ENV,
+            'INHERITED_FAILURE_TITLE_B64='+Buffer.from(p.title).toString('base64')+'\n'+
+            'INHERITED_FAILURE_MESSAGE_B64='+Buffer.from(p.message).toString('base64')+'\n'+
+            'INHERITED_FAILURE_SPEC_FILE='+p.specFile+'\n'+
+            'INHERITED_FAILURE_SPEC_LINE='+p.specLine+'\n'+
+            'NAV_RELATED_TERM_COUNT='+matched.length+'\n');
+          console.log('SINGLE_INHERITED_FAILURE_IDENTITY=PASS');
+          NODE
+
+      - name: Freeze R10 receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          test "$(git diff --cached --name-only "$PARENT")" = 'assets/js/core/stable-shell-router.js'
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          printf 'UX_NAV_DEBT_001_R10_INHERITED_FAILURE={"result":"PASS","checkpoint":"UX-NAV-DEBT-001-R10","parent":"%s","candidateTree":"%s","routerBlob":"%s","patchSha256":"%s","parentRc":%s,"candidateRc":%s,"singleInheritedFailure":true,"failureSpec":"%s","failureLine":%s,"navRelatedTermCount":%s,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"remoteProductMutation":false,"repositoryOnly":true}\n' \
+            "$PARENT" "$EXPECTED_CANDIDATE_TREE" "$EXPECTED_ROUTER_BLOB" "$EXPECTED_PATCH_SHA256" "$PARENT_RC" "$CANDIDATE_RC" "$INHERITED_FAILURE_SPEC_FILE" "$INHERITED_FAILURE_SPEC_LINE" "$NAV_RELATED_TERM_COUNT"
+          echo R10_DIAGNOSTIC=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
