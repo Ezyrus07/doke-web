@@ -1,0 +1,197 @@
+name: TEMP UX-NAV-DEBT-001 Regression Reconcile R4
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-001-regression-reconcile-r4
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+      PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+      EXPECTED_ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
+      EXPECTED_CANDIDATE_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      EXPECTED_PATCH_SHA256: 5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca
+      R3_RUN: '33132270189'
+      R3_JOB: '98724290261'
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-001-regression-reconcile-r4.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          echo "TEMP_HEAD=$H"
+          echo LINEAGE=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Re-materialize exact R3 candidate content
+        shell: bash
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/nav001-parent-r4"
+          C="$RUNNER_TEMP/nav001-candidate-r4"
+          git worktree add --detach "$P" "$PARENT" >/dev/null
+          git worktree add --detach "$C" "$PARENT" >/dev/null
+          cd "$C"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('assets/js/core/stable-shell-router.js')
+          s = p.read_text()
+          anchor1 = "  var CORE_SCRIPT_RE = /assets\\/js\\/core\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\.js(?:\\?.*)?$/i;\n"
+          insertion1 = "  var PERSISTENT_RUNTIME_STYLE_CAPABILITIES = new Set([\n    'card-experience-style',\n    'accessibility-experience-style',\n    'responsive-experience-style'\n  ]);\n\n" + anchor1
+          anchor2 = "  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    try {\n"
+          insertion2 = "  function isRouteManagedStylesheet(link) {\n    if (!link || !link.href) return false;\n    var runtimeCapability = link.getAttribute('data-doke-auth-capability') || '';\n    if (PERSISTENT_RUNTIME_STYLE_CAPABILITIES.has(runtimeCapability)) return false;\n    try {\n"
+          if s.count(anchor1) != 1 or s.count(anchor2) != 1:
+              raise SystemExit('candidate anchor drift')
+          s = s.replace(anchor1, insertion1, 1).replace(anchor2, insertion2, 1)
+          p.write_text(s)
+          PY
+          node --check assets/js/core/stable-shell-router.js
+          git diff --check
+          PATCH_SHA="$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')"
+          BLOB="$(git hash-object assets/js/core/stable-shell-router.js)"
+          test "$PATCH_SHA" = "$EXPECTED_PATCH_SHA256"
+          test "$BLOB" = "$EXPECTED_ROUTER_BLOB"
+          mapfile -t changed < <(git diff --name-only "$PARENT")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'assets/js/core/stable-shell-router.js'
+          git add assets/js/core/stable-shell-router.js
+          TREE="$(git write-tree)"
+          test "$TREE" = "$EXPECTED_CANDIDATE_TREE"
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          echo "PARENT_DIR=$P" >> "$GITHUB_ENV"
+          echo "CANDIDATE_DIR=$C" >> "$GITHUB_ENV"
+          echo CANDIDATE_CONTENT_IDENTITY=PASS
+          echo "CANDIDATE_TREE=$TREE"
+          echo "ROUTER_BLOB=$BLOB"
+          echo "PATCH_SHA256=$PATCH_SHA"
+
+      - name: Install identical test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix "$PARENT_DIR" ci --ignore-scripts
+          npm --prefix "$CANDIDATE_DIR" ci --ignore-scripts
+          node "$CANDIDATE_DIR/node_modules/@playwright/test/cli.js" install --with-deps chromium
+          echo DEPENDENCIES=PASS
+
+      - name: Prove legacy shell-scroll audit is inherited and unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_legacy() {
+            local root="$1" out="$2"
+            set +e
+            (cd "$root" && node scripts/audit-shell-router-scroll-reset.js) >"$out" 2>&1
+            local rc=$?
+            set -e
+            git -C "$root" restore --worktree -- docs/validation 2>/dev/null || true
+            git -C "$root" clean -fd -- docs/validation >/dev/null 2>&1 || true
+            echo "$rc"
+          }
+          POUT="$RUNNER_TEMP/legacy-parent.out"
+          COUT="$RUNNER_TEMP/legacy-candidate.out"
+          PRC="$(run_legacy "$PARENT_DIR" "$POUT")"
+          CRC="$(run_legacy "$CANDIDATE_DIR" "$COUT")"
+          echo "LEGACY_PARENT_RC=$PRC"
+          echo "LEGACY_CANDIDATE_RC=$CRC"
+          cat "$POUT"
+          test "$PRC" -ne 0
+          test "$CRC" -eq "$PRC"
+          test "$(sha256sum "$POUT" | awk '{print $1}')" = "$(sha256sum "$COUT" | awk '{print $1}')"
+          grep -q 'app.js check failed: hasScrollResetFunction' "$POUT"
+          grep -q 'app.js cache version not updated' "$POUT"
+          echo LEGACY_AUDIT_INHERITED_IDENTICAL=PASS
+          echo LEGACY_AUDIT_INTRODUCED_REGRESSION=false
+
+      - name: Run current navigation and stable-shell contracts A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          cleanup_root() {
+            local root="$1"
+            git -C "$root" restore --worktree -- docs/validation reports/generated 2>/dev/null || true
+            git -C "$root" clean -fd -- test-results playwright-report reports/generated docs/validation >/dev/null 2>&1 || true
+          }
+          compare_gate() {
+            local name="$1" cmd="$2"
+            local po="$RUNNER_TEMP/${name}-parent.out" co="$RUNNER_TEMP/${name}-candidate.out"
+            set +e
+            (cd "$PARENT_DIR" && bash -lc "$cmd") >"$po" 2>&1; local prc=$?
+            cleanup_root "$PARENT_DIR"
+            (cd "$CANDIDATE_DIR" && bash -lc "$cmd") >"$co" 2>&1; local crc=$?
+            cleanup_root "$CANDIDATE_DIR"
+            set -e
+            echo "GATE[$name] parent=$prc candidate=$crc"
+            if [ "$prc" -eq 0 ] && [ "$crc" -ne 0 ]; then
+              echo "CANDIDATE REGRESSION in $name" >&2
+              cat "$co" >&2
+              return 1
+            fi
+            if [ "$crc" -ne 0 ]; then
+              echo "INHERITED_GATE_FAILURE[$name]"
+              cat "$po"
+              return 2
+            fi
+            echo "GATE_PASS[$name]"
+            return 0
+          }
+          inherited=0
+          run_gate() {
+            set +e
+            compare_gate "$1" "$2"
+            rc=$?
+            set -e
+            if [ "$rc" -eq 1 ]; then exit 1; fi
+            if [ "$rc" -eq 2 ]; then inherited=$((inherited+1)); fi
+          }
+          run_gate nav_lifecycle_audit "node scripts/audit-navigation-lifecycle-contract.js --strict"
+          run_gate stable_shell_base "node scripts/test-stable-shell-project-base-contract.js"
+          run_gate nav_lifecycle_core "node scripts/test-navigation-lifecycle-core-contract.js"
+          run_gate nav_lifecycle_finalization "node scripts/test-navigation-lifecycle-finalization-contract.js"
+          run_gate responsive_boundaries "npm run audit:responsive-boundaries"
+          run_gate desktop_base "npm run audit:desktop-base"
+          run_gate shared_header "npm run audit:shared-app-header-contract"
+          run_gate router_scroll_browser "npm run test:router-scroll"
+          run_gate layout_contract_browser "npm run test:layout-contract"
+          echo "CURRENT_INHERITED_GATE_FAILURES=$inherited" | tee "$RUNNER_TEMP/current-gate-summary"
+          if [ "$inherited" -ne 0 ]; then
+            echo 'Current canonical qualification is not fully green; inherited blockers require explicit resolution.' >&2
+            exit 3
+          fi
+          echo CURRENT_CANONICAL_GATES=PASS
+
+      - name: Reconfirm exact candidate and clean diagnostic state
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CANDIDATE_DIR"
+          test "$(git hash-object assets/js/core/stable-shell-router.js)" = "$EXPECTED_ROUTER_BLOB"
+          test "$(git write-tree)" = "$EXPECTED_CANDIDATE_TREE"
+          test "$(git diff --binary "$PARENT" -- assets/js/core/stable-shell-router.js | sha256sum | awk '{print $1}')" = "$EXPECTED_PATCH_SHA256"
+          test -z "$(git diff --cached --name-only "$PARENT" -- config/domain-completion-matrix.json)"
+          test "$(git diff --cached --name-only "$PARENT" | wc -l)" -eq 1
+          test "$(git diff --cached --name-only "$PARENT")" = 'assets/js/core/stable-shell-router.js'
+          echo 'UX_NAV_DEBT_001_R4_REGRESSION={"result":"PASS","checkpoint":"UX-NAV-DEBT-001-R4","parent":"14bdb1af9cfefff4dfd27a78b937443975266001","candidateTree":"d982dc7c0c7cd9b227f1543a83243dc76de08b9a","routerBlob":"453d9f1bdd6bda9690692117e1f42c0719535c06","patchSha256":"5ebc6b4ff3ada4b681e067dc2be57f0288529e4264a9fce35d928253103cbfca","r3BrowserRun":33132270189,"r3BrowserJob":98724290261,"productFiles":1,"legacyAuditInherited":true,"currentCanonicalGatesPassed":true,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"remoteProductMutation":false,"repositoryOnly":true}'
+          echo R4_REGRESSION_RECONCILIATION=PASS
+          echo REMOTE_PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
