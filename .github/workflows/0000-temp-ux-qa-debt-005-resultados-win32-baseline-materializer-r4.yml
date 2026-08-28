@@ -1,0 +1,404 @@
+name: TEMP UX-QA-DEBT-005 Resultados Win32 Baseline Materializer R4
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-resultados-win32-baseline-materializer-r4
+
+permissions:
+  contents: read
+
+env:
+  PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+  PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+  MATERIALIZER_PATH: .github/workflows/0000-temp-ux-qa-debt-005-resultados-win32-baseline-materializer-r4.yml
+  CANDIDATE_BRANCH: diag/ux-qa-debt-005-resultados-win32-baseline-candidate
+  SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+  OLD_SNAPSHOT_BLOB: 1580b5410bcce1ea5424d5528356291a0f288c4e
+  DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+jobs:
+  static-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze diagnostic lineage and target
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$MATERIALIZER_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+          if git ls-remote --exit-code --heads origin "refs/heads/$CANDIDATE_BRANCH" >/dev/null 2>&1; then
+            echo "Candidate branch already exists" >&2
+            exit 1
+          fi
+          echo LINEAGE=PASS
+          echo OLD_BASELINE_IDENTITY=PASS
+          echo CANDIDATE_ABSENT=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Prepare exact parent worktree and Linux Chromium compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent_dir="$RUNNER_TEMP/qa005-parent-linux-r4"
+          git worktree add --detach "$parent_dir" "$PARENT" >/dev/null
+          cd "$parent_dir"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          chromium_path="$(node -e "const { chromium } = require('@playwright/test'); process.stdout.write(chromium.executablePath())")"
+          test -x "$chromium_path"
+          sudo ln -sf "$chromium_path" /usr/bin/chromium
+          test -x /usr/bin/chromium
+          echo LINUX_CHROMIUM_COMPATIBILITY=PASS
+
+      - name: Required Resultados desktop gates on compatible Linux runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-linux-r4"
+          npm run audit:desktop-base
+          npm run audit:desktop-phase-entry-gate
+          npm run audit:desktop-phase-entry-contract
+          npm run audit:visual-baseline
+          npm run audit:shared-app-header-contract
+          npm run test:results-card-density-contract
+          npm run audit:section-header-contract
+          npm run audit:overflow-text-clipping
+          npm run audit:marketplace-index-parity
+          echo RESULTADOS_DESKTOP_STATIC_GATES=PASS
+          echo MARKETPLACE_INDEX_PARITY=PASS
+
+      - name: Preserve inherited later-target debt separation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-linux-r4"
+          grep -q "detalhe-anuncio" scripts/audit-focused-index-parity.js
+          grep -q "perfil" scripts/audit-focused-index-parity.js
+          if grep -q "resultados" scripts/audit-focused-index-parity.js; then
+            echo "Focused parity unexpectedly includes Resultados" >&2
+            exit 1
+          fi
+          test -f scripts/audit-shared-card-anatomy.js
+          echo INHERITED_FOCUSED_PARITY_SCOPE=DETALHE_PROFILE_ONLY
+          echo INHERITED_SHARED_CARD_DEBT=SEPARATED_FROM_QA005
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+  materialize-win32:
+    needs: static-linux
+    runs-on: windows-latest
+    timeout-minutes: 50
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Re-freeze diagnostic lineage and candidate absence
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$MATERIALIZER_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+          if git ls-remote --exit-code --heads origin "refs/heads/$CANDIDATE_BRANCH" >/dev/null 2>&1; then
+            echo "Candidate branch appeared concurrently" >&2
+            exit 1
+          fi
+          echo WIN32_LINEAGE=PASS
+          echo WIN32_CANDIDATE_ABSENT=PASS
+
+      - name: Install locked Playwright Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+
+      - name: Prepare exact parent worktree with local dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent_dir="$RUNNER_TEMP/qa005-parent-win32-r4"
+          git worktree add --detach "$parent_dir" "$PARENT" >/dev/null
+          cd "$parent_dir"
+          npm ci --ignore-scripts
+          test -f node_modules/@playwright/test/cli.js
+          cp "$SNAPSHOT" "$RUNNER_TEMP/qa005-old-baseline-win32-r4.png"
+          echo WORKTREE_DEPENDENCY_RESOLUTION=PASS
+
+      - name: Generate and freeze one-file candidate from certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-win32-r4"
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" --update-snapshots
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$SNAPSHOT"
+          test -s "$SNAPSHOT"
+          candidate_blob="$(git hash-object "$SNAPSHOT")"
+          candidate_sha256="$(sha256sum "$SNAPSHOT" | awk '{print $1}')"
+          candidate_bytes="$(wc -c < "$SNAPSHOT" | tr -d ' ')"
+          test "$candidate_blob" != "$OLD_SNAPSHOT_BLOB"
+          cp "$SNAPSHOT" "$RUNNER_TEMP/qa005-frozen-candidate-win32-r4.png"
+          printf 'FROZEN_BLOB=%s\nFROZEN_SHA256=%s\nFROZEN_BYTES=%s\n' "$candidate_blob" "$candidate_sha256" "$candidate_bytes" > "$RUNNER_TEMP/qa005-frozen-identity-r4.env"
+          echo "CANDIDATE_BLOB=$candidate_blob"
+          echo "CANDIDATE_SHA256=$candidate_sha256"
+          echo "CANDIDATE_BYTES=$candidate_bytes"
+          echo ONE_FILE_BINARY_CANDIDATE=PASS
+
+      - name: Candidate passes three independent canonical visual renders
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-win32-r4"
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" --repeat-each=3
+          source "$RUNNER_TEMP/qa005-frozen-identity-r4.env"
+          test "$(git hash-object "$SNAPSHOT")" = "$FROZEN_BLOB"
+          test "$(sha256sum "$SNAPSHOT" | awk '{print $1}')" = "$FROZEN_SHA256"
+          test "$(wc -c < "$SNAPSHOT" | tr -d ' ')" = "$FROZEN_BYTES"
+          echo CANDIDATE_VISUAL_STABILITY=PASS
+          echo CANONICAL_MAX_DIFF_PIXEL_RATIO=0.01
+
+      - name: Negative proof old June baseline still fails without relaxing criteria
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-win32-r4"
+          cp "$RUNNER_TEMP/qa005-old-baseline-win32-r4.png" "$SNAPSHOT"
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" > "$RUNNER_TEMP/qa005-negative-win32-r4.log" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/qa005-negative-win32-r4.log"
+          test "$rc" -ne 0
+          grep -Eqi "Screenshot comparison failed|pixels .* different|exceeded" "$RUNNER_TEMP/qa005-negative-win32-r4.log"
+          grep -Eq "128033 pixels|ratio 0\.13" "$RUNNER_TEMP/qa005-negative-win32-r4.log"
+          cp "$RUNNER_TEMP/qa005-frozen-candidate-win32-r4.png" "$SNAPSHOT"
+          source "$RUNNER_TEMP/qa005-frozen-identity-r4.env"
+          test "$(git hash-object "$SNAPSHOT")" = "$FROZEN_BLOB"
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768"
+          echo NEGATIVE_OLD_BASELINE=PASS
+          echo CRITERIA_RELAXED=0
+
+      - name: Direct-load and stable-shell navigation contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-win32-r4"
+          node node_modules/@playwright/test/cli.js test tests/e2e/global-layout-contract.spec.js --grep "resultados.html keeps structural layout contract|DokeNavigate no-reload flow"
+          echo RESULTADOS_DIRECT_AND_NAV_LAYOUT=PASS
+
+      - name: Direct-load versus internal-navigation computed parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-win32-r4"
+          node <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const { spawn } = require('child_process');
+          const http = require('http');
+
+          const server = spawn(process.execPath, ['scripts/serve-static-site.js', '--host=127.0.0.1', '--port=5500'], {
+            env: { ...process.env, DOKE_E2E_DISABLE_REMOTE_SERVICES: '1' },
+            stdio: ['ignore', 'pipe', 'pipe']
+          });
+
+          const waitForServer = () => new Promise((resolve, reject) => {
+            let attempts = 0;
+            const probe = () => {
+              attempts += 1;
+              const req = http.get('http://127.0.0.1:5500/index.html', (res) => {
+                res.resume();
+                if (res.statusCode === 200) return resolve();
+                if (attempts > 60) return reject(new Error(`server status ${res.statusCode}`));
+                setTimeout(probe, 250);
+              });
+              req.on('error', () => attempts > 60 ? reject(new Error('static server unavailable')) : setTimeout(probe, 250));
+            };
+            probe();
+          });
+
+          const routeExternal = async (page) => {
+            await page.route('https://unpkg.com/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ contentType: 'text/css', body: '' }));
+            await page.route('https://fonts.gstatic.com/**', (route) => route.abort());
+          };
+
+          const session = {
+            provider: 'mock',
+            sessionStatus: 'active',
+            accountStatus: 'active',
+            user: { id: 'qa005-client', role: 'client', name: 'QA005', email: 'qa005@example.test', accountStatus: 'active' }
+          };
+
+          const installSession = (page) => page.addInitScript((value) => {
+            localStorage.setItem('doke.auth.session.v1', JSON.stringify(value));
+          }, session);
+
+          const stable = async (page) => {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.addStyleTag({ content: '*,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important;transition-delay:0s!important;caret-color:transparent!important}' });
+            await page.waitForTimeout(500);
+          };
+
+          const signature = (page) => page.evaluate(() => {
+            const visible = (el) => {
+              if (!el) return false;
+              const r = el.getBoundingClientRect();
+              const s = getComputedStyle(el);
+              return r.width > 0 && r.height > 0 && s.display !== 'none' && s.visibility !== 'hidden';
+            };
+            const read = (selector) => {
+              const el = Array.from(document.querySelectorAll(selector)).find(visible);
+              if (!el) return null;
+              const r = el.getBoundingClientRect();
+              const s = getComputedStyle(el);
+              return {
+                left: Math.round(r.left * 10) / 10,
+                top: Math.round(r.top * 10) / 10,
+                width: Math.round(r.width * 10) / 10,
+                height: Math.round(r.height * 10) / 10,
+                display: s.display,
+                position: s.position,
+                gridTemplateColumns: s.gridTemplateColumns,
+                gap: s.gap,
+                paddingLeft: s.paddingLeft,
+                paddingRight: s.paddingRight,
+                borderRadius: s.borderRadius
+              };
+            };
+            const root = document.documentElement;
+            return {
+              dataPage: document.body?.dataset.page || '',
+              overflow: root.scrollWidth > root.clientWidth + 1,
+              header: read('[data-app-header] .app-header__inner'),
+              workspace: read('.search-results-workspace'),
+              searchbar: read('.results-searchbar'),
+              layout: read('.results-layout')
+            };
+          });
+
+          const compare = (direct, nav) => {
+            if (direct.dataPage !== 'resultados' || nav.dataPage !== 'resultados') throw new Error('body[data-page] mismatch');
+            if (direct.overflow || nav.overflow) throw new Error(`horizontal overflow direct=${direct.overflow} nav=${nav.overflow}`);
+            for (const key of ['header', 'workspace', 'searchbar', 'layout']) {
+              if (!direct[key] || !nav[key]) throw new Error(`${key} missing direct/nav`);
+              for (const metric of ['left', 'top', 'width', 'height']) {
+                if (Math.abs(direct[key][metric] - nav[key][metric]) > 1) throw new Error(`${key}.${metric} geometry drift direct=${direct[key][metric]} nav=${nav[key][metric]}`);
+              }
+              for (const prop of ['display', 'position', 'gridTemplateColumns', 'gap', 'paddingLeft', 'paddingRight', 'borderRadius']) {
+                if (direct[key][prop] !== nav[key][prop]) throw new Error(`${key}.${prop} drift direct=${direct[key][prop]} nav=${nav[key][prop]}`);
+              }
+            }
+          };
+
+          (async () => {
+            let browser;
+            try {
+              await waitForServer();
+              browser = await chromium.launch();
+              const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+
+              const direct = await context.newPage();
+              const directErrors = [];
+              direct.on('pageerror', (error) => directErrors.push(String(error)));
+              await routeExternal(direct);
+              await installSession(direct);
+              await direct.goto('http://127.0.0.1:5500/resultados.html');
+              await stable(direct);
+              const directSignature = await signature(direct);
+              if (directErrors.length) throw new Error(`direct page errors ${JSON.stringify(directErrors)}`);
+
+              const nav = await context.newPage();
+              const navErrors = [];
+              nav.on('pageerror', (error) => navErrors.push(String(error)));
+              await routeExternal(nav);
+              await installSession(nav);
+              await nav.goto('http://127.0.0.1:5500/index.html');
+              await stable(nav);
+              await nav.waitForFunction(() => typeof window.DokeNavigate === 'function');
+              await nav.evaluate(async () => {
+                const result = window.DokeNavigate('/resultados.html');
+                if (result && typeof result.then === 'function') await result;
+              });
+              await nav.waitForURL(/\/resultados\.html(?:$|[?#])/);
+              await stable(nav);
+              const navSignature = await signature(nav);
+              if (navErrors.length) throw new Error(`nav page errors ${JSON.stringify(navErrors)}`);
+
+              compare(directSignature, navSignature);
+              console.log(`DIRECT_SIGNATURE=${JSON.stringify(directSignature)}`);
+              console.log(`NAV_SIGNATURE=${JSON.stringify(navSignature)}`);
+              console.log('DIRECT_INTERNAL_COMPUTED_PARITY=PASS');
+            } finally {
+              if (browser) await browser.close().catch(() => {});
+              server.kill();
+            }
+          })().catch((error) => {
+            console.error(error);
+            server.kill();
+            process.exit(1);
+          });
+          NODE
+
+      - name: Materialize diagnostic candidate branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-win32-r4"
+          if git ls-remote --exit-code --heads origin "refs/heads/$CANDIDATE_BRANCH" >/dev/null 2>&1; then
+            echo "Candidate branch appeared concurrently before materialization" >&2
+            exit 1
+          fi
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$SNAPSHOT"
+          git diff --check
+          source "$RUNNER_TEMP/qa005-frozen-identity-r4.env"
+          test "$(git hash-object "$SNAPSHOT")" = "$FROZEN_BLOB"
+          test "$(sha256sum "$SNAPSHOT" | awk '{print $1}')" = "$FROZEN_SHA256"
+          test "$(wc -c < "$SNAPSHOT" | tr -d ' ')" = "$FROZEN_BYTES"
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git checkout -b "$CANDIDATE_BRANCH"
+          git add -- "$SNAPSHOT"
+          git commit -m "test(ux-qa-debt-005): refresh Resultados Win32 visual baseline candidate"
+          CANDIDATE_SHA="$(git rev-parse HEAD)"
+          CANDIDATE_TREE="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^1)" = "$PARENT"
+          mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
+          test "${#committed[@]}" -eq 1
+          test "${committed[0]}" = "$SNAPSHOT"
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$FROZEN_BLOB"
+          git push origin "HEAD:refs/heads/$CANDIDATE_BRANCH"
+          test "$(git ls-remote origin "refs/heads/$CANDIDATE_BRANCH" | awk '{print $1}')" = "$CANDIDATE_SHA"
+          echo "CANDIDATE_SHA=$CANDIDATE_SHA"
+          echo "CANDIDATE_TREE=$CANDIDATE_TREE"
+          echo "CANDIDATE_BLOB=$FROZEN_BLOB"
+          echo "CANDIDATE_SHA256=$FROZEN_SHA256"
+          echo "CANDIDATE_BYTES=$FROZEN_BYTES"
+          echo UX_QA_DEBT_005_DIAGNOSTIC_MATERIALIZATION=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+          echo CRITERIA_RELAXED=0
