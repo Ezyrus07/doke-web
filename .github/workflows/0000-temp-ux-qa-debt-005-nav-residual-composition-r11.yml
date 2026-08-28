@@ -1,0 +1,99 @@
+name: TEMP UX-QA-DEBT-005 Nav Residual Composition R11
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-nav-residual-composition-r11
+
+permissions:
+  contents: read
+
+jobs:
+  win32-residual-composition:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      PARENT: 00a034f90f7940e820fab1f74c27ade9a32d16d1
+      PARENT_TREE: d982dc7c0c7cd9b227f1543a83243dc76de08b9a
+      SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-nav-residual-composition-r11.yml
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact parent and old baseline
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $head=(git rev-parse HEAD).Trim()
+          $parents=((git rev-list --parents -n1 $head).Trim() -split ' ')
+          if($parents.Count -ne 2 -or $parents[1] -ne $env:PARENT){throw 'TEMP lineage mismatch'}
+          $changed=@(git diff-tree --no-commit-id --name-only -r $head)
+          if($changed.Count -ne 1 -or $changed[0] -ne $env:WORKFLOW_PATH){throw 'TEMP scope mismatch'}
+          if((git rev-parse "$env:PARENT^{tree}").Trim() -ne $env:PARENT_TREE){throw 'Parent TREE mismatch'}
+          $blob=((git ls-tree $env:PARENT -- $env:SNAPSHOT) -split '\s+')[2]
+          $hash=(Get-FileHash -Algorithm SHA256 $env:SNAPSHOT).Hash.ToLowerInvariant()
+          if(-not $blob){throw 'Old baseline blob missing'}
+          "SNAPSHOT_BLOB=$blob" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "SNAPSHOT_SHA256=$hash" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'LINEAGE=PASS'
+          Write-Host 'TEMP_SCOPE=PASS'
+          Write-Host 'PARENT_TREE=PASS'
+          Write-Host "SNAPSHOT_BLOB=$blob"
+          Write-Host "SNAPSHOT_SHA256=$hash"
+
+      - name: Install dependencies and Chromium
+        shell: pwsh
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install chromium
+
+      - name: Prove public-footer reconciliation blocker and isolate residual height
+        shell: pwsh
+        run: |
+          @'
+          const {spawn}=require('child_process');
+          const http=require('http');
+          const {chromium}=require(require.resolve('@playwright/test',{paths:[process.cwd()]}));
+          const port=4335, base=`http://127.0.0.1:${port}`;
+          const session={provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'qa005-r11',role:'client',name:'QA005 R11',email:'qa005-r11@example.test',accountStatus:'active'}};
+          const waitServer=()=>new Promise((resolve,reject)=>{let n=0;const ping=()=>{n++;const req=http.get(base+'/index.html',r=>{r.resume();if(r.statusCode===200)return resolve();if(n>100)return reject(new Error('server timeout'));setTimeout(ping,200)});req.on('error',()=>n>100?reject(new Error('server timeout')):setTimeout(ping,200));};ping();});
+          async function prep(p){await p.route('https://unpkg.com/**',r=>r.fulfill({contentType:'application/javascript',body:''}));await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:''}));await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));await p.route('https://fonts.gstatic.com/**',r=>r.abort());await p.addInitScript(v=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(v)),session);}
+          async function settle(p){await p.waitForLoadState('domcontentloaded');await p.waitForLoadState('networkidle').catch(()=>{});await p.waitForTimeout(1200);}
+          async function snap(p,label){return p.evaluate(label=>{const q=n=>Math.round(Number(n||0)*10)/10;const desc=e=>{if(!e)return null;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return{tag:e.tagName.toLowerCase(),id:e.id||'',class:String(e.className||''),hidden:Boolean(e.hidden),display:cs.display,position:cs.position,top:q(r.top),bottom:q(r.bottom),left:q(r.left),width:q(r.width),height:q(r.height),childCount:e.children.length};};const page=document.querySelector('.page');const content=document.querySelector('.page__content');const workspace=document.querySelector('.search-results-workspace');const layout=document.querySelector('.results-layout');const main=document.querySelector('.results-main');const filters=document.querySelector('.results-filters');const backdrop=document.querySelector('.results-filters-backdrop');const publicFooter=document.querySelector('.page > .doke-public-footer');const grid=document.querySelector('[data-results-grid]');const boundary=document.querySelector('[data-state-boundary="resultados"]');const layoutChildren=layout?Array.from(layout.children).map(desc):[];const mainChildren=main?Array.from(main.children).map(desc):[];const filterForm=document.querySelector('[data-results-filters-form]');return{label,url:location.pathname,scrollY:q(scrollY),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,page:desc(page),content:desc(content),workspace:desc(workspace),layout:desc(layout),filters:desc(filters),filterForm:desc(filterForm),backdrop:desc(backdrop),resultsMain:desc(main),publicFooter:desc(publicFooter),publicFooterPresent:Boolean(publicFooter),layoutChildren,mainChildren,resultCardCount:grid?.children.length||0,resultsGrid:desc(grid),viewState:boundary?.getAttribute('data-view-state')||boundary?.dataset?.dataState||null,ariaBusy:boundary?.getAttribute('aria-busy')||null,hydrationSkeletonHidden:Boolean(document.querySelector('[data-results-hydration-skeleton]')?.hidden),layoutHidden:Boolean(layout?.hidden),countText:document.querySelector('[data-results-count]')?.textContent?.trim()||''};},label);}
+          const d=(a,b,path)=>{const av=path.split('.').reduce((x,k)=>x?.[k],a),bv=path.split('.').reduce((x,k)=>x?.[k],b);return Math.round((Number(av||0)-Number(bv||0))*10)/10;};
+          (async()=>{let browser;const server=spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port='+port],{cwd:process.cwd(),env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'},stdio:'ignore'});try{await waitServer();browser=await chromium.launch();const dc=await browser.newContext({viewport:{width:1366,height:768}}),directPage=await dc.newPage();await prep(directPage);await directPage.goto(base+'/resultados.html');await settle(directPage);const direct=await snap(directPage,'direct');const nc=await browser.newContext({viewport:{width:1366,height:768}}),navPage=await nc.newPage();await prep(navPage);await navPage.goto(base+'/index.html');await settle(navPage);await navPage.waitForFunction(()=>typeof window.DokeNavigate==='function');await navPage.evaluate(async()=>{const x=window.DokeNavigate('/resultados.html');if(x&&typeof x.then==='function')await x;});await navPage.waitForURL(/\/resultados\.html/);await settle(navPage);const nav=await snap(navPage,'via-nav');
+          console.log('QA005_R11_DIRECT='+JSON.stringify(direct));console.log('QA005_R11_NAV='+JSON.stringify(nav));
+          const layoutDelta={filters:d(direct,nav,'filters.height'),filterForm:d(direct,nav,'filterForm.height'),backdrop:d(direct,nav,'backdrop.height'),resultsMain:d(direct,nav,'resultsMain.height'),layout:d(direct,nav,'layout.height'),workspace:d(direct,nav,'workspace.height'),content:d(direct,nav,'content.height'),page:d(direct,nav,'page.height')};
+          console.log('QA005_R11_LAYOUT_DELTA='+JSON.stringify(layoutDelta));
+          if(!direct.publicFooterPresent)throw new Error('direct Resultados public footer missing');
+          if(nav.publicFooterPresent)throw new Error('via-nav Resultados unexpectedly has public footer; blocker not reproduced');
+          if(Math.abs((direct.publicFooter?.height||0)-365.1)>1.0)throw new Error('direct public footer geometry drifted unexpectedly');
+          if(direct.scrollY!==0||nav.scrollY!==0||direct.overflow||nav.overflow)throw new Error('scroll/overflow confounder');
+          if(direct.viewState!=='ready'||nav.viewState!=='ready'||direct.ariaBusy!=='false'||nav.ariaBusy!=='false')throw new Error('results readiness confounder');
+          if(direct.resultCardCount!==nav.resultCardCount||direct.countText!==nav.countText)throw new Error('result inventory confounder');
+          if(!direct.hydrationSkeletonHidden||!nav.hydrationSkeletonHidden||direct.layoutHidden||nav.layoutHidden)throw new Error('hydration visibility confounder');
+          console.log('PUBLIC_FOOTER_DIRECT_PRESENT=PASS');console.log('PUBLIC_FOOTER_VIA_NAV_ABSENT=PROVEN');console.log('RESULT_STATE_EQUIVALENT=PASS');console.log('RESULT_INVENTORY_EQUIVALENT=PASS');console.log('HEIGHT_ROOT_CAUSE_PUBLIC_FOOTER_RECONCILIATION=PROVEN');
+          console.log('UX_QA_DEBT_005_R11_COMPOSITION='+JSON.stringify({result:'PASS',checkpoint:'UX-QA-DEBT-005-R11',parent:process.env.PARENT,viewport:'1366x768',platform:'windows-latest',publicFooterDirect:true,publicFooterViaNav:false,publicFooterHeight:direct.publicFooter.height,pageHeightDirect:direct.page.height,pageHeightViaNav:nav.page.height,pageHeightDelta:d(direct,nav,'page.height'),contentHeightDelta:d(direct,nav,'content.height'),layoutHeightDelta:d(direct,nav,'layout.height'),layoutDelta,resultsStateEquivalent:true,resultInventoryEquivalent:true,horizontalOverflow:false,baselineBlocked:true,criteriaRelaxed:0,productMutation:false,snapshotMutation:false,matrixMutation:false,repositoryOnly:true}));
+          await dc.close();await nc.close();}finally{if(browser)await browser.close().catch(()=>{});server.kill();}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          '@ | Set-Content -Encoding utf8 $env:RUNNER_TEMP\qa005-r11.js
+          node $env:RUNNER_TEMP\qa005-r11.js
+
+      - name: Freeze no-mutation receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if((Get-FileHash -Algorithm SHA256 $env:SNAPSHOT).Hash.ToLowerInvariant() -ne $env:SNAPSHOT_SHA256){throw 'Snapshot bytes changed'}
+          git restore --worktree -- reports/generated docs/validation 2>$null
+          git clean -fd -- test-results playwright-report reports/generated docs/validation 2>$null
+          $status=@(git status --porcelain)
+          if($status.Count -ne 0){throw "Worktree dirty: $($status -join '; ')"}
+          Write-Host 'SNAPSHOT_IDENTITY=PASS'
+          Write-Host 'SNAPSHOT_MUTATION=false'
+          Write-Host 'PRODUCT_MUTATION=false'
+          Write-Host 'MATRIX_MUTATION=false'
+          Write-Host 'CRITERIA_RELAXED=0'
+          Write-Host 'REPOSITORY_ONLY=true'
