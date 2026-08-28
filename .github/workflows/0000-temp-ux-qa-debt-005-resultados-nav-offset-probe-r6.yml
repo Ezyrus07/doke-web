@@ -1,0 +1,99 @@
+name: TEMP UX-QA-DEBT-005 Resultados Nav Offset Probe R6
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-resultados-nav-offset-probe-r6
+
+permissions:
+  contents: read
+
+env:
+  PARENT: 14bdb1af9cfefff4dfd27a78b937443975266001
+  PARENT_TREE: 32f449b165b8cb119600c702c0625cc7199f3416
+  WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-resultados-nav-offset-probe-r6.yml
+  CANDIDATE_BRANCH: diag/ux-qa-debt-005-resultados-win32-baseline-candidate
+  DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and read-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          H="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$H" | awk '{print $2}')" = "$PARENT"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$H")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          if git ls-remote --exit-code --heads origin "refs/heads/$CANDIDATE_BRANCH" >/dev/null 2>&1; then exit 1; fi
+          echo LINEAGE=PASS
+          echo PRODUCT_MUTATION=false
+          echo MATRIX_MUTATION=false
+
+      - name: Prepare exact parent browser worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="$RUNNER_TEMP/qa005-parent-r6"
+          git worktree add --detach "$d" "$PARENT" >/dev/null
+          cd "$d"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          test -z "$(git status --porcelain)"
+
+      - name: Identify exact 21px flow occupant
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-r6"
+          node <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const { spawn } = require('child_process');
+          const http = require('http');
+          const server = spawn(process.execPath, ['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'], { env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}, stdio:'ignore' });
+          const wait = () => new Promise((resolve,reject)=>{ let n=0; const p=()=>{n++; const r=http.get('http://127.0.0.1:5500/index.html',res=>{res.resume(); if(res.statusCode===200)return resolve(); n>60?reject(new Error('server')):setTimeout(p,250)}); r.on('error',()=>n>60?reject(new Error('server')):setTimeout(p,250));}; p();});
+          const route = async p => {
+            await p.route('https://unpkg.com/**',r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:''}));
+            await p.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));
+            await p.route('https://fonts.gstatic.com/**',r=>r.abort());
+          };
+          const session={provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'qa005-client',role:'client',name:'QA005',email:'qa005@example.test',accountStatus:'active'}};
+          const init=p=>p.addInitScript(v=>localStorage.setItem('doke.auth.session.v1',JSON.stringify(v)),session);
+          const stable=async p=>{await p.waitForLoadState('domcontentloaded'); await p.waitForLoadState('networkidle').catch(()=>{}); await p.waitForTimeout(700);};
+          const inspect=(p,label)=>p.evaluate(label=>{
+            const q=n=>Math.round(Number(n||0)*10)/10;
+            const rect=e=>{const r=e.getBoundingClientRect();return{top:q(r.top),bottom:q(r.bottom),left:q(r.left),width:q(r.width),height:q(r.height)}};
+            const ps=(e,pseudo)=>{const s=getComputedStyle(e,pseudo);return{content:s.content,display:s.display,position:s.position,height:s.height,lineHeight:s.lineHeight,marginTop:s.marginTop,marginBottom:s.marginBottom,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom,visibility:s.visibility};};
+            const child=e=>({tag:e.tagName,id:e.id||'',className:typeof e.className==='string'?e.className:'',text:(e.innerText||'').replace(/\s+/g,' ').trim().slice(0,160),rect:rect(e),display:getComputedStyle(e).display,position:getComputedStyle(e).position,marginTop:getComputedStyle(e).marginTop,marginBottom:getComputedStyle(e).marginBottom,ariaLive:e.getAttribute('aria-live'),role:e.getAttribute('role'),data:Object.fromEntries(Array.from(e.attributes).filter(a=>a.name.startsWith('data-')).map(a=>[a.name,a.value]))});
+            const bodyChildren=Array.from(document.body.children).map(child);
+            const beforePage=bodyChildren.filter(x=>x.rect.top < 30 || x.rect.bottom <= 30);
+            const page=document.querySelector('.page');
+            return {label,url:location.href,scrollY:window.scrollY,bodyRect:rect(document.body),pageRect:page?rect(page):null,bodyBefore:ps(document.body,'::before'),bodyAfter:ps(document.body,'::after'),htmlBefore:ps(document.documentElement,'::before'),htmlAfter:ps(document.documentElement,'::after'),bodyChildren,beforePage,activeElement:document.activeElement?child(document.activeElement):null};
+          },label);
+          (async()=>{let b;try{await wait(); b=await chromium.launch(); const c=await b.newContext({viewport:{width:1366,height:768}});
+            const d=await c.newPage(); await route(d); await init(d); await d.goto('http://127.0.0.1:5500/resultados.html'); await stable(d); const direct=await inspect(d,'direct');
+            const n=await c.newPage(); await route(n); await init(n); await n.goto('http://127.0.0.1:5500/index.html'); await stable(n); await n.waitForFunction(()=>typeof window.DokeNavigate==='function'); await n.evaluate(async()=>{const x=window.DokeNavigate('/resultados.html'); if(x&&typeof x.then==='function')await x;}); await n.waitForURL(/\/resultados\.html/); await stable(n); const nav=await inspect(n,'nav');
+            console.log('OFFSET_PROBE='+JSON.stringify({direct,nav}));
+            console.log('R6_PROBE=PASS');
+          }finally{if(b)await b.close().catch(()=>{});server.kill();}})().catch(e=>{console.error(e);server.kill();process.exit(1)});
+          NODE
+
+      - name: Prove no repository mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-parent-r6"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --exit-code --heads origin "refs/heads/$CANDIDATE_BRANCH" >/dev/null 2>&1; then exit 1; fi
+          echo READ_ONLY_PROBE=PASS
+          echo CANDIDATE_ABSENT=PASS
