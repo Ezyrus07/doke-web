@@ -1,0 +1,153 @@
+name: TEMP GOV-DEBT-002 Permanent Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/gov-debt-002-permanent-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout promotion controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze controller lineage and target branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          parent_tree='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          target='gov/gov-debt-002-network-signal-classification'
+          workflow='.github/workflows/0000-temp-gov-debt-002-permanent-promotion-r1.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "$parent^{tree}")" = "$parent_tree"
+          mapfile -t controller_changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#controller_changed[@]}" -eq 1
+          test "${controller_changed[0]}" = "$workflow"
+          git fetch --no-tags origin "$target"
+          test "$(git rev-parse FETCH_HEAD)" = "$parent"
+          echo "GOV_DEBT_002_PROMOTION_R1_LINEAGE=PASS parent=$parent tree=$parent_tree targetHead=$parent controllerTempOnly=true"
+
+      - name: Materialize exact qualified owner candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          expected_blob='b47e62538641e5796bee13208cec301f73107102'
+          expected_tree='81a9fada8d9ff1cfaecae7ec43a7b0cc9c0b5c2a'
+          worktree="$RUNNER_TEMP/gov-debt-002-permanent"
+          git worktree add --detach "$worktree" "$parent"
+          git -C "$worktree" config user.name 'doke-governance'
+          git -C "$worktree" config user.email 'doke-governance@users.noreply.github.com'
+          cd "$worktree"
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('scripts/audit-domain-completion-matrix.js')
+          s = p.read_text(encoding='utf-8')
+          write = "const WRITE = process.argv.includes('--write');\n"
+          count_fn = """function signalCount(text, regex) {
+            regex.lastIndex = 0;
+            const matches = text.match(regex);
+            return matches ? matches.length : 0;
+          }
+          """
+          scan_line = "      const count = signalCount(text, regex);"
+          comparison = "if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');"
+          for needle in (write, count_fn, scan_line, comparison):
+              if s.count(needle) != 1:
+                  raise SystemExit(f'candidate anchor drift: {needle[:60]!r}')
+          s = s.replace(
+              write,
+              write
+              + "const normalizeLineEndings = (value) => String(value ?? '').replace(/\\r\\n?/g, '\\n');\n"
+              + "const PLAYWRIGHT_ROUTE_FETCH_SIGNAL = /\\broute\\s*\\.\\s*fetch\\s*\\(/g;\n"
+              + "const PLAYWRIGHT_TEST_IMPORT = /(?:require\\s*\\(\\s*['\\\"]@playwright\\/test['\\\"]\\s*\\)|from\\s+['\\\"]@playwright\\/test['\\\"])/;\n"
+          )
+          s = s.replace(count_fn, count_fn + """
+          function networkSignalCount(text, file) {
+            const total = signalCount(text, SIGNALS.network);
+            if (!total) return 0;
+            const relative = normalizeRel(file);
+            if (!relative.startsWith('tests/e2e/') || !PLAYWRIGHT_TEST_IMPORT.test(text)) return total;
+            return Math.max(0, total - signalCount(text, PLAYWRIGHT_ROUTE_FETCH_SIGNAL));
+          }
+          """)
+          s = s.replace(
+              scan_line,
+              "      const count = key === 'network' ? networkSignalCount(text, file) : signalCount(text, regex);"
+          )
+          s = s.replace(
+              comparison,
+              "if (!fs.existsSync(DOC_PATH) || normalizeLineEndings(fs.readFileSync(DOC_PATH, 'utf8')) !== normalizeLineEndings(markdown)) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');"
+          )
+          p.write_text(s, encoding='utf-8', newline='\n')
+          PY
+          node --check scripts/audit-domain-completion-matrix.js
+          git diff --check
+          test "$(git hash-object scripts/audit-domain-completion-matrix.js)" = "$expected_blob"
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'scripts/audit-domain-completion-matrix.js'
+          git add scripts/audit-domain-completion-matrix.js
+          git commit -m 'fix(gov): stabilize Domain Matrix network classification' >/dev/null
+          candidate_sha="$(git rev-parse HEAD)"
+          candidate_tree="$(git rev-parse HEAD^{tree})"
+          candidate_blob="$(git rev-parse HEAD:scripts/audit-domain-completion-matrix.js)"
+          test "$candidate_tree" = "$expected_tree"
+          test "$candidate_blob" = "$expected_blob"
+          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
+          echo "WORKTREE=$worktree" >> "$GITHUB_ENV"
+          echo "GOV_DEBT_002_PROMOTION_R1_MATERIALIZATION=PASS sha=$candidate_sha tree=$candidate_tree blob=$candidate_blob files=1"
+
+      - name: Validate permanent candidate before push
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          node --check scripts/audit-domain-completion-matrix.js
+          git diff --check "$parent" HEAD
+          node scripts/audit-domain-completion-matrix.js
+          npm run audit:agent-governance
+          mapfile -t dirty < <(git status --porcelain=v1 | sed -E 's/^...//')
+          for file in "${dirty[@]}"; do
+            case "$file" in
+              docs/HOME-AUTHORITY-CLASSIFICATION.md|docs/PAGE-ASSET-AUTHORITY-MATRIX.md)
+                git restore --source=HEAD --worktree --staged -- "$file"
+                ;;
+              '') ;;
+              *) echo "unexpected governance mutation: $file" >&2; exit 1 ;;
+            esac
+          done
+          test -z "$(git status --porcelain)"
+          test "$(git rev-parse HEAD^{tree})" = '81a9fada8d9ff1cfaecae7ec43a7b0cc9c0b5c2a'
+          test "$(git rev-parse HEAD:scripts/audit-domain-completion-matrix.js)" = 'b47e62538641e5796bee13208cec301f73107102'
+          echo 'GOV_DEBT_002_PROMOTION_R1_VALIDATION=PASS nodeCheck=true diffCheck=true matrix=true agentGovernance=true generatedOutputsRestored=true'
+
+      - name: Fast-forward permanent branch and verify remote receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          target='gov/gov-debt-002-network-signal-classification'
+          git fetch --no-tags origin "$target"
+          test "$(git rev-parse FETCH_HEAD)" = "$parent"
+          git push origin "HEAD:refs/heads/$target"
+          git fetch --no-tags origin "$target"
+          remote_sha="$(git rev-parse FETCH_HEAD)"
+          test "$remote_sha" = "$CANDIDATE_SHA"
+          test "$(git rev-parse "$remote_sha^{tree}")" = '81a9fada8d9ff1cfaecae7ec43a7b0cc9c0b5c2a'
+          test "$(git rev-parse "$remote_sha:scripts/audit-domain-completion-matrix.js")" = 'b47e62538641e5796bee13208cec301f73107102'
+          test "$(git rev-list --count "$parent..$remote_sha")" -eq 1
+          mapfile -t changed < <(git diff --name-only "$parent" "$remote_sha")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'scripts/audit-domain-completion-matrix.js'
+          echo "GOV_DEBT_002_PROMOTION_R1_FINAL=PASS branch=$target sha=$remote_sha tree=81a9fada8d9ff1cfaecae7ec43a7b0cc9c0b5c2a blob=b47e62538641e5796bee13208cec301f73107102 commitsAhead=1 files=1 force=false matrixMutation=false snapshotMutation=false qaMutation=false productMutation=false prCreated=false readyForReview=false merge=false staging=false production=false"
