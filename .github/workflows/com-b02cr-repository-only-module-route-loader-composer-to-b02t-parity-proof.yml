@@ -1,0 +1,105 @@
+name: COM-B02CR Repository-Only Module Route Loader Composer to B02T Parity Proof
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.json'
+      - 'scripts/test-com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.js'
+      - '.github/workflows/com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02cr-module-route-loader-composer-b02t-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 219c3386b3412a21f711d55f49e0f94fc02a92cf
+      PREDECESSOR_TREE: da2ae786c4d3bba189ec2d070e650f1fc0d9a12f
+      PREDECESSOR_RUN: '33227096237'
+      PREDECESSOR_JOB: '99032821020'
+      PREDECESSOR_WORKFLOW_ID: '345044579'
+      CONFIG: config/com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.json
+      TEST: scripts/test-com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.js
+      WORKFLOW: .github/workflows/com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.yml
+      MODULE_ROUTE_LOADER: backend/shared/http/module-route-loader.js
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      ROUTE_HANDLERS: backend/modules/communities/route-handlers.js
+      ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      B02T: backend/modules/communities/community-command-handler-repository-orchestration.js
+      B02T_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
+      B02CQ_CONFIG: config/com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.json
+      B02CQ_CONFIG_BLOB: f4738bc8bdff1653091b1cc1cf083f8bad4ddecb
+      B02CQ_TEST: scripts/test-com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.js
+      B02CQ_TEST_BLOB: f183615daf5ba1c3469eb2fec8d97b1e5a8fe4ae
+      B02CQ_WORKFLOW: .github/workflows/com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.yml
+      B02CQ_WORKFLOW_BLOB: ba7c47167c26ce873b13ad3a7cccf2c7758bf19c
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+
+    steps:
+      - name: Checkout exact certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CQ predecessor, loader dependencies and exact B02CR final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+
+          test "$(git rev-parse HEAD:$MODULE_ROUTE_LOADER)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_HANDLERS)" = "$ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$B02T)" = "$B02T_BLOB"
+          test "$(git rev-parse HEAD:$B02CQ_CONFIG)" = "$B02CQ_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02CQ_TEST)" = "$B02CQ_TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02CQ_WORKFLOW)" = "$B02CQ_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+
+          expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify loader resolution through all three composers to B02T begin
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if grep -Eq 'execute(Membership|Governance|Content)Command[[:space:]]*\(|resumeCommandRepositoryOnlySurface[[:space:]]*\(|resumeRepositoryOnlyCommandHandlerOrchestration[[:space:]]*\(' "$TEST"; then
+            echo "B02CR must not invoke active handlers or any resume surface" >&2
+            exit 1
+          fi
+
+          grep -F 'getRepositoryOnlySurface' "$TEST" >/dev/null
+          grep -F 'composeMembershipCommandRepositoryOnly' "$TEST" >/dev/null
+          grep -F 'composeGovernanceCommandRepositoryOnly' "$TEST" >/dev/null
+          grep -F 'composeContentCommandRepositoryOnly' "$TEST" >/dev/null
+          grep -F 'beginRepositoryOnlyCommandHandlerOrchestration' "$TEST" >/dev/null
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TEST"
+          node "$TEST"
+          git diff --check "$PREDECESSOR_HEAD" HEAD
