@@ -193,7 +193,7 @@
       boundary.removeAttribute('data-view-freshness');
     }
 
-    syncRegion(boundary, state, options);
+    if (options.preserveRegion !== true) syncRegion(boundary, state, options);
   }
 
   function setBoundaryState(root, state, messageOrOptions) {
@@ -245,7 +245,7 @@
     document.querySelectorAll('[data-state-boundary]').forEach(function (boundary) {
       var initialState = normalizeState(boundary.getAttribute('data-view-state') || STATES.IDLE);
       if (!isValidState(initialState)) initialState = STATES.IDLE;
-      applyBoundaryState(boundary, initialState, { announce: false });
+      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });
     });
   }
 
