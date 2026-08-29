@@ -1,0 +1,375 @@
+name: TEMP UX-STATE-003 Permanent Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/ux-state-003-permanent-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout promotion controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze stacked lineage and target branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='4509e393a4bc06970dd30e6a15ac9d9fb7227667'
+          parent_tree='7da4df10e58800e2200ab11d2a332a2c48432e71'
+          target='ux/ux-state-003-results-error-preservation'
+          workflow='.github/workflows/0000-temp-ux-state-003-permanent-promotion-r1.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "$parent^{tree}")" = "$parent_tree"
+          mapfile -t controller_changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#controller_changed[@]}" -eq 1
+          test "${controller_changed[0]}" = "$workflow"
+          git fetch --no-tags origin "$target"
+          test "$(git rev-parse FETCH_HEAD)" = "$parent"
+          test "$(git rev-parse "$parent:tests/e2e/search-flow.spec.js")" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse "$parent:scripts/audit-domain-completion-matrix.js")" = 'b47e62538641e5796bee13208cec301f73107102'
+          echo "UX_STATE_003_PROMOTION_R1_LINEAGE=PASS parent=$parent tree=$parent_tree targetHead=$parent qa007=e0276bfc627c8cec0f8857b76b7f6e05233c5912 scanner=b47e62538641e5796bee13208cec301f73107102 controllerTempOnly=true"
+
+      - name: Create detached stacked-parent worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          worktree="$RUNNER_TEMP/ux-state-003-permanent"
+          parenttree="$RUNNER_TEMP/ux-state-003-parent"
+          git worktree add --detach "$worktree" '4509e393a4bc06970dd30e6a15ac9d9fb7227667'
+          git worktree add --detach "$parenttree" '4509e393a4bc06970dd30e6a15ac9d9fb7227667'
+          git -C "$worktree" config user.name 'doke-state'
+          git -C "$worktree" config user.email 'doke-state@users.noreply.github.com'
+          echo "WORKTREE=$worktree" >> "$GITHUB_ENV"
+          echo "PARENT_WORKTREE=$parenttree" >> "$GITHUB_ENV"
+
+      - name: Materialize exact qualified state candidate
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+          path = Path('assets/js/state/state-contracts.js')
+          source = path.read_text(encoding='utf-8')
+          old_apply = """    syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"""
+          new_apply = """    if (options.preserveRegion !== true) syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"""
+          old_boot = """      applyBoundaryState(boundary, initialState, { announce: false });"""
+          new_boot = """      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });"""
+          if source.count(old_apply) != 1:
+              raise SystemExit(f'applyBoundaryState anchor count={source.count(old_apply)}')
+          if source.count(old_boot) != 1:
+              raise SystemExit(f'initializeBoundaries anchor count={source.count(old_boot)}')
+          source = source.replace(old_apply, new_apply).replace(old_boot, new_boot)
+          path.write_text(source, encoding='utf-8', newline='\n')
+          PY
+          node --check assets/js/state/state-contracts.js
+          git diff --check
+          test "$(git hash-object assets/js/state/state-contracts.js)" = '456e01e5fede548c276a5d4d7088a39175a3ae2a'
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'assets/js/state/state-contracts.js'
+          test -z "$(git diff --name-only -- resultados.html assets/css assets/js/core/page-hydration.js assets/js/pages/search-results-dom-adapter.js assets/js/pages/search-results.js config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md tests/visual)"
+          echo 'UX_STATE_003_PROMOTION_R1_MATERIALIZATION=PASS blob=456e01e5fede548c276a5d4d7088a39175a3ae2a files=1 productOwner=assets/js/state/state-contracts.js criteriaRelaxed=0'
+
+      - name: Install browser dependencies
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Prove parent negative and candidate bootstrap semantics
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          spec='tests/e2e/ux-state-003-bootstrap-promotion.spec.js'
+          cat > "$spec" <<'EOF'
+          const { test, expect } = require('@playwright/test');
+          const stateContractPath = process.env.STATE_CONTRACT_PATH;
+          const expectPreserve = process.env.EXPECT_PRESERVE === '1';
+
+          const markup = (state, visibleState = '') => `<!doctype html><html><body>
+            <main data-state-boundary="probe" data-view-state="${state}" aria-busy="false">
+              <div data-state-region aria-live="polite">
+                <p data-state-loading ${visibleState === 'loading' ? '' : 'hidden'}>Loading probe</p>
+                <p data-state-empty ${visibleState === 'empty' ? '' : 'hidden'}>Empty probe</p>
+                <p data-state-error ${visibleState === 'error' ? '' : 'hidden'}>Specific error probe</p>
+              </div>
+            </main>
+          </body></html>`;
+
+          test('bootstrap adoption preserves established terminal region only with candidate', async ({ page }) => {
+            await page.setContent(markup('error', 'error'));
+            await page.addScriptTag({ path: stateContractPath });
+            const state = await page.evaluate(() => {
+              const boundary = document.querySelector('[data-state-boundary="probe"]');
+              const region = document.querySelector('[data-state-region]');
+              const error = document.querySelector('[data-state-error]');
+              return {
+                viewState: boundary.dataset.viewState,
+                ariaBusy: boundary.getAttribute('aria-busy'),
+                regionHidden: region.hidden,
+                errorHidden: error.hidden,
+                errorText: error.textContent,
+              };
+            });
+            expect(state.viewState).toBe('error');
+            expect(state.ariaBusy).toBe('false');
+            expect(state.errorHidden).toBe(!expectPreserve);
+            if (expectPreserve) {
+              expect(state.regionHidden).toBe(false);
+              expect(state.errorText).toBe('Specific error probe');
+            }
+          });
+
+          test('candidate bootstrap does not invent state and normal error-to-ready transition still settles', async ({ page }) => {
+            test.skip(!expectPreserve, 'candidate-only semantic guard');
+            await page.setContent(markup('loading'));
+            await page.addScriptTag({ path: stateContractPath });
+            let state = await page.evaluate(() => ({
+              ariaBusy: document.querySelector('[data-state-boundary="probe"]').getAttribute('aria-busy'),
+              loadingHidden: document.querySelector('[data-state-loading]').hidden,
+              emptyHidden: document.querySelector('[data-state-empty]').hidden,
+              errorHidden: document.querySelector('[data-state-error]').hidden,
+            }));
+            expect(state).toEqual({ ariaBusy: 'true', loadingHidden: true, emptyHidden: true, errorHidden: true });
+            state = await page.evaluate(() => {
+              const boundary = document.querySelector('[data-state-boundary="probe"]');
+              const toError = window.Doke.stateContracts.setBoundaryState(boundary, 'error');
+              const errorSnapshot = {
+                accepted: toError,
+                errorHidden: document.querySelector('[data-state-error]').hidden,
+                emptyHidden: document.querySelector('[data-state-empty]').hidden,
+                loadingHidden: document.querySelector('[data-state-loading]').hidden,
+                viewState: boundary.dataset.viewState,
+              };
+              const toReady = window.Doke.stateContracts.setBoundaryState(boundary, 'ready');
+              return {
+                errorSnapshot,
+                readyAccepted: toReady,
+                readyState: boundary.dataset.viewState,
+                readyErrorHidden: document.querySelector('[data-state-error]').hidden,
+                readyEmptyHidden: document.querySelector('[data-state-empty]').hidden,
+                readyLoadingHidden: document.querySelector('[data-state-loading]').hidden,
+              };
+            });
+            expect(state.errorSnapshot).toEqual({ accepted: true, errorHidden: false, emptyHidden: true, loadingHidden: true, viewState: 'error' });
+            expect(state.readyAccepted).toBe(true);
+            expect(state.readyState).toBe('ready');
+            expect(state.readyErrorHidden).toBe(true);
+            expect(state.readyEmptyHidden).toBe(true);
+            expect(state.readyLoadingHidden).toBe(true);
+          });
+          EOF
+          export STATE_CONTRACT_PATH="$PARENT_WORKTREE/assets/js/state/state-contracts.js"
+          export EXPECT_PRESERVE=0
+          npx playwright test "$spec" --reporter=line
+          echo 'UX_STATE_003_PROMOTION_R1_PARENT_NEGATIVE=PASS terminalErrorHiddenByBootstrap=true'
+          export STATE_CONTRACT_PATH="$WORKTREE/assets/js/state/state-contracts.js"
+          export EXPECT_PRESERVE=1
+          npx playwright test "$spec" --reporter=line
+          rm -f "$spec"
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'assets/js/state/state-contracts.js'
+          echo 'UX_STATE_003_PROMOTION_R1_BOOTSTRAP=PASS preserveEstablishedTerminal=true unsolicitedInitialSurface=false errorToReadyTransition=true'
+
+      - name: Prove real Resultados recoverable error surface
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          spec='tests/e2e/ux-state-003-resultados-error-promotion.spec.js'
+          cat > "$spec" <<'EOF'
+          const { test, expect } = require('@playwright/test');
+          const READY_QUERY = '__ux_state_003_ready__';
+
+          test.beforeEach(async ({ page }) => {
+            await page.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ contentType: 'text/css', body: '' }));
+            await page.route('https://fonts.gstatic.com/**', (route) => route.abort());
+            await page.route('https://*.supabase.co/**', (route) => route.abort());
+            await page.route('**/assets/js/repositories/search-repository.js*', async (route) => {
+              const response = await route.fetch();
+              const originalBody = await response.text();
+              const harness = `\n;(function () {
+                var Doke = window.Doke || (window.Doke = {});
+                var repositories = Doke.repositories || (Doke.repositories = {});
+                var original = repositories.search;
+                if (!original || original.__uxState003Harness) return;
+                var item = Object.freeze({
+                  id: 'ux-state-003-service', remoteId: 'ux-state-003-service', serviceId: 'ux-state-003-service',
+                  title: 'UX STATE 003 deterministic service', description: 'Synthetic contract fixture', category: 'qa-contract',
+                  providerName: 'QA Provider', providerHandle: '@qa-provider', city: 'Sao Paulo', state: 'SP', location: 'Sao Paulo, SP',
+                  rating: 5, reviews: '1 avaliação', reviewsCount: 1, tags: ['qa'], priceValue: 100, price: 100,
+                  updatedAt: '2026-08-28T00:00:00.000Z'
+                });
+                function responseFor(request) {
+                  var contract = original.getContract();
+                  return { authority: contract.expectedAuthority, contractVersion: contract.version, request: Object.assign({}, request || {}), items: [item], page: { pageSize: 12, hasNext: false, nextCursor: null } };
+                }
+                repositories.search = Object.freeze({
+                  __uxState003Harness: true,
+                  queryPage: function (request) { return request && request.query === '${READY_QUERY}' ? Promise.resolve(responseFor(request)) : original.queryPage(request); },
+                  normalizeRequest: function (request) { return original.normalizeRequest(request); },
+                  getLastError: function () { return original.getLastError(); },
+                  getContract: function () { return original.getContract(); }
+                });
+              }());`;
+              await route.fulfill({ response, body: originalBody + harness });
+            });
+            await page.route('**/assets/js/components/public-service-card.js*', async (route) => {
+              const response = await route.fetch();
+              const originalBody = await response.text();
+              const harness = `\n;(function () {
+                var Doke = window.Doke || (window.Doke = {});
+                var original = Doke.publicServiceCard || {};
+                Doke.publicServiceCard = Object.freeze(Object.assign({}, original, {
+                  create: function () { var error = new Error('renderer failure'); error.code = 'DOKE_UX_STATE_003_RENDERER_FAILURE'; throw error; }
+                }));
+              }());`;
+              await route.fulfill({ response, body: originalBody + harness });
+            });
+          });
+
+          test('renderer failure keeps exactly one visible recoverable Resultados error surface', async ({ page }) => {
+            await page.goto(`/resultados.html?q=${READY_QUERY}&type=services`);
+            await expect.poll(() => page.evaluate(() => document.querySelector('[data-results-layout]')?.dataset.resultsState || 'missing'), { timeout: 30000 }).toBe('error');
+            await expect.poll(() => page.evaluate(() => document.body.dataset.pageHydration || 'missing'), { timeout: 30000 }).toBe('error');
+            const snapshot = await page.evaluate(() => {
+              const visible = (node) => {
+                if (!node || node.hidden) return false;
+                const style = getComputedStyle(node);
+                if (style.display === 'none' || style.visibility === 'hidden') return false;
+                const box = node.getBoundingClientRect();
+                return box.width > 0 && box.height > 0;
+              };
+              const errors = [...document.querySelectorAll('[data-state-error]')];
+              const boundary = document.querySelector('[data-state-boundary="resultados"]');
+              return {
+                hydration: document.body.dataset.pageHydration || '',
+                resultsState: document.querySelector('[data-results-layout]')?.dataset.resultsState || '',
+                boundaryState: boundary?.dataset.viewState || '',
+                visibleErrors: errors.filter(visible).length,
+                errorHidden: errors[0]?.hidden ?? true,
+                retryCount: document.querySelectorAll('[data-page-hydration-retry]').length,
+                overflow: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) - innerWidth,
+              };
+            });
+            expect(snapshot.hydration).toBe('error');
+            expect(snapshot.resultsState).toBe('error');
+            expect(snapshot.boundaryState).toBe('error');
+            expect(snapshot.visibleErrors).toBe(1);
+            expect(snapshot.errorHidden).toBe(false);
+            expect(snapshot.retryCount).toBe(1);
+            expect(snapshot.overflow).toBeLessThanOrEqual(1);
+          });
+          EOF
+          npx playwright test "$spec" --reporter=line
+          rm -f "$spec"
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'assets/js/state/state-contracts.js'
+          echo 'UX_STATE_003_PROMOTION_R1_RESULTADOS_ERROR=PASS visibleErrors=1 retry=1 overflow<=1'
+
+      - name: Preserve stacked search and Resultados acceptance
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          searchOut="$RUNNER_TEMP/ux429-promotion-search.json"
+          uxOut="$RUNNER_TEMP/ux429-promotion-ux-results.json"
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$searchOut" npx playwright test tests/e2e/search-flow.spec.js --reporter=json
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$uxOut" npx playwright test tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=json
+          node - "$searchOut" "$uxOut" <<'NODE'
+          const fs = require('fs');
+          function summary(path) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            let total = 0, failed = 0;
+            function walk(suites) {
+              for (const suite of suites || []) {
+                for (const spec of suite.specs || []) {
+                  for (const test of spec.tests || []) {
+                    total += 1;
+                    if ((test.results || []).some((r) => r.status === 'failed')) failed += 1;
+                  }
+                }
+                walk(suite.suites);
+              }
+            }
+            walk(report.suites);
+            return { total, failed };
+          }
+          const search = summary(process.argv[2]);
+          const ux = summary(process.argv[3]);
+          if (search.total !== 2 || search.failed !== 0) throw new Error(`search-flow total=${search.total} failed=${search.failed}`);
+          if (ux.total !== 3 || ux.failed !== 0) throw new Error(`UX-RESULTS total=${ux.total} failed=${ux.failed}`);
+          console.log('UX_STATE_003_PROMOTION_R1_ACCEPTANCE=PASS searchFlow=2/2 uxResults=3/3');
+          NODE
+
+      - name: Validate shared state and governance
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          parent='4509e393a4bc06970dd30e6a15ac9d9fb7227667'
+          node --check assets/js/state/state-contracts.js
+          git diff --check "$parent"
+          npm run audit:global-state-completion
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          mapfile -t dirty < <(git status --porcelain=v1 | sed -E 's/^...//')
+          for file in "${dirty[@]}"; do
+            case "$file" in
+              assets/js/state/state-contracts.js) ;;
+              docs/HOME-AUTHORITY-CLASSIFICATION.md|docs/PAGE-ASSET-AUTHORITY-MATRIX.md)
+                git restore --source="$parent" --worktree --staged -- "$file"
+                ;;
+              '') ;;
+              *) echo "unexpected governance mutation: $file" >&2; exit 1 ;;
+            esac
+          done
+          mapfile -t changed < <(git diff --name-only "$parent")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'assets/js/state/state-contracts.js'
+          test "$(git hash-object assets/js/state/state-contracts.js)" = '456e01e5fede548c276a5d4d7088a39175a3ae2a'
+          test "$(git rev-parse "$parent:tests/e2e/search-flow.spec.js")" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse "$parent:scripts/audit-domain-completion-matrix.js")" = 'b47e62538641e5796bee13208cec301f73107102'
+          echo 'UX_STATE_003_PROMOTION_R1_VALIDATION=PASS nodeCheck=true diffCheck=true globalState=true matrix=true agentGovernance=true browserAcceptance=6/6 generatedOutputsRestored=true'
+
+      - name: Commit, fast-forward permanent branch, and verify receipt
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          parent='4509e393a4bc06970dd30e6a15ac9d9fb7227667'
+          target='ux/ux-state-003-results-error-preservation'
+          git add assets/js/state/state-contracts.js
+          git commit -m 'fix(state): preserve established region during bootstrap' >/dev/null
+          candidate_sha="$(git rev-parse HEAD)"
+          candidate_tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD:assets/js/state/state-contracts.js)" = '456e01e5fede548c276a5d4d7088a39175a3ae2a'
+          test "$(git rev-parse HEAD:tests/e2e/search-flow.spec.js)" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse HEAD:scripts/audit-domain-completion-matrix.js)" = 'b47e62538641e5796bee13208cec301f73107102'
+          git fetch --no-tags origin "$target"
+          test "$(git rev-parse FETCH_HEAD)" = "$parent"
+          git push origin "HEAD:refs/heads/$target"
+          git fetch --no-tags origin "$target"
+          remote_sha="$(git rev-parse FETCH_HEAD)"
+          test "$remote_sha" = "$candidate_sha"
+          test "$(git rev-list --count "$parent..$remote_sha")" -eq 1
+          test "$(git rev-parse "$remote_sha:assets/js/state/state-contracts.js")" = '456e01e5fede548c276a5d4d7088a39175a3ae2a'
+          mapfile -t changed < <(git diff --name-only "$parent" "$remote_sha")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'assets/js/state/state-contracts.js'
+          echo "UX_STATE_003_PROMOTION_R1_FINAL=PASS branch=$target sha=$remote_sha tree=$candidate_tree stateBlob=456e01e5fede548c276a5d4d7088a39175a3ae2a qa007=e0276bfc627c8cec0f8857b76b7f6e05233c5912 scanner=b47e62538641e5796bee13208cec301f73107102 commitsAhead=1 files=1 force=false criteriaRelaxed=0 introducedRegressions=0 snapshotMutation=false matrixMutation=false qaMutation=false prCreated=false readyForReview=false merge=false staging=false production=false repositoryOnly=true"
