@@ -7,6 +7,8 @@ on:
     paths:
       - 'config/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.json'
       - 'scripts/test-com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.yml'
 
 permissions:
@@ -21,8 +23,14 @@ jobs:
       PREDECESSOR_TREE: a1f86a0983343cf6843a513fc86323fa4f99c7fc
       RECOVERY_HEAD: b334f279f33f5e3cda0c5d0fd3ac8d8f2b60991c
       RECOVERY_TREE: a1f86a0983343cf6843a513fc86323fa4f99c7fc
+      CANDIDATE_HEAD: 1243735eb9d2b103631696df2caabb74ca0e6002
+      CANDIDATE_TREE: af64788bb85ea324352480c16f8189b14890f022
+      MATRIX_DERIVATIVE_HEAD: 80a132adc0950a3e520717809a8834c9eea07c52
+      MATRIX_DERIVATIVE_TREE: cd4e745cbb048de95e2ac6c54d051e2022697499
       CONFIG: config/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.json
+      CONFIG_BLOB: da35896958b65d56e8e70b8fecf08e4e7b053a57
       TEST: scripts/test-com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.js
+      TEST_BLOB: 3123400104735bde50418a291f6b008431369e53
       WORKFLOW: .github/workflows/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.yml
       B02T: backend/modules/communities/community-command-handler-repository-orchestration.js
       B02T_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
@@ -42,9 +50,13 @@ jobs:
       B02L_BLOB: c48eabab7bb5b37b6a1663a051b3a8a6223cd0c9
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_MD_BLOB: 3ac79a6d1f31739d6918f14a1f14aa599b5bda12
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_REPORT_BLOB: 0510229125aa28d2c3775d766821e9348d302c81
 
     steps:
-      - name: Checkout exact candidate head
+      - name: Checkout exact certification head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -56,17 +68,23 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze predecessor, recovery, dependencies and exact candidate scope
+      - name: Freeze candidate, matrix derivatives, dependencies and exact reconciled scope
         shell: bash
         run: |
           set -euo pipefail
 
-          test "$(git rev-parse HEAD^)" = "$RECOVERY_HEAD"
+          test "$(git rev-parse HEAD^)" = "$MATRIX_DERIVATIVE_HEAD"
+          test "$(git rev-parse "$MATRIX_DERIVATIVE_HEAD^{tree}")" = "$MATRIX_DERIVATIVE_TREE"
+          test "$(git rev-parse "$MATRIX_DERIVATIVE_HEAD^")" = "$CANDIDATE_HEAD"
+          test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$CANDIDATE_HEAD^")" = "$RECOVERY_HEAD"
           test "$(git rev-parse "$RECOVERY_HEAD^{tree}")" = "$RECOVERY_TREE"
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
           test "$RECOVERY_TREE" = "$PREDECESSOR_TREE"
           test -z "$(git diff --name-only "$PREDECESSOR_HEAD" "$RECOVERY_HEAD")"
 
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
           test "$(git rev-parse HEAD:$B02T)" = "$B02T_BLOB"
           test "$(git rev-parse HEAD:$B02S)" = "$B02S_BLOB"
           test "$(git rev-parse HEAD:$B02R)" = "$B02R_BLOB"
@@ -76,10 +94,23 @@ jobs:
           test "$(git rev-parse HEAD:$B02M)" = "$B02M_BLOB"
           test "$(git rev-parse HEAD:$B02L)" = "$B02L_BLOB"
           test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_MD)" = "$MATRIX_MD_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_REPORT)" = "$MATRIX_REPORT_BLOB"
 
-          expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" | sort)"
-          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
-          test "$actual" = "$expected"
+          candidate_expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" | sort)"
+          candidate_actual="$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)"
+          test "$candidate_actual" = "$candidate_expected"
+
+          derivative_expected="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          derivative_actual="$(git diff --name-only "$CANDIDATE_HEAD" "$MATRIX_DERIVATIVE_HEAD" | sort)"
+          test "$derivative_actual" = "$derivative_expected"
+
+          reconciliation_actual="$(git diff --name-only "$MATRIX_DERIVATIVE_HEAD" HEAD | sort)"
+          test "$reconciliation_actual" = "$WORKFLOW"
+
+          final_expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          final_actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$final_actual" = "$final_expected"
 
           git diff --check "$PREDECESSOR_HEAD" HEAD
 
