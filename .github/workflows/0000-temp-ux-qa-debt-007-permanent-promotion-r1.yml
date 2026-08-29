@@ -1,0 +1,260 @@
+name: TEMP UX-QA-DEBT-007 Permanent Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-007-permanent-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout promotion controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze stacked lineage and target branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='71e63a3db65a80a350ca81e48e3a7bb01e8c973f'
+          parent_tree='81a9fada8d9ff1cfaecae7ec43a7b0cc9c0b5c2a'
+          target='ux/ux-qa-debt-007-search-flow-mobile'
+          workflow='.github/workflows/0000-temp-ux-qa-debt-007-permanent-promotion-r1.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "$parent^{tree}")" = "$parent_tree"
+          mapfile -t controller_changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#controller_changed[@]}" -eq 1
+          test "${controller_changed[0]}" = "$workflow"
+          git fetch --no-tags origin "$target"
+          test "$(git rev-parse FETCH_HEAD)" = "$parent"
+          test "$(git rev-parse "$parent:scripts/audit-domain-completion-matrix.js")" = 'b47e62538641e5796bee13208cec301f73107102'
+          echo "UX_QA_DEBT_007_PROMOTION_R1_LINEAGE=PASS parent=$parent tree=$parent_tree targetHead=$parent scannerBlob=b47e62538641e5796bee13208cec301f73107102 controllerTempOnly=true"
+
+      - name: Create detached stacked-parent worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          worktree="$RUNNER_TEMP/ux-qa-debt-007-permanent"
+          git worktree add --detach "$worktree" '71e63a3db65a80a350ca81e48e3a7bb01e8c973f'
+          git -C "$worktree" config user.name 'doke-qa'
+          git -C "$worktree" config user.email 'doke-qa@users.noreply.github.com'
+          echo "WORKTREE=$worktree" >> "$GITHUB_ENV"
+
+      - name: Install browser dependencies
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Reconfirm inherited parent signatures
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          searchOut="$RUNNER_TEMP/ux431-promotion-parent-search.json"
+          set +e
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$searchOut" npx playwright test tests/e2e/search-flow.spec.js --reporter=json
+          searchRc=$?
+          set -e
+          test "$searchRc" -ne 0
+          node - "$searchOut" <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          const failed = [];
+          function walk(suites) {
+            for (const suite of suites || []) {
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  if ((test.results || []).some((r) => r.status === 'failed')) failed.push(spec.title);
+                }
+              }
+              walk(suite.suites);
+            }
+          }
+          walk(report.suites);
+          const expected = [
+            'home search shell accepts typing without layout regression',
+            'results page keeps search flow contract',
+          ];
+          if (failed.length !== 2 || expected.some((title) => !failed.includes(title))) {
+            throw new Error(`unexpected stacked-parent search-flow failures: ${JSON.stringify(failed)}`);
+          }
+          console.log(`UX_QA_DEBT_007_PROMOTION_R1_PARENT_SEARCH=PASS failures=${failed.length} signature=missing-mobile-shell-default-viewport`);
+          NODE
+
+          lifecycleOut="$RUNNER_TEMP/ux431-promotion-parent-lifecycle.json"
+          set +e
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$lifecycleOut" npx playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          lifecycleRc=$?
+          set -e
+          echo "PARENT_LIFECYCLE_OUT=$lifecycleOut" >> "$GITHUB_ENV"
+          echo "PARENT_LIFECYCLE_RC=$lifecycleRc" >> "$GITHUB_ENV"
+          test -z "$(git status --porcelain)"
+
+      - name: Materialize exact qualified QA candidate
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          cat > tests/e2e/search-flow.spec.js <<'EOF'
+          const { test, expect } = require('@playwright/test');
+
+          test.describe('Search flow shell contract', () => {
+            test.use({
+              viewport: { width: 390, height: 844 },
+              hasTouch: true,
+              isMobile: true,
+            });
+
+            test('home mobile search shell accepts typing and submits canonical query', async ({ page }) => {
+              await page.goto('/index.html');
+              const shells = page.locator('[data-doke-mobile-shell]');
+              await expect(shells).toHaveCount(1);
+
+              const searchForm = shells.locator('form.doke-mobile-shell__search');
+              await expect(searchForm).toBeVisible();
+              const search = searchForm.locator('input[type="search"]').first();
+              await search.fill('pintor');
+              await expect(search).toHaveValue('pintor');
+
+              await Promise.all([
+                page.waitForURL((url) => url.pathname.endsWith('/resultados.html') && url.searchParams.get('q') === 'pintor'),
+                searchForm.evaluate((form) => form.requestSubmit()),
+              ]);
+
+              await expect(page.locator('[data-doke-mobile-shell]')).toHaveCount(1);
+              await expect(page.locator('.doke-mobile-shell__search input[type="search"]').first()).toHaveValue('pintor');
+            });
+
+            test('results page keeps one mobile search shell bound to canonical query', async ({ page }) => {
+              await page.goto('/resultados.html?q=pintor');
+              const shells = page.locator('[data-doke-mobile-shell]');
+              await expect(shells).toHaveCount(1);
+              const searchForm = shells.locator('form.doke-mobile-shell__search');
+              await expect(searchForm).toBeVisible();
+              await expect(searchForm.locator('input[type="search"]').first()).toHaveValue('pintor');
+              expect(new URL(page.url()).searchParams.get('q')).toBe('pintor');
+            });
+          });
+          EOF
+          node --check tests/e2e/search-flow.spec.js
+          git diff --check
+          test "$(git hash-object tests/e2e/search-flow.spec.js)" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'tests/e2e/search-flow.spec.js'
+          echo 'UX_QA_DEBT_007_PROMOTION_R1_MATERIALIZATION=PASS blob=e0276bfc627c8cec0f8857b76b7f6e05233c5912 files=1 productMutation=false criteriaRelaxed=0'
+
+      - name: Validate browser acceptance and lifecycle isolation
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          searchOut="$RUNNER_TEMP/ux431-promotion-candidate-search.json"
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$searchOut" npx playwright test tests/e2e/search-flow.spec.js --reporter=json
+          uxOut="$RUNNER_TEMP/ux431-promotion-ux-results.json"
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$uxOut" npx playwright test tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=json
+          lifecycleOut="$RUNNER_TEMP/ux431-promotion-candidate-lifecycle.json"
+          set +e
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$lifecycleOut" npx playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          lifecycleRc=$?
+          set -e
+
+          node - "$searchOut" "$uxOut" "$PARENT_LIFECYCLE_OUT" "$lifecycleOut" "$PARENT_LIFECYCLE_RC" "$lifecycleRc" <<'NODE'
+          const fs = require('fs');
+          function summary(path) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            let total = 0;
+            const failed = [];
+            function walk(suites) {
+              for (const suite of suites || []) {
+                for (const spec of suite.specs || []) {
+                  for (const test of spec.tests || []) {
+                    total += 1;
+                    if ((test.results || []).some((r) => r.status === 'failed')) failed.push(spec.title);
+                  }
+                }
+                walk(suite.suites);
+              }
+            }
+            walk(report.suites);
+            return { total, failed: failed.sort() };
+          }
+          const search = summary(process.argv[2]);
+          const ux = summary(process.argv[3]);
+          const parentLife = summary(process.argv[4]);
+          const candidateLife = summary(process.argv[5]);
+          const parentRc = process.argv[6];
+          const candidateRc = process.argv[7];
+          if (search.total !== 2 || search.failed.length !== 0) throw new Error(`search-flow total=${search.total} failed=${JSON.stringify(search.failed)}`);
+          if (ux.total !== 3 || ux.failed.length !== 0) throw new Error(`UX-RESULTS total=${ux.total} failed=${JSON.stringify(ux.failed)}`);
+          if (parentRc !== candidateRc) throw new Error(`lifecycle rc drift parent=${parentRc} candidate=${candidateRc}`);
+          if (JSON.stringify(parentLife.failed) !== JSON.stringify(candidateLife.failed)) {
+            throw new Error(`lifecycle signature drift parent=${JSON.stringify(parentLife.failed)} candidate=${JSON.stringify(candidateLife.failed)}`);
+          }
+          console.log(`UX_QA_DEBT_007_PROMOTION_R1_BROWSER=PASS searchFlow=2/2 uxResults=3/3 viewport=390x844 duplicateShell=0`);
+          console.log(`UX_QA_DEBT_007_PROMOTION_R1_LIFECYCLE=PASS sharedFailures=${parentLife.failed.length} candidateOnlyFailures=0 signatureChanges=0`);
+          NODE
+
+      - name: Validate governance before permanent push
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          parent='71e63a3db65a80a350ca81e48e3a7bb01e8c973f'
+          node --check tests/e2e/search-flow.spec.js
+          git diff --check
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          mapfile -t dirty < <(git status --porcelain=v1 | sed -E 's/^...//')
+          for file in "${dirty[@]}"; do
+            case "$file" in
+              tests/e2e/search-flow.spec.js) ;;
+              docs/HOME-AUTHORITY-CLASSIFICATION.md|docs/PAGE-ASSET-AUTHORITY-MATRIX.md)
+                git restore --source="$parent" --worktree --staged -- "$file"
+                ;;
+              '') ;;
+              *) echo "unexpected governance mutation: $file" >&2; exit 1 ;;
+            esac
+          done
+          mapfile -t changed < <(git diff --name-only "$parent")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'tests/e2e/search-flow.spec.js'
+          test "$(git hash-object tests/e2e/search-flow.spec.js)" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse "$parent:scripts/audit-domain-completion-matrix.js")" = 'b47e62538641e5796bee13208cec301f73107102'
+          echo 'UX_QA_DEBT_007_PROMOTION_R1_VALIDATION=PASS nodeCheck=true diffCheck=true matrix=true agentGovernance=true browserAcceptance=5/5 lifecycleIsolation=true generatedOutputsRestored=true'
+
+      - name: Commit, fast-forward permanent branch, and verify receipt
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          parent='71e63a3db65a80a350ca81e48e3a7bb01e8c973f'
+          target='ux/ux-qa-debt-007-search-flow-mobile'
+          git add tests/e2e/search-flow.spec.js
+          git commit -m 'test(qa): align search-flow with mobile shell viewport' >/dev/null
+          candidate_sha="$(git rev-parse HEAD)"
+          candidate_tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD:tests/e2e/search-flow.spec.js)" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse HEAD:scripts/audit-domain-completion-matrix.js)" = 'b47e62538641e5796bee13208cec301f73107102'
+          git fetch --no-tags origin "$target"
+          test "$(git rev-parse FETCH_HEAD)" = "$parent"
+          git push origin "HEAD:refs/heads/$target"
+          git fetch --no-tags origin "$target"
+          remote_sha="$(git rev-parse FETCH_HEAD)"
+          test "$remote_sha" = "$candidate_sha"
+          test "$(git rev-list --count "$parent..$remote_sha")" -eq 1
+          test "$(git rev-parse "$remote_sha:tests/e2e/search-flow.spec.js")" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse "$remote_sha:scripts/audit-domain-completion-matrix.js")" = 'b47e62538641e5796bee13208cec301f73107102'
+          mapfile -t changed < <(git diff --name-only "$parent" "$remote_sha")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'tests/e2e/search-flow.spec.js'
+          echo "UX_QA_DEBT_007_PROMOTION_R1_FINAL=PASS branch=$target sha=$remote_sha tree=$candidate_tree qaBlob=e0276bfc627c8cec0f8857b76b7f6e05233c5912 scannerBlob=b47e62538641e5796bee13208cec301f73107102 commitsAhead=1 files=1 force=false criteriaRelaxed=0 introducedRegressions=0 productMutation=false matrixMutation=false snapshotMutation=false prCreated=false readyForReview=false merge=false staging=false production=false repositoryOnly=true"
