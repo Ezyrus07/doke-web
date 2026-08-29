@@ -1,0 +1,210 @@
+name: TEMP UX-QA-DEBT-006 Matrix Signal Isolation R2d
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-006-matrix-signal-isolation-r2d
+
+permissions:
+  contents: read
+
+jobs:
+  isolate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          tree='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          workflow='.github/workflows/0000-temp-ux-qa-debt-006-matrix-signal-isolation-r2d.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "$parent^{tree}")" = "$tree"
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$workflow"
+          echo "UX_QA_DEBT_006_R2D_LINEAGE=PASS parent=$parent tree=$tree"
+
+      - name: Create four isolated parent worktrees and freeze source refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          for name in parent qa007 state qa006; do
+            path="$RUNNER_TEMP/r2d-$name"
+            git worktree add --detach "$path" "$parent"
+            echo "${name^^}_PATH=$path" >> "$GITHUB_ENV"
+          done
+          git fetch --no-tags origin diag/ux-qa-debt-006-results-lifecycle-candidate-r1d:refs/remotes/origin/qa006-r1d
+          git fetch --no-tags origin diag/ux-qa-debt-007-search-flow-mobile-r1:refs/remotes/origin/qa007-r1
+          test "$(git rev-parse refs/remotes/origin/qa006-r1d)" = '0c232c375c27e9ab2e8a48a759b390ea3308309b'
+          test "$(git rev-parse refs/remotes/origin/qa007-r1)" = '553ad212f6204294fe17b0563d7194792cfeaa45'
+          echo 'UX_QA_DEBT_006_R2D_WORKTREES=PASS isolated=4'
+
+      - name: Materialize exact isolated candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import os, subprocess, textwrap
+
+          root = Path(os.environ['GITHUB_WORKSPACE'])
+          qa006 = Path(os.environ['QA006_PATH'])
+          qa007 = Path(os.environ['QA007_PATH'])
+          state = Path(os.environ['STATE_PATH'])
+
+          def out(args, cwd):
+              return subprocess.check_output(args, cwd=cwd, text=True).strip()
+          def run(args, cwd):
+              subprocess.run(args, cwd=cwd, check=True, stdout=subprocess.DEVNULL)
+          def stage(wt, rel):
+              run(['git','add','--',rel], wt)
+              return out(['git','rev-parse',f':{rel}'], wt)
+          def show(ref, rel):
+              return subprocess.check_output(['git','show',f'{ref}:{rel}'], cwd=root).decode('utf-8')
+
+          # QA007 exact qualified blob.
+          y = show('refs/remotes/origin/qa007-r1', '.github/workflows/0000-temp-ux-qa-debt-007-search-flow-mobile-r1.yml')
+          marker = "cat > tests/e2e/search-flow.spec.js <<'EOF'\n"
+          start = y.index(marker) + len(marker)
+          end = y.index("\n          EOF", start)
+          body = textwrap.dedent(y[start:end]) + '\n'
+          (qa007/'tests/e2e/search-flow.spec.js').write_text(body, encoding='utf-8', newline='\n')
+          blob = stage(qa007, 'tests/e2e/search-flow.spec.js')
+          if blob != 'e0276bfc627c8cec0f8857b76b7f6e05233c5912':
+              raise SystemExit(f'QA007 blob drift {blob}')
+
+          # STATE exact qualified blob.
+          p = state/'assets/js/state/state-contracts.js'
+          src = p.read_text(encoding='utf-8')
+          old_apply = "    syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"
+          new_apply = "    if (options.preserveRegion !== true) syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"
+          old_boot = "      applyBoundaryState(boundary, initialState, { announce: false });"
+          new_boot = "      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });"
+          if src.count(old_apply) != 1 or src.count(old_boot) != 1:
+              raise SystemExit('STATE anchors drifted')
+          p.write_text(src.replace(old_apply,new_apply).replace(old_boot,new_boot), encoding='utf-8', newline='\n')
+          blob = stage(state, 'assets/js/state/state-contracts.js')
+          if blob != '456e01e5fede548c276a5d4d7088a39175a3ae2a':
+              raise SystemExit(f'STATE blob drift {blob}')
+
+          # QA006 exact qualified blob.
+          y = show('refs/remotes/origin/qa006-r1d', '.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1d.yml')
+          marker = "@'\n          const { test, expect } = require('@playwright/test');"
+          start = y.index(marker) + len("@'\n")
+          end = y.index("\n          '@ | Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js'", start)
+          body = textwrap.dedent(y[start:end]).replace('\r\n','\n').replace('\r','\n')
+          target = 'f99c8a622abacf6360680dbf5864e0b1c2ef2484'
+          matched = False
+          for trailing in (False, True):
+              text = body + ('\n' if trailing and not body.endswith('\n') else '')
+              for ending in ('\n','\r\n'):
+                  raw = text.replace('\n', ending).encode('utf-8')
+                  for candidate in (raw, b'\xef\xbb\xbf' + raw):
+                      path = qa006/'tests/e2e/results-entry-lifecycle.spec.js'
+                      path.write_bytes(candidate)
+                      blob = stage(qa006, 'tests/e2e/results-entry-lifecycle.spec.js')
+                      if blob == target:
+                          matched = True
+                          break
+                      run(['git','reset','HEAD','--','tests/e2e/results-entry-lifecycle.spec.js'], qa006)
+                  if matched: break
+              if matched: break
+          if not matched:
+              raise SystemExit('QA006 qualified blob not reproducible')
+
+          print('UX_QA_DEBT_006_R2D_BLOBS=PASS qa007=e0276bfc627c8cec0f8857b76b7f6e05233c5912 state=456e01e5fede548c276a5d4d7088a39175a3ae2a qa006=f99c8a622abacf6360680dbf5864e0b1c2ef2484')
+          PY
+
+      - name: Generate Matrix reports independently and isolate signal owner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json, os, subprocess
+
+          cases = {
+              'parent': Path(os.environ['PARENT_PATH']),
+              'qa007': Path(os.environ['QA007_PATH']),
+              'state': Path(os.environ['STATE_PATH']),
+              'qa006': Path(os.environ['QA006_PATH']),
+          }
+          rows = {}
+          target_file = 'tests/e2e/results-entry-lifecycle.spec.js'
+          for name, wt in cases.items():
+              subprocess.run(['node','scripts/audit-domain-completion-matrix.js','--write'], cwd=wt, check=True, stdout=subprocess.DEVNULL)
+              report = json.loads((wt/'reports/generated/domain-completion-matrix-report.json').read_text(encoding='utf-8'))
+              domains = {d['id']: d for d in report['domains']}
+              row = {}
+              for domain_id in ('WEB-001','APP-001'):
+                  d = domains[domain_id]
+                  files = {item['file']: item['count'] for item in d['signalFiles']['network']}
+                  row[domain_id] = {
+                      'network': d['signals']['network'],
+                      'targetCount': files.get(target_file, 0),
+                  }
+              rows[name] = row
+              print(f"R2D_CASE={name} WEB_NETWORK={row['WEB-001']['network']} WEB_TARGET={row['WEB-001']['targetCount']} APP_NETWORK={row['APP-001']['network']} APP_TARGET={row['APP-001']['targetCount']}")
+
+          expected = {
+              'parent': (280,0,677,0),
+              'qa007': (280,0,677,0),
+              'state': (280,0,677,0),
+              'qa006': (282,2,679,2),
+          }
+          for name, values in expected.items():
+              actual = (
+                  rows[name]['WEB-001']['network'], rows[name]['WEB-001']['targetCount'],
+                  rows[name]['APP-001']['network'], rows[name]['APP-001']['targetCount'],
+              )
+              if actual != values:
+                  raise SystemExit(f'isolation mismatch {name}: expected={values} actual={actual}')
+          print('UX_QA_DEBT_006_R2D_ISOLATION=PASS soleOwner=tests/e2e/results-entry-lifecycle.spec.js addedNetworkLexemes=2 webDelta=2 appDelta=2 qa007Delta=0 stateDelta=0')
+          PY
+
+      - name: Prove lexical source of the two false network signals
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$QA006_PATH"
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('tests/e2e/results-entry-lifecycle.spec.js')
+          text=p.read_text(encoding='utf-8-sig')
+          route_fetch=len(re.findall(r'\broute\.fetch\s*\(', text))
+          generic_fetch=len(re.findall(r'\bfetch\s*\(', text))
+          global_fetch=len(re.findall(r'(?<!\.)\bfetch\s*\(', text))
+          if (route_fetch,generic_fetch,global_fetch)!=(2,2,0):
+              raise SystemExit(f'lexeme classification drift route={route_fetch} generic={generic_fetch} global={global_fetch}')
+          print('UX_QA_DEBT_006_R2D_LEXEME=PASS routeFetch=2 genericScannerMatches=2 globalFetch=0 productNetworkAuthorityAdded=false')
+          PY
+
+      - name: Restore all worktrees and final safety receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          for var in PARENT_PATH QA007_PATH STATE_PATH QA006_PATH; do
+            path="${!var:-}"
+            if [ -n "$path" ] && [ -d "$path" ]; then
+              git -C "$path" reset --hard "$parent" >/dev/null
+              git -C "$path" clean -fd >/dev/null
+              test -z "$(git -C "$path" status --porcelain)"
+            fi
+          done
+          cd "$GITHUB_WORKSPACE"
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = '.github/workflows/0000-temp-ux-qa-debt-006-matrix-signal-isolation-r2d.yml'
+          echo 'UX_QA_DEBT_006_R2D_SAFETY=PASS remoteProductMutation=false matrixMutationPersisted=false snapshotMutation=false prCreated=false merge=false repositoryOnly=true'
