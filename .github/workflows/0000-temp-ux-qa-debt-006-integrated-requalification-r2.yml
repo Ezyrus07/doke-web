@@ -1,0 +1,396 @@
+name: TEMP UX-QA-DEBT-006 Integrated Requalification R2
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-006-integrated-requalification-r2
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    timeout-minutes: 50
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-ux-qa-debt-006-integrated-requalification-r2.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'parent tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "UX_QA_DEBT_006_INT_R2_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Create frozen QA baseline and integrated worktrees
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $baseline = Join-Path $env:RUNNER_TEMP 'qa006-int-r2-baseline'
+          $integrated = Join-Path $env:RUNNER_TEMP 'qa006-int-r2-integrated'
+          git worktree add --detach $baseline $parent
+          git worktree add --detach $integrated $parent
+          foreach ($path in @($baseline, $integrated)) {
+            Set-Location $path
+            git config user.name 'doke-diagnostic'
+            git config user.email 'doke-diagnostic@users.noreply.github.com'
+          }
+          Set-Location $env:GITHUB_WORKSPACE
+          git fetch --no-tags origin diag/ux-qa-debt-006-results-lifecycle-candidate-r1d:refs/remotes/origin/qa006-r1d
+          if ($LASTEXITCODE -ne 0) { throw 'fetch QA006 R1d failed' }
+          git fetch --no-tags origin diag/ux-qa-debt-007-search-flow-mobile-r1:refs/remotes/origin/qa007-r1
+          if ($LASTEXITCODE -ne 0) { throw 'fetch QA007 R1 failed' }
+          if ((git rev-parse refs/remotes/origin/qa006-r1d).Trim() -ne '0c232c375c27e9ab2e8a48a759b390ea3308309b') { throw 'QA006 R1d source ref drift' }
+          if ((git rev-parse refs/remotes/origin/qa007-r1).Trim() -ne '553ad212f6204294fe17b0563d7194792cfeaa45') { throw 'QA007 R1 source ref drift' }
+          "QA_BASELINE_PATH=$baseline" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INTEGRATED_PATH=$integrated" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host 'UX_QA_DEBT_006_INT_R2_WORKTREES=PASS sourcesFrozen=true baselineProductFix=false integratedProductFixPending=true'
+
+      - name: Materialize exact qualified cross-issue candidates
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:QA_BASELINE_PATH = $env:QA_BASELINE_PATH
+          $env:INTEGRATED_PATH = $env:INTEGRATED_PATH
+          Set-Location $env:GITHUB_WORKSPACE
+          @'
+          from pathlib import Path
+          import os, subprocess, textwrap
+
+          root = Path(os.environ['GITHUB_WORKSPACE'])
+          baseline = Path(os.environ['QA_BASELINE_PATH'])
+          integrated = Path(os.environ['INTEGRATED_PATH'])
+          parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          qa006_target_blob = 'f99c8a622abacf6360680dbf5864e0b1c2ef2484'
+          gov_target_blob = 'd90cbb445f6bcf3a19382d6a86c136be77c69131'
+          state_target_blob = '456e01e5fede548c276a5d4d7088a39175a3ae2a'
+
+          def run(args, cwd, capture=False):
+              if capture:
+                  return subprocess.check_output(args, cwd=cwd, text=True).strip()
+              subprocess.run(args, cwd=cwd, check=True, stdout=subprocess.DEVNULL)
+
+          def show(ref, path):
+              return subprocess.check_output(['git', 'show', f'{ref}:{path}'], cwd=root).decode('utf-8')
+
+          def stage_blob(worktree, rel):
+              run(['git', 'add', '--', rel], worktree)
+              return run(['git', 'rev-parse', f':{rel}'], worktree, True)
+
+          def write_matching_blob(worktree, rel, body, target):
+              normalized = body.replace('\r\n', '\n').replace('\r', '\n')
+              variants = []
+              for trailing in (False, True):
+                  text = normalized + ('\n' if trailing and not normalized.endswith('\n') else '')
+                  for ending in ('\n', '\r\n'):
+                      candidate = text.replace('\n', ending).encode('utf-8')
+                      variants.extend([candidate, b'\xef\xbb\xbf' + candidate])
+              seen = set()
+              for data in variants:
+                  if data in seen:
+                      continue
+                  seen.add(data)
+                  path = worktree / rel
+                  path.parent.mkdir(parents=True, exist_ok=True)
+                  path.write_bytes(data)
+                  blob = stage_blob(worktree, rel)
+                  if blob == target:
+                      return data
+                  run(['git', 'reset', 'HEAD', '--', rel], worktree)
+              raise SystemExit(f'could not reproduce qualified blob for {rel}; target={target}')
+
+          qa006_yaml = show('refs/remotes/origin/qa006-r1d', '.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1d.yml')
+          marker = "@'\n          const { test, expect } = require('@playwright/test');"
+          idx = qa006_yaml.index(marker)
+          start = idx + len("@'\n")
+          end_marker = "\n          '@ | Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js'"
+          end = qa006_yaml.index(end_marker, start)
+          qa006_body = textwrap.dedent(qa006_yaml[start:end])
+          qa006_bytes = write_matching_blob(baseline, 'tests/e2e/results-entry-lifecycle.spec.js', qa006_body, qa006_target_blob)
+          (integrated / 'tests/e2e/results-entry-lifecycle.spec.js').write_bytes(qa006_bytes)
+          if stage_blob(integrated, 'tests/e2e/results-entry-lifecycle.spec.js') != qa006_target_blob:
+              raise SystemExit('integrated QA006 blob mismatch')
+
+          qa007_yaml = show('refs/remotes/origin/qa007-r1', '.github/workflows/0000-temp-ux-qa-debt-007-search-flow-mobile-r1.yml')
+          q7_marker = "cat > tests/e2e/search-flow.spec.js <<'EOF'\n"
+          q7_start = qa007_yaml.index(q7_marker) + len(q7_marker)
+          q7_end = qa007_yaml.index("\n          EOF", q7_start)
+          qa007_body = textwrap.dedent(qa007_yaml[q7_start:q7_end]) + '\n'
+          qa007_bytes = qa007_body.encode('utf-8')
+          for worktree in (baseline, integrated):
+              (worktree / 'tests/e2e/search-flow.spec.js').write_bytes(qa007_bytes)
+              stage_blob(worktree, 'tests/e2e/search-flow.spec.js')
+          qa007_blob = run(['git', 'rev-parse', ':tests/e2e/search-flow.spec.js'], baseline, True)
+          if run(['git', 'rev-parse', ':tests/e2e/search-flow.spec.js'], integrated, True) != qa007_blob:
+              raise SystemExit('QA007 blob differs between worktrees')
+
+          def apply_gov(worktree):
+              path = worktree / 'scripts/audit-domain-completion-matrix.js'
+              source = path.read_text(encoding='utf-8')
+              anchor = "const WRITE = process.argv.includes('--write');\n"
+              comparison = "if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');"
+              if source.count(anchor) != 1 or source.count(comparison) != 1:
+                  raise SystemExit('GOV candidate anchors drifted')
+              source = source.replace(anchor, anchor + "const normalizeLineEndings = (value) => String(value ?? '').replace(/\\r\\n?/g, '\\n');\n")
+              source = source.replace(comparison, "if (!fs.existsSync(DOC_PATH) || normalizeLineEndings(fs.readFileSync(DOC_PATH, 'utf8')) !== normalizeLineEndings(markdown)) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');")
+              path.write_text(source, encoding='utf-8', newline='\n')
+              blob = stage_blob(worktree, 'scripts/audit-domain-completion-matrix.js')
+              if blob != gov_target_blob:
+                  raise SystemExit(f'GOV candidate blob drift: {blob}')
+
+          apply_gov(baseline)
+          apply_gov(integrated)
+
+          def apply_state(worktree):
+              path = worktree / 'assets/js/state/state-contracts.js'
+              source = path.read_text(encoding='utf-8')
+              old_apply = "    syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"
+              new_apply = "    if (options.preserveRegion !== true) syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"
+              old_boot = "      applyBoundaryState(boundary, initialState, { announce: false });"
+              new_boot = "      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });"
+              if source.count(old_apply) != 1 or source.count(old_boot) != 1:
+                  raise SystemExit('STATE candidate anchors drifted')
+              path.write_text(source.replace(old_apply, new_apply).replace(old_boot, new_boot), encoding='utf-8', newline='\n')
+              blob = stage_blob(worktree, 'assets/js/state/state-contracts.js')
+              if blob != state_target_blob:
+                  raise SystemExit(f'STATE candidate blob drift: {blob}')
+
+          apply_state(integrated)
+
+          expected_baseline = {
+              'tests/e2e/results-entry-lifecycle.spec.js',
+              'tests/e2e/search-flow.spec.js',
+              'scripts/audit-domain-completion-matrix.js',
+          }
+          expected_integrated = expected_baseline | {'assets/js/state/state-contracts.js'}
+
+          def commit_candidate(worktree, expected, message):
+              changed = set(subprocess.check_output(['git', 'diff', '--cached', '--name-only'], cwd=worktree, text=True).splitlines())
+              if changed != expected:
+                  raise SystemExit(f'scope drift in {worktree}: {sorted(changed)}')
+              subprocess.run(['git', 'commit', '-m', message], cwd=worktree, check=True, stdout=subprocess.DEVNULL)
+              sha = run(['git', 'rev-parse', 'HEAD'], worktree, True)
+              tree = run(['git', 'rev-parse', 'HEAD^{tree}'], worktree, True)
+              if subprocess.check_output(['git', 'status', '--porcelain'], cwd=worktree, text=True).strip():
+                  raise SystemExit(f'dirty after commit: {worktree}')
+              return sha, tree
+
+          baseline_sha, baseline_tree = commit_candidate(baseline, expected_baseline, 'test(qa): assemble corrected QA baseline')
+          integrated_sha, integrated_tree = commit_candidate(integrated, expected_integrated, 'test(qa): integrate qualified Resultados diagnostics')
+
+          values = {
+              'QA_BASELINE_SHA': baseline_sha,
+              'QA_BASELINE_TREE': baseline_tree,
+              'INTEGRATED_SHA': integrated_sha,
+              'INTEGRATED_TREE': integrated_tree,
+              'QA006_BLOB': qa006_target_blob,
+              'QA007_BLOB': qa007_blob,
+              'GOV_BLOB': gov_target_blob,
+              'STATE_BLOB': state_target_blob,
+          }
+          env_file = Path(os.environ['GITHUB_ENV'])
+          with env_file.open('a', encoding='utf-8') as f:
+              for key, value in values.items():
+                  f.write(f'{key}={value}\n')
+          print('UX_QA_DEBT_006_INT_R2_MATERIALIZATION=PASS '
+                f'baselineFiles=3 integratedFiles=4 qa006Blob={qa006_target_blob} '
+                f'qa007Blob={qa007_blob} govBlob={gov_target_blob} stateBlob={state_target_blob}')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "candidate materialization rc=$LASTEXITCODE" }
+
+      - name: Validate candidate scope and syntax before browser
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          Set-Location $env:QA_BASELINE_PATH
+          $baselineFiles = @(git diff --name-only $parent $env:QA_BASELINE_SHA)
+          $expectedBaseline = @('scripts/audit-domain-completion-matrix.js','tests/e2e/results-entry-lifecycle.spec.js','tests/e2e/search-flow.spec.js')
+          if (($baselineFiles -join '|') -ne ($expectedBaseline -join '|')) { throw "baseline scope drift: $($baselineFiles -join ', ')" }
+          node --check tests/e2e/results-entry-lifecycle.spec.js
+          if ($LASTEXITCODE -ne 0) { throw 'baseline lifecycle syntax failed' }
+          node --check tests/e2e/search-flow.spec.js
+          if ($LASTEXITCODE -ne 0) { throw 'baseline search-flow syntax failed' }
+          node --check scripts/audit-domain-completion-matrix.js
+          if ($LASTEXITCODE -ne 0) { throw 'baseline gov syntax failed' }
+          git diff --check $parent $env:QA_BASELINE_SHA
+          if ($LASTEXITCODE -ne 0) { throw 'baseline diff check failed' }
+
+          Set-Location $env:INTEGRATED_PATH
+          $integratedFiles = @(git diff --name-only $parent $env:INTEGRATED_SHA)
+          $expectedIntegrated = @('assets/js/state/state-contracts.js','scripts/audit-domain-completion-matrix.js','tests/e2e/results-entry-lifecycle.spec.js','tests/e2e/search-flow.spec.js')
+          if (($integratedFiles -join '|') -ne ($expectedIntegrated -join '|')) { throw "integrated scope drift: $($integratedFiles -join ', ')" }
+          foreach ($file in $expectedIntegrated) {
+            node --check $file
+            if ($LASTEXITCODE -ne 0) { throw "integrated syntax failed: $file" }
+          }
+          git diff --check $parent $env:INTEGRATED_SHA
+          if ($LASTEXITCODE -ne 0) { throw 'integrated diff check failed' }
+          Write-Host "UX_QA_DEBT_006_INT_R2_SCOPE=PASS baselineFiles=3 integratedFiles=4 productFiles=1 qaFiles=2 governanceFiles=1 criteriaRelaxed=0"
+
+      - name: Install dependencies and Chromium
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:QA_BASELINE_PATH
+          & npm.cmd ci
+          if ($LASTEXITCODE -ne 0) { throw "baseline npm ci rc=$LASTEXITCODE" }
+          Set-Location $env:INTEGRATED_PATH
+          & npm.cmd ci
+          if ($LASTEXITCODE -ne 0) { throw "integrated npm ci rc=$LASTEXITCODE" }
+          & npx.cmd playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw "playwright install rc=$LASTEXITCODE" }
+
+      - name: QA baseline must reproduce only the proven renderer blocker
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:QA_BASELINE_PATH
+          $out = Join-Path $env:RUNNER_TEMP 'qa006-int-r2-baseline-lifecycle.json'
+          $env:PLAYWRIGHT_JSON_OUTPUT_FILE = $out
+          & npx.cmd playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          $rc = $LASTEXITCODE
+          if ($rc -eq 0) { throw 'QA baseline unexpectedly green; #429 negative proof lost' }
+          $global:LASTEXITCODE = 0
+          @'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          let total = 0;
+          const failed = [];
+          function walk(suites) {
+            for (const suite of suites || []) {
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  total += 1;
+                  if ((test.results || []).some((r) => r.status === 'failed')) failed.push(spec.title);
+                }
+              }
+              walk(suite.suites);
+            }
+          }
+          walk(report.suites);
+          if (total !== 5) throw new Error(`baseline total drift ${total}`);
+          if (failed.length !== 1 || failed[0] !== 'renderer failure publishes one recoverable error surface') {
+            throw new Error(`baseline failure signature drift ${JSON.stringify(failed)}`);
+          }
+          console.log(`UX_QA_DEBT_006_INT_R2_BASELINE=PASS total=${total} passed=4 failed=1 failure=renderer-recoverable-error`);
+          '@ | node - $out
+          if ($LASTEXITCODE -ne 0) { throw "baseline receipt parser rc=$LASTEXITCODE" }
+
+      - name: Integrated state owner fix must close lifecycle 5 of 5
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:INTEGRATED_PATH
+          $out = Join-Path $env:RUNNER_TEMP 'qa006-int-r2-integrated-lifecycle.json'
+          $env:PLAYWRIGHT_JSON_OUTPUT_FILE = $out
+          & npx.cmd playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          if ($LASTEXITCODE -ne 0) { throw "integrated lifecycle rc=$LASTEXITCODE" }
+          @'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          let total = 0, failed = 0;
+          function walk(suites) {
+            for (const suite of suites || []) {
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  total += 1;
+                  if ((test.results || []).some((r) => r.status === 'failed')) failed += 1;
+                }
+              }
+              walk(suite.suites);
+            }
+          }
+          walk(report.suites);
+          if (total !== 5 || failed !== 0) throw new Error(`integrated lifecycle total=${total} failed=${failed}`);
+          console.log(`UX_QA_DEBT_006_INT_R2_LIFECYCLE=PASS total=${total} passed=5 failed=0 baselineDelta=one-owner-fix`);
+          '@ | node - $out
+          if ($LASTEXITCODE -ne 0) { throw "integrated receipt parser rc=$LASTEXITCODE" }
+
+      - name: Search-flow and UX-RESULTS acceptance stay green on both sides
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($entry in @(
+            @{ Name = 'baseline'; Path = $env:QA_BASELINE_PATH },
+            @{ Name = 'integrated'; Path = $env:INTEGRATED_PATH }
+          )) {
+            Set-Location $entry.Path
+            $out = Join-Path $env:RUNNER_TEMP "qa006-int-r2-$($entry.Name)-acceptance.json"
+            $env:PLAYWRIGHT_JSON_OUTPUT_FILE = $out
+            & npx.cmd playwright test tests/e2e/search-flow.spec.js tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=json
+            if ($LASTEXITCODE -ne 0) { throw "$($entry.Name) acceptance rc=$LASTEXITCODE" }
+            $env:RECEIPT_NAME = $entry.Name
+            @'
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+            let total = 0, failed = 0;
+            function walk(suites) {
+              for (const suite of suites || []) {
+                for (const spec of suite.specs || []) {
+                  for (const test of spec.tests || []) {
+                    total += 1;
+                    if ((test.results || []).some((r) => r.status === 'failed')) failed += 1;
+                  }
+                }
+                walk(suite.suites);
+              }
+            }
+            walk(report.suites);
+            if (total !== 5 || failed !== 0) throw new Error(`acceptance total=${total} failed=${failed}`);
+            console.log(`UX_QA_DEBT_006_INT_R2_ACCEPTANCE=PASS side=${process.env.RECEIPT_NAME} total=${total} failed=0 searchFlow=2/2 uxResults=3/3`);
+            '@ | node - $out
+            if ($LASTEXITCODE -ne 0) { throw "$($entry.Name) acceptance parser rc=$LASTEXITCODE" }
+          }
+
+      - name: Integrated global state and full governance must pass on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:INTEGRATED_PATH
+          & npm.cmd run audit:global-state-completion
+          if ($LASTEXITCODE -ne 0) { throw "global state completion rc=$LASTEXITCODE" }
+          & npm.cmd run audit:agent-governance
+          if ($LASTEXITCODE -ne 0) { throw "agent governance rc=$LASTEXITCODE" }
+
+          $dirty = @(git status --porcelain=v1 | ForEach-Object { $_.Substring(3) })
+          $allowedGenerated = @('docs/HOME-AUTHORITY-CLASSIFICATION.md','docs/PAGE-ASSET-AUTHORITY-MATRIX.md')
+          $unexpected = @($dirty | Where-Object { $_ -notin $allowedGenerated })
+          if ($unexpected.Count -ne 0) { throw "unexpected governance mutation: $($unexpected -join ', ')" }
+          if ($dirty.Count) {
+            git restore --source=$env:INTEGRATED_SHA --worktree --staged -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+            if ($LASTEXITCODE -ne 0) { throw 'generated authority-doc restore failed' }
+          }
+          if (git status --porcelain) { throw "integrated dirty after governance restore: $(git status --porcelain)" }
+          Write-Host "UX_QA_DEBT_006_INT_R2_GOVERNANCE=PASS globalState=true agentGovernance=true matrixWindows=true generatedOutputsRestored=true"
+
+      - name: Final integrated qualification and no-promotion safety receipt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          Set-Location $env:QA_BASELINE_PATH
+          if (git status --porcelain) { throw 'baseline worktree dirty at final receipt' }
+          Set-Location $env:INTEGRATED_PATH
+          if (git status --porcelain) { throw 'integrated worktree dirty at final receipt' }
+          $files = @(git diff --name-only $parent $env:INTEGRATED_SHA)
+          if ($files.Count -ne 4) { throw "integrated final scope count=$($files.Count)" }
+          if ((git rev-parse "$env:INTEGRATED_SHA:tests/e2e/results-entry-lifecycle.spec.js").Trim() -ne $env:QA006_BLOB) { throw 'QA006 final blob drift' }
+          if ((git rev-parse "$env:INTEGRATED_SHA:tests/e2e/search-flow.spec.js").Trim() -ne $env:QA007_BLOB) { throw 'QA007 final blob drift' }
+          if ((git rev-parse "$env:INTEGRATED_SHA:scripts/audit-domain-completion-matrix.js").Trim() -ne $env:GOV_BLOB) { throw 'GOV final blob drift' }
+          if ((git rev-parse "$env:INTEGRATED_SHA:assets/js/state/state-contracts.js").Trim() -ne $env:STATE_BLOB) { throw 'STATE final blob drift' }
+
+          Set-Location $env:GITHUB_WORKSPACE
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-ux-qa-debt-006-integrated-requalification-r2.yml') { throw 'remote TEMP scope changed' }
+          Write-Host "UX_QA_DEBT_006_INT_R2_FINAL=PASS parent=$parent baseline=$env:QA_BASELINE_SHA integrated=$env:INTEGRATED_SHA integratedTree=$env:INTEGRATED_TREE lifecycleBaseline=4/5 lifecycleIntegrated=5/5 searchFlow=2/2 uxResults=3/3 globalState=PASS agentGovernance=PASS productFiles=1 qaFiles=2 governanceFiles=1 criteriaRelaxed=0 introducedRegressions=0 snapshotMutation=false matrixMutation=false remoteProductMutation=false permanentBranchCreated=false prCreated=false readyForReview=false merge=false staging=false production=false repositoryOnly=true"
