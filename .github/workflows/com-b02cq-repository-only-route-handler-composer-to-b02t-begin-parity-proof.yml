@@ -1,0 +1,99 @@
+name: COM-B02CQ Repository-Only Route Handler Composer to B02T Begin Parity Proof
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.json'
+      - 'scripts/test-com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.js'
+      - '.github/workflows/com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02cq-route-handler-composer-b02t-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: c1b3fa6b4463062c5795681a724dc9a8a2975fef
+      PREDECESSOR_TREE: cf3f49be10e9edcd7a95be2cde97f47de0d517af
+      PREDECESSOR_RUN: '33226226655'
+      PREDECESSOR_JOB: '99030412694'
+      PREDECESSOR_WORKFLOW_ID: '345008857'
+      CONFIG: config/com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.json
+      TEST: scripts/test-com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.js
+      WORKFLOW: .github/workflows/com-b02cq-repository-only-route-handler-composer-to-b02t-begin-parity-proof.yml
+      ROUTE_HANDLERS: backend/modules/communities/route-handlers.js
+      ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      B02T: backend/modules/communities/community-command-handler-repository-orchestration.js
+      B02T_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
+      B02CP_CONFIG: config/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.json
+      B02CP_CONFIG_BLOB: da35896958b65d56e8e70b8fecf08e4e7b053a57
+      B02CP_TEST: scripts/test-com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.js
+      B02CP_TEST_BLOB: 3123400104735bde50418a291f6b008431369e53
+      B02CP_WORKFLOW: .github/workflows/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.yml
+      B02CP_WORKFLOW_BLOB: 63011f90c54dc4826f178721a1b7f496d9e0e192
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+
+    steps:
+      - name: Checkout exact certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CP predecessor, composer dependencies and exact B02CQ final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+
+          test "$(git rev-parse HEAD:$ROUTE_HANDLERS)" = "$ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$B02T)" = "$B02T_BLOB"
+          test "$(git rev-parse HEAD:$B02CP_CONFIG)" = "$B02CP_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02CP_TEST)" = "$B02CP_TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02CP_WORKFLOW)" = "$B02CP_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+
+          expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify all three route-handler composers against B02T begin
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if grep -Eq 'execute(Membership|Governance|Content)Command[[:space:]]*\(|resumeCommandRepositoryOnlySurface[[:space:]]*\(|resumeRepositoryOnlyCommandHandlerOrchestration[[:space:]]*\(' "$TEST"; then
+            echo "B02CQ must not invoke active handlers or any resume surface" >&2
+            exit 1
+          fi
+
+          grep -F 'composeMembershipCommandRepositoryOnly' "$TEST" >/dev/null
+          grep -F 'composeGovernanceCommandRepositoryOnly' "$TEST" >/dev/null
+          grep -F 'composeContentCommandRepositoryOnly' "$TEST" >/dev/null
+          grep -F 'beginRepositoryOnlyCommandHandlerOrchestration' "$TEST" >/dev/null
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TEST"
+          node "$TEST"
+          git diff --check "$PREDECESSOR_HEAD" HEAD
