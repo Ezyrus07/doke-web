@@ -1,0 +1,210 @@
+name: TEMP GOV-DEBT-002 Network Signal Candidate R1
+
+on:
+  push:
+    branches:
+      - diag/gov-debt-002-network-signal-candidate-r1
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          tree='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          workflow='.github/workflows/0000-temp-gov-debt-002-network-signal-candidate-r1.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "$parent^{tree}")" = "$tree"
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$workflow"
+          echo "GOV_DEBT_002_R1_LINEAGE=PASS parent=$parent tree=$tree"
+
+      - name: Create detached parent worktree and freeze QA006 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          worktree="$RUNNER_TEMP/gov-debt-002-r1"
+          git worktree add --detach "$worktree" '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          git -C "$worktree" config user.name 'doke-diagnostic'
+          git -C "$worktree" config user.email 'doke-diagnostic@users.noreply.github.com'
+          git fetch --no-tags origin diag/ux-qa-debt-006-results-lifecycle-candidate-r1d:refs/remotes/origin/qa006-r1d
+          test "$(git rev-parse refs/remotes/origin/qa006-r1d)" = '0c232c375c27e9ab2e8a48a759b390ea3308309b'
+          echo "WORKTREE=$worktree" >> "$GITHUB_ENV"
+
+      - name: Materialize one-file scanner candidate on top of qualified line-ending behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/audit-domain-completion-matrix.js')
+          s=p.read_text(encoding='utf-8')
+          write="const WRITE = process.argv.includes('--write');\n"
+          signal="  network: /\\bfetch\\s*\\(|\\bcreateClient\\s*\\(|\\.from\\s*\\(|\\.rpc\\s*\\(|\\.invoke\\s*\\(/g,\n"
+          count_fn="""function signalCount(text, regex) {
+            regex.lastIndex = 0;
+            const matches = text.match(regex);
+            return matches ? matches.length : 0;
+          }
+          """
+          scan_line="      const count = signalCount(text, regex);"
+          comparison="if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');"
+          for needle in (write,signal,count_fn,scan_line,comparison):
+            if s.count(needle)!=1: raise SystemExit(f'candidate anchor drift: {needle[:60]!r}')
+          s=s.replace(write, write+"const normalizeLineEndings = (value) => String(value ?? '').replace(/\\r\\n?/g, '\\n');\nconst PLAYWRIGHT_ROUTE_FETCH_SIGNAL = /\\broute\\s*\\.\\s*fetch\\s*\\(/g;\nconst PLAYWRIGHT_TEST_IMPORT = /(?:require\\s*\\(\\s*['\\\"]@playwright\\/test['\\\"]\\s*\\)|from\\s+['\\\"]@playwright\\/test['\\\"])/;\n")
+          s=s.replace(count_fn, count_fn+"""
+          function networkSignalCount(text, file) {
+            const total = signalCount(text, SIGNALS.network);
+            if (!total) return 0;
+            const relative = normalizeRel(file);
+            if (!relative.startsWith('tests/e2e/') || !PLAYWRIGHT_TEST_IMPORT.test(text)) return total;
+            return Math.max(0, total - signalCount(text, PLAYWRIGHT_ROUTE_FETCH_SIGNAL));
+          }
+          """)
+          s=s.replace(scan_line,"      const count = key === 'network' ? networkSignalCount(text, file) : signalCount(text, regex);")
+          s=s.replace(comparison,"if (!fs.existsSync(DOC_PATH) || normalizeLineEndings(fs.readFileSync(DOC_PATH, 'utf8')) !== normalizeLineEndings(markdown)) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');")
+          p.write_text(s,encoding='utf-8',newline='\n')
+          PY
+          node --check scripts/audit-domain-completion-matrix.js
+          git diff --check
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'scripts/audit-domain-completion-matrix.js'
+          git add scripts/audit-domain-completion-matrix.js
+          git commit -m 'test(gov): materialize GOV-DEBT-002 scanner candidate' >/dev/null
+          candidate_sha="$(git rev-parse HEAD)"
+          candidate_tree="$(git rev-parse HEAD^{tree})"
+          candidate_blob="$(git rev-parse HEAD:scripts/audit-domain-completion-matrix.js)"
+          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
+          echo "CANDIDATE_TREE=$candidate_tree" >> "$GITHUB_ENV"
+          echo "CANDIDATE_BLOB=$candidate_blob" >> "$GITHUB_ENV"
+          echo "GOV_DEBT_002_R1_CANDIDATE=PASS sha=$candidate_sha tree=$candidate_tree blob=$candidate_blob files=1 criteriaRelaxed=0"
+
+      - name: Candidate baseline Matrix remains canonical without write
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          node scripts/audit-domain-completion-matrix.js
+          test -z "$(git status --porcelain)"
+          echo 'GOV_DEBT_002_R1_BASELINE=PASS webNetwork=280 appNetwork=677 matrixMutation=false'
+
+      - name: Fail-closed fixtures preserve real network signals and exclude only Playwright route transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          mkdir -p tests/e2e assets/js
+          cat > tests/e2e/__gov_debt_002_playwright_network_fixture.spec.js <<'EOF'
+          const { test } = require('@playwright/test');
+          async function probe(route, client) {
+            await route.fetch();
+            await fetch('/bare');
+            await window.fetch('/window');
+            await globalThis.fetch('/global');
+            createClient('url', 'key');
+            client.from('table');
+            client.rpc('fn');
+            client.invoke('edge');
+          }
+          void test; void probe;
+          EOF
+          cat > assets/js/__gov_debt_002_member_fetch_fixture.js <<'EOF'
+          async function nonPlaywrightRoute(route) {
+            return route.fetch();
+          }
+          void nonPlaywrightRoute;
+          EOF
+
+          set +e
+          node scripts/audit-domain-completion-matrix.js > "$RUNNER_TEMP/r1-fixture-negative.log" 2>&1
+          rc=$?
+          set -e
+          test "$rc" -eq 1
+          grep -F 'docs/DOMAIN-COMPLETION-MATRIX.md is stale' "$RUNNER_TEMP/r1-fixture-negative.log" >/dev/null
+
+          node scripts/audit-domain-completion-matrix.js --write >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('reports/generated/domain-completion-matrix-report.json').read_text())
+          domains={d['id']:d for d in report['domains']}
+          play='tests/e2e/__gov_debt_002_playwright_network_fixture.spec.js'
+          member='assets/js/__gov_debt_002_member_fetch_fixture.js'
+          for domain_id in ('WEB-001','APP-001'):
+            files={x['file']:x['count'] for x in domains[domain_id]['signalFiles']['network']}
+            if files.get(play)!=7: raise SystemExit(f'{domain_id} Playwright fixture expected 7, got {files.get(play)}')
+            if files.get(member)!=1: raise SystemExit(f'{domain_id} member-fetch fixture expected 1, got {files.get(member)}')
+            print(f'GOV_DEBT_002_R1_FIXTURE domain={domain_id} playwrightCount={files[play]} nonPlaywrightMemberFetch={files[member]}')
+          PY
+          git reset --hard "$CANDIDATE_SHA" >/dev/null
+          git clean -fd >/dev/null
+          test -z "$(git status --porcelain)"
+          echo 'GOV_DEBT_002_R1_FAIL_CLOSED=PASS routeFetchExcluded=1 bareFetch=1 windowFetch=1 globalThisFetch=1 createClient=1 from=1 rpc=1 invoke=1 nonPlaywrightMemberFetch=1'
+
+      - name: Exact QA006 blob no longer creates Matrix drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+          python - <<'PY'
+          from pathlib import Path
+          import os, subprocess, textwrap
+          root=Path(os.environ['GITHUB_WORKSPACE']); wt=Path(os.environ['WORKTREE'])
+          y=subprocess.check_output(['git','show','refs/remotes/origin/qa006-r1d:.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1d.yml'],cwd=root).decode()
+          marker="@'\n          const { test, expect } = require('@playwright/test');"
+          start=y.index(marker)+len("@'\n"); end=y.index("\n          '@ | Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js'",start)
+          body=textwrap.dedent(y[start:end]).replace('\r\n','\n').replace('\r','\n')
+          target='f99c8a622abacf6360680dbf5864e0b1c2ef2484'; matched=False
+          for trailing in (False,True):
+            text=body+('\n' if trailing and not body.endswith('\n') else '')
+            for ending in ('\n','\r\n'):
+              raw=text.replace('\n',ending).encode()
+              for data in (raw,b'\xef\xbb\xbf'+raw):
+                p=wt/'tests/e2e/results-entry-lifecycle.spec.js'; p.write_bytes(data)
+                subprocess.run(['git','add','--','tests/e2e/results-entry-lifecycle.spec.js'],cwd=wt,check=True,stdout=subprocess.DEVNULL)
+                blob=subprocess.check_output(['git','rev-parse',':tests/e2e/results-entry-lifecycle.spec.js'],cwd=wt,text=True).strip()
+                if blob==target: matched=True; break
+                subprocess.run(['git','reset','HEAD','--','tests/e2e/results-entry-lifecycle.spec.js'],cwd=wt,check=True,stdout=subprocess.DEVNULL)
+              if matched: break
+            if matched: break
+          if not matched: raise SystemExit('QA006 qualified blob not reproducible')
+          PY
+          cd "$WORKTREE"
+          test "$(git rev-parse :tests/e2e/results-entry-lifecycle.spec.js)" = 'f99c8a622abacf6360680dbf5864e0b1c2ef2484'
+          node scripts/audit-domain-completion-matrix.js
+          test "$(git rev-parse HEAD:scripts/audit-domain-completion-matrix.js)" = "$CANDIDATE_BLOB"
+          git reset --hard "$CANDIDATE_SHA" >/dev/null
+          git clean -fd >/dev/null
+          test -z "$(git status --porcelain)"
+          echo 'GOV_DEBT_002_R1_QA006=PASS exactQaBlob=true webNetworkRestored=280 appNetworkRestored=677 matrixWriteRequired=false'
+
+      - name: Final one-file semantic qualification and safety receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${WORKTREE:-}" ] && [ -d "$WORKTREE" ]; then
+            git -C "$WORKTREE" reset --hard "${CANDIDATE_SHA:-00a034f90f7940e820fab1f74c27ade9a32d16d1}" >/dev/null
+            git -C "$WORKTREE" clean -fd >/dev/null
+            test -z "$(git -C "$WORKTREE" status --porcelain)"
+          fi
+          cd "$GITHUB_WORKSPACE"
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = '.github/workflows/0000-temp-gov-debt-002-network-signal-candidate-r1.yml'
+          echo "GOV_DEBT_002_R1_FINAL=PASS candidateBlob=${CANDIDATE_BLOB:-unknown} criteriaRelaxed=0 productMutation=false matrixMutation=false snapshotMutation=false permanentBranchCreated=false prCreated=false merge=false staging=false production=false repositoryOnly=true"
