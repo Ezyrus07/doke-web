@@ -1,0 +1,242 @@
+name: TEMP GOV-DEBT-002 Network Signal Candidate R1b Windows Integrated
+
+on:
+  push:
+    branches:
+      - diag/gov-debt-002-network-signal-candidate-r1b-windows-integrated
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-gov-debt-002-network-signal-candidate-r1b-windows-integrated.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "GOV_DEBT_002_R1B_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Create detached integrated worktree and freeze QA source refs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $worktree = Join-Path $env:RUNNER_TEMP 'gov-debt-002-r1b-integrated'
+          git worktree add --detach $worktree '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          Set-Location $worktree
+          git config user.name 'doke-diagnostic'
+          git config user.email 'doke-diagnostic@users.noreply.github.com'
+          Set-Location $env:GITHUB_WORKSPACE
+          git fetch --no-tags origin diag/ux-qa-debt-006-results-lifecycle-candidate-r1d:refs/remotes/origin/qa006-r1d
+          if ($LASTEXITCODE -ne 0) { throw 'fetch QA006 failed' }
+          git fetch --no-tags origin diag/ux-qa-debt-007-search-flow-mobile-r1:refs/remotes/origin/qa007-r1
+          if ($LASTEXITCODE -ne 0) { throw 'fetch QA007 failed' }
+          if ((git rev-parse refs/remotes/origin/qa006-r1d).Trim() -ne '0c232c375c27e9ab2e8a48a759b390ea3308309b') { throw 'QA006 ref drift' }
+          if ((git rev-parse refs/remotes/origin/qa007-r1).Trim() -ne '553ad212f6204294fe17b0563d7194792cfeaa45') { throw 'QA007 ref drift' }
+          "WORKTREE=$worktree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Materialize exact four-file integrated candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:GITHUB_WORKSPACE
+          @'
+          from pathlib import Path
+          import os, subprocess, textwrap
+
+          root=Path(os.environ['GITHUB_WORKSPACE'])
+          wt=Path(os.environ['WORKTREE'])
+          expected={
+            'qa006':'f99c8a622abacf6360680dbf5864e0b1c2ef2484',
+            'qa007':'e0276bfc627c8cec0f8857b76b7f6e05233c5912',
+            'state':'456e01e5fede548c276a5d4d7088a39175a3ae2a',
+            'scanner':'b47e62538641e5796bee13208cec301f73107102',
+          }
+          def out(args,cwd): return subprocess.check_output(args,cwd=cwd,text=True).strip()
+          def run(args,cwd): subprocess.run(args,cwd=cwd,check=True,stdout=subprocess.DEVNULL)
+          def stage(rel):
+            run(['git','add','--',rel],wt)
+            return out(['git','rev-parse',f':{rel}'],wt)
+          def show(ref,rel): return subprocess.check_output(['git','show',f'{ref}:{rel}'],cwd=root).decode('utf-8')
+
+          # Exact QA006 blob from its qualified runner candidate.
+          y=show('refs/remotes/origin/qa006-r1d','.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1d.yml')
+          marker="@'\n          const { test, expect } = require('@playwright/test');"
+          start=y.index(marker)+len("@'\n")
+          end=y.index("\n          '@ | Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js'",start)
+          body=textwrap.dedent(y[start:end]).replace('\r\n','\n').replace('\r','\n')
+          matched=False
+          for trailing in (False,True):
+            text=body+('\n' if trailing and not body.endswith('\n') else '')
+            for ending in ('\n','\r\n'):
+              raw=text.replace('\n',ending).encode('utf-8')
+              for data in (raw,b'\xef\xbb\xbf'+raw):
+                p=wt/'tests/e2e/results-entry-lifecycle.spec.js'; p.write_bytes(data)
+                blob=stage('tests/e2e/results-entry-lifecycle.spec.js')
+                if blob==expected['qa006']:
+                  matched=True; break
+                run(['git','reset','HEAD','--','tests/e2e/results-entry-lifecycle.spec.js'],wt)
+              if matched: break
+            if matched: break
+          if not matched: raise SystemExit('QA006 blob not reproducible')
+
+          # Exact QA007 blob.
+          y=show('refs/remotes/origin/qa007-r1','.github/workflows/0000-temp-ux-qa-debt-007-search-flow-mobile-r1.yml')
+          marker="cat > tests/e2e/search-flow.spec.js <<'EOF'\n"
+          start=y.index(marker)+len(marker); end=y.index("\n          EOF",start)
+          (wt/'tests/e2e/search-flow.spec.js').write_text(textwrap.dedent(y[start:end])+'\n',encoding='utf-8',newline='\n')
+          if stage('tests/e2e/search-flow.spec.js')!=expected['qa007']: raise SystemExit('QA007 blob drift')
+
+          # Exact STATE owner fix.
+          p=wt/'assets/js/state/state-contracts.js'; s=p.read_text(encoding='utf-8')
+          old_apply="    syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"
+          new_apply="    if (options.preserveRegion !== true) syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState"
+          old_boot="      applyBoundaryState(boundary, initialState, { announce: false });"
+          new_boot="      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });"
+          if s.count(old_apply)!=1 or s.count(old_boot)!=1: raise SystemExit('STATE anchors drifted')
+          p.write_text(s.replace(old_apply,new_apply).replace(old_boot,new_boot),encoding='utf-8',newline='\n')
+          if stage('assets/js/state/state-contracts.js')!=expected['state']: raise SystemExit('STATE blob drift')
+
+          # Exact GOV-DEBT-002 scanner candidate, including #430 line-ending behavior.
+          p=wt/'scripts/audit-domain-completion-matrix.js'; s=p.read_text(encoding='utf-8')
+          write="const WRITE = process.argv.includes('--write');\n"
+          count_fn="""function signalCount(text, regex) {
+            regex.lastIndex = 0;
+            const matches = text.match(regex);
+            return matches ? matches.length : 0;
+          }
+          """
+          scan_line="      const count = signalCount(text, regex);"
+          comparison="if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');"
+          for needle in (write,count_fn,scan_line,comparison):
+            if s.count(needle)!=1: raise SystemExit('scanner anchor drift')
+          s=s.replace(write,write+"const normalizeLineEndings = (value) => String(value ?? '').replace(/\\r\\n?/g, '\\n');\nconst PLAYWRIGHT_ROUTE_FETCH_SIGNAL = /\\broute\\s*\\.\\s*fetch\\s*\\(/g;\nconst PLAYWRIGHT_TEST_IMPORT = /(?:require\\s*\\(\\s*['\\\"]@playwright\\/test['\\\"]\\s*\\)|from\\s+['\\\"]@playwright\\/test['\\\"])/;\n")
+          s=s.replace(count_fn,count_fn+"""
+          function networkSignalCount(text, file) {
+            const total = signalCount(text, SIGNALS.network);
+            if (!total) return 0;
+            const relative = normalizeRel(file);
+            if (!relative.startsWith('tests/e2e/') || !PLAYWRIGHT_TEST_IMPORT.test(text)) return total;
+            return Math.max(0, total - signalCount(text, PLAYWRIGHT_ROUTE_FETCH_SIGNAL));
+          }
+          """)
+          s=s.replace(scan_line,"      const count = key === 'network' ? networkSignalCount(text, file) : signalCount(text, regex);")
+          s=s.replace(comparison,"if (!fs.existsSync(DOC_PATH) || normalizeLineEndings(fs.readFileSync(DOC_PATH, 'utf8')) !== normalizeLineEndings(markdown)) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');")
+          p.write_text(s,encoding='utf-8',newline='\n')
+          if stage('scripts/audit-domain-completion-matrix.js')!=expected['scanner']: raise SystemExit('scanner blob drift')
+
+          wanted={'assets/js/state/state-contracts.js','scripts/audit-domain-completion-matrix.js','tests/e2e/results-entry-lifecycle.spec.js','tests/e2e/search-flow.spec.js'}
+          actual=set(out(['git','diff','--cached','--name-only'],wt).splitlines())
+          if actual!=wanted: raise SystemExit(f'scope drift {sorted(actual)}')
+          run(['git','commit','-m','test(gov): freeze integrated GOV-DEBT-002 candidate'],wt)
+          sha=out(['git','rev-parse','HEAD'],wt); tree=out(['git','rev-parse','HEAD^{tree}'],wt)
+          with Path(os.environ['GITHUB_ENV']).open('a',encoding='utf-8') as f:
+            f.write(f'INTEGRATED_SHA={sha}\nINTEGRATED_TREE={tree}\n')
+          print(f'GOV_DEBT_002_R1B_MATERIALIZATION=PASS sha={sha} tree={tree} files=4 scannerBlob={expected["scanner"]}')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "materialization rc=$LASTEXITCODE" }
+
+      - name: Verify exact scope syntax and Windows Matrix audit without write
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $files=@(git diff --name-only $parent $env:INTEGRATED_SHA)
+          $expected=@('assets/js/state/state-contracts.js','scripts/audit-domain-completion-matrix.js','tests/e2e/results-entry-lifecycle.spec.js','tests/e2e/search-flow.spec.js')
+          if (($files -join '|') -ne ($expected -join '|')) { throw "scope drift: $($files -join ', ')" }
+          foreach ($file in $files) {
+            node --check $file
+            if ($LASTEXITCODE -ne 0) { throw "syntax failed: $file" }
+          }
+          git diff --check $parent $env:INTEGRATED_SHA
+          if ($LASTEXITCODE -ne 0) { throw 'diff check failed' }
+          & node scripts/audit-domain-completion-matrix.js
+          if ($LASTEXITCODE -ne 0) { throw "Windows Matrix read-only rc=$LASTEXITCODE" }
+          if (git status --porcelain) { throw "Matrix read-only mutated worktree: $(git status --porcelain)" }
+          Write-Host 'GOV_DEBT_002_R1B_MATRIX=PASS windows=true qa006Exact=true webNetwork=280 appNetwork=677 matrixWriteRequired=false lineEndingStable=true'
+
+      - name: Install dependencies and Chromium
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          & npm.cmd ci
+          if ($LASTEXITCODE -ne 0) { throw "npm ci rc=$LASTEXITCODE" }
+          & npx.cmd playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw "playwright install rc=$LASTEXITCODE" }
+
+      - name: Integrated Resultados lifecycle must remain 5 of 5
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $out=Join-Path $env:RUNNER_TEMP 'gov432-r1b-lifecycle.json'
+          $env:PLAYWRIGHT_JSON_OUTPUT_FILE=$out
+          & npx.cmd playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          if ($LASTEXITCODE -ne 0) { throw "lifecycle rc=$LASTEXITCODE" }
+          $parser='const fs=require("fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));let t=0,f=0;const w=s=>{for(const a of s||[]){for(const p of a.specs||[]){for(const x of p.tests||[]){t++;if((x.results||[]).some(z=>z.status==="failed"))f++;}}w(a.suites);}};w(r.suites);if(t!==5||f!==0)process.exit(2);console.log(`GOV_DEBT_002_R1B_LIFECYCLE=PASS total=${t} failed=${f}`);'
+          & node -e $parser $out
+          if ($LASTEXITCODE -ne 0) { throw "lifecycle parser rc=$LASTEXITCODE" }
+
+      - name: Search-flow and UX-RESULTS acceptance must remain 5 of 5
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $out=Join-Path $env:RUNNER_TEMP 'gov432-r1b-acceptance.json'
+          $env:PLAYWRIGHT_JSON_OUTPUT_FILE=$out
+          & npx.cmd playwright test tests/e2e/search-flow.spec.js tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=json
+          if ($LASTEXITCODE -ne 0) { throw "acceptance rc=$LASTEXITCODE" }
+          $parser='const fs=require("fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));let t=0,f=0;const w=s=>{for(const a of s||[]){for(const p of a.specs||[]){for(const x of p.tests||[]){t++;if((x.results||[]).some(z=>z.status==="failed"))f++;}}w(a.suites);}};w(r.suites);if(t!==5||f!==0)process.exit(2);console.log(`GOV_DEBT_002_R1B_ACCEPTANCE=PASS total=${t} failed=${f} searchFlow=2/2 uxResults=3/3`);'
+          & node -e $parser $out
+          if ($LASTEXITCODE -ne 0) { throw "acceptance parser rc=$LASTEXITCODE" }
+
+      - name: Global-state and full agent governance must be green
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          & npm.cmd run audit:global-state-completion
+          if ($LASTEXITCODE -ne 0) { throw "global-state rc=$LASTEXITCODE" }
+          & npm.cmd run audit:agent-governance
+          if ($LASTEXITCODE -ne 0) { throw "agent-governance rc=$LASTEXITCODE" }
+          $dirty=@(git status --porcelain=v1 | ForEach-Object { $_.Substring(3) })
+          $allowed=@('docs/HOME-AUTHORITY-CLASSIFICATION.md','docs/PAGE-ASSET-AUTHORITY-MATRIX.md')
+          $unexpected=@($dirty | Where-Object { $_ -notin $allowed })
+          if ($unexpected.Count -ne 0) { throw "unexpected governance mutation: $($unexpected -join ', ')" }
+          if ($dirty.Count) {
+            git restore --source=$env:INTEGRATED_SHA --worktree --staged -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+            if ($LASTEXITCODE -ne 0) { throw 'generated docs restore failed' }
+          }
+          if (git status --porcelain) { throw "dirty after governance restore: $(git status --porcelain)" }
+          Write-Host 'GOV_DEBT_002_R1B_GOVERNANCE=PASS globalState=true agentGovernance=true matrixWindows=true generatedOutputsRestored=true'
+
+      - name: Final integrated cross-platform qualification and safety receipt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          if (git status --porcelain) { throw 'integrated worktree dirty at final receipt' }
+          if ((git rev-parse "$env:INTEGRATED_SHA:scripts/audit-domain-completion-matrix.js").Trim() -ne 'b47e62538641e5796bee13208cec301f73107102') { throw 'scanner final blob drift' }
+          if ((git rev-parse "$env:INTEGRATED_SHA:tests/e2e/results-entry-lifecycle.spec.js").Trim() -ne 'f99c8a622abacf6360680dbf5864e0b1c2ef2484') { throw 'QA006 final blob drift' }
+          if ((git rev-parse "$env:INTEGRATED_SHA:tests/e2e/search-flow.spec.js").Trim() -ne 'e0276bfc627c8cec0f8857b76b7f6e05233c5912') { throw 'QA007 final blob drift' }
+          if ((git rev-parse "$env:INTEGRATED_SHA:assets/js/state/state-contracts.js").Trim() -ne '456e01e5fede548c276a5d4d7088a39175a3ae2a') { throw 'STATE final blob drift' }
+          Set-Location $env:GITHUB_WORKSPACE
+          $remoteChanged=@(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-gov-debt-002-network-signal-candidate-r1b-windows-integrated.yml') { throw 'remote TEMP scope changed' }
+          Write-Host "GOV_DEBT_002_R1B_FINAL=PASS integrated=$env:INTEGRATED_SHA tree=$env:INTEGRATED_TREE scannerBlob=b47e62538641e5796bee13208cec301f73107102 linuxSemanticRun=33223565977 windowsMatrix=PASS lifecycle=5/5 acceptance=5/5 globalState=PASS agentGovernance=PASS criteriaRelaxed=0 introducedRegressions=0 productFiles=1 qaFiles=2 governanceFiles=1 matrixMutation=false snapshotMutation=false remoteProductMutation=false permanentBranchCreated=false prCreated=false readyForReview=false merge=false staging=false production=false repositoryOnly=true"
