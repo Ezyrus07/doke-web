@@ -1,0 +1,211 @@
+name: TEMP UX-QA-DEBT-006 Integrated Governance Order R2c
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-006-integrated-governance-order-r2c
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze lineage and TEMP-only remote scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          $tree = 'd982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          $workflow = '.github/workflows/0000-temp-ux-qa-debt-006-integrated-governance-order-r2c.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $tree) { throw 'tree drift' }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne $workflow) { throw "TEMP scope drift: $($changed -join ', ')" }
+          Write-Host "UX_QA_DEBT_006_INT_R2C_LINEAGE=PASS parent=$parent tree=$tree"
+
+      - name: Create integrated worktree and freeze source refs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $worktree = Join-Path $env:RUNNER_TEMP 'qa006-int-r2c-integrated'
+          git worktree add --detach $worktree '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          Set-Location $worktree
+          git config user.name 'doke-diagnostic'
+          git config user.email 'doke-diagnostic@users.noreply.github.com'
+          Set-Location $env:GITHUB_WORKSPACE
+          git fetch --no-tags origin diag/ux-qa-debt-006-results-lifecycle-candidate-r1d:refs/remotes/origin/qa006-r1d
+          if ($LASTEXITCODE -ne 0) { throw 'fetch QA006 failed' }
+          git fetch --no-tags origin diag/ux-qa-debt-007-search-flow-mobile-r1:refs/remotes/origin/qa007-r1
+          if ($LASTEXITCODE -ne 0) { throw 'fetch QA007 failed' }
+          if ((git rev-parse refs/remotes/origin/qa006-r1d).Trim() -ne '0c232c375c27e9ab2e8a48a759b390ea3308309b') { throw 'QA006 ref drift' }
+          if ((git rev-parse refs/remotes/origin/qa007-r1).Trim() -ne '553ad212f6204294fe17b0563d7194792cfeaa45') { throw 'QA007 ref drift' }
+          "WORKTREE=$worktree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Reconstruct exact R2 integrated candidate and commit locally
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:GITHUB_WORKSPACE
+          @'
+          from pathlib import Path
+          import os, subprocess, textwrap
+          root=Path(os.environ['GITHUB_WORKSPACE'])
+          wt=Path(os.environ['WORKTREE'])
+          exp={
+            'qa006':'f99c8a622abacf6360680dbf5864e0b1c2ef2484',
+            'qa007':'e0276bfc627c8cec0f8857b76b7f6e05233c5912',
+            'gov':'d90cbb445f6bcf3a19382d6a86c136be77c69131',
+            'state':'456e01e5fede548c276a5d4d7088a39175a3ae2a',
+          }
+          def out(args,cwd): return subprocess.check_output(args,cwd=cwd,text=True).strip()
+          def run(args,cwd): subprocess.run(args,cwd=cwd,check=True,stdout=subprocess.DEVNULL)
+          def stage(rel):
+            run(['git','add','--',rel],wt)
+            return out(['git','rev-parse',f':{rel}'],wt)
+          def show(ref,rel): return subprocess.check_output(['git','show',f'{ref}:{rel}'],cwd=root).decode()
+
+          y=show('refs/remotes/origin/qa006-r1d','.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1d.yml')
+          m="@'\n          const { test, expect } = require('@playwright/test');"
+          s=y.index(m)+len("@'\n")
+          e=y.index("\n          '@ | Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js'",s)
+          body=textwrap.dedent(y[s:e]).replace('\r\n','\n').replace('\r','\n')
+          ok=False
+          for trailing in (False,True):
+            text=body+('\n' if trailing and not body.endswith('\n') else '')
+            for ending in ('\n','\r\n'):
+              data=text.replace('\n',ending).encode()
+              for candidate in (data,b'\xef\xbb\xbf'+data):
+                (wt/'tests/e2e/results-entry-lifecycle.spec.js').write_bytes(candidate)
+                blob=stage('tests/e2e/results-entry-lifecycle.spec.js')
+                if blob==exp['qa006']:
+                  ok=True;break
+                run(['git','reset','HEAD','--','tests/e2e/results-entry-lifecycle.spec.js'],wt)
+              if ok: break
+            if ok: break
+          if not ok: raise SystemExit('QA006 blob mismatch')
+
+          y=show('refs/remotes/origin/qa007-r1','.github/workflows/0000-temp-ux-qa-debt-007-search-flow-mobile-r1.yml')
+          m="cat > tests/e2e/search-flow.spec.js <<'EOF'\n"
+          s=y.index(m)+len(m); e=y.index("\n          EOF",s)
+          (wt/'tests/e2e/search-flow.spec.js').write_text(textwrap.dedent(y[s:e])+'\n',encoding='utf-8',newline='\n')
+          if stage('tests/e2e/search-flow.spec.js')!=exp['qa007']: raise SystemExit('QA007 blob mismatch')
+
+          p=wt/'scripts/audit-domain-completion-matrix.js'; src=p.read_text(encoding='utf-8')
+          anchor="const WRITE = process.argv.includes('--write');\n"
+          cmp="if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');"
+          src=src.replace(anchor,anchor+"const normalizeLineEndings = (value) => String(value ?? '').replace(/\\r\\n?/g, '\\n');\n")
+          src=src.replace(cmp,"if (!fs.existsSync(DOC_PATH) || normalizeLineEndings(fs.readFileSync(DOC_PATH, 'utf8')) !== normalizeLineEndings(markdown)) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');")
+          p.write_text(src,encoding='utf-8',newline='\n')
+          if stage('scripts/audit-domain-completion-matrix.js')!=exp['gov']: raise SystemExit('GOV blob mismatch')
+
+          p=wt/'assets/js/state/state-contracts.js'; src=p.read_text(encoding='utf-8')
+          src=src.replace("    syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState","    if (options.preserveRegion !== true) syncRegion(boundary, state, options);\n  }\n\n  function setBoundaryState")
+          src=src.replace("      applyBoundaryState(boundary, initialState, { announce: false });","      applyBoundaryState(boundary, initialState, { announce: false, preserveRegion: true });")
+          p.write_text(src,encoding='utf-8',newline='\n')
+          if stage('assets/js/state/state-contracts.js')!=exp['state']: raise SystemExit('STATE blob mismatch')
+
+          expected={'assets/js/state/state-contracts.js','scripts/audit-domain-completion-matrix.js','tests/e2e/results-entry-lifecycle.spec.js','tests/e2e/search-flow.spec.js'}
+          actual=set(out(['git','diff','--cached','--name-only'],wt).splitlines())
+          if actual!=expected: raise SystemExit(f'scope drift {actual}')
+          run(['git','commit','-m','test(qa): freeze exact integrated R2 candidate'],wt)
+          sha=out(['git','rev-parse','HEAD'],wt); tree=out(['git','rev-parse','HEAD^{tree}'],wt)
+          with Path(os.environ['GITHUB_ENV']).open('a',encoding='utf-8') as f:
+            f.write(f'INTEGRATED_SHA={sha}\nINTEGRATED_TREE={tree}\n')
+          print(f'UX_QA_DEBT_006_INT_R2C_CANDIDATE=PASS sha={sha} tree={tree} files=4')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "candidate reconstruction rc=$LASTEXITCODE" }
+
+      - name: Matrix audit before global-state
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $log = Join-Path $env:RUNNER_TEMP 'matrix-pre-global.log'
+          & node scripts/audit-domain-completion-matrix.js 2>&1 | Tee-Object -FilePath $log
+          $rc = $LASTEXITCODE
+          $text = Get-Content -LiteralPath $log -Raw
+          "MATRIX_PRE_RC=$rc" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          if ($rc -eq 0) {
+            Write-Host 'UX_QA_DEBT_006_INT_R2C_MATRIX_PRE=PASS rc=0'
+          } elseif ($text.Contains('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix')) {
+            Write-Host 'UX_QA_DEBT_006_INT_R2C_MATRIX_PRE=STALE rc=1'
+          } else {
+            throw "unexpected pre-global Matrix failure rc=$rc"
+          }
+          $global:LASTEXITCODE = 0
+
+      - name: Run global-state and inventory exact side effects
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          & npm.cmd run audit:global-state-completion
+          if ($LASTEXITCODE -ne 0) { throw "global-state rc=$LASTEXITCODE" }
+          $status = @(git status --porcelain=v1)
+          Write-Host "UX_QA_DEBT_006_INT_R2C_GLOBAL_STATE=PASS dirtyCount=$($status.Count)"
+          foreach ($line in $status) { Write-Host "GLOBAL_STATE_DIRTY=$line" }
+          $paths = @($status | ForEach-Object { $_.Substring(3) })
+          ($paths -join "`n") | Set-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'global-state-dirty-paths.txt') -Encoding utf8
+
+      - name: Matrix audit after global-state and classify semantic delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $log = Join-Path $env:RUNNER_TEMP 'matrix-post-global.log'
+          & node scripts/audit-domain-completion-matrix.js 2>&1 | Tee-Object -FilePath $log
+          $rc = $LASTEXITCODE
+          $text = Get-Content -LiteralPath $log -Raw
+          if ($rc -eq 0) {
+            Write-Host 'UX_QA_DEBT_006_INT_R2C_MATRIX_POST=PASS rc=0'
+            $global:LASTEXITCODE = 0
+            exit 0
+          }
+          if (-not $text.Contains('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix')) { throw "unexpected post-global Matrix failure rc=$rc" }
+          $global:LASTEXITCODE = 0
+          Write-Host 'UX_QA_DEBT_006_INT_R2C_MATRIX_POST=STALE rc=1'
+          Copy-Item 'docs/DOMAIN-COMPLETION-MATRIX.md' (Join-Path $env:RUNNER_TEMP 'matrix-before-write.md')
+          Copy-Item 'reports/generated/domain-completion-matrix-report.json' (Join-Path $env:RUNNER_TEMP 'matrix-report-before-write.json')
+          & node scripts/audit-domain-completion-matrix.js --write
+          if ($LASTEXITCODE -ne 0) { throw "temp Matrix write rc=$LASTEXITCODE" }
+          Copy-Item 'docs/DOMAIN-COMPLETION-MATRIX.md' (Join-Path $env:RUNNER_TEMP 'matrix-after-write.md')
+          Copy-Item 'reports/generated/domain-completion-matrix-report.json' (Join-Path $env:RUNNER_TEMP 'matrix-report-after-write.json')
+          @'
+          from pathlib import Path
+          import os, difflib, json
+          t=Path(os.environ['RUNNER_TEMP'])
+          def norm(p): return p.read_text(encoding='utf-8-sig').replace('\r\n','\n').replace('\r','\n').splitlines()
+          before=norm(t/'matrix-before-write.md'); after=norm(t/'matrix-after-write.md')
+          diff=list(difflib.unified_diff(before,after,fromfile='tracked',tofile='generated',n=1))
+          print(f'UX_QA_DEBT_006_INT_R2C_MATRIX_DIFF normalizedChangedLines={len(diff)}')
+          for line in diff[:120]: print('MATRIX_DIFF='+line)
+          rb=json.loads((t/'matrix-report-before-write.json').read_text(encoding='utf-8-sig'))
+          ra=json.loads((t/'matrix-report-after-write.json').read_text(encoding='utf-8-sig'))
+          print('REPORT_SUMMARY_BEFORE='+json.dumps(rb.get('summary'),sort_keys=True,separators=(',',':')))
+          print('REPORT_SUMMARY_AFTER='+json.dumps(ra.get('summary'),sort_keys=True,separators=(',',':')))
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "diff classifier rc=$LASTEXITCODE" }
+
+      - name: Restore exact integrated candidate and safety receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:WORKTREE -and (Test-Path $env:WORKTREE)) {
+            Set-Location $env:WORKTREE
+            git reset --hard $env:INTEGRATED_SHA
+            git clean -fd
+            if (git status --porcelain) { throw "worktree dirty after restore: $(git status --porcelain)" }
+          }
+          Set-Location $env:GITHUB_WORKSPACE
+          $remoteChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($remoteChanged.Count -ne 1 -or $remoteChanged[0] -ne '.github/workflows/0000-temp-ux-qa-debt-006-integrated-governance-order-r2c.yml') { throw 'remote TEMP scope changed' }
+          Write-Host "UX_QA_DEBT_006_INT_R2C_SAFETY=PASS preMatrixRc=$env:MATRIX_PRE_RC remoteProductMutation=false matrixMutationPersisted=false snapshotMutation=false prCreated=false merge=false repositoryOnly=true"
