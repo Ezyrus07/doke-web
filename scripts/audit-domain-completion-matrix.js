@@ -9,6 +9,9 @@ const SNAPSHOT_PATH = path.join(ROOT, 'docs/validation/domain-completion-staging
 const REPORT_PATH = path.join(ROOT, 'reports/generated/domain-completion-matrix-report.json');
 const DOC_PATH = path.join(ROOT, 'docs/DOMAIN-COMPLETION-MATRIX.md');
 const WRITE = process.argv.includes('--write');
+const normalizeLineEndings = (value) => String(value ?? '').replace(/\r\n?/g, '\n');
+const PLAYWRIGHT_ROUTE_FETCH_SIGNAL = /\broute\s*\.\s*fetch\s*\(/g;
+const PLAYWRIGHT_TEST_IMPORT = /(?:require\s*\(\s*['\"]@playwright\/test['\"]\s*\)|from\s+['\"]@playwright\/test['\"])/;
 
 const IGNORE_DIRS = new Set([
   'node_modules',
@@ -89,13 +92,21 @@ function signalCount(text, regex) {
   return matches ? matches.length : 0;
 }
 
+function networkSignalCount(text, file) {
+  const total = signalCount(text, SIGNALS.network);
+  if (!total) return 0;
+  const relative = normalizeRel(file);
+  if (!relative.startsWith('tests/e2e/') || !PLAYWRIGHT_TEST_IMPORT.test(text)) return total;
+  return Math.max(0, total - signalCount(text, PLAYWRIGHT_ROUTE_FETCH_SIGNAL));
+}
+
 function scanSignals(files) {
   const totals = Object.fromEntries(Object.keys(SIGNALS).map((key) => [key, 0]));
   const fileIndex = Object.fromEntries(Object.keys(SIGNALS).map((key) => [key, []]));
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     for (const [key, regex] of Object.entries(SIGNALS)) {
-      const count = signalCount(text, regex);
+      const count = key === 'network' ? networkSignalCount(text, file) : signalCount(text, regex);
       if (!count) continue;
       totals[key] += count;
       fileIndex[key].push({ file: normalizeRel(file), count });
@@ -370,7 +381,7 @@ function main() {
     fs.writeFileSync(REPORT_PATH, reportJson);
     fs.writeFileSync(DOC_PATH, markdown);
   } else {
-    if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');
+    if (!fs.existsSync(DOC_PATH) || normalizeLineEndings(fs.readFileSync(DOC_PATH, 'utf8')) !== normalizeLineEndings(markdown)) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');
   }
 
   if (failures.length) {
