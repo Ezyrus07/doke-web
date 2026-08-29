@@ -1,0 +1,294 @@
+name: TEMP UX-QA-DEBT-007 Search Flow Mobile R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-007-search-flow-mobile-r1
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact lineage and TEMP-only remote scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          tree='d982dc7c0c7cd9b227f1543a83243dc76de08b9a'
+          workflow='.github/workflows/0000-temp-ux-qa-debt-007-search-flow-mobile-r1.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "$parent^{tree}")" = "$tree"
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$workflow"
+          echo "UX_QA_DEBT_007_R1_LINEAGE=PASS parent=$parent tree=$tree tempHead=$(git rev-parse HEAD)"
+
+      - name: Create detached certified-parent worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          worktree="$RUNNER_TEMP/ux-qa-debt-007-r1"
+          git worktree add --detach "$worktree" '00a034f90f7940e820fab1f74c27ade9a32d16d1'
+          echo "WORKTREE=$worktree" >> "$GITHUB_ENV"
+
+      - name: Install test dependencies
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Reproduce inherited default-viewport failures on parent
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/ux431-parent-search-flow.json"
+          set +e
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$out" npx playwright test tests/e2e/search-flow.spec.js --reporter=json
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          node - "$out" <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          const failed = [];
+          function walk(suites) {
+            for (const suite of suites || []) {
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  if ((test.results || []).some((r) => r.status === 'failed')) failed.push(spec.title);
+                }
+              }
+              walk(suite.suites);
+            }
+          }
+          walk(report.suites);
+          const expected = [
+            'home search shell accepts typing without layout regression',
+            'results page keeps search flow contract',
+          ];
+          if (failed.length !== 2 || expected.some((title) => !failed.includes(title))) {
+            throw new Error(`unexpected parent failures: ${JSON.stringify(failed)}`);
+          }
+          console.log(`UX_QA_DEBT_007_R1_PARENT_NEGATIVE=PASS failures=${failed.length} signature=missing-mobile-shell-default-viewport`);
+          NODE
+          test -z "$(git status --porcelain)"
+
+      - name: Prove canonical shell viewport boundary before candidate
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('assets/js/components/mobile-app-shell.js', 'utf8');
+          if (!source.includes("window.matchMedia('(max-width: 560px), ((hover: none) and (pointer: coarse) and (max-device-width: 560px))').matches")) {
+            throw new Error('canonical <=560px viewport gate missing');
+          }
+          if (!source.includes('teardownForNonMobileViewport();')) throw new Error('non-mobile teardown missing');
+          if (!source.includes('class="doke-mobile-shell__search"')) throw new Error('canonical mobile search form missing');
+          if (!source.includes("navigateTo('resultados.html?q=' + encodeURIComponent(value));")) throw new Error('canonical mobile submit navigation missing');
+          console.log('UX_QA_DEBT_007_R1_SOURCE_AUTHORITY=PASS boundary=max-width-560 submit=DokeNavigate-query');
+          NODE
+
+      - name: Materialize QA-only mobile candidate in runner
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          cat > tests/e2e/search-flow.spec.js <<'EOF'
+          const { test, expect } = require('@playwright/test');
+
+          test.describe('Search flow shell contract', () => {
+            test.use({
+              viewport: { width: 390, height: 844 },
+              hasTouch: true,
+              isMobile: true,
+            });
+
+            test('home mobile search shell accepts typing and submits canonical query', async ({ page }) => {
+              await page.goto('/index.html');
+              const shells = page.locator('[data-doke-mobile-shell]');
+              await expect(shells).toHaveCount(1);
+
+              const searchForm = shells.locator('form.doke-mobile-shell__search');
+              await expect(searchForm).toBeVisible();
+              const search = searchForm.locator('input[type="search"]').first();
+              await search.fill('pintor');
+              await expect(search).toHaveValue('pintor');
+
+              await Promise.all([
+                page.waitForURL((url) => url.pathname.endsWith('/resultados.html') && url.searchParams.get('q') === 'pintor'),
+                searchForm.evaluate((form) => form.requestSubmit()),
+              ]);
+
+              await expect(page.locator('[data-doke-mobile-shell]')).toHaveCount(1);
+              await expect(page.locator('.doke-mobile-shell__search input[type="search"]').first()).toHaveValue('pintor');
+            });
+
+            test('results page keeps one mobile search shell bound to canonical query', async ({ page }) => {
+              await page.goto('/resultados.html?q=pintor');
+              const shells = page.locator('[data-doke-mobile-shell]');
+              await expect(shells).toHaveCount(1);
+              const searchForm = shells.locator('form.doke-mobile-shell__search');
+              await expect(searchForm).toBeVisible();
+              await expect(searchForm.locator('input[type="search"]').first()).toHaveValue('pintor');
+              expect(new URL(page.url()).searchParams.get('q')).toBe('pintor');
+            });
+          });
+          EOF
+          node --check tests/e2e/search-flow.spec.js
+          git diff --check
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'tests/e2e/search-flow.spec.js'
+          echo 'UX_QA_DEBT_007_R1_SCOPE=PASS candidateFiles=1 productMutation=false criteriaRelaxed=0'
+
+      - name: Candidate search-flow must be green and stronger
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/ux431-candidate-search-flow.json"
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$out" npx playwright test tests/e2e/search-flow.spec.js --reporter=json
+          node - "$out" <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          let total = 0;
+          let failed = 0;
+          function walk(suites) {
+            for (const suite of suites || []) {
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  total += 1;
+                  if ((test.results || []).some((r) => r.status === 'failed')) failed += 1;
+                }
+              }
+              walk(suite.suites);
+            }
+          }
+          walk(report.suites);
+          if (total !== 2 || failed !== 0) throw new Error(`candidate summary total=${total} failed=${failed}`);
+          console.log(`UX_QA_DEBT_007_R1_CANDIDATE=PASS total=${total} failed=${failed} viewport=390x844 canonicalSubmit=true duplicateShell=0`);
+          NODE
+
+      - name: UX-RESULTS-001 browser acceptance remains green
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/ux431-ux-results.json"
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$out" npx playwright test tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=json
+          node - "$out" <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          let total = 0, failed = 0;
+          function walk(suites) { for (const suite of suites || []) { for (const spec of suite.specs || []) { for (const test of spec.tests || []) { total++; if ((test.results || []).some(r => r.status === 'failed')) failed++; } } walk(suite.suites); } }
+          walk(report.suites);
+          if (total !== 3 || failed !== 0) throw new Error(`UX-RESULTS summary total=${total} failed=${failed}`);
+          console.log(`UX_QA_DEBT_007_R1_UX_RESULTS=PASS total=${total} failed=${failed}`);
+          NODE
+
+      - name: Resultados lifecycle inherited signatures remain unchanged
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          git checkout -- tests/e2e/search-flow.spec.js
+          parentOut="$RUNNER_TEMP/ux431-lifecycle-parent.json"
+          set +e
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$parentOut" npx playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          parentRc=$?
+          set -e
+
+          cat > tests/e2e/search-flow.spec.js <<'EOF'
+          const { test, expect } = require('@playwright/test');
+
+          test.describe('Search flow shell contract', () => {
+            test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+            test('home mobile search shell accepts typing and submits canonical query', async ({ page }) => {
+              await page.goto('/index.html');
+              const shells = page.locator('[data-doke-mobile-shell]');
+              await expect(shells).toHaveCount(1);
+              const searchForm = shells.locator('form.doke-mobile-shell__search');
+              await expect(searchForm).toBeVisible();
+              const search = searchForm.locator('input[type="search"]').first();
+              await search.fill('pintor');
+              await expect(search).toHaveValue('pintor');
+              await Promise.all([
+                page.waitForURL((url) => url.pathname.endsWith('/resultados.html') && url.searchParams.get('q') === 'pintor'),
+                searchForm.evaluate((form) => form.requestSubmit()),
+              ]);
+              await expect(page.locator('[data-doke-mobile-shell]')).toHaveCount(1);
+              await expect(page.locator('.doke-mobile-shell__search input[type="search"]').first()).toHaveValue('pintor');
+            });
+
+            test('results page keeps one mobile search shell bound to canonical query', async ({ page }) => {
+              await page.goto('/resultados.html?q=pintor');
+              const shells = page.locator('[data-doke-mobile-shell]');
+              await expect(shells).toHaveCount(1);
+              const searchForm = shells.locator('form.doke-mobile-shell__search');
+              await expect(searchForm).toBeVisible();
+              await expect(searchForm.locator('input[type="search"]').first()).toHaveValue('pintor');
+              expect(new URL(page.url()).searchParams.get('q')).toBe('pintor');
+            });
+          });
+          EOF
+
+          candidateOut="$RUNNER_TEMP/ux431-lifecycle-candidate.json"
+          set +e
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$candidateOut" npx playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          candidateRc=$?
+          set -e
+
+          node - "$parentOut" "$candidateOut" "$parentRc" "$candidateRc" <<'NODE'
+          const fs = require('fs');
+          function failures(path) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const out = [];
+            function walk(suites) { for (const suite of suites || []) { for (const spec of suite.specs || []) { for (const test of spec.tests || []) { if ((test.results || []).some(r => r.status === 'failed')) out.push(spec.title); } } walk(suite.suites); } }
+            walk(report.suites);
+            return out.sort();
+          }
+          const p = failures(process.argv[2]);
+          const c = failures(process.argv[3]);
+          if (process.argv[4] !== process.argv[5]) throw new Error(`lifecycle rc drift parent=${process.argv[4]} candidate=${process.argv[5]}`);
+          if (JSON.stringify(p) !== JSON.stringify(c)) throw new Error(`lifecycle signature drift parent=${JSON.stringify(p)} candidate=${JSON.stringify(c)}`);
+          console.log(`UX_QA_DEBT_007_R1_LIFECYCLE_RECONCILIATION=PASS sharedFailures=${p.length} candidateOnlyFailures=0 signatureChanges=0`);
+          NODE
+
+      - name: Governance and final safety receipt
+        shell: bash
+        working-directory: ${{ env.WORKTREE }}
+        run: |
+          set -euo pipefail
+          node --check tests/e2e/search-flow.spec.js
+          git diff --check
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          mapfile -t changed < <(git diff --name-only)
+          unexpected=()
+          for f in "${changed[@]}"; do
+            case "$f" in
+              tests/e2e/search-flow.spec.js|docs/HOME-AUTHORITY-CLASSIFICATION.md|docs/PAGE-ASSET-AUTHORITY-MATRIX.md) ;;
+              *) unexpected+=("$f") ;;
+            esac
+          done
+          test "${#unexpected[@]}" -eq 0
+          git checkout -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md 2>/dev/null || true
+          mapfile -t finalChanged < <(git diff --name-only)
+          test "${#finalChanged[@]}" -eq 1
+          test "${finalChanged[0]}" = 'tests/e2e/search-flow.spec.js'
+          echo 'UX_QA_DEBT_007_R1_FINAL=PASS criteriaRelaxed=0 introducedRegressions=0 productMutation=false snapshotMutation=false matrixMutation=false permanentBranchCreated=false prCreated=false repositoryOnly=true'
