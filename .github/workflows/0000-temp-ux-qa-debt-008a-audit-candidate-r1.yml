@@ -1,4 +1,4 @@
-name: TEMP UX-QA-DEBT-008A Audit Candidate Qualification R1
+name: TEMP UX-QA-DEBT-008A Audit Candidate Qualification R1b
 
 on:
   push:
@@ -15,19 +15,20 @@ jobs:
     env:
       PARENT_SHA: 7a7b67e8f92918c75133b65bc224ec5de3cdb4c4
       PARENT_TREE: bee05e8bea81436c521fb73bb36472c8d46baf52
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008a-audit-candidate-r1.yml
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 4
 
       - name: Freeze lineage and TEMP-only remote scope
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          git merge-base --is-ancestor "$PARENT_SHA" HEAD
           test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
-          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
-          test "$changed" = ".github/workflows/0000-temp-ux-qa-debt-008a-audit-candidate-r1.yml"
+          changed="$(git diff --name-only "$PARENT_SHA..HEAD")"
+          test "$changed" = "$TEMP_PATH"
           echo "TEMP_SCOPE_OK=1"
 
       - name: Create exact parent worktree
@@ -69,6 +70,8 @@ jobs:
           const routerSource = fs.readFileSync(routerPath, 'utf8');
           const lifecycleSource = fs.readFileSync(lifecyclePath, 'utf8');
 
+          const popstateRestoreContract = /window\.addEventListener\(\s*['"]popstate['"][\s\S]{0,1000}?go\(window\.location\.href,\s*\{[\s\S]{0,600}?restoreScroll\s*:\s*true[\s\S]{0,300}?captureScroll\s*:\s*false/.test(lifecycleSource);
+
           const checks = {
             routerDefinesResetScroll: /function\s+resetScroll\s*\(\s*\)/.test(routerSource),
             resetClearsTransientRouteState: routerSource.includes('clearTransientRouteState();'),
@@ -85,9 +88,7 @@ jobs:
               && routerSource.includes('replaceShell(nextDoc, path);'),
             lifecycleDefinesCaptureScroll: /function\s+captureScroll\s*\(/.test(lifecycleSource),
             lifecycleDefinesRestoreScroll: /function\s+restoreScroll\s*\(/.test(lifecycleSource),
-            popstateRequestsScrollRestore: lifecycleSource.includes("refreshEntry('restore', { source: 'popstate' });")
-              && /restoreScroll\s*:\s*true/.test(lifecycleSource)
-              && /captureScroll\s*:\s*false/.test(lifecycleSource)
+            popstateRequestsScrollRestore: popstateRestoreContract
           };
 
           const failures = Object.entries(checks)
@@ -130,7 +131,10 @@ jobs:
           git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
           npm run audit:domain-completion-matrix
           npm run audit:agent-governance
-          git checkout -- docs/validation 2>/dev/null || true
+          echo "STATUS_BEFORE_DERIVATIVE_RESTORE"
+          git status --short
+          git checkout -- docs reports/generated 2>/dev/null || true
+          git clean -fd -- docs/validation reports/generated >/dev/null 2>&1 || true
           git diff --check
           files="$(git diff --name-only)"
           test "$files" = "scripts/audit-shell-router-scroll-reset.js"
@@ -143,6 +147,10 @@ jobs:
           cd ../parent
           cp assets/js/core/stable-shell-router.js /tmp/router.original.js
           cp assets/js/core/navigation-lifecycle.js /tmp/lifecycle.original.js
+
+          restore_report() {
+            git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
+          }
 
           expect_fail() {
             label="$1"
@@ -157,7 +165,7 @@ jobs:
               exit 1
             fi
             grep -q "$expected" "/tmp/${label}.log"
-            git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
+            restore_report
             echo "NEGATIVE_${label}=PASS"
           }
 
@@ -211,13 +219,14 @@ jobs:
           s=p.read_text()
           old='replaceShell(nextDoc, path);'
           assert old in s
-          p.write_text(s.replace(old, 'void nextDoc; void path;', 1))
+          p.write_text(s.replace(old, 'void nextDoc; void path;'))
           PY
           expect_fail shell_commit "routerOwnsShellCommit"
           cp /tmp/router.original.js assets/js/core/stable-shell-router.js
 
           node scripts/audit-shell-router-scroll-reset.js
-          git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
+          restore_report
+          git diff --check
           test "$(git diff --name-only)" = "scripts/audit-shell-router-scroll-reset.js"
           echo "FAIL_CLOSED_FIXTURES=5/5"
 
@@ -228,5 +237,5 @@ jobs:
           cd ../parent
           candidate_sha="$(sha256sum scripts/audit-shell-router-scroll-reset.js | cut -d' ' -f1)"
           cat <<EOF
-          UX_QA_DEBT_008A_R1_FINAL={"result":"PASS","checkpoint":"UX-QA-DEBT-008A-R1-RUNNER-ONLY-AUDIT-CANDIDATE","parent":"$PARENT_SHA","parentTree":"$PARENT_TREE","candidateFile":"scripts/audit-shell-router-scroll-reset.js","candidateSha256":"$candidate_sha","legacyFailureReproduced":true,"positiveAudit":true,"domainMatrix":true,"agentGovernance":true,"failClosedFixtures":5,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"snapshotMutation":false,"runtimeMutation":false,"remoteCandidateMaterialized":false,"permanentBranchCreated":false,"prCreated":false,"readyForReview":false,"merge":false,"repositoryOnly":true}
+          UX_QA_DEBT_008A_R1B_FINAL={"result":"PASS","checkpoint":"UX-QA-DEBT-008A-R1B-RUNNER-ONLY-AUDIT-CANDIDATE","parent":"$PARENT_SHA","parentTree":"$PARENT_TREE","candidateFile":"scripts/audit-shell-router-scroll-reset.js","candidateSha256":"$candidate_sha","legacyFailureReproduced":true,"positiveAudit":true,"domainMatrix":true,"agentGovernance":true,"failClosedFixtures":5,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"snapshotMutation":false,"runtimeMutation":false,"remoteCandidateMaterialized":false,"permanentBranchCreated":false,"prCreated":false,"readyForReview":false,"merge":false,"repositoryOnly":true}
           EOF
