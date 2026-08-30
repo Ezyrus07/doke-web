@@ -16,6 +16,31 @@ const routes = [
   '/ajuda.html',
 ];
 
+async function installAuthenticatedSession(page) {
+  await page.goto('/index.html');
+  await expect.poll(() => page.evaluate(
+    () => typeof window.Doke?.session?.setCurrentUser
+  )).toBe('function');
+
+  await page.evaluate(() => {
+    window.Doke.session.setCurrentUser({
+      id: 'stable-shell-client',
+      role: 'client',
+      name: 'Cliente Stable Shell',
+      email: 'stable-shell@example.test',
+      accountStatus: 'active',
+    });
+  });
+
+  await expect.poll(() => page.evaluate(
+    () => window.Doke?.session?.isAuthenticated?.() === true
+  )).toBe(true);
+}
+
+test.beforeEach(async ({ page }) => {
+  await installAuthenticatedSession(page);
+});
+
 async function waitForStableRoute(page) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForLoadState('networkidle').catch(() => {});
