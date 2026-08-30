@@ -1,0 +1,230 @@
+name: TEMP UX-QA-DEBT-006 Permanent Promotion R1b
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-006-permanent-promotion-r1b
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout promotion controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze stacked lineage and target
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent='b9b09a57f62b4541fe62f97f9a29dc52acf836ea'
+          parent_tree='8af0f86990ee6c970a07763c409e5c3e9eb0995e'
+          target='ux/ux-qa-debt-006-results-lifecycle'
+          workflow='.github/workflows/0000-temp-ux-qa-debt-006-permanent-promotion-r1b.yml'
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git rev-parse "${parent}^{tree}")" = "$parent_tree"
+          mapfile -t controller_changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#controller_changed[@]}" -eq 1
+          test "${controller_changed[0]}" = "$workflow"
+          git fetch --no-tags origin "$target"
+          test "$(git rev-parse FETCH_HEAD)" = "$parent"
+          test "$(git rev-parse "${parent}:tests/e2e/search-flow.spec.js")" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse "${parent}:assets/js/state/state-contracts.js")" = '456e01e5fede548c276a5d4d7088a39175a3ae2a'
+          test "$(git rev-parse "${parent}:scripts/audit-domain-completion-matrix.js")" = 'b47e62538641e5796bee13208cec301f73107102'
+          echo "UX_QA_DEBT_006_PROMOTION_R1B_LINEAGE=PASS parent=$parent tree=$parent_tree targetHead=$parent qa007=e0276bfc627c8cec0f8857b76b7f6e05233c5912 state=456e01e5fede548c276a5d4d7088a39175a3ae2a scanner=b47e62538641e5796bee13208cec301f73107102 controllerTempOnly=true"
+
+      - name: Create detached parent worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          worktree="$RUNNER_TEMP/qa006-permanent-r1b"
+          git worktree add --detach "$worktree" 'b9b09a57f62b4541fe62f97f9a29dc52acf836ea'
+          git -C "$worktree" config user.name 'doke-qa'
+          git -C "$worktree" config user.email 'doke-qa@users.noreply.github.com'
+          echo "WORKTREE=$worktree" >> "$GITHUB_ENV"
+
+      - name: Reconstruct exact qualified QA006 bytes from R1d source
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_branch='diag/ux-qa-debt-006-results-lifecycle-candidate-r1d'
+          source_commit='0c232c375c27e9ab2e8a48a759b390ea3308309b'
+          source_workflow='.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1d.yml'
+          git fetch --no-tags origin "$source_branch"
+          test "$(git rev-parse FETCH_HEAD)" = "$source_commit"
+          cd "$WORKTREE"
+          export QA006_SOURCE_REPO="$GITHUB_WORKSPACE"
+          export QA006_SOURCE_COMMIT="$source_commit"
+          export QA006_SOURCE_WORKFLOW="$source_workflow"
+          python <<'PY'
+          import hashlib
+          import os
+          import subprocess
+          from pathlib import Path
+
+          repo = os.environ['QA006_SOURCE_REPO']
+          commit = os.environ['QA006_SOURCE_COMMIT']
+          workflow = os.environ['QA006_SOURCE_WORKFLOW']
+          expected = 'f99c8a622abacf6360680dbf5864e0b1c2ef2484'
+          raw = subprocess.check_output(['git', '-C', repo, 'show', f'{commit}:{workflow}'], text=True, encoding='utf-8')
+          start_marker = "          @'\n          const { test, expect } = require('@playwright/test');"
+          end_marker = "\n          '@ | Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js' -Encoding UTF8"
+          start = raw.find(start_marker)
+          if start < 0:
+              raise SystemExit('R1d candidate start marker missing')
+          start += len("          @'\n")
+          end = raw.find(end_marker, start)
+          if end < 0:
+              raise SystemExit('R1d candidate end marker missing')
+          embedded = raw[start:end]
+          lines = embedded.split('\n')
+          if any(line and not line.startswith('          ') for line in lines):
+              raise SystemExit('R1d candidate indentation drift')
+          text = '\n'.join(line[10:] if line.startswith('          ') else '' for line in lines)
+          if not text.endswith('\n'):
+              text += '\n'
+
+          def blob_sha(data):
+              return hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()
+
+          variants = []
+          for newline in ('\n', '\r\n'):
+              normalized = text.replace('\r\n', '\n').replace('\r', '\n').replace('\n', newline)
+              for bom in (b'', b'\xef\xbb\xbf'):
+                  data = bom + normalized.encode('utf-8')
+                  variants.append((blob_sha(data), data, newline, bool(bom)))
+          matches = [item for item in variants if item[0] == expected]
+          if len(matches) != 1:
+              raise SystemExit(f'exact QA006 reconstruction failed matches={[(m[0], m[2], m[3]) for m in matches]} all={[v[0] for v in variants]}')
+          _, data, newline, bom = matches[0]
+          Path('tests/e2e/results-entry-lifecycle.spec.js').write_bytes(data)
+          print(f'QA006_RECONSTRUCTION=PASS blob={expected} newline={newline.encode()} bom={bom}')
+          PY
+          test "$(git hash-object tests/e2e/results-entry-lifecycle.spec.js)" = 'f99c8a622abacf6360680dbf5864e0b1c2ef2484'
+          node --check tests/e2e/results-entry-lifecycle.spec.js
+          git diff --check
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'tests/e2e/results-entry-lifecycle.spec.js'
+          test -z "$(git diff --name-only -- assets '*.html' config docs/DOMAIN-COMPLETION-MATRIX.md tests/visual)"
+          echo 'UX_QA_DEBT_006_PROMOTION_R1B_MATERIALIZATION=PASS blob=f99c8a622abacf6360680dbf5864e0b1c2ef2484 files=1 owner=tests/e2e/results-entry-lifecycle.spec.js productMutation=false snapshotMutation=false matrixMutation=false criteriaRelaxed=0'
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Prove canonical Resultados lifecycle 5 of 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          out="$RUNNER_TEMP/qa006-lifecycle.json"
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$out" npx playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          node - "$out" <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          let total = 0, failed = 0;
+          function walk(suites) {
+            for (const suite of suites || []) {
+              for (const spec of suite.specs || []) for (const test of spec.tests || []) {
+                total += 1;
+                if ((test.results || []).some((r) => r.status === 'failed')) failed += 1;
+              }
+              walk(suite.suites);
+            }
+          }
+          walk(report.suites);
+          if (total !== 5 || failed !== 0) throw new Error(`lifecycle total=${total} failed=${failed}`);
+          console.log('UX_QA_DEBT_006_PROMOTION_R1B_LIFECYCLE=PASS total=5 passed=5 failed=0 desktop=true tablet=true mobile=true rendererError=true repositoryObserver=true');
+          NODE
+
+      - name: Preserve stacked search and UX Results acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          search_out="$RUNNER_TEMP/qa006-search.json"
+          ux_out="$RUNNER_TEMP/qa006-ux-results.json"
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$search_out" npx playwright test tests/e2e/search-flow.spec.js --reporter=json
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$ux_out" npx playwright test tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=json
+          node - "$search_out" "$ux_out" <<'NODE'
+          const fs = require('fs');
+          function summary(path) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            let total = 0, failed = 0;
+            function walk(suites) {
+              for (const suite of suites || []) {
+                for (const spec of suite.specs || []) for (const test of spec.tests || []) {
+                  total += 1;
+                  if ((test.results || []).some((r) => r.status === 'failed')) failed += 1;
+                }
+                walk(suite.suites);
+              }
+            }
+            walk(report.suites);
+            return { total, failed };
+          }
+          const search = summary(process.argv[2]);
+          const ux = summary(process.argv[3]);
+          if (search.total !== 2 || search.failed !== 0) throw new Error(`search=${JSON.stringify(search)}`);
+          if (ux.total !== 3 || ux.failed !== 0) throw new Error(`ux=${JSON.stringify(ux)}`);
+          console.log('UX_QA_DEBT_006_PROMOTION_R1B_ACCEPTANCE=PASS searchFlow=2/2 uxResults=3/3');
+          NODE
+
+      - name: Validate shared state and governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          parent='b9b09a57f62b4541fe62f97f9a29dc52acf836ea'
+          node --check tests/e2e/results-entry-lifecycle.spec.js
+          git diff --check "$parent"
+          npm run audit:global-state-completion
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git restore --source="$parent" --worktree --staged -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+          mapfile -t changed < <(git diff --name-only "$parent")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = 'tests/e2e/results-entry-lifecycle.spec.js'
+          test "$(git hash-object tests/e2e/results-entry-lifecycle.spec.js)" = 'f99c8a622abacf6360680dbf5864e0b1c2ef2484'
+          test "$(git rev-parse "${parent}:tests/e2e/search-flow.spec.js")" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse "${parent}:assets/js/state/state-contracts.js")" = '456e01e5fede548c276a5d4d7088a39175a3ae2a'
+          test "$(git rev-parse "${parent}:scripts/audit-domain-completion-matrix.js")" = 'b47e62538641e5796bee13208cec301f73107102'
+          echo 'UX_QA_DEBT_006_PROMOTION_R1B_VALIDATION=PASS nodeCheck=true diffCheck=true globalState=true matrix=true agentGovernance=true lifecycle=5/5 searchFlow=2/2 uxResults=3/3 generatedOutputsRestored=true criteriaRelaxed=0 introducedRegressions=0'
+
+      - name: Commit fast-forward and verify permanent receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$WORKTREE"
+          parent='b9b09a57f62b4541fe62f97f9a29dc52acf836ea'
+          target='ux/ux-qa-debt-006-results-lifecycle'
+          git add tests/e2e/results-entry-lifecycle.spec.js
+          git commit -m 'test(qa): align Resultados lifecycle with canonical search authority' >/dev/null
+          candidate="$(git rev-parse HEAD)"
+          candidate_tree="$(git rev-parse HEAD^{tree})"
+          test "$candidate_tree" = 'bee05e8bea81436c521fb73bb36472c8d46baf52'
+          test "$(git rev-parse HEAD:tests/e2e/results-entry-lifecycle.spec.js)" = 'f99c8a622abacf6360680dbf5864e0b1c2ef2484'
+          test "$(git rev-parse HEAD:tests/e2e/search-flow.spec.js)" = 'e0276bfc627c8cec0f8857b76b7f6e05233c5912'
+          test "$(git rev-parse HEAD:assets/js/state/state-contracts.js)" = '456e01e5fede548c276a5d4d7088a39175a3ae2a'
+          test "$(git rev-parse HEAD:scripts/audit-domain-completion-matrix.js)" = 'b47e62538641e5796bee13208cec301f73107102'
+          git fetch --no-tags origin "$target"
+          test "$(git rev-parse FETCH_HEAD)" = "$parent"
+          git push origin "HEAD:refs/heads/$target"
+          git fetch --no-tags origin "$target"
+          remote="$(git rev-parse FETCH_HEAD)"
+          test "$remote" = "$candidate"
+          test "$(git rev-list --count "$parent..$remote")" -eq 1
+          mapfile -t files < <(git diff --name-only "$parent" "$remote")
+          test "${#files[@]}" -eq 1
+          test "${files[0]}" = 'tests/e2e/results-entry-lifecycle.spec.js'
+          echo "UX_QA_DEBT_006_PROMOTION_R1B_FINAL=PASS branch=$target sha=$remote tree=$candidate_tree qa006=f99c8a622abacf6360680dbf5864e0b1c2ef2484 qa007=e0276bfc627c8cec0f8857b76b7f6e05233c5912 state=456e01e5fede548c276a5d4d7088a39175a3ae2a scanner=b47e62538641e5796bee13208cec301f73107102 commitsAhead=1 files=1 force=false lifecycle=5/5 acceptance=5/5 criteriaRelaxed=0 introducedRegressions=0 productMutation=false snapshotMutation=false matrixMutation=false prCreated=false readyForReview=false merge=false staging=false production=false repositoryOnly=true"
