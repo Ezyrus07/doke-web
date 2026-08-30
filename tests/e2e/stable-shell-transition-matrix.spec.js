@@ -45,6 +45,24 @@ test.beforeEach(async ({ page }) => {
   await installAuthenticatedSession(page);
 });
 
+async function waitForTabletRouteTerminality(page, file, pageKey) {
+  await expect.poll(() => page.evaluate(({ file: expectedFile, pageKey: expectedPage }) => {
+    const snapshot = window.Doke?.navigationLifecycle?.getSnapshot?.();
+    const route = snapshot?.route || {};
+    const expectedPath = `/${expectedFile}`;
+    const routeSettled = route.to === expectedPath && (route.state === 'ready' || route.state === 'empty');
+    const routerIdle = window.Doke?.stableShellRouter?.isNavigating?.() === false;
+    const pageSettled = document.body?.dataset.page === expectedPage;
+    const routingIdle = !document.documentElement.classList.contains('is-stable-shell-routing')
+      && !document.body?.classList.contains('is-stable-shell-routing');
+    return routeSettled && routerIdle && pageSettled && routingIdle;
+  }, { file, pageKey })).toBe(true);
+
+  await page.evaluate(() => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
+}
+
 const readState = () => {
   const root = document.documentElement;
   const body = document.body;
@@ -96,6 +114,9 @@ for (const [name, width, height] of viewports) {
 
     for (const [file, pageKey] of stableShellPages) {
       await page.evaluate((href) => window.DokeNavigate(`/${href}`), file);
+      if (name === 'tablet') {
+        await waitForTabletRouteTerminality(page, file, pageKey);
+      }
       const state = await page.evaluate(readState);
       const direct = directStates.get(file);
       expect(state.page).toBe(pageKey);
