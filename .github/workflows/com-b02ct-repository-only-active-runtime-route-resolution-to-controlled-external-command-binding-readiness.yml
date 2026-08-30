@@ -1,4 +1,4 @@
-name: COM-B02CT-R2 Repository-Only Domain Matrix Workspace-State Differential Diagnostic
+name: COM-B02CT-R3 Repository-Only Root-Scan-Neutral Contract Recovery
 
 on:
   push:
@@ -11,481 +11,508 @@ permissions:
   contents: read
 
 jobs:
-  diagnose-b02ct-domain-matrix-workspace-state:
+  certify-b02ct-root-scan-neutral-readiness:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       B02CS_HEAD: 734395ff2366ee2e31917b9270758f7b7fffaae2
       B02CS_TREE: 8b056f97b70a8cdda7cee791031747882edab790
-      R1_HEAD: 7c7c2723ee94fd87952348106ed85ae418319b3a
-      R1_TREE: 374692c51ad998dd4649b9000323fa75bb3b86a3
-      R1_WORKFLOW_BLOB: cca19fd455c97594d86a71eb4ab5d5e408d2e321
-      FAILED_CANDIDATE_HEAD: 3ebf306ebbe9394727ccbf637f2c9b4438b67636
-      FAILED_CANDIDATE_TREE: bef7f997ca790f5413dd52ea6bd1641aa4aae70a
-      FAILED_TEST: scripts/test-com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.js
-      FAILED_TEST_BLOB: da8a33e9c2ab56e850ebcec599a06e0bb231b9ae
+      R2_HEAD: 632b1b981dd87d298226cff2c1eca9ca7d5558ce
+      R2_TREE: 8f7c37f1cdcc38078b5c2cf9f95a4e028d19cf30
+      R2_RUN_ID: '33337112811'
+      R2_WORKFLOW_BLOB: 9060a73e2f350ce7e365ff6aba807452c7ef0356
+      PERSISTENT_CONFIG_BLOB: 02ff5bcf9b7837ac170bbde0da9d414b4664ebc6
       WORKFLOW: .github/workflows/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.yml
       CONFIG: config/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.json
-      CONFIG_BLOB: 02ff5bcf9b7837ac170bbde0da9d414b4664ebc6
+      FAILED_TEST: scripts/test-com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.js
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
       MATRIX_DERIVATIVE: docs/DOMAIN-COMPLETION-MATRIX.md
       MATRIX_DERIVATIVE_BLOB: 17cfe628187244c79305d3fe3415509e9111265d
       MATRIX_AUDITOR: scripts/audit-domain-completion-matrix.js
       MATRIX_AUDITOR_BLOB: f60d9b9efc8a191822b34d39d4e9137a59b8727e
-      MATRIX_SNAPSHOT: docs/validation/domain-completion-staging-snapshot.json
-      MATRIX_SNAPSHOT_BLOB: f8a8a5ac6275c5adbaba0c740c1fbefcd6b1b363
-      PACKAGE_JSON: package.json
-      PACKAGE_JSON_BLOB: 8b9670383773896d03410cb661a23e2061911495
+      ROUTE_REGISTRY: backend/shared/http/route-registry.js
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER: backend/shared/http/module-route-loader.js
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      ROUTE_HANDLERS: backend/modules/communities/route-handlers.js
+      ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      SURFACE_DESCRIPTOR: backend/shared/http/repository-only-route-surface-descriptor.js
+      SURFACE_DESCRIPTOR_BLOB: c899df5404d9d7f90795f8933dfc44bdd57a1971
+      SURFACE_RESOLVER: backend/shared/http/repository-only-route-surface-resolver.js
+      SURFACE_RESOLVER_BLOB: 00df5c48a9ac4a72fefde4aa31486fe8ed46ea8c
+      BEGIN_DISPATCHER: backend/shared/http/repository-only-route-begin-dispatcher.js
+      BEGIN_DISPATCHER_BLOB: 00d8d8e62dfb7c30b70753f83fa172f3953aad83
+      RESUME_DISPATCHER: backend/shared/http/repository-only-route-resume-dispatcher.js
+      RESUME_DISPATCHER_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      RESUME_REGISTRY_LOOKUP: backend/shared/http/repository-only-route-resume-dispatcher-registry-lookup-integration.js
+      RESUME_REGISTRY_LOOKUP_BLOB: 43ba780f17ef23790d03224955cafe49c454ac6c
+      COMMAND_ORCHESTRATION: backend/modules/communities/community-command-handler-repository-orchestration.js
+      COMMAND_ORCHESTRATION_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
+      STAGING_API_RUNTIME: backend/runtime/staging/staging-api-runtime.js
+      STAGING_API_RUNTIME_BLOB: 69de100fe3a269507a0da7847ae8e9887f831ceb
 
     steps:
-      - name: Checkout exact R2 diagnostic candidate head
+      - name: Checkout exact R3 recovery candidate head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Freeze R1 parent, certified predecessor and one-file diagnostic scope
+      - name: Freeze R2 lineage, root-scan-neutral scope and certified sources
         shell: bash
         run: |
           set -euo pipefail
 
-          test "$(git rev-parse HEAD^)" = "$R1_HEAD"
-          test "$(git rev-parse "$R1_HEAD^{tree}")" = "$R1_TREE"
-          test "$(git rev-parse "$R1_HEAD:$WORKFLOW")" = "$R1_WORKFLOW_BLOB"
-          test "$(git rev-parse "$FAILED_CANDIDATE_HEAD^{tree}")" = "$FAILED_CANDIDATE_TREE"
+          test "$(git rev-parse HEAD^)" = "$R2_HEAD"
+          test "$(git rev-parse "$R2_HEAD^{tree}")" = "$R2_TREE"
+          test "$(git rev-parse "$R2_HEAD:$WORKFLOW")" = "$R2_WORKFLOW_BLOB"
+          test "$(git rev-parse "$R2_HEAD:$CONFIG")" = "$PERSISTENT_CONFIG_BLOB"
           test "$(git rev-parse "$B02CS_HEAD^{tree}")" = "$B02CS_TREE"
-          test "$(git rev-parse "$FAILED_CANDIDATE_HEAD:$FAILED_TEST")" = "$FAILED_TEST_BLOB"
 
-          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
-          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
-          test "$(git rev-parse HEAD:$MATRIX_DERIVATIVE)" = "$MATRIX_DERIVATIVE_BLOB"
-          test "$(git rev-parse HEAD:$MATRIX_AUDITOR)" = "$MATRIX_AUDITOR_BLOB"
-          test "$(git rev-parse HEAD:$MATRIX_SNAPSHOT)" = "$MATRIX_SNAPSHOT_BLOB"
-          test "$(git rev-parse HEAD:$PACKAGE_JSON)" = "$PACKAGE_JSON_BLOB"
-
-          r2_actual="$(git diff --name-only "$R1_HEAD" HEAD)"
-          test "$r2_actual" = "$WORKFLOW"
-
-          net_actual="$(git diff --name-only "$B02CS_HEAD" HEAD | sort)"
-          net_expected="$(printf '%s\n' "$WORKFLOW" "$CONFIG" | sort)"
-          test "$net_actual" = "$net_expected"
-
-          if test -e "$FAILED_TEST"; then
-            echo 'B02CT-R2 must not restore the persistent B02CT proof script' >&2
+          if git cat-file -e "HEAD:$CONFIG" 2>/dev/null; then
+            echo 'R3 must remove the persistent B02CT config from the repository tree' >&2
             exit 1
           fi
 
-          git diff --check "$R1_HEAD" HEAD
+          if test -e "$CONFIG"; then
+            echo 'R3 checkout unexpectedly contains persistent B02CT config' >&2
+            exit 1
+          fi
+
+          if test -e "$FAILED_TEST"; then
+            echo 'R3 must not restore the persistent B02CT proof script' >&2
+            exit 1
+          fi
+
+          r3_actual="$(git diff --name-status "$R2_HEAD" HEAD)"
+          r3_expected="$(printf 'D\t%s\nM\t%s\n' "$CONFIG" "$WORKFLOW" | sort)"
+          test "$(printf '%s\n' "$r3_actual" | sort)" = "$r3_expected"
+
+          net_actual="$(git diff --name-only "$B02CS_HEAD" HEAD)"
+          test "$net_actual" = "$WORKFLOW"
+
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_DERIVATIVE)" = "$MATRIX_DERIVATIVE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_AUDITOR)" = "$MATRIX_AUDITOR_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_REGISTRY)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:$MODULE_ROUTE_LOADER)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_HANDLERS)" = "$ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$SURFACE_DESCRIPTOR)" = "$SURFACE_DESCRIPTOR_BLOB"
+          test "$(git rev-parse HEAD:$SURFACE_RESOLVER)" = "$SURFACE_RESOLVER_BLOB"
+          test "$(git rev-parse HEAD:$BEGIN_DISPATCHER)" = "$BEGIN_DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$RESUME_DISPATCHER)" = "$RESUME_DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$RESUME_REGISTRY_LOOKUP)" = "$RESUME_REGISTRY_LOOKUP_BLOB"
+          test "$(git rev-parse HEAD:$COMMAND_ORCHESTRATION)" = "$COMMAND_ORCHESTRATION_BLOB"
+          test "$(git rev-parse HEAD:$STAGING_API_RUNTIME)" = "$STAGING_API_RUNTIME_BLOB"
+
+          git diff --check "$R2_HEAD" HEAD
           git diff --check "$B02CS_HEAD" HEAD
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
-          mkdir -p "$RUNNER_TEMP/com-b02ct-r2"
-          git status --porcelain=v1 --untracked-files=all > "$RUNNER_TEMP/com-b02ct-r2/main-status-after-checkout.txt"
-          git ls-files --others --exclude-standard > "$RUNNER_TEMP/com-b02ct-r2/main-untracked-after-checkout.txt"
+      - name: Prove Matrix is current before any runner-temp B02CT materialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+          node "$MATRIX_AUDITOR"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
-      - name: Setup Node 24
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
-      - name: Materialize runner-temp scan manifest helper
+      - name: Materialize isolated R3 contract and dynamic reference-resolution proof
         shell: bash
         run: |
           set -euo pipefail
 
-          HELPER="$RUNNER_TEMP/com-b02ct-r2/scan-manifest.py"
-          cat > "$HELPER" <<'PY'
-          import hashlib
-          import json
-          import sys
-          from pathlib import Path
+          CONTRACT="$RUNNER_TEMP/com-b02ct-r3-contract.json"
+          TEST="$RUNNER_TEMP/test-com-b02ct-r3-root-scan-neutral-readiness.js"
+          PROOF="$RUNNER_TEMP/com-b02ct-r3-repository-only-readiness-proof.json"
 
-          root = Path(sys.argv[1]).resolve()
-          output = Path(sys.argv[2])
-          matrix = json.loads((root / 'config/domain-completion-matrix.json').read_text(encoding='utf-8'))
-
-          ignore_dirs = {
-              'node_modules', '.git', 'playwright-report', 'test-results',
-              'reports', 'coverage', 'dist', 'build', 'archive',
+          cat > "$CONTRACT" <<'JSON'
+          {
+            "contractId": "com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness-v2",
+            "boundaryId": "COM-B02CT",
+            "recoveryBoundaryId": "COM-B02CT-R3",
+            "domain": "COM-001",
+            "mode": "repository-only-readiness",
+            "state": "READINESS_ONLY",
+            "predecessor": {
+              "boundaryId": "COM-B02CS",
+              "head": "734395ff2366ee2e31917b9270758f7b7fffaae2",
+              "tree": "8b056f97b70a8cdda7cee791031747882edab790",
+              "certificationRunId": 33291051581
+            },
+            "recovery": {
+              "diagnosticBoundaryId": "COM-B02CT-R2",
+              "diagnosticHead": "632b1b981dd87d298226cff2c1eca9ca7d5558ce",
+              "diagnosticTree": "8f7c37f1cdcc38078b5c2cf9f95a4e028d19cf30",
+              "diagnosticRunId": 33337112811,
+              "rootCause": "APP-001 scanRoots [.] counts persistent text files at repository root scope; the persistent B02CT config JSON changed the scanned universe while the workflow YAML did not.",
+              "strategy": "remove-persistent-config-and-materialize-contract-proof-only-under-runner-temp"
+            },
+            "objective": "Prove the structural seam from active runtime route resolution to the existing controlled external command binding lineage while keeping default active handlers fail-closed and invoking neither path.",
+            "routes": [
+              {
+                "routeName": "communities.membership.command",
+                "moduleName": "communities",
+                "activeHandlerName": "executeMembershipCommand",
+                "beginSurfaceName": "composeMembershipCommandRepositoryOnly",
+                "resumeSurfaceName": "resumeCommandRepositoryOnlySurface"
+              },
+              {
+                "routeName": "communities.governance.command",
+                "moduleName": "communities",
+                "activeHandlerName": "executeGovernanceCommand",
+                "beginSurfaceName": "composeGovernanceCommandRepositoryOnly",
+                "resumeSurfaceName": "resumeCommandRepositoryOnlySurface"
+              },
+              {
+                "routeName": "communities.content.command",
+                "moduleName": "communities",
+                "activeHandlerName": "executeContentCommand",
+                "beginSurfaceName": "composeContentCommandRepositoryOnly",
+                "resumeSurfaceName": "resumeCommandRepositoryOnlySurface"
+              }
+            ],
+            "frozenSources": {
+              "routeRegistry": {
+                "path": "backend/shared/http/route-registry.js",
+                "blob": "04a039c1967ffb59502e05584d05831f7c9a1a41"
+              },
+              "moduleRouteLoader": {
+                "path": "backend/shared/http/module-route-loader.js",
+                "blob": "85e061fe36339596ba9558a503b2fa7ce02574ae"
+              },
+              "routeHandlers": {
+                "path": "backend/modules/communities/route-handlers.js",
+                "blob": "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+              },
+              "surfaceDescriptor": {
+                "path": "backend/shared/http/repository-only-route-surface-descriptor.js",
+                "blob": "c899df5404d9d7f90795f8933dfc44bdd57a1971"
+              },
+              "surfaceResolver": {
+                "path": "backend/shared/http/repository-only-route-surface-resolver.js",
+                "blob": "00df5c48a9ac4a72fefde4aa31486fe8ed46ea8c"
+              },
+              "beginDispatcher": {
+                "path": "backend/shared/http/repository-only-route-begin-dispatcher.js",
+                "blob": "00d8d8e62dfb7c30b70753f83fa172f3953aad83"
+              },
+              "resumeDispatcher": {
+                "path": "backend/shared/http/repository-only-route-resume-dispatcher.js",
+                "blob": "4a8da53cca4ef27777c550e91f28a4abe5bbe542"
+              },
+              "resumeRegistryLookupIntegration": {
+                "path": "backend/shared/http/repository-only-route-resume-dispatcher-registry-lookup-integration.js",
+                "blob": "43ba780f17ef23790d03224955cafe49c454ac6c"
+              },
+              "commandOrchestration": {
+                "path": "backend/modules/communities/community-command-handler-repository-orchestration.js",
+                "blob": "f094ddc01a3f05975794bafb925d64f146a51ea2"
+              },
+              "stagingApiRuntime": {
+                "path": "backend/runtime/staging/staging-api-runtime.js",
+                "blob": "69de100fe3a269507a0da7847ae8e9887f831ceb"
+              }
+            },
+            "rootCause": {
+              "activeRuntimePath": "route-registry -> module-route-loader.getHandler() -> active execute handler",
+              "repositoryOnlyPath": "COM-B02W/X -> COM-B02Y -> COM-B02T -> existing continuation/resume lineage through COM-B02CO",
+              "gap": "The active runtime resolves the fail-closed execute handler directly; the certified repository-only command lineage remains separate and is not wired into active dispatch.",
+              "duplicateMechanismRequired": false
+            },
+            "persistentScope": {
+              "allowedFiles": [
+                ".github/workflows/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.yml"
+              ],
+              "persistentConfigAllowed": false,
+              "persistentScriptAllowed": false,
+              "matrixSourceWriteAllowed": false,
+              "matrixDerivativeWriteAllowed": false
+            },
+            "authority": {
+              "repositoryOnlyReadinessAuthority": true,
+              "activeExecuteHandlerInvocationAuthority": false,
+              "repositoryOnlySurfaceInvocationAuthority": false,
+              "externalCommandBindingInvocationAuthority": false,
+              "repositoryOperationInvocationAuthority": false,
+              "credentialReadAuthority": false,
+              "rpcExecutionAuthority": false,
+              "networkAuthority": false,
+              "supabaseAuthority": false,
+              "stagingDeploymentAuthority": false,
+              "stagingTrafficAuthority": false,
+              "runtimeWiringAuthority": false,
+              "runtimeActivationAuthority": false,
+              "realtimeActivationAuthority": false,
+              "migrationApplicationAuthority": false,
+              "productionAuthority": false,
+              "pullRequestMergeAuthority": false,
+              "readyForReviewAuthority": false
+            },
+            "rollback": "Revert the single R3 commit to restore the R2 workflow and persistent diagnostic-era config; no implementation source or Matrix source/derivative is changed by R3."
           }
-          generated_scan_paths = {
-              'docs/DOMAIN-COMPLETION-MATRIX.md',
-              'docs/HOME-AUTHORITY-CLASSIFICATION.md',
-              'docs/PAGE-ASSET-AUTHORITY-MATRIX.md',
+          JSON
+
+          cat > "$TEST" <<'NODE'
+          'use strict';
+
+          const assert = require('assert');
+          const fs = require('fs');
+          const path = require('path');
+          const Module = require('module');
+          const { execFileSync } = require('child_process');
+
+          const root = process.cwd();
+          const configPath = process.env.B02CT_TEMP_CONFIG;
+          const proofPath = process.env.PROOF_PATH;
+
+          assert.ok(configPath);
+          assert.ok(proofPath);
+          const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+          function source(relativePath) {
+            return fs.readFileSync(path.join(root, relativePath), 'utf8');
           }
-          text_extensions = {'.js', '.mjs', '.cjs', '.ts', '.html', '.css', '.sql', '.json', '.md'}
 
-          def rel(path):
-              return path.relative_to(root).as_posix()
-
-          def ignored(path):
-              relative = rel(path)
-              parts = relative.split('/')
-              return (
-                  any(part in ignore_dirs for part in parts)
-                  or relative == 'docs/validation'
-                  or relative.startswith('docs/validation/')
-                  or relative in generated_scan_paths
-              )
-
-          def resolve_scan_root(value):
-              exact = root / value
-              if exact.exists():
-                  return [exact]
-              directory = exact.parent
-              prefix = exact.name
-              if not directory.exists() or not directory.is_dir():
-                  return []
-              return [entry for entry in directory.iterdir() if entry.name.startswith(prefix)]
-
-          def walk(entry, result):
-              if not entry.exists() or ignored(entry):
-                  return
-              if entry.is_dir():
-                  for child in sorted(entry.iterdir(), key=lambda p: p.name):
-                      walk(child, result)
-                  return
-              if entry.suffix.lower() not in text_extensions:
-                  return
-              if entry.stat().st_size > 2_000_000:
-                  return
-              result.add(entry)
-
-          domains = {}
-          all_files = set()
-          for domain in matrix.get('domains', []):
-              files = set()
-              for scan_root in domain.get('scanRoots', []):
-                  for resolved in resolve_scan_root(scan_root):
-                      walk(resolved, files)
-              ordered = sorted(files, key=lambda p: rel(p))
-              domains[domain['id']] = [rel(path) for path in ordered]
-              all_files.update(ordered)
-
-          file_hashes = {}
-          for path in sorted(all_files, key=lambda p: rel(p)):
-              file_hashes[rel(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
-
-          payload = {
-              'root': '.',
-              'domainFileCounts': {key: len(value) for key, value in domains.items()},
-              'domains': domains,
-              'fileHashes': file_hashes,
+          function frozenBlob(relativePath) {
+            return execFileSync('git', ['rev-parse', `HEAD:${relativePath}`], { encoding: 'utf8' }).trim();
           }
-          output.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-          PY
 
-          case "$(realpath "$HELPER")" in
+          for (const entry of Object.values(config.frozenSources)) {
+            assert.strictEqual(frozenBlob(entry.path), entry.blob, `frozen blob drift: ${entry.path}`);
+          }
+
+          const routeRegistry = require(path.join(root, config.frozenSources.routeRegistry.path));
+          const routeHandlers = require(path.join(root, config.frozenSources.routeHandlers.path));
+
+          const loaderPath = path.join(root, config.frozenSources.moduleRouteLoader.path);
+          const originalLoad = Module._load;
+          const unrelatedRouteHandlerRequests = new Set([
+            '../../modules/auth/route-handlers',
+            '../../modules/orders/route-handlers',
+            '../../modules/messaging/route-handlers',
+            '../../modules/notifications/route-handlers',
+            '../../modules/wallet/route-handlers',
+            '../../modules/admin/route-handlers'
+          ]);
+
+          Module._load = function patchedLoad(request, parent, isMain) {
+            if (parent && path.resolve(parent.filename) === loaderPath && unrelatedRouteHandlerRequests.has(request)) {
+              return Object.freeze({
+                routes: Object.freeze([]),
+                handlers: Object.freeze({})
+              });
+            }
+            return originalLoad.call(this, request, parent, isMain);
+          };
+
+          let moduleRouteLoader;
+          try {
+            delete require.cache[require.resolve(loaderPath)];
+            moduleRouteLoader = require(loaderPath);
+          } finally {
+            Module._load = originalLoad;
+          }
+
+          const surfaceDescriptor = require(path.join(root, config.frozenSources.surfaceDescriptor.path));
+          const surfaceResolver = require(path.join(root, config.frozenSources.surfaceResolver.path));
+
+          assert.strictEqual(config.boundaryId, 'COM-B02CT');
+          assert.strictEqual(config.recoveryBoundaryId, 'COM-B02CT-R3');
+          assert.strictEqual(config.predecessor.boundaryId, 'COM-B02CS');
+          assert.strictEqual(config.persistentScope.persistentConfigAllowed, false);
+          assert.strictEqual(config.persistentScope.persistentScriptAllowed, false);
+          assert.strictEqual(config.authority.activeExecuteHandlerInvocationAuthority, false);
+          assert.strictEqual(config.authority.repositoryOnlySurfaceInvocationAuthority, false);
+          assert.strictEqual(config.authority.repositoryOperationInvocationAuthority, false);
+          assert.strictEqual(config.authority.networkAuthority, false);
+          assert.strictEqual(config.authority.runtimeWiringAuthority, false);
+          assert.strictEqual(config.authority.runtimeActivationAuthority, false);
+
+          const stagingRuntimeSource = source(config.frozenSources.stagingApiRuntime.path);
+          assert.ok(stagingRuntimeSource.includes("const { listRoutes } = require('../../shared/http/route-registry');"));
+          assert.ok(stagingRuntimeSource.includes("const { getHandler } = require('../../shared/http/module-route-loader');"));
+          assert.ok(stagingRuntimeSource.includes('const handler = getHandler(match.route.module, match.route.handler);'));
+          assert.ok(stagingRuntimeSource.includes('const result = await handler({'));
+          assert.strictEqual(stagingRuntimeSource.includes('getRepositoryOnlySurface'), false);
+          assert.strictEqual(stagingRuntimeSource.includes('repository-only-route-begin-dispatcher'), false);
+          assert.strictEqual(stagingRuntimeSource.includes('repository-only-route-resume-dispatcher'), false);
+
+          const routeHandlerSource = source(config.frozenSources.routeHandlers.path);
+          assert.ok(routeHandlerSource.includes("const B02F_FAILURE_CODE = 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED';"));
+          for (const entry of config.routes) {
+            assert.ok(routeHandlerSource.includes(`async function ${entry.activeHandlerName}()`));
+            assert.ok(routeHandlerSource.includes(`throw createB02FBlockedRouteError('${entry.routeName}');`));
+          }
+
+          const beginSource = source(config.frozenSources.beginDispatcher.path);
+          const resumeSource = source(config.frozenSources.resumeDispatcher.path);
+          const registryLookupSource = source(config.frozenSources.resumeRegistryLookupIntegration.path);
+          const orchestrationSource = source(config.frozenSources.commandOrchestration.path);
+
+          assert.ok(beginSource.includes('function dispatchRepositoryOnlyRouteBegin'));
+          assert.ok(beginSource.includes('routeName, packet, options = {}'));
+          assert.ok(beginSource.includes('const state = resolution.beginSurface(packet, options);'));
+          assert.ok(resumeSource.includes('function dispatchRepositoryOnlyRouteResume'));
+          assert.ok(registryLookupSource.includes('repository-only-route-resume-dispatcher'));
+          assert.ok(orchestrationSource.includes('function beginRepositoryOnlyCommandHandlerOrchestration(routeName, packet, options = {})'));
+          assert.ok(orchestrationSource.includes('function resumeRepositoryOnlyCommandHandlerOrchestration(orchestration, repositoryResult, options = {})'));
+
+          assert.strictEqual(surfaceDescriptor.BOUNDARY_ID, 'COM-B02W');
+          assert.strictEqual(surfaceResolver.BOUNDARY_ID, 'COM-B02X');
+
+          const results = [];
+          for (const entry of config.routes) {
+            const registryRoute = routeRegistry.findRouteByName(entry.routeName);
+            assert.ok(registryRoute, `missing active route: ${entry.routeName}`);
+            assert.strictEqual(registryRoute.module, entry.moduleName);
+            assert.strictEqual(registryRoute.handler, entry.activeHandlerName);
+
+            const activeHandler = moduleRouteLoader.getHandler(entry.moduleName, entry.activeHandlerName);
+            const beginSurface = moduleRouteLoader.getRepositoryOnlySurface(entry.moduleName, entry.beginSurfaceName);
+            const resumeSurface = moduleRouteLoader.getRepositoryOnlySurface(entry.moduleName, entry.resumeSurfaceName);
+
+            assert.strictEqual(activeHandler, routeHandlers.handlers[entry.activeHandlerName]);
+            assert.strictEqual(activeHandler, routeHandlers[entry.activeHandlerName]);
+            assert.strictEqual(beginSurface, routeHandlers[entry.beginSurfaceName]);
+            assert.strictEqual(resumeSurface, routeHandlers[entry.resumeSurfaceName]);
+            assert.notStrictEqual(activeHandler, beginSurface);
+            assert.notStrictEqual(activeHandler, resumeSurface);
+
+            const descriptor = surfaceDescriptor.describeRepositoryOnlyRouteSurface(entry.routeName);
+            assert.ok(descriptor, `missing descriptor: ${entry.routeName}`);
+            assert.strictEqual(descriptor.activeHandlerName, entry.activeHandlerName);
+            assert.strictEqual(descriptor.beginSurfaceName, entry.beginSurfaceName);
+            assert.strictEqual(descriptor.resumeSurfaceName, entry.resumeSurfaceName);
+
+            const resolution = surfaceResolver.resolveRepositoryOnlyRouteSurface(entry.routeName);
+            assert.ok(resolution, `missing resolver result: ${entry.routeName}`);
+            assert.strictEqual(resolution.activeHandlerName, entry.activeHandlerName);
+            assert.strictEqual(resolution.beginSurfaceName, entry.beginSurfaceName);
+            assert.strictEqual(resolution.resumeSurfaceName, entry.resumeSurfaceName);
+            assert.strictEqual(resolution.beginSurface, beginSurface);
+            assert.strictEqual(resolution.resumeSurface, resumeSurface);
+            assert.strictEqual(resolution.executableReferencesResolved, true);
+            assert.strictEqual(resolution.executableReferencesInvoked, false);
+
+            results.push(Object.freeze({
+              routeName: entry.routeName,
+              activeRuntimeRouteResolved: true,
+              activeHandlerReferenceResolvedNotInvoked: true,
+              repositoryOnlyBeginReferenceResolvedNotInvoked: true,
+              repositoryOnlyResumeReferenceResolvedNotInvoked: true,
+              descriptorParity: true,
+              resolverParity: true,
+              activeAndRepositoryOnlyReferencesRemainSeparated: true,
+              controlledExternalBindingLineageReusable: true,
+              defaultFailClosedPreserved: true
+            }));
+          }
+
+          assert.strictEqual(results.length, 3);
+
+          const proof = Object.freeze({
+            contractId: config.contractId,
+            boundaryId: config.boundaryId,
+            recoveryBoundaryId: config.recoveryBoundaryId,
+            domain: config.domain,
+            mode: config.mode,
+            state: 'REPOSITORY_READINESS_PASS',
+            head: process.env.GITHUB_SHA,
+            tree: execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim(),
+            predecessor: config.predecessor,
+            recovery: config.recovery,
+            proofTarget: 'active runtime route resolution -> existing controlled external command binding lineage (references resolved, never invoked)',
+            cases: results,
+            invariants: Object.freeze({
+              persistentConfigPresent: false,
+              persistentProofScriptPresent: false,
+              matrixSourceChanged: false,
+              matrixDerivativeChanged: false,
+              activeExecuteHandlerInvoked: false,
+              repositoryOnlyBeginSurfaceInvoked: false,
+              repositoryOnlyResumeSurfaceInvoked: false,
+              beginDispatcherInvoked: false,
+              resumeDispatcherInvoked: false,
+              externalCommandBindingInvoked: false,
+              repositoryOperationInvoked: false,
+              credentialReadExecuted: false,
+              rpcExecuted: false,
+              networkExecuted: false,
+              supabaseOperationExecuted: false,
+              stagingReadExecuted: false,
+              stagingMutationExecuted: false,
+              runtimeWiringChanged: false,
+              runtimeActivated: false,
+              realtimeActivated: false,
+              migrationApplied: false,
+              productionChanged: false,
+              mergeExecuted: false,
+              readyForReviewExecuted: false
+            })
+          });
+
+          fs.writeFileSync(proofPath, `${JSON.stringify(proof, null, 2)}\n`, 'utf8');
+          console.log(JSON.stringify(proof));
+          NODE
+
+          case "$(realpath "$CONTRACT")" in
             "$(realpath "$GITHUB_WORKSPACE")"/*)
-              echo 'diagnostic helper must remain outside GITHUB_WORKSPACE' >&2
+              echo 'R3 contract must remain outside GITHUB_WORKSPACE' >&2
               exit 1
               ;;
           esac
 
-          python "$HELPER" "$GITHUB_WORKSPACE" "$RUNNER_TEMP/com-b02ct-r2/main-manifest-after-setup-node.json"
-          git status --porcelain=v1 --untracked-files=all > "$RUNNER_TEMP/com-b02ct-r2/main-status-after-setup-node.txt"
-          git ls-files --others --exclude-standard > "$RUNNER_TEMP/com-b02ct-r2/main-untracked-after-setup-node.txt"
-
-      - name: Compare B02CS and R1 in clean detached worktrees
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DIAG="$RUNNER_TEMP/com-b02ct-r2"
-          HELPER="$DIAG/scan-manifest.py"
-
-          diagnose_ref() {
-            ref="$1"
-            label="$2"
-            worktree="$RUNNER_TEMP/com-b02ct-r2-worktree-$label"
-            copy="$RUNNER_TEMP/com-b02ct-r2-generation-copy-$label"
-
-            git worktree add --detach "$worktree" "$ref"
-            git -C "$worktree" status --porcelain=v1 --untracked-files=all > "$DIAG/$label-worktree-status-before-audit.txt"
-            python "$HELPER" "$worktree" "$DIAG/$label-manifest.json"
-            cp "$worktree/$MATRIX_DERIVATIVE" "$DIAG/$label-tracked.md"
-
-            set +e
-            (
-              cd "$worktree"
-              node "$MATRIX_AUDITOR"
-            ) > "$DIAG/$label-audit.log" 2>&1
-            audit_rc=$?
-            set -e
-            printf '%s\n' "$audit_rc" > "$DIAG/$label-audit.rc"
-
-            git -C "$worktree" status --porcelain=v1 --untracked-files=all > "$DIAG/$label-worktree-status-after-audit.txt"
-
-            mkdir -p "$copy"
-            cp -a "$worktree/." "$copy/"
-            rm -f "$copy/.git"
-
-            set +e
-            (
-              cd "$copy"
-              node "$MATRIX_AUDITOR" --write
-            ) > "$DIAG/$label-generation.log" 2>&1
-            generation_rc=$?
-            set -e
-            printf '%s\n' "$generation_rc" > "$DIAG/$label-generation.rc"
-
-            cp "$copy/$MATRIX_DERIVATIVE" "$DIAG/$label-generated.md"
-            sha256sum "$DIAG/$label-tracked.md" > "$DIAG/$label-tracked.sha256"
-            sha256sum "$DIAG/$label-generated.md" > "$DIAG/$label-generated.sha256"
-
-            set +e
-            cmp -s "$DIAG/$label-tracked.md" "$DIAG/$label-generated.md"
-            tracked_generated_cmp=$?
-            set -e
-            printf '%s\n' "$tracked_generated_cmp" > "$DIAG/$label-tracked-generated.cmp"
-
-            git -C "$worktree" reset --hard "$ref"
-            git -C "$worktree" clean -fd
-            test -z "$(git -C "$worktree" status --porcelain=v1 --untracked-files=all)"
-            git worktree remove --force "$worktree"
-            rm -rf "$copy"
-          }
-
-          diagnose_ref "$B02CS_HEAD" b02cs
-          diagnose_ref "$R1_HEAD" r1
-
-          set +e
-          cmp -s "$DIAG/b02cs-generated.md" "$DIAG/r1-generated.md"
-          generated_cmp=$?
-          cmp -s "$DIAG/b02cs-manifest.json" "$DIAG/r1-manifest.json"
-          manifest_cmp=$?
-          diff -u "$DIAG/b02cs-generated.md" "$DIAG/r1-generated.md" > "$DIAG/b02cs-vs-r1-generated.patch"
-          set -e
-
-          printf '%s\n' "$generated_cmp" > "$DIAG/b02cs-vs-r1-generated.cmp"
-          printf '%s\n' "$manifest_cmp" > "$DIAG/b02cs-vs-r1-manifest.cmp"
-
-      - name: Audit main workspace before dependency installation
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DIAG="$RUNNER_TEMP/com-b02ct-r2"
-          python "$DIAG/scan-manifest.py" "$GITHUB_WORKSPACE" "$DIAG/main-manifest-preinstall.json"
-          git status --porcelain=v1 --untracked-files=all > "$DIAG/main-status-preinstall.txt"
-          git ls-files --others --exclude-standard > "$DIAG/main-untracked-preinstall.txt"
-
-          set +e
-          node "$MATRIX_AUDITOR" > "$DIAG/main-audit-preinstall.log" 2>&1
-          audit_rc=$?
-          set -e
-          printf '%s\n' "$audit_rc" > "$DIAG/main-audit-preinstall.rc"
-
-          git status --porcelain=v1 --untracked-files=all > "$DIAG/main-status-after-preinstall-audit.txt"
-
-      - name: Probe dependency-install effect without package network
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DIAG="$RUNNER_TEMP/com-b02ct-r2"
-
-          set +e
-          npm_config_offline=true \
-          npm_config_audit=false \
-          npm_config_fund=false \
-          npm ci --ignore-scripts --offline > "$DIAG/npm-ci-offline.log" 2>&1
-          npm_rc=$?
-          set -e
-          printf '%s\n' "$npm_rc" > "$DIAG/npm-ci-offline.rc"
-
-          python "$DIAG/scan-manifest.py" "$GITHUB_WORKSPACE" "$DIAG/main-manifest-postnpm.json"
-          git status --porcelain=v1 --untracked-files=all > "$DIAG/main-status-postnpm.txt"
-          git ls-files --others --exclude-standard > "$DIAG/main-untracked-postnpm.txt"
-
-          set +e
-          node "$MATRIX_AUDITOR" > "$DIAG/main-audit-postnpm.log" 2>&1
-          audit_rc=$?
-          set -e
-          printf '%s\n' "$audit_rc" > "$DIAG/main-audit-postnpm.rc"
-
-      - name: Prove runner-temp proof materialization cannot enter matrix scan roots
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DIAG="$RUNNER_TEMP/com-b02ct-r2"
-          TEST="$RUNNER_TEMP/test-com-b02ct-r2-materialization-probe.js"
-
-          git show "$FAILED_CANDIDATE_HEAD:$FAILED_TEST" > "$TEST"
-          test "$(git hash-object "$TEST")" = "$FAILED_TEST_BLOB"
-
           case "$(realpath "$TEST")" in
             "$(realpath "$GITHUB_WORKSPACE")"/*)
-              echo 'runner-temp probe unexpectedly materialized inside GITHUB_WORKSPACE' >&2
+              echo 'R3 proof must remain outside GITHUB_WORKSPACE' >&2
               exit 1
               ;;
           esac
 
           if grep -Eq '\bexecute(Membership|Governance|Content)Command[[:space:]]*\(' "$TEST"; then
-            echo 'R2 diagnostic must not invoke active execute handlers' >&2
+            echo 'R3 proof must not invoke active execute handlers' >&2
             exit 1
           fi
 
           if grep -Eq '\b(composeMembershipCommandRepositoryOnly|composeGovernanceCommandRepositoryOnly|composeContentCommandRepositoryOnly|resumeCommandRepositoryOnlySurface|dispatchRepositoryOnlyRouteBegin|dispatchRepositoryOnlyRouteResume)[[:space:]]*\(' "$TEST"; then
-            echo 'R2 diagnostic must not invoke repository-only surfaces or dispatchers' >&2
+            echo 'R3 proof must not invoke repository-only surfaces or dispatchers' >&2
             exit 1
           fi
 
-          python "$DIAG/scan-manifest.py" "$GITHUB_WORKSPACE" "$DIAG/main-manifest-posttemp.json"
-          git status --porcelain=v1 --untracked-files=all > "$DIAG/main-status-posttemp.txt"
-          git ls-files --others --exclude-standard > "$DIAG/main-untracked-posttemp.txt"
+          export B02CT_TEMP_CONFIG="$CONTRACT"
+          export PROOF_PATH="$PROOF"
 
-          set +e
-          node "$MATRIX_AUDITOR" > "$DIAG/main-audit-posttemp.log" 2>&1
-          audit_rc=$?
-          set -e
-          printf '%s\n' "$audit_rc" > "$DIAG/main-audit-posttemp.rc"
+          node --check "$TEST"
+          node "$TEST"
+          test -s "$PROOF"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
-      - name: Classify differential result
+      - name: Prove runner-temp contract and proof are Matrix-invisible
         shell: bash
         run: |
           set -euo pipefail
+          node "$MATRIX_AUDITOR"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_DERIVATIVE)" = "$MATRIX_DERIVATIVE_BLOB"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
-          DIAG="$RUNNER_TEMP/com-b02ct-r2"
-          python - "$DIAG" <<'PY'
-          import hashlib
-          import json
-          import os
-          import sys
-          from pathlib import Path
-
-          diag = Path(sys.argv[1])
-
-          def integer(name):
-              return int((diag / name).read_text().strip())
-
-          def sha(name):
-              return hashlib.sha256((diag / name).read_bytes()).hexdigest()
-
-          b02cs_audit = integer('b02cs-audit.rc')
-          r1_audit = integer('r1-audit.rc')
-          b02cs_generation = integer('b02cs-generation.rc')
-          r1_generation = integer('r1-generation.rc')
-          generated_equal = integer('b02cs-vs-r1-generated.cmp') == 0
-          manifests_equal = integer('b02cs-vs-r1-manifest.cmp') == 0
-          b02cs_tracked_equal_generated = integer('b02cs-tracked-generated.cmp') == 0
-          r1_tracked_equal_generated = integer('r1-tracked-generated.cmp') == 0
-          preinstall = integer('main-audit-preinstall.rc')
-          npm_rc = integer('npm-ci-offline.rc')
-          postnpm = integer('main-audit-postnpm.rc')
-          posttemp = integer('main-audit-posttemp.rc')
-
-          main_manifest_pre = sha('main-manifest-preinstall.json')
-          main_manifest_postnpm = sha('main-manifest-postnpm.json')
-          main_manifest_posttemp = sha('main-manifest-posttemp.json')
-          manifest_changed_after_npm = main_manifest_pre != main_manifest_postnpm
-          manifest_changed_after_temp = main_manifest_postnpm != main_manifest_posttemp
-
-          if not generated_equal or not manifests_equal:
-              classification = 'TRACKED_CONTENT_DIFFERENTIAL'
-          elif not b02cs_tracked_equal_generated and not r1_tracked_equal_generated:
-              classification = 'BASELINE_DERIVATIVE_DRIFT_REPRODUCED_IN_BOTH_WORKTREES'
-          elif b02cs_tracked_equal_generated and not r1_tracked_equal_generated:
-              classification = 'R1_ONLY_DERIVATIVE_DRIFT'
-          elif b02cs_audit == 0 and r1_audit == 0 and preinstall != 0:
-              classification = 'MAIN_WORKSPACE_PREINSTALL_CONTAMINATION'
-          elif preinstall == 0 and npm_rc == 0 and postnpm != 0:
-              classification = 'OFFLINE_NPM_WORKSPACE_CONTAMINATION'
-          elif preinstall == postnpm == 0 and posttemp != 0:
-              classification = 'RUNNER_TEMP_MATERIALIZATION_EFFECT'
-          elif preinstall == postnpm == posttemp == 0 and b02cs_audit == r1_audit == 0:
-              classification = 'CLEAN_NON_REPRODUCTION'
-          elif npm_rc != 0:
-              classification = 'OFFLINE_NPM_PROBE_UNAVAILABLE'
-          else:
-              classification = 'UNEXPLAINED_DIFFERENTIAL_REQUIRES_LOWER_LEVEL_DIAGNOSTIC'
-
-          payload = {
-              'contractId': 'com-b02ct-r2-domain-matrix-workspace-state-differential-diagnostic-v1',
-              'boundaryId': 'COM-B02CT-R2',
-              'state': 'DIAGNOSTIC_COMPLETE',
-              'head': os.environ.get('GITHUB_SHA'),
-              'parent': os.environ.get('R1_HEAD'),
-              'certifiedPredecessor': os.environ.get('B02CS_HEAD'),
-              'classification': classification,
-              'worktreeComparison': {
-                  'b02csAuditRc': b02cs_audit,
-                  'r1AuditRc': r1_audit,
-                  'b02csGenerationRc': b02cs_generation,
-                  'r1GenerationRc': r1_generation,
-                  'generatedMarkdownEqual': generated_equal,
-                  'scanManifestsEqual': manifests_equal,
-                  'b02csTrackedEqualsGenerated': b02cs_tracked_equal_generated,
-                  'r1TrackedEqualsGenerated': r1_tracked_equal_generated,
-              },
-              'mainWorkspace': {
-                  'preinstallAuditRc': preinstall,
-                  'offlineNpmCiRc': npm_rc,
-                  'postnpmAuditRc': postnpm,
-                  'posttempAuditRc': posttemp,
-                  'scanManifestChangedAfterNpm': manifest_changed_after_npm,
-                  'scanManifestChangedAfterRunnerTempMaterialization': manifest_changed_after_temp,
-              },
-              'hashes': {
-                  'b02csTrackedMarkdownSha256': sha('b02cs-tracked.md'),
-                  'b02csGeneratedMarkdownSha256': sha('b02cs-generated.md'),
-                  'r1TrackedMarkdownSha256': sha('r1-tracked.md'),
-                  'r1GeneratedMarkdownSha256': sha('r1-generated.md'),
-                  'mainManifestPreinstallSha256': main_manifest_pre,
-                  'mainManifestPostnpmSha256': main_manifest_postnpm,
-                  'mainManifestPosttempSha256': main_manifest_posttemp,
-              },
-              'invariants': {
-                  'repositoryWriteExecutedByDiagnostic': False,
-                  'matrixSourceModified': False,
-                  'matrixDerivativePersistedModified': False,
-                  'persistentScriptCreated': False,
-                  'activeExecuteHandlerInvoked': False,
-                  'repositoryOnlySurfaceInvoked': False,
-                  'repositoryOperationInvoked': False,
-                  'credentialReadExecuted': False,
-                  'rpcExecuted': False,
-                  'applicationNetworkExecuted': False,
-                  'supabaseOperationExecuted': False,
-                  'stagingReadExecuted': False,
-                  'stagingMutationExecuted': False,
-                  'runtimeActivated': False,
-                  'realtimeActivated': False,
-                  'migrationApplied': False,
-                  'productionChanged': False,
-                  'mergeExecuted': False,
-                  'readyForReviewExecuted': False,
-              },
-          }
-
-          (diag / 'com-b02ct-r2-domain-matrix-workspace-state-differential-diagnostic.json').write_text(
-              json.dumps(payload, indent=2, sort_keys=True) + '\n',
-              encoding='utf-8',
-          )
-          print(json.dumps(payload, sort_keys=True))
-          PY
-
-          git diff --check "$R1_HEAD" HEAD
-          test "$(git diff --name-only "$R1_HEAD" HEAD)" = "$WORKFLOW"
-
-      - name: Run repository governance audit read-only
+      - name: Run repository governance without dependency installation
         shell: bash
         run: |
           set -euo pipefail
+          npm run audit:agent-governance
+          git diff --check "$R2_HEAD" HEAD
+          git diff --check "$B02CS_HEAD" HEAD
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
-          DIAG="$RUNNER_TEMP/com-b02ct-r2"
-          set +e
-          npm run audit:agent-governance > "$DIAG/agent-governance.log" 2>&1
-          governance_rc=$?
-          set -e
-          printf '%s\n' "$governance_rc" > "$DIAG/agent-governance.rc"
-          git diff --check "$R1_HEAD" HEAD
-
-      - name: Upload B02CT-R2 diagnostic evidence
-        uses: actions/upload-artifact@v4
-        with:
-          name: com-b02ct-r2-domain-matrix-workspace-state-differential-diagnostic-${{ github.sha }}
-          path: ${{ runner.temp }}/com-b02ct-r2
-          if-no-files-found: error
-          retention-days: 30
+      - name: Emit R3 repository-only proof evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$RUNNER_TEMP/com-b02ct-r3-repository-only-readiness-proof.json"
+          cat "$RUNNER_TEMP/com-b02ct-r3-repository-only-readiness-proof.json"
+          printf '%s\n' 'COM-B02CT-R3 repository-only root-scan-neutral recovery proof passed.'
