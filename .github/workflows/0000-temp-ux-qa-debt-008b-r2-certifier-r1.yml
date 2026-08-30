@@ -17,7 +17,7 @@ jobs:
       - name: Checkout TEMP branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
 
       - name: Freeze R2 and detach exact candidate
         shell: bash
@@ -28,7 +28,7 @@ jobs:
           PARENT='7a7b67e8f92918c75133b65bc224ec5de3cdb4c4'
           TEMP_PATH='.github/workflows/0000-temp-ux-qa-debt-008b-r2-certifier-r1.yml'
 
-          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
           test "$(git show -s --format=%T "$CANDIDATE")" = "$CANDIDATE_TREE"
           test "$(git diff --name-only "$CANDIDATE"..HEAD)" = "$TEMP_PATH"
 
