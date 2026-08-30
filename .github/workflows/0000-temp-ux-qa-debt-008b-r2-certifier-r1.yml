@@ -73,6 +73,14 @@ jobs:
           test "$changed" = "$expected"
           git diff --quiet "$PARENT".."$CANDIDATE" -- docs/DOMAIN-COMPLETION-MATRIX.md
           git diff --quiet "$PARENT".."$CANDIDATE" -- tests/visual reports/baseline
+
+          echo 'Runner status after governance audits:'
+          git status --porcelain || true
+
+          git diff --quiet HEAD -- docs/DOMAIN-COMPLETION-MATRIX.md tests/e2e/stable-shell-scroll-contract.spec.js tests/e2e/stable-shell-transition-matrix.spec.js tests/visual reports/baseline
+          git reset --hard "$CANDIDATE"
+          git clean -fd -- reports/generated test-results || true
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
           test -z "$(git status --porcelain)"
 
       - name: Run exact R2 owner suites
