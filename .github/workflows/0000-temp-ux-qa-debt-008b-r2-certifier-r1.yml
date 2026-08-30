@@ -1,0 +1,106 @@
+name: TEMP UX-QA-DEBT-008B R2 Certifier R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008b-r2-certifier-r1
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze R2 and detach exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE='5a08f07de2b56b1175a5fd4bf5e26df862a98594'
+          CANDIDATE_TREE='022b25d8ca1c8aaef35de4c8e1918856927f0b45'
+          PARENT='7a7b67e8f92918c75133b65bc224ec5de3cdb4c4'
+          TEMP_PATH='.github/workflows/0000-temp-ux-qa-debt-008b-r2-certifier-r1.yml'
+
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          test "$(git show -s --format=%T "$CANDIDATE")" = "$CANDIDATE_TREE"
+          test "$(git diff --name-only "$CANDIDATE"..HEAD)" = "$TEMP_PATH"
+
+          candidate_changed="$(git diff --name-only "$PARENT".."$CANDIDATE")"
+          expected=$'tests/e2e/stable-shell-scroll-contract.spec.js\ntests/e2e/stable-shell-transition-matrix.spec.js'
+          test "$candidate_changed" = "$expected"
+
+          git checkout --detach "$CANDIDATE"
+          git reset --hard "$CANDIDATE"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git show -s --format=%T HEAD)" = "$CANDIDATE_TREE"
+          test -z "$(git status --porcelain)"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run minimum governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT='7a7b67e8f92918c75133b65bc224ec5de3cdb4c4'
+          CANDIDATE='5a08f07de2b56b1175a5fd4bf5e26df862a98594'
+
+          node --check tests/e2e/stable-shell-scroll-contract.spec.js
+          node --check tests/e2e/stable-shell-transition-matrix.spec.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT".."$CANDIDATE"
+
+          changed="$(git diff --name-only "$PARENT".."$CANDIDATE")"
+          expected=$'tests/e2e/stable-shell-scroll-contract.spec.js\ntests/e2e/stable-shell-transition-matrix.spec.js'
+          test "$changed" = "$expected"
+          git diff --quiet "$PARENT".."$CANDIDATE" -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --quiet "$PARENT".."$CANDIDATE" -- tests/visual reports/baseline
+          test -z "$(git status --porcelain)"
+
+      - name: Run exact R2 owner suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          node node_modules/@playwright/test/cli.js test \
+            tests/e2e/stable-shell-scroll-contract.spec.js \
+            tests/e2e/stable-shell-transition-matrix.spec.js
+
+      - name: Prove candidate remained immutable
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE='5a08f07de2b56b1175a5fd4bf5e26df862a98594'
+          CANDIDATE_TREE='022b25d8ca1c8aaef35de4c8e1918856927f0b45'
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git show -s --format=%T HEAD)" = "$CANDIDATE_TREE"
+
+      - name: Upload owner-suite evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008b-r2-certifier-${{ github.sha }}
+          path: |
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
