@@ -2,72 +2,55 @@ const fs = require('fs');
 const path = require('path');
 
 const root = process.cwd();
-const mainPages = [
-  'index.html',
-  'resultados.html',
-  'perfil.html',
-  'detalhe-anuncio.html',
-  'pedidos.html',
-  'carteira.html',
-  'pagamento-profissional.html',
-  'configuracoes.html',
-  'notificacoes.html',
-  'mensagens.html',
-  'comunidade.html',
-  'comunidade.html'
-];
-const expectedVersion = 'assets/js/core/app.js?v=20260512-shell-router-scroll-reset-v167';
-const appPath = path.join(root, 'assets/js/core/app.js');
-const appSource = fs.readFileSync(appPath, 'utf8');
+const routerPath = path.join(root, 'assets/js/core/stable-shell-router.js');
+const lifecyclePath = path.join(root, 'assets/js/core/navigation-lifecycle.js');
+const routerSource = fs.readFileSync(routerPath, 'utf8');
+const lifecycleSource = fs.readFileSync(lifecyclePath, 'utf8');
+
+const popstateRestoreContract = /window\.addEventListener\(\s*['"]popstate['"][\s\S]{0,1000}?go\(window\.location\.href,\s*\{[\s\S]{0,600}?restoreScroll\s*:\s*true[\s\S]{0,300}?captureScroll\s*:\s*false/.test(lifecycleSource);
 
 const checks = {
-  hasScrollResetFunction: appSource.includes('const resetRouteScrollState = () =>'),
-  swapsAppShellScope: appSource.includes('replaceAppShellFromDocument(nextDoc)'),
-  doesNotOnlyReplacePage: !appSource.includes('currentPage.replaceWith(nextPageNode)'),
-  callsScrollResetOnNavigation: appSource.includes('resetRouteScrollState();'),
-  keepsInstantNavigationFlagged: appSource.includes('shouldBypassShellSwap') && appSource.includes('swapView(href, options)')
+  routerDefinesResetScroll: /function\s+resetScroll\s*\(\s*\)/.test(routerSource),
+  resetClearsTransientRouteState: routerSource.includes('clearTransientRouteState();'),
+  resetClearsWindowPosition: /window\.scrollTo\s*\(\s*0\s*,\s*0\s*\)/.test(routerSource),
+  resetClearsSurfaceOffsets: routerSource.includes('node.scrollTop = 0; node.scrollLeft = 0;'),
+  transientStateClearsScrollLocks: routerSource.includes('clearRouteScrollSurfaces();')
+    && routerSource.includes('clearInlineScrollLocks(document.documentElement);')
+    && routerSource.includes('clearInlineScrollLocks(document.body);'),
+  navigationCapturesCurrentScroll: routerSource.includes('lifecycle.scroll.capture(window.location.href);'),
+  navigationResetsAfterCommit: routerSource.includes('await resetScroll();'),
+  navigationSupportsRestoreAfterCommit: routerSource.includes('await restoreScrollWithFallback(url.href);'),
+  restoreDelegatesToLifecycle: routerSource.includes('lifecycle.scroll.restore(href)'),
+  routerOwnsShellCommit: /function\s+replaceShell\s*\(\s*nextDoc\s*,\s*path\s*\)/.test(routerSource)
+    && routerSource.includes('replaceShell(nextDoc, path);'),
+  lifecycleDefinesCaptureScroll: /function\s+captureScroll\s*\(/.test(lifecycleSource),
+  lifecycleDefinesRestoreScroll: /function\s+restoreScroll\s*\(/.test(lifecycleSource),
+  popstateRequestsScrollRestore: popstateRestoreContract
 };
 
-const pageReports = mainPages.map((page) => {
-  const htmlPath = path.join(root, page);
-  const html = fs.readFileSync(htmlPath, 'utf8');
-  const appScriptMatches = html.match(/<script[^>]+assets\/js\/core\/app\.js[^>]*><\/script>/g) || [];
-  return {
-    page,
-    appScriptCount: appScriptMatches.length,
-    hasExpectedVersion: html.includes(expectedVersion),
-    appScriptIsDeferred: appScriptMatches.every((tag) => /\sdefer(\s|>|$)/.test(tag)),
-    hasMalformedDeferText: />\s*defer\s*<\/script>/i.test(html),
-    usesOldDrawer: html.includes('assets/js/pages/home/drawer.js')
-  };
-});
-
-const failures = [];
-Object.entries(checks).forEach(([name, passed]) => {
-  if (!passed) failures.push(`app.js check failed: ${name}`);
-});
-pageReports.forEach((report) => {
-  if (report.appScriptCount !== 1) failures.push(`${report.page}: expected one app.js script, found ${report.appScriptCount}`);
-  if (!report.hasExpectedVersion) failures.push(`${report.page}: app.js cache version not updated`);
-  if (!report.appScriptIsDeferred) failures.push(`${report.page}: app.js is not defer`);
-  if (report.hasMalformedDeferText) failures.push(`${report.page}: malformed > defer script tag remains`);
-  if (report.usesOldDrawer) failures.push(`${report.page}: old drawer path remains`);
-});
+const failures = Object.entries(checks)
+  .filter(([, passed]) => !passed)
+  .map(([name]) => `current scroll authority check failed: ${name}`);
 
 const report = {
   status: failures.length ? 'failed' : 'passed',
-  expectedVersion,
+  authority: {
+    router: 'assets/js/core/stable-shell-router.js',
+    lifecycle: 'assets/js/core/navigation-lifecycle.js'
+  },
   checks,
-  pageReports,
   failures
 };
 
 const outDir = path.join(root, 'docs/validation');
 fs.mkdirSync(outDir, { recursive: true });
-fs.writeFileSync(path.join(outDir, 'global-cycle-167-shell-router-scroll-reset-report.json'), JSON.stringify(report, null, 2));
+fs.writeFileSync(
+  path.join(outDir, 'global-cycle-167-shell-router-scroll-reset-report.json'),
+  JSON.stringify(report, null, 2)
+);
 
 if (failures.length) {
   console.error(failures.join('\n'));
   process.exit(1);
 }
-console.log('Shell router scroll reset audit passed.');
+console.log('Current stable-shell scroll authority audit passed.');
