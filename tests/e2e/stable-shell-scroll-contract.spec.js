@@ -7,7 +7,6 @@ const viewports = [
 ];
 
 const routes = [
-  '/perfil.html',
   '/pedidos.html',
   '/mensagens.html',
   '/notificacoes.html',
@@ -119,7 +118,26 @@ test.describe('Stable shell document scroll contract', () => {
         hasTouch: viewport.hasTouch,
       });
 
+      test('/perfil.html keeps direct scroll coverage and remains native-only under DokeNavigate', async ({ page }) => {
+        await page.goto('/perfil.html');
+        await waitForStableRoute(page);
+        await assertDocumentScrollWorks(page, '/perfil.html', 'direct');
 
+        await page.goto('/index.html');
+        await waitForStableRoute(page);
+        await expect.poll(() => page.evaluate(() => typeof window.DokeNavigate)).toBe('function');
+
+        await page.evaluate(() => {
+          window.__dokeNativeOnlyProfileProbe = 'same-document-only';
+          window.setTimeout(() => window.DokeNavigate('/perfil.html'), 0);
+        });
+        await expect(page).toHaveURL(/\/perfil\.html(?:$|[?#])/);
+        await waitForStableRoute(page);
+
+        const probe = await page.evaluate(() => window.__dokeNativeOnlyProfileProbe || null);
+        expect(probe, 'DokeNavigate para /perfil.html deve trocar o documento por política native-only').toBeNull();
+        await assertDocumentScrollWorks(page, '/perfil.html', 'native-only DokeNavigate');
+      });
 
       test('leaving mensagens.html restores document scroll contract for subsequent routes', async ({ page }) => {
         await page.goto('/index.html');
@@ -132,7 +150,7 @@ test.describe('Stable shell document scroll contract', () => {
           window.addEventListener('load', () => { window.__dokeLoadCount += 1; });
         });
 
-        for (const route of ['/mensagens.html', '/perfil.html', '/pedidos.html', '/resultados.html', '/ajuda.html']) {
+        for (const route of ['/mensagens.html', '/pedidos.html', '/resultados.html', '/ajuda.html']) {
           await page.evaluate(async (target) => {
             const result = window.DokeNavigate(target);
             if (result && typeof result.then === 'function') await result;

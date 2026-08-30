@@ -12,6 +12,8 @@ const pages = [
   ['ajuda.html', 'ajuda']
 ];
 
+const stableShellPages = pages.filter(([file]) => file !== 'perfil.html');
+
 const viewports = [
   ['desktop', 1366, 768],
   ['tablet', 820, 1180],
@@ -92,7 +94,7 @@ for (const [name, width, height] of viewports) {
       window.__matrixHeader = document.querySelector('[data-app-header]');
     });
 
-    for (const [file, pageKey] of pages) {
+    for (const [file, pageKey] of stableShellPages) {
       await page.evaluate((href) => window.DokeNavigate(`/${href}`), file);
       const state = await page.evaluate(readState);
       const direct = directStates.get(file);
@@ -117,5 +119,44 @@ for (const [name, width, height] of viewports) {
     }));
     expect(shellState.loadCount).toBe(1);
     expect(shellState.sameHeader).toBe(true);
+  });
+
+  test(`${name}: perfil.html remains native-only under DokeNavigate`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+
+    await page.goto('/perfil.html');
+    await expect.poll(() => page.evaluate(() => document.readyState)).toBe('complete');
+    const direct = await page.evaluate(readState);
+    expect(direct.page).toBe('perfil');
+    expect(direct.overflow).toBeLessThanOrEqual(1);
+    expect(direct.hasShell).toBe(true);
+    expect(direct.hasHeader).toBe(true);
+    expect(direct.hasSidebar).toBe(true);
+    expect(direct.skeletonVisible).toBe(false);
+
+    await page.goto('/index.html');
+    await expect.poll(() => page.evaluate(() => typeof window.DokeNavigate)).toBe('function');
+    await page.evaluate(() => {
+      window.__matrixNativeOnlyProfileProbe = 'same-document-only';
+      window.setTimeout(() => window.DokeNavigate('/perfil.html'), 0);
+    });
+    await expect(page).toHaveURL(/\/perfil\.html(?:$|[?#])/);
+    await expect.poll(() => page.evaluate(() => document.readyState)).toBe('complete');
+
+    const navigated = await page.evaluate(readState);
+    const probe = await page.evaluate(() => window.__matrixNativeOnlyProfileProbe || null);
+    expect(probe, 'DokeNavigate para perfil.html deve trocar o documento por política native-only').toBeNull();
+    expect(navigated.page).toBe(direct.page);
+    expect(navigated.overflow).toBeLessThanOrEqual(1);
+    expect(navigated.hasShell).toBe(direct.hasShell);
+    expect(navigated.hasHeader).toBe(direct.hasHeader);
+    expect(navigated.hasSidebar).toBe(direct.hasSidebar);
+    expect(navigated.skeletonVisible).toBe(false);
+
+    if (navigated.scrollable) {
+      await page.evaluate(() => window.scrollTo(0, 500));
+      await page.waitForTimeout(50);
+      expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    }
   });
 }
