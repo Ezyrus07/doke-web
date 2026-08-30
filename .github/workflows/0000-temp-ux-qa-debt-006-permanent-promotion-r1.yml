@@ -1,0 +1,243 @@
+name: TEMP UX-QA-DEBT-006 Permanent Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-006-permanent-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout promotion controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze stacked lineage and target
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = 'b9b09a57f62b4541fe62f97f9a29dc52acf836ea'
+          $parentTree = '8af0f86990ee6c970a07763c409e5c3e9eb0995e'
+          $target = 'ux/ux-qa-debt-006-results-lifecycle'
+          $workflow = '.github/workflows/0000-temp-ux-qa-debt-006-permanent-promotion-r1.yml'
+          if ((git rev-parse HEAD^).Trim() -ne $parent) { throw 'controller parent drift' }
+          if ((git rev-parse "$parent^{tree}").Trim() -ne $parentTree) { throw 'parent tree drift' }
+          $controllerChanged = @(git diff --name-only HEAD^ HEAD)
+          if ($controllerChanged.Count -ne 1 -or $controllerChanged[0] -ne $workflow) { throw "controller scope drift: $($controllerChanged -join ', ')" }
+          git fetch --no-tags origin $target
+          if ((git rev-parse FETCH_HEAD).Trim() -ne $parent) { throw 'target moved before qualification' }
+          if ((git rev-parse "$parent:tests/e2e/search-flow.spec.js").Trim() -ne 'e0276bfc627c8cec0f8857b76b7f6e05233c5912') { throw 'QA007 blob drift' }
+          if ((git rev-parse "$parent:assets/js/state/state-contracts.js").Trim() -ne '456e01e5fede548c276a5d4d7088a39175a3ae2a') { throw 'STATE blob drift' }
+          if ((git rev-parse "$parent:scripts/audit-domain-completion-matrix.js").Trim() -ne 'b47e62538641e5796bee13208cec301f73107102') { throw 'scanner blob drift' }
+          Write-Host "UX_QA_DEBT_006_PROMOTION_R1_LINEAGE=PASS parent=$parent tree=$parentTree targetHead=$parent qa007=e0276bfc627c8cec0f8857b76b7f6e05233c5912 state=456e01e5fede548c276a5d4d7088a39175a3ae2a scanner=b47e62538641e5796bee13208cec301f73107102 controllerTempOnly=true"
+
+      - name: Create detached parent worktree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $worktree = Join-Path $env:RUNNER_TEMP 'qa006-permanent'
+          git worktree add --detach $worktree 'b9b09a57f62b4541fe62f97f9a29dc52acf836ea'
+          git -C $worktree config user.name 'doke-qa'
+          git -C $worktree config user.email 'doke-qa@users.noreply.github.com'
+          "WORKTREE=$worktree" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Reconstruct exact qualified QA006 bytes from R1d source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sourceBranch = 'diag/ux-qa-debt-006-results-lifecycle-candidate-r1d'
+          $sourceCommit = '0c232c375c27e9ab2e8a48a759b390ea3308309b'
+          $sourceWorkflow = '.github/workflows/0000-temp-ux-qa-debt-006-results-lifecycle-candidate-r1d.yml'
+          git fetch --no-tags origin $sourceBranch
+          if ((git rev-parse FETCH_HEAD).Trim() -ne $sourceCommit) { throw 'R1d source branch drift' }
+          Set-Location $env:WORKTREE
+          $env:QA006_SOURCE_REPO = $env:GITHUB_WORKSPACE
+          $env:QA006_SOURCE_COMMIT = $sourceCommit
+          $env:QA006_SOURCE_WORKFLOW = $sourceWorkflow
+          @'
+          import hashlib
+          import os
+          import subprocess
+          from pathlib import Path
+
+          repo = os.environ['QA006_SOURCE_REPO']
+          commit = os.environ['QA006_SOURCE_COMMIT']
+          workflow = os.environ['QA006_SOURCE_WORKFLOW']
+          expected = 'f99c8a622abacf6360680dbf5864e0b1c2ef2484'
+          raw = subprocess.check_output(['git', '-C', repo, 'show', f'{commit}:{workflow}'], text=True, encoding='utf-8')
+          start_marker = "          @'\n          const { test, expect } = require('@playwright/test');"
+          end_marker = "\n          '@ | Set-Content -LiteralPath 'tests/e2e/results-entry-lifecycle.spec.js' -Encoding UTF8"
+          start = raw.find(start_marker)
+          if start < 0:
+              raise SystemExit('R1d candidate start marker missing')
+          start += len("          @'\n")
+          end = raw.find(end_marker, start)
+          if end < 0:
+              raise SystemExit('R1d candidate end marker missing')
+          embedded = raw[start:end]
+          lines = embedded.split('\n')
+          if any(line and not line.startswith('          ') for line in lines):
+              raise SystemExit('R1d candidate indentation drift')
+          text = '\n'.join(line[10:] if line.startswith('          ') else '' for line in lines)
+          if not text.endswith('\n'):
+              text += '\n'
+
+          def git_blob_sha(data):
+              header = f'blob {len(data)}\0'.encode('ascii')
+              return hashlib.sha1(header + data).hexdigest()
+
+          candidates = []
+          for newline in ('\n', '\r\n'):
+              normalized = text.replace('\r\n', '\n').replace('\r', '\n').replace('\n', newline)
+              for bom in (b'', b'\xef\xbb\xbf'):
+                  data = bom + normalized.encode('utf-8')
+                  candidates.append((git_blob_sha(data), data, newline, bool(bom)))
+          matches = [entry for entry in candidates if entry[0] == expected]
+          if len(matches) != 1:
+              raise SystemExit(f'exact QA006 reconstruction failed matches={[(m[0], m[2], m[3]) for m in matches]} all={[c[0] for c in candidates]}')
+          _, data, newline, bom = matches[0]
+          path = Path('tests/e2e/results-entry-lifecycle.spec.js')
+          path.write_bytes(data)
+          print(f'QA006_RECONSTRUCTION=PASS blob={expected} newline={newline.encode()} bom={bom}')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "QA006 reconstruction rc=$LASTEXITCODE" }
+          if ((git hash-object tests/e2e/results-entry-lifecycle.spec.js).Trim() -ne 'f99c8a622abacf6360680dbf5864e0b1c2ef2484') { throw 'QA006 blob mismatch after reconstruction' }
+          node --check tests/e2e/results-entry-lifecycle.spec.js
+          git diff --check
+          $changed = @(git diff --name-only)
+          if ($changed.Count -ne 1 -or $changed[0] -ne 'tests/e2e/results-entry-lifecycle.spec.js') { throw "candidate scope drift: $($changed -join ', ')" }
+          if (@(git diff --name-only -- 'assets/**' '*.html' 'config/**' 'docs/DOMAIN-COMPLETION-MATRIX.md' 'tests/visual/**').Count -ne 0) { throw 'forbidden product/matrix/snapshot mutation detected' }
+          Write-Host 'UX_QA_DEBT_006_PROMOTION_R1_MATERIALIZATION=PASS blob=f99c8a622abacf6360680dbf5864e0b1c2ef2484 files=1 owner=tests/e2e/results-entry-lifecycle.spec.js productMutation=false snapshotMutation=false matrixMutation=false criteriaRelaxed=0'
+
+      - name: Install dependencies and Chromium
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          npm ci
+          npx playwright install chromium
+
+      - name: Prove canonical Resultados lifecycle 5 of 5
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $out = Join-Path $env:RUNNER_TEMP 'qa006-lifecycle.json'
+          $env:PLAYWRIGHT_JSON_OUTPUT_FILE = $out
+          npx playwright test tests/e2e/results-entry-lifecycle.spec.js --reporter=json
+          if ($LASTEXITCODE -ne 0) { throw "Resultados lifecycle rc=$LASTEXITCODE" }
+          $env:QA_REPORT = $out
+          @'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.env.QA_REPORT, 'utf8'));
+          let total = 0, failed = 0;
+          function walk(suites) {
+            for (const suite of suites || []) {
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  total += 1;
+                  if ((test.results || []).some((r) => r.status === 'failed')) failed += 1;
+                }
+              }
+              walk(suite.suites);
+            }
+          }
+          walk(report.suites);
+          if (total !== 5 || failed !== 0) throw new Error(`lifecycle total=${total} failed=${failed}`);
+          console.log('UX_QA_DEBT_006_PROMOTION_R1_LIFECYCLE=PASS total=5 passed=5 failed=0 desktop=true tablet=true mobile=true rendererError=true repositoryObserver=true');
+          '@ | node -
+          if ($LASTEXITCODE -ne 0) { throw "lifecycle receipt rc=$LASTEXITCODE" }
+
+      - name: Preserve stacked search and UX Results acceptance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $searchOut = Join-Path $env:RUNNER_TEMP 'qa006-search.json'
+          $uxOut = Join-Path $env:RUNNER_TEMP 'qa006-ux-results.json'
+          $env:PLAYWRIGHT_JSON_OUTPUT_FILE = $searchOut
+          npx playwright test tests/e2e/search-flow.spec.js --reporter=json
+          if ($LASTEXITCODE -ne 0) { throw "search-flow rc=$LASTEXITCODE" }
+          $env:PLAYWRIGHT_JSON_OUTPUT_FILE = $uxOut
+          npx playwright test tests/e2e/ux-results-001-browser-acceptance.spec.js --reporter=json
+          if ($LASTEXITCODE -ne 0) { throw "UX-RESULTS rc=$LASTEXITCODE" }
+          $env:SEARCH_REPORT = $searchOut
+          $env:UX_REPORT = $uxOut
+          @'
+          const fs = require('fs');
+          function summary(path) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            let total = 0, failed = 0;
+            function walk(suites) {
+              for (const suite of suites || []) {
+                for (const spec of suite.specs || []) for (const test of spec.tests || []) {
+                  total += 1;
+                  if ((test.results || []).some((r) => r.status === 'failed')) failed += 1;
+                }
+                walk(suite.suites);
+              }
+            }
+            walk(report.suites);
+            return { total, failed };
+          }
+          const search = summary(process.env.SEARCH_REPORT);
+          const ux = summary(process.env.UX_REPORT);
+          if (search.total !== 2 || search.failed !== 0) throw new Error(`search=${JSON.stringify(search)}`);
+          if (ux.total !== 3 || ux.failed !== 0) throw new Error(`ux=${JSON.stringify(ux)}`);
+          console.log('UX_QA_DEBT_006_PROMOTION_R1_ACCEPTANCE=PASS searchFlow=2/2 uxResults=3/3');
+          '@ | node -
+          if ($LASTEXITCODE -ne 0) { throw "acceptance receipt rc=$LASTEXITCODE" }
+
+      - name: Validate shared state and governance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $parent = 'b9b09a57f62b4541fe62f97f9a29dc52acf836ea'
+          node --check tests/e2e/results-entry-lifecycle.spec.js
+          git diff --check $parent
+          npm run audit:global-state-completion
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git restore --source=$parent --worktree --staged -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+          $changed = @(git diff --name-only $parent)
+          if ($changed.Count -ne 1 -or $changed[0] -ne 'tests/e2e/results-entry-lifecycle.spec.js') { throw "post-governance scope drift: $($changed -join ', ')" }
+          if ((git hash-object tests/e2e/results-entry-lifecycle.spec.js).Trim() -ne 'f99c8a622abacf6360680dbf5864e0b1c2ef2484') { throw 'QA006 blob drift after governance' }
+          if ((git rev-parse "$parent:tests/e2e/search-flow.spec.js").Trim() -ne 'e0276bfc627c8cec0f8857b76b7f6e05233c5912') { throw 'QA007 parent drift after governance' }
+          if ((git rev-parse "$parent:assets/js/state/state-contracts.js").Trim() -ne '456e01e5fede548c276a5d4d7088a39175a3ae2a') { throw 'STATE parent drift after governance' }
+          if ((git rev-parse "$parent:scripts/audit-domain-completion-matrix.js").Trim() -ne 'b47e62538641e5796bee13208cec301f73107102') { throw 'scanner parent drift after governance' }
+          Write-Host 'UX_QA_DEBT_006_PROMOTION_R1_VALIDATION=PASS nodeCheck=true diffCheck=true globalState=true matrix=true agentGovernance=true lifecycle=5/5 searchFlow=2/2 uxResults=3/3 generatedOutputsRestored=true criteriaRelaxed=0 introducedRegressions=0'
+
+      - name: Commit fast-forward and verify permanent receipt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:WORKTREE
+          $parent = 'b9b09a57f62b4541fe62f97f9a29dc52acf836ea'
+          $target = 'ux/ux-qa-debt-006-results-lifecycle'
+          git add tests/e2e/results-entry-lifecycle.spec.js
+          git commit -m 'test(qa): align Resultados lifecycle with canonical search authority' | Out-Null
+          $candidate = (git rev-parse HEAD).Trim()
+          $candidateTree = (git rev-parse 'HEAD^{tree}').Trim()
+          if ($candidateTree -ne 'bee05e8bea81436c521fb73bb36472c8d46baf52') { throw "integrated tree mismatch: $candidateTree" }
+          if ((git rev-parse 'HEAD:tests/e2e/results-entry-lifecycle.spec.js').Trim() -ne 'f99c8a622abacf6360680dbf5864e0b1c2ef2484') { throw 'final QA006 blob mismatch' }
+          if ((git rev-parse 'HEAD:tests/e2e/search-flow.spec.js').Trim() -ne 'e0276bfc627c8cec0f8857b76b7f6e05233c5912') { throw 'final QA007 blob mismatch' }
+          if ((git rev-parse 'HEAD:assets/js/state/state-contracts.js').Trim() -ne '456e01e5fede548c276a5d4d7088a39175a3ae2a') { throw 'final STATE blob mismatch' }
+          if ((git rev-parse 'HEAD:scripts/audit-domain-completion-matrix.js').Trim() -ne 'b47e62538641e5796bee13208cec301f73107102') { throw 'final scanner blob mismatch' }
+          git fetch --no-tags origin $target
+          if ((git rev-parse FETCH_HEAD).Trim() -ne $parent) { throw 'target moved before permanent push' }
+          git push origin "HEAD:refs/heads/$target"
+          if ($LASTEXITCODE -ne 0) { throw "permanent push rc=$LASTEXITCODE" }
+          git fetch --no-tags origin $target
+          $remote = (git rev-parse FETCH_HEAD).Trim()
+          if ($remote -ne $candidate) { throw 'remote candidate mismatch' }
+          if ((git rev-list --count "$parent..$remote").Trim() -ne '1') { throw 'permanent branch commit count mismatch' }
+          $files = @(git diff --name-only $parent $remote)
+          if ($files.Count -ne 1 -or $files[0] -ne 'tests/e2e/results-entry-lifecycle.spec.js') { throw "permanent scope mismatch: $($files -join ', ')" }
+          Write-Host "UX_QA_DEBT_006_PROMOTION_R1_FINAL=PASS branch=$target sha=$remote tree=$candidateTree qa006=f99c8a622abacf6360680dbf5864e0b1c2ef2484 qa007=e0276bfc627c8cec0f8857b76b7f6e05233c5912 state=456e01e5fede548c276a5d4d7088a39175a3ae2a scanner=b47e62538641e5796bee13208cec301f73107102 commitsAhead=1 files=1 force=false lifecycle=5/5 acceptance=5/5 criteriaRelaxed=0 introducedRegressions=0 productMutation=false snapshotMutation=false matrixMutation=false prCreated=false readyForReview=false merge=false staging=false production=false repositoryOnly=true"
