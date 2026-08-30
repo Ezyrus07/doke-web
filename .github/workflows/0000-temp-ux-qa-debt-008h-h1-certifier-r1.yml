@@ -1,0 +1,121 @@
+name: TEMP UX-QA-DEBT-008H H1 Certifier R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008h-h1-certifier-r1
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze H1 and detach exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE='25b0f0eb1860254cbd452461166dfabdd5e25a73'
+          CANDIDATE_TREE='73c9ccff3f1ce56ff4a20358839c2015b8d5eef3'
+          PARENT='1e924d26f3f524aeaff7dbd2941356e97242da0a'
+          TEMP_PATH='.github/workflows/0000-temp-ux-qa-debt-008h-h1-certifier-r1.yml'
+
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
+          test "$(git show -s --format=%T "$CANDIDATE")" = "$CANDIDATE_TREE"
+          test "$(git diff --name-only "$CANDIDATE"..HEAD)" = "$TEMP_PATH"
+
+          candidate_changed="$(git diff --name-only "$PARENT".."$CANDIDATE")"
+          expected='tests/e2e/stable-shell-scroll-contract.spec.js'
+          test "$candidate_changed" = "$expected"
+
+          git checkout --detach "$CANDIDATE"
+          git reset --hard "$CANDIDATE"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git show -s --format=%T HEAD)" = "$CANDIDATE_TREE"
+          test -z "$(git status --porcelain)"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run minimum governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT='1e924d26f3f524aeaff7dbd2941356e97242da0a'
+          CANDIDATE='25b0f0eb1860254cbd452461166dfabdd5e25a73'
+
+          node --check tests/e2e/stable-shell-scroll-contract.spec.js
+          node --check tests/e2e/stable-shell-transition-matrix.spec.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT".."$CANDIDATE"
+
+          changed="$(git diff --name-only "$PARENT".."$CANDIDATE")"
+          expected='tests/e2e/stable-shell-scroll-contract.spec.js'
+          test "$changed" = "$expected"
+          git diff --quiet "$PARENT".."$CANDIDATE" -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --quiet "$PARENT".."$CANDIDATE" -- docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet "$PARENT".."$CANDIDATE" -- tests/visual reports/baseline
+
+          echo 'Runner status after governance audits:'
+          git status --porcelain || true
+
+          git diff --quiet HEAD -- \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            docs/validation/domain-completion-staging-snapshot.json \
+            tests/e2e/stable-shell-scroll-contract.spec.js \
+            tests/e2e/stable-shell-transition-matrix.spec.js \
+            tests/visual reports/baseline
+
+          git reset --hard "$CANDIDATE"
+          git clean -fd -- reports/generated test-results || true
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test -z "$(git status --porcelain)"
+
+      - name: Run exact H1 owner suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          node node_modules/@playwright/test/cli.js test \
+            tests/e2e/stable-shell-scroll-contract.spec.js \
+            tests/e2e/stable-shell-transition-matrix.spec.js
+
+      - name: Prove candidate remained immutable
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE='25b0f0eb1860254cbd452461166dfabdd5e25a73'
+          CANDIDATE_TREE='73c9ccff3f1ce56ff4a20358839c2015b8d5eef3'
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git show -s --format=%T HEAD)" = "$CANDIDATE_TREE"
+
+      - name: Upload owner-suite evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008h-h1-certifier-${{ github.sha }}
+          path: |
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
