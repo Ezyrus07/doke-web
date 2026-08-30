@@ -1,0 +1,120 @@
+name: COM-B02CT Repository-Only Active Runtime Route Resolution to Controlled External Command Binding Readiness
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.yml'
+      - 'config/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.json'
+      - 'scripts/test-com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.js'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02ct-controlled-external-command-binding-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 734395ff2366ee2e31917b9270758f7b7fffaae2
+      PREDECESSOR_TREE: 8b056f97b70a8cdda7cee791031747882edab790
+      WORKFLOW: .github/workflows/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.yml
+      CONFIG: config/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.json
+      TEST: scripts/test-com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.js
+      ROUTE_REGISTRY: backend/shared/http/route-registry.js
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER: backend/shared/http/module-route-loader.js
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      ROUTE_HANDLERS: backend/modules/communities/route-handlers.js
+      ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      SURFACE_DESCRIPTOR: backend/shared/http/repository-only-route-surface-descriptor.js
+      SURFACE_DESCRIPTOR_BLOB: c899df5404d9d7f90795f8933dfc44bdd57a1971
+      SURFACE_RESOLVER: backend/shared/http/repository-only-route-surface-resolver.js
+      SURFACE_RESOLVER_BLOB: 00df5c48a9ac4a72fefde4aa31486fe8ed46ea8c
+      BEGIN_DISPATCHER: backend/shared/http/repository-only-route-begin-dispatcher.js
+      BEGIN_DISPATCHER_BLOB: 00d8d8e62dfb7c30b70753f83fa172f3953aad83
+      RESUME_DISPATCHER: backend/shared/http/repository-only-route-resume-dispatcher.js
+      RESUME_DISPATCHER_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      RESUME_REGISTRY_LOOKUP: backend/shared/http/repository-only-route-resume-dispatcher-registry-lookup-integration.js
+      RESUME_REGISTRY_LOOKUP_BLOB: 43ba780f17ef23790d03224955cafe49c454ac6c
+      B02T: backend/modules/communities/community-command-handler-repository-orchestration.js
+      B02T_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
+      STAGING_API_RUNTIME: backend/runtime/staging/staging-api-runtime.js
+      STAGING_API_RUNTIME_BLOB: 69de100fe3a269507a0da7847ae8e9887f831ceb
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CS predecessor and exact B02CT readiness scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+
+          test "$(git rev-parse HEAD:$ROUTE_REGISTRY)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:$MODULE_ROUTE_LOADER)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_HANDLERS)" = "$ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$SURFACE_DESCRIPTOR)" = "$SURFACE_DESCRIPTOR_BLOB"
+          test "$(git rev-parse HEAD:$SURFACE_RESOLVER)" = "$SURFACE_RESOLVER_BLOB"
+          test "$(git rev-parse HEAD:$BEGIN_DISPATCHER)" = "$BEGIN_DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$RESUME_DISPATCHER)" = "$RESUME_DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$RESUME_REGISTRY_LOOKUP)" = "$RESUME_REGISTRY_LOOKUP_BLOB"
+          test "$(git rev-parse HEAD:$B02T)" = "$B02T_BLOB"
+          test "$(git rev-parse HEAD:$STAGING_API_RUNTIME)" = "$STAGING_API_RUNTIME_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          expected="$(printf '%s\n' "$WORKFLOW" "$CONFIG" "$TEST" | sort)"
+          test "$actual" = "$expected"
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Prove controlled external command binding readiness without invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if grep -Eq '\bexecute(Membership|Governance|Content)Command[[:space:]]*\(' "$TEST"; then
+            echo 'B02CT must not invoke active execute handlers' >&2
+            exit 1
+          fi
+
+          if grep -Eq '\b(composeMembershipCommandRepositoryOnly|composeGovernanceCommandRepositoryOnly|composeContentCommandRepositoryOnly|resumeCommandRepositoryOnlySurface|dispatchRepositoryOnlyRouteBegin|dispatchRepositoryOnlyRouteResume)[[:space:]]*\(' "$TEST"; then
+            echo 'B02CT must not invoke repository-only begin/resume/dispatcher surfaces' >&2
+            exit 1
+          fi
+
+          PROOF="$RUNNER_TEMP/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.json"
+          export PROOF_PATH="$PROOF"
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TEST"
+          node "$TEST"
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+
+      - name: Upload B02CT repository-only readiness proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness-${{ github.sha }}
+          path: ${{ runner.temp }}/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.json
+          if-no-files-found: error
+          retention-days: 30
