@@ -1,0 +1,228 @@
+name: TEMP UX-QA-DEBT-008 Residual Classification R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008-residual-classification-r1
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 7a7b67e8f92918c75133b65bc224ec5de3cdb4c4
+      PARENT_TREE: bee05e8bea81436c521fb73bb36472c8d46baf52
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-008-residual-classification-r1.yml
+      EXPECTED_SCANNER_BLOB: b47e62538641e5796bee13208cec301f73107102
+      EXPECTED_QA007_BLOB: e0276bfc627c8cec0f8857b76b7f6e05233c5912
+      EXPECTED_STATE_BLOB: 456e01e5fede548c276a5d4d7088a39175a3ae2a
+      EXPECTED_QA006_BLOB: f99c8a622abacf6360680dbf5864e0b1c2ef2484
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and TEMP-only scope
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:scripts/audit-domain-completion-matrix.js")" == "$EXPECTED_SCANNER_BLOB" ]] || { echo 'Scanner drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:tests/e2e/search-flow.spec.js")" == "$EXPECTED_QA007_BLOB" ]] || { echo 'QA007 drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:assets/js/state/state-contracts.js")" == "$EXPECTED_STATE_BLOB" ]] || { echo 'STATE drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:tests/e2e/results-entry-lifecycle.spec.js")" == "$EXPECTED_QA006_BLOB" ]] || { echo 'QA006 drift'; exit 1; }
+          echo "TEMP_SHA=$head"
+          echo 'LINEAGE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'STACK_OWNERS=PASS'
+
+      - name: Create exact parent worktree and install dependencies
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../qa008-r1-parent "$PARENT"
+          cd ../qa008-r1-parent
+          npm ci
+          npx playwright install chromium
+          echo 'DEPENDENCIES=PASS'
+
+      - name: Revalidate parent governance read-only
+        run: |
+          set -euo pipefail
+          cd ../qa008-r1-parent
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard "$PARENT"
+          [[ -z "$(git diff --name-only "$PARENT")" ]] || { echo 'Tracked parent mutation after governance'; exit 1; }
+          echo 'PARENT_GOVERNANCE=PASS'
+
+      - name: Reproduce and fingerprint static residual gates
+        run: |
+          set -euo pipefail
+          cd ../qa008-r1-parent
+          node - <<'NODE'
+          const { spawnSync } = require('node:child_process');
+          const crypto = require('node:crypto');
+          const fs = require('node:fs');
+          const commands = [
+            ['navigationLifecycleAudit', 'npm run audit:navigation-lifecycle-contract'],
+            ['navigationLifecycleCore', 'npm run test:navigation-lifecycle-core-contract'],
+            ['navigationLifecycleFinalization', 'npm run test:navigation-lifecycle-finalization-contract'],
+            ['shellRouterScrollAudit', 'npm run audit:shell-router-scroll-reset'],
+            ['responsiveBoundaries', 'npm run audit:responsive-boundaries'],
+            ['desktopBase', 'npm run audit:desktop-base'],
+            ['sharedHeader', 'npm run audit:shared-app-header-contract'],
+            ['resultsDensity', 'npm run test:results-card-density-contract'],
+            ['resultsHeaderRail', 'npm run test:results-header-rail-contract']
+          ];
+          const normalize = value => String(value || '')
+            .replace(/\x1b\[[0-9;]*m/g, '')
+            .replace(/[A-Z]:\\[^\n]+/g, '<PATH>')
+            .replace(/\\/g, '/');
+          const rows = [];
+          for (const [name, command] of commands) {
+            const out = spawnSync(command, { shell: true, encoding: 'utf8', env: process.env, maxBuffer: 40 * 1024 * 1024 });
+            const rc = Number.isInteger(out.status) ? out.status : 1;
+            const raw = normalize((out.stdout || '') + '\n' + (out.stderr || ''));
+            const salient = raw.split(/\r?\n/)
+              .map(line => line.trim())
+              .filter(Boolean)
+              .filter(line => /pass|fail|error|mismatch|missing|expected|unexpected|violation|finding|assert|scroll|route|header|rail|final/i.test(line))
+              .filter(line => !/^npm warn/i.test(line))
+              .slice(0, 80);
+            const signature = crypto.createHash('sha256').update(salient.join('\n')).digest('hex');
+            rows.push({ name, command, rc, signature, salient });
+            console.log('QA008_R1_STATIC=' + JSON.stringify({ name, rc, signature, salient }));
+          }
+          const failures = rows.filter(r => r.rc !== 0).map(r => r.name).sort();
+          const expected = ['navigationLifecycleFinalization','resultsHeaderRail','shellRouterScrollAudit'].sort();
+          if (JSON.stringify(failures) !== JSON.stringify(expected)) {
+            throw new Error('Static residual drift: ' + JSON.stringify({ failures, expected }));
+          }
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/qa008-r1-static.json', JSON.stringify({ rows, failures }));
+          console.log('QA008_R1_STATIC_SUMMARY=' + JSON.stringify({ result:'PASS', failures, failureCount: failures.length }));
+          NODE
+
+      - name: Reproduce exact 18 browser residuals
+        run: |
+          set -euo pipefail
+          cd ../qa008-r1-parent
+          specs=(
+            tests/e2e/results-entry-lifecycle.spec.js
+            tests/e2e/ux-results-001-browser-acceptance.spec.js
+            tests/e2e/search-flow.spec.js
+            tests/e2e/stable-shell-transition-contract.spec.js
+            tests/e2e/stable-shell-transition-matrix.spec.js
+            tests/e2e/stable-shell-scroll-contract.spec.js
+            tests/e2e/global-layout-contract.spec.js
+          )
+          set +e
+          node node_modules/@playwright/test/cli.js test "${specs[@]}" --reporter=json > "$RUNNER_TEMP/qa008-r1-playwright.json"
+          rc=$?
+          set -e
+          export PLAYWRIGHT_RC="$rc"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const report = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/qa008-r1-playwright.json', 'utf8'));
+          const normalize = value => String(value || '')
+            .replace(/[A-Z]:\\[^\n:]+/g, '<PATH>')
+            .replace(/\\/g, '/');
+          const rows = [];
+          function walk(suite, parents, inheritedFile) {
+            const prefix = [...parents, suite.title || ''].filter(Boolean);
+            const suiteFile = suite.file || inheritedFile || '';
+            for (const spec of suite.specs || []) {
+              const file = spec.file || suiteFile || '';
+              for (const test of spec.tests || []) {
+                const last = (test.results || []).at(-1) || {};
+                let status = test.status;
+                if (!['expected','unexpected','flaky','skipped'].includes(status)) {
+                  const actual = last.status || 'unknown';
+                  if (actual === 'skipped') status = 'skipped';
+                  else if (actual === 'passed' && (test.expectedStatus || 'passed') === 'passed') status = 'expected';
+                  else status = 'unexpected';
+                }
+                const errors = (last.errors || []).map(e => normalize(e.message || e.stack || e.value || JSON.stringify(e))).join('\n');
+                const signature = crypto.createHash('sha256').update(errors).digest('hex');
+                rows.push({
+                  file,
+                  key: [...prefix, spec.title || '', test.projectName || ''].filter(Boolean).join(' :: '),
+                  status,
+                  expectedStatus: test.expectedStatus || '',
+                  signature,
+                  errors: errors.slice(0, 3500)
+                });
+              }
+            }
+            for (const child of suite.suites || []) walk(child, prefix, suiteFile);
+          }
+          for (const suite of report.suites || []) walk(suite, [], '');
+          const unexpected = rows.filter(r => r.status === 'unexpected');
+          const expected = rows.filter(r => r.status === 'expected');
+          const skipped = rows.filter(r => r.status === 'skipped');
+          const flaky = rows.filter(r => r.status === 'flaky');
+          for (const row of unexpected) console.log('QA008_R1_BROWSER_FAIL=' + JSON.stringify(row));
+          const byFile = {};
+          for (const row of unexpected) {
+            const key = row.file || '<unknown-file>';
+            byFile[key] = (byFile[key] || 0) + 1;
+          }
+          const summary = {
+            rc: Number(process.env.PLAYWRIGHT_RC),
+            total: rows.length,
+            expected: expected.length,
+            unexpected: unexpected.length,
+            skipped: skipped.length,
+            flaky: flaky.length,
+            byFile
+          };
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/qa008-r1-browser-summary.json', JSON.stringify({ summary, unexpected }));
+          console.log('QA008_R1_BROWSER_SUMMARY=' + JSON.stringify(summary));
+          if (rows.length !== 72 || unexpected.length !== 18) {
+            throw new Error('Browser residual drift: ' + JSON.stringify(summary));
+          }
+          NODE
+
+      - name: Emit classification inventory and no-mutation receipt
+        run: |
+          set -euo pipefail
+          cd ../qa008-r1-parent
+          [[ -z "$(git diff --name-only "$PARENT")" ]] || { echo 'Tracked product mutation detected'; exit 1; }
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const stat = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/qa008-r1-static.json','utf8'));
+          const browser = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/qa008-r1-browser-summary.json','utf8'));
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008-R1-RESIDUAL-CLASSIFICATION',
+            parent: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            staticResidualCount: stat.failures.length,
+            staticResiduals: stat.failures,
+            browserTotal: browser.summary.total,
+            browserUnexpected: browser.summary.unexpected,
+            browserByFile: browser.summary.byFile,
+            candidateMaterialized: false,
+            productMutation: false,
+            snapshotMutation: false,
+            matrixMutation: false,
+            permanentBranchCreated: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            criteriaRelaxed: 0,
+            repositoryOnly: true
+          };
+          console.log('UX_QA_DEBT_008_R1_FINAL=' + JSON.stringify(receipt));
+          NODE
