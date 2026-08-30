@@ -46,6 +46,56 @@ async function waitForStableRoute(page) {
   await page.waitForTimeout(200);
 }
 
+async function seedPaintingConversation(page) {
+  await expect.poll(() => page.evaluate(() => (
+    document.querySelector('[data-messages-page]')?.dataset.messagesReady || ''
+  ))).toBe('true');
+  await expect.poll(() => page.evaluate(
+    () => typeof window.Doke?.repositories?.messages?.writeLocal
+  )).toBe('function');
+
+  await page.evaluate(() => {
+    window.Doke.repositories.messages.writeLocal([{
+      id: 'painting',
+      clientId: 'stable-shell-client',
+      professionalId: 'stable-shell-professional',
+      participants: ['stable-shell-client', 'stable-shell-professional'],
+      professionalName: 'Pintor Stable Shell',
+      providerName: 'Pintor Stable Shell',
+      group: 'orders',
+      status: 'accepted',
+      statusLabel: 'Pedido aceito',
+      order: {
+        id: 'order-stable-shell-painting',
+        clientId: 'stable-shell-client',
+        professionalId: 'stable-shell-professional',
+        providerId: 'stable-shell-professional',
+        providerName: 'Pintor Stable Shell',
+        title: 'Pintura residencial',
+        serviceTitle: 'Pintura residencial',
+        status: 'accepted',
+        statusLabel: 'Pedido aceito',
+        budget: 'R$ 450,00',
+      },
+      messages: [{
+        id: 'message-stable-shell-painting',
+        senderId: 'stable-shell-professional',
+        author: 'Pintor Stable Shell',
+        text: 'Posso iniciar a pintura amanhã.',
+        createdAt: '2026-08-30T12:00:00.000Z',
+      }],
+      createdAt: '2026-08-30T12:00:00.000Z',
+      updatedAt: '2026-08-30T12:01:00.000Z',
+    }]);
+
+    document.dispatchEvent(new CustomEvent('doke:auth-session-change', {
+      detail: { source: 'stable-shell-e2e' },
+    }));
+  });
+
+  await expect(page.locator('.message-item[data-message-id="painting"]').first()).toBeVisible();
+}
+
 async function scrollMetrics(page) {
   return page.evaluate(() => {
     const root = document.documentElement;
@@ -193,6 +243,7 @@ test.describe('Mensagens mobile thread interaction', () => {
   test('tap on a conversation opens the thread on phone viewport', async ({ page }) => {
     await page.goto('/mensagens.html');
     await waitForStableRoute(page);
+    await seedPaintingConversation(page);
 
     await page.locator('.message-item[data-message-id="painting"]').first().click();
     await page.waitForTimeout(120);
