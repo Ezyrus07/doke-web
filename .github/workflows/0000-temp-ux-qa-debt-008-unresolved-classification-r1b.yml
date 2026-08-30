@@ -1,0 +1,152 @@
+name: TEMP UX-QA-DEBT-008 Unresolved Classification R1b
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008-unresolved-classification-r1b
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 7a7b67e8f92918c75133b65bc224ec5de3cdb4c4
+      PARENT_TREE: bee05e8bea81436c521fb73bb36472c8d46baf52
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-008-unresolved-classification-r1b.yml
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact parent and TEMP-only scope
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || exit 1
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || exit 1
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || exit 1
+          echo "TEMP_SHA=$head"
+          echo 'R1B_SCOPE=PASS'
+
+      - name: Install exact parent worktree
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../qa008-r1b-parent "$PARENT"
+          cd ../qa008-r1b-parent
+          npm ci
+          npx playwright install chromium
+
+      - name: Capture exact static failure text
+        run: |
+          set -euo pipefail
+          cd ../qa008-r1b-parent
+          for cmd in \
+            'npm run test:navigation-lifecycle-finalization-contract' \
+            'npm run test:results-header-rail-contract'; do
+            echo "QA008_R1B_COMMAND=$cmd"
+            set +e
+            output=$(eval "$cmd" 2>&1)
+            rc=$?
+            set -e
+            printf '%s\n' "$output"
+            echo "QA008_R1B_RC=$rc"
+            [[ $rc -ne 0 ]] || { echo 'Expected inherited failure unexpectedly green'; exit 1; }
+          done
+
+      - name: Diagnose Mensagens desktop header computed ownership
+        run: |
+          set -euo pipefail
+          cd ../qa008-r1b-parent
+          npx http-server . -p 4173 -c-1 > "$RUNNER_TEMP/http-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null && break
+            sleep 1
+          done
+          node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+            const page = await context.newPage();
+            await page.addInitScript((session) => {
+              localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+            }, {
+              provider: 'mock', sessionStatus: 'active', accountStatus: 'active',
+              user: { id:'global-layout-client', role:'client', name:'Cliente Layout', email:'layout@example.test', accountStatus:'active' }
+            });
+            await page.route('https://unpkg.com/**', r => r.fulfill({ contentType:'application/javascript', body:'' }));
+            await page.route('https://cdn.jsdelivr.net/**', r => r.fulfill({ contentType:'application/javascript', body:'' }));
+            await page.route('https://fonts.googleapis.com/**', r => r.fulfill({ contentType:'text/css', body:'' }));
+            await page.goto('http://127.0.0.1:4173/mensagens.html', { waitUntil:'domcontentloaded' });
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.waitForTimeout(300);
+            const result = await page.evaluate(() => {
+              const header = document.querySelector('[data-app-header]');
+              const inner = document.querySelector('[data-header-inner]');
+              const summarize = (el) => {
+                if (!el) return null;
+                const s = getComputedStyle(el);
+                const r = el.getBoundingClientRect();
+                return { tag:el.tagName, className:el.className, hidden:el.hidden, display:s.display, visibility:s.visibility, opacity:s.opacity, position:s.position, width:r.width, height:r.height, top:r.top, bottom:r.bottom, overflow:s.overflow };
+              };
+              const matched = [];
+              const visit = (rules, href, media='') => {
+                for (const rule of Array.from(rules || [])) {
+                  if (rule.type === CSSRule.MEDIA_RULE) {
+                    if (matchMedia(rule.conditionText).matches) visit(rule.cssRules, href, rule.conditionText);
+                    continue;
+                  }
+                  if (rule.type !== CSSRule.STYLE_RULE) continue;
+                  let matches = false;
+                  try { matches = header && header.matches(rule.selectorText); } catch (_) {}
+                  if (!matches) continue;
+                  const interesting = ['display','visibility','opacity','position','height','min-height','max-height','overflow','overflow-y'];
+                  const declarations = {};
+                  for (const prop of interesting) {
+                    const value = rule.style.getPropertyValue(prop);
+                    if (value) declarations[prop] = value + (rule.style.getPropertyPriority(prop) ? ' !important' : '');
+                  }
+                  if (Object.keys(declarations).length) matched.push({ href, media, selector:rule.selectorText, declarations });
+                }
+              };
+              for (const sheet of Array.from(document.styleSheets)) {
+                let rules;
+                try { rules = sheet.cssRules; } catch (_) { continue; }
+                visit(rules, sheet.href || '<inline>');
+              }
+              return {
+                url: location.href,
+                bodyPage: document.body?.dataset.page || '',
+                bodyClass: document.body?.className || '',
+                authReady: document.documentElement.dataset.authSurfaceReady || '',
+                hydration: document.body?.dataset.pageHydration || '',
+                header: summarize(header),
+                inner: summarize(inner),
+                matchedHeaderRules: matched
+              };
+            });
+            console.log('QA008_R1B_MESSAGES_HEADER=' + JSON.stringify(result));
+            if (!result.header || result.header.width !== 0 || result.header.height !== 0) {
+              throw new Error('Expected inherited hidden desktop header was not reproduced');
+            }
+            await browser.close();
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+
+      - name: No-mutation receipt
+        run: |
+          set -euo pipefail
+          cd ../qa008-r1b-parent
+          [[ -z "$(git diff --name-only "$PARENT")" ]] || { echo 'Tracked mutation detected'; exit 1; }
+          echo 'UX_QA_DEBT_008_R1B_FINAL={"result":"PASS","candidateMaterialized":false,"productMutation":false,"snapshotMutation":false,"matrixMutation":false,"criteriaRelaxed":0,"repositoryOnly":true}'
