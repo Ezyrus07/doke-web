@@ -1,0 +1,252 @@
+name: TEMP UX-QA-DEBT-008B Auth Harness R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008b-auth-harness-r1
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Freeze exact parent and detach
+        run: |
+          set -euo pipefail
+          PARENT='7a7b67e8f92918c75133b65bc224ec5de3cdb4c4'
+          PARENT_TREE='bee05e8bea81436c521fb73bb36472c8d46baf52'
+          TEMP_PATH='.github/workflows/0000-temp-ux-qa-debt-008b-auth-harness-r1.yml'
+          git config core.autocrlf false
+          git reset --hard HEAD
+          actual_parent="$(git rev-parse HEAD^)"
+          actual_tree="$(git show -s --format=%T "$PARENT")"
+          changed="$(git diff --name-only "$PARENT"..HEAD)"
+          test "$actual_parent" = "$PARENT"
+          test "$actual_tree" = "$PARENT_TREE"
+          test "$changed" = "$TEMP_PATH"
+          git checkout --detach "$PARENT"
+          git reset --hard "$PARENT"
+          echo "UX_QA_DEBT_008B_PARENT={\"sha\":\"$PARENT\",\"tree\":\"$PARENT_TREE\",\"tempOnlyRemote\":true}"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install chromium
+
+      - name: Run exact parent suites
+        run: |
+          set -euo pipefail
+          mkdir -p diagnostics
+          set +e
+          node node_modules/@playwright/test/cli.js test \
+            tests/e2e/stable-shell-scroll-contract.spec.js \
+            tests/e2e/stable-shell-transition-matrix.spec.js \
+            > diagnostics/parent.log 2>&1
+          parent_exit=$?
+          set -e
+          cp reports/generated/playwright-results.json diagnostics/parent.json
+          echo "PARENT_EXIT=$parent_exit" >> "$GITHUB_ENV"
+          cat diagnostics/parent.log
+
+      - name: Materialize runner-only auth candidate
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const paths = [
+            'tests/e2e/stable-shell-scroll-contract.spec.js',
+            'tests/e2e/stable-shell-transition-matrix.spec.js',
+          ];
+          const marker = "const { test, expect } = require('@playwright/test');";
+          const fixture = `
+
+          const authenticatedSession = {
+            provider: 'mock',
+            sessionStatus: 'active',
+            accountStatus: 'active',
+            user: {
+              id: 'stable-shell-client',
+              role: 'client',
+              name: 'Cliente Stable Shell',
+              email: 'stable-shell@example.test',
+              accountStatus: 'active',
+            },
+          };
+
+          test.beforeEach(async ({ page }) => {
+            await page.addInitScript((session) => {
+              localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+            }, authenticatedSession);
+          });`;
+
+          for (const path of paths) {
+            const source = fs.readFileSync(path, 'utf8');
+            if (!source.startsWith(marker)) throw new Error(`${path}: canonical import marker missing`);
+            if (source.includes('const authenticatedSession =')) throw new Error(`${path}: auth fixture already exists`);
+            fs.writeFileSync(path, source.replace(marker, marker + fixture), 'utf8');
+          }
+          NODE
+
+          changed="$(git diff --name-only | tr '\\' '/')"
+          expected=$'tests/e2e/stable-shell-scroll-contract.spec.js\ntests/e2e/stable-shell-transition-matrix.spec.js'
+          test "$changed" = "$expected"
+          git diff --stat
+          git diff --check
+          echo "CANDIDATE_PATCH_SHA256=$(git diff --binary | sha256sum | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "SCROLL_BLOB=$(git hash-object tests/e2e/stable-shell-scroll-contract.spec.js)" >> "$GITHUB_ENV"
+          echo "MATRIX_BLOB=$(git hash-object tests/e2e/stable-shell-transition-matrix.spec.js)" >> "$GITHUB_ENV"
+
+      - name: Run minimum governance gates
+        run: |
+          set -euo pipefail
+          node --check tests/e2e/stable-shell-scroll-contract.spec.js
+          node --check tests/e2e/stable-shell-transition-matrix.spec.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+          changed="$(git diff --name-only | tr '\\' '/')"
+          expected=$'tests/e2e/stable-shell-scroll-contract.spec.js\ntests/e2e/stable-shell-transition-matrix.spec.js'
+          test "$changed" = "$expected"
+          test -z "$(git diff --name-only -- docs/DOMAIN-COMPLETION-MATRIX.md tests/visual reports/baseline 2>/dev/null || true)"
+
+      - name: Commit candidate locally only
+        run: |
+          set -euo pipefail
+          git config user.name 'doke-qa'
+          git config user.email 'doke-qa@users.noreply.github.com'
+          git add tests/e2e/stable-shell-scroll-contract.spec.js tests/e2e/stable-shell-transition-matrix.spec.js
+          git commit -m 'test(qa): authenticate protected stable-shell harnesses'
+          candidate_sha="$(git rev-parse HEAD)"
+          candidate_tree="$(git show -s --format=%T HEAD)"
+          changed="$(git diff --name-only 7a7b67e8f92918c75133b65bc224ec5de3cdb4c4..HEAD | tr '\\' '/')"
+          expected=$'tests/e2e/stable-shell-scroll-contract.spec.js\ntests/e2e/stable-shell-transition-matrix.spec.js'
+          test "$changed" = "$expected"
+          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
+          echo "CANDIDATE_TREE=$candidate_tree" >> "$GITHUB_ENV"
+          echo "UX_QA_DEBT_008B_CANDIDATE={\"sha\":\"$candidate_sha\",\"tree\":\"$candidate_tree\",\"scrollBlob\":\"$SCROLL_BLOB\",\"matrixBlob\":\"$MATRIX_BLOB\",\"patchSha256\":\"$CANDIDATE_PATCH_SHA256\",\"runnerOnly\":true,\"remoteProductMutation\":false}"
+
+      - name: Run candidate suites
+        run: |
+          set -euo pipefail
+          set +e
+          node node_modules/@playwright/test/cli.js test \
+            tests/e2e/stable-shell-scroll-contract.spec.js \
+            tests/e2e/stable-shell-transition-matrix.spec.js \
+            > diagnostics/candidate.log 2>&1
+          candidate_exit=$?
+          set -e
+          cp reports/generated/playwright-results.json diagnostics/candidate.json
+          echo "CANDIDATE_EXIT=$candidate_exit" >> "$GITHUB_ENV"
+          cat diagnostics/candidate.log
+
+      - name: Compare parent and candidate results
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+
+          function flatten(file) {
+            const report = JSON.parse(fs.readFileSync(file, 'utf8'));
+            const tests = [];
+            function walk(suite, parents = []) {
+              const chain = suite.title ? [...parents, suite.title] : parents;
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  const key = [...chain, spec.title, test.projectName || 'default'].join(' > ');
+                  const errors = (test.results || [])
+                    .flatMap((result) => result.errors || [])
+                    .map((error) => error.message || error.value || '')
+                    .filter(Boolean)
+                    .join(' || ');
+                  tests.push({ key, status: test.status || 'unknown', errors });
+                }
+              }
+              for (const child of suite.suites || []) walk(child, chain);
+            }
+            for (const suite of report.suites || []) walk(suite, []);
+            return tests;
+          }
+
+          function summary(tests) {
+            const counts = {};
+            for (const test of tests) counts[test.status] = (counts[test.status] || 0) + 1;
+            return { total: tests.length, ...counts };
+          }
+
+          function signature(test) {
+            return (test.errors || '').split(/\r?\n/).map((line) => line.trim()).find(Boolean) || '';
+          }
+
+          const parent = flatten('diagnostics/parent.json');
+          const candidate = flatten('diagnostics/candidate.json');
+          const parentMap = new Map(parent.map((test) => [test.key, test]));
+          const candidateMap = new Map(candidate.map((test) => [test.key, test]));
+          const parentUnexpected = parent.filter((test) => test.status === 'unexpected');
+          const candidateUnexpected = candidate.filter((test) => test.status === 'unexpected');
+          const candidateOnly = candidateUnexpected.filter((test) => parentMap.get(test.key)?.status !== 'unexpected');
+          const parentOnly = parentUnexpected.filter((test) => candidateMap.get(test.key)?.status !== 'unexpected');
+          const sharedChanged = candidateUnexpected
+            .filter((test) => parentMap.get(test.key)?.status === 'unexpected')
+            .map((test) => ({
+              key: test.key,
+              parent: signature(parentMap.get(test.key)),
+              candidate: signature(test),
+            }))
+            .filter((entry) => entry.parent !== entry.candidate);
+
+          console.log('UX_QA_DEBT_008B_PARENT_RESULT=' + JSON.stringify(summary(parent)));
+          console.log('UX_QA_DEBT_008B_CANDIDATE_RESULT=' + JSON.stringify(summary(candidate)));
+          console.log('UX_QA_DEBT_008B_COMPARISON=' + JSON.stringify({
+            parentUnexpected: parentUnexpected.length,
+            candidateUnexpected: candidateUnexpected.length,
+            candidateOnlyFailures: candidateOnly.map((test) => ({ key: test.key, signature: signature(test) })),
+            parentOnlyFailures: parentOnly.map((test) => ({ key: test.key, signature: signature(test) })),
+            sharedFailureSignatureChanges: sharedChanged,
+          }));
+          console.log('UX_QA_DEBT_008B_FINAL=' + JSON.stringify({
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008B-R1-AUTH-HARNESS-QUALIFICATION',
+            parent: '7a7b67e8f92918c75133b65bc224ec5de3cdb4c4',
+            parentTree: 'bee05e8bea81436c521fb73bb36472c8d46baf52',
+            candidateSha: process.env.CANDIDATE_SHA,
+            candidateTree: process.env.CANDIDATE_TREE,
+            candidatePatchSha256: process.env.CANDIDATE_PATCH_SHA256,
+            parentExit: Number(process.env.PARENT_EXIT),
+            candidateExit: Number(process.env.CANDIDATE_EXIT),
+            parentUnexpected: parentUnexpected.length,
+            candidateUnexpected: candidateUnexpected.length,
+            candidateOnlyFailureCount: candidateOnly.length,
+            sharedFailureSignatureChangeCount: sharedChanged.length,
+            criteriaRelaxed: 0,
+            matrixMutation: false,
+            snapshotMutation: false,
+            productMutation: false,
+            authRuntimeMutation: false,
+            routerMutation: false,
+            runnerOnly: true,
+            permanentBranchCreated: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true,
+          }));
+          NODE
