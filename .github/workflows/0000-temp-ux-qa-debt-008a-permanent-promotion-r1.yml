@@ -1,0 +1,242 @@
+name: TEMP UX-QA-DEBT-008A Permanent Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008a-permanent-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PARENT_SHA: 7a7b67e8f92918c75133b65bc224ec5de3cdb4c4
+      PARENT_TREE: bee05e8bea81436c521fb73bb36472c8d46baf52
+      PERMANENT_BRANCH: qa/ux-qa-debt-008a-shell-scroll-audit
+      CANDIDATE_SHA256: 213375b28720d133cc2485f0087905bb4eaecac7939e3fa7bedf06b54daed884
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008a-permanent-promotion-r1.yml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 4
+
+      - name: Freeze controller and target lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = "$TEMP_PATH"
+          remote_target="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_target" = "$PARENT_SHA"
+          echo "PROMOTION_LINEAGE_OK=1"
+
+      - name: Create exact parent worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add ../candidate "$PARENT_SHA"
+          cd ../candidate
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+
+      - name: Reproduce legacy audit failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          set +e
+          npm run audit:shell-router-scroll-reset > /tmp/legacy-audit.log 2>&1
+          code=$?
+          set -e
+          test "$code" -ne 0
+          grep -q "app.js check failed: hasScrollResetFunction" /tmp/legacy-audit.log
+          grep -q "app.js check failed: swapsAppShellScope" /tmp/legacy-audit.log
+          git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
+          echo "LEGACY_FAILURE_REPRODUCED=1"
+
+      - name: Materialize exact qualified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          cat > scripts/audit-shell-router-scroll-reset.js <<'JS'
+          const fs = require('fs');
+          const path = require('path');
+
+          const root = process.cwd();
+          const routerPath = path.join(root, 'assets/js/core/stable-shell-router.js');
+          const lifecyclePath = path.join(root, 'assets/js/core/navigation-lifecycle.js');
+          const routerSource = fs.readFileSync(routerPath, 'utf8');
+          const lifecycleSource = fs.readFileSync(lifecyclePath, 'utf8');
+
+          const popstateRestoreContract = /window\.addEventListener\(\s*['"]popstate['"][\s\S]{0,1000}?go\(window\.location\.href,\s*\{[\s\S]{0,600}?restoreScroll\s*:\s*true[\s\S]{0,300}?captureScroll\s*:\s*false/.test(lifecycleSource);
+
+          const checks = {
+            routerDefinesResetScroll: /function\s+resetScroll\s*\(\s*\)/.test(routerSource),
+            resetClearsTransientRouteState: routerSource.includes('clearTransientRouteState();'),
+            resetClearsWindowPosition: /window\.scrollTo\s*\(\s*0\s*,\s*0\s*\)/.test(routerSource),
+            resetClearsSurfaceOffsets: routerSource.includes('node.scrollTop = 0; node.scrollLeft = 0;'),
+            transientStateClearsScrollLocks: routerSource.includes('clearRouteScrollSurfaces();')
+              && routerSource.includes('clearInlineScrollLocks(document.documentElement);')
+              && routerSource.includes('clearInlineScrollLocks(document.body);'),
+            navigationCapturesCurrentScroll: routerSource.includes('lifecycle.scroll.capture(window.location.href);'),
+            navigationResetsAfterCommit: routerSource.includes('await resetScroll();'),
+            navigationSupportsRestoreAfterCommit: routerSource.includes('await restoreScrollWithFallback(url.href);'),
+            restoreDelegatesToLifecycle: routerSource.includes('lifecycle.scroll.restore(href)'),
+            routerOwnsShellCommit: /function\s+replaceShell\s*\(\s*nextDoc\s*,\s*path\s*\)/.test(routerSource)
+              && routerSource.includes('replaceShell(nextDoc, path);'),
+            lifecycleDefinesCaptureScroll: /function\s+captureScroll\s*\(/.test(lifecycleSource),
+            lifecycleDefinesRestoreScroll: /function\s+restoreScroll\s*\(/.test(lifecycleSource),
+            popstateRequestsScrollRestore: popstateRestoreContract
+          };
+
+          const failures = Object.entries(checks)
+            .filter(([, passed]) => !passed)
+            .map(([name]) => `current scroll authority check failed: ${name}`);
+
+          const report = {
+            status: failures.length ? 'failed' : 'passed',
+            authority: {
+              router: 'assets/js/core/stable-shell-router.js',
+              lifecycle: 'assets/js/core/navigation-lifecycle.js'
+            },
+            checks,
+            failures
+          };
+
+          const outDir = path.join(root, 'docs/validation');
+          fs.mkdirSync(outDir, { recursive: true });
+          fs.writeFileSync(
+            path.join(outDir, 'global-cycle-167-shell-router-scroll-reset-report.json'),
+            JSON.stringify(report, null, 2)
+          );
+
+          if (failures.length) {
+            console.error(failures.join('\n'));
+            process.exit(1);
+          }
+          console.log('Current stable-shell scroll authority audit passed.');
+          JS
+          actual="$(sha256sum scripts/audit-shell-router-scroll-reset.js | cut -d' ' -f1)"
+          test "$actual" = "$CANDIDATE_SHA256"
+          echo "EXACT_CANDIDATE_SHA256=$actual"
+
+      - name: Positive qualification and governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          node --check scripts/audit-shell-router-scroll-reset.js
+          npm run audit:shell-router-scroll-reset
+          git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git checkout -- docs 2>/dev/null || true
+          git checkout -- reports/generated 2>/dev/null || true
+          git clean -fd -- docs/validation reports/generated >/dev/null 2>&1 || true
+          git diff --check
+          test "$(git diff --name-only)" = "scripts/audit-shell-router-scroll-reset.js"
+          test "$(sha256sum scripts/audit-shell-router-scroll-reset.js | cut -d' ' -f1)" = "$CANDIDATE_SHA256"
+          echo "POSITIVE_GATES_PASS=1"
+
+      - name: Repeat fail-closed proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          cp assets/js/core/stable-shell-router.js /tmp/router.original.js
+          cp assets/js/core/navigation-lifecycle.js /tmp/lifecycle.original.js
+
+          restore_report() {
+            git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
+          }
+          expect_fail() {
+            label="$1"
+            expected="$2"
+            set +e
+            node scripts/audit-shell-router-scroll-reset.js > "/tmp/${label}.log" 2>&1
+            code=$?
+            set -e
+            test "$code" -ne 0
+            grep -q "$expected" "/tmp/${label}.log"
+            restore_report
+            echo "NEGATIVE_${label}=PASS"
+          }
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/stable-shell-router.js'); s=p.read_text(); old='function resetScroll() {'; assert old in s; p.write_text(s.replace(old, 'function resetScrollBROKEN() {', 1))
+          PY
+          expect_fail reset_owner "routerDefinesResetScroll"
+          cp /tmp/router.original.js assets/js/core/stable-shell-router.js
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/stable-shell-router.js'); s=p.read_text(); old='lifecycle.scroll.capture(window.location.href);'; assert old in s; p.write_text(s.replace(old, 'void window.location.href;', 1))
+          PY
+          expect_fail capture "navigationCapturesCurrentScroll"
+          cp /tmp/router.original.js assets/js/core/stable-shell-router.js
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/stable-shell-router.js'); s=p.read_text(); old='lifecycle.scroll.restore(href)'; assert old in s; p.write_text(s.replace(old, 'Promise.resolve(false)', 1))
+          PY
+          expect_fail restore_delegate "restoreDelegatesToLifecycle"
+          cp /tmp/router.original.js assets/js/core/stable-shell-router.js
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/navigation-lifecycle.js'); s=p.read_text(); old='restoreScroll: true,'; assert old in s; p.write_text(s.replace(old, 'restoreScroll: false,', 1))
+          PY
+          expect_fail popstate_restore "popstateRequestsScrollRestore"
+          cp /tmp/lifecycle.original.js assets/js/core/navigation-lifecycle.js
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/core/stable-shell-router.js'); s=p.read_text(); old='replaceShell(nextDoc, path);'; assert old in s; p.write_text(s.replace(old, 'void nextDoc; void path;'))
+          PY
+          expect_fail shell_commit "routerOwnsShellCommit"
+          cp /tmp/router.original.js assets/js/core/stable-shell-router.js
+
+          npm run audit:shell-router-scroll-reset
+          restore_report
+          git diff --check
+          test "$(git diff --name-only)" = "scripts/audit-shell-router-scroll-reset.js"
+          test "$(sha256sum scripts/audit-shell-router-scroll-reset.js | cut -d' ' -f1)" = "$CANDIDATE_SHA256"
+          echo "FAIL_CLOSED_FIXTURES=5/5"
+
+      - name: Commit and fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          remote_target="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_target" = "$PARENT_SHA"
+          git config user.name "doke-qa"
+          git config user.email "doke-qa@users.noreply.github.com"
+          git add scripts/audit-shell-router-scroll-reset.js
+          test "$(git diff --cached --name-only)" = "scripts/audit-shell-router-scroll-reset.js"
+          git diff --cached --check
+          git commit -m "test(qa): align shell-scroll audit with current authority"
+          candidate_commit="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(sha256sum scripts/audit-shell-router-scroll-reset.js | cut -d' ' -f1)" = "$CANDIDATE_SHA256"
+          git push origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          pushed="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$pushed" = "$candidate_commit"
+          echo "PERMANENT_COMMIT=$candidate_commit"
+          echo "PERMANENT_TREE=$(git rev-parse HEAD^{tree})"
+          echo "FAST_FORWARD_FORCE_FALSE=1"
+
+      - name: Emit promotion receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          cat <<EOF
+          UX_QA_DEBT_008A_PROMOTION_FINAL={"result":"PASS","checkpoint":"UX-QA-DEBT-008A-PERMANENT-PROMOTION","parent":"$PARENT_SHA","parentTree":"$PARENT_TREE","permanentBranch":"$PERMANENT_BRANCH","head":"$(git rev-parse HEAD)","tree":"$(git rev-parse HEAD^{tree})","candidateFile":"scripts/audit-shell-router-scroll-reset.js","candidateSha256":"$CANDIDATE_SHA256","legacyFailureReproduced":true,"positiveAudit":true,"domainMatrix":true,"agentGovernance":true,"failClosedFixtures":5,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"snapshotMutation":false,"runtimeMutation":false,"fastForward":true,"force":false,"prCreated":false,"readyForReview":false,"merge":false,"repositoryOnly":true}
+          EOF
