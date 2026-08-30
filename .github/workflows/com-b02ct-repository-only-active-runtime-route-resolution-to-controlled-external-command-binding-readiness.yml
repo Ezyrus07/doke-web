@@ -17,11 +17,14 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      PREDECESSOR_HEAD: 734395ff2366ee2e31917b9270758f7b7fffaae2
-      PREDECESSOR_TREE: 8b056f97b70a8cdda7cee791031747882edab790
+      B02CS_HEAD: 734395ff2366ee2e31917b9270758f7b7fffaae2
+      B02CS_TREE: 8b056f97b70a8cdda7cee791031747882edab790
+      FAILED_CANDIDATE_HEAD: 3ebf306ebbe9394727ccbf637f2c9b4438b67636
+      FAILED_CANDIDATE_TREE: bef7f997ca790f5413dd52ea6bd1641aa4aae70a
+      FAILED_TEST: scripts/test-com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.js
+      FAILED_TEST_BLOB: da8a33e9c2ab56e850ebcec599a06e0bb231b9ae
       WORKFLOW: .github/workflows/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.yml
       CONFIG: config/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.json
-      TEST: scripts/test-com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.js
       ROUTE_REGISTRY: backend/shared/http/route-registry.js
       ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
       MODULE_ROUTE_LOADER: backend/shared/http/module-route-loader.js
@@ -44,9 +47,11 @@ jobs:
       STAGING_API_RUNTIME_BLOB: 69de100fe3a269507a0da7847ae8e9887f831ceb
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_DERIVATIVE: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_DERIVATIVE_BLOB: 17cfe628187244c79305d3fe3415509e9111265d
 
     steps:
-      - name: Checkout exact candidate head
+      - name: Checkout exact recovery candidate head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -58,13 +63,16 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Freeze B02CS predecessor and exact B02CT readiness scope
+      - name: Freeze failed candidate lineage, B02CS predecessor and matrix-neutral recovery scope
         shell: bash
         run: |
           set -euo pipefail
 
-          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
-          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git rev-parse HEAD^)" = "$FAILED_CANDIDATE_HEAD"
+          test "$(git rev-parse "$FAILED_CANDIDATE_HEAD^{tree}")" = "$FAILED_CANDIDATE_TREE"
+          test "$(git rev-parse "$FAILED_CANDIDATE_HEAD^")" = "$B02CS_HEAD"
+          test "$(git rev-parse "$B02CS_HEAD^{tree}")" = "$B02CS_TREE"
+          test "$(git rev-parse "$FAILED_CANDIDATE_HEAD:$FAILED_TEST")" = "$FAILED_TEST_BLOB"
 
           test "$(git rev-parse HEAD:$ROUTE_REGISTRY)" = "$ROUTE_REGISTRY_BLOB"
           test "$(git rev-parse HEAD:$MODULE_ROUTE_LOADER)" = "$MODULE_ROUTE_LOADER_BLOB"
@@ -77,20 +85,53 @@ jobs:
           test "$(git rev-parse HEAD:$B02T)" = "$B02T_BLOB"
           test "$(git rev-parse HEAD:$STAGING_API_RUNTIME)" = "$STAGING_API_RUNTIME_BLOB"
           test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_DERIVATIVE)" = "$MATRIX_DERIVATIVE_BLOB"
 
-          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
-          expected="$(printf '%s\n' "$WORKFLOW" "$CONFIG" "$TEST" | sort)"
-          test "$actual" = "$expected"
+          recovery_actual="$(git diff --name-only "$FAILED_CANDIDATE_HEAD" HEAD | sort)"
+          recovery_expected="$(printf '%s\n' "$WORKFLOW" "$CONFIG" "$FAILED_TEST" | sort)"
+          test "$recovery_actual" = "$recovery_expected"
 
-          git diff --check "$PREDECESSOR_HEAD" HEAD
+          modified_actual="$(git diff --diff-filter=M --name-only "$FAILED_CANDIDATE_HEAD" HEAD | sort)"
+          modified_expected="$(printf '%s\n' "$WORKFLOW" "$CONFIG" | sort)"
+          test "$modified_actual" = "$modified_expected"
+          test "$(git diff --diff-filter=D --name-only "$FAILED_CANDIDATE_HEAD" HEAD)" = "$FAILED_TEST"
+
+          net_actual="$(git diff --name-only "$B02CS_HEAD" HEAD | sort)"
+          net_expected="$(printf '%s\n' "$WORKFLOW" "$CONFIG" | sort)"
+          test "$net_actual" = "$net_expected"
+
+          if test -e "$FAILED_TEST"; then
+            echo 'B02CT-R1 must not persist the proof test under scripts/' >&2
+            exit 1
+          fi
+
+          git diff --check "$FAILED_CANDIDATE_HEAD" HEAD
+          git diff --check "$B02CS_HEAD" HEAD
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Prove controlled external command binding readiness without invocation
+      - name: Materialize isolated B02CT proof from failed candidate blob
         shell: bash
         run: |
           set -euo pipefail
+
+          TEST="$RUNNER_TEMP/test-com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.js"
+          PROOF="$RUNNER_TEMP/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.json"
+
+          git show "$FAILED_CANDIDATE_HEAD:$FAILED_TEST" > "$TEST"
+          python - "$TEST" <<'PY'
+          from pathlib import Path
+          import sys
+
+          path = Path(sys.argv[1])
+          source = path.read_text()
+          old = "const root = path.resolve(__dirname, '..');"
+          new = "const root = process.cwd();"
+          if source.count(old) != 1:
+              raise SystemExit("unexpected B02CT isolated-test root declaration")
+          path.write_text(source.replace(old, new))
+          PY
 
           if grep -Eq '\bexecute(Membership|Governance|Content)Command[[:space:]]*\(' "$TEST"; then
             echo 'B02CT must not invoke active execute handlers' >&2
@@ -102,14 +143,14 @@ jobs:
             exit 1
           fi
 
-          PROOF="$RUNNER_TEMP/com-b02ct-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-readiness.json"
           export PROOF_PATH="$PROOF"
 
           npm run audit:domain-completion-matrix
           npm run audit:agent-governance
           node --check "$TEST"
           node "$TEST"
-          git diff --check "$PREDECESSOR_HEAD" HEAD
+          git diff --check "$FAILED_CANDIDATE_HEAD" HEAD
+          git diff --check "$B02CS_HEAD" HEAD
 
       - name: Upload B02CT repository-only readiness proof
         uses: actions/upload-artifact@v4
