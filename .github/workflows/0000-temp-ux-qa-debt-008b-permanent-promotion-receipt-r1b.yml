@@ -1,0 +1,183 @@
+name: TEMP UX-QA-DEBT-008B Permanent Promotion Receipt R1b
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008b-permanent-promotion-receipt-r1b
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PERMANENT_BRANCH: qa/ux-qa-debt-008b-auth-harness
+  PERMANENT_SHA: c7e4e94a772e64ed57472dd0db9a9301de4f9993
+  PERMANENT_TREE: f46b0e0ec95593d8e5bd8fad5bb8466686e59327
+  PARENT_SHA: a13da4f6a3eb604168ffa135abbca03afd82cfd4
+  SCROLL_FILE: tests/e2e/stable-shell-scroll-contract.spec.js
+  SCROLL_BLOB: 7b5b2db651c6871ee91471e4cb05b201a0e3aa25
+  MATRIX_FILE: tests/e2e/stable-shell-transition-matrix.spec.js
+  MATRIX_BLOB: 9e4f1557f3a88985720738065eb1267ad80161dd
+  AUDIT_FILE: scripts/audit-shell-router-scroll-reset.js
+  AUDIT_BLOB: 6f6d8232022b2a436e3781c29d1707b7d3bf89ce
+  PRIOR_RUN_ID: '33347305832'
+  PRIOR_JOB_ID: '99353779424'
+  PRIOR_CONTROLLER_SHA: 78e2164f901b9e27ad0a79f523063b5cfb25b312
+  TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008b-permanent-promotion-receipt-r1b.yml
+  RECEIPT_PATH: evidence/ux-qa-debt-008b-permanent-promotion-receipt-r1b.json
+
+jobs:
+  receipt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout TEMP receipt controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze permanent authority and TEMP scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PERMANENT_SHA"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = "$TEMP_PATH"
+
+          remote_permanent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_permanent" = "$PERMANENT_SHA"
+
+          test "$(git rev-parse "$PERMANENT_SHA^{tree}")" = "$PERMANENT_TREE"
+          test "$(git rev-parse "$PERMANENT_SHA^")" = "$PARENT_SHA"
+          test "$(git rev-parse "$PERMANENT_SHA:$SCROLL_FILE")" = "$SCROLL_BLOB"
+          test "$(git rev-parse "$PERMANENT_SHA:$MATRIX_FILE")" = "$MATRIX_BLOB"
+          test "$(git rev-parse "$PERMANENT_SHA:$AUDIT_FILE")" = "$AUDIT_BLOB"
+
+          changed="$(git diff-tree --no-commit-id --name-only -r "$PERMANENT_SHA" | sort)"
+          expected="$(printf '%s\n%s\n' "$SCROLL_FILE" "$MATRIX_FILE" | sort)"
+          test "$changed" = "$expected"
+
+          echo "PERMANENT_AUTHORITY=PASS"
+          echo "TEMP_SCOPE=WORKFLOW_ONLY"
+
+      - name: Reconcile prior promotion run and job evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+
+          curl -fsSL "${auth[@]}" "$api/actions/runs/$PRIOR_RUN_ID" > /tmp/prior-run.json
+          curl -fsSL "${auth[@]}" "$api/actions/jobs/$PRIOR_JOB_ID" > /tmp/prior-job.json
+          curl -fsSL -L "${auth[@]}" "$api/actions/jobs/$PRIOR_JOB_ID/logs" > /tmp/prior-job.log
+
+          jq -e --arg id "$PRIOR_RUN_ID" --arg sha "$PRIOR_CONTROLLER_SHA" '
+            (.id | tostring) == $id and
+            .head_sha == $sha and
+            .run_attempt == 1 and
+            .status == "completed" and
+            .conclusion == "failure"
+          ' /tmp/prior-run.json >/dev/null
+
+          jq -e --arg id "$PRIOR_JOB_ID" --arg run "$PRIOR_RUN_ID" '
+            (.id | tostring) == $id and
+            (.run_id | tostring) == $run and
+            .status == "completed" and
+            .conclusion == "failure"
+          ' /tmp/prior-job.json >/dev/null
+
+          jq -e '[.steps[] | select(.name == "Run minimum gates and inherited shell-scroll audit" and .conclusion == "success")] | length == 1' /tmp/prior-job.json >/dev/null
+          jq -e '[.steps[] | select(.name == "Run exact owner suites across desktop tablet mobile" and .conclusion == "success")] | length == 1' /tmp/prior-job.json >/dev/null
+          jq -e '[.steps[] | select(.name == "Prove exact 31 of 31 and post-E2E immutability" and .conclusion == "success")] | length == 1' /tmp/prior-job.json >/dev/null
+          jq -e '[.steps[] | select(.name == "Commit once and fast-forward permanent branch" and .conclusion == "success")] | length == 1' /tmp/prior-job.json >/dev/null
+          jq -e '[.steps[] | select(.name == "Emit permanent promotion receipt" and .conclusion == "success")] | length == 1' /tmp/prior-job.json >/dev/null
+          jq -e '[.steps[] | select(.name == "Upload promotion evidence" and .conclusion == "failure")] | length == 1' /tmp/prior-job.json >/dev/null
+
+          grep -F "31 passed (" /tmp/prior-job.log >/dev/null
+          grep -F "OWNER_SUITE_RECEIPT total=31 passed=31 failed=0" /tmp/prior-job.log >/dev/null
+          grep -F "PERMANENT_COMMIT=$PERMANENT_SHA" /tmp/prior-job.log >/dev/null
+          grep -F "PERMANENT_TREE=$PERMANENT_TREE" /tmp/prior-job.log >/dev/null
+          grep -F "FAST_FORWARD_FORCE_FALSE=1" /tmp/prior-job.log >/dev/null
+          grep -F "Invalid pattern '../candidate/reports/generated/playwright-html/'. Relative pathing '.' and '..' is not allowed." /tmp/prior-job.log >/dev/null
+
+          echo "PRIOR_RUN_JOB_RECONCILIATION=PASS"
+          echo "PRIOR_OWNER_SUITES=31/31"
+          echo "PRIOR_FAST_FORWARD_FORCE_FALSE=PASS"
+          echo "PRIOR_RED_CAUSE=POST_PUSH_ARTIFACT_PATH_ONLY"
+
+      - name: Emit reconciled permanent promotion receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$(dirname "$RECEIPT_PATH")"
+
+          current_permanent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$current_permanent" = "$PERMANENT_SHA"
+
+          jq -n \
+            --arg checkpoint "UX-QA-DEBT-008B-PERMANENT-PROMOTION-RECEIPT-R1B" \
+            --arg permanentBranch "$PERMANENT_BRANCH" \
+            --arg head "$PERMANENT_SHA" \
+            --arg tree "$PERMANENT_TREE" \
+            --arg parent "$PARENT_SHA" \
+            --arg scrollBlob "$SCROLL_BLOB" \
+            --arg matrixBlob "$MATRIX_BLOB" \
+            --arg audit008aBlob "$AUDIT_BLOB" \
+            --arg priorRun "$PRIOR_RUN_ID" \
+            --arg priorJob "$PRIOR_JOB_ID" \
+            --arg priorController "$PRIOR_CONTROLLER_SHA" \
+            '{
+              result: "PASS",
+              checkpoint: $checkpoint,
+              permanentBranch: $permanentBranch,
+              head: $head,
+              tree: $tree,
+              parent: $parent,
+              scrollBlob: $scrollBlob,
+              matrixBlob: $matrixBlob,
+              audit008aBlob: $audit008aBlob,
+              priorRun: $priorRun,
+              priorJob: $priorJob,
+              priorController: $priorController,
+              priorRunOverallConclusion: "failure",
+              priorFailureClass: "post-push artifact archival path only",
+              ownerSuites: "31/31",
+              shellScrollAudit: true,
+              domainMatrix: true,
+              agentGovernance: true,
+              postE2EImmutability: true,
+              permanentCommitCreated: true,
+              fastForward: true,
+              force: false,
+              permanentBranchMovedByReceipt: false,
+              ownerSuitesRerunByReceipt: false,
+              permanentFilesChangedByReceipt: false,
+              prCreated: false,
+              merge: false,
+              readyForReview: false
+            }' > "$RECEIPT_PATH"
+
+          jq -e '.result == "PASS" and .ownerSuites == "31/31" and .permanentBranchMovedByReceipt == false and .ownerSuitesRerunByReceipt == false' "$RECEIPT_PATH" >/dev/null
+          cat "$RECEIPT_PATH"
+
+      - name: Prove permanent branch remained immutable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)" = "$PERMANENT_SHA"
+          test "$(git rev-parse "$PERMANENT_SHA^{tree}")" = "$PERMANENT_TREE"
+          test "$(git rev-parse "$PERMANENT_SHA:$SCROLL_FILE")" = "$SCROLL_BLOB"
+          test "$(git rev-parse "$PERMANENT_SHA:$MATRIX_FILE")" = "$MATRIX_BLOB"
+          test "$(git rev-parse "$PERMANENT_SHA:$AUDIT_FILE")" = "$AUDIT_BLOB"
+          echo "PERMANENT_IMMUTABILITY_AFTER_RECEIPT=PASS"
+
+      - name: Upload reconciled receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008b-permanent-promotion-receipt-r1b-${{ github.sha }}
+          path: evidence/ux-qa-debt-008b-permanent-promotion-receipt-r1b.json
+          if-no-files-found: error
+          retention-days: 14
