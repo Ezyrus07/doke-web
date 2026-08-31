@@ -1,0 +1,271 @@
+name: TEMP UX-QA-DEBT-008D Permanent Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008d-permanent-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PARENT_SHA: dd9bfa9c56ec8c338c8de5db8283ab8dd28f6fe3
+      PARENT_TREE: 599517aaada895d09dd5791009b096282efeeb1a
+      SOURCE_BRANCH: diag/ux-qa-debt-008d-finalization-contract-c1
+      SOURCE_SHA: 65fc2342f315acba99fa39b0cfc695c08ca4d255
+      SOURCE_TREE: bfd34a50eafec796c1c68165d48ac5b1566eed93
+      PERMANENT_BRANCH: qa/ux-qa-debt-008d-finalization-contract
+      OWNER_FILE: scripts/test-navigation-lifecycle-finalization-contract.js
+      OWNER_BLOB: 0b21a7171167de4d62f623d3d95b3ae8a2d447c3
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008d-permanent-promotion-r1.yml
+
+    steps:
+      - name: Checkout TEMP controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller source permanent target and auth authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = "$TEMP_PATH"
+
+          remote_target="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_target" = "$PARENT_SHA"
+
+          git fetch --no-tags origin "refs/heads/$SOURCE_BRANCH:refs/remotes/origin/uxqa008d-source"
+          test "$(git rev-parse refs/remotes/origin/uxqa008d-source)" = "$SOURCE_SHA"
+          test "$(git rev-parse "$SOURCE_SHA^{tree}")" = "$SOURCE_TREE"
+          test "$(git rev-parse "$SOURCE_SHA:$OWNER_FILE")" = "$OWNER_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA^")" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA".."$SOURCE_SHA")" = "$OWNER_FILE"
+
+          test "$(git rev-parse "$SOURCE_SHA:auth/login.html")" = '6a4f57f4f01d591fb9fbfe3d52a29f3c960fc35c'
+          test "$(git rev-parse "$SOURCE_SHA:auth/cadastro.html")" = 'b37679c165e75babeb8676994a983e2cc823d46b'
+          test "$(git rev-parse "$SOURCE_SHA:auth/esqueci-senha.html")" = '72a2e1eb457349e64e6cbe81038d5e13aa6abd5e'
+          test "$(git rev-parse "$SOURCE_SHA:assets/js/pages/auth-password-pages.js")" = '00fd71f58915a069405cc3bd1ea6ad9761dd8161'
+          test "$(git rev-parse "$SOURCE_SHA:assets/js/pages/auth.js")" = '651669cfadbb0652d395173e1cbfd6a48d512b78'
+          test "$(git rev-parse "$SOURCE_SHA:assets/js/core/navigation-lifecycle.js")" = '23aa36beb2929d4538b336e6670ee38e04057919'
+
+          echo 'CONTROLLER_LINEAGE=PASS'
+          echo 'SOURCE_IDENTITY=PASS'
+          echo 'PERMANENT_TARGET_FROZEN=PASS'
+          echo 'AUTH_LIFECYCLE_AUTHORITIES=PASS'
+
+      - name: Create exact parent worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add ../candidate "$PARENT_SHA"
+          cd ../candidate
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test -z "$(git status --porcelain)"
+
+      - name: Reconstruct exact certified C1 owner blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          git show "$SOURCE_SHA:$OWNER_FILE" > "$OWNER_FILE"
+          test "$(git hash-object "$OWNER_FILE")" = "$OWNER_BLOB"
+          test "$(git diff --name-only)" = "$OWNER_FILE"
+          git diff --check
+          git diff --quiet -- auth/login.html auth/cadastro.html auth/esqueci-senha.html
+          git diff --quiet -- assets/js/pages/auth-password-pages.js assets/js/pages/auth.js assets/js/core/navigation-lifecycle.js
+          git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet -- tests/visual reports/baseline
+          echo 'EXACT_OWNER_BLOB=PASS'
+          echo 'OWNER_SCOPE=1_FILE'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          npm ci
+
+      - name: Run frozen promotion qualification gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          node --check "$OWNER_FILE"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT_SHA".."$SOURCE_SHA"
+          npm run test:navigation-lifecycle-finalization-contract
+          npm run audit:navigation-lifecycle-contract
+          npm run test:navigation-lifecycle-core-contract
+          npm run audit:auth-session
+
+          git checkout -- docs 2>/dev/null || true
+          git checkout -- reports/generated 2>/dev/null || true
+          git clean -fd -- docs/validation reports/generated test-results >/dev/null 2>&1 || true
+
+          test "$(git diff --name-only)" = "$OWNER_FILE"
+          test "$(git hash-object "$OWNER_FILE")" = "$OWNER_BLOB"
+          git diff --check
+          git diff --quiet -- auth/login.html auth/cadastro.html auth/esqueci-senha.html
+          git diff --quiet -- assets/js/pages/auth-password-pages.js assets/js/pages/auth.js assets/js/core/navigation-lifecycle.js
+          git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet -- tests/visual reports/baseline
+
+          echo 'NODE_CHECK=PASS'
+          echo 'DOMAIN_MATRIX=PASS'
+          echo 'AGENT_GOVERNANCE=PASS'
+          echo 'DIFF_CHECK=PASS'
+          echo 'FINALIZATION_CONTRACT=PASS'
+          echo 'NAVIGATION_LIFECYCLE_AUDIT=PASS'
+          echo 'NAVIGATION_LIFECYCLE_CORE=PASS'
+          echo 'AUTH_SESSION=PASS'
+          echo 'GOVERNANCE_SCOPE_RESTORED=PASS'
+
+      - name: Prove exact controller order assertions before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          node <<'NODE'
+          const fs = require('fs');
+          const owner = fs.readFileSync(process.env.OWNER_FILE, 'utf8');
+          const read = (file) => fs.readFileSync(file, 'utf8');
+          const assert = (condition, message) => { if (!condition) throw new Error(message); };
+
+          assert(owner.includes("for (const file of ['auth/login.html', 'auth/cadastro.html'])"), 'login/cadastro assertion drifted');
+          assert(owner.includes("const file = 'auth/esqueci-senha.html';"), 'recovery dedicated block missing');
+          assert(owner.includes('../assets/js/pages/auth-password-pages.js'), 'dedicated controller assertion missing');
+          assert(owner.includes('legacy auth controller must remain absent'), 'legacy absence assertion missing');
+
+          const lifecycle = '../assets/js/core/navigation-lifecycle.js';
+          const legacy = '../assets/js/pages/auth.js';
+          const dedicated = '../assets/js/pages/auth-password-pages.js';
+          for (const file of ['auth/login.html', 'auth/cadastro.html']) {
+            const html = read(file);
+            const l = html.indexOf(lifecycle);
+            const a = html.indexOf(legacy);
+            assert(l >= 0 && a >= 0 && l < a, `${file}: lifecycle -> auth.js order drifted`);
+          }
+          const recovery = read('auth/esqueci-senha.html');
+          const rl = recovery.indexOf(lifecycle);
+          const rd = recovery.indexOf(dedicated);
+          assert(rl >= 0 && rd >= 0 && rl < rd, 'recovery lifecycle -> dedicated order drifted');
+          assert(recovery.indexOf(legacy) < 0, 'recovery legacy auth.js unexpectedly present');
+          console.log('CONTROLLER_ORDER_ASSERTIONS=PASS');
+          console.log('CRITERIA_RELAXED=0');
+          NODE
+
+          test "$(git diff --name-only)" = "$OWNER_FILE"
+          test "$(git hash-object "$OWNER_FILE")" = "$OWNER_BLOB"
+
+      - name: Commit once and fast forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          remote_target="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_target" = "$PARENT_SHA"
+          test "$(git diff --name-only)" = "$OWNER_FILE"
+          test "$(git hash-object "$OWNER_FILE")" = "$OWNER_BLOB"
+
+          git config user.name 'doke-qa'
+          git config user.email 'doke-qa@users.noreply.github.com'
+          git add "$OWNER_FILE"
+          test "$(git diff --cached --name-only)" = "$OWNER_FILE"
+          git diff --cached --check
+          git commit -m 'test(qa): align recovery finalization controller contract'
+
+          permanent_commit="$(git rev-parse HEAD)"
+          permanent_tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD:$OWNER_FILE)" = "$OWNER_BLOB"
+          test "$(git diff --name-only "$PARENT_SHA"..HEAD)" = "$OWNER_FILE"
+          test "$permanent_tree" = "$SOURCE_TREE"
+
+          test "$(git rev-parse "HEAD:auth/login.html")" = '6a4f57f4f01d591fb9fbfe3d52a29f3c960fc35c'
+          test "$(git rev-parse "HEAD:auth/cadastro.html")" = 'b37679c165e75babeb8676994a983e2cc823d46b'
+          test "$(git rev-parse "HEAD:auth/esqueci-senha.html")" = '72a2e1eb457349e64e6cbe81038d5e13aa6abd5e'
+          test "$(git rev-parse "HEAD:assets/js/pages/auth-password-pages.js")" = '00fd71f58915a069405cc3bd1ea6ad9761dd8161'
+          test "$(git rev-parse "HEAD:assets/js/pages/auth.js")" = '651669cfadbb0652d395173e1cbfd6a48d512b78'
+          test "$(git rev-parse "HEAD:assets/js/core/navigation-lifecycle.js")" = '23aa36beb2929d4538b336e6670ee38e04057919'
+
+          git push origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          pushed="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$pushed" = "$permanent_commit"
+
+          echo "PERMANENT_COMMIT=$permanent_commit" >> "$GITHUB_ENV"
+          echo "PERMANENT_TREE=$permanent_tree" >> "$GITHUB_ENV"
+          echo "PERMANENT_COMMIT=$permanent_commit"
+          echo "PERMANENT_TREE=$permanent_tree"
+          echo 'FAST_FORWARD_FORCE_FALSE=1'
+
+      - name: Emit permanent promotion receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p promotion-evidence
+          node <<'NODE'
+          const fs = require('fs');
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008D-PERMANENT-PROMOTION',
+            parent: process.env.PARENT_SHA,
+            parentTree: process.env.PARENT_TREE,
+            source: process.env.SOURCE_SHA,
+            sourceTree: process.env.SOURCE_TREE,
+            permanentBranch: process.env.PERMANENT_BRANCH,
+            head: process.env.PERMANENT_COMMIT,
+            tree: process.env.PERMANENT_TREE,
+            owner: process.env.OWNER_FILE,
+            ownerBlob: process.env.OWNER_BLOB,
+            nodeCheck: true,
+            domainMatrix: true,
+            agentGovernance: true,
+            diffCheck: true,
+            finalizationContract: true,
+            navigationLifecycleAudit: true,
+            navigationLifecycleCore: true,
+            authSession: true,
+            controllerOrderAssertions: true,
+            authLifecycleAuthorityBlobs: true,
+            criteriaRelaxed: 0,
+            introducedRegressions: 0,
+            candidateMutation: false,
+            htmlMutation: false,
+            productMutation: false,
+            authSemanticsMutation: false,
+            runtimeMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            visualBaselineMutation: false,
+            fastForward: true,
+            force: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true
+          };
+          fs.writeFileSync('promotion-evidence/receipt.json', JSON.stringify(receipt, null, 2) + '\n');
+          console.log(`UX_QA_DEBT_008D_PROMOTION_FINAL=${JSON.stringify(receipt)}`);
+          NODE
+
+      - name: Upload permanent promotion evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008d-permanent-promotion-${{ github.sha }}
+          path: promotion-evidence/
+          if-no-files-found: error
+          retention-days: 14
