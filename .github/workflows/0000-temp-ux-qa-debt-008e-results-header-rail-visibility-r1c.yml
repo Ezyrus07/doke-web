@@ -1,0 +1,376 @@
+name: TEMP UX-QA-DEBT-008E Results Header Rail Deterministic Geometry R1c
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008e-results-header-rail-visibility-r1c
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SOURCE_SHA: c62445938fb4e0bbf937fdb45209a12eb3d0b52d
+      SOURCE_TREE: bfd34a50eafec796c1c68165d48ac5b1566eed93
+      PERMANENT_BRANCH: qa/ux-qa-debt-008d-finalization-contract
+      TEMP_WORKFLOW: .github/workflows/0000-temp-ux-qa-debt-008e-results-header-rail-visibility-r1c.yml
+      CONTRACT_BLOB: 56d0046cb4c3a4b408fe4be2a531648474266ec7
+      RESULTS_ENTRY_SPEC_BLOB: f99c8a622abacf6360680dbf5864e0b1c2ef2484
+      SEARCH_REPOSITORY_BLOB: d4418a94cb939ba56dc7099069afc27ae57ea54f
+      SUPABASE_CONFIG_BLOB: a370c903fc6c390ba02bdc20ecc5ca88c11e1f29
+      RESULTS_HTML_BLOB: 9b4431143ef80dafc70788bfa5c96ebf6460b5d1
+      SEARCH_RESULTS_BLOB: 76ae990f89829d8c85968e6b2550841312fefbdc
+      HYDRATION_CSS_BLOB: cbf6641f3c43b278f1779fc2ff9b25443d418b51
+      RESPONSIVE_CSS_BLOB: 1669e471ae68c0d46fdb9a3e1aeaf4f3b05a3270
+      DESKTOP_CSS_BLOB: e7829045b33fcdca429f4ca2a248f1a7d6eb01bb
+      SHELL_CSS_BLOB: c28c47b061fa994871386a81b4d1adfc212ac553
+
+    steps:
+      - name: Checkout TEMP controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze parent, owners and TEMP-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$SOURCE_SHA"
+          test "$(git rev-parse "$SOURCE_SHA^{tree}")" = "$SOURCE_TREE"
+          test "$(git rev-parse "$SOURCE_SHA:scripts/test-results-header-rail-contract.js")" = "$CONTRACT_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:tests/e2e/results-entry-lifecycle.spec.js")" = "$RESULTS_ENTRY_SPEC_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/js/repositories/search-repository.js")" = "$SEARCH_REPOSITORY_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/js/core/supabase-config.js")" = "$SUPABASE_CONFIG_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:resultados.html")" = "$RESULTS_HTML_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/js/pages/search-results.js")" = "$SEARCH_RESULTS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/css/pages/results/page-hydration-states.css")" = "$HYDRATION_CSS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/css/pages/search-results/responsive-pass.css")" = "$RESPONSIVE_CSS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/css/pages/search-results/desktop-envelope.css")" = "$DESKTOP_CSS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/css/pages/results/shell.css")" = "$SHELL_CSS_BLOB"
+          mapfile -t changed < <(git diff --name-only "$SOURCE_SHA"...HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$TEMP_WORKFLOW"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$SOURCE_SHA"
+          echo "FREEZE=PASS"
+          echo "REMOTE_SCOPE=ONE_TEMP_WORKFLOW"
+
+      - name: Detach exact requalified source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$SOURCE_TREE"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Reproduce original contract unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node scripts/test-results-header-rail-contract.js > "$RUNNER_TEMP/original-contract.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" > "$RUNNER_TEMP/original-contract.status"
+          cat "$RUNNER_TEMP/original-contract.log"
+          echo "ORIGINAL_STATUS=$status"
+          test "$status" -ne 0
+          grep -Fq '/resultados.html?q=sSAS 820x1180: results layout is not visible' "$RUNNER_TEMP/original-contract.log"
+          echo "ORIGINAL_820_VISIBILITY_FAILURE=REPRODUCED"
+
+      - name: Build runner-only deterministic contract derivative
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .r1c-temp
+          mkdir -p .r1c-temp
+          cp scripts/test-results-header-rail-contract.js .r1c-temp/test-results-header-rail-contract-r1c.js
+          cat > "$RUNNER_TEMP/r1c-network-mocks.jsfrag" <<'JS'
+          async function installNetworkMocks(context) {
+            await context.route('**/assets/js/repositories/search-repository.js*', async (route) => {
+              const response = await route.fetch();
+              const originalBody = await response.text();
+              const harness = `
+          ;(function () {
+            var Doke = window.Doke || (window.Doke = {});
+            var repositories = Doke.repositories || (Doke.repositories = {});
+            var original = repositories.search;
+            if (!original || original.__qaResultsHeaderRailHarness === true) return;
+            var item = Object.freeze({
+              id: 'qa-service-008e-r1c',
+              remoteId: 'qa-service-008e-r1c',
+              serviceId: 'qa-service-008e-r1c',
+              title: 'QA deterministic sSAS service',
+              description: 'Synthetic browser-only Resultados header-rail contract fixture.',
+              category: 'qa-contract',
+              providerName: 'QA Provider',
+              providerHandle: '@qa-provider',
+              city: 'Sao Paulo',
+              state: 'SP',
+              location: 'Sao Paulo, SP',
+              rating: 5,
+              reviews: '1 avaliação',
+              reviewsCount: 1,
+              tags: ['qa', 'contract', 'sSAS'],
+              priceValue: 100,
+              price: 100,
+              updatedAt: '2026-08-31T00:00:00.000Z'
+            });
+            function responseFor(request, items) {
+              var contract = original.getContract();
+              return {
+                authority: contract.expectedAuthority,
+                contractVersion: contract.version,
+                request: Object.assign({}, request || {}),
+                items: items.slice(),
+                page: {
+                  pageSize: Number(request && request.pageSize || 12),
+                  hasNext: false,
+                  nextCursor: null
+                }
+              };
+            }
+            repositories.search = Object.freeze({
+              __qaResultsHeaderRailHarness: true,
+              queryPage: function (request) {
+                request = request || {};
+                if (request.query === 'sSAS') {
+                  return Promise.resolve(responseFor(request, [item]));
+                }
+                return original.queryPage(request);
+              },
+              normalizeRequest: function (request) { return original.normalizeRequest(request); },
+              getLastError: function () { return original.getLastError(); },
+              getContract: function () { return original.getContract(); }
+            });
+          }());`;
+              await route.fulfill({ response, body: `${originalBody}\n${harness}` });
+            });
+            await context.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ status: 200, body: '' }));
+            await context.route('https://fonts.gstatic.com/**', (route) => route.abort());
+            await context.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript; charset=utf-8',
+              body: '',
+            }));
+            await context.route('https://unpkg.com/**', (route) => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript; charset=utf-8',
+              body: 'window.lucide={createIcons(){}};',
+            }));
+          }
+          JS
+          node - <<'NODE'
+          const fs = require('fs');
+          const sourcePath = 'scripts/test-results-header-rail-contract.js';
+          const targetPath = '.r1c-temp/test-results-header-rail-contract-r1c.js';
+          const replacementPath = process.env.RUNNER_TEMP + '/r1c-network-mocks.jsfrag';
+          const source = fs.readFileSync(sourcePath, 'utf8');
+          const replacement = fs.readFileSync(replacementPath, 'utf8').trimEnd();
+          const startMarker = 'async function installNetworkMocks(context) {';
+          const endMarker = '\n\nasync function collectLayout(page) {';
+          const start = source.indexOf(startMarker);
+          const end = source.indexOf(endMarker, start);
+          if (start < 0 || end < 0) throw new Error('R1C_TRANSFORM_MARKERS_MISSING');
+          if (source.indexOf(startMarker, start + 1) !== -1) throw new Error('R1C_TRANSFORM_START_NOT_UNIQUE');
+          const derived = source.slice(0, start) + replacement + source.slice(end);
+          fs.writeFileSync(targetPath, derived);
+          const unchanged = [
+            "const routes = ['/resultados.html?q=sSAS', '/doke-web/resultados.html?q=sSAS'];",
+            '  [390, 844],',
+            '  [760, 1024],',
+            '  [820, 1180],',
+            '  [1024, 1180],',
+            '  [1366, 768],',
+            '  [1760, 900],',
+            'const tolerance = 1.25;',
+            'await page.waitForTimeout(650);',
+            'app header inner is not visible',
+            'results searchbar is not visible',
+            'results layout is not visible',
+            'searchbar left rail must match header',
+            'searchbar right rail must match header',
+            'results layout left rail must match header',
+            'results layout right rail must match header',
+            'results workspace must not keep nested page padding'
+          ];
+          for (const token of unchanged) {
+            if (!derived.includes(token)) throw new Error('R1C_UNCHANGED_CONTRACT_TOKEN_MISSING: ' + token);
+          }
+          if (!derived.includes("__qaResultsHeaderRailHarness")) throw new Error('R1C_HARNESS_NOT_INSTALLED');
+          if (!derived.includes("request.query === 'sSAS'")) throw new Error('R1C_QUERY_NOT_BOUNDED');
+          console.log('R1C_DERIVATIVE_SCOPE=NETWORK_MOCK_FUNCTION_ONLY');
+          NODE
+          diff -u scripts/test-results-header-rail-contract.js .r1c-temp/test-results-header-rail-contract-r1c.js > "$RUNNER_TEMP/r1c-contract.diff" || true
+          node --check .r1c-temp/test-results-header-rail-contract-r1c.js
+          echo "R1C_DERIVATIVE_NODE_CHECK=PASS"
+
+      - name: Run deterministic R1c geometry contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node .r1c-temp/test-results-header-rail-contract-r1c.js > "$RUNNER_TEMP/r1c-contract.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" > "$RUNNER_TEMP/r1c-contract.status"
+          cat "$RUNNER_TEMP/r1c-contract.log"
+          echo "R1C_STATUS=$status"
+
+      - name: Classify R1c
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - "$RUNNER_TEMP/original-contract.status" "$RUNNER_TEMP/original-contract.log" "$RUNNER_TEMP/r1c-contract.status" "$RUNNER_TEMP/r1c-contract.log" "$RUNNER_TEMP/r1c-receipt.json" <<'NODE'
+          const fs = require('fs');
+          const [originalStatusPath, originalLogPath, r1cStatusPath, r1cLogPath, receiptPath] = process.argv.slice(2);
+          const originalStatus = Number(fs.readFileSync(originalStatusPath, 'utf8').trim());
+          const originalLog = fs.readFileSync(originalLogPath, 'utf8');
+          const r1cStatus = Number(fs.readFileSync(r1cStatusPath, 'utf8').trim());
+          const r1cLog = fs.readFileSync(r1cLogPath, 'utf8');
+          const originalSignature = '/resultados.html?q=sSAS 820x1180: results layout is not visible';
+          const geometryPatterns = [
+            'involuntary horizontal overflow',
+            'searchbar left rail must match header',
+            'searchbar right rail must match header',
+            'results layout left rail must match header',
+            'results layout right rail must match header',
+            'results workspace must not keep nested page padding'
+          ];
+          const visibilityPatterns = [
+            'app header inner is not visible',
+            'results searchbar is not visible',
+            'results layout is not visible'
+          ];
+          let classification = 'UNRESOLVED_R1C_FAILURE';
+          if (r1cStatus === 0) {
+            classification = 'HARNESS_ONLY_NO_GEOMETRY_DEFECT_UNDER_DETERMINISTIC_PRECONDITION';
+          } else if (geometryPatterns.some((value) => r1cLog.includes(value))) {
+            classification = 'GEOMETRY_DIVERGENCE_PROVEN';
+          } else if (visibilityPatterns.some((value) => r1cLog.includes(value))) {
+            classification = 'DETERMINISTIC_VISIBILITY_PRECONDITION_STILL_FAILS';
+          } else if (r1cLog.includes('body[data-page] should be resultados')) {
+            classification = 'ROUTE_COMPOSITION_PRECONDITION_FAILURE';
+          }
+          const receipt = {
+            result: classification === 'UNRESOLVED_R1C_FAILURE' ? 'UNRESOLVED' : 'CLASSIFIED',
+            checkpoint: 'UX-QA-DEBT-008E-R1C-DETERMINISTIC-GEOMETRY',
+            source: process.env.SOURCE_SHA,
+            sourceTree: process.env.SOURCE_TREE,
+            originalContractStatus: originalStatus,
+            originalObserved820Failure: originalLog.includes(originalSignature),
+            deterministicStatus: r1cStatus,
+            classification,
+            deterministicLogTail: r1cLog.split(/\r?\n/).filter(Boolean).slice(-12),
+            criteriaRelaxed: 0,
+            introducedRegressions: 0,
+            candidateMaterialized: false,
+            productMutation: false,
+            cssHtmlMutation: false,
+            qaOwnerMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            supabaseInvocation: false,
+            rpcInvocation: false,
+            stagingProduction: false,
+            repositoryOnly: true
+          };
+          fs.writeFileSync(receiptPath, JSON.stringify(receipt, null, 2));
+          console.log('UX_QA_DEBT_008E_R1C_FINAL=' + JSON.stringify(receipt));
+          if (originalStatus === 0 || !receipt.originalObserved820Failure) process.exit(2);
+          if (classification === 'UNRESOLVED_R1C_FAILURE') process.exit(3);
+          NODE
+
+      - name: Remove runner-only derivative
+        if: always()
+        shell: bash
+        run: |
+          rm -rf .r1c-temp
+
+      - name: Run repository governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git restore --worktree --staged docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md 2>/dev/null || true
+          git diff --check
+          test -z "$(git status --porcelain)"
+          echo "DOMAIN_MATRIX=PASS"
+          echo "AGENT_GOVERNANCE=PASS"
+          echo "GIT_DIFF_CHECK=PASS"
+          echo "CHANGED_JS_FILES=0"
+
+      - name: Prove permanent source remained immutable
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .r1c-temp
+          git restore --worktree --staged docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md 2>/dev/null || true
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$SOURCE_TREE"
+          test "$(git rev-parse "HEAD:scripts/test-results-header-rail-contract.js")" = "$CONTRACT_BLOB"
+          test "$(git rev-parse "HEAD:tests/e2e/results-entry-lifecycle.spec.js")" = "$RESULTS_ENTRY_SPEC_BLOB"
+          test "$(git rev-parse "HEAD:assets/js/repositories/search-repository.js")" = "$SEARCH_REPOSITORY_BLOB"
+          test "$(git rev-parse "HEAD:assets/js/core/supabase-config.js")" = "$SUPABASE_CONFIG_BLOB"
+          test "$(git rev-parse "HEAD:resultados.html")" = "$RESULTS_HTML_BLOB"
+          test "$(git rev-parse "HEAD:assets/js/pages/search-results.js")" = "$SEARCH_RESULTS_BLOB"
+          test "$(git rev-parse "HEAD:assets/css/pages/results/page-hydration-states.css")" = "$HYDRATION_CSS_BLOB"
+          test "$(git rev-parse "HEAD:assets/css/pages/search-results/responsive-pass.css")" = "$RESPONSIVE_CSS_BLOB"
+          test "$(git rev-parse "HEAD:assets/css/pages/search-results/desktop-envelope.css")" = "$DESKTOP_CSS_BLOB"
+          test "$(git rev-parse "HEAD:assets/css/pages/results/shell.css")" = "$SHELL_CSS_BLOB"
+          test -z "$(git status --porcelain)"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$SOURCE_SHA"
+          echo "PERMANENT_IMMUTABILITY=PASS"
+
+      - name: Stage diagnostic evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p diagnostic-evidence
+          for f in original-contract.log original-contract.status r1c-contract.diff r1c-contract.log r1c-contract.status r1c-receipt.json; do
+            if [ -f "$RUNNER_TEMP/$f" ]; then cp "$RUNNER_TEMP/$f" "diagnostic-evidence/$f"; fi
+          done
+          cat > diagnostic-evidence/metadata.txt <<EOF
+          source=$SOURCE_SHA
+          source_tree=$SOURCE_TREE
+          workflow_head=$GITHUB_SHA
+          run_id=$GITHUB_RUN_ID
+          run_attempt=$GITHUB_RUN_ATTEMPT
+          candidate_materialized=false
+          product_mutation=false
+          css_html_mutation=false
+          qa_owner_mutation=false
+          matrix_mutation=false
+          snapshot_mutation=false
+          supabase_invocation=false
+          rpc_invocation=false
+          staging_production=false
+          EOF
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008e-results-header-rail-visibility-r1c-${{ github.sha }}
+          path: diagnostic-evidence/
+          if-no-files-found: error
