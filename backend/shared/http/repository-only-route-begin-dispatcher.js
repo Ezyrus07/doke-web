@@ -7,6 +7,11 @@ const CONTRACT_ID = 'com-b02y-repository-only-route-begin-dispatch-integration-v
 const BOUNDARY_ID = 'COM-B02Y';
 const PREDECESSOR_CONTRACT_ID = resolver.CONTRACT_ID;
 const PREDECESSOR_HEAD = 'ff100a57932a3dd1a197df0d3af45f9056c7d876';
+const CONTROLLED_BINDING_CONTRACT_ID =
+  'com-b02cu-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-implementation-v1';
+const CONTROLLED_BINDING_BOUNDARY_ID = 'COM-B02CU';
+const CONTROLLED_BINDING_PREDECESSOR_CONTRACT_ID = CONTRACT_ID;
+const CONTROLLED_BINDING_PREDECESSOR_HEAD = 'b9e860137e03159d191c0821e28b30865dfe1d81';
 
 function isObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -222,6 +227,115 @@ function dispatchRepositoryOnlyRouteBegin(routeName, packet, options = {}) {
   });
 }
 
+function projectActiveRouteIdentity(activeRoute) {
+  if (!isObject(activeRoute)) return null;
+  if (typeof activeRoute.name !== 'string' ||
+      typeof activeRoute.module !== 'string' ||
+      typeof activeRoute.handler !== 'string') {
+    return null;
+  }
+
+  return freeze({
+    routeName: activeRoute.name,
+    moduleName: activeRoute.module,
+    activeHandlerName: activeRoute.handler
+  });
+}
+
+function blockedControlledExternalCommandBinding(reason, activeRoute) {
+  return freeze({
+    contractId: CONTROLLED_BINDING_CONTRACT_ID,
+    boundaryId: CONTROLLED_BINDING_BOUNDARY_ID,
+    predecessorContractId: CONTROLLED_BINDING_PREDECESSOR_CONTRACT_ID,
+    predecessorHead: CONTROLLED_BINDING_PREDECESSOR_HEAD,
+    decision: 'blocked_repository_only_active_runtime_route_command_binding',
+    reason,
+    activeRoute: projectActiveRouteIdentity(activeRoute),
+    controlledExternalCommandBindingMaterialized: false,
+    controlledExternalCommandBindingInvoked: false,
+    executableReferenceReturned: false,
+    repositoryOnlyBeginSurfaceInvocationAuthority: false,
+    resumeSurfaceInvocationAuthority: false,
+    activeExecuteHandlerInvocationAuthority: false,
+    repositoryOperationInvocationAuthority: false,
+    rpcExecutionAuthority: false,
+    networkAuthority: false,
+    runtimeWiringAuthority: false,
+    runtimeActivationAuthority: false,
+    ...inertEffects()
+  });
+}
+
+function resolveActiveRuntimeRouteToControlledExternalCommandBinding(activeRoute) {
+  const activeRouteIdentity = projectActiveRouteIdentity(activeRoute);
+  if (!activeRouteIdentity) {
+    return blockedControlledExternalCommandBinding(
+      'ACTIVE_RUNTIME_ROUTE_IDENTITY_REQUIRED',
+      activeRoute
+    );
+  }
+
+  const resolution = resolver.resolveRepositoryOnlyRouteSurface(activeRouteIdentity.routeName);
+  if (!resolution) {
+    return blockedControlledExternalCommandBinding(
+      'B02X_RESOLVED_ROUTE_SURFACE_REQUIRED',
+      activeRoute
+    );
+  }
+
+  if (resolution.contractId !== resolver.CONTRACT_ID ||
+      resolution.boundaryId !== resolver.BOUNDARY_ID ||
+      resolution.executableReferencesResolved !== true ||
+      resolution.executableReferencesInvoked !== false ||
+      typeof resolution.beginSurface !== 'function' ||
+      typeof resolution.resumeSurface !== 'function' ||
+      resolution.repositoryOperationInvoked !== false ||
+      resolution.rpcExecuted !== false ||
+      resolution.networkExecuted !== false ||
+      resolution.runtimeActivated !== false) {
+    return blockedControlledExternalCommandBinding(
+      'B02X_INERT_RESOLUTION_REQUIRED',
+      activeRoute
+    );
+  }
+
+  if (resolution.moduleName !== activeRouteIdentity.moduleName ||
+      resolution.activeHandlerName !== activeRouteIdentity.activeHandlerName) {
+    return blockedControlledExternalCommandBinding(
+      'ACTIVE_RUNTIME_ROUTE_REPOSITORY_ONLY_SURFACE_PARITY_REQUIRED',
+      activeRoute
+    );
+  }
+
+  return freeze({
+    contractId: CONTROLLED_BINDING_CONTRACT_ID,
+    boundaryId: CONTROLLED_BINDING_BOUNDARY_ID,
+    predecessorContractId: CONTROLLED_BINDING_PREDECESSOR_CONTRACT_ID,
+    predecessorHead: CONTROLLED_BINDING_PREDECESSOR_HEAD,
+    decision: 'repository_only_active_runtime_route_command_binding_materialized',
+    routeName: activeRouteIdentity.routeName,
+    moduleName: activeRouteIdentity.moduleName,
+    activeHandlerName: activeRouteIdentity.activeHandlerName,
+    b02xContractId: resolver.CONTRACT_ID,
+    b02yContractId: CONTRACT_ID,
+    beginDispatcherName: 'dispatchRepositoryOnlyRouteBegin',
+    beginSurfaceName: resolution.beginSurfaceName,
+    resumeSurfaceName: resolution.resumeSurfaceName,
+    controlledExternalCommandBindingMaterialized: true,
+    controlledExternalCommandBindingInvoked: false,
+    executableReferenceReturned: false,
+    repositoryOnlyBeginSurfaceInvocationAuthority: false,
+    resumeSurfaceInvocationAuthority: false,
+    activeExecuteHandlerInvocationAuthority: false,
+    repositoryOperationInvocationAuthority: false,
+    rpcExecutionAuthority: false,
+    networkAuthority: false,
+    runtimeWiringAuthority: false,
+    runtimeActivationAuthority: false,
+    ...inertEffects()
+  });
+}
+
 function inspectRepositoryOnlyRouteBeginDispatcher() {
   const resolutions = resolver.listRepositoryOnlyRouteSurfaceResolutions();
   return freeze({
@@ -250,6 +364,11 @@ module.exports = freeze({
   BOUNDARY_ID,
   PREDECESSOR_CONTRACT_ID,
   PREDECESSOR_HEAD,
+  CONTROLLED_BINDING_CONTRACT_ID,
+  CONTROLLED_BINDING_BOUNDARY_ID,
+  CONTROLLED_BINDING_PREDECESSOR_CONTRACT_ID,
+  CONTROLLED_BINDING_PREDECESSOR_HEAD,
   dispatchRepositoryOnlyRouteBegin,
+  resolveActiveRuntimeRouteToControlledExternalCommandBinding,
   inspectRepositoryOnlyRouteBeginDispatcher
 });
