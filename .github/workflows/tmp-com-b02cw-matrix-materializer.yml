@@ -1,0 +1,101 @@
+name: TEMP COM-B02CW Matrix Derivative Materializer
+
+on:
+  push:
+    branches:
+      - tmp/com-b02cw-matrix-materializer-20260831
+    paths:
+      - '.github/workflows/tmp-com-b02cw-matrix-materializer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact temporary branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/com-b02cw-matrix-materializer-20260831
+          fetch-depth: 0
+
+      - name: Freeze authorized base and temporary scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=1e13048b350d595f6d9283d49a3af54da0f14612
+          BASE_TREE=aaad0cac235f580bd42092e975f313403bf362e6
+          WORKFLOW=.github/workflows/tmp-com-b02cw-matrix-materializer.yml
+          SOURCE=backend/modules/communities/community-command-post-idempotency-external-authority-projection-contract.js
+          CERTIFIER=.github/workflows/com-b02cw-repository-only-post-idempotency-external-authority-projection-contract.yml
+          MATRIX_SOURCE=config/domain-completion-matrix.json
+          DOC=docs/DOMAIN-COMPLETION-MATRIX.md
+          REPORT=reports/generated/domain-completion-matrix-report.json
+
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          test "$(git rev-parse "$BASE^{tree}")" = "$BASE_TREE"
+          test "$(git diff --name-only "$BASE" HEAD)" = "$WORKFLOW"
+          test "$(git rev-parse "$BASE:$SOURCE")" = "$(git rev-parse "HEAD:$SOURCE")"
+          test "$(git rev-parse "$BASE:$CERTIFIER")" = "$(git rev-parse "HEAD:$CERTIFIER")"
+          test "$(git rev-parse "$BASE:$MATRIX_SOURCE")" = "$(git rev-parse "HEAD:$MATRIX_SOURCE")"
+          test "$(git rev-parse "$BASE:$DOC")" = "$(git rev-parse "HEAD:$DOC")"
+          test "$(git rev-parse "$BASE:$REPORT")" = "$(git rev-parse "HEAD:$REPORT")"
+
+      - name: Generate and validate exact Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE=backend/modules/communities/community-command-post-idempotency-external-authority-projection-contract.js
+          DOC=docs/DOMAIN-COMPLETION-MATRIX.md
+          REPORT=reports/generated/domain-completion-matrix-report.json
+
+          node --check "$SOURCE"
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+          expected="$(printf '%s\n' "$DOC" "$REPORT" | sort)"
+          actual="$(git status --porcelain --untracked-files=all | sed -E 's/^...//' | sort)"
+          test "$actual" = "$expected"
+          git diff --check
+
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/generated/domain-completion-matrix-report.json', 'utf8'));
+          const com = report.domains.find((domain) => domain.id === 'COM-001');
+          if (!com) throw new Error('COM-001 missing from generated report');
+          if (com.filesMatched !== 119) {
+            throw new Error(`expected COM-001 filesMatched=119, got ${com.filesMatched}`);
+          }
+          const expectedSignals = {
+            localStorage: 56,
+            sessionStorage: 24,
+            mock: 4,
+            network: 28,
+            directSupabase: 28,
+            todo: 0,
+          };
+          for (const [key, value] of Object.entries(expectedSignals)) {
+            if (com.signals?.[key] !== value) {
+              throw new Error(`expected COM-001 ${key}=${value}, got ${com.signals?.[key]}`);
+            }
+          }
+          NODE
+
+      - name: Persist only generated derivative blobs on temporary branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          DOC=docs/DOMAIN-COMPLETION-MATRIX.md
+          REPORT=reports/generated/domain-completion-matrix-report.json
+
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "$DOC"
+          git add -f "$REPORT"
+          git diff --cached --name-only | sort | diff -u - <(printf '%s\n' "$DOC" "$REPORT" | sort)
+          git diff --cached --check
+          git commit -m 'chore(com): materialize B02CW Matrix derivative blobs'
+          git push origin HEAD:refs/heads/tmp/com-b02cw-matrix-materializer-20260831
