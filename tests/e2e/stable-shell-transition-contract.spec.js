@@ -52,44 +52,96 @@ test.describe('stable shell transition contract', () => {
     expect(result.overflow).toBeLessThanOrEqual(1);
   });
 
-  test('slow data route keeps the previous page, then uses its destination skeleton', async ({ page }) => {
+  test('slow data route preserves the previous page until direct hydration can commit', async ({ page }) => {
     await page.addInitScript(() => { window.__DOKE_DISABLE_ROUTE_WARMUP__ = true; });
+    let releaseAsset;
+    let markAssetRequested;
+    const assetRequested = new Promise((resolve) => { markAssetRequested = resolve; });
+    const assetRelease = new Promise((resolve) => { releaseAsset = resolve; });
     await page.route('**/assets/js/pages/pedidos.js*', async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      markAssetRequested();
+      await assetRelease;
       await route.continue();
     });
     await waitForRouter(page);
     await page.evaluate(() => {
+      const isVisible = (node) => {
+        if (!node || node.hidden) return false;
+        const style = getComputedStyle(node);
+        const rect = node.getBoundingClientRect();
+        return style.display !== 'none'
+          && style.visibility !== 'hidden'
+          && Number(style.opacity || 1) > 0
+          && rect.width > 0
+          && rect.height > 0;
+      };
+      window.__loadCount = 1;
+      window.addEventListener('load', () => { window.__loadCount += 1; });
       window.__transitionStates = [];
-      window.__skeletonSeenAtCommit = false;
+      window.__hydrationStates = [];
+      window.__documentPreloaderReplay = false;
+      window.__destinationSkeletonSeen = false;
+      window.__directHydrationProbeActive = true;
       document.addEventListener('doke:route-transition-state', (event) => {
         window.__transitionStates.push(event.detail.state);
-        if (event.detail.state === 'skeleton-commit') {
-          window.__skeletonSeenAtCommit = [...document.querySelectorAll('[data-orders-hydration-skeleton]')]
-            .some((node) => !node.hidden);
+      });
+      document.addEventListener('doke:page-hydration-state', (event) => {
+        if (event.detail?.page === 'pedidos') {
+          window.__hydrationStates.push(event.detail.state);
         }
       });
+      const sample = () => {
+        if (!window.__directHydrationProbeActive) return;
+        if (document.body?.dataset.page === 'pedidos') {
+          const preloader = document.querySelector('[data-orders-document-preloader]');
+          const skeletons = [...document.querySelectorAll('[data-orders-hydration-skeleton], [data-orders-hydration-count-skeleton]')];
+          if (isVisible(preloader)) window.__documentPreloaderReplay = true;
+          if (skeletons.some(isVisible)) window.__destinationSkeletonSeen = true;
+        }
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
       window.__pendingNavigation = window.DokeNavigate('/pedidos.html');
     });
 
-    await page.waitForTimeout(80);
-    expect(await page.evaluate(() => document.body.dataset.page)).toBe('home');
+    await assetRequested;
+    await page.waitForTimeout(100);
+    const blocked = await page.evaluate(() => ({
+      page: document.body.dataset.page,
+      states: window.__transitionStates,
+      loadCount: window.__loadCount
+    }));
+    expect(blocked.page).toBe('home');
+    expect(blocked.states).not.toContain('direct-commit');
+    expect(blocked.states).not.toContain('skeleton-commit');
+    expect(blocked.loadCount).toBe(1);
 
-    await expect.poll(() => page.evaluate(() => document.body.dataset.page)).toBe('pedidos');
-    const skeletonWasCommitted = await page.evaluate(() => (
-      window.__transitionStates.includes('skeleton-commit')
-      && window.__skeletonSeenAtCommit
-    ));
-    expect(skeletonWasCommitted).toBe(true);
-
+    releaseAsset();
     await page.evaluate(() => window.__pendingNavigation);
+    await expect.poll(() => page.evaluate(() => document.body.dataset.page)).toBe('pedidos');
+    await expect.poll(() => page.evaluate(() => document.body.dataset.pageHydration)).toMatch(/^(ready|empty)$/);
+    await page.waitForTimeout(50);
+    await page.evaluate(() => { window.__directHydrationProbeActive = false; });
+
     const settled = await page.evaluate(() => ({
       state: document.body.dataset.pageHydration,
-      skeletonVisible: [...document.querySelectorAll('[data-orders-hydration-skeleton]')].some((node) => !node.hidden),
-      states: window.__transitionStates
+      skeletonVisible: [...document.querySelectorAll('[data-orders-hydration-skeleton], [data-orders-hydration-count-skeleton]')]
+        .some((node) => !node.hidden && getComputedStyle(node).display !== 'none'),
+      states: window.__transitionStates,
+      hydrationStates: window.__hydrationStates,
+      documentPreloaderReplay: window.__documentPreloaderReplay,
+      destinationSkeletonSeen: window.__destinationSkeletonSeen,
+      loadCount: window.__loadCount
     }));
     expect(['ready', 'empty']).toContain(settled.state);
+    expect(settled.states).toContain('direct-commit');
+    expect(settled.states).not.toContain('skeleton-commit');
+    expect(settled.hydrationStates).toContain('hydrating');
+    expect(settled.hydrationStates.some((state) => state === 'ready' || state === 'empty')).toBe(true);
+    expect(settled.documentPreloaderReplay).toBe(false);
+    expect(settled.destinationSkeletonSeen).toBe(false);
     expect(settled.skeletonVisible).toBe(false);
+    expect(settled.loadCount).toBe(1);
     expect(settled.states.some((state) => state === 'ready' || state === 'empty')).toBe(true);
   });
 
