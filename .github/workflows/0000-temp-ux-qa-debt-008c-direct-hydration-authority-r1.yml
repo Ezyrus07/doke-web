@@ -1,0 +1,360 @@
+name: TEMP UX-QA-DEBT-008C Canonical Direct-Hydration Authority Proof R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008c-direct-hydration-authority-r1
+
+permissions:
+  contents: read
+
+jobs:
+  authority-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TOP_SHA: c7e4e94a772e64ed57472dd0db9a9301de4f9993
+      TOP_TREE: f46b0e0ec95593d8e5bd8fad5bb8466686e59327
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-008c-direct-hydration-authority-r1.yml
+      EXPECTED_SCANNER_BLOB: b47e62538641e5796bee13208cec301f73107102
+      EXPECTED_QA007_BLOB: e0276bfc627c8cec0f8857b76b7f6e05233c5912
+      EXPECTED_STATE_BLOB: 456e01e5fede548c276a5d4d7088a39175a3ae2a
+      EXPECTED_QA006_BLOB: f99c8a622abacf6360680dbf5864e0b1c2ef2484
+      EXPECTED_008A_BLOB: 6f6d8232022b2a436e3781c29d1707b7d3bf89ce
+      EXPECTED_008B_SCROLL_BLOB: 7b5b2db651c6871ee91471e4cb05b201a0e3aa25
+      EXPECTED_008B_MATRIX_BLOB: 9e4f1557f3a88985720738065eb1267ad80161dd
+      EXPECTED_008C_OWNER_BLOB: e96310e1d6c7f4c5abb3cd7794e5b65151d31553
+      EXPECTED_ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
+      EXPECTED_HYDRATION_BLOB: 41bcff124681ccd4fd527ffea7227f19a302e7e9
+      EXPECTED_LIFECYCLE_BLOB: 23aa36beb2929d4538b336e6670ee38e04057919
+      EXPECTED_PEDIDOS_BLOB: 60bce682d13dfb46786dd701eece8b333b08d6bb
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+    steps:
+      - name: Checkout TEMP proof controller
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze stack, source authority, and TEMP-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$TOP_SHA" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA^{tree}")" == "$TOP_TREE" ]] || { echo 'Top TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+
+          [[ "$(git rev-parse "$TOP_SHA:scripts/audit-domain-completion-matrix.js")" == "$EXPECTED_SCANNER_BLOB" ]] || { echo 'GOV scanner drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:tests/e2e/search-flow.spec.js")" == "$EXPECTED_QA007_BLOB" ]] || { echo 'QA007 drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:assets/js/state/state-contracts.js")" == "$EXPECTED_STATE_BLOB" ]] || { echo 'STATE owner drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:tests/e2e/results-entry-lifecycle.spec.js")" == "$EXPECTED_QA006_BLOB" ]] || { echo 'QA006 drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:scripts/audit-shell-router-scroll-reset.js")" == "$EXPECTED_008A_BLOB" ]] || { echo '008A owner drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:tests/e2e/stable-shell-scroll-contract.spec.js")" == "$EXPECTED_008B_SCROLL_BLOB" ]] || { echo '008B scroll owner drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:tests/e2e/stable-shell-transition-matrix.spec.js")" == "$EXPECTED_008B_MATRIX_BLOB" ]] || { echo '008B matrix owner drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:tests/e2e/stable-shell-transition-contract.spec.js")" == "$EXPECTED_008C_OWNER_BLOB" ]] || { echo '008C owner drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:assets/js/core/stable-shell-router.js")" == "$EXPECTED_ROUTER_BLOB" ]] || { echo 'Router authority drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:assets/js/core/page-hydration.js")" == "$EXPECTED_HYDRATION_BLOB" ]] || { echo 'Hydration authority drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:assets/js/core/navigation-lifecycle.js")" == "$EXPECTED_LIFECYCLE_BLOB" ]] || { echo 'Lifecycle authority drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:assets/js/pages/pedidos.js")" == "$EXPECTED_PEDIDOS_BLOB" ]] || { echo 'Pedidos authority drift'; exit 1; }
+
+          git show "$TOP_SHA:assets/js/core/stable-shell-router.js" | grep -F "var INTERNAL_DIRECT_HYDRATION_ROUTES = new Set([" >/dev/null
+          git show "$TOP_SHA:assets/js/core/stable-shell-router.js" | grep -F "'/pedidos.html'" >/dev/null
+          git show "$TOP_SHA:assets/js/core/stable-shell-router.js" | grep -F "if (hasSkeleton && !shouldCommitHydrationRouteDirect(path))" >/dev/null
+          git show "$TOP_SHA:assets/js/core/stable-shell-router.js" | grep -F "visualMode = 'direct';" >/dev/null
+          git show "$TOP_SHA:assets/js/core/page-hydration.js" | grep -F "if (internalNavigation && routeVisualMode === 'direct') return false;" >/dev/null
+          git show "$TOP_SHA:assets/js/pages/pedidos.js" | grep -F "skeletonMode: 'hard-load'" >/dev/null
+
+          echo "TEMP_SHA=$head"
+          echo 'STACK_FREEZE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'DIRECT_HYDRATION_SOURCE_AUTHORITY=PASS'
+
+      - name: Install browser dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run Pedidos canonical direct-hydration browser proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/serve-static-site.js --host=127.0.0.1 --port=5500 >"$RUNNER_TEMP/qa008c-server.log" 2>&1 &
+          server_pid=$!
+          cleanup() {
+            kill "$server_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for i in $(seq 1 100); do
+            if curl -fsS http://127.0.0.1:5500/index.html >/dev/null 2>&1; then break; fi
+            sleep 0.1
+          done
+          curl -fsS http://127.0.0.1:5500/index.html >/dev/null
+
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const { chromium } = require('playwright');
+
+          const assert = (condition, message, detail) => {
+            if (!condition) throw new Error(`${message}${detail ? ` :: ${JSON.stringify(detail)}` : ''}`);
+          };
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+            const page = await context.newPage();
+            const pageErrors = [];
+            page.on('pageerror', error => pageErrors.push(error.message));
+
+            await page.addInitScript(() => {
+              window.__DOKE_DISABLE_ROUTE_WARMUP__ = true;
+            });
+
+            await page.goto('http://127.0.0.1:5500/index.html');
+            await page.waitForFunction(() => typeof window.Doke?.session?.setCurrentUser === 'function');
+            await page.evaluate(() => {
+              window.Doke.session.setCurrentUser({
+                id: 'stable-shell-client',
+                role: 'client',
+                name: 'Cliente Stable Shell',
+                email: 'stable-shell@example.test',
+                accountStatus: 'active'
+              });
+            });
+            await page.waitForFunction(() => window.Doke?.session?.isAuthenticated?.() === true);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function');
+
+            await page.evaluate(() => {
+              const isVisible = (node) => {
+                if (!node || node.hidden) return false;
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== 'none'
+                  && style.visibility !== 'hidden'
+                  && Number(style.opacity || 1) > 0
+                  && rect.width > 0
+                  && rect.height > 0;
+              };
+
+              window.__qa008c = {
+                transitions: [],
+                hydrationStates: [],
+                lifecycleRouteStates: [],
+                lifecyclePageStates: [],
+                frames: [],
+                preloaderEverVisible: false,
+                skeletonEverVisibleAfterCommit: false,
+                invalidVisualFrames: [],
+                loadCount: 1,
+                sampling: true
+              };
+
+              window.addEventListener('load', () => { window.__qa008c.loadCount += 1; });
+              document.addEventListener('doke:route-transition-state', (event) => {
+                window.__qa008c.transitions.push({
+                  state: event.detail?.state || '',
+                  to: event.detail?.to || '',
+                  visualMode: event.detail?.visualMode || ''
+                });
+              });
+              document.addEventListener('doke:page-hydration-state', (event) => {
+                if (event.detail?.page === 'pedidos') {
+                  window.__qa008c.hydrationStates.push(event.detail.state || '');
+                }
+              });
+              document.addEventListener('doke:navigation-lifecycle-change', (event) => {
+                if (event.detail?.domain === 'route') {
+                  window.__qa008c.lifecycleRouteStates.push(event.detail.state || '');
+                }
+                if (event.detail?.domain === 'page' && event.detail?.snapshot?.page?.page === 'pedidos') {
+                  window.__qa008c.lifecyclePageStates.push(event.detail.state || '');
+                }
+              });
+
+              const sample = () => {
+                if (!window.__qa008c?.sampling) return;
+                const pageKey = document.body?.dataset.page || '';
+                if (pageKey === 'pedidos') {
+                  const preloader = document.querySelector('[data-orders-document-preloader]');
+                  const skeletons = [...document.querySelectorAll('[data-orders-hydration-skeleton], [data-orders-hydration-count-skeleton]')];
+                  const readyNodes = [...document.querySelectorAll('[data-orders-hydration-ready], [data-orders-hydration-count-ready]')];
+                  const root = document.querySelector('.orders-page');
+                  const preloaderVisible = isVisible(preloader);
+                  const skeletonVisible = skeletons.some(isVisible);
+                  const readyVisible = readyNodes.some(isVisible);
+                  const rootVisible = isVisible(root);
+                  const hydration = document.body?.dataset.pageHydration || '';
+                  const frame = { pageKey, hydration, preloaderVisible, skeletonVisible, readyVisible, rootVisible };
+                  window.__qa008c.frames.push(frame);
+                  if (preloaderVisible) window.__qa008c.preloaderEverVisible = true;
+                  if (skeletonVisible) window.__qa008c.skeletonEverVisibleAfterCommit = true;
+                  if (!rootVisible || preloaderVisible || hydration === 'error') {
+                    window.__qa008c.invalidVisualFrames.push(frame);
+                  }
+                }
+                requestAnimationFrame(sample);
+              };
+              requestAnimationFrame(sample);
+            });
+
+            let assetRequestedResolve;
+            const assetRequested = new Promise(resolve => { assetRequestedResolve = resolve; });
+            let releaseAssetResolve;
+            const releaseAsset = new Promise(resolve => { releaseAssetResolve = resolve; });
+            let intercepted = 0;
+
+            await page.route('**/assets/js/pages/pedidos.js*', async route => {
+              intercepted += 1;
+              if (intercepted === 1) {
+                assetRequestedResolve();
+                await releaseAsset;
+              }
+              await route.continue();
+            });
+
+            await page.evaluate(() => {
+              window.__qa008cNavigationPromise = window.DokeNavigate('/pedidos.html');
+            });
+
+            await Promise.race([
+              assetRequested,
+              new Promise((_, reject) => setTimeout(() => reject(new Error('pedidos.js was not requested')), 8000))
+            ]);
+            await page.waitForTimeout(150);
+
+            const blocked = await page.evaluate(() => ({
+              page: document.body?.dataset.page || '',
+              href: location.pathname,
+              transitionStates: window.__qa008c.transitions.map(item => item.state),
+              routeState: window.Doke?.navigationLifecycle?.getSnapshot?.().route?.state || '',
+              loadCount: window.__qa008c.loadCount
+            }));
+
+            assert(blocked.page === 'home', 'Previous Home page was not preserved while essential Pedidos asset was blocked', blocked);
+            assert(!blocked.transitionStates.includes('direct-commit'), 'Route committed before essential asset release', blocked);
+            assert(!blocked.transitionStates.includes('skeleton-commit'), 'Skeleton committed while essential asset was blocked', blocked);
+            assert(blocked.loadCount === 1, 'Unexpected document reload before asset release', blocked);
+
+            releaseAssetResolve();
+
+            await page.waitForFunction(() => document.body?.dataset.page === 'pedidos', null, { timeout: 10000 });
+            await page.evaluate(() => window.__qa008cNavigationPromise);
+            await page.waitForFunction(() => ['ready', 'empty'].includes(document.body?.dataset.pageHydration || ''), null, { timeout: 10000 });
+            await page.waitForTimeout(100);
+            await page.evaluate(() => { window.__qa008c.sampling = false; });
+
+            const settled = await page.evaluate(() => {
+              const proof = window.__qa008c;
+              const snapshot = window.Doke?.navigationLifecycle?.getSnapshot?.() || {};
+              const isVisible = (node) => {
+                if (!node || node.hidden) return false;
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== 'none'
+                  && style.visibility !== 'hidden'
+                  && Number(style.opacity || 1) > 0
+                  && rect.width > 0
+                  && rect.height > 0;
+              };
+              return {
+                page: document.body?.dataset.page || '',
+                hydration: document.body?.dataset.pageHydration || '',
+                transitions: proof.transitions,
+                hydrationStates: proof.hydrationStates,
+                lifecycleRouteStates: proof.lifecycleRouteStates,
+                lifecyclePageStates: proof.lifecyclePageStates,
+                preloaderEverVisible: proof.preloaderEverVisible,
+                skeletonEverVisibleAfterCommit: proof.skeletonEverVisibleAfterCommit,
+                invalidVisualFrames: proof.invalidVisualFrames,
+                sampledFrames: proof.frames.length,
+                finalRootVisible: isVisible(document.querySelector('.orders-page')),
+                finalReadyVisible: [...document.querySelectorAll('[data-orders-hydration-ready], [data-orders-hydration-count-ready]')].some(isVisible),
+                finalSkeletonVisible: [...document.querySelectorAll('[data-orders-hydration-skeleton], [data-orders-hydration-count-skeleton]')].some(isVisible),
+                routeSnapshot: snapshot.route || {},
+                pageSnapshot: snapshot.page || {},
+                loadCount: proof.loadCount
+              };
+            });
+
+            const transitionStates = settled.transitions.map(item => item.state);
+            assert(intercepted >= 1, 'Essential Pedidos asset interception did not occur', { intercepted });
+            assert(settled.page === 'pedidos', 'Pedidos did not become the committed page', settled);
+            assert(['ready', 'empty'].includes(settled.hydration), 'Pedidos did not reach ready|empty hydration', settled);
+            assert(transitionStates.includes('direct-commit'), 'Canonical direct-commit was not observed', settled);
+            assert(!transitionStates.includes('skeleton-commit'), 'Unexpected skeleton-commit was observed', settled);
+            assert(settled.hydrationStates.includes('hydrating'), 'Pedidos hydrating state was not observed', settled);
+            assert(settled.hydrationStates.some(state => state === 'ready' || state === 'empty'), 'Pedidos hydration did not publish ready|empty', settled);
+            assert(settled.lifecycleRouteStates.includes('committed'), 'Lifecycle route commit was not observed', settled);
+            assert(settled.lifecycleRouteStates.some(state => state === 'ready' || state === 'empty'), 'Lifecycle route did not reach ready|empty', settled);
+            assert(settled.lifecyclePageStates.includes('hydrating'), 'Lifecycle page hydrating state was not observed', settled);
+            assert(settled.lifecyclePageStates.some(state => state === 'ready' || state === 'empty'), 'Lifecycle page did not reach ready|empty', settled);
+            assert(settled.preloaderEverVisible === false, 'Document preloader replayed during internal navigation', settled);
+            assert(settled.skeletonEverVisibleAfterCommit === false, 'Destination hydration skeleton became visible during direct internal navigation', settled);
+            assert(settled.invalidVisualFrames.length === 0, 'Invalid/blank visual frame was observed after Pedidos commit', settled);
+            assert(settled.sampledFrames > 0, 'No post-commit visual frames were sampled', settled);
+            assert(settled.finalRootVisible === true, 'Pedidos root was not visible at terminal state', settled);
+            assert(settled.finalSkeletonVisible === false, 'Pedidos skeleton remained visible at terminal state', settled);
+            assert(settled.loadCount === 1, 'Internal navigation replayed a document load', settled);
+            assert(pageErrors.length === 0, 'Browser page errors occurred', pageErrors);
+
+            const receipt = {
+              result: 'PASS',
+              checkpoint: 'UX-QA-DEBT-008C-R1-CANONICAL-DIRECT-HYDRATION-AUTHORITY',
+              top: process.env.TOP_SHA,
+              topTree: process.env.TOP_TREE,
+              route: '/pedidos.html',
+              essentialAssetBlocked: 'assets/js/pages/pedidos.js',
+              previousPagePreservedWhileBlocked: true,
+              directCommit: true,
+              skeletonCommit: false,
+              hydrationLifecycle: 'hydrating->ready|empty',
+              documentPreloaderReplay: false,
+              destinationSkeletonVisibleDuringInternalCommit: false,
+              invalidVisualFrames: 0,
+              documentReloads: 0,
+              pageErrors: 0,
+              candidateMaterialized: false,
+              qaOwnerMutation: false,
+              productMutation: false,
+              runtimeMutation: false,
+              routerMutation: false,
+              matrixMutation: false,
+              snapshotMutation: false,
+              visualBaselineMutation: false,
+              prCreated: false,
+              readyForReview: false,
+              merge: false,
+              repositoryOnly: true
+            };
+            fs.writeFileSync(`${process.env.RUNNER_TEMP}/ux-qa-debt-008c-r1-proof.json`, JSON.stringify({ receipt, blocked, settled }, null, 2));
+            console.log('UX_QA_DEBT_008C_R1_FINAL=' + JSON.stringify(receipt));
+            console.log('UX_QA_DEBT_008C_R1_BLOCKED=' + JSON.stringify(blocked));
+            console.log('UX_QA_DEBT_008C_R1_SETTLED=' + JSON.stringify(settled));
+
+            await browser.close();
+          })().catch(error => {
+            console.error(error.stack || error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Prove repository immutability after browser probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD^)" == "$TOP_SHA" ]] || { echo 'TEMP parent drift'; exit 1; }
+          mapfile -t committed_delta < <(git diff --name-only "$TOP_SHA"..HEAD)
+          [[ ${#committed_delta[@]} -eq 1 && "${committed_delta[0]}" == "$WORKFLOW_PATH" ]] || { printf 'Committed TEMP delta drift: %s\n' "${committed_delta[*]}"; exit 1; }
+          [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { echo 'Tracked worktree mutation detected'; git status --short; exit 1; }
+          [[ "$(git hash-object tests/e2e/stable-shell-transition-contract.spec.js)" == "$EXPECTED_008C_OWNER_BLOB" ]] || { echo '008C owner mutated'; exit 1; }
+          [[ "$(git hash-object assets/js/core/stable-shell-router.js)" == "$EXPECTED_ROUTER_BLOB" ]] || { echo 'Router mutated'; exit 1; }
+          [[ "$(git hash-object assets/js/core/page-hydration.js)" == "$EXPECTED_HYDRATION_BLOB" ]] || { echo 'Hydration authority mutated'; exit 1; }
+          [[ "$(git hash-object assets/js/core/navigation-lifecycle.js)" == "$EXPECTED_LIFECYCLE_BLOB" ]] || { echo 'Lifecycle authority mutated'; exit 1; }
+          [[ "$(git hash-object assets/js/pages/pedidos.js)" == "$EXPECTED_PEDIDOS_BLOB" ]] || { echo 'Pedidos authority mutated'; exit 1; }
+          echo 'REPOSITORY_IMMUTABILITY=PASS'
+          cat "$RUNNER_TEMP/ux-qa-debt-008c-r1-proof.json"
