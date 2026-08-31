@@ -77,12 +77,71 @@ function createStaticServer() {
 }
 
 async function installNetworkMocks(context) {
+  await context.route('**/assets/js/repositories/search-repository.js*', async (route) => {
+    const response = await route.fetch();
+    const originalBody = await response.text();
+    const harness = `
+;(function () {
+  var Doke = window.Doke || (window.Doke = {});
+  var repositories = Doke.repositories || (Doke.repositories = {});
+  var original = repositories.search;
+  if (!original || original.__qaResultsHeaderRailHarness === true) return;
+  var item = Object.freeze({
+    id: 'qa-service-008e-c1',
+    remoteId: 'qa-service-008e-c1',
+    serviceId: 'qa-service-008e-c1',
+    title: 'QA deterministic sSAS service',
+    description: 'Synthetic browser-only Resultados header-rail contract fixture.',
+    category: 'qa-contract',
+    providerName: 'QA Provider',
+    providerHandle: '@qa-provider',
+    city: 'Sao Paulo',
+    state: 'SP',
+    location: 'Sao Paulo, SP',
+    rating: 5,
+    reviews: '1 avaliação',
+    reviewsCount: 1,
+    tags: ['qa', 'contract', 'sSAS'],
+    priceValue: 100,
+    price: 100,
+    updatedAt: '2026-08-31T00:00:00.000Z'
+  });
+  function responseFor(request, items) {
+    var contract = original.getContract();
+    return {
+      authority: contract.expectedAuthority,
+      contractVersion: contract.version,
+      request: Object.assign({}, request || {}),
+      items: items.slice(),
+      page: {
+        pageSize: Number(request && request.pageSize || 12),
+        hasNext: false,
+        nextCursor: null
+      }
+    };
+  }
+  repositories.search = Object.freeze({
+    __qaResultsHeaderRailHarness: true,
+    queryPage: function (request) {
+      request = request || {};
+      if (request.query === 'sSAS') {
+        return Promise.resolve(responseFor(request, [item]));
+      }
+      return original.queryPage(request);
+    },
+    normalizeRequest: function (request) { return original.normalizeRequest(request); },
+    getLastError: function () { return original.getLastError(); },
+    getContract: function () { return original.getContract(); }
+  });
+}());`;
+    await route.fulfill({ response, body: `${originalBody}\n${harness}` });
+  });
   await context.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ status: 200, body: '' }));
   await context.route('https://fonts.gstatic.com/**', (route) => route.abort());
   await context.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({
     status: 200,
     contentType: 'application/javascript; charset=utf-8',
-    body: 'window.supabase={createClient(){return {}}};',
+    body: '',
   }));
   await context.route('https://unpkg.com/**', (route) => route.fulfill({
     status: 200,
