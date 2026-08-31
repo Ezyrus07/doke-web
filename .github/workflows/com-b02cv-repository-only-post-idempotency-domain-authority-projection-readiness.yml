@@ -1,0 +1,282 @@
+name: COM-B02CV Repository-Only Post-Idempotency Canonical Domain Authority Projection Readiness
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-command-post-idempotency-domain-authority-projection-readiness.js'
+      - '.github/workflows/com-b02cv-repository-only-post-idempotency-domain-authority-projection-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02cv-post-idempotency-domain-authority-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PREDECESSOR_HEAD: 7a2b8ba4c4985ed194691f4915f62352acfa63ea
+      PREDECESSOR_TREE: e8cea4af5e5b1098c08b2a9dfbcf2ce10b45fd12
+      SOURCE: backend/modules/communities/community-command-post-idempotency-domain-authority-projection-readiness.js
+      WORKFLOW: .github/workflows/com-b02cv-repository-only-post-idempotency-domain-authority-projection-readiness.yml
+      B02CU_SOURCE: backend/shared/http/repository-only-route-begin-dispatcher.js
+      B02CU_SOURCE_BLOB: de9cfabfba07979c981af1409c95be162315c362
+      B02CU_WORKFLOW: .github/workflows/com-b02cu-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-implementation.yml
+      B02CU_WORKFLOW_BLOB: 03c8bdd5a27c8612a7d5c3864264097483811f5d
+      B02L: backend/modules/communities/community-command-runtime-binding-adapter-contract.js
+      B02L_BLOB: c48eabab7bb5b37b6a1663a051b3a8a6223cd0c9
+      B02M: backend/modules/communities/community-command-runtime-binding-adapter-implementation.js
+      B02M_BLOB: 233e241fa9da0494d0d350c9ac686168e508d2e2
+      B02J: backend/modules/communities/community-command-handler-composition.js
+      B02J_BLOB: 27b1e212c3656dd4ad5a1f2f604903ce44c8dbfb
+      MEMBERSHIP: backend/modules/communities/community-membership-command.js
+      MEMBERSHIP_BLOB: bd26ebf77038cdba5077a2e524a7d15f3055a96f
+      CONTENT: backend/modules/communities/community-content-realtime-contract.js
+      CONTENT_BLOB: ec2c4b01e38b1a9c771154c37ffc8d896d33ce5d
+      ROUTE_HANDLERS: backend/modules/communities/route-handlers.js
+      ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      STAGING_API_RUNTIME: backend/runtime/staging/staging-api-runtime.js
+      STAGING_API_RUNTIME_BLOB: 69de100fe3a269507a0da7847ae8e9887f831ceb
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_DERIVATIVE: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_DERIVATIVE_BLOB: 17cfe628187244c79305d3fe3415509e9111265d
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Freeze predecessor, dependencies and exact persistent scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+
+          ! git cat-file -e "$PREDECESSOR_HEAD:$SOURCE" 2>/dev/null
+          ! git cat-file -e "$PREDECESSOR_HEAD:$WORKFLOW" 2>/dev/null
+
+          actual="$(git diff --name-status "$PREDECESSOR_HEAD" HEAD | sort)"
+          expected="$(printf 'A\t%s\nA\t%s\n' "$SOURCE" "$WORKFLOW" | sort)"
+          test "$actual" = "$expected"
+
+          test "$(git rev-parse HEAD:$B02CU_SOURCE)" = "$B02CU_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$B02CU_WORKFLOW)" = "$B02CU_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$B02L)" = "$B02L_BLOB"
+          test "$(git rev-parse HEAD:$B02M)" = "$B02M_BLOB"
+          test "$(git rev-parse HEAD:$B02J)" = "$B02J_BLOB"
+          test "$(git rev-parse HEAD:$MEMBERSHIP)" = "$MEMBERSHIP_BLOB"
+          test "$(git rev-parse HEAD:$CONTENT)" = "$CONTENT_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_HANDLERS)" = "$ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$STAGING_API_RUNTIME)" = "$STAGING_API_RUNTIME_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_DERIVATIVE)" = "$MATRIX_DERIVATIVE_BLOB"
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Validate syntax and repository governance
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node --check "$SOURCE"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Prove post-idempotency provenance and external-authority readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TEST="$RUNNER_TEMP/test-com-b02cv-post-idempotency-domain-authority-readiness.js"
+          PROOF="$RUNNER_TEMP/com-b02cv-post-idempotency-domain-authority-readiness-proof.json"
+
+          cat > "$TEST" <<'NODE'
+          'use strict';
+
+          const assert = require('assert');
+          const fs = require('fs');
+          const readiness = require(process.env.SOURCE_PATH);
+
+          assert.strictEqual(readiness.BOUNDARY_ID, 'COM-B02CV');
+          assert.strictEqual(
+            readiness.PREDECESSOR_CONTRACT_ID,
+            'com-b02cu-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-implementation-v1'
+          );
+          assert.strictEqual(readiness.PREDECESSOR_HEAD, process.env.PREDECESSOR_HEAD);
+          assert.strictEqual(readiness.PREDECESSOR_TREE, process.env.PREDECESSOR_TREE);
+
+          assert.deepStrictEqual(
+            readiness.externalAuthorityForCommand('invite_member'),
+            [{ field: 'targetStatus', provenance: 'canonical_external', condition: 'claim_state_new' }]
+          );
+          assert.deepStrictEqual(
+            readiness.externalAuthorityForCommand('approve_join_request'),
+            [{ field: 'targetStatus', provenance: 'canonical_external', condition: 'claim_state_new' }]
+          );
+          assert.deepStrictEqual(
+            readiness.externalAuthorityForCommand('send_message'),
+            [{
+              field: 'rateLimit',
+              provenance: 'canonical_external',
+              condition: 'claim_state_new_and_no_canonical_bypassSlowMode'
+            }]
+          );
+          assert.deepStrictEqual(
+            readiness.externalAuthorityForCommand('publish_post'),
+            [{
+              field: 'rateLimit',
+              provenance: 'canonical_external',
+              condition: 'claim_state_new_and_no_canonical_bypassSlowMode'
+            }]
+          );
+          assert.deepStrictEqual(readiness.externalAuthorityForCommand('request_join'), []);
+          assert.deepStrictEqual(readiness.externalAuthorityForCommand('create_channel'), []);
+
+          assert.strictEqual(readiness.PROVENANCE_BY_FIELD.targetUserId, 'client_intent_selector');
+          assert.strictEqual(readiness.PROVENANCE_BY_FIELD.targetStatus, 'canonical_external');
+          assert.strictEqual(readiness.PROVENANCE_BY_FIELD.rateLimit, 'canonical_external');
+          assert.strictEqual(readiness.PROVENANCE_BY_FIELD.permissions, 'canonical_projection_derived');
+          assert.strictEqual(readiness.PROVENANCE_BY_FIELD.bypassSlowMode, 'canonical_projection_derived');
+
+          const description = readiness.describePostIdempotencyDomainAuthorityProjectionReadiness();
+          assert.strictEqual(description.replayTerminatesBeforeExternalAuthorityProjection, true);
+          assert.strictEqual(description.externalAuthorityProjectionOnlyAfterNewClaim, true);
+          assert.strictEqual(description.targetStatusReadPortImplemented, false);
+          assert.strictEqual(description.canonicalRateLimitSnapshotReadImplemented, false);
+          assert.strictEqual(description.rateLimitConsumeImplemented, false);
+          assert.strictEqual(description.postIdempotencyProjectionStageImplemented, false);
+          assert.strictEqual(description.repositoryOperationInvoked, false);
+          assert.strictEqual(description.credentialReadExecuted, false);
+          assert.strictEqual(description.externalAuthorityReadExecuted, false);
+          assert.strictEqual(description.rpcExecuted, false);
+          assert.strictEqual(description.networkExecuted, false);
+          assert.strictEqual(description.supabaseOperationExecuted, false);
+          assert.strictEqual(description.runtimeActivated, false);
+          assert.strictEqual(description.migrationApplied, false);
+          assert.strictEqual(description.matrixChanged, false);
+
+          for (const forbidden of [
+            'body.targetStatus',
+            'query.targetStatus',
+            'headers.targetStatus',
+            'body.rateLimit',
+            'query.rateLimit',
+            'headers.rateLimit'
+          ]) {
+            assert.ok(description.forbiddenClientAuthoritySources.includes(forbidden));
+          }
+
+          const certification = readiness.evaluateReadinessInvariant({
+            predecessorContractId: readiness.PREDECESSOR_CONTRACT_ID,
+            predecessorHead: readiness.PREDECESSOR_HEAD,
+            predecessorTree: readiness.PREDECESSOR_TREE,
+            replayTerminatesBeforeExternalAuthorityProjection: true,
+            externalAuthorityProjectionOnlyAfterNewClaim: true,
+            clientRequestCanProvideTargetStatusAuthority: false,
+            clientRequestCanProvideRateLimitAuthority: false,
+            targetStatusCommandsExact: true,
+            rateLimitCommandsExact: true,
+            canonicalProjectionDerivationsRequired: true,
+            externalAuthorityReadsImplemented: false,
+            postIdempotencyProjectionStageImplemented: false,
+            runtimeActivated: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            credentialReadExecuted: false,
+            migrationApplied: false
+          });
+
+          assert.strictEqual(certification.ready, true);
+          assert.deepStrictEqual(certification.blockers, []);
+          assert.deepStrictEqual(
+            certification.targetStatusCommands,
+            ['invite_member', 'approve_join_request']
+          );
+          assert.deepStrictEqual(
+            certification.rateLimitCommands,
+            ['send_message', 'publish_post']
+          );
+
+          const clientAuthorityViolation = readiness.evaluateReadinessInvariant({
+            predecessorContractId: readiness.PREDECESSOR_CONTRACT_ID,
+            predecessorHead: readiness.PREDECESSOR_HEAD,
+            predecessorTree: readiness.PREDECESSOR_TREE,
+            replayTerminatesBeforeExternalAuthorityProjection: true,
+            externalAuthorityProjectionOnlyAfterNewClaim: true,
+            clientRequestCanProvideTargetStatusAuthority: true,
+            clientRequestCanProvideRateLimitAuthority: false,
+            targetStatusCommandsExact: true,
+            rateLimitCommandsExact: true,
+            canonicalProjectionDerivationsRequired: true,
+            externalAuthorityReadsImplemented: false,
+            postIdempotencyProjectionStageImplemented: false,
+            runtimeActivated: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            credentialReadExecuted: false,
+            migrationApplied: false
+          });
+          assert.strictEqual(clientAuthorityViolation.ready, false);
+          assert.ok(clientAuthorityViolation.blockers.includes('CLIENT_TARGET_STATUS_AUTHORITY_PROHIBITED'));
+
+          const source = fs.readFileSync(process.env.SOURCE_PATH, 'utf8');
+          for (const prohibited of [
+            '.rpc(',
+            '.from(',
+            'fetch(',
+            'createClient(',
+            'SUPABASE_SERVICE_ROLE_KEY'
+          ]) {
+            assert.ok(!source.includes(prohibited), `prohibited implementation token: ${prohibited}`);
+          }
+
+          const proof = {
+            contractId: readiness.CONTRACT_ID,
+            boundaryId: readiness.BOUNDARY_ID,
+            predecessorHead: readiness.PREDECESSOR_HEAD,
+            predecessorTree: readiness.PREDECESSOR_TREE,
+            targetStatusCommands: certification.targetStatusCommands,
+            rateLimitCommands: certification.rateLimitCommands,
+            replayTerminatesBeforeExternalAuthorityProjection: true,
+            clientTargetStatusAuthorityAllowed: false,
+            clientRateLimitAuthorityAllowed: false,
+            canonicalProjectionDerivationsRequired: true,
+            externalAuthorityReadsImplemented: false,
+            postIdempotencyProjectionStageImplemented: false,
+            repositoryOperationInvoked: false,
+            credentialReadExecuted: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            supabaseOperationExecuted: false,
+            stagingReadExecuted: false,
+            stagingMutationExecuted: false,
+            runtimeActivated: false,
+            realtimeActivated: false,
+            migrationApplied: false,
+            productionChanged: false,
+            matrixChanged: false
+          };
+
+          fs.writeFileSync(process.env.PROOF_PATH, `${JSON.stringify(proof, null, 2)}\n`);
+          NODE
+
+          SOURCE_PATH="$PWD/$SOURCE" PROOF_PATH="$PROOF" node "$TEST"
+          test -s "$PROOF"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Upload B02CV repository-only proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02cv-post-idempotency-domain-authority-readiness-${{ github.sha }}
+          path: ${{ runner.temp }}/com-b02cv-post-idempotency-domain-authority-readiness-proof.json
+          if-no-files-found: error
+          retention-days: 30
