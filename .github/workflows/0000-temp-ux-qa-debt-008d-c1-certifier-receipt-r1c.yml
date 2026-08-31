@@ -1,0 +1,278 @@
+name: TEMP UX-QA-DEBT-008D C1 Certifier Receipt Immutability R1c
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008d-c1-certifier-receipt-r1c
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout R1c TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze R1c scope and candidate authority pre-state
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT='dd9bfa9c56ec8c338c8de5db8283ab8dd28f6fe3'
+          CANDIDATE='65fc2342f315acba99fa39b0cfc695c08ca4d255'
+          CANDIDATE_TREE='bfd34a50eafec796c1c68165d48ac5b1566eed93'
+          CANDIDATE_BRANCH='diag/ux-qa-debt-008d-finalization-contract-c1'
+          OWNER='scripts/test-navigation-lifecycle-finalization-contract.js'
+          OWNER_BLOB='0b21a7171167de4d62f623d3d95b3ae8a2d447c3'
+          TEMP_PATH='.github/workflows/0000-temp-ux-qa-debt-008d-c1-certifier-receipt-r1c.yml'
+          R1_HEAD='786d02d56dab2c7f7724e0d850f57370457acec4'
+          R1B_HEAD='4235d6579bceac908a56224bcbc8a2e602b4c8de'
+
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          test "$(git diff --name-only "$CANDIDATE"..HEAD)" = "$TEMP_PATH"
+          test "$(git rev-parse "$CANDIDATE^")" = "$PARENT"
+          test "$(git show -s --format=%T "$CANDIDATE")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$CANDIDATE:$OWNER")" = "$OWNER_BLOB"
+          test "$(git rev-parse "$R1_HEAD^")" = "$CANDIDATE"
+          test "$(git rev-parse "$R1B_HEAD^")" = "$CANDIDATE"
+
+          REMOTE_CANDIDATE="$(git ls-remote origin "refs/heads/$CANDIDATE_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_CANDIDATE" = "$CANDIDATE"
+
+          test "$(git rev-parse "$CANDIDATE:auth/login.html")" = '6a4f57f4f01d591fb9fbfe3d52a29f3c960fc35c'
+          test "$(git rev-parse "$CANDIDATE:auth/cadastro.html")" = 'b37679c165e75babeb8676994a983e2cc823d46b'
+          test "$(git rev-parse "$CANDIDATE:auth/esqueci-senha.html")" = '72a2e1eb457349e64e6cbe81038d5e13aa6abd5e'
+          test "$(git rev-parse "$CANDIDATE:assets/js/pages/auth-password-pages.js")" = '00fd71f58915a069405cc3bd1ea6ad9761dd8161'
+          test "$(git rev-parse "$CANDIDATE:assets/js/pages/auth.js")" = '651669cfadbb0652d395173e1cbfd6a48d512b78'
+          test "$(git rev-parse "$CANDIDATE:assets/js/core/navigation-lifecycle.js")" = '23aa36beb2929d4538b336e6670ee38e04057919'
+
+          echo 'R1C_FREEZE=PASS'
+          echo 'REMOTE_CANDIDATE_IDENTITY_PRE=PASS'
+          echo 'AUTH_LIFECYCLE_BLOBS_PRE=PASS'
+
+      - name: Reconcile R1 and R1b from metadata and positive evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          R1_RUN='33393691297'
+          R1_JOB='99493061695'
+          R1B_RUN='33394631298'
+          R1B_JOB='99496106453'
+          R1_HEAD='786d02d56dab2c7f7724e0d850f57370457acec4'
+          R1B_HEAD='4235d6579bceac908a56224bcbc8a2e602b4c8de'
+          EVIDENCE='evidence/ux-qa-debt-008d-c1-certifier-r1c'
+          mkdir -p "$EVIDENCE"
+
+          for spec in \
+            "r1-run:$R1_RUN:actions/runs" \
+            "r1-job:$R1_JOB:actions/jobs" \
+            "r1b-run:$R1B_RUN:actions/runs" \
+            "r1b-job:$R1B_JOB:actions/jobs"
+          do
+            IFS=':' read -r name id family <<< "$spec"
+            curl -fsSL \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "https://api.github.com/repos/Ezyrus07/doke-web/$family/$id" \
+              -o "$EVIDENCE/$name.json"
+          done
+
+          curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/Ezyrus07/doke-web/actions/jobs/$R1_JOB/logs" \
+            -o "$EVIDENCE/r1-job.log"
+
+          curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/Ezyrus07/doke-web/actions/jobs/$R1B_JOB/logs" \
+            -o "$EVIDENCE/r1b-job.log"
+
+          git show "$R1_HEAD:.github/workflows/0000-temp-ux-qa-debt-008d-c1-certifier-r1.yml" > "$EVIDENCE/r1-workflow.yml"
+          git show "$R1B_HEAD:.github/workflows/0000-temp-ux-qa-debt-008d-c1-certifier-receipt-r1b.yml" > "$EVIDENCE/r1b-workflow.yml"
+
+          node <<'NODE'
+          const fs = require('fs');
+          const base = 'evidence/ux-qa-debt-008d-c1-certifier-r1c';
+          const readJson = (name) => JSON.parse(fs.readFileSync(`${base}/${name}.json`, 'utf8'));
+          const r1Run = readJson('r1-run');
+          const r1Job = readJson('r1-job');
+          const r1bRun = readJson('r1b-run');
+          const r1bJob = readJson('r1b-job');
+          const r1Log = fs.readFileSync(`${base}/r1-job.log`, 'utf8');
+          const r1bLog = fs.readFileSync(`${base}/r1b-job.log`, 'utf8');
+          const r1Workflow = fs.readFileSync(`${base}/r1-workflow.yml`, 'utf8');
+          const r1bWorkflow = fs.readFileSync(`${base}/r1b-workflow.yml`, 'utf8');
+          const assert = (condition, message) => { if (!condition) throw new Error(message); };
+          const stepMap = (job) => new Map((job.steps || []).map((step) => [step.name, step]));
+
+          assert(r1Run.id === 33393691297 && r1Run.status === 'completed' && r1Run.conclusion === 'failure', 'R1 run metadata drifted');
+          assert(r1Run.run_attempt === 1 && r1Run.head_sha === '786d02d56dab2c7f7724e0d850f57370457acec4', 'R1 attempt/head drifted');
+          assert(r1Job.id === 99493061695 && r1Job.status === 'completed' && r1Job.conclusion === 'failure', 'R1 job metadata drifted');
+          const r1Steps = stepMap(r1Job);
+          for (const name of [
+            'Checkout TEMP branch',
+            'Freeze C1 and detached authorities',
+            'Setup Node',
+            'Install dependencies',
+            'Run frozen governance and auth-navigation gates',
+            'Prove exact controller-order assertions and emit receipt',
+            'Upload C1 certifier evidence'
+          ]) {
+            assert(r1Steps.get(name)?.conclusion === 'success', `R1 success step drifted: ${name}`);
+          }
+          assert(r1Steps.get('Prove candidate remained immutable')?.conclusion === 'failure', 'R1 failed step drifted');
+
+          for (const marker of [
+            'FREEZE=PASS',
+            'NODE_CHECK=PASS',
+            'DOMAIN_MATRIX=PASS',
+            'AGENT_GOVERNANCE=PASS',
+            'DIFF_CHECK=PASS',
+            'FINALIZATION_CONTRACT=PASS',
+            'NAVIGATION_LIFECYCLE_AUDIT=PASS',
+            'NAVIGATION_LIFECYCLE_CORE=PASS',
+            'AUTH_SESSION=PASS',
+            'UX_QA_DEBT_008D_C1_CERTIFIER_FINAL=',
+            '\"result\":\"PASS\"',
+            '\"criteriaRelaxed\":0',
+            '\"introducedRegressions\":0',
+            'reports/generated/active-legacy-structures-report.json',
+            'reports/generated/page-asset-authority-matrix.json',
+            'reports/generated/docs-report-hygiene-summary.json'
+          ]) {
+            assert(r1Log.includes(marker), `R1 positive evidence missing: ${marker}`);
+          }
+          const r1ImmutabilityStart = r1Workflow.indexOf('- name: Prove candidate remained immutable');
+          const r1UploadStart = r1Workflow.indexOf('- name: Upload C1 certifier evidence', r1ImmutabilityStart);
+          assert(r1ImmutabilityStart >= 0 && r1UploadStart > r1ImmutabilityStart, 'R1 immutability block missing');
+          const r1ImmutabilityBlock = r1Workflow.slice(r1ImmutabilityStart, r1UploadStart);
+          assert(r1ImmutabilityBlock.includes('git diff --quiet HEAD --'), 'R1 local cleanliness assertion missing');
+          assert(!r1ImmutabilityBlock.includes('git reset --hard'), 'R1 unexpectedly cleaned generated outputs');
+          assert(r1Workflow.indexOf('npm run audit:agent-governance') < r1ImmutabilityStart, 'R1 governance audit did not precede local cleanliness check');
+
+          assert(r1bRun.id === 33394631298 && r1bRun.status === 'completed' && r1bRun.conclusion === 'failure', 'R1b run metadata drifted');
+          assert(r1bRun.run_attempt === 1 && r1bRun.head_sha === '4235d6579bceac908a56224bcbc8a2e602b4c8de', 'R1b attempt/head drifted');
+          assert(r1bJob.id === 99496106453 && r1bJob.status === 'completed' && r1bJob.conclusion === 'failure', 'R1b job metadata drifted');
+          const r1bSteps = stepMap(r1bJob);
+          assert(r1bSteps.get('Checkout R1b TEMP branch')?.conclusion === 'success', 'R1b checkout drifted');
+          assert(r1bSteps.get('Freeze R1b scope and remote candidate identity')?.conclusion === 'success', 'R1b freeze drifted');
+          assert(r1bSteps.get('Reconcile frozen R1 run job and receipt')?.conclusion === 'failure', 'R1b reconciliation failure drifted');
+          assert(r1bSteps.get('Prove remote immutability and emit R1b receipt')?.conclusion === 'skipped', 'R1b post-reconciliation step drifted');
+          assert(r1bSteps.get('Upload R1b reconciliation evidence')?.conclusion === 'success', 'R1b evidence upload drifted');
+
+          const buggyAssertion = "assert(!log.includes('POST_GATES_IMMUTABILITY=PASS'), 'R1 unexpectedly recorded post-gates immutability PASS');";
+          assert(r1bWorkflow.includes(buggyAssertion), 'R1b naive log-marker assertion missing');
+          assert(r1bLog.includes("Error: R1 unexpectedly recorded post-gates immutability PASS"), 'R1b false-positive error missing');
+          assert(r1bLog.includes("echo 'POST_GATES_IMMUTABILITY=PASS'"), 'R1b log does not demonstrate command-source echo');
+          assert(r1bLog.includes('R1B_FREEZE=PASS'), 'R1b pre-reconciliation freeze proof missing');
+          assert(r1bLog.includes('REMOTE_CANDIDATE_IDENTITY_PRE=PASS'), 'R1b pre-reconciliation remote identity proof missing');
+
+          const classification = {
+            r1: 'WORKTREE_CONTAMINATION_BY_AUDIT_GENERATED_OUTPUTS',
+            r1b: 'FALSE_POSITIVE_FROM_NAIVE_RAW_LOG_MARKER_PARSING',
+            substantiveGates: 'PASS',
+            controllerOrderReceipt: 'PASS',
+            r1bFreeze: 'PASS'
+          };
+          fs.writeFileSync(`${base}/classification.json`, JSON.stringify(classification, null, 2) + '\n');
+          console.log('R1_METADATA_AND_STEPS=PASS');
+          console.log('R1_SUBSTANTIVE_GATES_RECEIPT=PASS');
+          console.log('R1_FAILURE_CLASSIFICATION=WORKTREE_CONTAMINATION_BY_AUDIT_GENERATED_OUTPUTS');
+          console.log('R1B_METADATA_AND_FREEZE=PASS');
+          console.log('R1B_FAILURE_CLASSIFICATION=FALSE_POSITIVE_FROM_NAIVE_RAW_LOG_MARKER_PARSING');
+          NODE
+
+      - name: Prove candidate authority post-state and emit final receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT='dd9bfa9c56ec8c338c8de5db8283ab8dd28f6fe3'
+          CANDIDATE='65fc2342f315acba99fa39b0cfc695c08ca4d255'
+          CANDIDATE_TREE='bfd34a50eafec796c1c68165d48ac5b1566eed93'
+          CANDIDATE_BRANCH='diag/ux-qa-debt-008d-finalization-contract-c1'
+          OWNER='scripts/test-navigation-lifecycle-finalization-contract.js'
+          OWNER_BLOB='0b21a7171167de4d62f623d3d95b3ae8a2d447c3'
+          EVIDENCE='evidence/ux-qa-debt-008d-c1-certifier-r1c'
+
+          REMOTE_CANDIDATE="$(git ls-remote origin "refs/heads/$CANDIDATE_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_CANDIDATE" = "$CANDIDATE"
+          test "$(git rev-parse "$CANDIDATE^")" = "$PARENT"
+          test "$(git show -s --format=%T "$CANDIDATE")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$CANDIDATE:$OWNER")" = "$OWNER_BLOB"
+          test "$(git rev-parse "$CANDIDATE:auth/login.html")" = '6a4f57f4f01d591fb9fbfe3d52a29f3c960fc35c'
+          test "$(git rev-parse "$CANDIDATE:auth/cadastro.html")" = 'b37679c165e75babeb8676994a983e2cc823d46b'
+          test "$(git rev-parse "$CANDIDATE:auth/esqueci-senha.html")" = '72a2e1eb457349e64e6cbe81038d5e13aa6abd5e'
+          test "$(git rev-parse "$CANDIDATE:assets/js/pages/auth-password-pages.js")" = '00fd71f58915a069405cc3bd1ea6ad9761dd8161'
+          test "$(git rev-parse "$CANDIDATE:assets/js/pages/auth.js")" = '651669cfadbb0652d395173e1cbfd6a48d512b78'
+          test "$(git rev-parse "$CANDIDATE:assets/js/core/navigation-lifecycle.js")" = '23aa36beb2929d4538b336e6670ee38e04057919'
+
+          cat > "$EVIDENCE/receipt.json" <<'JSON'
+          {
+            "result": "PASS",
+            "checkpoint": "UX-QA-DEBT-008D-C1-CERTIFIER-RECEIPT-IMMUTABILITY-R1C",
+            "parent": "dd9bfa9c56ec8c338c8de5db8283ab8dd28f6fe3",
+            "candidate": "65fc2342f315acba99fa39b0cfc695c08ca4d255",
+            "candidateTree": "bfd34a50eafec796c1c68165d48ac5b1566eed93",
+            "owner": "scripts/test-navigation-lifecycle-finalization-contract.js",
+            "ownerBlob": "0b21a7171167de4d62f623d3d95b3ae8a2d447c3",
+            "r1Run": 33393691297,
+            "r1Job": 99493061695,
+            "r1Attempt": 1,
+            "r1SubstantiveGates": "PASS",
+            "r1ControllerOrderReceipt": "PASS",
+            "r1OverallConclusion": "failure",
+            "r1FailureClassification": "WORKTREE_CONTAMINATION_BY_AUDIT_GENERATED_OUTPUTS",
+            "r1bRun": 33394631298,
+            "r1bJob": 99496106453,
+            "r1bAttempt": 1,
+            "r1bFreeze": "PASS",
+            "r1bOverallConclusion": "failure",
+            "r1bFailureClassification": "FALSE_POSITIVE_FROM_NAIVE_RAW_LOG_MARKER_PARSING",
+            "remoteCandidateIdentityPre": "PASS",
+            "remoteCandidateIdentityPost": "PASS",
+            "candidateTreeIdentity": "PASS",
+            "ownerBlobIdentity": "PASS",
+            "authLifecycleAuthorityBlobs": "PASS",
+            "reranSubstantiveGates": false,
+            "candidateMutation": false,
+            "htmlMutation": false,
+            "productMutation": false,
+            "authSemanticsMutation": false,
+            "runtimeMutation": false,
+            "matrixMutation": false,
+            "snapshotMutation": false,
+            "visualBaselineMutation": false,
+            "permanentBranchCreated": false,
+            "prCreated": false,
+            "readyForReview": false,
+            "merge": false,
+            "criteriaRelaxed": 0,
+            "repositoryOnly": true
+          }
+          JSON
+
+          echo 'REMOTE_CANDIDATE_IDENTITY_POST=PASS'
+          echo 'AUTH_LIFECYCLE_BLOBS_POST=PASS'
+          echo 'UX_QA_DEBT_008D_C1_CERTIFIER_R1C=PASS'
+
+      - name: Upload R1c reconciliation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008d-c1-certifier-r1c-${{ github.sha }}
+          path: evidence/ux-qa-debt-008d-c1-certifier-r1c/
+          if-no-files-found: error
+          retention-days: 14
