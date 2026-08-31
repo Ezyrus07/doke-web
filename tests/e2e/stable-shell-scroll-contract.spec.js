@@ -7,7 +7,6 @@ const viewports = [
 ];
 
 const routes = [
-  '/perfil.html',
   '/pedidos.html',
   '/mensagens.html',
   '/notificacoes.html',
@@ -16,10 +15,85 @@ const routes = [
   '/ajuda.html',
 ];
 
+async function installAuthenticatedSession(page) {
+  await page.goto('/index.html');
+  await expect.poll(() => page.evaluate(
+    () => typeof window.Doke?.session?.setCurrentUser
+  )).toBe('function');
+
+  await page.evaluate(() => {
+    window.Doke.session.setCurrentUser({
+      id: 'stable-shell-client',
+      role: 'client',
+      name: 'Cliente Stable Shell',
+      email: 'stable-shell@example.test',
+      accountStatus: 'active',
+    });
+  });
+
+  await expect.poll(() => page.evaluate(
+    () => window.Doke?.session?.isAuthenticated?.() === true
+  )).toBe(true);
+}
+
+test.beforeEach(async ({ page }) => {
+  await installAuthenticatedSession(page);
+});
+
 async function waitForStableRoute(page) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.waitForTimeout(200);
+}
+
+async function seedPaintingConversation(page) {
+  await expect.poll(() => page.evaluate(() => (
+    document.querySelector('[data-messages-page]')?.dataset.messagesReady || ''
+  ))).toBe('true');
+  await expect.poll(() => page.evaluate(
+    () => typeof window.Doke?.repositories?.messages?.writeLocal
+  )).toBe('function');
+
+  await page.evaluate(() => {
+    window.Doke.repositories.messages.writeLocal([{
+      id: 'painting',
+      clientId: 'stable-shell-client',
+      professionalId: 'stable-shell-professional',
+      participants: ['stable-shell-client', 'stable-shell-professional'],
+      professionalName: 'Pintor Stable Shell',
+      providerName: 'Pintor Stable Shell',
+      group: 'orders',
+      status: 'accepted',
+      statusLabel: 'Pedido aceito',
+      order: {
+        id: 'order-stable-shell-painting',
+        clientId: 'stable-shell-client',
+        professionalId: 'stable-shell-professional',
+        providerId: 'stable-shell-professional',
+        providerName: 'Pintor Stable Shell',
+        title: 'Pintura residencial',
+        serviceTitle: 'Pintura residencial',
+        status: 'accepted',
+        statusLabel: 'Pedido aceito',
+        budget: 'R$ 450,00',
+      },
+      messages: [{
+        id: 'message-stable-shell-painting',
+        senderId: 'stable-shell-professional',
+        author: 'Pintor Stable Shell',
+        text: 'Posso iniciar a pintura amanhã.',
+        createdAt: '2026-08-30T12:00:00.000Z',
+      }],
+      createdAt: '2026-08-30T12:00:00.000Z',
+      updatedAt: '2026-08-30T12:01:00.000Z',
+    }]);
+
+    document.dispatchEvent(new CustomEvent('doke:auth-session-change', {
+      detail: { source: 'stable-shell-e2e' },
+    }));
+  });
+
+  await expect(page.locator('.message-item[data-message-id="painting"]').first()).toBeVisible();
 }
 
 async function scrollMetrics(page) {
@@ -94,7 +168,26 @@ test.describe('Stable shell document scroll contract', () => {
         hasTouch: viewport.hasTouch,
       });
 
+      test('/perfil.html keeps direct scroll coverage and remains native-only under DokeNavigate', async ({ page }) => {
+        await page.goto('/perfil.html');
+        await waitForStableRoute(page);
+        await assertDocumentScrollWorks(page, '/perfil.html', 'direct');
 
+        await page.goto('/index.html');
+        await waitForStableRoute(page);
+        await expect.poll(() => page.evaluate(() => typeof window.DokeNavigate)).toBe('function');
+
+        await page.evaluate(() => {
+          window.__dokeNativeOnlyProfileProbe = 'same-document-only';
+          window.setTimeout(() => window.DokeNavigate('/perfil.html'), 0);
+        });
+        await expect(page).toHaveURL(/\/perfil\.html(?:$|[?#])/);
+        await waitForStableRoute(page);
+
+        const probe = await page.evaluate(() => window.__dokeNativeOnlyProfileProbe || null);
+        expect(probe, 'DokeNavigate para /perfil.html deve trocar o documento por política native-only').toBeNull();
+        await assertDocumentScrollWorks(page, '/perfil.html', 'native-only DokeNavigate');
+      });
 
       test('leaving mensagens.html restores document scroll contract for subsequent routes', async ({ page }) => {
         await page.goto('/index.html');
@@ -107,7 +200,7 @@ test.describe('Stable shell document scroll contract', () => {
           window.addEventListener('load', () => { window.__dokeLoadCount += 1; });
         });
 
-        for (const route of ['/mensagens.html', '/perfil.html', '/pedidos.html', '/resultados.html', '/ajuda.html']) {
+        for (const route of ['/mensagens.html', '/pedidos.html', '/resultados.html', '/ajuda.html']) {
           await page.evaluate(async (target) => {
             const result = window.DokeNavigate(target);
             if (result && typeof result.then === 'function') await result;
@@ -150,6 +243,7 @@ test.describe('Mensagens mobile thread interaction', () => {
   test('tap on a conversation opens the thread on phone viewport', async ({ page }) => {
     await page.goto('/mensagens.html');
     await waitForStableRoute(page);
+    await seedPaintingConversation(page);
 
     await page.locator('.message-item[data-message-id="painting"]').first().click();
     await page.waitForTimeout(120);
