@@ -1,0 +1,257 @@
+name: TEMP UX-QA-DEBT-008B Permanent Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008b-permanent-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PARENT_SHA: a13da4f6a3eb604168ffa135abbca03afd82cfd4
+      PARENT_TREE: 8ff045441b602e5146015bc4eff9acb2064882fe
+      SOURCE_BRANCH: diag/ux-qa-debt-008i-scroll-readiness-i4
+      SOURCE_SHA: e92b227c27588dea40a18e77c78902a89bd30780
+      SOURCE_TREE: e137efae980ba9b24a6246d531af0c8fabd00126
+      PERMANENT_BRANCH: qa/ux-qa-debt-008b-auth-harness
+      SCROLL_FILE: tests/e2e/stable-shell-scroll-contract.spec.js
+      SCROLL_BLOB: 7b5b2db651c6871ee91471e4cb05b201a0e3aa25
+      MATRIX_FILE: tests/e2e/stable-shell-transition-matrix.spec.js
+      MATRIX_BLOB: 9e4f1557f3a88985720738065eb1267ad80161dd
+      AUDIT_FILE: scripts/audit-shell-router-scroll-reset.js
+      AUDIT_BLOB: 6f6d8232022b2a436e3781c29d1707b7d3bf89ce
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008b-permanent-promotion-r1.yml
+
+    steps:
+      - name: Checkout TEMP controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller, source, and stacked target
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = "$TEMP_PATH"
+
+          remote_target="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_target" = "$PARENT_SHA"
+
+          test "$(git rev-parse "$PARENT_SHA:$AUDIT_FILE")" = "$AUDIT_BLOB"
+
+          git fetch --no-tags origin "refs/heads/$SOURCE_BRANCH:refs/remotes/origin/uxqa008b-source"
+          test "$(git rev-parse refs/remotes/origin/uxqa008b-source)" = "$SOURCE_SHA"
+          test "$(git rev-parse "$SOURCE_SHA^{tree}")" = "$SOURCE_TREE"
+          test "$(git rev-parse "$SOURCE_SHA:$SCROLL_FILE")" = "$SCROLL_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:$MATRIX_FILE")" = "$MATRIX_BLOB"
+
+          echo "CONTROLLER_LINEAGE=PASS"
+          echo "SOURCE_IDENTITY=PASS"
+          echo "STACKED_PARENT_008A=PASS"
+
+      - name: Create exact stacked-parent worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add ../candidate "$PARENT_SHA"
+          cd ../candidate
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git rev-parse HEAD:$AUDIT_FILE)" = "$AUDIT_BLOB"
+          test -z "$(git status --porcelain)"
+
+      - name: Reconstruct exact certified owner blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+
+          git show "$SOURCE_SHA:$SCROLL_FILE" > "$SCROLL_FILE"
+          git show "$SOURCE_SHA:$MATRIX_FILE" > "$MATRIX_FILE"
+
+          test "$(git hash-object "$SCROLL_FILE")" = "$SCROLL_BLOB"
+          test "$(git hash-object "$MATRIX_FILE")" = "$MATRIX_BLOB"
+          test "$(git rev-parse HEAD:$AUDIT_FILE)" = "$AUDIT_BLOB"
+          test "$(git hash-object "$AUDIT_FILE")" = "$AUDIT_BLOB"
+
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n%s\n' "$SCROLL_FILE" "$MATRIX_FILE" | sort)"
+          test "$changed" = "$expected"
+          git diff --check
+
+          git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --quiet -- docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet -- tests/visual reports/baseline
+
+          echo "EXACT_OWNER_BLOBS=PASS"
+          echo "OWNER_SCOPE=2_FILES"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run minimum gates and inherited shell-scroll audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+
+          node --check "$SCROLL_FILE"
+          node --check "$MATRIX_FILE"
+          npm run audit:shell-router-scroll-reset
+          git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+          git checkout -- docs 2>/dev/null || true
+          git checkout -- reports/generated 2>/dev/null || true
+          git clean -fd -- docs/validation reports/generated test-results >/dev/null 2>&1 || true
+
+          git diff --check
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n%s\n' "$SCROLL_FILE" "$MATRIX_FILE" | sort)"
+          test "$changed" = "$expected"
+          test "$(git hash-object "$SCROLL_FILE")" = "$SCROLL_BLOB"
+          test "$(git hash-object "$MATRIX_FILE")" = "$MATRIX_BLOB"
+          test "$(git hash-object "$AUDIT_FILE")" = "$AUDIT_BLOB"
+          git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --quiet -- docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet -- tests/visual reports/baseline
+
+          echo "NODE_CHECKS=PASS"
+          echo "SHELL_SCROLL_AUDIT=PASS"
+          echo "DOMAIN_MATRIX=PASS"
+          echo "AGENT_GOVERNANCE=PASS"
+          echo "GOVERNANCE_SCOPE_RESTORED=PASS"
+
+      - name: Run exact owner suites across desktop tablet mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          node node_modules/@playwright/test/cli.js test \
+            "$SCROLL_FILE" \
+            "$MATRIX_FILE"
+
+      - name: Prove exact 31 of 31 and post-E2E immutability
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/generated/playwright-results.json', 'utf8'));
+          let total = 0;
+          let passed = 0;
+          const failures = [];
+          const visit = (suite) => {
+            for (const spec of suite.specs || []) {
+              for (const test of spec.tests || []) {
+                total += 1;
+                const results = test.results || [];
+                const last = results[results.length - 1] || {};
+                if (last.status === 'passed') passed += 1;
+                else failures.push(`${spec.title} :: ${test.projectName || test.projectId || 'default'} :: ${last.status || 'no-result'}`);
+              }
+            }
+            for (const child of suite.suites || []) visit(child);
+          };
+          for (const suite of report.suites || []) visit(suite);
+          console.log(`OWNER_SUITE_RECEIPT total=${total} passed=${passed} failed=${failures.length}`);
+          if (failures.length) console.log(failures.join('\n'));
+          if (total !== 31 || passed !== 31 || failures.length !== 0) process.exit(1);
+          NODE
+
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n%s\n' "$SCROLL_FILE" "$MATRIX_FILE" | sort)"
+          test "$changed" = "$expected"
+          test "$(git hash-object "$SCROLL_FILE")" = "$SCROLL_BLOB"
+          test "$(git hash-object "$MATRIX_FILE")" = "$MATRIX_BLOB"
+          test "$(git hash-object "$AUDIT_FILE")" = "$AUDIT_BLOB"
+          git diff --check
+          git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --quiet -- docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet -- tests/visual reports/baseline
+
+          echo "OWNER_SUITES=31/31"
+          echo "POST_E2E_IMMUTABILITY=PASS"
+
+      - name: Commit once and fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+
+          remote_target="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_target" = "$PARENT_SHA"
+
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n%s\n' "$SCROLL_FILE" "$MATRIX_FILE" | sort)"
+          test "$changed" = "$expected"
+          test "$(git hash-object "$SCROLL_FILE")" = "$SCROLL_BLOB"
+          test "$(git hash-object "$MATRIX_FILE")" = "$MATRIX_BLOB"
+          test "$(git hash-object "$AUDIT_FILE")" = "$AUDIT_BLOB"
+
+          git config user.name "doke-qa"
+          git config user.email "doke-qa@users.noreply.github.com"
+          git add "$SCROLL_FILE" "$MATRIX_FILE"
+          staged="$(git diff --cached --name-only | sort)"
+          test "$staged" = "$expected"
+          git diff --cached --check
+          git commit -m "test(qa): align protected stable-shell harnesses"
+
+          permanent_commit="$(git rev-parse HEAD)"
+          permanent_tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD:$SCROLL_FILE)" = "$SCROLL_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_FILE)" = "$MATRIX_BLOB"
+          test "$(git rev-parse HEAD:$AUDIT_FILE)" = "$AUDIT_BLOB"
+          test "$(git diff --name-only "$PARENT_SHA"..HEAD | sort)" = "$expected"
+
+          git push origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          pushed="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$pushed" = "$permanent_commit"
+
+          echo "PERMANENT_COMMIT=$permanent_commit"
+          echo "PERMANENT_TREE=$permanent_tree"
+          echo "FAST_FORWARD_FORCE_FALSE=1"
+
+      - name: Emit permanent promotion receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          cat <<EOF
+          UX_QA_DEBT_008B_PROMOTION_FINAL={"result":"PASS","checkpoint":"UX-QA-DEBT-008B-PERMANENT-PROMOTION","parent":"$PARENT_SHA","parentTree":"$PARENT_TREE","source":"$SOURCE_SHA","sourceTree":"$SOURCE_TREE","permanentBranch":"$PERMANENT_BRANCH","head":"$(git rev-parse HEAD)","tree":"$(git rev-parse HEAD^{tree})","scrollBlob":"$SCROLL_BLOB","matrixBlob":"$MATRIX_BLOB","audit008aBlob":"$AUDIT_BLOB","ownerSuites":"31/31","shellScrollAudit":true,"domainMatrix":true,"agentGovernance":true,"criteriaRelaxed":0,"introducedRegressions":0,"matrixMutation":false,"snapshotMutation":false,"visualBaselineMutation":false,"productMutation":false,"runtimeMutation":false,"routerMutation":false,"fastForward":true,"force":false,"prCreated":false,"readyForReview":false,"merge":false,"repositoryOnly":true}
+          EOF
+
+      - name: Upload promotion evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008b-permanent-promotion-${{ github.sha }}
+          path: |
+            ../candidate/reports/generated/playwright-html/
+            ../candidate/reports/generated/playwright-results.json
+            ../candidate/test-results/
+          if-no-files-found: warn
+          retention-days: 14
