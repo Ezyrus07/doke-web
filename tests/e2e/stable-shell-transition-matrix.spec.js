@@ -50,7 +50,8 @@ async function waitForTabletRouteTerminality(page, file, pageKey) {
     const snapshot = window.Doke?.navigationLifecycle?.getSnapshot?.();
     const route = snapshot?.route || {};
     const expectedPath = `/${expectedFile}`;
-    const routeSettled = route.to === expectedPath && (route.state === 'ready' || route.state === 'empty');
+    const routeSettled = route.to === expectedPath
+      && ['ready', 'empty', 'error'].includes(route.state);
     const routerIdle = window.Doke?.stableShellRouter?.isNavigating?.() === false;
     const pageSettled = document.body?.dataset.page === expectedPage;
     const routingIdle = !document.documentElement.classList.contains('is-stable-shell-routing')
