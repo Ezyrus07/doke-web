@@ -1,0 +1,336 @@
+name: TEMP UX-QA-DEBT-008E Results Header Rail Visibility R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008e-results-header-rail-visibility-r1
+
+permissions:
+  contents: read
+
+jobs:
+  authority-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_SHA: c62445938fb4e0bbf937fdb45209a12eb3d0b52d
+      SOURCE_TREE: bfd34a50eafec796c1c68165d48ac5b1566eed93
+      PERMANENT_BRANCH: qa/ux-qa-debt-008d-finalization-contract
+      TEMP_WORKFLOW: .github/workflows/0000-temp-ux-qa-debt-008e-results-header-rail-visibility-r1.yml
+      CONTRACT_BLOB: 56d0046cb4c3a4b408fe4be2a531648474266ec7
+      RESULTS_HTML_BLOB: 9b4431143ef80dafc70788bfa5c96ebf6460b5d1
+      SEARCH_RESULTS_BLOB: 76ae990f89829d8c85968e6b2550841312fefbdc
+      HYDRATION_CSS_BLOB: cbf6641f3c43b278f1779fc2ff9b25443d418b51
+      RESPONSIVE_CSS_BLOB: 1669e471ae68c0d46fdb9a3e1aeaf4f3b05a3270
+      DESKTOP_CSS_BLOB: e7829045b33fcdca429f4ca2a248f1a7d6eb01bb
+      SHELL_CSS_BLOB: c28c47b061fa994871386a81b4d1adfc212ac553
+      RESULTS_ENTRY_SPEC_BLOB: f99c8a622abacf6360680dbf5864e0b1c2ef2484
+
+    steps:
+      - name: Checkout TEMP controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze source authority and TEMP scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$SOURCE_SHA"
+          test "$(git rev-parse "$SOURCE_SHA^{tree}")" = "$SOURCE_TREE"
+          test "$(git rev-parse "$SOURCE_SHA:scripts/test-results-header-rail-contract.js")" = "$CONTRACT_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:resultados.html")" = "$RESULTS_HTML_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/js/pages/search-results.js")" = "$SEARCH_RESULTS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/css/pages/results/page-hydration-states.css")" = "$HYDRATION_CSS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/css/pages/search-results/responsive-pass.css")" = "$RESPONSIVE_CSS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/css/pages/search-results/desktop-envelope.css")" = "$DESKTOP_CSS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:assets/css/pages/results/shell.css")" = "$SHELL_CSS_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA:tests/e2e/results-entry-lifecycle.spec.js")" = "$RESULTS_ENTRY_SPEC_BLOB"
+          mapfile -t changed < <(git diff --name-only "$SOURCE_SHA"...HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$TEMP_WORKFLOW"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$SOURCE_SHA"
+          echo 'FREEZE=PASS'
+
+      - name: Detach exact permanent source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$SOURCE_TREE"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run current header rail contract unchanged
+        id: original
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node scripts/test-results-header-rail-contract.js > "$RUNNER_TEMP/original-contract.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" > "$RUNNER_TEMP/original-contract.status"
+          cat "$RUNNER_TEMP/original-contract.log"
+          echo "ORIGINAL_STATUS=$status"
+          if grep -Fq '/resultados.html?q=sSAS 820x1180: results layout is not visible' "$RUNNER_TEMP/original-contract.log"; then
+            echo 'ORIGINAL_820_VISIBILITY_FAILURE=YES'
+          else
+            echo 'ORIGINAL_820_VISIBILITY_FAILURE=NO'
+          fi
+
+      - name: Probe hydration and visibility timeline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/results-visibility-probe.js" <<'NODE'
+          const fs = require('fs');
+          const http = require('http');
+          const path = require('path');
+          const { chromium } = require('@playwright/test');
+
+          const root = process.cwd();
+          const out = process.env.PROBE_OUTPUT;
+          const routes = ['/resultados.html?q=sSAS', '/doke-web/resultados.html?q=sSAS'];
+          const viewports = [[760, 1024], [820, 1180], [1024, 1180]];
+          const sampleTimes = [0, 250, 650, 1000, 2000];
+          const mimeTypes = new Map([
+            ['.css', 'text/css; charset=utf-8'], ['.gif', 'image/gif'],
+            ['.html', 'text/html; charset=utf-8'], ['.ico', 'image/x-icon'],
+            ['.jpeg', 'image/jpeg'], ['.jpg', 'image/jpeg'],
+            ['.js', 'application/javascript; charset=utf-8'], ['.json', 'application/json; charset=utf-8'],
+            ['.png', 'image/png'], ['.svg', 'image/svg+xml; charset=utf-8'],
+            ['.webp', 'image/webp'], ['.woff2', 'font/woff2'],
+          ]);
+
+          function createStaticServer() {
+            return new Promise((resolve) => {
+              const server = http.createServer((request, response) => {
+                let urlPath = decodeURIComponent((request.url || '').split('?')[0]);
+                if (urlPath.startsWith('/doke-web/')) urlPath = urlPath.slice('/doke-web'.length);
+                if (urlPath === '/' || urlPath === '') urlPath = '/index.html';
+                const filePath = path.normalize(path.join(root, urlPath));
+                if (!filePath.startsWith(root)) { response.writeHead(403); response.end('Forbidden'); return; }
+                fs.stat(filePath, (error, stat) => {
+                  if (error || !stat.isFile()) { response.writeHead(404); response.end(`Not found: ${urlPath}`); return; }
+                  response.writeHead(200, { 'content-type': mimeTypes.get(path.extname(filePath).toLowerCase()) || 'application/octet-stream' });
+                  fs.createReadStream(filePath).pipe(response);
+                });
+              });
+              server.listen(0, '127.0.0.1', () => resolve(server));
+            });
+          }
+
+          async function installNetworkMocks(context) {
+            await context.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ status: 200, body: '' }));
+            await context.route('https://fonts.gstatic.com/**', (route) => route.abort());
+            await context.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript; charset=utf-8',
+              body: 'window.supabase={createClient(){return {}}};',
+            }));
+            await context.route('https://unpkg.com/**', (route) => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript; charset=utf-8',
+              body: 'window.lucide={createIcons(){}};',
+            }));
+          }
+
+          async function snapshot(page, targetMs) {
+            return page.evaluate((targetMs) => {
+              function state(selector) {
+                const el = document.querySelector(selector);
+                if (!el) return { exists: false };
+                const style = getComputedStyle(el);
+                const r = el.getBoundingClientRect();
+                return {
+                  exists: true,
+                  hidden: !!el.hidden,
+                  ariaHidden: el.getAttribute('aria-hidden'),
+                  display: style.display,
+                  visibility: style.visibility,
+                  opacity: style.opacity,
+                  rect: { x: +r.x.toFixed(2), y: +r.y.toFixed(2), width: +r.width.toFixed(2), height: +r.height.toFixed(2) },
+                  visible: !el.hidden && r.width > 0 && r.height > 0 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0',
+                };
+              }
+              const body = document.body;
+              let lifecycle = null;
+              try {
+                const api = window.Doke && window.Doke.lifecycle;
+                if (api && typeof api.getSnapshot === 'function') lifecycle = api.getSnapshot();
+                else if (api && typeof api.snapshot === 'function') lifecycle = api.snapshot();
+                else if (api) lifecycle = { available: true, keys: Object.keys(api).sort() };
+              } catch (error) {
+                lifecycle = { error: String(error && error.message || error) };
+              }
+              return {
+                targetMs,
+                readyState: document.readyState,
+                body: {
+                  page: body?.dataset?.page || null,
+                  viewState: body?.dataset?.viewState || null,
+                  pageHydration: body?.dataset?.pageHydration || null,
+                  routeTransitionState: body?.dataset?.routeTransitionState || null,
+                  ariaBusy: body?.getAttribute('aria-busy') || null,
+                },
+                readySurface: state('[data-results-hydration-ready]'),
+                resultsLayout: state('.results-layout'),
+                searchbar: state('.results-searchbar'),
+                skeleton: state('[data-results-hydration-skeleton]'),
+                empty: state('[data-results-hydration-empty]'),
+                error: state('[data-results-hydration-error]'),
+                preloader: state('[data-results-document-preloader]'),
+                lifecycle,
+              };
+            }, targetMs);
+          }
+
+          (async () => {
+            const server = await createStaticServer();
+            const port = server.address().port;
+            const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
+            const browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
+            const report = [];
+            try {
+              for (const route of routes) {
+                for (const [width, height] of viewports) {
+                  const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
+                  await installNetworkMocks(context);
+                  const page = await context.newPage();
+                  const pageErrors = [];
+                  const consoleErrors = [];
+                  const requestFailures = [];
+                  page.on('pageerror', (error) => pageErrors.push(String(error && error.message || error)));
+                  page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+                  page.on('requestfailed', (req) => requestFailures.push({ url: req.url(), error: req.failure()?.errorText || null }));
+                  const started = Date.now();
+                  await page.goto(`http://127.0.0.1:${port}${route}`, { waitUntil: 'domcontentloaded' });
+                  const samples = [];
+                  for (const targetMs of sampleTimes) {
+                    const elapsed = Date.now() - started;
+                    if (targetMs > elapsed) await page.waitForTimeout(targetMs - elapsed);
+                    samples.push(await snapshot(page, targetMs));
+                  }
+                  report.push({ route, viewport: `${width}x${height}`, pageErrors, consoleErrors, requestFailures, samples });
+                  await context.close();
+                }
+              }
+            } finally {
+              await browser.close();
+              server.close();
+            }
+            const payload = { ok: true, report };
+            fs.writeFileSync(out, JSON.stringify(payload, null, 2));
+            console.log(JSON.stringify(payload, null, 2));
+          })().catch((error) => {
+            fs.writeFileSync(out, JSON.stringify({ ok: false, error: String(error && error.stack || error) }, null, 2));
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+          PROBE_OUTPUT="$RUNNER_TEMP/results-visibility-probe.json" node "$RUNNER_TEMP/results-visibility-probe.js" | tee "$RUNNER_TEMP/results-visibility-probe.log"
+
+      - name: Emit diagnostic receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - "$RUNNER_TEMP/original-contract.status" "$RUNNER_TEMP/original-contract.log" "$RUNNER_TEMP/results-visibility-probe.json" "$RUNNER_TEMP/receipt.json" <<'NODE'
+          const fs = require('fs');
+          const [statusPath, originalLogPath, probePath, receiptPath] = process.argv.slice(2);
+          const status = Number(fs.readFileSync(statusPath, 'utf8').trim());
+          const originalLog = fs.readFileSync(originalLogPath, 'utf8');
+          const probe = JSON.parse(fs.readFileSync(probePath, 'utf8'));
+          const rows = probe.report || [];
+          const row820 = rows.find((row) => row.route === '/resultados.html?q=sSAS' && row.viewport === '820x1180');
+          const sample = (row, t) => row?.samples?.find((s) => s.targetMs === t) || null;
+          const s650 = sample(row820, 650);
+          const s1000 = sample(row820, 1000);
+          const s2000 = sample(row820, 2000);
+          const hasRuntimeErrors = !!(row820 && (row820.pageErrors.length || row820.consoleErrors.length));
+          let classification = 'UNRESOLVED';
+          if (s650 && !s650.resultsLayout.visible && ((s1000 && s1000.resultsLayout.visible) || (s2000 && s2000.resultsLayout.visible)) && !hasRuntimeErrors) {
+            classification = 'FIXED_TIMEOUT_RACE';
+          } else if (s2000 && !s2000.resultsLayout.visible && hasRuntimeErrors) {
+            classification = 'TEST_SETUP_OR_MOCK_RUNTIME_FAILURE';
+          } else if (s2000 && !s2000.resultsLayout.visible && !hasRuntimeErrors && s2000.body.viewState !== 'loading') {
+            classification = 'TERMINAL_LAYOUT_VISIBILITY_SOURCE';
+          } else if (s2000 && !s2000.resultsLayout.visible && s2000.body.viewState === 'loading') {
+            classification = 'HYDRATION_NEVER_TERMINATES';
+          }
+          const receipt = {
+            source: process.env.SOURCE_SHA,
+            sourceTree: process.env.SOURCE_TREE,
+            originalContractStatus: status,
+            originalObserved820Failure: originalLog.includes('/resultados.html?q=sSAS 820x1180: results layout is not visible'),
+            classification,
+            row820: row820 || null,
+            candidateMaterialized: false,
+            productMutation: false,
+            cssHtmlMutation: false,
+            qaOwnerMutation: false,
+          };
+          fs.writeFileSync(receiptPath, JSON.stringify(receipt, null, 2));
+          console.log(JSON.stringify(receipt, null, 2));
+          NODE
+
+      - name: Prove source and permanent branch remained immutable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$SOURCE_TREE"
+          test "$(git rev-parse "HEAD:scripts/test-results-header-rail-contract.js")" = "$CONTRACT_BLOB"
+          test "$(git rev-parse "HEAD:resultados.html")" = "$RESULTS_HTML_BLOB"
+          test "$(git rev-parse "HEAD:assets/js/pages/search-results.js")" = "$SEARCH_RESULTS_BLOB"
+          test "$(git rev-parse "HEAD:assets/css/pages/results/page-hydration-states.css")" = "$HYDRATION_CSS_BLOB"
+          test "$(git rev-parse "HEAD:assets/css/pages/search-results/responsive-pass.css")" = "$RESPONSIVE_CSS_BLOB"
+          test "$(git rev-parse "HEAD:assets/css/pages/search-results/desktop-envelope.css")" = "$DESKTOP_CSS_BLOB"
+          test "$(git rev-parse "HEAD:assets/css/pages/results/shell.css")" = "$SHELL_CSS_BLOB"
+          test "$(git rev-parse "HEAD:tests/e2e/results-entry-lifecycle.spec.js")" = "$RESULTS_ENTRY_SPEC_BLOB"
+          git diff --quiet HEAD --
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$SOURCE_SHA"
+          echo 'POST_PROBE_IMMUTABILITY=PASS'
+
+      - name: Stage diagnostic evidence for artifact
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p diagnostic-evidence
+          for f in original-contract.log original-contract.status results-visibility-probe.json results-visibility-probe.log receipt.json; do
+            if [ -f "$RUNNER_TEMP/$f" ]; then cp "$RUNNER_TEMP/$f" "diagnostic-evidence/$f"; fi
+          done
+          cat > diagnostic-evidence/metadata.txt <<EOF
+          source=$SOURCE_SHA
+          source_tree=$SOURCE_TREE
+          workflow_head=$GITHUB_SHA
+          run_id=$GITHUB_RUN_ID
+          run_attempt=$GITHUB_RUN_ATTEMPT
+          candidate_materialized=false
+          product_mutation=false
+          css_html_mutation=false
+          qa_owner_mutation=false
+          EOF
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008e-results-header-rail-visibility-r1-${{ github.sha }}
+          path: diagnostic-evidence/
+          if-no-files-found: error
