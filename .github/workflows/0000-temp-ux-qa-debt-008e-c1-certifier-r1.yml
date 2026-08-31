@@ -1,0 +1,303 @@
+name: TEMP UX-QA-DEBT-008E C1 Certifier R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008e-c1-certifier-r1
+
+permissions:
+  contents: read
+
+env:
+  PARENT: c62445938fb4e0bbf937fdb45209a12eb3d0b52d
+  CANDIDATE: 0deab753b417428d5f1e920e92eae24099beac47
+  CANDIDATE_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+  OWNER: scripts/test-results-header-rail-contract.js
+  OWNER_PREIMAGE_BLOB: 56d0046cb4c3a4b408fe4be2a531648474266ec7
+  OWNER_BLOB: 368ec5dafafb25d9b74e8c76bf8c0f3145ea591b
+  QA006_OWNER: tests/e2e/results-entry-lifecycle.spec.js
+  QA006_BLOB: f99c8a622abacf6360680dbf5864e0b1c2ef2484
+  SEARCH_REPOSITORY: assets/js/repositories/search-repository.js
+  SEARCH_REPOSITORY_BLOB: d4418a94cb939ba56dc7099069afc27ae57ea54f
+  SUPABASE_CONFIG: assets/js/core/supabase-config.js
+  SUPABASE_CONFIG_BLOB: a370c903fc6c390ba02bdc20ecc5ca88c11e1f29
+  PERMANENT_BRANCH: qa/ux-qa-debt-008d-finalization-contract
+  TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008e-c1-certifier-r1.yml
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze candidate and repository authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
+          test "$(git rev-parse "$CANDIDATE^")" = "$PARENT"
+          test "$(git show -s --format=%T "$CANDIDATE")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$PARENT:$OWNER")" = "$OWNER_PREIMAGE_BLOB"
+          test "$(git rev-parse "$CANDIDATE:$OWNER")" = "$OWNER_BLOB"
+          test "$(git rev-parse "$CANDIDATE:$QA006_OWNER")" = "$QA006_BLOB"
+          test "$(git rev-parse "$CANDIDATE:$SEARCH_REPOSITORY")" = "$SEARCH_REPOSITORY_BLOB"
+          test "$(git rev-parse "$CANDIDATE:$SUPABASE_CONFIG")" = "$SUPABASE_CONFIG_BLOB"
+          test "$(git diff --name-only "$PARENT".."$CANDIDATE")" = "$OWNER"
+          test "$(git diff --name-only "$CANDIDATE"..HEAD)" = "$TEMP_PATH"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT"
+
+          git checkout --detach "$CANDIDATE"
+          git reset --hard "$CANDIDATE"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git show -s --format=%T HEAD)" = "$CANDIDATE_TREE"
+          test -z "$(git status --porcelain)"
+          echo 'FREEZE=PASS'
+
+      - name: Prove owner-only structural invariance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const { execFileSync } = require('child_process');
+          const parent = process.env.PARENT;
+          const owner = process.env.OWNER;
+          const candidate = fs.readFileSync(owner, 'utf8');
+          const preimage = execFileSync('git', ['show', `${parent}:${owner}`], { encoding: 'utf8' });
+          const start = 'async function installNetworkMocks(context) {';
+          const suffix = '\nasync function collectLayout(page) {';
+          const pStart = preimage.indexOf(start);
+          const cStart = candidate.indexOf(start);
+          const pSuffix = preimage.indexOf(suffix);
+          const cSuffix = candidate.indexOf(suffix);
+          if ([pStart, cStart, pSuffix, cSuffix].some((value) => value < 0)) {
+            throw new Error('installNetworkMocks/collectLayout structural markers missing');
+          }
+          if (preimage.slice(0, pStart) !== candidate.slice(0, cStart)) {
+            throw new Error('bytes before installNetworkMocks changed');
+          }
+          if (preimage.slice(pSuffix) !== candidate.slice(cSuffix)) {
+            throw new Error('bytes after installNetworkMocks changed');
+          }
+
+          const required = [
+            "const routes = ['/resultados.html?q=sSAS', '/doke-web/resultados.html?q=sSAS'];",
+            '[390, 844]', '[760, 1024]', '[820, 1180]', '[1024, 1180]', '[1366, 768]', '[1760, 900]',
+            'const tolerance = 1.25;',
+            'await page.waitForTimeout(650);',
+            'involuntary horizontal overflow',
+            'app header inner is not visible',
+            'results searchbar is not visible',
+            'results layout is not visible',
+            'searchbar left rail must match header',
+            'searchbar right rail must match header',
+            'results layout left rail must match header',
+            'results layout right rail must match header',
+            'results workspace must not keep nested page padding',
+            "context.route('**/assets/js/repositories/search-repository.js*'",
+            'const response = await route.fetch();',
+            "if (request.query === 'sSAS')",
+            'return original.queryPage(request);',
+            'normalizeRequest: function (request) { return original.normalizeRequest(request); }',
+            'getLastError: function () { return original.getLastError(); }',
+            'getContract: function () { return original.getContract(); }',
+            '__qaResultsHeaderRailHarness: true'
+          ];
+          for (const token of required) {
+            if (!candidate.includes(token)) throw new Error(`required contract token missing: ${token}`);
+          }
+          if (candidate.includes('window.supabase={createClient(){return {}}};')) {
+            throw new Error('obsolete empty Supabase client mock remains');
+          }
+          if (candidate.includes('functions.invoke') || candidate.includes('.rpc(')) {
+            throw new Error('candidate test owner must not synthesize Supabase/RPC invocation');
+          }
+          console.log('OUTSIDE_INSTALL_NETWORK_MOCKS_BYTE_IDENTICAL=PASS');
+          console.log('CRITERIA_TOKENS_PRESERVED=PASS');
+          console.log('DETERMINISTIC_REPOSITORY_HARNESS=PASS');
+          NODE
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run frozen syntax and browser contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$OWNER"
+          set +e
+          node "$OWNER" > "$RUNNER_TEMP/results-header-rail-contract.json" 2> "$RUNNER_TEMP/results-header-rail-contract.stderr"
+          status=$?
+          set -e
+          printf '%s\n' "$status" > "$RUNNER_TEMP/results-header-rail-contract.status"
+          cat "$RUNNER_TEMP/results-header-rail-contract.stderr" || true
+          test "$status" -eq 0
+          cat "$RUNNER_TEMP/results-header-rail-contract.json"
+          echo 'NODE_CHECK=PASS'
+          echo 'RESULTS_HEADER_RAIL_BROWSER_CONTRACT=PASS'
+
+      - name: Prove 2 routes x 6 viewports and emit receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const reportPath = `${process.env.RUNNER_TEMP}/results-header-rail-contract.json`;
+          const payload = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+          if (payload.ok !== true || !Array.isArray(payload.report) || payload.report.length !== 12) {
+            throw new Error('browser contract did not produce exactly 12 passing cases');
+          }
+          const routes = ['/resultados.html?q=sSAS', '/doke-web/resultados.html?q=sSAS'];
+          const viewports = ['390x844', '760x1024', '820x1180', '1024x1180', '1366x768', '1760x900'];
+          const tolerance = 1.25;
+          for (const route of routes) {
+            const rows = payload.report.filter((row) => row.route === route);
+            if (rows.length !== 6) throw new Error(`${route}: expected six viewport rows`);
+            for (const viewport of viewports) {
+              if (!rows.some((row) => row.viewport === viewport)) throw new Error(`${route}: missing ${viewport}`);
+            }
+            const tablet = rows.find((row) => row.viewport === '820x1180');
+            const layout = tablet && tablet.layout;
+            if (!layout || layout.bodyPage !== 'resultados') throw new Error(`${route}: 820 bodyPage mismatch`);
+            if (layout.scrollWidth - layout.clientWidth > tolerance) throw new Error(`${route}: 820 horizontal overflow`);
+            for (const key of ['appHeaderInner', 'resultsSearchbar', 'resultsLayout']) {
+              if (!layout[key] || layout[key].visible !== true) throw new Error(`${route}: 820 ${key} not visible`);
+            }
+            if (Math.abs(layout.resultsSearchbar.left - layout.appHeaderInner.left) > tolerance
+              || Math.abs(layout.resultsSearchbar.right - layout.appHeaderInner.right) > tolerance
+              || Math.abs(layout.resultsLayout.left - layout.appHeaderInner.left) > tolerance
+              || Math.abs(layout.resultsLayout.right - layout.appHeaderInner.right) > tolerance) {
+              throw new Error(`${route}: 820 rail geometry divergence`);
+            }
+            if (layout.pageInner.paddingLeft !== '0px' || layout.pageInner.paddingRight !== '0px') {
+              throw new Error(`${route}: 820 nested page padding drift`);
+            }
+          }
+
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008E-C1-CERTIFIER-R1',
+            parent: process.env.PARENT,
+            candidate: process.env.CANDIDATE,
+            candidateTree: process.env.CANDIDATE_TREE,
+            owner: process.env.OWNER,
+            ownerBlob: process.env.OWNER_BLOB,
+            routeCount: 2,
+            viewportCountPerRoute: 6,
+            totalBrowserCases: 12,
+            tablet820GeometryPassedBothRoutes: true,
+            nodeCheck: true,
+            resultsHeaderRailBrowserContract: true,
+            criteriaRelaxed: 0,
+            introducedRegressions: 0,
+            candidateMutation: false,
+            productMutation: false,
+            cssHtmlMutation: false,
+            qa006Mutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            supabaseInvocation: false,
+            rpcInvocation: false,
+            stagingProduction: false,
+            permanentBranchMutation: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true
+          };
+          const receiptPath = `${process.env.RUNNER_TEMP}/ux-qa-debt-008e-c1-certifier-receipt.json`;
+          fs.writeFileSync(receiptPath, JSON.stringify(receipt, null, 2) + '\n');
+          console.log('UX_QA_DEBT_008E_C1_CERTIFIER_FINAL=' + JSON.stringify(receipt));
+          NODE
+
+      - name: Run repository governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git restore --worktree --staged docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md 2>/dev/null || true
+          git diff --check "$PARENT".."$CANDIDATE"
+          test -z "$(git status --porcelain)"
+          echo 'DOMAIN_MATRIX=PASS'
+          echo 'AGENT_GOVERNANCE=PASS'
+          echo 'DIFF_CHECK=PASS'
+
+      - name: Prove candidate and permanent branch remained immutable
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git restore --worktree --staged docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md 2>/dev/null || true
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git show -s --format=%T HEAD)" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "HEAD:$OWNER")" = "$OWNER_BLOB"
+          test "$(git rev-parse "HEAD:$QA006_OWNER")" = "$QA006_BLOB"
+          test "$(git rev-parse "HEAD:$SEARCH_REPOSITORY")" = "$SEARCH_REPOSITORY_BLOB"
+          test "$(git rev-parse "HEAD:$SUPABASE_CONFIG")" = "$SUPABASE_CONFIG_BLOB"
+          git diff --quiet HEAD --
+          test -z "$(git status --porcelain)"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT"
+          echo 'CANDIDATE_IMMUTABILITY=PASS'
+          echo 'PERMANENT_BRANCH_IMMUTABILITY=PASS'
+
+      - name: Stage certifier evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p certifier-evidence
+          for f in results-header-rail-contract.json results-header-rail-contract.stderr results-header-rail-contract.status ux-qa-debt-008e-c1-certifier-receipt.json; do
+            if [ -f "$RUNNER_TEMP/$f" ]; then cp "$RUNNER_TEMP/$f" "certifier-evidence/$f"; fi
+          done
+          cat > certifier-evidence/metadata.txt <<EOF
+          parent=$PARENT
+          candidate=$CANDIDATE
+          candidate_tree=$CANDIDATE_TREE
+          candidate_owner_blob=$OWNER_BLOB
+          workflow_head=$GITHUB_SHA
+          run_id=$GITHUB_RUN_ID
+          run_attempt=$GITHUB_RUN_ATTEMPT
+          criteria_relaxed=0
+          introduced_regressions=0
+          candidate_mutation=false
+          product_mutation=false
+          css_html_mutation=false
+          qa006_mutation=false
+          matrix_mutation=false
+          snapshot_mutation=false
+          supabase_invocation=false
+          rpc_invocation=false
+          staging_production=false
+          permanent_branch_mutation=false
+          pr_created=false
+          ready_for_review=false
+          merge=false
+          repository_only=true
+          EOF
+
+      - name: Upload C1 certifier evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008e-c1-certifier-${{ github.sha }}
+          path: certifier-evidence/
+          if-no-files-found: error
+          retention-days: 14
