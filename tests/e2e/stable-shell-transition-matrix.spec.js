@@ -127,9 +127,10 @@ for (const [name, width, height] of viewports) {
       expect(state.skeletonVisible).toBe(false);
 
       if (state.scrollable) {
-        await page.evaluate(() => window.scrollTo(0, 500));
-        await page.waitForTimeout(50);
-        expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+        await expect.poll(() => page.evaluate(() => {
+          window.scrollTo(0, 500);
+          return window.scrollY;
+        })).toBeGreaterThan(0);
       }
     }
 
