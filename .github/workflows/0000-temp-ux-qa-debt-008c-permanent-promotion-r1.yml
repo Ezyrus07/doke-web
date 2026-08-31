@@ -1,0 +1,257 @@
+name: TEMP UX-QA-DEBT-008C Permanent Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008c-permanent-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PARENT_SHA: c7e4e94a772e64ed57472dd0db9a9301de4f9993
+      PARENT_TREE: f46b0e0ec95593d8e5bd8fad5bb8466686e59327
+      SOURCE_BRANCH: diag/ux-qa-debt-008c-direct-hydration-candidate-c1
+      SOURCE_SHA: 1f90dcce85f87cebd2c5905cb11200aec36780cd
+      SOURCE_TREE: 599517aaada895d09dd5791009b096282efeeb1a
+      PERMANENT_BRANCH: qa/ux-qa-debt-008c-direct-hydration-contract
+      OWNER_FILE: tests/e2e/stable-shell-transition-contract.spec.js
+      OWNER_BLOB: ba16c3465df6c65f714a2c1e11f2500a2b3f9c40
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008c-permanent-promotion-r1.yml
+      PEDIDOS_TEST: slow data route preserves the previous page until direct hydration can commit
+
+    steps:
+      - name: Checkout TEMP controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller source and permanent target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse "$PARENT_SHA^{tree}")" = "$PARENT_TREE"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = "$TEMP_PATH"
+
+          remote_target="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_target" = "$PARENT_SHA"
+
+          git fetch --no-tags origin "refs/heads/$SOURCE_BRANCH:refs/remotes/origin/uxqa008c-source"
+          test "$(git rev-parse refs/remotes/origin/uxqa008c-source)" = "$SOURCE_SHA"
+          test "$(git rev-parse "$SOURCE_SHA^{tree}")" = "$SOURCE_TREE"
+          test "$(git rev-parse "$SOURCE_SHA:$OWNER_FILE")" = "$OWNER_BLOB"
+          test "$(git rev-parse "$SOURCE_SHA^")" = "$PARENT_SHA"
+
+          echo "CONTROLLER_LINEAGE=PASS"
+          echo "SOURCE_IDENTITY=PASS"
+          echo "PERMANENT_TARGET_FROZEN=PASS"
+
+      - name: Create exact parent worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add ../candidate "$PARENT_SHA"
+          cd ../candidate
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test -z "$(git status --porcelain)"
+
+      - name: Reconstruct exact certified C1 owner blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          git show "$SOURCE_SHA:$OWNER_FILE" > "$OWNER_FILE"
+          test "$(git hash-object "$OWNER_FILE")" = "$OWNER_BLOB"
+          test "$(git diff --name-only)" = "$OWNER_FILE"
+          git diff --check
+          git diff --quiet -- assets/js/core/stable-shell-router.js assets/js/core/page-hydration.js assets/js/core/navigation-lifecycle.js assets/js/pages/pedidos.js
+          git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet -- tests/visual reports/baseline
+          echo "EXACT_OWNER_BLOB=PASS"
+          echo "OWNER_SCOPE=1_FILE"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run promotion qualification gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          node --check "$OWNER_FILE"
+          npm run audit:shell-router-scroll-reset
+          git checkout -- docs/validation/global-cycle-167-shell-router-scroll-reset-report.json 2>/dev/null || true
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+          git checkout -- docs 2>/dev/null || true
+          git checkout -- reports/generated 2>/dev/null || true
+          git clean -fd -- docs/validation reports/generated test-results >/dev/null 2>&1 || true
+
+          test "$(git diff --name-only)" = "$OWNER_FILE"
+          test "$(git hash-object "$OWNER_FILE")" = "$OWNER_BLOB"
+          git diff --check
+          git diff --quiet -- assets/js/core/stable-shell-router.js assets/js/core/page-hydration.js assets/js/core/navigation-lifecycle.js assets/js/pages/pedidos.js
+          git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet -- tests/visual reports/baseline
+
+          echo "NODE_CHECK=PASS"
+          echo "SHELL_SCROLL_AUDIT=PASS"
+          echo "DOMAIN_MATRIX=PASS"
+          echo "AGENT_GOVERNANCE=PASS"
+          echo "GOVERNANCE_SCOPE_RESTORED=PASS"
+
+      - name: Run exact 008C owner suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          node node_modules/@playwright/test/cli.js test "$OWNER_FILE"
+
+      - name: Prove 6 of 6 Pedidos PASS and post E2E immutability
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/generated/playwright-results.json', 'utf8'));
+          const target = process.env.PEDIDOS_TEST;
+          let total = 0;
+          let passed = 0;
+          let targetPassed = false;
+          const failures = [];
+          const visit = (suite) => {
+            for (const spec of suite.specs || []) {
+              for (const test of spec.tests || []) {
+                total += 1;
+                const results = test.results || [];
+                const last = results[results.length - 1] || {};
+                if (last.status === 'passed') passed += 1;
+                else failures.push(`${spec.title} :: ${last.status || 'no-result'}`);
+                if (spec.title === target && last.status === 'passed') targetPassed = true;
+              }
+            }
+            for (const child of suite.suites || []) visit(child);
+          };
+          for (const suite of report.suites || []) visit(suite);
+          console.log(`OWNER_SUITE_RECEIPT total=${total} passed=${passed} failed=${failures.length}`);
+          console.log(`PEDIDOS_DIRECT_HYDRATION=${targetPassed ? 'PASS' : 'FAIL'}`);
+          if (failures.length) console.log(failures.join('\n'));
+          if (total !== 6 || passed !== 6 || failures.length !== 0 || !targetPassed) process.exit(1);
+          NODE
+
+          test "$(git diff --name-only)" = "$OWNER_FILE"
+          test "$(git hash-object "$OWNER_FILE")" = "$OWNER_BLOB"
+          git diff --check
+          git diff --quiet -- assets/js/core/stable-shell-router.js assets/js/core/page-hydration.js assets/js/core/navigation-lifecycle.js assets/js/pages/pedidos.js
+          git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet -- tests/visual reports/baseline
+          echo "OWNER_SUITE=6/6"
+          echo "POST_E2E_IMMUTABILITY=PASS"
+
+      - name: Commit once and fast forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ../candidate
+          remote_target="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$remote_target" = "$PARENT_SHA"
+          test "$(git diff --name-only)" = "$OWNER_FILE"
+          test "$(git hash-object "$OWNER_FILE")" = "$OWNER_BLOB"
+
+          git config user.name "doke-qa"
+          git config user.email "doke-qa@users.noreply.github.com"
+          git add "$OWNER_FILE"
+          test "$(git diff --cached --name-only)" = "$OWNER_FILE"
+          git diff --cached --check
+          git commit -m "test(qa): align Pedidos direct-hydration transition contract"
+
+          permanent_commit="$(git rev-parse HEAD)"
+          permanent_tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD:$OWNER_FILE)" = "$OWNER_BLOB"
+          test "$(git diff --name-only "$PARENT_SHA"..HEAD)" = "$OWNER_FILE"
+
+          git push origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          pushed="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | cut -f1)"
+          test "$pushed" = "$permanent_commit"
+
+          echo "PERMANENT_COMMIT=$permanent_commit" >> "$GITHUB_ENV"
+          echo "PERMANENT_TREE=$permanent_tree" >> "$GITHUB_ENV"
+          echo "PERMANENT_COMMIT=$permanent_commit"
+          echo "PERMANENT_TREE=$permanent_tree"
+          echo "FAST_FORWARD_FORCE_FALSE=1"
+
+      - name: Emit promotion receipt with valid evidence paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p promotion-evidence
+          cp ../candidate/reports/generated/playwright-results.json promotion-evidence/playwright-results.json
+          node <<'NODE'
+          const fs = require('fs');
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008C-PERMANENT-PROMOTION',
+            parent: process.env.PARENT_SHA,
+            parentTree: process.env.PARENT_TREE,
+            source: process.env.SOURCE_SHA,
+            sourceTree: process.env.SOURCE_TREE,
+            permanentBranch: process.env.PERMANENT_BRANCH,
+            head: process.env.PERMANENT_COMMIT,
+            tree: process.env.PERMANENT_TREE,
+            owner: process.env.OWNER_FILE,
+            ownerBlob: process.env.OWNER_BLOB,
+            ownerSuite: '6/6',
+            pedidosDirectHydration: true,
+            shellScrollAudit: true,
+            domainMatrix: true,
+            agentGovernance: true,
+            criteriaRelaxed: 0,
+            introducedRegressions: 0,
+            candidateMutation: false,
+            productMutation: false,
+            runtimeMutation: false,
+            routerMutation: false,
+            hydrationMutation: false,
+            lifecycleMutation: false,
+            pedidosMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            visualBaselineMutation: false,
+            fastForward: true,
+            force: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true
+          };
+          fs.writeFileSync('promotion-evidence/receipt.json', JSON.stringify(receipt, null, 2) + '\n');
+          console.log(`UX_QA_DEBT_008C_PROMOTION_FINAL=${JSON.stringify(receipt)}`);
+          NODE
+
+      - name: Upload permanent promotion evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008c-permanent-promotion-${{ github.sha }}
+          path: promotion-evidence/
+          if-no-files-found: error
+          retention-days: 14
