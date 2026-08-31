@@ -6,6 +6,8 @@ on:
       - com/com-001-baseline-audit
     paths:
       - 'backend/modules/communities/community-command-post-idempotency-domain-authority-projection-readiness.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/com-b02cv-repository-only-post-idempotency-domain-authority-projection-readiness.yml'
 
 permissions:
@@ -18,7 +20,12 @@ jobs:
     env:
       PREDECESSOR_HEAD: 7a2b8ba4c4985ed194691f4915f62352acfa63ea
       PREDECESSOR_TREE: e8cea4af5e5b1098c08b2a9dfbcf2ce10b45fd12
+      CANDIDATE_HEAD: 8c6a41934a6867fd2a07f0067a70215ad4db3af4
+      CANDIDATE_TREE: fecdb50e60f7b0a54f8f08f94923b5207ef87683
+      MATRIX_DERIVATIVE_HEAD: b1fff99d9acba319c4aa70e1b7fab19c0e78d1db
+      MATRIX_DERIVATIVE_TREE: 0f9fed6d056c61e41d77119232b76a8dbe79cb4e
       SOURCE: backend/modules/communities/community-command-post-idempotency-domain-authority-projection-readiness.js
+      SOURCE_BLOB: 72b2f1a245fde755589b22762f64c220e9686312
       WORKFLOW: .github/workflows/com-b02cv-repository-only-post-idempotency-domain-authority-projection-readiness.yml
       B02CU_SOURCE: backend/shared/http/repository-only-route-begin-dispatcher.js
       B02CU_SOURCE_BLOB: de9cfabfba07979c981af1409c95be162315c362
@@ -40,32 +47,35 @@ jobs:
       STAGING_API_RUNTIME_BLOB: 69de100fe3a269507a0da7847ae8e9887f831ceb
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
-      MATRIX_DERIVATIVE: docs/DOMAIN-COMPLETION-MATRIX.md
-      MATRIX_DERIVATIVE_BLOB: 17cfe628187244c79305d3fe3415509e9111265d
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_MD_BLOB: 54c99900b0e0b448485feacfe679996e7f9a3b36
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_REPORT_BLOB: 8861671202430572189447fe41419d3c779ed210
 
     steps:
-      - name: Checkout exact candidate head
+      - name: Checkout exact certification head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Freeze predecessor, dependencies and exact persistent scope
+      - name: Freeze candidate, Matrix derivatives, dependencies and exact reconciled scope
         shell: bash
         run: |
           set -euo pipefail
 
-          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse HEAD^)" = "$MATRIX_DERIVATIVE_HEAD"
+          test "$(git rev-parse "$MATRIX_DERIVATIVE_HEAD^{tree}")" = "$MATRIX_DERIVATIVE_TREE"
+          test "$(git rev-parse "$MATRIX_DERIVATIVE_HEAD^")" = "$CANDIDATE_HEAD"
+          test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$CANDIDATE_HEAD^")" = "$PREDECESSOR_HEAD"
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
 
           ! git cat-file -e "$PREDECESSOR_HEAD:$SOURCE" 2>/dev/null
           ! git cat-file -e "$PREDECESSOR_HEAD:$WORKFLOW" 2>/dev/null
 
-          actual="$(git diff --name-status "$PREDECESSOR_HEAD" HEAD | sort)"
-          expected="$(printf 'A\t%s\nA\t%s\n' "$SOURCE" "$WORKFLOW" | sort)"
-          test "$actual" = "$expected"
-
+          test "$(git rev-parse HEAD:$SOURCE)" = "$SOURCE_BLOB"
           test "$(git rev-parse HEAD:$B02CU_SOURCE)" = "$B02CU_SOURCE_BLOB"
           test "$(git rev-parse HEAD:$B02CU_WORKFLOW)" = "$B02CU_WORKFLOW_BLOB"
           test "$(git rev-parse HEAD:$B02L)" = "$B02L_BLOB"
@@ -76,7 +86,23 @@ jobs:
           test "$(git rev-parse HEAD:$ROUTE_HANDLERS)" = "$ROUTE_HANDLERS_BLOB"
           test "$(git rev-parse HEAD:$STAGING_API_RUNTIME)" = "$STAGING_API_RUNTIME_BLOB"
           test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
-          test "$(git rev-parse HEAD:$MATRIX_DERIVATIVE)" = "$MATRIX_DERIVATIVE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_MD)" = "$MATRIX_MD_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_REPORT)" = "$MATRIX_REPORT_BLOB"
+
+          candidate_expected="$(printf '%s\n' "$SOURCE" "$WORKFLOW" | sort)"
+          candidate_actual="$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)"
+          test "$candidate_actual" = "$candidate_expected"
+
+          derivative_expected="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          derivative_actual="$(git diff --name-only "$CANDIDATE_HEAD" "$MATRIX_DERIVATIVE_HEAD" | sort)"
+          test "$derivative_actual" = "$derivative_expected"
+
+          reconciliation_actual="$(git diff --name-only "$MATRIX_DERIVATIVE_HEAD" HEAD | sort)"
+          test "$reconciliation_actual" = "$WORKFLOW"
+
+          final_expected="$(printf '%s\n' "$SOURCE" "$WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          final_actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$final_actual" = "$final_expected"
 
           git diff --check "$PREDECESSOR_HEAD" HEAD
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
