@@ -1,0 +1,213 @@
+name: TEMP UX-QA-DEBT-008C C1 Certifier R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008c-c1-certifier-r1
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze C1 and detach exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT='c7e4e94a772e64ed57472dd0db9a9301de4f9993'
+          CANDIDATE='1f90dcce85f87cebd2c5905cb11200aec36780cd'
+          CANDIDATE_TREE='599517aaada895d09dd5791009b096282efeeb1a'
+          OWNER='tests/e2e/stable-shell-transition-contract.spec.js'
+          OWNER_BLOB='ba16c3465df6c65f714a2c1e11f2500a2b3f9c40'
+          TEMP_PATH='.github/workflows/0000-temp-ux-qa-debt-008c-c1-certifier-r1.yml'
+
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
+          test "$(git rev-parse "$CANDIDATE^")" = "$PARENT"
+          test "$(git show -s --format=%T "$CANDIDATE")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$CANDIDATE:$OWNER")" = "$OWNER_BLOB"
+          test "$(git diff --name-only "$CANDIDATE"..HEAD)" = "$TEMP_PATH"
+
+          changed="$(git diff --name-only "$PARENT".."$CANDIDATE")"
+          test "$changed" = "$OWNER"
+
+          git checkout --detach "$CANDIDATE"
+          git reset --hard "$CANDIDATE"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git show -s --format=%T HEAD)" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "HEAD:$OWNER")" = "$OWNER_BLOB"
+          test -z "$(git status --porcelain)"
+
+          echo 'FREEZE=PASS'
+          echo "PARENT=$PARENT"
+          echo "CANDIDATE=$CANDIDATE"
+          echo "CANDIDATE_TREE=$CANDIDATE_TREE"
+          echo "OWNER_BLOB=$OWNER_BLOB"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run frozen governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT='c7e4e94a772e64ed57472dd0db9a9301de4f9993'
+          CANDIDATE='1f90dcce85f87cebd2c5905cb11200aec36780cd'
+          OWNER='tests/e2e/stable-shell-transition-contract.spec.js'
+
+          node --check "$OWNER"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:shell-router-scroll-reset
+          git diff --check "$PARENT".."$CANDIDATE"
+
+          changed="$(git diff --name-only "$PARENT".."$CANDIDATE")"
+          test "$changed" = "$OWNER"
+
+          git diff --quiet "$PARENT".."$CANDIDATE" -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --quiet "$PARENT".."$CANDIDATE" -- docs/validation/domain-completion-staging-snapshot.json
+          git diff --quiet "$PARENT".."$CANDIDATE" -- tests/visual reports/baseline
+
+          git diff --quiet HEAD -- \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            docs/validation/domain-completion-staging-snapshot.json \
+            tests/e2e/stable-shell-transition-contract.spec.js \
+            tests/visual reports/baseline
+
+          git reset --hard "$CANDIDATE"
+          git clean -fd -- reports/generated test-results || true
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test -z "$(git status --porcelain)"
+
+          echo 'NODE_CHECK=PASS'
+          echo 'DOMAIN_MATRIX=PASS'
+          echo 'AGENT_GOVERNANCE=PASS'
+          echo 'SHELL_SCROLL_AUDIT=PASS'
+          echo 'DIFF_CHECK=PASS'
+          echo 'SCOPE_IMMUTABILITY=PASS'
+
+      - name: Run complete 008C owner suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          node node_modules/@playwright/test/cli.js test tests/e2e/stable-shell-transition-contract.spec.js
+
+      - name: Confirm Pedidos direct-hydration PASS and emit receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/generated
+          node <<'NODE'
+          const fs = require('fs');
+          const reportPath = 'reports/generated/playwright-results.json';
+          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+          const target = 'slow data route preserves the previous page until direct hydration can commit';
+          const specs = [];
+          const walk = (node) => {
+            if (!node || typeof node !== 'object') return;
+            if (Array.isArray(node)) return node.forEach(walk);
+            if (typeof node.title === 'string' && Array.isArray(node.tests)) specs.push(node);
+            for (const value of Object.values(node)) walk(value);
+          };
+          walk(report.suites || []);
+          const matches = specs.filter((spec) => spec.title === target || spec.titlePath?.includes?.(target));
+          if (matches.length !== 1) {
+            throw new Error(`Expected exactly one Pedidos direct-hydration spec, found ${matches.length}`);
+          }
+          const statuses = matches[0].tests.flatMap((test) => (test.results || []).map((result) => result.status));
+          if (!statuses.includes('passed')) {
+            throw new Error(`Pedidos direct-hydration did not pass: ${JSON.stringify(statuses)}`);
+          }
+          const allTests = specs.flatMap((spec) => spec.tests || []);
+          const finalStatuses = allTests.map((test) => {
+            const results = test.results || [];
+            return results.length ? results[results.length - 1].status : 'unknown';
+          });
+          const failed = finalStatuses.filter((status) => status !== 'passed' && status !== 'skipped').length;
+          if (failed !== 0) throw new Error(`Owner suite contains ${failed} non-passing final result(s)`);
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008C-C1-CERTIFIER-R1',
+            parent: 'c7e4e94a772e64ed57472dd0db9a9301de4f9993',
+            candidate: '1f90dcce85f87cebd2c5905cb11200aec36780cd',
+            candidateTree: '599517aaada895d09dd5791009b096282efeeb1a',
+            owner: 'tests/e2e/stable-shell-transition-contract.spec.js',
+            ownerBlob: 'ba16c3465df6c65f714a2c1e11f2500a2b3f9c40',
+            pedidosDirectHydration: true,
+            ownerSuiteTests: finalStatuses.length,
+            ownerSuiteNonPassing: failed,
+            nodeCheck: true,
+            domainMatrix: true,
+            agentGovernance: true,
+            shellScrollAudit: true,
+            diffCheck: true,
+            candidateMutation: false,
+            productMutation: false,
+            runtimeMutation: false,
+            routerMutation: false,
+            hydrationMutation: false,
+            lifecycleMutation: false,
+            pedidosMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            visualBaselineMutation: false,
+            permanentBranchCreated: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true
+          };
+          fs.writeFileSync('reports/generated/ux-qa-debt-008c-c1-certifier-receipt.json', JSON.stringify(receipt, null, 2) + '\n');
+          console.log(`PEDIDOS_DIRECT_HYDRATION=PASS`);
+          console.log(`OWNER_SUITE_TESTS=${finalStatuses.length}`);
+          console.log(`UX_QA_DEBT_008C_C1_CERTIFIER_FINAL=${JSON.stringify(receipt)}`);
+          NODE
+
+      - name: Prove candidate remained immutable
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE='1f90dcce85f87cebd2c5905cb11200aec36780cd'
+          CANDIDATE_TREE='599517aaada895d09dd5791009b096282efeeb1a'
+          OWNER='tests/e2e/stable-shell-transition-contract.spec.js'
+          OWNER_BLOB='ba16c3465df6c65f714a2c1e11f2500a2b3f9c40'
+
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git show -s --format=%T HEAD)" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "HEAD:$OWNER")" = "$OWNER_BLOB"
+          git diff --quiet HEAD --
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+          echo 'POST_E2E_IMMUTABILITY=PASS'
+
+      - name: Upload C1 certifier evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008c-c1-certifier-${{ github.sha }}
+          path: |
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            reports/generated/ux-qa-debt-008c-c1-certifier-receipt.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
