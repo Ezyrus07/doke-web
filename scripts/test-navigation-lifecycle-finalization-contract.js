@@ -40,11 +40,21 @@ for (const file of directFiles) {
   assert(!/(?:window\.)?location\.(?:href\s*=|assign\s*\(|replace\s*\()\s*['"`](?:\.\.\/)?[^'"`]*\.html/.test(source), `${file}: direct internal document mutation remains`);
 }
 
-for (const file of ['auth/login.html', 'auth/cadastro.html', 'auth/esqueci-senha.html']) {
+for (const file of ['auth/login.html', 'auth/cadastro.html']) {
   const html = read(file);
   const lifecycleIndex = html.indexOf('../assets/js/core/navigation-lifecycle.js');
   const authIndex = html.indexOf('../assets/js/pages/auth.js');
   assert(lifecycleIndex >= 0 && authIndex >= 0 && lifecycleIndex < authIndex, `${file}: lifecycle must load before auth controller`);
+}
+
+{
+  const file = 'auth/esqueci-senha.html';
+  const html = read(file);
+  const lifecycleIndex = html.indexOf('../assets/js/core/navigation-lifecycle.js');
+  const dedicatedAuthIndex = html.indexOf('../assets/js/pages/auth-password-pages.js');
+  const legacyAuthIndex = html.indexOf('../assets/js/pages/auth.js');
+  assert(lifecycleIndex >= 0 && dedicatedAuthIndex >= 0 && lifecycleIndex < dedicatedAuthIndex, `${file}: lifecycle must load before dedicated password controller`);
+  assert(legacyAuthIndex < 0, `${file}: legacy auth controller must remain absent`);
 }
 
 for (const file of [
