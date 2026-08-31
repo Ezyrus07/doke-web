@@ -1,0 +1,392 @@
+name: TEMP UX-QA-DEBT-008D Dedicated Recovery Controller Authority Proof R1
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008d-dedicated-recovery-authority-r1
+
+permissions:
+  contents: read
+
+jobs:
+  authority-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TOP_SHA: dd9bfa9c56ec8c338c8de5db8283ab8dd28f6fe3
+      TOP_TREE: 599517aaada895d09dd5791009b096282efeeb1a
+      HISTORICAL_REMOVAL_SHA: 12f8c6823e67b3ee591f8c6c002788b7c09483f2
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-008d-dedicated-recovery-authority-r1.yml
+      RECOVERY_HTML: auth/esqueci-senha.html
+      RECOVERY_HTML_BLOB: 72a2e1eb457349e64e6cbe81038d5e13aa6abd5e
+      CONTRACT_FILE: scripts/test-navigation-lifecycle-finalization-contract.js
+      CONTRACT_BLOB: 247d016d5dd4b68f8c24a2767958e1617aad771d
+      DEDICATED_CONTROLLER: assets/js/pages/auth-password-pages.js
+      DEDICATED_CONTROLLER_BLOB: 00fd71f58915a069405cc3bd1ea6ad9761dd8161
+      LEGACY_CONTROLLER: assets/js/pages/auth.js
+      LEGACY_CONTROLLER_BLOB: 651669cfadbb0652d395173e1cbfd6a48d512b78
+      LIFECYCLE_FILE: assets/js/core/navigation-lifecycle.js
+      LIFECYCLE_BLOB: 23aa36beb2929d4538b336e6670ee38e04057919
+      RECOVERY_EARLY_BLOB: 4773b55da8e0552d5266f984803830d6046c9aac
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+    steps:
+      - name: Checkout TEMP authority proof
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage, current authority, and historical removal
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$TOP_SHA" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA^{tree}")" == "$TOP_TREE" ]] || { echo 'Top TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+
+          [[ "$(git rev-parse "$TOP_SHA:$RECOVERY_HTML")" == "$RECOVERY_HTML_BLOB" ]] || { echo 'Recovery HTML drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:$CONTRACT_FILE")" == "$CONTRACT_BLOB" ]] || { echo 'Finalization contract drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:$DEDICATED_CONTROLLER")" == "$DEDICATED_CONTROLLER_BLOB" ]] || { echo 'Dedicated controller drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:$LEGACY_CONTROLLER")" == "$LEGACY_CONTROLLER_BLOB" ]] || { echo 'Legacy controller drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:$LIFECYCLE_FILE")" == "$LIFECYCLE_BLOB" ]] || { echo 'Lifecycle drift'; exit 1; }
+          [[ "$(git rev-parse "$TOP_SHA:assets/js/core/auth-recovery-state-early.js")" == "$RECOVERY_EARLY_BLOB" ]] || { echo 'Recovery early marker drift'; exit 1; }
+
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync(process.env.RECOVERY_HTML, 'utf8');
+          const lifecycle = html.indexOf('../assets/js/core/navigation-lifecycle.js');
+          const dedicated = html.indexOf('../assets/js/pages/auth-password-pages.js');
+          const legacy = html.indexOf('../assets/js/pages/auth.js');
+          if (!(lifecycle >= 0 && dedicated >= 0 && lifecycle < dedicated && legacy < 0)) {
+            throw new Error(JSON.stringify({ lifecycle, dedicated, legacy }));
+          }
+          console.log('CURRENT_RECOVERY_ORDER=PASS');
+          console.log('LEGACY_AUTH_CONTROLLER_ABSENT=PASS');
+          NODE
+
+          [[ "$(git show -s --format=%s "$HISTORICAL_REMOVAL_SHA")" == 'Remove legacy auth page controller from recovery route' ]] || { echo 'Historical commit title mismatch'; exit 1; }
+          git show "$HISTORICAL_REMOVAL_SHA^:$RECOVERY_HTML" | grep -F '../assets/js/pages/auth.js' >/dev/null
+          ! git show "$HISTORICAL_REMOVAL_SHA:$RECOVERY_HTML" | grep -F '../assets/js/pages/auth.js' >/dev/null
+          git diff "$HISTORICAL_REMOVAL_SHA^" "$HISTORICAL_REMOVAL_SHA" -- "$RECOVERY_HTML" | grep -F -- '-  <script src="../assets/js/pages/auth.js?v=20260718-real-auth-only-v1" defer></script>' >/dev/null
+          echo 'HISTORICAL_LEGACY_REMOVAL=PASS'
+          echo "TEMP_SHA=$head"
+          echo 'STACK_FREEZE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+
+      - name: Capture exact stale finalization-contract divergence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p authority-evidence
+          set +e
+          node "$CONTRACT_FILE" > authority-evidence/current-contract-output.txt 2>&1
+          status=$?
+          set -e
+          cat authority-evidence/current-contract-output.txt
+          [[ $status -ne 0 ]] || { echo 'Expected current contract to fail, but it passed'; exit 1; }
+          grep -F -- '- auth/esqueci-senha.html: lifecycle must load before auth controller' authority-evidence/current-contract-output.txt >/dev/null
+          [[ "$(grep -c '^- ' authority-evidence/current-contract-output.txt)" -eq 1 ]] || { echo 'Unexpected additional finalization-contract failures'; exit 1; }
+          echo 'CURRENT_CONTRACT_STALE_DIVERGENCE=PASS'
+
+      - name: Install browser dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run dedicated recovery controller browser proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/serve-static-site.js --host=127.0.0.1 --port=5500 > authority-evidence/server.log 2>&1 &
+          server_pid=$!
+          cleanup() {
+            kill "$server_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for i in $(seq 1 100); do
+            if curl -fsS http://127.0.0.1:5500/auth/esqueci-senha.html >/dev/null 2>&1; then break; fi
+            sleep 0.1
+          done
+          curl -fsS http://127.0.0.1:5500/auth/esqueci-senha.html >/dev/null
+
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { chromium } = require('playwright');
+
+          const assert = (condition, message, detail) => {
+            if (!condition) throw new Error(`${message}${detail ? ` :: ${JSON.stringify(detail)}` : ''}`);
+          };
+
+          const installInstrumentation = async (page) => {
+            await page.addInitScript(() => {
+              window.__qa008d = {
+                registrations: { request: 0, reset: 0 },
+                lifecycleAtRegistration: { request: [], reset: [] },
+                calls: { request: 0, initialize: 0, complete: 0 },
+                preloaderHiddenObserved: false,
+                preloaderReplayAfterHidden: false,
+                sampling: true
+              };
+
+              const originalAdd = EventTarget.prototype.addEventListener;
+              EventTarget.prototype.addEventListener = function(type, listener, options) {
+                if (type === 'submit' && this instanceof HTMLFormElement) {
+                  const lifecyclePresent = Boolean(window.Doke?.navigationLifecycle);
+                  if (this.matches('[data-auth-password-recovery]')) {
+                    window.__qa008d.registrations.request += 1;
+                    window.__qa008d.lifecycleAtRegistration.request.push(lifecyclePresent);
+                  }
+                  if (this.matches('[data-auth-password-reset]')) {
+                    window.__qa008d.registrations.reset += 1;
+                    window.__qa008d.lifecycleAtRegistration.reset.push(lifecyclePresent);
+                  }
+                }
+                return originalAdd.call(this, type, listener, options);
+              };
+
+              const visible = (node) => {
+                if (!node || node.hidden) return false;
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== 'none'
+                  && style.visibility !== 'hidden'
+                  && Number(style.opacity || 1) > 0
+                  && rect.width > 0
+                  && rect.height > 0;
+              };
+
+              const sample = () => {
+                if (!window.__qa008d?.sampling) return;
+                const preloader = document.querySelector('[data-doke-document-preloader]');
+                if (preloader) {
+                  const isVisible = visible(preloader);
+                  if (!isVisible) window.__qa008d.preloaderHiddenObserved = true;
+                  else if (window.__qa008d.preloaderHiddenObserved) window.__qa008d.preloaderReplayAfterHidden = true;
+                }
+                requestAnimationFrame(sample);
+              };
+              requestAnimationFrame(sample);
+            });
+          };
+
+          const installServiceStubs = async (page, counters) => {
+            page.on('request', request => {
+              const url = request.url();
+              if (/\/assets\/js\/pages\/auth\.js(?:\?|$)/.test(url)) counters.legacyRequests += 1;
+              if (/\/assets\/js\/pages\/auth-password-pages\.js(?:\?|$)/.test(url)) counters.dedicatedRequests += 1;
+            });
+
+            await page.route('https://cdn.jsdelivr.net/**', route => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript',
+              body: 'window.supabase={createClient:function(){return {};}};'
+            }));
+            await page.route('**/assets/js/core/supabase-config.js*', route => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript',
+              body: 'window.DokeSupabase=window.DokeSupabase||{};'
+            }));
+            await page.route('**/assets/js/repositories/users-repository.js*', route => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript',
+              body: 'window.DokeUsersRepository=window.DokeUsersRepository||{};'
+            }));
+            await page.route('**/assets/js/services/auth-service.js*', route => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript',
+              body: `window.DokeAuth={
+                requestPasswordRecovery:async function(payload){window.__qa008d.calls.request+=1;return {message:'synthetic recovery accepted',payload:payload};},
+                initializePasswordRecovery:async function(){window.__qa008d.calls.initialize+=1;return {active:true};},
+                completePasswordRecovery:async function(payload){window.__qa008d.calls.complete+=1;return {ok:true,payload:payload};},
+                passwordAuthority:{isStrongPassword:function(){return true;}}
+              };`
+            }));
+            await page.route('**/assets/js/services/auth-session-authority.js*', route => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript',
+              body: 'window.DokeAuth=window.DokeAuth||{};'
+            }));
+            await page.route('**/assets/js/services/auth-password-authority.js*', route => route.fulfill({
+              status: 200,
+              contentType: 'application/javascript',
+              body: 'window.DokeAuth=window.DokeAuth||{};window.DokeAuth.passwordAuthority=window.DokeAuth.passwordAuthority||{isStrongPassword:function(){return true;}};'
+            }));
+          };
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+            const proof = { request: {}, reset: {}, pageErrors: [] };
+
+            const requestPage = await context.newPage();
+            requestPage.on('pageerror', error => proof.pageErrors.push(`request:${error.message}`));
+            const requestCounters = { legacyRequests: 0, dedicatedRequests: 0 };
+            await installInstrumentation(requestPage);
+            await installServiceStubs(requestPage, requestCounters);
+            await requestPage.goto('http://127.0.0.1:5500/auth/esqueci-senha.html', { waitUntil: 'load' });
+            await requestPage.waitForFunction(() => Boolean(window.Doke?.navigationLifecycle));
+            await requestPage.waitForFunction(() => window.__qa008d.registrations.request === 1);
+            await requestPage.waitForFunction(() => window.__qa008d.preloaderHiddenObserved === true);
+
+            await requestPage.fill('#recovery-email', 'qa008d@example.test');
+            await requestPage.click('[data-auth-password-recovery] [data-auth-submit]');
+            await requestPage.waitForFunction(() => window.__qa008d.calls.request === 1);
+            await requestPage.waitForFunction(() => document.querySelector('[data-auth-password-recovery]')?.dataset.authRecoveryRequested === 'true');
+            await requestPage.waitForTimeout(100);
+            await requestPage.evaluate(() => { window.__qa008d.sampling = false; });
+
+            proof.request = await requestPage.evaluate(() => ({
+              registrations: window.__qa008d.registrations,
+              lifecycleAtRegistration: window.__qa008d.lifecycleAtRegistration,
+              calls: window.__qa008d.calls,
+              preloaderHiddenObserved: window.__qa008d.preloaderHiddenObserved,
+              preloaderReplayAfterHidden: window.__qa008d.preloaderReplayAfterHidden,
+              lifecycleVersion: document.documentElement.dataset.dokeLifecycleVersion || '',
+              recoveryRequested: document.querySelector('[data-auth-password-recovery]')?.dataset.authRecoveryRequested || ''
+            }));
+            proof.request.legacyRequests = requestCounters.legacyRequests;
+            proof.request.dedicatedRequests = requestCounters.dedicatedRequests;
+
+            assert(proof.request.registrations.request === 1, 'Request form did not receive exactly one submit handler', proof.request);
+            assert(proof.request.lifecycleAtRegistration.request.length === 1 && proof.request.lifecycleAtRegistration.request[0] === true, 'Lifecycle was not available when request handler registered', proof.request);
+            assert(proof.request.calls.request === 1, 'Request submit did not call recovery service exactly once', proof.request);
+            assert(proof.request.legacyRequests === 0, 'Legacy auth.js was requested on recovery page', proof.request);
+            assert(proof.request.dedicatedRequests === 1, 'Dedicated recovery controller was not requested exactly once', proof.request);
+            assert(proof.request.preloaderHiddenObserved === true && proof.request.preloaderReplayAfterHidden === false, 'Document preloader replayed during recovery request', proof.request);
+            assert(Boolean(proof.request.lifecycleVersion), 'Lifecycle dataset version missing on recovery request page', proof.request);
+
+            const resetPage = await context.newPage();
+            resetPage.on('pageerror', error => proof.pageErrors.push(`reset:${error.message}`));
+            const resetCounters = { legacyRequests: 0, dedicatedRequests: 0 };
+            await installInstrumentation(resetPage);
+            await installServiceStubs(resetPage, resetCounters);
+            await resetPage.goto('http://127.0.0.1:5500/auth/esqueci-senha.html?type=recovery&code=synthetic&mode=reset', { waitUntil: 'load' });
+            await resetPage.waitForFunction(() => Boolean(window.Doke?.navigationLifecycle));
+            await resetPage.waitForFunction(() => window.__qa008d.registrations.reset === 1);
+            await resetPage.waitForFunction(() => window.__qa008d.calls.initialize === 1);
+            await resetPage.waitForFunction(() => !document.querySelector('[data-auth-reset-fields]')?.hidden);
+            await resetPage.waitForFunction(() => window.__qa008d.preloaderHiddenObserved === true);
+
+            await resetPage.fill('#reset-password', 'StrongPass1!');
+            await resetPage.fill('#reset-password-confirmation', 'StrongPass1!');
+            await resetPage.click('[data-auth-password-reset] [data-auth-submit]');
+            await resetPage.waitForFunction(() => window.__qa008d.calls.complete === 1);
+            await resetPage.waitForTimeout(100);
+            await resetPage.evaluate(() => { window.__qa008d.sampling = false; });
+
+            proof.reset = await resetPage.evaluate(() => ({
+              registrations: window.__qa008d.registrations,
+              lifecycleAtRegistration: window.__qa008d.lifecycleAtRegistration,
+              calls: window.__qa008d.calls,
+              preloaderHiddenObserved: window.__qa008d.preloaderHiddenObserved,
+              preloaderReplayAfterHidden: window.__qa008d.preloaderReplayAfterHidden,
+              lifecycleVersion: document.documentElement.dataset.dokeLifecycleVersion || '',
+              boot: window.DOKE_AUTH_RECOVERY_BOOT || null,
+              resetFieldsHidden: Boolean(document.querySelector('[data-auth-reset-fields]')?.hidden)
+            }));
+            proof.reset.legacyRequests = resetCounters.legacyRequests;
+            proof.reset.dedicatedRequests = resetCounters.dedicatedRequests;
+
+            assert(proof.reset.registrations.reset === 1, 'Reset form did not receive exactly one submit handler', proof.reset);
+            assert(proof.reset.lifecycleAtRegistration.reset.length === 1 && proof.reset.lifecycleAtRegistration.reset[0] === true, 'Lifecycle was not available when reset handler registered', proof.reset);
+            assert(proof.reset.calls.initialize === 1, 'Reset context did not initialize exactly once', proof.reset);
+            assert(proof.reset.calls.complete === 1, 'Reset submit did not complete exactly once', proof.reset);
+            assert(proof.reset.legacyRequests === 0, 'Legacy auth.js was requested on reset page', proof.reset);
+            assert(proof.reset.dedicatedRequests === 1, 'Dedicated recovery controller was not requested exactly once on reset page', proof.reset);
+            assert(proof.reset.preloaderHiddenObserved === true && proof.reset.preloaderReplayAfterHidden === false, 'Document preloader replayed during password reset', proof.reset);
+            assert(Boolean(proof.reset.lifecycleVersion), 'Lifecycle dataset version missing on reset page', proof.reset);
+            assert(proof.reset.boot?.requested === true, 'Canonical early recovery marker did not recognize synthetic recovery intent', proof.reset);
+            assert(proof.pageErrors.length === 0, 'Browser page errors were observed', proof.pageErrors);
+
+            fs.writeFileSync('authority-evidence/browser-proof.json', JSON.stringify(proof, null, 2) + '\n');
+            console.log(`RECOVERY_REQUEST_HANDLER=1/1`);
+            console.log(`RECOVERY_RESET_HANDLER=1/1`);
+            console.log(`RECOVERY_REQUEST_CALL=1/1`);
+            console.log(`RECOVERY_RESET_INITIALIZE=1/1`);
+            console.log(`RECOVERY_RESET_COMPLETE=1/1`);
+            console.log(`LIFECYCLE_PRESENT_AT_HANDLER_REGISTRATION=PASS`);
+            console.log(`LEGACY_AUTH_JS_REQUESTS=0`);
+            console.log(`DEDICATED_CONTROLLER_REQUESTS=2/2`);
+            console.log(`DOCUMENT_PRELOADER_REPLAY=0`);
+            console.log(`BROWSER_PAGE_ERRORS=0`);
+
+            await browser.close();
+          })().catch(error => {
+            console.error(error.stack || error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Prove post-probe immutability and emit receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse "$TOP_SHA:$RECOVERY_HTML")" == "$RECOVERY_HTML_BLOB" ]]
+          [[ "$(git rev-parse "$TOP_SHA:$CONTRACT_FILE")" == "$CONTRACT_BLOB" ]]
+          [[ "$(git rev-parse "$TOP_SHA:$DEDICATED_CONTROLLER")" == "$DEDICATED_CONTROLLER_BLOB" ]]
+          [[ "$(git rev-parse "$TOP_SHA:$LEGACY_CONTROLLER")" == "$LEGACY_CONTROLLER_BLOB" ]]
+          [[ "$(git rev-parse "$TOP_SHA:$LIFECYCLE_FILE")" == "$LIFECYCLE_BLOB" ]]
+          git diff --quiet
+          [[ -z "$(git status --porcelain --untracked-files=no)" ]]
+          mapfile -t delta < <(git diff --name-only "$TOP_SHA"..HEAD)
+          [[ ${#delta[@]} -eq 1 && "${delta[0]}" == "$WORKFLOW_PATH" ]]
+
+          node <<'NODE'
+          const fs = require('fs');
+          const browser = JSON.parse(fs.readFileSync('authority-evidence/browser-proof.json', 'utf8'));
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008D-DEDICATED-RECOVERY-AUTHORITY-PROOF-R1',
+            top: process.env.TOP_SHA,
+            topTree: process.env.TOP_TREE,
+            historicalRemoval: process.env.HISTORICAL_REMOVAL_SHA,
+            recoveryHtmlBlob: process.env.RECOVERY_HTML_BLOB,
+            contractBlob: process.env.CONTRACT_BLOB,
+            dedicatedControllerBlob: process.env.DEDICATED_CONTROLLER_BLOB,
+            legacyControllerBlob: process.env.LEGACY_CONTROLLER_BLOB,
+            lifecycleBlob: process.env.LIFECYCLE_BLOB,
+            historicalLegacyRemoval: true,
+            currentContractDivergenceCaptured: true,
+            lifecycleBeforeDedicatedController: true,
+            requestHandlerRegistrations: browser.request.registrations.request,
+            requestServiceCalls: browser.request.calls.request,
+            resetHandlerRegistrations: browser.reset.registrations.reset,
+            resetInitializeCalls: browser.reset.calls.initialize,
+            resetCompleteCalls: browser.reset.calls.complete,
+            legacyAuthRequests: browser.request.legacyRequests + browser.reset.legacyRequests,
+            dedicatedControllerRequests: browser.request.dedicatedRequests + browser.reset.dedicatedRequests,
+            documentPreloaderReplay: false,
+            browserPageErrors: browser.pageErrors.length,
+            candidateMaterialized: false,
+            htmlMutation: false,
+            jsMutation: false,
+            contractMutation: false,
+            productMutation: false,
+            authSemanticsMutation: false,
+            runtimeMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            visualBaselineMutation: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true
+          };
+          fs.writeFileSync('authority-evidence/receipt.json', JSON.stringify(receipt, null, 2) + '\n');
+          console.log(`UX_QA_DEBT_008D_AUTHORITY_PROOF_FINAL=${JSON.stringify(receipt)}`);
+          NODE
+          echo 'POST_PROBE_IMMUTABILITY=PASS'
+
+      - name: Upload authority proof evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008d-authority-proof-${{ github.sha }}
+          path: authority-evidence/
+          if-no-files-found: error
+          retention-days: 14
