@@ -1,0 +1,450 @@
+name: TEMP UX-QA-DEBT-008F Messages Desktop Header Source R1b
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008f-messages-desktop-header-source-r1b
+
+permissions:
+  contents: read
+
+jobs:
+  source-ownership-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PARENT: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PARENT_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-source-r1b.yml
+      MESSAGES_HTML_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      CHAT_RESPONSIVE_BLOB: 4a77ff3f0a9befd89a8294be65d014a5eddb7b6c
+      MESSAGING_RUNTIME_CHAT_BLOB: 225939d37e493d4f7d3ae3349e75866a5196a94b
+      GLOBAL_LAYOUT_TEST_BLOB: 3ac328c5722da0cd593003f01422546337c01116
+      GLOBAL_LAYOUT_DOC_BLOB: 47f39b3e1f2f4fc1e23e027f2aad1b4ca2bc6b00
+      SHARED_HEADER_AUDIT_BLOB: 5829a86b326061c39d466f28a102b530343049a7
+
+    steps:
+      - name: Checkout TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze reachable TEMP scope and current-stack authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-list --count "$PARENT"..HEAD)" = "1"
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          remote_parent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_parent" = "$PARENT"
+
+          test "$(git rev-parse "$PARENT:mensagens.html")" = "$MESSAGES_HTML_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/chat-responsive-state.css")" = "$CHAT_RESPONSIVE_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/messaging-runtime-chat.css")" = "$MESSAGING_RUNTIME_CHAT_BLOB"
+          test "$(git rev-parse "$PARENT:tests/e2e/global-layout-contract.spec.js")" = "$GLOBAL_LAYOUT_TEST_BLOB"
+          test "$(git rev-parse "$PARENT:docs/GLOBAL-LAYOUT-CONTRACT.md")" = "$GLOBAL_LAYOUT_DOC_BLOB"
+          test "$(git rev-parse "$PARENT:scripts/audit-shared-app-header-contract.js")" = "$SHARED_HEADER_AUDIT_BLOB"
+
+      - name: Checkout frozen parent detached
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT"
+          git reset --hard "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static source and authority proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check tests/e2e/global-layout-contract.spec.js
+          node scripts/audit-shared-app-header-contract.js
+          node <<'NODE'
+          const fs = require('fs');
+          const css = fs.readFileSync('assets/css/pages/chat-responsive-state.css', 'utf8');
+          const runtime = fs.readFileSync('assets/css/pages/messaging-runtime-chat.css', 'utf8');
+          const html = fs.readFileSync('mensagens.html', 'utf8');
+          const doc = fs.readFileSync('docs/GLOBAL-LAYOUT-CONTRACT.md', 'utf8');
+          const audit = fs.readFileSync('scripts/audit-shared-app-header-contract.js', 'utf8');
+
+          const baseRule = /body:is\(\[data-page="mensagens"\], \[data-page="comunidade-interna"\]\)\s*>\s*\.app-shell\s*>\s*\.page\s*>\s*\.chat-list-app-header\s*\{\s*display:\s*none;\s*\}/m;
+          if (!baseRule.test(css)) throw new Error('canonical chat-list desktop display:none rule missing');
+          if (!/@media\s*\(max-width:\s*1180px\)/.test(css)) throw new Error('1180px compact override boundary missing');
+          if (!/\.chat-list-app-header\s*\{[\s\S]*?display:\s*flex;/m.test(css)) throw new Error('compact display:flex override missing');
+          if (!runtime.includes('./chat-responsive-state.css?v=20260618-chat-global-page-contract-v2')) throw new Error('messaging runtime no longer imports chat responsive state');
+          if (!runtime.includes('../layout/header.css?v=20260715-control-elevation-scope-v1')) throw new Error('messaging runtime no longer imports shared header authority');
+          if (!/data-page="mensagens"/.test(html) || !/data-app-header/.test(html) || !/data-header-variant="contextual"/.test(html)) throw new Error('Mensagens contextual app-header markup drift');
+          if (!doc.includes('Toda página ativa que renderiza `.app-header` deve participar da matriz')) throw new Error('global header authority statement drift');
+          if (!doc.includes('`comunidade-interna.html` | workspace de conversa em tela inteira')) throw new Error('approved documented workspace exception drift');
+          if (!audit.includes("'mensagens.html': { variant: 'contextual', context: true }")) throw new Error('Mensagens missing from shared header audit matrix');
+          if (!audit.includes("'comunidade-interna.html': 'full-height conversation workspace with its own thread headers'")) throw new Error('approved workspace exception drift');
+          console.log('008F static source ownership: PASS');
+          NODE
+
+      - name: Governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT"..HEAD
+          git reset --hard "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Current-stack browser source-ownership proof
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1b-browser.json
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 > "${RUNNER_TEMP}/ux-qa-debt-008f-r1b-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null
+
+          cat > "${RUNNER_TEMP}/ux-qa-debt-008f-r1b-probe.cjs" <<'NODE'
+          const fs = require('fs');
+          const { chromium } = require('@playwright/test');
+
+          const baseURL = 'http://127.0.0.1:4173';
+          const authenticatedSession = {
+            provider: 'mock',
+            sessionStatus: 'active',
+            accountStatus: 'active',
+            user: {
+              id: 'ux-qa-debt-008f-r1b',
+              role: 'client',
+              name: 'Cliente 008F',
+              email: 'qa008f@example.test',
+              accountStatus: 'active',
+            },
+          };
+
+          async function prepareContext(browser) {
+            const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+            const blockedRemoteRequests = [];
+            await context.route('**/*', async (route) => {
+              const request = route.request();
+              const url = new URL(request.url());
+              if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') return route.continue();
+              if (url.hostname === 'fonts.googleapis.com') {
+                return route.fulfill({ status: 200, contentType: 'text/css; charset=utf-8', body: '' });
+              }
+              if (url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'unpkg.com') {
+                return route.fulfill({ status: 200, contentType: 'application/javascript; charset=utf-8', body: '' });
+              }
+              blockedRemoteRequests.push(request.url());
+              return route.abort();
+            });
+            await context.addInitScript((session) => {
+              localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+            }, authenticatedSession);
+            return { context, blockedRemoteRequests };
+          }
+
+          async function waitForSettled(page) {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.waitForFunction(() => document.body && document.body.dataset.page, null, { timeout: 5000 }).catch(() => {});
+            await page.waitForFunction(() => {
+              const state = document.querySelector('[data-messages-page]')?.getAttribute('data-view-state');
+              return state && state !== 'loading';
+            }, null, { timeout: 5000 }).catch(() => {});
+            await page.waitForTimeout(350);
+          }
+
+          async function inspectDirect(page) {
+            return page.evaluate(() => {
+              const header = document.querySelector('[data-app-header]');
+              if (!header) return { headerPresent: false };
+
+              const matched = [];
+              let causalRule = null;
+
+              function walkSheet(sheet, conditions = []) {
+                let rules;
+                try { rules = sheet.cssRules; } catch { return; }
+                if (!rules) return;
+                for (const rule of rules) {
+                  if (rule.type === CSSRule.IMPORT_RULE && rule.styleSheet) {
+                    walkSheet(rule.styleSheet, conditions);
+                    continue;
+                  }
+                  if (rule.type === CSSRule.MEDIA_RULE) {
+                    const condition = { type: 'media', text: rule.conditionText, matches: matchMedia(rule.conditionText).matches };
+                    walkRules(rule.cssRules, sheet.href, [...conditions, condition]);
+                    continue;
+                  }
+                  if (rule.cssRules) {
+                    walkRules(rule.cssRules, sheet.href, conditions);
+                    continue;
+                  }
+                  inspectRule(rule, sheet.href, conditions);
+                }
+              }
+
+              function walkRules(rules, href, conditions = []) {
+                if (!rules) return;
+                for (const rule of rules) {
+                  if (rule.type === CSSRule.IMPORT_RULE && rule.styleSheet) {
+                    walkSheet(rule.styleSheet, conditions);
+                    continue;
+                  }
+                  if (rule.type === CSSRule.MEDIA_RULE) {
+                    const condition = { type: 'media', text: rule.conditionText, matches: matchMedia(rule.conditionText).matches };
+                    walkRules(rule.cssRules, href, [...conditions, condition]);
+                    continue;
+                  }
+                  if (rule.cssRules) {
+                    walkRules(rule.cssRules, href, conditions);
+                    continue;
+                  }
+                  inspectRule(rule, href, conditions);
+                }
+              }
+
+              function inspectRule(rule, href, conditions) {
+                if (!rule.selectorText || !rule.style || !rule.style.getPropertyValue('display')) return;
+                let selectorMatches = false;
+                try { selectorMatches = header.matches(rule.selectorText); } catch { return; }
+                if (!selectorMatches) return;
+                const entry = {
+                  href: href || null,
+                  selector: rule.selectorText,
+                  display: rule.style.getPropertyValue('display'),
+                  priority: rule.style.getPropertyPriority('display'),
+                  conditions,
+                  active: conditions.every((condition) => condition.type !== 'media' || condition.matches),
+                };
+                matched.push(entry);
+                if (
+                  !causalRule
+                  && entry.active
+                  && entry.display === 'none'
+                  && String(entry.href || '').includes('/assets/css/pages/chat-responsive-state.css')
+                  && entry.selector.includes('.chat-list-app-header')
+                ) causalRule = rule;
+              }
+
+              for (const sheet of document.styleSheets) walkSheet(sheet);
+
+              const before = getComputedStyle(header).display;
+              let afterRemoval = null;
+              let afterRestore = null;
+              let causalMutationApplied = false;
+              if (causalRule) {
+                const value = causalRule.style.getPropertyValue('display');
+                const priority = causalRule.style.getPropertyPriority('display');
+                causalRule.style.removeProperty('display');
+                afterRemoval = getComputedStyle(header).display;
+                causalRule.style.setProperty('display', value, priority);
+                afterRestore = getComputedStyle(header).display;
+                causalMutationApplied = true;
+              }
+
+              const rect = header.getBoundingClientRect();
+              return {
+                headerPresent: true,
+                bodyPage: document.body?.dataset?.page || null,
+                url: location.href,
+                authGuard: document.documentElement.getAttribute('data-auth-guard'),
+                hydrationState: document.querySelector('[data-messages-page]')?.getAttribute('data-view-state') || null,
+                hidden: header.hidden,
+                classes: header.className,
+                displayBefore: before,
+                visibility: getComputedStyle(header).visibility,
+                opacity: getComputedStyle(header).opacity,
+                rect: { width: rect.width, height: rect.height, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
+                matchedDisplayRules: matched,
+                causalRuleFound: Boolean(causalRule),
+                causalMutationApplied,
+                displayAfterRuleRemoval: afterRemoval,
+                displayAfterRuleRestore: afterRestore,
+              };
+            });
+          }
+
+          async function inspectStable(page) {
+            return page.evaluate(() => {
+              const header = document.querySelector('[data-app-header]');
+              const rect = header?.getBoundingClientRect?.();
+              return {
+                bodyPage: document.body?.dataset?.page || null,
+                url: location.href,
+                adapter: document.body?.dataset?.dokeNavigationAdapter || null,
+                headerPresent: Boolean(header),
+                headerPreserved: Boolean(header && window.__uxQa008fInitialHeader === header),
+                classes: header?.className || null,
+                hasChatListClass: Boolean(header?.classList?.contains('chat-list-app-header')),
+                display: header ? getComputedStyle(header).display : null,
+                visibility: header ? getComputedStyle(header).visibility : null,
+                rect: rect ? { width: rect.width, height: rect.height, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom } : null,
+              };
+            });
+          }
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            try {
+              const directPrepared = await prepareContext(browser);
+              const directPage = await directPrepared.context.newPage();
+              await directPage.goto(`${baseURL}/mensagens.html`, { waitUntil: 'domcontentloaded' });
+              await waitForSettled(directPage);
+              const direct = await inspectDirect(directPage);
+
+              if (!direct.headerPresent) throw new Error('direct-load Mensagens app header missing');
+              if (direct.bodyPage !== 'mensagens') throw new Error(`direct-load body[data-page] drift: ${direct.bodyPage}`);
+              if (!direct.url.includes('/mensagens.html')) throw new Error(`direct-load redirected away from Mensagens: ${direct.url}`);
+              if (direct.displayBefore !== 'none') throw new Error(`expected direct computed display:none, got ${direct.displayBefore}`);
+              if (!direct.causalRuleFound || !direct.causalMutationApplied) throw new Error('chat-responsive-state causal display:none rule not found in live CSSOM');
+              if (direct.displayAfterRuleRemoval === 'none') throw new Error('removing source-owner display declaration did not restore header display');
+              if (direct.displayAfterRuleRestore !== 'none') throw new Error('restoring source-owner display declaration did not restore display:none');
+
+              const stablePrepared = await prepareContext(browser);
+              const stablePage = await stablePrepared.context.newPage();
+              await stablePage.goto(`${baseURL}/index.html`, { waitUntil: 'domcontentloaded' });
+              await waitForSettled(stablePage);
+              await stablePage.evaluate(() => { window.__uxQa008fInitialHeader = document.querySelector('[data-app-header]'); });
+              await stablePage.waitForFunction(() => typeof window.DokeNavigate === 'function', null, { timeout: 10000 });
+              await stablePage.evaluate(async () => {
+                const result = window.DokeNavigate('/mensagens.html');
+                if (result && typeof result.then === 'function') await result;
+              });
+              await stablePage.waitForURL(/\/mensagens\.html(?:$|[?#])/, { timeout: 15000 });
+              await waitForSettled(stablePage);
+              const stable = await inspectStable(stablePage);
+
+              if (stable.bodyPage !== 'mensagens') throw new Error(`stable-shell body[data-page] drift: ${stable.bodyPage}`);
+              if (!stable.headerPresent) throw new Error('stable-shell Mensagens header missing');
+
+              const allBlocked = [...directPrepared.blockedRemoteRequests, ...stablePrepared.blockedRemoteRequests];
+              const classification = stable.display === 'none'
+                ? 'PRODUCT_CASCADE_DRIFT_BOTH_DIRECT_AND_STABLE_ENTRY'
+                : stable.headerPreserved
+                  ? 'DIRECT_LOAD_CASCADE_DRIFT_WITH_STABLE_SHELL_HEADER_PRESERVATION'
+                  : 'DIRECT_LOAD_CASCADE_DRIFT_STABLE_ENTRY_DIFFERENT_HEADER_STATE';
+
+              const report = {
+                checkpoint: 'UX-QA-DEBT-008F-R1B-CURRENT-STACK-BROWSER-SOURCE-OWNERSHIP',
+                viewport: { width: 1366, height: 768 },
+                direct,
+                stable,
+                classification,
+                blockedRemoteRequests: allBlocked,
+                supabaseNetworkSent: false,
+                rpcInvocation: false,
+              };
+              fs.writeFileSync(process.env.REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`);
+              console.log(`UX_QA_DEBT_008F_R1B_BROWSER=${JSON.stringify(report)}`);
+              await directPrepared.context.close();
+              await stablePrepared.context.close();
+            } finally {
+              await browser.close();
+            }
+          })().catch((error) => {
+            console.error(error.stack || error);
+            process.exit(1);
+          });
+          NODE
+
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node "${RUNNER_TEMP}/ux-qa-debt-008f-r1b-probe.cjs"
+
+      - name: Build receipt and assert classification
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1b-browser.json
+          RECEIPT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1b-receipt.json
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.env.REPORT_PATH, 'utf8'));
+          const d = report.direct;
+          if (d.displayBefore !== 'none') throw new Error('direct display:none not reproduced');
+          if (!d.causalRuleFound) throw new Error('source owner not found');
+          if (d.displayAfterRuleRemoval === 'none') throw new Error('counterfactual source-owner proof failed');
+          if (d.displayAfterRuleRestore !== 'none') throw new Error('source-owner restore proof failed');
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008F-R1B-CURRENT-STACK-BROWSER-SOURCE-OWNERSHIP',
+            parent: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            viewport: '1366x768',
+            sourceOwner: 'assets/css/pages/chat-responsive-state.css',
+            sourceOwnerBlob: process.env.CHAT_RESPONSIVE_BLOB,
+            directDisplayNone: true,
+            causalRuleFound: true,
+            counterfactualRuleRemovalRestoresDisplay: true,
+            stableEntryCaptured: true,
+            stableDisplay: report.stable.display,
+            stableHeaderPreserved: report.stable.headerPreserved,
+            classification: report.classification,
+            sharedAppHeaderAuthorityConflict: true,
+            globalLayoutTestStalenessProven: false,
+            criteriaRelaxed: 0,
+            introducedRegressions: 0,
+            candidateMaterialized: false,
+            productMutation: false,
+            cssHtmlMutation: false,
+            testMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            visualBaselineMutation: false,
+            supabaseNetworkSent: false,
+            rpcInvocation: false,
+            stagingProduction: false,
+            permanentBranchMutation: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true,
+          };
+          fs.writeFileSync(process.env.RECEIPT_PATH, `${JSON.stringify(receipt, null, 2)}\n`);
+          console.log(`UX_QA_DEBT_008F_R1B_FINAL=${JSON.stringify(receipt)}`);
+          NODE
+
+      - name: Post-gates parent immutability
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:mensagens.html")" = "$MESSAGES_HTML_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/chat-responsive-state.css")" = "$CHAT_RESPONSIVE_BLOB"
+          test "$(git rev-parse "$PARENT:tests/e2e/global-layout-contract.spec.js")" = "$GLOBAL_LAYOUT_TEST_BLOB"
+          git diff --quiet HEAD --
+          git diff --cached --quiet
+
+      - name: Upload R1b evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008f-r1b-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/ux-qa-debt-008f-r1b-browser.json
+            ${{ runner.temp }}/ux-qa-debt-008f-r1b-receipt.json
+            ${{ runner.temp }}/ux-qa-debt-008f-r1b-server.log
+          if-no-files-found: error
+          retention-days: 14
