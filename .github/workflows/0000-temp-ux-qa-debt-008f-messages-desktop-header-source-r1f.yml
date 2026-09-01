@@ -1,0 +1,585 @@
+name: TEMP UX-QA-DEBT-008F Messages Desktop Header Source R1f
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008f-messages-desktop-header-source-r1f
+
+permissions:
+  contents: read
+
+jobs:
+  source-ownership-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PARENT: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PARENT_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-source-r1f.yml
+      MESSAGES_HTML_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      CHAT_MOBILE_NAV_BLOB: 8ff7c626c1bf20f8814cb27ff6ce6e7bffa1491e
+      CHAT_RESPONSIVE_BLOB: 4a77ff3f0a9befd89a8294be65d014a5eddb7b6c
+      MESSAGING_RUNTIME_CHAT_BLOB: 225939d37e493d4f7d3ae3349e75866a5196a94b
+      GLOBAL_LAYOUT_TEST_BLOB: 3ac328c5722da0cd593003f01422546337c01116
+      GLOBAL_LAYOUT_DOC_BLOB: 47f39b3e1f2f4fc1e23e027f2aad1b4ca2bc6b00
+      SHARED_HEADER_AUDIT_BLOB: 5829a86b326061c39d466f28a102b530343049a7
+
+    steps:
+      - name: Checkout TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze reachable TEMP scope and current-stack authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-list --count "$PARENT"..HEAD)" = "1"
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          remote_parent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_parent" = "$PARENT"
+
+          test "$(git rev-parse "$PARENT:mensagens.html")" = "$MESSAGES_HTML_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/chat-mobile-navigation.css")" = "$CHAT_MOBILE_NAV_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/chat-responsive-state.css")" = "$CHAT_RESPONSIVE_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/messaging-runtime-chat.css")" = "$MESSAGING_RUNTIME_CHAT_BLOB"
+          test "$(git rev-parse "$PARENT:tests/e2e/global-layout-contract.spec.js")" = "$GLOBAL_LAYOUT_TEST_BLOB"
+          test "$(git rev-parse "$PARENT:docs/GLOBAL-LAYOUT-CONTRACT.md")" = "$GLOBAL_LAYOUT_DOC_BLOB"
+          test "$(git rev-parse "$PARENT:scripts/audit-shared-app-header-contract.js")" = "$SHARED_HEADER_AUDIT_BLOB"
+
+      - name: Checkout frozen parent detached
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT"
+          git reset --hard "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static source and authority proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check tests/e2e/global-layout-contract.spec.js
+          node scripts/audit-shared-app-header-contract.js
+          node <<'NODE'
+          const fs = require('fs');
+          const mobile = fs.readFileSync('assets/css/pages/chat-mobile-navigation.css', 'utf8');
+          const responsive = fs.readFileSync('assets/css/pages/chat-responsive-state.css', 'utf8');
+          const runtime = fs.readFileSync('assets/css/pages/messaging-runtime-chat.css', 'utf8');
+          const html = fs.readFileSync('mensagens.html', 'utf8');
+          const doc = fs.readFileSync('docs/GLOBAL-LAYOUT-CONTRACT.md', 'utf8');
+          const audit = fs.readFileSync('scripts/audit-shared-app-header-contract.js', 'utf8');
+
+          const mobileHide = /body:is\(\[data-page="mensagens"\], \[data-page="comunidade-interna"\]\)\s*>\s*\.app-shell\s*>\s*\.page\s*>\s*\.app-header\s*\{\s*display:\s*none;\s*\}/m;
+          const responsiveHide = /body:is\(\[data-page="mensagens"\], \[data-page="comunidade-interna"\]\)\s*>\s*\.app-shell\s*>\s*\.page\s*>\s*\.chat-list-app-header\s*\{\s*display:\s*none;\s*\}/m;
+          if (!mobileHide.test(mobile)) throw new Error('chat-mobile-navigation app-header display:none authority drift');
+          if (!responsiveHide.test(responsive)) throw new Error('chat-responsive-state chat-list display:none authority drift');
+          if (!/@media\s*\(max-width:\s*1180px\)/.test(responsive)) throw new Error('1180px compact override boundary missing');
+          if (!/\.chat-list-app-header\s*\{[\s\S]*?display:\s*flex;/m.test(responsive)) throw new Error('compact display:flex override missing');
+          if (!runtime.includes('./chat-responsive-state.css?v=20260618-chat-global-page-contract-v2')) throw new Error('messaging runtime no longer imports chat responsive state');
+          if (!runtime.includes('../layout/header.css?v=20260715-control-elevation-scope-v1')) throw new Error('messaging runtime no longer imports shared header authority');
+          if (!/data-page="mensagens"/.test(html) || !/data-app-header/.test(html) || !/data-header-variant="contextual"/.test(html)) throw new Error('Mensagens contextual app-header markup drift');
+          if (!doc.includes('Toda página ativa que renderiza `.app-header` deve participar da matriz')) throw new Error('global header authority statement drift');
+          if (!doc.includes('`comunidade-interna.html` | workspace de conversa em tela inteira')) throw new Error('approved documented workspace exception drift');
+          if (!audit.includes("'mensagens.html': { variant: 'contextual', context: true }")) throw new Error('Mensagens missing from shared header audit matrix');
+          if (!audit.includes("'comunidade-interna.html': 'full-height conversation workspace with its own thread headers'")) throw new Error('approved workspace exception drift');
+          console.log('008F R1f static source ownership: PASS');
+          NODE
+
+      - name: Governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT"..HEAD
+          git reset --hard "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Current-stack browser direct and stable-shell causal-set proof
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1f-browser.json
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 > "${RUNNER_TEMP}/ux-qa-debt-008f-r1f-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null
+
+          cat > "${RUNNER_TEMP}/ux-qa-debt-008f-r1f-probe.cjs" <<'NODE'
+          const fs = require('fs');
+          const { chromium } = require('@playwright/test');
+
+          const baseURL = 'http://127.0.0.1:4173';
+          const authenticatedSession = {
+            provider: 'mock',
+            sessionStatus: 'active',
+            accountStatus: 'active',
+            user: {
+              id: 'ux-qa-debt-008f-r1f',
+              role: 'client',
+              name: 'Cliente 008F',
+              email: 'qa008f@example.test',
+              accountStatus: 'active',
+            },
+          };
+
+          async function prepareContext(browser) {
+            const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+            const blockedRemoteRequests = [];
+            await context.route('**/*', async (route) => {
+              const request = route.request();
+              const url = new URL(request.url());
+              if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') return route.continue();
+              if (url.hostname === 'fonts.googleapis.com') return route.fulfill({ status: 200, contentType: 'text/css; charset=utf-8', body: '' });
+              if (url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'unpkg.com') return route.fulfill({ status: 200, contentType: 'application/javascript; charset=utf-8', body: '' });
+              blockedRemoteRequests.push(request.url());
+              return route.abort();
+            });
+            await context.addInitScript((session) => {
+              localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+            }, authenticatedSession);
+            return { context, blockedRemoteRequests };
+          }
+
+          async function waitForSettled(page) {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.waitForFunction(() => document.body && document.body.dataset.page, null, { timeout: 5000 }).catch(() => {});
+            await page.waitForFunction(() => {
+              const root = document.querySelector('[data-messages-page]');
+              if (!root) return true;
+              const state = root.getAttribute('data-view-state');
+              return state && state !== 'loading';
+            }, null, { timeout: 5000 }).catch(() => {});
+            await page.waitForTimeout(350);
+          }
+
+          async function inspectCascade(page) {
+            return page.evaluate(() => {
+              const header = document.querySelector('[data-app-header]');
+              if (!header) return { headerPresent: false };
+
+              const matched = [];
+              const candidates = [];
+              const inaccessibleSheets = [];
+
+              function rectFor(element) {
+                if (!element) return null;
+                const rect = element.getBoundingClientRect();
+                return { width: rect.width, height: rect.height, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+              }
+
+              function geometry() {
+                const root = document.documentElement;
+                const content = document.querySelector('.page__content');
+                return {
+                  header: rectFor(header),
+                  content: rectFor(content),
+                  scrollWidth: root.scrollWidth,
+                  clientWidth: root.clientWidth,
+                  scrollHeight: root.scrollHeight,
+                  clientHeight: root.clientHeight,
+                };
+              }
+
+              function ownerRuleDescriptor(sheet) {
+                const owner = sheet?.ownerRule || null;
+                if (!owner) return null;
+                return {
+                  type: owner.constructor?.name || 'CSSImportRule',
+                  href: owner.href || null,
+                  cssText: owner.cssText || null,
+                  parentStyleSheetHref: owner.parentStyleSheet?.href || null,
+                };
+              }
+
+              function importChain(sheet) {
+                const chain = [];
+                const seen = new Set();
+                let current = sheet;
+                while (current && current.ownerRule && !seen.has(current)) {
+                  seen.add(current);
+                  const owner = current.ownerRule;
+                  chain.push({
+                    type: owner.constructor?.name || 'CSSImportRule',
+                    href: owner.href || null,
+                    cssText: owner.cssText || null,
+                    parentStyleSheetHref: owner.parentStyleSheet?.href || null,
+                  });
+                  current = owner.parentStyleSheet;
+                }
+                return chain;
+              }
+
+              function sheetProvenance(sheet) {
+                const ownerNode = sheet?.ownerNode || null;
+                return {
+                  parentStyleSheetHref: sheet?.href || null,
+                  actualSheetHref: sheet?.href || null,
+                  ownerNodeTag: ownerNode?.tagName || null,
+                  ownerNodeHref: ownerNode?.href || ownerNode?.getAttribute?.('href') || null,
+                  ownerRule: ownerRuleDescriptor(sheet),
+                  ownerRuleChain: importChain(sheet),
+                };
+              }
+
+              function describeGroup(rule) {
+                const type = rule.constructor?.name || `CSSRule:${rule.type}`;
+                if (type === 'CSSMediaRule') {
+                  let matches = false;
+                  try { matches = matchMedia(rule.conditionText).matches; } catch {}
+                  return { type: 'media', text: rule.conditionText || null, active: matches };
+                }
+                if (type === 'CSSSupportsRule') {
+                  let matches = true;
+                  try { matches = CSS.supports(rule.conditionText); } catch {}
+                  return { type: 'supports', text: rule.conditionText || null, active: matches };
+                }
+                return { type, text: rule.conditionText || rule.name || rule.cssText || null, active: true };
+              }
+
+              function inspectRule(rule, ancestry) {
+                if (!rule.selectorText || !rule.style || !rule.style.getPropertyValue('display')) return;
+                let selectorMatches = false;
+                try { selectorMatches = header.matches(rule.selectorText); } catch { return; }
+                if (!selectorMatches) return;
+                const entry = {
+                  selector: rule.selectorText,
+                  cssText: rule.cssText || null,
+                  display: rule.style.getPropertyValue('display'),
+                  priority: rule.style.getPropertyPriority('display'),
+                  conditions: ancestry,
+                  active: ancestry.every((condition) => condition.active !== false),
+                  provenance: sheetProvenance(rule.parentStyleSheet),
+                };
+                matched.push(entry);
+                if (entry.active && entry.display === 'none') candidates.push({ rule, entry });
+              }
+
+              function walkRules(rules, ancestry = []) {
+                if (!rules) return;
+                for (const rule of rules) {
+                  if (rule.type === CSSRule.IMPORT_RULE && rule.styleSheet) {
+                    const mediaText = rule.media?.mediaText || '';
+                    let active = true;
+                    if (mediaText && mediaText !== 'all') {
+                      try { active = matchMedia(mediaText).matches; } catch {}
+                    }
+                    walkSheet(rule.styleSheet, [...ancestry, {
+                      type: 'import',
+                      text: rule.cssText || null,
+                      href: rule.href || null,
+                      active,
+                      parentStyleSheetHref: rule.parentStyleSheet?.href || null,
+                    }]);
+                    continue;
+                  }
+                  if (rule.selectorText && rule.style) {
+                    inspectRule(rule, ancestry);
+                    if (rule.cssRules && rule.cssRules.length) walkRules(rule.cssRules, [...ancestry, describeGroup(rule)]);
+                    continue;
+                  }
+                  if (rule.cssRules) walkRules(rule.cssRules, [...ancestry, describeGroup(rule)]);
+                }
+              }
+
+              function walkSheet(sheet, ancestry = []) {
+                let rules;
+                try { rules = sheet.cssRules; } catch (error) {
+                  inaccessibleSheets.push({ href: sheet?.href || null, error: String(error?.message || error) });
+                  return;
+                }
+                walkRules(rules, ancestry);
+              }
+
+              for (const sheet of document.styleSheets) walkSheet(sheet);
+
+              const before = getComputedStyle(header).display;
+              const beforeGeometry = geometry();
+              const serializedCandidates = candidates.map(({ entry }, index) => ({ index, ...entry }));
+
+              function runCounterfactual(indices) {
+                const saved = indices.map((index) => {
+                  const rule = candidates[index].rule;
+                  return { index, value: rule.style.getPropertyValue('display'), priority: rule.style.getPropertyPriority('display') };
+                });
+                for (const { index } of saved) candidates[index].rule.style.removeProperty('display');
+                const afterRemoval = getComputedStyle(header).display;
+                const afterRemovalGeometry = geometry();
+                for (const item of [...saved].reverse()) candidates[item.index].rule.style.setProperty('display', item.value, item.priority);
+                const afterRestore = getComputedStyle(header).display;
+                const afterRestoreGeometry = geometry();
+                return {
+                  indices,
+                  size: indices.length,
+                  afterRemoval,
+                  afterRestore,
+                  afterRemovalGeometry,
+                  afterRestoreGeometry,
+                  caused: before === 'none' && afterRemoval !== 'none' && afterRestore === 'none',
+                };
+              }
+
+              const individualCounterfactuals = candidates.map((_, index) => runCounterfactual([index]));
+              const jointIndices = candidates.map((_, index) => index);
+              const jointCounterfactual = runCounterfactual(jointIndices);
+              const testedSets = [...individualCounterfactuals];
+              if (jointIndices.length > 1) testedSets.push(jointCounterfactual);
+              const causalSets = testedSets.filter((item) => item.caused).sort((a, b) => a.size - b.size);
+              const minimalSize = causalSets.length ? causalSets[0].size : null;
+              const minimalSets = minimalSize === null ? [] : causalSets.filter((item) => item.size === minimalSize);
+              const minimalCausalSet = minimalSets.length === 1 ? minimalSets[0] : null;
+              const minimalCausalSetMembers = minimalCausalSet ? minimalCausalSet.indices.map((index) => serializedCandidates[index]) : [];
+
+              return {
+                headerPresent: true,
+                bodyPage: document.body?.dataset?.page || null,
+                url: location.href,
+                adapter: document.body?.dataset?.dokeNavigationAdapter || null,
+                headerPreserved: Boolean(window.__uxQa008fInitialHeader && window.__uxQa008fInitialHeader === header),
+                documentNavigationCount: performance.getEntriesByType('navigation').length,
+                initialDocumentNavigationCount: window.__uxQa008fInitialDocumentNavigationCount ?? null,
+                hidden: header.hidden,
+                classes: header.className,
+                displayBefore: before,
+                visibility: getComputedStyle(header).visibility,
+                opacity: getComputedStyle(header).opacity,
+                geometryBefore: beforeGeometry,
+                matchedDisplayRules: matched,
+                matchedDisplayRuleCount: matched.length,
+                displayNoneCandidates: serializedCandidates,
+                displayNoneCandidateCount: serializedCandidates.length,
+                individualCounterfactuals,
+                jointCounterfactual,
+                minimalCausalSet,
+                minimalCausalSetCount: minimalSets.length,
+                minimalCausalSetSize: minimalCausalSet?.size || null,
+                minimalCausalSetMembers,
+                inaccessibleSheets,
+              };
+            });
+          }
+
+          function provenanceStrings(member) {
+            return [
+              member?.provenance?.parentStyleSheetHref,
+              member?.provenance?.actualSheetHref,
+              member?.provenance?.ownerNodeHref,
+              member?.provenance?.ownerRule?.href,
+              member?.provenance?.ownerRule?.parentStyleSheetHref,
+              member?.provenance?.ownerRule?.cssText,
+              ...(member?.provenance?.ownerRuleChain || []).flatMap((item) => [item.href, item.parentStyleSheetHref, item.cssText]),
+            ].filter(Boolean).map(String);
+          }
+
+          function memberHasOwner(member, fileName) {
+            return provenanceStrings(member).some((value) => value.includes(`/assets/css/pages/${fileName}`));
+          }
+
+          function assertExpectedCausalSet(result, label) {
+            if (!result.headerPresent) throw new Error(`${label}: Mensagens app header missing`);
+            if (result.bodyPage !== 'mensagens') throw new Error(`${label}: body[data-page] drift: ${result.bodyPage}`);
+            if (!result.url.includes('/mensagens.html')) throw new Error(`${label}: URL drift: ${result.url}`);
+            if (result.displayBefore !== 'none') throw new Error(`${label}: expected computed display:none, got ${result.displayBefore}`);
+            if (result.matchedDisplayRuleCount < 1) throw new Error(`${label}: no matching explicit display rules enumerated`);
+            if (result.displayNoneCandidateCount !== 2) throw new Error(`${label}: expected exactly two active display:none candidates, got ${result.displayNoneCandidateCount}`);
+            if (result.individualCounterfactuals.length !== 2) throw new Error(`${label}: individual counterfactual coverage drift`);
+            if (result.individualCounterfactuals.some((item) => item.caused)) throw new Error(`${label}: an individual candidate became independently causal`);
+            if (result.individualCounterfactuals.some((item) => item.afterRestore !== 'none')) throw new Error(`${label}: individual restoration did not return display:none`);
+            if (!result.jointCounterfactual?.caused) throw new Error(`${label}: joint candidate removal did not prove causal set`);
+            if (result.jointCounterfactual.afterRemoval !== 'flex') throw new Error(`${label}: joint removal expected display:flex, got ${result.jointCounterfactual.afterRemoval}`);
+            if (result.jointCounterfactual.afterRestore !== 'none') throw new Error(`${label}: joint restoration did not return display:none`);
+            if (result.minimalCausalSetCount !== 1 || result.minimalCausalSetSize !== 2 || result.minimalCausalSetMembers.length !== 2) {
+              throw new Error(`${label}: unique two-member minimal causal set not proven`);
+            }
+
+            const members = result.minimalCausalSetMembers;
+            const mobileMembers = members.filter((member) => member.selector.includes('.app-header') && !member.selector.includes('.chat-list-app-header') && memberHasOwner(member, 'chat-mobile-navigation.css'));
+            const responsiveMembers = members.filter((member) => member.selector.includes('.chat-list-app-header') && memberHasOwner(member, 'chat-responsive-state.css'));
+            if (mobileMembers.length !== 1 || responsiveMembers.length !== 1) {
+              throw new Error(`${label}: heterogeneous causal-set owner mismatch: ${JSON.stringify(members.map((member) => ({ selector: member.selector, provenance: provenanceStrings(member) })))}`);
+            }
+          }
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            try {
+              const directPrepared = await prepareContext(browser);
+              const directPage = await directPrepared.context.newPage();
+              await directPage.goto(`${baseURL}/mensagens.html`, { waitUntil: 'domcontentloaded' });
+              await waitForSettled(directPage);
+              const direct = await inspectCascade(directPage);
+              assertExpectedCausalSet(direct, 'direct-load');
+              console.log(`UX_QA_DEBT_008F_R1F_DIRECT=${JSON.stringify({ members: direct.minimalCausalSetMembers, individualCounterfactuals: direct.individualCounterfactuals, jointCounterfactual: direct.jointCounterfactual, geometryBefore: direct.geometryBefore })}`);
+
+              const stablePrepared = await prepareContext(browser);
+              const stablePage = await stablePrepared.context.newPage();
+              await stablePage.goto(`${baseURL}/index.html`, { waitUntil: 'domcontentloaded' });
+              await waitForSettled(stablePage);
+              await stablePage.evaluate(() => {
+                window.__uxQa008fInitialHeader = document.querySelector('[data-app-header]');
+                window.__uxQa008fInitialDocumentNavigationCount = performance.getEntriesByType('navigation').length;
+              });
+              await stablePage.waitForFunction(() => typeof window.DokeNavigate === 'function', null, { timeout: 10000 });
+              await stablePage.evaluate(async () => {
+                const result = window.DokeNavigate('/mensagens.html');
+                if (result && typeof result.then === 'function') await result;
+              });
+              await stablePage.waitForURL(/\/mensagens\.html(?:$|[?#])/, { timeout: 15000 });
+              await waitForSettled(stablePage);
+              const stable = await inspectCascade(stablePage);
+              assertExpectedCausalSet(stable, 'stable-shell');
+              if (stable.adapter !== 'stable-shell') throw new Error(`stable-shell adapter drift: ${stable.adapter}`);
+              if (!stable.headerPreserved) throw new Error('stable-shell header identity was not preserved');
+              if (stable.initialDocumentNavigationCount === null || stable.documentNavigationCount !== stable.initialDocumentNavigationCount) {
+                throw new Error(`stable-shell created a new document navigation: initial=${stable.initialDocumentNavigationCount} current=${stable.documentNavigationCount}`);
+              }
+              console.log(`UX_QA_DEBT_008F_R1F_STABLE=${JSON.stringify({ adapter: stable.adapter, headerPreserved: stable.headerPreserved, navigationCount: stable.documentNavigationCount, members: stable.minimalCausalSetMembers, individualCounterfactuals: stable.individualCounterfactuals, jointCounterfactual: stable.jointCounterfactual, geometryBefore: stable.geometryBefore })}`);
+
+              const allBlocked = [...directPrepared.blockedRemoteRequests, ...stablePrepared.blockedRemoteRequests];
+              const report = {
+                checkpoint: 'UX-QA-DEBT-008F-R1F-STABLE-SHELL-CAUSAL-SET-CONFIRMATION',
+                viewport: { width: 1366, height: 768 },
+                direct,
+                stable,
+                classification: 'PRODUCT_CASCADE_DRIFT_REDUNDANT_CAUSAL_SET_BOTH_DIRECT_AND_STABLE_ENTRY',
+                blockedRemoteRequests: allBlocked,
+                supabaseNetworkSent: false,
+                rpcInvocation: false,
+              };
+              fs.writeFileSync(process.env.REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`);
+              console.log(`UX_QA_DEBT_008F_R1F_BROWSER=${JSON.stringify(report)}`);
+              await directPrepared.context.close();
+              await stablePrepared.context.close();
+            } finally {
+              await browser.close();
+            }
+          })().catch((error) => {
+            console.error(error.stack || error);
+            process.exit(1);
+          });
+          NODE
+
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node "${RUNNER_TEMP}/ux-qa-debt-008f-r1f-probe.cjs"
+
+      - name: Build receipt and assert classification
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1f-browser.json
+          RECEIPT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1f-receipt.json
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.env.REPORT_PATH, 'utf8'));
+          const direct = report.direct;
+          const stable = report.stable;
+          if (report.classification !== 'PRODUCT_CASCADE_DRIFT_REDUNDANT_CAUSAL_SET_BOTH_DIRECT_AND_STABLE_ENTRY') throw new Error('classification drift');
+          for (const [label, result] of [['direct', direct], ['stable', stable]]) {
+            if (result.displayBefore !== 'none') throw new Error(`${label}: display:none not reproduced`);
+            if (result.displayNoneCandidateCount !== 2) throw new Error(`${label}: two display:none candidates not proven`);
+            if (result.individualCounterfactuals?.some((item) => item.caused)) throw new Error(`${label}: individual candidate unexpectedly causal`);
+            if (!result.jointCounterfactual?.caused || result.jointCounterfactual.afterRemoval !== 'flex' || result.jointCounterfactual.afterRestore !== 'none') throw new Error(`${label}: joint counterfactual drift`);
+            if (result.minimalCausalSetCount !== 1 || result.minimalCausalSetSize !== 2 || result.minimalCausalSetMembers?.length !== 2) throw new Error(`${label}: two-member minimal causal set not proven`);
+          }
+          if (stable.adapter !== 'stable-shell' || !stable.headerPreserved) throw new Error('stable-shell preservation not proven');
+          if (stable.documentNavigationCount !== stable.initialDocumentNavigationCount) throw new Error('stable-shell document navigation count drift');
+
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008F-R1F-STABLE-SHELL-CAUSAL-SET-CONFIRMATION',
+            parent: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            viewport: '1366x768',
+            sourceOwners: [
+              { path: 'assets/css/pages/chat-mobile-navigation.css', blob: process.env.CHAT_MOBILE_NAV_BLOB },
+              { path: 'assets/css/pages/chat-responsive-state.css', blob: process.env.CHAT_RESPONSIVE_BLOB },
+            ],
+            directDisplayNone: true,
+            directMinimalCausalSetMembers: direct.minimalCausalSetMembers,
+            directGeometryBefore: direct.geometryBefore,
+            directJointRemovalGeometry: direct.jointCounterfactual.afterRemovalGeometry,
+            directJointRestoreGeometry: direct.jointCounterfactual.afterRestoreGeometry,
+            stableEntryCaptured: true,
+            stableAdapter: stable.adapter,
+            stableHeaderPreserved: stable.headerPreserved,
+            stableDocumentNavigationCount: stable.documentNavigationCount,
+            stableInitialDocumentNavigationCount: stable.initialDocumentNavigationCount,
+            stableDisplayNone: stable.displayBefore === 'none',
+            stableMinimalCausalSetMembers: stable.minimalCausalSetMembers,
+            stableGeometryBefore: stable.geometryBefore,
+            stableJointRemovalGeometry: stable.jointCounterfactual.afterRemovalGeometry,
+            stableJointRestoreGeometry: stable.jointCounterfactual.afterRestoreGeometry,
+            classification: report.classification,
+            sharedAppHeaderAuthorityConflict: true,
+            globalLayoutTestStalenessProven: false,
+            criteriaRelaxed: 0,
+            introducedRegressions: 0,
+            candidateMaterialized: false,
+            productMutation: false,
+            cssHtmlMutation: false,
+            testMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            visualBaselineMutation: false,
+            supabaseNetworkSent: false,
+            rpcInvocation: false,
+            stagingProduction: false,
+            permanentBranchMutation: false,
+            issueMutation: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true,
+          };
+          fs.writeFileSync(process.env.RECEIPT_PATH, `${JSON.stringify(receipt, null, 2)}\n`);
+          console.log(`UX_QA_DEBT_008F_R1F_FINAL=${JSON.stringify(receipt)}`);
+          NODE
+
+      - name: Post-gates parent immutability
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:mensagens.html")" = "$MESSAGES_HTML_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/chat-mobile-navigation.css")" = "$CHAT_MOBILE_NAV_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/chat-responsive-state.css")" = "$CHAT_RESPONSIVE_BLOB"
+          test "$(git rev-parse "$PARENT:tests/e2e/global-layout-contract.spec.js")" = "$GLOBAL_LAYOUT_TEST_BLOB"
+          git diff --quiet HEAD --
+          git diff --cached --quiet
+
+      - name: Upload R1f evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008f-r1f-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/ux-qa-debt-008f-r1f-browser.json
+            ${{ runner.temp }}/ux-qa-debt-008f-r1f-receipt.json
+            ${{ runner.temp }}/ux-qa-debt-008f-r1f-server.log
+          if-no-files-found: error
