@@ -1,4 +1,4 @@
-name: TEMP COM-B02CX Matrix Candidate Artifact
+name: TEMP COM-B02CX Matrix Derivative Materializer
 
 on:
   push:
@@ -8,14 +8,15 @@ on:
       - '.github/workflows/tmp-com-b02cx-matrix-candidate-artifact.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  generate-b02cx-matrix-candidate-artifact:
+  materialize-b02cx-matrix-derivatives:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      CANDIDATE_HEAD: 0b578cda5aceb45f39d80dcb9e17e1f1827e1eda
+      BASE_HEAD: cf06cf41981e7d350efc37f7147905b83196311f
+      BASE_TREE: 0cf48ae23408ab4ccba1f0518a1402cd6211cca1
       TEMP_WORKFLOW: .github/workflows/tmp-com-b02cx-matrix-candidate-artifact.yml
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
@@ -23,45 +24,55 @@ jobs:
       MATRIX_GENERATOR_BLOB: f60d9b9efc8a191822b34d39d4e9137a59b8727e
       PACKAGE_JSON: package.json
       PACKAGE_JSON_BLOB: 8b9670383773896d03410cb661a23e2061911495
+      B02CX_SOURCE: backend/modules/communities/community-command-post-idempotency-external-authority-projection-implementation.js
+      B02CX_SOURCE_BLOB: 9ad0ac01bc002ba007bb424dd23e6f41cff99bbd
+      PERMANENT_WORKFLOW: .github/workflows/com-b02cx-repository-only-post-idempotency-external-authority-projection-implementation.yml
+      PERMANENT_WORKFLOW_BLOB: e4a701b2c6a1ccf917d3598b07b8eed1b50c85a7
       MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
-      MATRIX_MD_BLOB: fa97eac621201107e76afc1fb6103b1a65f7925f
+      MATRIX_MD_BASE_BLOB: fa97eac621201107e76afc1fb6103b1a65f7925f
+      MATRIX_MD_EXPECTED_BLOB: 8436b7fb5fb658ef83b9fb11ebb6daeb89317328
       MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
-      MATRIX_REPORT_BLOB: a8642aba18f8c8668bf8f017c077334bf5afb459
+      MATRIX_REPORT_BASE_BLOB: a8642aba18f8c8668bf8f017c077334bf5afb459
+      MATRIX_REPORT_EXPECTED_BLOB: 50d5bc6f96326b107bd8291f5270d1b701537bfe
+      TARGET_BRANCH: com/com-001-baseline-audit
 
     steps:
-      - name: Checkout exact artifact candidate head
+      - name: Checkout exact materializer installation head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Freeze B02CX lineage and artifact-only scope
+      - name: Freeze B02CX lineage and single-use materializer installation
         shell: bash
         run: |
           set -euo pipefail
 
-          test "$(git rev-parse HEAD^)" = "$CANDIDATE_HEAD"
+          test "$(git rev-parse HEAD^)" = "$BASE_HEAD"
+          test "$(git rev-parse "$BASE_HEAD^{tree}")" = "$BASE_TREE"
 
-          actual="$(git diff --name-status "$CANDIDATE_HEAD" HEAD)"
-          expected="$(printf 'A\t%s' "$TEMP_WORKFLOW")"
+          actual="$(git diff --name-status "$BASE_HEAD" HEAD)"
+          expected="$(printf 'M\t%s' "$TEMP_WORKFLOW")"
           test "$actual" = "$expected"
 
           test "$(git rev-parse "HEAD:$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
           test "$(git rev-parse "HEAD:$MATRIX_GENERATOR")" = "$MATRIX_GENERATOR_BLOB"
           test "$(git rev-parse "HEAD:$PACKAGE_JSON")" = "$PACKAGE_JSON_BLOB"
-          test "$(git rev-parse "HEAD:$MATRIX_MD")" = "$MATRIX_MD_BLOB"
-          test "$(git rev-parse "HEAD:$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
+          test "$(git rev-parse "HEAD:$B02CX_SOURCE")" = "$B02CX_SOURCE_BLOB"
+          test "$(git rev-parse "HEAD:$PERMANENT_WORKFLOW")" = "$PERMANENT_WORKFLOW_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_MD")" = "$MATRIX_MD_BASE_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_REPORT")" = "$MATRIX_REPORT_BASE_BLOB"
 
-          git diff --check "$CANDIDATE_HEAD" HEAD
+          git diff --check "$BASE_HEAD" HEAD
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
-      - name: Generate canonical Matrix derivatives locally
+      - name: Generate and freeze exact B02CX Matrix derivatives
         shell: bash
         run: |
           set -euo pipefail
@@ -71,45 +82,71 @@ jobs:
           test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
           test "$(git hash-object "$MATRIX_GENERATOR")" = "$MATRIX_GENERATOR_BLOB"
           test "$(git hash-object "$PACKAGE_JSON")" = "$PACKAGE_JSON_BLOB"
+          test "$(git hash-object "$B02CX_SOURCE")" = "$B02CX_SOURCE_BLOB"
+          test "$(git hash-object "$PERMANENT_WORKFLOW")" = "$PERMANENT_WORKFLOW_BLOB"
+          test "$(git hash-object "$MATRIX_MD")" = "$MATRIX_MD_EXPECTED_BLOB"
+          test "$(git hash-object "$MATRIX_REPORT")" = "$MATRIX_REPORT_EXPECTED_BLOB"
 
           actual_generated="$(git diff --name-only | sort)"
-          test -n "$actual_generated"
+          expected_generated="$(printf '%s\n%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$actual_generated" = "$expected_generated"
 
-          for path in $actual_generated; do
-            case "$path" in
-              "$MATRIX_MD"|"$MATRIX_REPORT") ;;
-              *) echo "Unexpected generated path: $path" >&2; exit 1 ;;
-            esac
-          done
-
-      - name: Validate generated Matrix candidate
+      - name: Stage TEMP-free final tree and validate governance
         shell: bash
         run: |
           set -euo pipefail
 
+          git rm "$TEMP_WORKFLOW"
+          git add "$MATRIX_MD"
+          git add -f "$MATRIX_REPORT"
+
+          test -z "$(git diff --name-only)"
+
+          final_scope="$(git diff --cached --name-status "$BASE_HEAD" | sort)"
+          expected_final="$(printf 'D\t%s\nM\t%s\nM\t%s\n' "$TEMP_WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$final_scope" = "$expected_final"
+
+          test "$(git hash-object "$MATRIX_MD")" = "$MATRIX_MD_EXPECTED_BLOB"
+          test "$(git hash-object "$MATRIX_REPORT")" = "$MATRIX_REPORT_EXPECTED_BLOB"
+          test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test "$(git hash-object "$B02CX_SOURCE")" = "$B02CX_SOURCE_BLOB"
+          test "$(git hash-object "$PERMANENT_WORKFLOW")" = "$PERMANENT_WORKFLOW_BLOB"
+
           npm run audit:domain-completion-matrix
-          git diff --check -- "$MATRIX_MD" "$MATRIX_REPORT"
+          npm run audit:agent-governance
+          git diff --cached --check "$BASE_HEAD"
 
-          actual_generated="$(git diff --name-only | sort)"
-          test -n "$actual_generated"
-          for path in $actual_generated; do
-            case "$path" in
-              "$MATRIX_MD"|"$MATRIX_REPORT") ;;
-              *) echo "Unexpected path after validation: $path" >&2; exit 1 ;;
-            esac
-          done
+      - name: Commit and push TEMP removal plus exact Matrix derivatives only
+        shell: bash
+        run: |
+          set -euo pipefail
 
-          printf 'BASE_HEAD=%s\n' "$CANDIDATE_HEAD"
-          printf 'ARTIFACT_HEAD=%s\n' "$(git rev-parse HEAD)"
-          printf 'MARKDOWN_BLOB=%s\n' "$(git hash-object "$MATRIX_MD")"
-          printf 'REPORT_BLOB=%s\n' "$(git hash-object "$MATRIX_REPORT")"
+          git fetch origin "$TARGET_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse HEAD)"
 
-      - name: Upload B02CX Matrix candidate artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: com-b02cx-domain-completion-matrix-candidate-${{ github.sha }}
-          path: |
-            docs/DOMAIN-COMPLETION-MATRIX.md
-            reports/generated/domain-completion-matrix-report.json
-          if-no-files-found: error
-          retention-days: 7
+          parent="$(git rev-parse HEAD)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): materialize B02CX matrix derivatives [skip ci]'
+
+          commit="$(git rev-parse HEAD)"
+          tree="$(git rev-parse HEAD^{tree})"
+          test "$(git rev-parse HEAD^)" = "$parent"
+
+          commit_scope="$(git diff-tree --no-commit-id --name-status -r HEAD | sort)"
+          expected_commit="$(printf 'D\t%s\nM\t%s\nM\t%s\n' "$TEMP_WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$commit_scope" = "$expected_commit"
+
+          test ! -e "$TEMP_WORKFLOW"
+          test "$(git rev-parse "HEAD:$MATRIX_MD")" = "$MATRIX_MD_EXPECTED_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_REPORT")" = "$MATRIX_REPORT_EXPECTED_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse "HEAD:$B02CX_SOURCE")" = "$B02CX_SOURCE_BLOB"
+          test "$(git rev-parse "HEAD:$PERMANENT_WORKFLOW")" = "$PERMANENT_WORKFLOW_BLOB"
+
+          git push origin "HEAD:$TARGET_BRANCH"
+
+          printf 'FINAL_COMMIT_SHA=%s\n' "$commit"
+          printf 'FINAL_TREE_SHA=%s\n' "$tree"
+          printf 'FINAL_MARKDOWN_BLOB=%s\n' "$(git rev-parse "HEAD:$MATRIX_MD")"
+          printf 'FINAL_REPORT_BLOB=%s\n' "$(git rev-parse "HEAD:$MATRIX_REPORT")"
