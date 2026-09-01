@@ -1,0 +1,609 @@
+name: TEMP UX-QA-DEBT-008F Messages Desktop Header Source R1e
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008f-messages-desktop-header-source-r1e
+
+permissions:
+  contents: read
+
+jobs:
+  source-ownership-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PARENT: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PARENT_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-source-r1e.yml
+      MESSAGES_HTML_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      CHAT_RESPONSIVE_BLOB: 4a77ff3f0a9befd89a8294be65d014a5eddb7b6c
+      MESSAGING_RUNTIME_CHAT_BLOB: 225939d37e493d4f7d3ae3349e75866a5196a94b
+      GLOBAL_LAYOUT_TEST_BLOB: 3ac328c5722da0cd593003f01422546337c01116
+      GLOBAL_LAYOUT_DOC_BLOB: 47f39b3e1f2f4fc1e23e027f2aad1b4ca2bc6b00
+      SHARED_HEADER_AUDIT_BLOB: 5829a86b326061c39d466f28a102b530343049a7
+
+    steps:
+      - name: Checkout TEMP branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze reachable TEMP scope and current-stack authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-list --count "$PARENT"..HEAD)" = "1"
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          remote_parent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_parent" = "$PARENT"
+
+          test "$(git rev-parse "$PARENT:mensagens.html")" = "$MESSAGES_HTML_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/chat-responsive-state.css")" = "$CHAT_RESPONSIVE_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/messaging-runtime-chat.css")" = "$MESSAGING_RUNTIME_CHAT_BLOB"
+          test "$(git rev-parse "$PARENT:tests/e2e/global-layout-contract.spec.js")" = "$GLOBAL_LAYOUT_TEST_BLOB"
+          test "$(git rev-parse "$PARENT:docs/GLOBAL-LAYOUT-CONTRACT.md")" = "$GLOBAL_LAYOUT_DOC_BLOB"
+          test "$(git rev-parse "$PARENT:scripts/audit-shared-app-header-contract.js")" = "$SHARED_HEADER_AUDIT_BLOB"
+
+      - name: Checkout frozen parent detached
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$PARENT"
+          git reset --hard "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static source and authority proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check tests/e2e/global-layout-contract.spec.js
+          node scripts/audit-shared-app-header-contract.js
+          node <<'NODE'
+          const fs = require('fs');
+          const css = fs.readFileSync('assets/css/pages/chat-responsive-state.css', 'utf8');
+          const runtime = fs.readFileSync('assets/css/pages/messaging-runtime-chat.css', 'utf8');
+          const html = fs.readFileSync('mensagens.html', 'utf8');
+          const doc = fs.readFileSync('docs/GLOBAL-LAYOUT-CONTRACT.md', 'utf8');
+          const audit = fs.readFileSync('scripts/audit-shared-app-header-contract.js', 'utf8');
+
+          const baseRule = /body:is\(\[data-page="mensagens"\], \[data-page="comunidade-interna"\]\)\s*>\s*\.app-shell\s*>\s*\.page\s*>\s*\.chat-list-app-header\s*\{\s*display:\s*none;\s*\}/m;
+          if (!baseRule.test(css)) throw new Error('canonical chat-list desktop display:none rule missing');
+          if (!/@media\s*\(max-width:\s*1180px\)/.test(css)) throw new Error('1180px compact override boundary missing');
+          if (!/\.chat-list-app-header\s*\{[\s\S]*?display:\s*flex;/m.test(css)) throw new Error('compact display:flex override missing');
+          if (!runtime.includes('./chat-responsive-state.css?v=20260618-chat-global-page-contract-v2')) throw new Error('messaging runtime no longer imports chat responsive state');
+          if (!runtime.includes('../layout/header.css?v=20260715-control-elevation-scope-v1')) throw new Error('messaging runtime no longer imports shared header authority');
+          if (!/data-page="mensagens"/.test(html) || !/data-app-header/.test(html) || !/data-header-variant="contextual"/.test(html)) throw new Error('Mensagens contextual app-header markup drift');
+          if (!doc.includes('Toda página ativa que renderiza `.app-header` deve participar da matriz')) throw new Error('global header authority statement drift');
+          if (!doc.includes('`comunidade-interna.html` | workspace de conversa em tela inteira')) throw new Error('approved documented workspace exception drift');
+          if (!audit.includes("'mensagens.html': { variant: 'contextual', context: true }")) throw new Error('Mensagens missing from shared header audit matrix');
+          if (!audit.includes("'comunidade-interna.html': 'full-height conversation workspace with its own thread headers'")) throw new Error('approved workspace exception drift');
+          console.log('008F static source ownership: PASS');
+          NODE
+
+      - name: Governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT"..HEAD
+          git reset --hard "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Current-stack browser CSSOM provenance proof
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1e-browser.json
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 > "${RUNNER_TEMP}/ux-qa-debt-008f-r1e-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null
+
+          cat > "${RUNNER_TEMP}/ux-qa-debt-008f-r1e-probe.cjs" <<'NODE'
+          const fs = require('fs');
+          const { chromium } = require('@playwright/test');
+
+          const baseURL = 'http://127.0.0.1:4173';
+          const authenticatedSession = {
+            provider: 'mock',
+            sessionStatus: 'active',
+            accountStatus: 'active',
+            user: {
+              id: 'ux-qa-debt-008f-r1b',
+              role: 'client',
+              name: 'Cliente 008F',
+              email: 'qa008f@example.test',
+              accountStatus: 'active',
+            },
+          };
+
+          async function prepareContext(browser) {
+            const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+            const blockedRemoteRequests = [];
+            await context.route('**/*', async (route) => {
+              const request = route.request();
+              const url = new URL(request.url());
+              if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') return route.continue();
+              if (url.hostname === 'fonts.googleapis.com') {
+                return route.fulfill({ status: 200, contentType: 'text/css; charset=utf-8', body: '' });
+              }
+              if (url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'unpkg.com') {
+                return route.fulfill({ status: 200, contentType: 'application/javascript; charset=utf-8', body: '' });
+              }
+              blockedRemoteRequests.push(request.url());
+              return route.abort();
+            });
+            await context.addInitScript((session) => {
+              localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+            }, authenticatedSession);
+            return { context, blockedRemoteRequests };
+          }
+
+          async function waitForSettled(page) {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.waitForFunction(() => document.body && document.body.dataset.page, null, { timeout: 5000 }).catch(() => {});
+            await page.waitForFunction(() => {
+              const state = document.querySelector('[data-messages-page]')?.getAttribute('data-view-state');
+              return state && state !== 'loading';
+            }, null, { timeout: 5000 }).catch(() => {});
+            await page.waitForTimeout(350);
+          }
+
+          async function inspectDirect(page) {
+            return page.evaluate(() => {
+              const header = document.querySelector('[data-app-header]');
+              if (!header) return { headerPresent: false };
+
+              const matched = [];
+              const candidates = [];
+              const inaccessibleSheets = [];
+
+              function ownerRuleDescriptor(sheet) {
+                const owner = sheet?.ownerRule || null;
+                if (!owner) return null;
+                return {
+                  type: owner.constructor?.name || 'CSSImportRule',
+                  href: owner.href || null,
+                  cssText: owner.cssText || null,
+                  parentStyleSheetHref: owner.parentStyleSheet?.href || null,
+                };
+              }
+
+              function importChain(sheet) {
+                const chain = [];
+                const seen = new Set();
+                let current = sheet;
+                while (current && current.ownerRule && !seen.has(current)) {
+                  seen.add(current);
+                  const owner = current.ownerRule;
+                  chain.push({
+                    type: owner.constructor?.name || 'CSSImportRule',
+                    href: owner.href || null,
+                    cssText: owner.cssText || null,
+                    parentStyleSheetHref: owner.parentStyleSheet?.href || null,
+                  });
+                  current = owner.parentStyleSheet;
+                }
+                return chain;
+              }
+
+              function sheetProvenance(sheet) {
+                const ownerNode = sheet?.ownerNode || null;
+                return {
+                  parentStyleSheetHref: sheet?.href || null,
+                  actualSheetHref: sheet?.href || null,
+                  ownerNodeTag: ownerNode?.tagName || null,
+                  ownerNodeHref: ownerNode?.href || ownerNode?.getAttribute?.('href') || null,
+                  ownerRule: ownerRuleDescriptor(sheet),
+                  ownerRuleChain: importChain(sheet),
+                };
+              }
+
+              function describeGroup(rule) {
+                const type = rule.constructor?.name || `CSSRule:${rule.type}`;
+                if (type === 'CSSMediaRule') {
+                  let matches = false;
+                  try { matches = matchMedia(rule.conditionText).matches; } catch {}
+                  return { type: 'media', text: rule.conditionText || null, active: matches };
+                }
+                if (type === 'CSSSupportsRule') {
+                  let matches = true;
+                  try { matches = CSS.supports(rule.conditionText); } catch {}
+                  return { type: 'supports', text: rule.conditionText || null, active: matches };
+                }
+                return { type, text: rule.conditionText || rule.name || rule.cssText || null, active: true };
+              }
+
+              function inspectRule(rule, ancestry) {
+                if (!rule.selectorText || !rule.style || !rule.style.getPropertyValue('display')) return;
+                let selectorMatches = false;
+                try { selectorMatches = header.matches(rule.selectorText); } catch { return; }
+                if (!selectorMatches) return;
+
+                const entry = {
+                  selector: rule.selectorText,
+                  cssText: rule.cssText || null,
+                  display: rule.style.getPropertyValue('display'),
+                  priority: rule.style.getPropertyPriority('display'),
+                  conditions: ancestry,
+                  active: ancestry.every((condition) => condition.active !== false),
+                  provenance: sheetProvenance(rule.parentStyleSheet),
+                };
+                matched.push(entry);
+                if (entry.active && entry.display === 'none') candidates.push({ rule, entry });
+              }
+
+              function walkRules(rules, ancestry = []) {
+                if (!rules) return;
+                for (const rule of rules) {
+                  if (rule.type === CSSRule.IMPORT_RULE && rule.styleSheet) {
+                    const mediaText = rule.media?.mediaText || '';
+                    let active = true;
+                    if (mediaText && mediaText !== 'all') {
+                      try { active = matchMedia(mediaText).matches; } catch {}
+                    }
+                    walkSheet(rule.styleSheet, [...ancestry, {
+                      type: 'import',
+                      text: rule.cssText || null,
+                      href: rule.href || null,
+                      active,
+                      parentStyleSheetHref: rule.parentStyleSheet?.href || null,
+                    }]);
+                    continue;
+                  }
+
+                  if (rule.selectorText && rule.style) {
+                    inspectRule(rule, ancestry);
+                    if (rule.cssRules && rule.cssRules.length) {
+                      walkRules(rule.cssRules, [...ancestry, describeGroup(rule)]);
+                    }
+                    continue;
+                  }
+
+                  if (rule.cssRules) {
+                    walkRules(rule.cssRules, [...ancestry, describeGroup(rule)]);
+                    continue;
+                  }
+                }
+              }
+
+              function walkSheet(sheet, ancestry = []) {
+                let rules;
+                try { rules = sheet.cssRules; } catch (error) {
+                  inaccessibleSheets.push({ href: sheet?.href || null, error: String(error?.message || error) });
+                  return;
+                }
+                walkRules(rules, ancestry);
+              }
+
+              for (const sheet of document.styleSheets) walkSheet(sheet);
+
+              const before = getComputedStyle(header).display;
+              const serializedCandidates = candidates.map(({ entry }, index) => ({ index, ...entry }));
+
+              function runCounterfactual(indices) {
+                const saved = indices.map((index) => {
+                  const rule = candidates[index].rule;
+                  return {
+                    index,
+                    value: rule.style.getPropertyValue('display'),
+                    priority: rule.style.getPropertyPriority('display'),
+                  };
+                });
+                for (const { index } of saved) candidates[index].rule.style.removeProperty('display');
+                const afterRemoval = getComputedStyle(header).display;
+                for (const item of [...saved].reverse()) {
+                  candidates[item.index].rule.style.setProperty('display', item.value, item.priority);
+                }
+                const afterRestore = getComputedStyle(header).display;
+                return {
+                  indices,
+                  size: indices.length,
+                  afterRemoval,
+                  afterRestore,
+                  caused: before === 'none' && afterRemoval !== 'none' && afterRestore === 'none',
+                };
+              }
+
+              const individualCounterfactuals = candidates.map((_, index) => runCounterfactual([index]));
+              const jointIndices = candidates.map((_, index) => index);
+              const jointCounterfactual = runCounterfactual(jointIndices);
+
+              const testedSets = [...individualCounterfactuals];
+              if (jointIndices.length > 1) testedSets.push(jointCounterfactual);
+              const causalSets = testedSets
+                .filter((item) => item.caused)
+                .sort((a, b) => a.size - b.size);
+              const minimalSize = causalSets.length ? causalSets[0].size : null;
+              const minimalSets = minimalSize === null ? [] : causalSets.filter((item) => item.size === minimalSize);
+              const minimalCausalSet = minimalSets.length === 1 ? minimalSets[0] : null;
+              const minimalCausalSetMembers = minimalCausalSet
+                ? minimalCausalSet.indices.map((index) => serializedCandidates[index])
+                : [];
+              const minimalProvenanceStrings = minimalCausalSetMembers.flatMap((member) => [
+                member.provenance?.parentStyleSheetHref,
+                member.provenance?.actualSheetHref,
+                member.provenance?.ownerNodeHref,
+                member.provenance?.ownerRule?.href,
+                member.provenance?.ownerRule?.parentStyleSheetHref,
+                member.provenance?.ownerRule?.cssText,
+                ...(member.provenance?.ownerRuleChain || []).flatMap((item) => [item.href, item.parentStyleSheetHref, item.cssText]),
+              ]).filter(Boolean).map(String);
+
+              const rect = header.getBoundingClientRect();
+              return {
+                headerPresent: true,
+                bodyPage: document.body?.dataset?.page || null,
+                url: location.href,
+                authGuard: document.documentElement.getAttribute('data-auth-guard'),
+                hydrationState: document.querySelector('[data-messages-page]')?.getAttribute('data-view-state') || null,
+                hidden: header.hidden,
+                classes: header.className,
+                displayBefore: before,
+                visibility: getComputedStyle(header).visibility,
+                opacity: getComputedStyle(header).opacity,
+                rect: { width: rect.width, height: rect.height, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
+                matchedDisplayRules: matched,
+                matchedDisplayRuleCount: matched.length,
+                displayNoneCandidates: serializedCandidates,
+                displayNoneCandidateCount: serializedCandidates.length,
+                individualCounterfactuals,
+                jointCounterfactual,
+                minimalCausalSet,
+                minimalCausalSetCount: minimalSets.length,
+                minimalCausalSetSize: minimalCausalSet?.size || null,
+                minimalCausalSetMembers,
+                minimalCausalSetAllMembersNameChatResponsiveState: minimalCausalSetMembers.length > 0 && minimalCausalSetMembers.every((member) => {
+                  const values = [
+                    member.provenance?.parentStyleSheetHref,
+                    member.provenance?.actualSheetHref,
+                    member.provenance?.ownerNodeHref,
+                    member.provenance?.ownerRule?.href,
+                    member.provenance?.ownerRule?.parentStyleSheetHref,
+                    member.provenance?.ownerRule?.cssText,
+                    ...(member.provenance?.ownerRuleChain || []).flatMap((item) => [item.href, item.parentStyleSheetHref, item.cssText]),
+                  ].filter(Boolean).map(String);
+                  return values.some((value) => value.includes('/assets/css/pages/chat-responsive-state.css'));
+                }),
+                minimalProvenanceNamesChatResponsiveState: minimalProvenanceStrings.some((value) => value.includes('/assets/css/pages/chat-responsive-state.css')),
+                inaccessibleSheets,
+              };
+            });
+          }
+
+          async function inspectStable(page) {
+            return page.evaluate(() => {
+              const header = document.querySelector('[data-app-header]');
+              const rect = header?.getBoundingClientRect?.();
+              return {
+                bodyPage: document.body?.dataset?.page || null,
+                url: location.href,
+                adapter: document.body?.dataset?.dokeNavigationAdapter || null,
+                headerPresent: Boolean(header),
+                headerPreserved: Boolean(header && window.__uxQa008fInitialHeader === header),
+                classes: header?.className || null,
+                hasChatListClass: Boolean(header?.classList?.contains('chat-list-app-header')),
+                display: header ? getComputedStyle(header).display : null,
+                visibility: header ? getComputedStyle(header).visibility : null,
+                rect: rect ? { width: rect.width, height: rect.height, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom } : null,
+              };
+            });
+          }
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            try {
+              const directPrepared = await prepareContext(browser);
+              const directPage = await directPrepared.context.newPage();
+              await directPage.goto(`${baseURL}/mensagens.html`, { waitUntil: 'domcontentloaded' });
+              await waitForSettled(directPage);
+              const direct = await inspectDirect(directPage);
+
+              console.log(`UX_QA_DEBT_008F_R1E_DIRECT=${JSON.stringify({
+                matchedDisplayRules: direct.matchedDisplayRules,
+                displayNoneCandidates: direct.displayNoneCandidates,
+                individualCounterfactuals: direct.individualCounterfactuals,
+                jointCounterfactual: direct.jointCounterfactual,
+                minimalCausalSet: direct.minimalCausalSet,
+                minimalCausalSetMembers: direct.minimalCausalSetMembers,
+                inaccessibleSheets: direct.inaccessibleSheets,
+              })}`);
+
+              if (!direct.headerPresent) throw new Error('direct-load Mensagens app header missing');
+              if (direct.bodyPage !== 'mensagens') throw new Error(`direct-load body[data-page] drift: ${direct.bodyPage}`);
+              if (!direct.url.includes('/mensagens.html')) throw new Error(`direct-load redirected away from Mensagens: ${direct.url}`);
+              if (direct.displayBefore !== 'none') throw new Error(`expected direct computed display:none, got ${direct.displayBefore}`);
+              if (direct.matchedDisplayRuleCount < 1) throw new Error('no matching explicit display rules enumerated in live CSSOM');
+              if (direct.displayNoneCandidateCount !== 2) {
+                throw new Error(`expected exactly two active display:none candidates from R1d, got ${direct.displayNoneCandidateCount}; matched=${direct.matchedDisplayRuleCount}`);
+              }
+              if (direct.individualCounterfactuals.length !== 2) throw new Error('individual counterfactual coverage drift');
+              if (direct.individualCounterfactuals.some((item) => item.afterRestore !== 'none')) throw new Error('individual restoration did not return display:none');
+              if (direct.individualCounterfactuals.some((item) => item.caused)) throw new Error('R1d redundancy expectation drift: an individual candidate became independently causal');
+              if (!direct.jointCounterfactual?.caused) {
+                throw new Error(`joint candidate removal did not restore display; afterRemoval=${direct.jointCounterfactual?.afterRemoval}; afterRestore=${direct.jointCounterfactual?.afterRestore}`);
+              }
+              if (direct.jointCounterfactual.afterRemoval === 'none') throw new Error('joint candidate removal did not restore header display');
+              if (direct.jointCounterfactual.afterRestore !== 'none') throw new Error('joint candidate restoration did not restore display:none');
+              if (direct.minimalCausalSetCount !== 1 || !direct.minimalCausalSet) throw new Error(`unique minimal causal set not proven; count=${direct.minimalCausalSetCount}`);
+              if (direct.minimalCausalSetSize !== 2) throw new Error(`expected redundant two-rule minimal causal set, got size=${direct.minimalCausalSetSize}`);
+              if (direct.minimalCausalSetMembers.length !== 2) throw new Error('minimal causal-set member serialization drift');
+              if (direct.minimalCausalSetMembers.some((member) => !member.selector.includes('.chat-list-app-header'))) {
+                throw new Error(`minimal causal-set selector drift: ${JSON.stringify(direct.minimalCausalSetMembers.map((member) => member.selector))}`);
+              }
+              if (!direct.minimalCausalSetAllMembersNameChatResponsiveState || !direct.minimalProvenanceNamesChatResponsiveState) {
+                throw new Error(`minimal causal-set provenance does not resolve every member to chat-responsive-state.css: ${JSON.stringify(direct.minimalCausalSetMembers.map((member) => member.provenance))}`);
+              }
+
+              const stablePrepared = await prepareContext(browser);
+              const stablePage = await stablePrepared.context.newPage();
+              await stablePage.goto(`${baseURL}/index.html`, { waitUntil: 'domcontentloaded' });
+              await waitForSettled(stablePage);
+              await stablePage.evaluate(() => { window.__uxQa008fInitialHeader = document.querySelector('[data-app-header]'); });
+              await stablePage.waitForFunction(() => typeof window.DokeNavigate === 'function', null, { timeout: 10000 });
+              await stablePage.evaluate(async () => {
+                const result = window.DokeNavigate('/mensagens.html');
+                if (result && typeof result.then === 'function') await result;
+              });
+              await stablePage.waitForURL(/\/mensagens\.html(?:$|[?#])/, { timeout: 15000 });
+              await waitForSettled(stablePage);
+              const stable = await inspectStable(stablePage);
+
+              if (stable.bodyPage !== 'mensagens') throw new Error(`stable-shell body[data-page] drift: ${stable.bodyPage}`);
+              if (!stable.headerPresent) throw new Error('stable-shell Mensagens header missing');
+
+              const allBlocked = [...directPrepared.blockedRemoteRequests, ...stablePrepared.blockedRemoteRequests];
+              const classification = stable.display === 'none'
+                ? 'PRODUCT_CASCADE_DRIFT_REDUNDANT_CAUSAL_SET_BOTH_DIRECT_AND_STABLE_ENTRY'
+                : stable.headerPreserved
+                  ? 'DIRECT_LOAD_REDUNDANT_CASCADE_DRIFT_WITH_STABLE_SHELL_HEADER_PRESERVATION'
+                  : 'DIRECT_LOAD_REDUNDANT_CASCADE_DRIFT_STABLE_ENTRY_DIFFERENT_HEADER_STATE';
+
+              const report = {
+                checkpoint: 'UX-QA-DEBT-008F-R1E-REDUNDANT-CAUSAL-SET-RECOVERY',
+                viewport: { width: 1366, height: 768 },
+                direct,
+                stable,
+                classification,
+                blockedRemoteRequests: allBlocked,
+                supabaseNetworkSent: false,
+                rpcInvocation: false,
+              };
+              fs.writeFileSync(process.env.REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`);
+              console.log(`UX_QA_DEBT_008F_R1E_BROWSER=${JSON.stringify(report)}`);
+              await directPrepared.context.close();
+              await stablePrepared.context.close();
+            } finally {
+              await browser.close();
+            }
+          })().catch((error) => {
+            console.error(error.stack || error);
+            process.exit(1);
+          });
+          NODE
+
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node "${RUNNER_TEMP}/ux-qa-debt-008f-r1e-probe.cjs"
+
+      - name: Build receipt and assert classification
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1e-browser.json
+          RECEIPT_PATH: ${{ runner.temp }}/ux-qa-debt-008f-r1e-receipt.json
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.env.REPORT_PATH, 'utf8'));
+          const d = report.direct;
+          const causalSet = d.minimalCausalSet;
+          const members = d.minimalCausalSetMembers || [];
+          if (d.displayBefore !== 'none') throw new Error('direct display:none not reproduced');
+          if (d.matchedDisplayRuleCount < 1) throw new Error('no matching display rules enumerated');
+          if (d.displayNoneCandidateCount !== 2) throw new Error('two active display:none candidates not preserved');
+          if (d.individualCounterfactuals?.some((item) => item.caused)) throw new Error('individual candidate unexpectedly causal');
+          if (!d.jointCounterfactual?.caused) throw new Error('joint counterfactual causal-set proof failed');
+          if (d.jointCounterfactual.afterRemoval === 'none') throw new Error('joint causal-set removal did not restore display');
+          if (d.jointCounterfactual.afterRestore !== 'none') throw new Error('joint causal-set restore did not return display:none');
+          if (d.minimalCausalSetCount !== 1 || !causalSet) throw new Error('unique minimal causal set not proven');
+          if (d.minimalCausalSetSize !== 2 || members.length !== 2) throw new Error('redundant two-member causal set not proven');
+          if (!d.minimalCausalSetAllMembersNameChatResponsiveState) throw new Error('causal-set provenance did not resolve all members to chat-responsive-state.css');
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-QA-DEBT-008F-R1E-REDUNDANT-CAUSAL-SET-RECOVERY',
+            parent: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            viewport: '1366x768',
+            sourceOwner: 'assets/css/pages/chat-responsive-state.css',
+            sourceOwnerBlob: process.env.CHAT_RESPONSIVE_BLOB,
+            directDisplayNone: true,
+            matchedDisplayRuleCount: d.matchedDisplayRuleCount,
+            displayNoneCandidateCount: d.displayNoneCandidateCount,
+            individualCounterfactuals: d.individualCounterfactuals,
+            jointCounterfactual: d.jointCounterfactual,
+            minimalCausalSetSize: d.minimalCausalSetSize,
+            minimalCausalSetMembers: members.map((member) => ({
+              selector: member.selector,
+              conditions: member.conditions,
+              parentStyleSheetHref: member.provenance?.parentStyleSheetHref || null,
+              ownerRule: member.provenance?.ownerRule || null,
+              ownerRuleChain: member.provenance?.ownerRuleChain || [],
+            })),
+            jointCounterfactualRemovalRestoresDisplay: d.jointCounterfactual.afterRemoval !== 'none',
+            jointCounterfactualRestoreReturnsDisplayNone: d.jointCounterfactual.afterRestore === 'none',
+            stableEntryCaptured: true,
+            stableDisplay: report.stable.display,
+            stableHeaderPreserved: report.stable.headerPreserved,
+            classification: report.classification,
+            sharedAppHeaderAuthorityConflict: true,
+            globalLayoutTestStalenessProven: false,
+            criteriaRelaxed: 0,
+            introducedRegressions: 0,
+            candidateMaterialized: false,
+            productMutation: false,
+            cssHtmlMutation: false,
+            testMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            visualBaselineMutation: false,
+            supabaseNetworkSent: false,
+            rpcInvocation: false,
+            stagingProduction: false,
+            permanentBranchMutation: false,
+            issueMutation: false,
+            prCreated: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true,
+          };
+          fs.writeFileSync(process.env.RECEIPT_PATH, `${JSON.stringify(receipt, null, 2)}\n`);
+          console.log(`UX_QA_DEBT_008F_R1E_FINAL=${JSON.stringify(receipt)}`);
+          NODE
+
+      - name: Post-gates parent immutability
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse HEAD^{tree})" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:mensagens.html")" = "$MESSAGES_HTML_BLOB"
+          test "$(git rev-parse "$PARENT:assets/css/pages/chat-responsive-state.css")" = "$CHAT_RESPONSIVE_BLOB"
+          test "$(git rev-parse "$PARENT:tests/e2e/global-layout-contract.spec.js")" = "$GLOBAL_LAYOUT_TEST_BLOB"
+          git diff --quiet HEAD --
+          git diff --cached --quiet
+
+      - name: Upload R1e evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008f-r1e-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/ux-qa-debt-008f-r1e-browser.json
+            ${{ runner.temp }}/ux-qa-debt-008f-r1e-receipt.json
+            ${{ runner.temp }}/ux-qa-debt-008f-r1e-server.log
+          if-no-files-found: error
