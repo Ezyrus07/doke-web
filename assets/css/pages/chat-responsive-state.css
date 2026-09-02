@@ -373,9 +373,11 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
 /* Chat list global header adapter.
    Scope: mensagens.html and comunidade-interna.html list/canal states only.
    Responsibility: consume the existing global .app-header/home-side-meta contract
-   instead of recreating header/profile geometry inside chat CSS. Thread states
-   remain full chat workspaces without a global top header. */
-body:is([data-page="mensagens"], [data-page="comunidade-interna"]) > .app-shell > .page > .chat-list-app-header {
+   instead of recreating header/profile geometry inside chat CSS. Mensagens keeps
+   the global header in desktop split/list states; only the approved
+   comunidade-interna workspace keeps the base no-global-header state. Compact
+   thread states remain full chat workspaces without a global top header. */
+body[data-page="comunidade-interna"] > .app-shell > .page > .chat-list-app-header {
   display: none;
 }
 
