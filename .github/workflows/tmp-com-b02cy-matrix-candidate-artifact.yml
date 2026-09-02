@@ -10,7 +10,7 @@ on:
       - '.github/workflows/tmp-com-b02cy-matrix-candidate-artifact.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate-clean-b02cy-target:
@@ -40,7 +40,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
@@ -139,3 +139,24 @@ jobs:
             /tmp/com-b02cy-clean-target/reports/generated/domain-completion-matrix-report.json
           if-no-files-found: error
           retention-days: 7
+
+      - name: Materialize validated derivative blobs on auxiliary branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+          cp "$TARGET_DIR/$MATRIX_MD" "$MATRIX_MD"
+          cp "$TARGET_DIR/$MATRIX_REPORT" "$MATRIX_REPORT"
+
+          test "$(git hash-object "$MATRIX_MD")" = '4a9db1aef14269c575c23eba9e810aab00b5bec0'
+          test "$(git hash-object "$MATRIX_REPORT")" = '393969bdc0c21295d9d85c19d0d1c7a484e2a058'
+          actual="$(git diff --name-status | sort)"
+          expected="$(printf 'M\t%s\nM\t%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$actual" = "$expected"
+          git diff --check
+
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add -- "$MATRIX_MD" "$MATRIX_REPORT"
+          git commit -m 'ci(com): retain validated B02CY matrix derivative blobs'
+          git push origin "HEAD:refs/heads/tmp/com-b02cy-matrix-candidate-artifact"
