@@ -18,6 +18,7 @@ jobs:
     env:
       PREDECESSOR_HEAD: 6bb9608ce4b1b5a01ffb249030e3eb8cd71e88ca
       PREDECESSOR_TREE: e18f83d4e78f077af933b922124531840a23a8c1
+      FIRST_AUXILIARY_HEAD: d9883731ba2b7383ac167300a3684190e990927c
       SOURCE: backend/modules/communities/community-command-post-idempotency-rate-limit-policy-snapshot-authority-readiness.js
       SOURCE_BLOB: 0ebc392f9dcff88b8698dd42020789901e8fd12e
       TEMP_WORKFLOW: .github/workflows/tmp-com-b02cy-matrix-candidate-artifact.yml
@@ -50,7 +51,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse HEAD^)" = "$FIRST_AUXILIARY_HEAD"
+          test "$(git rev-parse "$FIRST_AUXILIARY_HEAD^")" = "$PREDECESSOR_HEAD"
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
 
           actual="$(git diff --name-status "$PREDECESSOR_HEAD" HEAD | sort)"
@@ -67,12 +69,11 @@ jobs:
           git diff --check "$PREDECESSOR_HEAD" HEAD
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
-      - name: Validate source syntax and repository governance
+      - name: Validate B02CY source syntax
         shell: bash
         run: |
           set -euo pipefail
           node --check "$SOURCE"
-          npm run audit:agent-governance
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
       - name: Generate canonical Matrix derivatives locally
@@ -90,12 +91,13 @@ jobs:
           expected_generated="$(printf '%s\n%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
           test "$actual_generated" = "$expected_generated"
 
-      - name: Validate generated Matrix candidate and deterministic COM delta
+      - name: Validate generated Matrix candidate and repository governance
         shell: bash
         run: |
           set -euo pipefail
 
           npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
           git diff --check -- "$MATRIX_MD" "$MATRIX_REPORT"
 
           node <<'NODE'
