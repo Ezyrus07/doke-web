@@ -1,0 +1,603 @@
+name: TEMP UX-QA-DEBT-008F C1e Canonical Mobile Shell Browser Recovery
+
+# Materialization is intentionally non-executing. A later, separately authorized
+# execution may be triggered only by creating the exact *-run branch below.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - diag/ux-qa-debt-008f-messages-desktop-header-c1e-mobile-shell-browser-recovery-run
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-mobile-shell-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PARENT: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PARENT_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
+      C1: afe003ac7b45b776359d60c0aa9a93853a2d7942
+      C1_TREE: a91cff6e2fef82c05522e314eafa339752aea8f5
+      C1_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1
+      C1B: 8cae2dfb042518988ab075349eda04902c8394a7
+      C1B_TREE: ffd525e0f2ad65625ffde003fda88380eea169a5
+      C1B_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1b-rail-differential-recovery
+      C1C: 4fccee9edc5ab91eb8c9dd98aecae71edd193cf1
+      C1C_TREE: b8d1c2f7cb362a7ea18ca08553c032187c1bb103
+      C1C_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1c-remaining-gates-recovery
+      C1C_RUN: "33578613810"
+      C1C_JOB: "100087926745"
+      C1C_GLOBAL_LAYOUT_CLASSIFICATION: C1C_PASS_GLOBAL_LAYOUT_DIFFERENTIAL_ONLY_OWNED_MENSAGENS_DESKTOP_REMOVED
+      C1D: dfe1bc49d7d750abf47b3a8b9dfd9832f5304d61
+      C1D_TREE: 38ef054bc7ad388561b154b65d6293e4294b0c37
+      C1D_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1d-community-precondition-browser-recovery
+      C1D_RUN: "33622476194"
+      C1D_JOB: "100222445136"
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-c1e-mobile-shell-browser-recovery.yml
+      MOBILE_NAV_PATH: assets/css/pages/chat-mobile-navigation.css
+      MOBILE_NAV_C1_BLOB: 4b891d87603798a02cdc316b7427b6b15e471b0c
+      RESPONSIVE_PATH: assets/css/pages/chat-responsive-state.css
+      RESPONSIVE_C1_BLOB: acfb52d38d0416672cbbebdbd1467090940cd185
+      APP_HEADER_PATH: assets/css/components/shell/app-header.css
+      APP_HEADER_C1_BLOB: f21bb85bf8bd19ec1016e579e77c4c81496c27ac
+      MOBILE_SHELL_PATH: assets/css/components/shell/mobile-app-shell.css
+      MOBILE_SHELL_C1_BLOB: 14fb64c93777d606b07c0abbf2c6532aed134cc4
+      MESSAGES_JS_PATH: assets/js/pages/mensagens.js
+      MESSAGES_JS_C1_BLOB: 14503ef5e4793fcfc3ce75bafb32ac87da75bcd6
+      STABLE_SCROLL_SPEC_PATH: tests/e2e/stable-shell-scroll-contract.spec.js
+      STABLE_SCROLL_SPEC_C1_BLOB: 7b5b2db651c6871ee91471e4cb05b201a0e3aa25
+      MOBILE_SHELL_SPEC_PATH: tests/e2e/mobile-shell.spec.js
+      MOBILE_SHELL_SPEC_C1_BLOB: 12272ce8b6761cc71c5d0b72b545ca3a3cd8206a
+      VISUAL_SPEC_PATH: tests/visual/doke-visual-regression.spec.js
+      VISUAL_SPEC_C1_BLOB: bf3885913496481155aa10e17340043e47245331
+      COMMUNITY_JS_PATH: assets/js/pages/comunidade-interna.js
+      COMMUNITY_JS_C1_BLOB: cf32b2bbc402f7b7ac74d2558262de3b3bb87b84
+
+    steps:
+      - name: Checkout C1e harness branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze TEMP-only scope and immutable authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1^")" = "$PARENT"
+          test "$(git rev-parse "$C1B^{tree}")" = "$C1B_TREE"
+          test "$(git rev-parse "$C1B^")" = "$PARENT"
+          test "$(git rev-parse "$C1C^{tree}")" = "$C1C_TREE"
+          test "$(git rev-parse "$C1C^")" = "$PARENT"
+          test "$(git rev-parse "$C1D^{tree}")" = "$C1D_TREE"
+          test "$(git rev-parse "$C1D^")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT"..HEAD)" = "1"
+
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')" = "$PARENT"
+          test "$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')" = "$C1"
+          test "$(git ls-remote origin "refs/heads/$C1B_BRANCH" | awk '{print $1}')" = "$C1B"
+          test "$(git ls-remote origin "refs/heads/$C1C_BRANCH" | awk '{print $1}')" = "$C1C"
+          test "$(git ls-remote origin "refs/heads/$C1D_BRANCH" | awk '{print $1}')" = "$C1D"
+
+          test "$(git rev-parse "$C1:$MOBILE_NAV_PATH")" = "$MOBILE_NAV_C1_BLOB"
+          test "$(git rev-parse "$C1:$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+          test "$(git rev-parse "$C1:$APP_HEADER_PATH")" = "$APP_HEADER_C1_BLOB"
+          test "$(git rev-parse "$C1:$MOBILE_SHELL_PATH")" = "$MOBILE_SHELL_C1_BLOB"
+          test "$(git rev-parse "$C1:$MESSAGES_JS_PATH")" = "$MESSAGES_JS_C1_BLOB"
+          test "$(git rev-parse "$C1:$STABLE_SCROLL_SPEC_PATH")" = "$STABLE_SCROLL_SPEC_C1_BLOB"
+          test "$(git rev-parse "$C1:$MOBILE_SHELL_SPEC_PATH")" = "$MOBILE_SHELL_SPEC_C1_BLOB"
+          test "$(git rev-parse "$C1:$VISUAL_SPEC_PATH")" = "$VISUAL_SPEC_C1_BLOB"
+          test "$(git rev-parse "$C1:$COMMUNITY_JS_PATH")" = "$COMMUNITY_JS_C1_BLOB"
+          test "$(git rev-parse "$PARENT:package.json")" = "$(git rev-parse "$C1:package.json")"
+          test "$(git rev-parse "$PARENT:package-lock.json")" = "$(git rev-parse "$C1:package-lock.json")"
+          git diff --check "$PARENT"..HEAD
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies once
+        run: npm ci
+
+      - name: Governance gates for TEMP-only materialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT"..HEAD
+
+      - name: Install Chromium once
+        run: npx playwright install chromium
+
+      - name: Browser direct and stable-shell C1 validation with canonical mobile shell
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/c1e-evidence/c1-browser.json
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1e-evidence"
+          mkdir -p "$evidence"
+
+          git checkout --detach "$C1"
+          git reset --hard "$C1"
+          test "$(git rev-parse HEAD)" = "$C1"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$C1_TREE"
+          test "$(git rev-parse "HEAD:$APP_HEADER_PATH")" = "$APP_HEADER_C1_BLOB"
+          test "$(git rev-parse "HEAD:$MOBILE_SHELL_PATH")" = "$MOBILE_SHELL_C1_BLOB"
+          test "$(git rev-parse "HEAD:$MESSAGES_JS_PATH")" = "$MESSAGES_JS_C1_BLOB"
+          test "$(git rev-parse "HEAD:$STABLE_SCROLL_SPEC_PATH")" = "$STABLE_SCROLL_SPEC_C1_BLOB"
+          test "$(git rev-parse "HEAD:$MOBILE_SHELL_SPEC_PATH")" = "$MOBILE_SHELL_SPEC_C1_BLOB"
+
+          python3 -m http.server 4173 --bind 127.0.0.1 > "$RUNNER_TEMP/ux-qa-debt-008f-c1e-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null
+
+          cat > "$RUNNER_TEMP/ux-qa-debt-008f-c1e-browser.cjs" <<'NODE'
+          const fs = require('fs');
+          const { chromium } = require('@playwright/test');
+
+          const baseURL = 'http://127.0.0.1:4173';
+          const viewports = [
+            { name: 'desktop-1366x768', width: 1366, height: 768 },
+            { name: 'tablet-820x1180', width: 820, height: 1180 },
+            { name: 'mobile-390x844', width: 390, height: 844 },
+          ];
+          const authenticatedSession = {
+            provider: 'mock',
+            sessionStatus: 'active',
+            accountStatus: 'active',
+            user: {
+              id: 'ux-qa-debt-008f-c1e',
+              role: 'client',
+              name: 'Cliente 008F C1e',
+              email: 'qa008f-c1e@example.test',
+              accountStatus: 'active',
+            },
+          };
+          const canonicalCommunity = {
+            id: 'visual-community',
+            title: 'Comunidade Visual',
+            name: 'Comunidade Visual',
+            category: 'Geral',
+            visibility: 'public',
+            status: 'active',
+            ownerId: authenticatedSession.user.id,
+            ownerAccountKey: authenticatedSession.user.id,
+            ownerIdentityKeys: [authenticatedSession.user.id, authenticatedSession.user.email],
+            members: [{
+              id: authenticatedSession.user.id,
+              userId: authenticatedSession.user.id,
+              accountKey: authenticatedSession.user.id,
+              email: authenticatedSession.user.email,
+              name: authenticatedSession.user.name,
+              role: 'owner',
+              identityKeys: [authenticatedSession.user.id, authenticatedSession.user.email],
+              joinedAt: '2026-01-01T00:00:00.000Z',
+              membershipVersion: 1,
+            }],
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          };
+
+          function assert(condition, message) {
+            if (!condition) throw new Error(message);
+          }
+
+          function visible(element) {
+            if (!element) return false;
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+          }
+
+          async function prepareContext(browser, viewport, options = {}) {
+            const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
+            const blockedRemoteRequests = [];
+            await context.route('**/*', async route => {
+              const request = route.request();
+              const url = new URL(request.url());
+              if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') return route.continue();
+              if (url.hostname === 'fonts.googleapis.com') return route.fulfill({ status: 200, contentType: 'text/css; charset=utf-8', body: '' });
+              if (url.hostname === 'fonts.gstatic.com') return route.abort();
+              if (url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'unpkg.com') {
+                return route.fulfill({ status: 200, contentType: 'application/javascript; charset=utf-8', body: '' });
+              }
+              blockedRemoteRequests.push(request.url());
+              return route.abort();
+            });
+            await context.addInitScript(({ session, installCommunity, community }) => {
+              localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+              if (installCommunity) {
+                localStorage.setItem('doke.communities.local.v1', JSON.stringify([community]));
+                localStorage.setItem('doke.community.selected.v1', JSON.stringify({
+                  id: community.id,
+                  title: community.title,
+                  category: community.category,
+                  selectedAt: '2026-01-01T00:00:00.000Z',
+                }));
+              }
+            }, {
+              session: authenticatedSession,
+              installCommunity: options.installCommunity === true,
+              community: canonicalCommunity,
+            });
+            return { context, blockedRemoteRequests };
+          }
+
+          async function settle(page) {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.waitForFunction(() => document.body && document.body.dataset.page, null, { timeout: 5000 }).catch(() => {});
+            await page.waitForTimeout(350);
+          }
+
+          async function readState(page) {
+            return page.evaluate(() => {
+              const isVisible = (element) => {
+                if (!element) return false;
+                const rect = element.getBoundingClientRect();
+                const style = getComputedStyle(element);
+                return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+              };
+              const appHeader = document.querySelector('[data-app-header]');
+              const mobileShell = document.querySelector('.doke-mobile-app-shell, .doke-mobile-shell');
+              const mobileTopbar = document.querySelector('.doke-mobile-shell__topbar');
+              const mobileBottomNav = document.querySelector('.doke-mobile-shell__bottom-nav, .doke-mobile-bottom-nav');
+              const messagesRoot = document.querySelector('[data-messages-page]');
+              const thread = document.querySelector('[data-messages-thread], .messages-thread');
+              const sidebar = document.querySelector('.messages-sidebar');
+              const root = document.documentElement;
+              return {
+                bodyPage: document.body?.dataset?.page || null,
+                appHeaderCount: document.querySelectorAll('[data-app-header]').length,
+                appHeaderVisible: isVisible(appHeader),
+                mobileShellVisible: isVisible(mobileShell),
+                mobileTopbarVisible: isVisible(mobileTopbar),
+                mobileBottomNavVisible: isVisible(mobileBottomNav),
+                mobileShellMounted: document.body?.classList.contains('doke-mobile-shell-mounted') || false,
+                bodyThreadOpen: document.body?.classList.contains('messages-thread-is-open') || false,
+                htmlThreadOpen: root.classList.contains('messages-thread-is-open'),
+                bodyMobileRoomOpen: document.body?.classList.contains('chat-room-mobile-open') || false,
+                htmlMobileRoomOpen: root.classList.contains('chat-room-mobile-open'),
+                appThreadOpen: messagesRoot?.classList.contains('messages-app--thread-open') || false,
+                messagesMode: messagesRoot?.dataset?.messagesMode || '',
+                threadVisible: isVisible(thread),
+                sidebarVisible: isVisible(sidebar),
+                scrollWidth: root.scrollWidth,
+                clientWidth: root.clientWidth,
+              };
+            });
+          }
+
+          function assertNoOverflow(state, label) {
+            assert(state.scrollWidth <= state.clientWidth + 1, `${label}: horizontal overflow ${state.scrollWidth}-${state.clientWidth}`);
+          }
+
+          function assertMessagesListChrome(state, viewport, label) {
+            assert(state.bodyPage === 'mensagens', `${label}: body=${state.bodyPage}`);
+            assert(state.appHeaderCount === 1, `${label}: expected one app header, got ${state.appHeaderCount}`);
+            assertNoOverflow(state, label);
+            if (viewport.width <= 560) {
+              assert(state.appHeaderVisible === false, `${label}: desktop app header must remain hidden on phone`);
+              assert(state.mobileShellMounted === true, `${label}: canonical mobile shell must be mounted`);
+              assert(state.mobileShellVisible === true, `${label}: canonical mobile shell must be visible`);
+              assert(state.mobileTopbarVisible === true, `${label}: canonical mobile topbar must be visible`);
+              assert(state.mobileBottomNavVisible === true, `${label}: canonical mobile bottom nav must be visible`);
+              assert(state.bodyMobileRoomOpen === false && state.htmlMobileRoomOpen === false, `${label}: list state cannot keep mobile room-open chrome`);
+            } else {
+              assert(state.appHeaderVisible === true, `${label}: app header must be visible outside phone breakpoint`);
+            }
+          }
+
+          function assertMessagesThreadChrome(state, viewport, label) {
+            assertNoOverflow(state, label);
+            assert(state.bodyThreadOpen === true, `${label}: body thread-open missing`);
+            assert(state.htmlThreadOpen === true, `${label}: html thread-open missing`);
+            assert(state.appThreadOpen === true, `${label}: messages-app thread-open missing`);
+            assert(state.messagesMode === 'thread', `${label}: messagesMode=${state.messagesMode}`);
+            assert(state.threadVisible === true, `${label}: thread must be visible`);
+            assert(state.sidebarVisible === false, `${label}: sidebar must be hidden while thread is open`);
+            assert(state.appHeaderVisible === false, `${label}: list app header must be hidden while thread is open`);
+            if (viewport.width <= 560) {
+              assert(state.bodyMobileRoomOpen === true && state.htmlMobileRoomOpen === true, `${label}: canonical phone room-open classes missing`);
+              assert(state.mobileShellVisible === false, `${label}: global mobile shell must be hidden in phone thread state`);
+              assert(state.mobileBottomNavVisible === false, `${label}: global mobile bottom nav must be hidden in phone thread state`);
+            }
+          }
+
+          async function seedConversation(page) {
+            await page.waitForFunction(() => document.querySelector('[data-messages-page]')?.dataset.messagesReady === 'true', null, { timeout: 10000 });
+            await page.waitForFunction(() => typeof window.Doke?.repositories?.messages?.writeLocal === 'function', null, { timeout: 10000 });
+            await page.evaluate(() => {
+              window.Doke.repositories.messages.writeLocal([{
+                id: 'painting',
+                clientId: 'ux-qa-debt-008f-c1e',
+                professionalId: 'ux-qa-debt-008f-professional',
+                participants: ['ux-qa-debt-008f-c1e', 'ux-qa-debt-008f-professional'],
+                professionalName: 'Pintor 008F',
+                providerName: 'Pintor 008F',
+                group: 'orders',
+                status: 'accepted',
+                statusLabel: 'Pedido aceito',
+                order: {
+                  id: 'order-008f-c1e-painting',
+                  clientId: 'ux-qa-debt-008f-c1e',
+                  professionalId: 'ux-qa-debt-008f-professional',
+                  providerId: 'ux-qa-debt-008f-professional',
+                  providerName: 'Pintor 008F',
+                  title: 'Pintura residencial',
+                  serviceTitle: 'Pintura residencial',
+                  status: 'accepted',
+                  statusLabel: 'Pedido aceito',
+                  budget: 'R$ 450,00',
+                },
+                messages: [{
+                  id: 'message-008f-c1e-painting',
+                  senderId: 'ux-qa-debt-008f-professional',
+                  author: 'Pintor 008F',
+                  text: 'Posso iniciar a pintura amanhã.',
+                  createdAt: '2026-08-30T12:00:00.000Z',
+                }],
+                createdAt: '2026-08-30T12:00:00.000Z',
+                updatedAt: '2026-08-30T12:01:00.000Z',
+              }]);
+              document.dispatchEvent(new CustomEvent('doke:auth-session-change', { detail: { source: 'ux-qa-debt-008f-c1e' } }));
+            });
+            await page.waitForFunction(() => {
+              const item = document.querySelector('.message-item[data-message-id="painting"]');
+              if (!item) return false;
+              const rect = item.getBoundingClientRect();
+              const style = getComputedStyle(item);
+              return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+            }, null, { timeout: 10000 });
+          }
+
+          async function openRealThread(page, viewport, label) {
+            await seedConversation(page);
+            await page.locator('.message-item[data-message-id="painting"]').first().click();
+            await page.waitForTimeout(150);
+            const thread = await readState(page);
+            assertMessagesThreadChrome(thread, viewport, label);
+            return thread;
+          }
+
+          async function restoreRealList(page, viewport, label) {
+            const back = page.locator('.messages-thread__back, [data-messages-back]').first();
+            await back.click();
+            await page.waitForTimeout(150);
+            const restored = await readState(page);
+            assertMessagesListChrome(restored, viewport, label);
+            assert(restored.bodyThreadOpen === false && restored.htmlThreadOpen === false, `${label}: thread-open classes not cleared`);
+            assert(restored.appThreadOpen === false, `${label}: app thread-open not cleared`);
+            return restored;
+          }
+
+          async function directMessages(browser, viewport) {
+            const { context, blockedRemoteRequests } = await prepareContext(browser, viewport);
+            const page = await context.newPage();
+            await page.goto(`${baseURL}/mensagens.html`);
+            await settle(page);
+            const list = await readState(page);
+            assertMessagesListChrome(list, viewport, `${viewport.name} direct mensagens list`);
+
+            let thread = null;
+            let restored = null;
+            if (viewport.width <= 1180) {
+              thread = await openRealThread(page, viewport, `${viewport.name} direct mensagens thread`);
+              restored = await restoreRealList(page, viewport, `${viewport.name} direct mensagens restored`);
+            }
+            await context.close();
+            return { list, thread, restored, blockedRemoteRequestCount: blockedRemoteRequests.length };
+          }
+
+          async function directCommunity(browser, viewport) {
+            const { context, blockedRemoteRequests } = await prepareContext(browser, viewport, { installCommunity: true });
+            const page = await context.newPage();
+            await page.goto(`${baseURL}/comunidade-interna.html`);
+            await settle(page);
+            const base = await readState(page);
+            assert(base.bodyPage === 'comunidade-interna', `${viewport.name} direct community body=${base.bodyPage}`);
+            assertNoOverflow(base, `${viewport.name} direct community`);
+            if (viewport.width > 1180) {
+              assert(base.appHeaderVisible === false, `${viewport.name} direct community desktop workspace app header must remain hidden`);
+            } else if (viewport.width > 560) {
+              assert(base.appHeaderVisible === true, `${viewport.name} direct community tablet list app header must remain visible`);
+            } else {
+              assert(base.appHeaderVisible === false, `${viewport.name} direct community phone desktop app header must remain hidden`);
+            }
+            await context.close();
+            return { base, blockedRemoteRequestCount: blockedRemoteRequests.length };
+          }
+
+          async function stableMessages(browser, viewport) {
+            const { context, blockedRemoteRequests } = await prepareContext(browser, viewport);
+            const page = await context.newPage();
+            await page.goto(`${baseURL}/index.html`);
+            await settle(page);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function', null, { timeout: 10000 });
+            await page.evaluate(() => {
+              window.__qa008fC1eMarker = `marker-${Date.now()}`;
+              window.__qa008fC1eNavigationCount = performance.getEntriesByType('navigation').length;
+              window.__qa008fC1eHeader = document.querySelector('[data-app-header]');
+            });
+            const marker = await page.evaluate(() => window.__qa008fC1eMarker);
+            await page.evaluate(async () => {
+              const result = window.DokeNavigate('/mensagens.html');
+              if (result && typeof result.then === 'function') await result;
+            });
+            await page.waitForURL(/\/mensagens\.html(?:$|[?#])/);
+            await settle(page);
+
+            const shell = await page.evaluate(() => ({
+              marker: window.__qa008fC1eMarker,
+              documentNavigationCount: performance.getEntriesByType('navigation').length,
+              initialDocumentNavigationCount: window.__qa008fC1eNavigationCount,
+              adapter: document.body.dataset.dokeNavigationAdapter || null,
+              headerPreserved: window.__qa008fC1eHeader === document.querySelector('[data-app-header]'),
+            }));
+            assert(shell.marker === marker, `${viewport.name} stable mensagens: JS context changed`);
+            assert(shell.documentNavigationCount === shell.initialDocumentNavigationCount, `${viewport.name} stable mensagens: document reload detected`);
+            assert(shell.adapter === 'stable-shell', `${viewport.name} stable mensagens: adapter=${shell.adapter}`);
+            assert(shell.headerPreserved === true, `${viewport.name} stable mensagens: app-header node replaced`);
+
+            const list = await readState(page);
+            assertMessagesListChrome(list, viewport, `${viewport.name} stable mensagens list`);
+
+            let thread = null;
+            let restored = null;
+            if (viewport.width <= 1180) {
+              thread = await openRealThread(page, viewport, `${viewport.name} stable mensagens thread`);
+              restored = await restoreRealList(page, viewport, `${viewport.name} stable mensagens restored`);
+            }
+            await context.close();
+            return { shell, list, thread, restored, blockedRemoteRequestCount: blockedRemoteRequests.length };
+          }
+
+          (async () => {
+            const browser = await chromium.launch();
+            const report = {
+              status: 'PASS',
+              boundary: 'UX-QA-DEBT-008F-C1e',
+              canonicalCommunityPrecondition: true,
+              canonicalMobileShellAuthority: true,
+              realConversationInteraction: true,
+              viewports: {},
+              criteriaRelaxed: 0,
+              introducedRegressions: 0,
+            };
+            try {
+              for (const viewport of viewports) {
+                report.viewports[viewport.name] = {
+                  directMessages: await directMessages(browser, viewport),
+                  directCommunity: await directCommunity(browser, viewport),
+                  stableMessages: await stableMessages(browser, viewport),
+                };
+              }
+            } catch (error) {
+              report.status = 'FAIL';
+              report.error = error && (error.stack || error.message || String(error));
+              throw error;
+            } finally {
+              await browser.close();
+              fs.writeFileSync(process.env.REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`);
+            }
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node "$RUNNER_TEMP/ux-qa-debt-008f-c1e-browser.cjs"
+          test -s "$REPORT_PATH"
+          node -e 'const r=JSON.parse(require("fs").readFileSync(process.env.REPORT_PATH,"utf8")); if(r.status!=="PASS"||r.canonicalCommunityPrecondition!==true||r.canonicalMobileShellAuthority!==true||r.realConversationInteraction!==true||r.criteriaRelaxed!==0||r.introducedRegressions!==0) process.exit(1)'
+
+      - name: Build C1e receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1e-evidence"
+          EVIDENCE_DIR="$evidence" node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const dir = process.env.EVIDENCE_DIR;
+          const browser = JSON.parse(fs.readFileSync(path.join(dir, 'c1-browser.json'), 'utf8'));
+          const receipt = {
+            boundary: 'UX-QA-DEBT-008F-C1e',
+            status: browser.status === 'PASS' ? 'PASS' : 'FAIL',
+            classification: 'TEMP_ONLY_CANONICAL_MOBILE_SHELL_BROWSER_RECOVERY',
+            parentSha: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            c1Sha: process.env.C1,
+            c1Tree: process.env.C1_TREE,
+            reusedC1bHeaderRailProof: {
+              sha: process.env.C1B,
+              tree: process.env.C1B_TREE,
+              rerun: false,
+            },
+            reusedC1cGlobalLayoutProof: {
+              sha: process.env.C1C,
+              tree: process.env.C1C_TREE,
+              run: Number(process.env.C1C_RUN),
+              job: Number(process.env.C1C_JOB),
+              classification: process.env.C1C_GLOBAL_LAYOUT_CLASSIFICATION,
+              rerun: false,
+            },
+            predecessorC1dHarnessFailure: {
+              sha: process.env.C1D,
+              tree: process.env.C1D_TREE,
+              run: Number(process.env.C1D_RUN),
+              job: Number(process.env.C1D_JOB),
+              classification: 'TEMP_HARNESS_MOBILE_HEADER_AUTHORITY_DEFECT',
+              rerun: false,
+            },
+            browser: {
+              status: browser.status,
+              canonicalCommunityPrecondition: browser.canonicalCommunityPrecondition,
+              canonicalMobileShellAuthority: browser.canonicalMobileShellAuthority,
+              realConversationInteraction: browser.realConversationInteraction,
+              viewports: Object.keys(browser.viewports || {}),
+              criteriaRelaxed: browser.criteriaRelaxed,
+              introducedRegressions: browser.introducedRegressions,
+            },
+            matrixMutation: false,
+            snapshotMutation: false,
+            productMutationByC1e: false,
+          };
+          fs.writeFileSync(path.join(dir, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+          if (receipt.status !== 'PASS') process.exit(1);
+          NODE
+
+      - name: Revalidate immutable refs and TEMP-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1B^{tree}")" = "$C1B_TREE"
+          test "$(git rev-parse "$C1C^{tree}")" = "$C1C_TREE"
+          test "$(git rev-parse "$C1D^{tree}")" = "$C1D_TREE"
+
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')" = "$PARENT"
+          test "$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')" = "$C1"
+          test "$(git ls-remote origin "refs/heads/$C1B_BRANCH" | awk '{print $1}')" = "$C1B"
+          test "$(git ls-remote origin "refs/heads/$C1C_BRANCH" | awk '{print $1}')" = "$C1C"
+          test "$(git ls-remote origin "refs/heads/$C1D_BRANCH" | awk '{print $1}')" = "$C1D"
+          git diff --check "$PARENT"..HEAD
+
+      - name: Upload C1e evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008f-c1e-canonical-mobile-shell-browser-evidence
+          path: ${{ runner.temp }}/c1e-evidence
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Assert C1e classification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'const r=JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP+"/c1e-evidence/receipt.json","utf8")); if(r.status!=="PASS"||r.matrixMutation!==false||r.snapshotMutation!==false||r.productMutationByC1e!==false||r.reusedC1bHeaderRailProof.rerun!==false||r.reusedC1cGlobalLayoutProof.rerun!==false||r.predecessorC1dHarnessFailure.rerun!==false||r.browser.canonicalCommunityPrecondition!==true||r.browser.canonicalMobileShellAuthority!==true||r.browser.realConversationInteraction!==true||r.browser.criteriaRelaxed!==0||r.browser.introducedRegressions!==0) process.exit(1)'
