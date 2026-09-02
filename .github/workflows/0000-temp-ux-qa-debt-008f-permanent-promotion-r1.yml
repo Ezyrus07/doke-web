@@ -1,0 +1,325 @@
+name: TEMP UX-QA-DEBT-008F Permanent Promotion R1
+
+# Materialization is intentionally inert. A later, separately authorized
+# execution may be triggered only by creating the exact *-run branch below.
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008f-permanent-promotion-r1-run
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  permanent-promotion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PARENT: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PARENT_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
+
+      C1: afe003ac7b45b776359d60c0aa9a93853a2d7942
+      C1_TREE: a91cff6e2fef82c05522e314eafa339752aea8f5
+      C1_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1
+      C1_TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-c1.yml
+
+      C1B: 8cae2dfb042518988ab075349eda04902c8394a7
+      C1B_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1b-rail-differential-recovery
+      C1B_RUN: "33577062346"
+      C1B_JOB: "100083247674"
+
+      C1C: 4fccee9edc5ab91eb8c9dd98aecae71edd193cf1
+      C1C_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1c-remaining-gates-recovery
+      C1C_RUN: "33578613810"
+      C1C_JOB: "100087926745"
+
+      C1F: 99f257bbc4d6f39d559c9f85c9a3f6e1ba17bb58
+      C1F_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1f-exact-c1-provenance-recovery
+      C1F_RUN: "33634462646"
+      C1F_JOB: "100261715950"
+      C1F_ARTIFACT: "9848212604"
+      C1F_ARTIFACT_DIGEST: sha256:386f04c80a8b40585d2e373440db2ed3eaffaaec382fbced521fdf62fdf4a166
+
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-permanent-promotion-r1.yml
+      MOBILE_PATH: assets/css/pages/chat-mobile-navigation.css
+      MOBILE_PARENT_BLOB: 8ff7c626c1bf20f8814cb27ff6ce6e7bffa1491e
+      MOBILE_C1_BLOB: 4b891d87603798a02cdc316b7427b6b15e471b0c
+      RESPONSIVE_PATH: assets/css/pages/chat-responsive-state.css
+      RESPONSIVE_PARENT_BLOB: 4a77ff3f0a9befd89a8294be65d014a5eddb7b6c
+      RESPONSIVE_C1_BLOB: acfb52d38d0416672cbbebdbd1467090940cd185
+      GLOBAL_LAYOUT_PATH: tests/e2e/global-layout-contract.spec.js
+      GLOBAL_LAYOUT_BLOB: 3ac328c5722da0cd593003f01422546337c01116
+      SHARED_HEADER_AUDIT_PATH: scripts/audit-shared-app-header-contract.js
+      SHARED_HEADER_AUDIT_BLOB: 5829a86b326061c39d466f28a102b530343049a7
+      PACKAGE_BLOB: 844cc877d92a50c692cc8d96d704b54bdc23ca80
+      PACKAGE_LOCK_BLOB: 4bc5ac8bc6805be0d55e9d97e478f9ea8250a487
+      PROMOTION_MESSAGE: "fix(css): restore Mensagens desktop global header contract"
+
+    steps:
+      - name: Checkout R1 controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller, source, target, and certified owners
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1^")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT"..HEAD)" = "1"
+
+          mapfile -t controller_changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#controller_changed[@]}" = "1"
+          test "${controller_changed[0]}" = "$TEMP_PATH"
+
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')" = "$PARENT"
+          test "$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')" = "$C1"
+          test "$(git ls-remote origin "refs/heads/$C1B_BRANCH" | awk '{print $1}')" = "$C1B"
+          test "$(git ls-remote origin "refs/heads/$C1C_BRANCH" | awk '{print $1}')" = "$C1C"
+          test "$(git ls-remote origin "refs/heads/$C1F_BRANCH" | awk '{print $1}')" = "$C1F"
+
+          test "$(git rev-parse "$PARENT:$MOBILE_PATH")" = "$MOBILE_PARENT_BLOB"
+          test "$(git rev-parse "$C1:$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git rev-parse "$PARENT:$RESPONSIVE_PATH")" = "$RESPONSIVE_PARENT_BLOB"
+          test "$(git rev-parse "$C1:$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+          test "$(git rev-parse "$PARENT:$GLOBAL_LAYOUT_PATH")" = "$GLOBAL_LAYOUT_BLOB"
+          test "$(git rev-parse "$C1:$GLOBAL_LAYOUT_PATH")" = "$GLOBAL_LAYOUT_BLOB"
+          test "$(git rev-parse "$PARENT:$SHARED_HEADER_AUDIT_PATH")" = "$SHARED_HEADER_AUDIT_BLOB"
+          test "$(git rev-parse "$C1:$SHARED_HEADER_AUDIT_PATH")" = "$SHARED_HEADER_AUDIT_BLOB"
+          test "$(git rev-parse "$PARENT:package.json")" = "$PACKAGE_BLOB"
+          test "$(git rev-parse "$C1:package.json")" = "$PACKAGE_BLOB"
+          test "$(git rev-parse "$PARENT:package-lock.json")" = "$PACKAGE_LOCK_BLOB"
+          test "$(git rev-parse "$C1:package-lock.json")" = "$PACKAGE_LOCK_BLOB"
+
+          mapfile -t source_changed < <(git diff --name-only "$PARENT".."$C1" | sort)
+          expected=("$C1_TEMP_PATH" "$MOBILE_PATH" "$RESPONSIVE_PATH")
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          test "${#source_changed[@]}" = "3"
+          test "${source_changed[*]}" = "${expected_sorted[*]}"
+
+          git diff --check "$PARENT"..HEAD
+
+      - name: Revalidate reusable certification evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          repo="$GITHUB_REPOSITORY"
+
+          test "$(gh api "repos/$repo/actions/runs/$C1B_RUN" --jq '.head_sha')" = "$C1B"
+          test "$(gh api "repos/$repo/actions/runs/$C1B_RUN" --jq '.run_attempt')" = "1"
+          test "$(gh api "repos/$repo/actions/runs/$C1B_RUN" --jq '.conclusion')" = "success"
+
+          test "$(gh api "repos/$repo/actions/runs/$C1C_RUN" --jq '.head_sha')" = "$C1C"
+          test "$(gh api "repos/$repo/actions/runs/$C1C_RUN" --jq '.run_attempt')" = "1"
+          test "$(gh api "repos/$repo/actions/runs/$C1C_RUN" --jq '.conclusion')" = "failure"
+          c1c_steps="$(gh api "repos/$repo/actions/jobs/$C1C_JOB" --jq '.steps[] | [.name,.conclusion] | @tsv')"
+          grep -F $'Capture C1 global-layout report\tsuccess' <<<"$c1c_steps" >/dev/null
+          grep -F $'Classify parent to C1 global-layout differential\tsuccess' <<<"$c1c_steps" >/dev/null
+
+          test "$(gh api "repos/$repo/actions/runs/$C1F_RUN" --jq '.head_sha')" = "$C1F"
+          test "$(gh api "repos/$repo/actions/runs/$C1F_RUN" --jq '.run_attempt')" = "1"
+          test "$(gh api "repos/$repo/actions/runs/$C1F_RUN" --jq '.conclusion')" = "success"
+          c1f_steps="$(gh api "repos/$repo/actions/jobs/$C1F_JOB" --jq '.steps[] | [.name,.conclusion] | @tsv')"
+          grep -F $'Freeze TEMP-only scope and exact provenance\tsuccess' <<<"$c1f_steps" >/dev/null
+          grep -F $'Governance gates for TEMP-only materialization\tsuccess' <<<"$c1f_steps" >/dev/null
+          grep -F $'Browser C1 validation reusing immutable C1e probe\tsuccess' <<<"$c1f_steps" >/dev/null
+          grep -F $'Assert C1f classification\tsuccess' <<<"$c1f_steps" >/dev/null
+
+          artifact="$(gh api "repos/$repo/actions/artifacts/$C1F_ARTIFACT")"
+          test "$(jq -r '.expired' <<<"$artifact")" = "false"
+          test "$(jq -r '.digest' <<<"$artifact")" = "$C1F_ARTIFACT_DIGEST"
+
+      - name: Create exact parent worktree and reconstruct certified owners
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git worktree add "$RUNNER_TEMP/008f-promotion" "$PARENT"
+          cd "$RUNNER_TEMP/008f-promotion"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PARENT_TREE"
+          test -z "$(git status --porcelain)"
+
+          git show "$C1:$MOBILE_PATH" > "$MOBILE_PATH"
+          git show "$C1:$RESPONSIVE_PATH" > "$RESPONSIVE_PATH"
+
+          test "$(git hash-object "$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git hash-object "$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+
+          mapfile -t changed < <(git diff --name-only | sort)
+          expected=("$MOBILE_PATH" "$RESPONSIVE_PATH")
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          test "${#changed[@]}" = "2"
+          test "${changed[*]}" = "${expected_sorted[*]}"
+          git diff --check
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/008f-promotion"
+          npm ci
+          npx playwright install chromium
+
+      - name: Validate reconstructed permanent candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/008f-promotion"
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          git diff --check
+
+          rm -rf reports/generated/playwright-results.json reports/generated/playwright-html test-results
+          node node_modules/@playwright/test/cli.js test "$GLOBAL_LAYOUT_PATH"
+
+      - name: Reconstruct clean two-owner promotion after validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/008f-promotion"
+
+          git reset --hard "$PARENT"
+          git clean -fd
+          git show "$C1:$MOBILE_PATH" > "$MOBILE_PATH"
+          git show "$C1:$RESPONSIVE_PATH" > "$RESPONSIVE_PATH"
+
+          test "$(git hash-object "$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git hash-object "$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+
+          mapfile -t changed < <(git diff --name-only | sort)
+          expected=("$MOBILE_PATH" "$RESPONSIVE_PATH")
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          test "${#changed[@]}" = "2"
+          test "${changed[*]}" = "${expected_sorted[*]}"
+          git diff --check
+
+      - name: Create exact permanent child commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/008f-promotion"
+
+          git config user.name "doke-qa"
+          git config user.email "doke-qa@users.noreply.github.com"
+          git add -- "$MOBILE_PATH" "$RESPONSIVE_PATH"
+
+          mapfile -t staged < <(git diff --cached --name-only | sort)
+          expected=("$MOBILE_PATH" "$RESPONSIVE_PATH")
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          test "${#staged[@]}" = "2"
+          test "${staged[*]}" = "${expected_sorted[*]}"
+
+          git commit -m "$PROMOTION_MESSAGE"
+          promotion_sha="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "HEAD:$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git rev-parse "HEAD:$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD | sort | tr '\n' ' ' | sed 's/ $//')" = "$(printf '%s\n' "$MOBILE_PATH" "$RESPONSIVE_PATH" | sort | tr '\n' ' ' | sed 's/ $//')"
+
+          printf '%s\n' "$promotion_sha" > "$RUNNER_TEMP/008f-promotion-sha.txt"
+
+      - name: Revalidate frozen target immediately before fast-forward
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')" = "$PARENT"
+          test "$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')" = "$C1"
+          test "$(git ls-remote origin "refs/heads/$C1B_BRANCH" | awk '{print $1}')" = "$C1B"
+          test "$(git ls-remote origin "refs/heads/$C1C_BRANCH" | awk '{print $1}')" = "$C1C"
+          test "$(git ls-remote origin "refs/heads/$C1F_BRANCH" | awk '{print $1}')" = "$C1F"
+
+      - name: Fast-forward permanent branch without force
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/008f-promotion"
+
+          promotion_sha="$(cat "$RUNNER_TEMP/008f-promotion-sha.txt")"
+          test "$(git rev-parse HEAD)" = "$promotion_sha"
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+
+          git push origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+
+          remote_after="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_after" = "$promotion_sha"
+
+      - name: Build promotion receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/008f-promotion-evidence"
+          mkdir -p "$evidence"
+
+          promotion_sha="$(cat "$RUNNER_TEMP/008f-promotion-sha.txt")"
+          promotion_tree="$(git -C "$RUNNER_TEMP/008f-promotion" rev-parse 'HEAD^{tree}')"
+
+          cat > "$evidence/receipt.json" <<JSON
+          {
+            "boundary": "UX-QA-DEBT-008F-PERMANENT-PROMOTION-R1",
+            "status": "PASS",
+            "classification": "EXACT_TWO_OWNER_CERTIFIED_C1_PROMOTION",
+            "parentSha": "$PARENT",
+            "parentTree": "$PARENT_TREE",
+            "sourceC1Sha": "$C1",
+            "sourceC1Tree": "$C1_TREE",
+            "promotionSha": "$promotion_sha",
+            "promotionTree": "$promotion_tree",
+            "permanentBranch": "$PERMANENT_BRANCH",
+            "owners": {
+              "$MOBILE_PATH": "$MOBILE_C1_BLOB",
+              "$RESPONSIVE_PATH": "$RESPONSIVE_C1_BLOB"
+            },
+            "reusedEvidence": {
+              "c1bRun": $C1B_RUN,
+              "c1bJob": $C1B_JOB,
+              "c1cRun": $C1C_RUN,
+              "c1cJob": $C1C_JOB,
+              "c1fRun": $C1F_RUN,
+              "c1fJob": $C1F_JOB,
+              "c1fArtifact": $C1F_ARTIFACT,
+              "rerunC1b": false,
+              "rerunC1c": false,
+              "rerunC1f": false
+            },
+            "criteriaRelaxed": 0,
+            "introducedRegressions": 0,
+            "fastForward": true,
+            "force": false
+          }
+          JSON
+
+          jq -e '
+            .status == "PASS" and
+            .classification == "EXACT_TWO_OWNER_CERTIFIED_C1_PROMOTION" and
+            .criteriaRelaxed == 0 and
+            .introducedRegressions == 0 and
+            .fastForward == true and
+            .force == false
+          ' "$evidence/receipt.json" >/dev/null
+
+      - name: Upload promotion evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008f-permanent-promotion-r1-evidence
+          path: ${{ runner.temp }}/008f-promotion-evidence
+          if-no-files-found: error
+          retention-days: 7
