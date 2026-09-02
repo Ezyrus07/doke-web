@@ -22,7 +22,7 @@ jobs:
       WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-008-closure-residual-r2a.yml
       TARGET_SPEC: tests/e2e/stable-shell-transition-matrix.spec.js
       TARGET_BLOB: 9e4f1557f3a88985720738065eb1267ad80161dd
-      TARGET_TITLE: mobile: direct and DokeNavigate converge across priority pages
+      TARGET_TITLE: 'mobile: direct and DokeNavigate converge across priority pages'
       R2_RUN: '33688521635'
       R2_JOB: '100441602655'
       R2_CONTROLLER: 5185e146d779657a09648ef8073ee50a5752b6bd
@@ -39,14 +39,14 @@ jobs:
         run: |
           set -euo pipefail
           head="$(git rev-parse HEAD)"
-          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
-          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP controller lineage mismatch'; exit 1; }
+          [[ "$(git merge-base "$PARENT" "$head")" == "$PARENT" ]] || { echo 'TEMP controller root mismatch'; exit 1; }
           [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Permanent parent TREE mismatch'; exit 1; }
-          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
-          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { echo "TEMP scope mismatch: ${changed[*]}"; exit 1; }
+          mapfile -t changed < <(git diff --name-only "$PARENT" "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { echo "TEMP accumulated scope mismatch: ${changed[*]}"; exit 1; }
           [[ "$(git rev-parse "$PARENT:$TARGET_SPEC")" == "$TARGET_BLOB" ]] || { echo 'Permanent target spec blob drift'; exit 1; }
           echo "TEMP_CONTROLLER_HEAD=$head"
-          echo 'TEMP_ONLY_SCOPE=PASS'
+          echo "TEMP_CONTROLLER_DEPTH=$(git rev-list --count "$PARENT..$head")"
+          echo 'TEMP_ONLY_ACCUMULATED_SCOPE=PASS'
           echo 'PERMANENT_TARGET_PROVENANCE=PASS'
 
       - name: Capture frozen R2 evidence metadata
