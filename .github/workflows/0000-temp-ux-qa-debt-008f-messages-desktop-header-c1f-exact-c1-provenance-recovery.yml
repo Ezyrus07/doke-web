@@ -1,0 +1,294 @@
+name: TEMP UX-QA-DEBT-008F C1f Exact C1 Provenance Recovery
+
+# Materialization is intentionally non-executing. A later, separately authorized
+# execution may be triggered only by creating the exact *-run branch below.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - diag/ux-qa-debt-008f-messages-desktop-header-c1f-exact-c1-provenance-recovery-run
+
+permissions:
+  contents: read
+
+jobs:
+  exact-c1-provenance-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PARENT: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PARENT_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
+      C1: afe003ac7b45b776359d60c0aa9a93853a2d7942
+      C1_TREE: a91cff6e2fef82c05522e314eafa339752aea8f5
+      C1_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1
+      C1B: 8cae2dfb042518988ab075349eda04902c8394a7
+      C1B_TREE: ffd525e0f2ad65625ffde003fda88380eea169a5
+      C1B_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1b-rail-differential-recovery
+      C1C: 4fccee9edc5ab91eb8c9dd98aecae71edd193cf1
+      C1C_TREE: b8d1c2f7cb362a7ea18ca08553c032187c1bb103
+      C1C_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1c-remaining-gates-recovery
+      C1C_RUN: "33578613810"
+      C1C_JOB: "100087926745"
+      C1C_GLOBAL_LAYOUT_CLASSIFICATION: C1C_PASS_GLOBAL_LAYOUT_DIFFERENTIAL_ONLY_OWNED_MENSAGENS_DESKTOP_REMOVED
+      C1D: dfe1bc49d7d750abf47b3a8b9dfd9832f5304d61
+      C1D_TREE: 38ef054bc7ad388561b154b65d6293e4294b0c37
+      C1D_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1d-community-precondition-browser-recovery
+      C1D_RUN: "33622476194"
+      C1D_JOB: "100222445136"
+      C1E: 6c528085964aa924ea22400f5bd87d6b67a6105d
+      C1E_TREE: 72fe8121b8f8f1149656526354e7840e602b3b7e
+      C1E_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1e-mobile-shell-browser-recovery
+      C1E_RUN: "33627284246"
+      C1E_JOB: "100237908937"
+      C1E_WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-c1e-mobile-shell-browser-recovery.yml
+      C1E_WORKFLOW_BLOB: 253860be18787381c1855857300511874ede46ba
+      C1E_STALE_MESSAGES_JS_BLOB: 14503ef5e4793fcfc3ce75bafb32ac87da75bcd6
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-c1f-exact-c1-provenance-recovery.yml
+      APP_HEADER_PATH: assets/css/components/shell/app-header.css
+      APP_HEADER_C1_BLOB: f21bb85bf8bd19ec1016e579e77c4c81496c27ac
+      MOBILE_SHELL_PATH: assets/css/components/shell/mobile-app-shell.css
+      MOBILE_SHELL_C1_BLOB: 14fb64c93777d606b07c0abbf2c6532aed134cc4
+      MESSAGES_JS_PATH: assets/js/pages/mensagens.js
+      MESSAGES_JS_C1_BLOB: 432aca27165cf282a7bfc337f773666e52076e5d
+      STABLE_SCROLL_SPEC_PATH: tests/e2e/stable-shell-scroll-contract.spec.js
+      STABLE_SCROLL_SPEC_C1_BLOB: 7b5b2db651c6871ee91471e4cb05b201a0e3aa25
+      MOBILE_SHELL_SPEC_PATH: tests/e2e/mobile-shell.spec.js
+      MOBILE_SHELL_SPEC_C1_BLOB: 12272ce8b6761cc71c5d0b72b545ca3a3cd8206a
+      VISUAL_SPEC_PATH: tests/visual/doke-visual-regression.spec.js
+      VISUAL_SPEC_C1_BLOB: bf3885913496481155aa10e17340043e47245331
+      COMMUNITY_JS_PATH: assets/js/pages/comunidade-interna.js
+      COMMUNITY_JS_C1_BLOB: cf32b2bbc402f7b7ac74d2558262de3b3bb87b84
+
+    steps:
+      - name: Checkout C1f harness branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze TEMP-only scope and exact provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1^")" = "$PARENT"
+          test "$(git rev-parse "$C1B^{tree}")" = "$C1B_TREE"
+          test "$(git rev-parse "$C1B^")" = "$PARENT"
+          test "$(git rev-parse "$C1C^{tree}")" = "$C1C_TREE"
+          test "$(git rev-parse "$C1C^")" = "$PARENT"
+          test "$(git rev-parse "$C1D^{tree}")" = "$C1D_TREE"
+          test "$(git rev-parse "$C1D^")" = "$PARENT"
+          test "$(git rev-parse "$C1E^{tree}")" = "$C1E_TREE"
+          test "$(git rev-parse "$C1E^")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT"..HEAD)" = "1"
+
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')" = "$PARENT"
+          test "$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')" = "$C1"
+          test "$(git ls-remote origin "refs/heads/$C1B_BRANCH" | awk '{print $1}')" = "$C1B"
+          test "$(git ls-remote origin "refs/heads/$C1C_BRANCH" | awk '{print $1}')" = "$C1C"
+          test "$(git ls-remote origin "refs/heads/$C1D_BRANCH" | awk '{print $1}')" = "$C1D"
+          test "$(git ls-remote origin "refs/heads/$C1E_BRANCH" | awk '{print $1}')" = "$C1E"
+
+          test "$(git rev-parse "$C1:$MESSAGES_JS_PATH")" = "$MESSAGES_JS_C1_BLOB"
+          test "$(git rev-parse "$PARENT:$MESSAGES_JS_PATH")" = "$MESSAGES_JS_C1_BLOB"
+          test "$(git rev-parse "$C1:$APP_HEADER_PATH")" = "$APP_HEADER_C1_BLOB"
+          test "$(git rev-parse "$C1:$MOBILE_SHELL_PATH")" = "$MOBILE_SHELL_C1_BLOB"
+          test "$(git rev-parse "$C1:$STABLE_SCROLL_SPEC_PATH")" = "$STABLE_SCROLL_SPEC_C1_BLOB"
+          test "$(git rev-parse "$C1:$MOBILE_SHELL_SPEC_PATH")" = "$MOBILE_SHELL_SPEC_C1_BLOB"
+          test "$(git rev-parse "$C1:$VISUAL_SPEC_PATH")" = "$VISUAL_SPEC_C1_BLOB"
+          test "$(git rev-parse "$C1:$COMMUNITY_JS_PATH")" = "$COMMUNITY_JS_C1_BLOB"
+          test "$(git rev-parse "$C1E:$C1E_WORKFLOW_PATH")" = "$C1E_WORKFLOW_BLOB"
+          git show "$C1E:$C1E_WORKFLOW_PATH" | grep -F "MESSAGES_JS_C1_BLOB: $C1E_STALE_MESSAGES_JS_BLOB" >/dev/null
+          test "$(git rev-parse "$PARENT:package.json")" = "$(git rev-parse "$C1:package.json")"
+          test "$(git rev-parse "$PARENT:package-lock.json")" = "$(git rev-parse "$C1:package-lock.json")"
+          git diff --check "$PARENT"..HEAD
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies once
+        run: npm ci
+
+      - name: Governance gates for TEMP-only materialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT"..HEAD
+
+      - name: Install Chromium once
+        run: npx playwright install chromium
+
+      - name: Browser C1 validation reusing immutable C1e probe
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/c1f-evidence/c1-browser.json
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1f-evidence"
+          mkdir -p "$evidence"
+
+          git checkout --detach "$C1"
+          git reset --hard "$C1"
+          test "$(git rev-parse HEAD)" = "$C1"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$C1_TREE"
+          test "$(git rev-parse "HEAD:$MESSAGES_JS_PATH")" = "$MESSAGES_JS_C1_BLOB"
+          test "$(git rev-parse "HEAD:$APP_HEADER_PATH")" = "$APP_HEADER_C1_BLOB"
+          test "$(git rev-parse "HEAD:$MOBILE_SHELL_PATH")" = "$MOBILE_SHELL_C1_BLOB"
+
+          git show "$C1E:$C1E_WORKFLOW_PATH" > "$RUNNER_TEMP/c1e-workflow.yml"
+          test "$(git hash-object "$RUNNER_TEMP/c1e-workflow.yml")" = "$C1E_WORKFLOW_BLOB"
+
+          python3 - "$RUNNER_TEMP/c1e-workflow.yml" "$RUNNER_TEMP/ux-qa-debt-008f-c1f-browser.cjs" <<'PY'
+          from pathlib import Path
+          import sys
+          import textwrap
+
+          source = Path(sys.argv[1]).read_text(encoding='utf-8')
+          start_marker = '          cat > "$RUNNER_TEMP/ux-qa-debt-008f-c1e-browser.cjs" <<\'NODE\'\n'
+          end_marker = '\n          NODE\n\n          NODE_PATH='
+          start = source.index(start_marker) + len(start_marker)
+          end = source.index(end_marker, start)
+          probe = textwrap.dedent(source[start:end])
+          Path(sys.argv[2]).write_text(probe + '\n', encoding='utf-8')
+          PY
+
+          test -s "$RUNNER_TEMP/ux-qa-debt-008f-c1f-browser.cjs"
+          grep -F "canonicalMobileShellAuthority: true" "$RUNNER_TEMP/ux-qa-debt-008f-c1f-browser.cjs" >/dev/null
+          grep -F "realConversationInteraction: true" "$RUNNER_TEMP/ux-qa-debt-008f-c1f-browser.cjs" >/dev/null
+
+          python3 -m http.server 4173 --bind 127.0.0.1 > "$RUNNER_TEMP/ux-qa-debt-008f-c1f-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null
+
+          REPORT_PATH="$REPORT_PATH" NODE_PATH="$GITHUB_WORKSPACE/node_modules" node "$RUNNER_TEMP/ux-qa-debt-008f-c1f-browser.cjs"
+          test -s "$REPORT_PATH"
+          node -e 'const r=JSON.parse(require("fs").readFileSync(process.env.REPORT_PATH,"utf8")); if(r.status!=="PASS"||r.boundary!=="UX-QA-DEBT-008F-C1e"||r.canonicalCommunityPrecondition!==true||r.canonicalMobileShellAuthority!==true||r.realConversationInteraction!==true||r.criteriaRelaxed!==0||r.introducedRegressions!==0) process.exit(1)'
+
+      - name: Build C1f receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1f-evidence"
+          EVIDENCE_DIR="$evidence" node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const dir = process.env.EVIDENCE_DIR;
+          const browser = JSON.parse(fs.readFileSync(path.join(dir, 'c1-browser.json'), 'utf8'));
+          const receipt = {
+            boundary: 'UX-QA-DEBT-008F-C1f',
+            status: browser.status === 'PASS' ? 'PASS' : 'FAIL',
+            classification: 'TEMP_ONLY_EXACT_C1_PROVENANCE_RECOVERY',
+            harnessSha: process.env.GITHUB_SHA,
+            parentSha: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            c1Sha: process.env.C1,
+            c1Tree: process.env.C1_TREE,
+            correctedMessagesJsBlob: process.env.MESSAGES_JS_C1_BLOB,
+            predecessorC1eFreezeFailure: {
+              sha: process.env.C1E,
+              tree: process.env.C1E_TREE,
+              run: Number(process.env.C1E_RUN),
+              job: Number(process.env.C1E_JOB),
+              staleMessagesJsBlob: process.env.C1E_STALE_MESSAGES_JS_BLOB,
+              classification: 'TEMP_HARNESS_STALE_MESSAGES_JS_BLOB',
+              rerun: false,
+            },
+            reusedC1eBrowserProbe: {
+              sha: process.env.C1E,
+              workflowBlob: process.env.C1E_WORKFLOW_BLOB,
+              sourceBoundary: browser.boundary,
+              rerunC1eWorkflow: false,
+            },
+            reusedC1bHeaderRailProof: {
+              sha: process.env.C1B,
+              tree: process.env.C1B_TREE,
+              rerun: false,
+            },
+            reusedC1cGlobalLayoutProof: {
+              sha: process.env.C1C,
+              tree: process.env.C1C_TREE,
+              run: Number(process.env.C1C_RUN),
+              job: Number(process.env.C1C_JOB),
+              classification: process.env.C1C_GLOBAL_LAYOUT_CLASSIFICATION,
+              rerun: false,
+            },
+            predecessorC1dHarnessFailure: {
+              sha: process.env.C1D,
+              tree: process.env.C1D_TREE,
+              run: Number(process.env.C1D_RUN),
+              job: Number(process.env.C1D_JOB),
+              rerun: false,
+            },
+            browser: {
+              status: browser.status,
+              canonicalCommunityPrecondition: browser.canonicalCommunityPrecondition,
+              canonicalMobileShellAuthority: browser.canonicalMobileShellAuthority,
+              realConversationInteraction: browser.realConversationInteraction,
+              viewports: Object.keys(browser.viewports || {}),
+              criteriaRelaxed: browser.criteriaRelaxed,
+              introducedRegressions: browser.introducedRegressions,
+            },
+            matrixMutation: false,
+            snapshotMutation: false,
+            productMutationByC1f: false,
+          };
+          fs.writeFileSync(path.join(dir, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+          if (receipt.status !== 'PASS') process.exit(1);
+          NODE
+
+      - name: Revalidate immutable refs and TEMP-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1B^{tree}")" = "$C1B_TREE"
+          test "$(git rev-parse "$C1C^{tree}")" = "$C1C_TREE"
+          test "$(git rev-parse "$C1D^{tree}")" = "$C1D_TREE"
+          test "$(git rev-parse "$C1E^{tree}")" = "$C1E_TREE"
+
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')" = "$PARENT"
+          test "$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')" = "$C1"
+          test "$(git ls-remote origin "refs/heads/$C1B_BRANCH" | awk '{print $1}')" = "$C1B"
+          test "$(git ls-remote origin "refs/heads/$C1C_BRANCH" | awk '{print $1}')" = "$C1C"
+          test "$(git ls-remote origin "refs/heads/$C1D_BRANCH" | awk '{print $1}')" = "$C1D"
+          test "$(git ls-remote origin "refs/heads/$C1E_BRANCH" | awk '{print $1}')" = "$C1E"
+          test "$(git rev-parse "$C1:$MESSAGES_JS_PATH")" = "$MESSAGES_JS_C1_BLOB"
+          git diff --check "$PARENT"..HEAD
+
+      - name: Upload C1f evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008f-c1f-exact-c1-provenance-evidence
+          path: ${{ runner.temp }}/c1f-evidence
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Assert C1f classification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'const r=JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP+"/c1f-evidence/receipt.json","utf8")); if(r.status!=="PASS"||r.classification!=="TEMP_ONLY_EXACT_C1_PROVENANCE_RECOVERY"||r.correctedMessagesJsBlob!=="432aca27165cf282a7bfc337f773666e52076e5d"||r.matrixMutation!==false||r.snapshotMutation!==false||r.productMutationByC1f!==false||r.reusedC1bHeaderRailProof.rerun!==false||r.reusedC1cGlobalLayoutProof.rerun!==false||r.predecessorC1dHarnessFailure.rerun!==false||r.predecessorC1eFreezeFailure.rerun!==false||r.reusedC1eBrowserProbe.rerunC1eWorkflow!==false||r.browser.canonicalCommunityPrecondition!==true||r.browser.canonicalMobileShellAuthority!==true||r.browser.realConversationInteraction!==true||r.browser.criteriaRelaxed!==0||r.browser.introducedRegressions!==0) process.exit(1)'
