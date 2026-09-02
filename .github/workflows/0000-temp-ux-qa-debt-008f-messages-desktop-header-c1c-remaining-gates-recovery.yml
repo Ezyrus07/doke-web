@@ -1,0 +1,596 @@
+name: TEMP UX-QA-DEBT-008F C1c Remaining Gates Recovery
+
+# Materialization is intentionally non-executing. A later, separately authorized
+# run may be triggered by creating the exact *-run branch below from this commit.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - diag/ux-qa-debt-008f-messages-desktop-header-c1c-remaining-gates-recovery-run
+
+permissions:
+  contents: read
+
+jobs:
+  remaining-gates-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      PARENT: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PARENT_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
+      C1: afe003ac7b45b776359d60c0aa9a93853a2d7942
+      C1_TREE: a91cff6e2fef82c05522e314eafa339752aea8f5
+      C1_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1
+      C1B: 8cae2dfb042518988ab075349eda04902c8394a7
+      C1B_TREE: ffd525e0f2ad65625ffde003fda88380eea169a5
+      C1B_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1b-rail-differential-recovery
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-c1c-remaining-gates-recovery.yml
+      GLOBAL_LAYOUT_PATH: tests/e2e/global-layout-contract.spec.js
+      GLOBAL_LAYOUT_BLOB: 3ac328c5722da0cd593003f01422546337c01116
+      MOBILE_PATH: assets/css/pages/chat-mobile-navigation.css
+      MOBILE_PARENT_BLOB: 8ff7c626c1bf20f8814cb27ff6ce6e7bffa1491e
+      MOBILE_C1_BLOB: 4b891d87603798a02cdc316b7427b6b15e471b0c
+      RESPONSIVE_PATH: assets/css/pages/chat-responsive-state.css
+      RESPONSIVE_PARENT_BLOB: 4a77ff3f0a9befd89a8294be65d014a5eddb7b6c
+      RESPONSIVE_C1_BLOB: acfb52d38d0416672cbbebdbd1467090940cd185
+
+    steps:
+      - name: Checkout C1c harness branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze TEMP-only scope and immutable authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1^")" = "$PARENT"
+          test "$(git rev-parse "$C1B^{tree}")" = "$C1B_TREE"
+          test "$(git rev-parse "$C1B^")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT"..HEAD)" = "1"
+
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          remote_parent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          remote_c1="$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')"
+          remote_c1b="$(git ls-remote origin "refs/heads/$C1B_BRANCH" | awk '{print $1}')"
+          test "$remote_parent" = "$PARENT"
+          test "$remote_c1" = "$C1"
+          test "$remote_c1b" = "$C1B"
+
+          test "$(git rev-parse "$PARENT:$GLOBAL_LAYOUT_PATH")" = "$GLOBAL_LAYOUT_BLOB"
+          test "$(git rev-parse "$C1:$GLOBAL_LAYOUT_PATH")" = "$GLOBAL_LAYOUT_BLOB"
+          test "$(git rev-parse "$PARENT:$MOBILE_PATH")" = "$MOBILE_PARENT_BLOB"
+          test "$(git rev-parse "$C1:$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git rev-parse "$PARENT:$RESPONSIVE_PATH")" = "$RESPONSIVE_PARENT_BLOB"
+          test "$(git rev-parse "$C1:$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+          test "$(git rev-parse "$PARENT:package.json")" = "$(git rev-parse "$C1:package.json")"
+          test "$(git rev-parse "$PARENT:package-lock.json")" = "$(git rev-parse "$C1:package-lock.json")"
+          git diff --check "$PARENT"..HEAD
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies once
+        run: npm ci
+
+      - name: Governance gates for TEMP-only materialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT"..HEAD
+
+      - name: Install Chromium once
+        run: npx playwright install chromium
+
+      - name: Capture parent global-layout report
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1c-evidence"
+          mkdir -p "$evidence"
+
+          git checkout --detach "$PARENT"
+          git reset --hard "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PARENT_TREE"
+          test "$(git rev-parse "HEAD:$GLOBAL_LAYOUT_PATH")" = "$GLOBAL_LAYOUT_BLOB"
+
+          rm -rf reports/generated/playwright-results.json reports/generated/playwright-html test-results
+          set +e
+          node node_modules/@playwright/test/cli.js test "$GLOBAL_LAYOUT_PATH"
+          rc=$?
+          set -e
+          test "$rc" = "0" -o "$rc" = "1"
+          test -s reports/generated/playwright-results.json
+          node -e 'JSON.parse(require("fs").readFileSync("reports/generated/playwright-results.json", "utf8"))'
+          cp reports/generated/playwright-results.json "$evidence/parent-global-layout.json"
+          printf '%s\n' "$rc" > "$evidence/parent-global-layout-exit.txt"
+
+          git reset --hard "$PARENT"
+          git clean -fd -- reports/generated test-results
+
+      - name: Capture C1 global-layout report
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1c-evidence"
+
+          git checkout --detach "$C1"
+          git reset --hard "$C1"
+          test "$(git rev-parse HEAD)" = "$C1"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$C1_TREE"
+          test "$(git rev-parse "HEAD:$GLOBAL_LAYOUT_PATH")" = "$GLOBAL_LAYOUT_BLOB"
+          test "$(git rev-parse "HEAD:$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git rev-parse "HEAD:$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+
+          rm -rf reports/generated/playwright-results.json reports/generated/playwright-html test-results
+          set +e
+          node node_modules/@playwright/test/cli.js test "$GLOBAL_LAYOUT_PATH"
+          rc=$?
+          set -e
+          test "$rc" = "0" -o "$rc" = "1"
+          test -s reports/generated/playwright-results.json
+          node -e 'JSON.parse(require("fs").readFileSync("reports/generated/playwright-results.json", "utf8"))'
+          cp reports/generated/playwright-results.json "$evidence/c1-global-layout.json"
+          printf '%s\n' "$rc" > "$evidence/c1-global-layout-exit.txt"
+
+          git reset --hard "$C1"
+          git clean -fd -- reports/generated test-results
+
+      - name: Classify parent to C1 global-layout differential
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1c-evidence"
+
+          EVIDENCE_DIR="$evidence" node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const dir = process.env.EVIDENCE_DIR;
+          const parent = JSON.parse(fs.readFileSync(path.join(dir, 'parent-global-layout.json'), 'utf8'));
+          const candidate = JSON.parse(fs.readFileSync(path.join(dir, 'c1-global-layout.json'), 'utf8'));
+          const parentExit = Number(fs.readFileSync(path.join(dir, 'parent-global-layout-exit.txt'), 'utf8').trim());
+          const candidateExit = Number(fs.readFileSync(path.join(dir, 'c1-global-layout-exit.txt'), 'utf8').trim());
+
+          const compact = value => String(value || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+
+          function collectUnexpected(report) {
+            const rows = [];
+            function visit(suite, ancestors) {
+              const next = suite.title ? [...ancestors, suite.title] : ancestors;
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  if (test.status !== 'unexpected') continue;
+                  const results = test.results || [];
+                  const last = [...results].reverse().find(result => result.status && result.status !== 'skipped') || results.at(-1) || {};
+                  const errors = [
+                    ...(last.errors || []).map(error => error && (error.message || error.value)),
+                    last.error && (last.error.message || last.error.value),
+                  ].filter(Boolean);
+                  const title = [...next, spec.title].filter(Boolean).join(' > ');
+                  rows.push({
+                    key: `${spec.file || ''}|${title}|${test.projectName || test.projectId || ''}`,
+                    file: spec.file || '',
+                    title,
+                    project: test.projectName || test.projectId || '',
+                    errorSignature: compact(errors[0] || ''),
+                  });
+                }
+              }
+              for (const child of suite.suites || []) visit(child, next);
+            }
+            for (const suite of report.suites || []) visit(suite, []);
+            return rows.sort((a, b) => a.key.localeCompare(b.key));
+          }
+
+          const before = collectUnexpected(parent);
+          const after = collectUnexpected(candidate);
+          const beforeMap = new Map(before.map(row => [row.key, row]));
+          const afterMap = new Map(after.map(row => [row.key, row]));
+          if (beforeMap.size !== before.length) throw new Error('parent global-layout duplicate failure key');
+          if (afterMap.size !== after.length) throw new Error('C1 global-layout duplicate failure key');
+
+          const keys = [...new Set([...beforeMap.keys(), ...afterMap.keys()])].sort();
+          const entries = [];
+          for (const key of keys) {
+            const parentFailure = beforeMap.get(key) || null;
+            const c1Failure = afterMap.get(key) || null;
+            let classification;
+            if (!parentFailure) classification = 'added';
+            else if (!c1Failure) classification = 'removed';
+            else if (JSON.stringify(parentFailure) === JSON.stringify(c1Failure)) classification = 'unchanged';
+            else classification = 'changed';
+            entries.push({ key, classification, parent: parentFailure, c1: c1Failure });
+          }
+
+          const isOwnedMensagensDesktop = row => Boolean(
+            row
+            && /global-layout-contract\.spec\.js$/.test(row.file)
+            && /desktop-1366/.test(row.title)
+            && /mensagens\.html keeps structural layout contract/.test(row.title)
+          );
+
+          const added = entries.filter(entry => entry.classification === 'added');
+          const changed = entries.filter(entry => entry.classification === 'changed');
+          const removed = entries.filter(entry => entry.classification === 'removed');
+          const ownedRemoved = removed.filter(entry => isOwnedMensagensDesktop(entry.parent));
+          const unrelatedRemoved = removed.filter(entry => !isOwnedMensagensDesktop(entry.parent));
+          const invariantErrors = [];
+
+          if (![0, 1].includes(parentExit)) invariantErrors.push(`unexpected parent exit ${parentExit}`);
+          if (![0, 1].includes(candidateExit)) invariantErrors.push(`unexpected C1 exit ${candidateExit}`);
+          if (added.length) invariantErrors.push(`candidate-only failures ${added.length}`);
+          if (changed.length) invariantErrors.push(`changed inherited failure signatures ${changed.length}`);
+          if (unrelatedRemoved.length) invariantErrors.push(`unrelated removed failures ${unrelatedRemoved.length}`);
+          if (ownedRemoved.length !== 1) invariantErrors.push(`expected exactly one owned Mensagens desktop failure removal, got ${ownedRemoved.length}`);
+
+          const status = invariantErrors.length ? 'FAIL' : 'PASS';
+          const classification = status === 'PASS'
+            ? 'C1C_PASS_GLOBAL_LAYOUT_DIFFERENTIAL_ONLY_OWNED_MENSAGENS_DESKTOP_REMOVED'
+            : 'C1C_FAIL_GLOBAL_LAYOUT_DIFFERENTIAL_BOUNDARY';
+
+          const differential = {
+            boundary: 'UX-QA-DEBT-008F-C1c',
+            status,
+            classification,
+            parent: { sha: process.env.PARENT, exitCode: parentExit, unexpected: before.length },
+            c1: { sha: process.env.C1, exitCode: candidateExit, unexpected: after.length },
+            reusableHeaderRailProof: { sha: process.env.C1B, tree: process.env.C1B_TREE, rerun: false },
+            counts: {
+              unchanged: entries.filter(entry => entry.classification === 'unchanged').length,
+              added: added.length,
+              removed: removed.length,
+              changed: changed.length,
+              ownedRemoved: ownedRemoved.length,
+              unrelatedRemoved: unrelatedRemoved.length,
+            },
+            invariantErrors,
+            entries,
+          };
+
+          fs.writeFileSync(path.join(dir, 'global-layout-differential.json'), `${JSON.stringify(differential, null, 2)}\n`);
+          fs.writeFileSync(path.join(dir, 'global-layout-differential.md'), [
+            '# UX-QA-DEBT-008F C1c global-layout differential',
+            '',
+            `Status: **${status}**`,
+            `Classification: \`${classification}\``,
+            `Parent unexpected: ${before.length}`,
+            `C1 unexpected: ${after.length}`,
+            `Added: ${added.length}`,
+            `Removed: ${removed.length}`,
+            `Changed: ${changed.length}`,
+            `Owned Mensagens desktop removed: ${ownedRemoved.length}`,
+            `Unrelated removed: ${unrelatedRemoved.length}`,
+            '',
+            'C1b header-rail proof is reused by immutable SHA; it is not rerun by C1c.',
+            '',
+            '## Invariant errors',
+            invariantErrors.length ? invariantErrors.map(value => `- ${value}`).join('\n') : 'None.',
+          ].join('\n') + '\n');
+
+          if (status !== 'PASS') process.exit(1);
+          NODE
+
+      - name: Browser direct and stable-shell C1 validation
+        shell: bash
+        env:
+          REPORT_PATH: ${{ runner.temp }}/c1c-evidence/c1-browser.json
+        run: |
+          set -euo pipefail
+          git checkout --detach "$C1"
+          git reset --hard "$C1"
+          test "$(git rev-parse HEAD)" = "$C1"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$C1_TREE"
+          test "$(git rev-parse "HEAD:$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git rev-parse "HEAD:$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+
+          python3 -m http.server 4173 --bind 127.0.0.1 > "$RUNNER_TEMP/ux-qa-debt-008f-c1c-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/mensagens.html >/dev/null
+
+          cat > "$RUNNER_TEMP/ux-qa-debt-008f-c1c-browser.cjs" <<'NODE'
+          const fs = require('fs');
+          const { chromium } = require('@playwright/test');
+
+          const baseURL = 'http://127.0.0.1:4173';
+          const viewports = [
+            { name: 'desktop-1366x768', width: 1366, height: 768 },
+            { name: 'tablet-820x1180', width: 820, height: 1180 },
+            { name: 'mobile-390x844', width: 390, height: 844 },
+          ];
+          const authenticatedSession = {
+            provider: 'mock',
+            sessionStatus: 'active',
+            accountStatus: 'active',
+            user: {
+              id: 'ux-qa-debt-008f-c1c',
+              role: 'client',
+              name: 'Cliente 008F C1c',
+              email: 'qa008f-c1c@example.test',
+              accountStatus: 'active',
+            },
+          };
+
+          function assert(condition, message) {
+            if (!condition) throw new Error(message);
+          }
+
+          async function prepareContext(browser, viewport) {
+            const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
+            const blockedRemoteRequests = [];
+            await context.route('**/*', async route => {
+              const request = route.request();
+              const url = new URL(request.url());
+              if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') return route.continue();
+              if (url.hostname === 'fonts.googleapis.com') return route.fulfill({ status: 200, contentType: 'text/css; charset=utf-8', body: '' });
+              if (url.hostname === 'fonts.gstatic.com') return route.abort();
+              if (url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'unpkg.com') {
+                return route.fulfill({ status: 200, contentType: 'application/javascript; charset=utf-8', body: '' });
+              }
+              blockedRemoteRequests.push(request.url());
+              return route.abort();
+            });
+            await context.addInitScript(session => {
+              localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+            }, authenticatedSession);
+            return { context, blockedRemoteRequests };
+          }
+
+          async function settle(page) {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.waitForFunction(() => document.body && document.body.dataset.page, null, { timeout: 5000 }).catch(() => {});
+            await page.waitForTimeout(350);
+          }
+
+          async function state(page) {
+            return page.evaluate(() => {
+              const headers = Array.from(document.querySelectorAll('[data-app-header]'));
+              const header = headers[0] || null;
+              const rect = header?.getBoundingClientRect() || null;
+              const style = header ? getComputedStyle(header) : null;
+              const root = document.documentElement;
+              return {
+                bodyPage: document.body?.dataset?.page || null,
+                headerCount: headers.length,
+                display: style?.display || null,
+                visibility: style?.visibility || null,
+                width: rect?.width || 0,
+                height: rect?.height || 0,
+                scrollWidth: root.scrollWidth,
+                clientWidth: root.clientWidth,
+              };
+            });
+          }
+
+          function assertVisible(value, label) {
+            assert(value.headerCount === 1, `${label}: expected one app header, got ${value.headerCount}`);
+            assert(value.display !== 'none', `${label}: header display=${value.display}`);
+            assert(value.visibility !== 'hidden', `${label}: header visibility hidden`);
+            assert(value.width > 0 && value.height > 0, `${label}: header rect ${value.width}x${value.height}`);
+            assert(value.scrollWidth <= value.clientWidth + 1, `${label}: horizontal overflow ${value.scrollWidth}-${value.clientWidth}`);
+          }
+
+          function assertHidden(value, label) {
+            assert(value.headerCount === 1, `${label}: expected one app header, got ${value.headerCount}`);
+            assert(value.display === 'none', `${label}: expected hidden app header, display=${value.display}`);
+            assert(value.scrollWidth <= value.clientWidth + 1, `${label}: horizontal overflow ${value.scrollWidth}-${value.clientWidth}`);
+          }
+
+          async function directMessages(browser, viewport) {
+            const { context, blockedRemoteRequests } = await prepareContext(browser, viewport);
+            const page = await context.newPage();
+            await page.goto(`${baseURL}/mensagens.html`);
+            await settle(page);
+            const list = await state(page);
+            assert(list.bodyPage === 'mensagens', `${viewport.name} direct mensagens body=${list.bodyPage}`);
+            assertVisible(list, `${viewport.name} direct mensagens list`);
+
+            let thread = null;
+            let restored = null;
+            if (viewport.width <= 1180) {
+              await page.evaluate(() => {
+                document.body.classList.add('messages-thread-is-open');
+                document.querySelector('.messages-app')?.classList.add('messages-app--thread-open');
+              });
+              thread = await state(page);
+              assertHidden(thread, `${viewport.name} direct mensagens thread`);
+              await page.evaluate(() => {
+                document.body.classList.remove('messages-thread-is-open');
+                document.querySelector('.messages-app')?.classList.remove('messages-app--thread-open');
+              });
+              restored = await state(page);
+              assertVisible(restored, `${viewport.name} direct mensagens restored`);
+            }
+            await context.close();
+            return { list, thread, restored, blockedRemoteRequestCount: blockedRemoteRequests.length };
+          }
+
+          async function directCommunity(browser, viewport) {
+            const { context, blockedRemoteRequests } = await prepareContext(browser, viewport);
+            const page = await context.newPage();
+            await page.goto(`${baseURL}/comunidade-interna.html`);
+            await settle(page);
+            const base = await state(page);
+            assert(base.bodyPage === 'comunidade-interna', `${viewport.name} direct community body=${base.bodyPage}`);
+            if (viewport.width > 1180) assertHidden(base, `${viewport.name} direct community desktop workspace`);
+            else assertVisible(base, `${viewport.name} direct community compact list`);
+            await context.close();
+            return { base, blockedRemoteRequestCount: blockedRemoteRequests.length };
+          }
+
+          async function stableMessages(browser, viewport) {
+            const { context, blockedRemoteRequests } = await prepareContext(browser, viewport);
+            const page = await context.newPage();
+            await page.goto(`${baseURL}/index.html`);
+            await settle(page);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function', null, { timeout: 10000 });
+            await page.evaluate(() => {
+              window.__qa008fC1cMarker = `marker-${Date.now()}`;
+              window.__qa008fC1cNavigationCount = performance.getEntriesByType('navigation').length;
+              window.__qa008fC1cHeader = document.querySelector('[data-app-header]');
+            });
+            const marker = await page.evaluate(() => window.__qa008fC1cMarker);
+            await page.evaluate(async () => {
+              const result = window.DokeNavigate('/mensagens.html');
+              if (result && typeof result.then === 'function') await result;
+            });
+            await page.waitForURL(/\/mensagens\.html(?:$|[?#])/);
+            await settle(page);
+
+            const shell = await page.evaluate(() => ({
+              marker: window.__qa008fC1cMarker,
+              documentNavigationCount: performance.getEntriesByType('navigation').length,
+              initialDocumentNavigationCount: window.__qa008fC1cNavigationCount,
+              adapter: document.body.dataset.dokeNavigationAdapter || null,
+              headerPreserved: window.__qa008fC1cHeader === document.querySelector('[data-app-header]'),
+            }));
+            assert(shell.marker === marker, `${viewport.name} stable mensagens: JS context changed`);
+            assert(shell.documentNavigationCount === shell.initialDocumentNavigationCount, `${viewport.name} stable mensagens: document reload detected`);
+            assert(shell.adapter === 'stable-shell', `${viewport.name} stable mensagens: adapter=${shell.adapter}`);
+            assert(shell.headerPreserved === true, `${viewport.name} stable mensagens: header node replaced`);
+
+            const list = await state(page);
+            assert(list.bodyPage === 'mensagens', `${viewport.name} stable mensagens body=${list.bodyPage}`);
+            assertVisible(list, `${viewport.name} stable mensagens list`);
+
+            let thread = null;
+            let restored = null;
+            if (viewport.width <= 1180) {
+              await page.evaluate(() => {
+                document.body.classList.add('messages-thread-is-open');
+                document.querySelector('.messages-app')?.classList.add('messages-app--thread-open');
+              });
+              thread = await state(page);
+              assertHidden(thread, `${viewport.name} stable mensagens thread`);
+              await page.evaluate(() => {
+                document.body.classList.remove('messages-thread-is-open');
+                document.querySelector('.messages-app')?.classList.remove('messages-app--thread-open');
+              });
+              restored = await state(page);
+              assertVisible(restored, `${viewport.name} stable mensagens restored`);
+            }
+
+            await context.close();
+            return { shell, list, thread, restored, blockedRemoteRequestCount: blockedRemoteRequests.length };
+          }
+
+          (async () => {
+            const browser = await chromium.launch();
+            const report = { status: 'PASS', viewports: {}, criteriaRelaxed: 0, introducedRegressions: 0 };
+            try {
+              for (const viewport of viewports) {
+                report.viewports[viewport.name] = {
+                  directMessages: await directMessages(browser, viewport),
+                  directCommunity: await directCommunity(browser, viewport),
+                  stableMessages: await stableMessages(browser, viewport),
+                };
+              }
+            } catch (error) {
+              report.status = 'FAIL';
+              report.error = error && (error.stack || error.message || String(error));
+              throw error;
+            } finally {
+              await browser.close();
+              fs.writeFileSync(process.env.REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`);
+            }
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node "$RUNNER_TEMP/ux-qa-debt-008f-c1c-browser.cjs"
+          test -s "$REPORT_PATH"
+          node -e 'const r=JSON.parse(require("fs").readFileSync(process.env.REPORT_PATH,"utf8")); if(r.status!=="PASS"||r.criteriaRelaxed!==0||r.introducedRegressions!==0) process.exit(1)'
+
+      - name: Build C1c receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1c-evidence"
+          EVIDENCE_DIR="$evidence" node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const dir = process.env.EVIDENCE_DIR;
+          const differential = JSON.parse(fs.readFileSync(path.join(dir, 'global-layout-differential.json'), 'utf8'));
+          const browser = JSON.parse(fs.readFileSync(path.join(dir, 'c1-browser.json'), 'utf8'));
+          const receipt = {
+            boundary: 'UX-QA-DEBT-008F-C1c',
+            status: differential.status === 'PASS' && browser.status === 'PASS' ? 'PASS' : 'FAIL',
+            classification: 'TEMP_ONLY_REMAINING_GATES_RECOVERY',
+            parentSha: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            c1Sha: process.env.C1,
+            c1Tree: process.env.C1_TREE,
+            reusedC1bHeaderRailProof: {
+              sha: process.env.C1B,
+              tree: process.env.C1B_TREE,
+              rerun: false,
+            },
+            globalLayout: differential,
+            browser: {
+              status: browser.status,
+              viewports: Object.keys(browser.viewports || {}),
+              criteriaRelaxed: browser.criteriaRelaxed,
+              introducedRegressions: browser.introducedRegressions,
+            },
+            matrixMutation: false,
+            snapshotMutation: false,
+            productMutationByC1c: false,
+          };
+          fs.writeFileSync(path.join(dir, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+          if (receipt.status !== 'PASS') process.exit(1);
+          NODE
+
+      - name: Revalidate immutable refs and TEMP-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1B^{tree}")" = "$C1B_TREE"
+
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          test "$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')" = "$PARENT"
+          test "$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')" = "$C1"
+          test "$(git ls-remote origin "refs/heads/$C1B_BRANCH" | awk '{print $1}')" = "$C1B"
+          git diff --check "$PARENT"..HEAD
+
+      - name: Upload C1c evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008f-c1c-remaining-gates-evidence
+          path: ${{ runner.temp }}/c1c-evidence
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Assert C1c classification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'const r=JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP+"/c1c-evidence/receipt.json","utf8")); if(r.status!=="PASS"||r.matrixMutation!==false||r.snapshotMutation!==false||r.productMutationByC1c!==false||r.reusedC1bHeaderRailProof.rerun!==false) process.exit(1)'
