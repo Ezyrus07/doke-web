@@ -155,14 +155,22 @@ jobs:
           const newReport = JSON.parse(fs.readFileSync(process.env.MATRIX_REPORT, 'utf8'));
           const oldCom = oldReport.domains.find((d) => d.id === 'COM-001');
           const newCom = newReport.domains.find((d) => d.id === 'COM-001');
+          const oldApp = oldReport.domains.find((d) => d.id === 'APP-001');
+          const newApp = newReport.domains.find((d) => d.id === 'APP-001');
           assert.strictEqual(newCom.filesMatched, oldCom.filesMatched + 1);
           assert.deepStrictEqual(newCom.signals, oldCom.signals);
+          assert.strictEqual(newApp.filesMatched, oldApp.filesMatched + 1);
+          assert.deepStrictEqual(newApp.signals, oldApp.signals);
+          assert.deepStrictEqual(newApp.sampleFiles, oldApp.sampleFiles);
           const a = JSON.parse(JSON.stringify(oldReport));
           const b = JSON.parse(JSON.stringify(newReport));
           const ac = a.domains.find((d) => d.id === 'COM-001');
           const bc = b.domains.find((d) => d.id === 'COM-001');
+          const aa = a.domains.find((d) => d.id === 'APP-001');
+          const ba = b.domains.find((d) => d.id === 'APP-001');
           ac.filesMatched = bc.filesMatched;
           ac.sampleFiles = bc.sampleFiles;
+          aa.filesMatched = ba.filesMatched;
           assert.deepStrictEqual(b, a);
           NODE
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
