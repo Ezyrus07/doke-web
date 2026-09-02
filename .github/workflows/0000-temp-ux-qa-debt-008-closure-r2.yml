@@ -1,0 +1,260 @@
+name: TEMP UX-QA-DEBT-008 Closure R2
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008-closure-r2-run
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  closure:
+    runs-on: windows-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: b260bfb59241d15f5cee76dedd2b60e115919425
+      PARENT_TREE: bbe1dc29f352908a7603e194215eb7ca0a3b9c43
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-008-closure-r2.yml
+      ROOT_008: 7a7b67e8f92918c75133b65bc224ec5de3cdb4c4
+      ROOT_008_TREE: bee05e8bea81436c521fb73bb36472c8d46baf52
+      PERM_008A: a13da4f6a3eb604168ffa135abbca03afd82cfd4
+      PERM_008A_TREE: 8ff045441b602e5146015bc4eff9acb2064882fe
+      PERM_008B: c7e4e94a772e64ed57472dd0db9a9301de4f9993
+      PERM_008B_TREE: f46b0e0ec95593d8e5bd8fad5bb8466686e59327
+      PERM_008C: dd9bfa9c56ec8c338c8de5db8283ab8dd28f6fe3
+      PERM_008C_TREE: 599517aaada895d09dd5791009b096282efeeb1a
+      PERM_008D: c62445938fb4e0bbf937fdb45209a12eb3d0b52d
+      PERM_008D_TREE: bfd34a50eafec796c1c68165d48ac5b1566eed93
+      PERM_008E: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PERM_008E_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      PERM_008F: b260bfb59241d15f5cee76dedd2b60e115919425
+      PERM_008F_TREE: bbe1dc29f352908a7603e194215eb7ca0a3b9c43
+      G1_REF: refs/heads/diag/ux-qa-debt-008g-native-only-profile-g1
+      G1_SHA: 1e924d26f3f524aeaff7dbd2941356e97242da0a
+      G1_TREE: e6de36d64a44c73366493f785223ac3e4108b821
+      H1_REF: refs/heads/diag/ux-qa-debt-008h-messages-fixture-h1
+      H1_SHA: 25b0f0eb1860254cbd452461166dfabdd5e25a73
+      H1_TREE: 73c9ccff3f1ce56ff4a20358839c2015b8d5eef3
+      I4_REF: refs/heads/diag/ux-qa-debt-008i-scroll-readiness-i4
+      I4_SHA: e92b227c27588dea40a18e77c78902a89bd30780
+      I4_TREE: e137efae980ba9b24a6246d531af0c8fabd00126
+      I4_SCROLL_BLOB: 7b5b2db651c6871ee91471e4cb05b201a0e3aa25
+      I4_MATRIX_BLOB: 9e4f1557f3a88985720738065eb1267ad80161dd
+      I4_CERTIFIER_RUN: '33346067646'
+      B_PROMOTION_RECEIPT_RUN: '33348192074'
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze TEMP controller and permanent 008A-through-008F lineage
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP controller lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { echo "TEMP scope mismatch: ${changed[*]}"; exit 1; }
+
+          verify_commit() { [[ "$(git rev-parse "$1^{tree}")" == "$2" ]] || { echo "TREE mismatch: $1"; exit 1; }; }
+          verify_parent() { [[ "$(git rev-parse "$1^")" == "$2" ]] || { echo "Parent mismatch: $1"; exit 1; }; }
+
+          verify_commit "$ROOT_008" "$ROOT_008_TREE"
+          verify_commit "$PERM_008A" "$PERM_008A_TREE"
+          verify_commit "$PERM_008B" "$PERM_008B_TREE"
+          verify_commit "$PERM_008C" "$PERM_008C_TREE"
+          verify_commit "$PERM_008D" "$PERM_008D_TREE"
+          verify_commit "$PERM_008E" "$PERM_008E_TREE"
+          verify_commit "$PERM_008F" "$PERM_008F_TREE"
+          verify_parent "$PERM_008A" "$ROOT_008"
+          verify_parent "$PERM_008B" "$PERM_008A"
+          verify_parent "$PERM_008C" "$PERM_008B"
+          verify_parent "$PERM_008D" "$PERM_008C"
+          verify_parent "$PERM_008E" "$PERM_008D"
+          verify_parent "$PERM_008F" "$PERM_008E"
+          [[ "$PARENT" == "$PERM_008F" ]] || { echo 'Closure parent is not permanent 008F'; exit 1; }
+          echo 'PERMANENT_LINEAGE_008A_TO_008F=PASS'
+          echo 'TEMP_ONLY_SCOPE=PASS'
+
+      - name: Freeze certified 008B-through-008G-H-I lineage and receipts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          remote_sha() { git ls-remote origin "$1" | awk '{print $1}'; }
+          [[ "$(remote_sha "$G1_REF")" == "$G1_SHA" ]] || { echo 'G1 ref drift'; exit 1; }
+          [[ "$(remote_sha "$H1_REF")" == "$H1_SHA" ]] || { echo 'H1 ref drift'; exit 1; }
+          [[ "$(remote_sha "$I4_REF")" == "$I4_SHA" ]] || { echo 'I4 ref drift'; exit 1; }
+          git fetch --no-tags origin "$G1_REF:refs/remotes/qa008-closure/g1"
+          git fetch --no-tags origin "$H1_REF:refs/remotes/qa008-closure/h1"
+          git fetch --no-tags origin "$I4_REF:refs/remotes/qa008-closure/i4"
+          [[ "$(git rev-parse "$G1_SHA^{tree}")" == "$G1_TREE" ]] || { echo 'G1 TREE mismatch'; exit 1; }
+          [[ "$(git rev-parse "$H1_SHA^{tree}")" == "$H1_TREE" ]] || { echo 'H1 TREE mismatch'; exit 1; }
+          [[ "$(git rev-parse "$I4_SHA^{tree}")" == "$I4_TREE" ]] || { echo 'I4 TREE mismatch'; exit 1; }
+          [[ "$(git rev-parse "$H1_SHA^")" == "$G1_SHA" ]] || { echo 'G1-to-H1 lineage mismatch'; exit 1; }
+          git merge-base --is-ancestor "$H1_SHA" "$I4_SHA" || { echo 'H1 is not ancestor of I4'; exit 1; }
+          [[ "$(git rev-parse "$I4_SHA:tests/e2e/stable-shell-scroll-contract.spec.js")" == "$I4_SCROLL_BLOB" ]] || { echo 'I4 scroll blob mismatch'; exit 1; }
+          [[ "$(git rev-parse "$I4_SHA:tests/e2e/stable-shell-transition-matrix.spec.js")" == "$I4_MATRIX_BLOB" ]] || { echo 'I4 matrix blob mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PERM_008B:tests/e2e/stable-shell-scroll-contract.spec.js")" == "$I4_SCROLL_BLOB" ]] || { echo '008B scroll transport mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PERM_008B:tests/e2e/stable-shell-transition-matrix.spec.js")" == "$I4_MATRIX_BLOB" ]] || { echo '008B matrix transport mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:tests/e2e/stable-shell-scroll-contract.spec.js")" == "$I4_SCROLL_BLOB" ]] || { echo 'Current scroll owner drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:tests/e2e/stable-shell-transition-matrix.spec.js")" == "$I4_MATRIX_BLOB" ]] || { echo 'Current matrix owner drift'; exit 1; }
+
+          verify_run() {
+            local run_id="$1"
+            local json
+            json="$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}")"
+            RUN_JSON="$json" node - <<'NODE'
+          const row = JSON.parse(process.env.RUN_JSON);
+          if (row.status !== 'completed' || row.conclusion !== 'success' || row.run_attempt !== 1) {
+            throw new Error(`Frozen run invalid: ${row.id}`);
+          }
+          console.log(`RUN_${row.id}=PASS`);
+          NODE
+          }
+          verify_run "$I4_CERTIFIER_RUN"
+          verify_run "$B_PROMOTION_RECEIPT_RUN"
+          echo 'CERTIFIED_008B_G_H_I_LINEAGE=PASS'
+
+      - name: Create exact closure parent worktree and install dependencies
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../qa008-closure-r2-parent "$PARENT"
+          cd ../qa008-closure-r2-parent
+          npm ci
+          npx playwright install chromium
+          echo 'DEPENDENCIES=PASS'
+
+      - name: Revalidate governance without persistent mutation
+        run: |
+          set -euo pipefail
+          cd ../qa008-closure-r2-parent
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard "$PARENT"
+          [[ -z "$(git diff --name-only "$PARENT")" ]] || { echo 'Tracked mutation after governance'; exit 1; }
+          echo 'GOVERNANCE=PASS'
+
+      - name: Execute the same 9 static gates from UX-QA-DEBT-008 R1
+        run: |
+          set -euo pipefail
+          cd ../qa008-closure-r2-parent
+          node - <<'NODE'
+          const { spawnSync } = require('node:child_process');
+          const fs = require('node:fs');
+          const commands = [
+            ['navigationLifecycleAudit', 'npm run audit:navigation-lifecycle-contract'],
+            ['navigationLifecycleCore', 'npm run test:navigation-lifecycle-core-contract'],
+            ['navigationLifecycleFinalization', 'npm run test:navigation-lifecycle-finalization-contract'],
+            ['shellRouterScrollAudit', 'npm run audit:shell-router-scroll-reset'],
+            ['responsiveBoundaries', 'npm run audit:responsive-boundaries'],
+            ['desktopBase', 'npm run audit:desktop-base'],
+            ['sharedHeader', 'npm run audit:shared-app-header-contract'],
+            ['resultsDensity', 'npm run test:results-card-density-contract'],
+            ['resultsHeaderRail', 'npm run test:results-header-rail-contract']
+          ];
+          const rows = commands.map(([name, command]) => {
+            const out = spawnSync(command, { shell: true, encoding: 'utf8', env: process.env, maxBuffer: 50 * 1024 * 1024 });
+            process.stdout.write(out.stdout || '');
+            process.stderr.write(out.stderr || '');
+            const rc = Number.isInteger(out.status) ? out.status : 1;
+            console.log('QA008_CLOSURE_R2_STATIC=' + JSON.stringify({ name, command, rc }));
+            return { name, command, rc };
+          });
+          const failures = rows.filter((row) => row.rc !== 0);
+          const receipt = { gateCount: rows.length, staticFailures: failures.length, failedGates: failures.map((row) => row.name) };
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/qa008-closure-r2-static.json', JSON.stringify({ rows, receipt }, null, 2));
+          console.log('QA008_CLOSURE_R2_STATIC_SUMMARY=' + JSON.stringify(receipt));
+          if (rows.length !== 9) throw new Error(`Static gate count drift: ${rows.length}`);
+          if (failures.length !== 0) throw new Error(`Expected staticFailures=0, got ${failures.length}`);
+          NODE
+
+      - name: Execute the same 7 Playwright specs from UX-QA-DEBT-008 R1
+        run: |
+          set -euo pipefail
+          cd ../qa008-closure-r2-parent
+          specs=(
+            tests/e2e/results-entry-lifecycle.spec.js
+            tests/e2e/ux-results-001-browser-acceptance.spec.js
+            tests/e2e/search-flow.spec.js
+            tests/e2e/stable-shell-transition-contract.spec.js
+            tests/e2e/stable-shell-transition-matrix.spec.js
+            tests/e2e/stable-shell-scroll-contract.spec.js
+            tests/e2e/global-layout-contract.spec.js
+          )
+          [[ ${#specs[@]} -eq 7 ]] || { echo 'Playwright spec count drift'; exit 1; }
+          set +e
+          node node_modules/@playwright/test/cli.js test "${specs[@]}" --reporter=json > "$RUNNER_TEMP/qa008-closure-r2-playwright.json"
+          rc=$?
+          set -e
+          export PLAYWRIGHT_RC="$rc"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/qa008-closure-r2-playwright.json', 'utf8'));
+          let total = 0, expected = 0, unexpected = 0, flaky = 0, skipped = 0;
+          const unexpectedRows = [];
+          function classify(test, last) {
+            if (['expected','unexpected','flaky','skipped'].includes(test.status)) return test.status;
+            const actual = last?.status || 'unknown';
+            if (actual === 'skipped') return 'skipped';
+            return actual === (test.expectedStatus || 'passed') ? 'expected' : 'unexpected';
+          }
+          function walk(suite, parents = [], inheritedFile = '') {
+            const prefix = [...parents, suite.title || ''].filter(Boolean);
+            const suiteFile = suite.file || inheritedFile || '';
+            for (const spec of suite.specs || []) {
+              const file = spec.file || suiteFile || '';
+              for (const test of spec.tests || []) {
+                total += 1;
+                const last = (test.results || []).at(-1) || {};
+                const status = classify(test, last);
+                if (status === 'expected') expected += 1;
+                else if (status === 'unexpected') { unexpected += 1; unexpectedRows.push({ file, title: [...prefix, spec.title || '', test.title || ''].filter(Boolean).join(' > '), status: last.status || status }); }
+                else if (status === 'flaky') flaky += 1;
+                else if (status === 'skipped') skipped += 1;
+              }
+            }
+            for (const child of suite.suites || []) walk(child, prefix, suiteFile);
+          }
+          for (const suite of report.suites || []) walk(suite);
+          const receipt = { playwrightRc: Number(process.env.PLAYWRIGHT_RC || 1), browserTotal: total, browserExpected: expected, browserUnexpected: unexpected, browserFlaky: flaky, browserSkipped: skipped, unexpectedRows };
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/qa008-closure-r2-browser.json', JSON.stringify(receipt, null, 2));
+          console.log('QA008_CLOSURE_R2_BROWSER_SUMMARY=' + JSON.stringify(receipt));
+          if (unexpected !== 0) throw new Error(`Expected browserUnexpected=0, got ${unexpected}`);
+          if (Number(process.env.PLAYWRIGHT_RC || 1) !== 0) throw new Error(`Playwright exited non-zero: ${process.env.PLAYWRIGHT_RC}`);
+          NODE
+
+      - name: Emit closure receipt and prove no persistent repository mutation
+        run: |
+          set -euo pipefail
+          cd ../qa008-closure-r2-parent
+          git diff --check
+          git reset --hard "$PARENT"
+          [[ -z "$(git diff --name-only "$PARENT")" ]] || { echo 'Tracked closure mutation detected'; exit 1; }
+          STATIC_JSON="$(cat "$RUNNER_TEMP/qa008-closure-r2-static.json")" BROWSER_JSON="$(cat "$RUNNER_TEMP/qa008-closure-r2-browser.json")" node - <<'NODE'
+          const staticData = JSON.parse(process.env.STATIC_JSON);
+          const browser = JSON.parse(process.env.BROWSER_JSON);
+          const receipt = {
+            result: 'PASS', checkpoint: 'UX-QA-DEBT-008-CLOSURE-R2',
+            parent: process.env.PARENT, parentTree: process.env.PARENT_TREE,
+            staticGateCount: staticData.receipt.gateCount,
+            staticFailures: staticData.receipt.staticFailures,
+            browserTotal: browser.browserTotal,
+            browserUnexpected: browser.browserUnexpected,
+            criteriaRelaxed: 0, introducedRegressions: 0,
+            productMutation: false, permanentTestMutation: false,
+            matrixMutation: false, snapshotMutation: false,
+            supabaseInvocation: false, stagingProduction: false,
+            issueMutation: false, prMutation: false,
+            readyForReview: false, merge: false, repositoryOnly: true
+          };
+          if (receipt.staticFailures !== 0 || receipt.browserUnexpected !== 0) throw new Error('Closure receipt cannot pass with residual failures');
+          console.log('UX_QA_DEBT_008_CLOSURE_R2=' + JSON.stringify(receipt));
+          NODE
