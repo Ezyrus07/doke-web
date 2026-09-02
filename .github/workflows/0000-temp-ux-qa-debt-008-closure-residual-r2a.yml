@@ -1,0 +1,294 @@
+name: TEMP UX-QA-DEBT-008 Closure Residual R2a
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008-closure-residual-r2a-run
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  residual-diagnostic:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: b260bfb59241d15f5cee76dedd2b60e115919425
+      PARENT_TREE: bbe1dc29f352908a7603e194215eb7ca0a3b9c43
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-008-closure-residual-r2a.yml
+      TARGET_SPEC: tests/e2e/stable-shell-transition-matrix.spec.js
+      TARGET_BLOB: 9e4f1557f3a88985720738065eb1267ad80161dd
+      TARGET_TITLE: mobile: direct and DokeNavigate converge across priority pages
+      R2_RUN: '33688521635'
+      R2_JOB: '100441602655'
+      R2_CONTROLLER: 5185e146d779657a09648ef8073ee50a5752b6bd
+      R2_EXPECTED_BROWSER_UNEXPECTED: '1'
+      EVIDENCE_DIR: ${{ runner.temp }}/qa008-closure-residual-r2a
+
+    steps:
+      - name: Checkout TEMP controller
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller scope and permanent target provenance
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP controller lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Permanent parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { echo "TEMP scope mismatch: ${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$TARGET_SPEC")" == "$TARGET_BLOB" ]] || { echo 'Permanent target spec blob drift'; exit 1; }
+          echo "TEMP_CONTROLLER_HEAD=$head"
+          echo 'TEMP_ONLY_SCOPE=PASS'
+          echo 'PERMANENT_TARGET_PROVENANCE=PASS'
+
+      - name: Capture frozen R2 evidence metadata
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          curl -fsSL \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${R2_RUN}" \
+            -o "$EVIDENCE_DIR/r2-run.json"
+          curl -fsSL \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/jobs/${R2_JOB}" \
+            -o "$EVIDENCE_DIR/r2-job.json"
+          curl -fsSL -L \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/jobs/${R2_JOB}/logs" \
+            -o "$EVIDENCE_DIR/r2-job.log"
+          R2_RUN_JSON="$(cat "$EVIDENCE_DIR/r2-run.json")" R2_JOB_JSON="$(cat "$EVIDENCE_DIR/r2-job.json")" node - <<'NODE'
+          const run = JSON.parse(process.env.R2_RUN_JSON);
+          const job = JSON.parse(process.env.R2_JOB_JSON);
+          if (String(run.id) !== process.env.R2_RUN) throw new Error('R2 run id drift');
+          if (run.head_sha !== process.env.R2_CONTROLLER) throw new Error('R2 controller SHA drift');
+          if (run.status !== 'completed' || run.conclusion !== 'failure' || run.run_attempt !== 1) {
+            throw new Error('R2 run state drift');
+          }
+          if (String(job.id) !== process.env.R2_JOB || job.status !== 'completed' || job.conclusion !== 'failure') {
+            throw new Error('R2 job state drift');
+          }
+          const step = (job.steps || []).find((row) => row.name === 'Execute the same 7 Playwright specs from UX-QA-DEBT-008 R1');
+          if (!step || step.conclusion !== 'failure') throw new Error('R2 browser-step provenance drift');
+          console.log('R2_RESIDUAL_PROVENANCE=PASS');
+          NODE
+
+      - name: Create exact permanent-parent worktree and install dependencies
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../qa008-closure-residual-r2a-parent "$PARENT"
+          cd ../qa008-closure-residual-r2a-parent
+          [[ "$(git rev-parse HEAD)" == "$PARENT" ]] || { echo 'Detached parent HEAD mismatch'; exit 1; }
+          [[ "$(git rev-parse HEAD^{tree})" == "$PARENT_TREE" ]] || { echo 'Detached parent TREE mismatch'; exit 1; }
+          [[ "$(git rev-parse "$TARGET_SPEC")" == "$TARGET_BLOB" ]] || { echo 'Detached target blob mismatch'; exit 1; }
+          npm ci
+          npx playwright install chromium
+          echo 'EXACT_PARENT_WORKTREE=PASS'
+
+      - name: Capture current diagnostic environment
+        run: |
+          set -euo pipefail
+          cd ../qa008-closure-residual-r2a-parent
+          mkdir -p "$EVIDENCE_DIR"
+          node --version > "$EVIDENCE_DIR/node-version.txt"
+          npm --version > "$EVIDENCE_DIR/npm-version.txt"
+          npx playwright --version > "$EVIDENCE_DIR/playwright-version.txt"
+          git rev-parse HEAD > "$EVIDENCE_DIR/current-parent.txt"
+          git rev-parse HEAD^{tree} > "$EVIDENCE_DIR/current-parent-tree.txt"
+          git rev-parse "$TARGET_SPEC" > "$EVIDENCE_DIR/current-target-blob.txt"
+          git rev-parse "$PARENT:package.json" > "$EVIDENCE_DIR/package-json-blob.txt"
+          git rev-parse "$PARENT:package-lock.json" > "$EVIDENCE_DIR/package-lock-blob.txt"
+          {
+            echo "RUNNER_OS=${RUNNER_OS:-}"
+            echo "RUNNER_ARCH=${RUNNER_ARCH:-}"
+            echo "ImageOS=${ImageOS:-}"
+            echo "ImageVersion=${ImageVersion:-}"
+            echo "ImageVersionOverride=${ImageVersionOverride:-}"
+            echo "GITHUB_RUN_ID=${GITHUB_RUN_ID:-}"
+            echo "GITHUB_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT:-}"
+            echo "GITHUB_SHA=${GITHUB_SHA:-}"
+            echo "GITHUB_REF_NAME=${GITHUB_REF_NAME:-}"
+          } > "$EVIDENCE_DIR/current-runner-environment.txt"
+          node - <<'NODE' > "$EVIDENCE_DIR/chromium-version.txt"
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            console.log(await browser.version());
+            await browser.close();
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+          echo 'CURRENT_ENVIRONMENT_CAPTURE=PASS'
+
+      - name: Execute only the frozen mobile residual in three isolated attempts
+        run: |
+          set -euo pipefail
+          cd ../qa008-closure-residual-r2a-parent
+          mkdir -p "$EVIDENCE_DIR"
+          for attempt in 1 2 3; do
+            rm -rf test-results
+            set +e
+            node node_modules/@playwright/test/cli.js test "$TARGET_SPEC" \
+              --grep '^mobile: direct and DokeNavigate converge across priority pages$' \
+              --workers=1 \
+              --retries=0 \
+              --trace retain-on-failure \
+              --reporter=json \
+              > "$EVIDENCE_DIR/attempt-${attempt}.json" \
+              2> "$EVIDENCE_DIR/attempt-${attempt}.stderr.log"
+            rc=$?
+            set -e
+            printf '%s\n' "$rc" > "$EVIDENCE_DIR/attempt-${attempt}.rc"
+            if [[ -d test-results ]]; then
+              cp -R test-results "$EVIDENCE_DIR/test-results-attempt-${attempt}"
+            fi
+            [[ "$(git rev-parse "$TARGET_SPEC")" == "$TARGET_BLOB" ]] || { echo "Target blob drift after attempt ${attempt}"; exit 1; }
+            [[ -z "$(git diff --name-only "$PARENT")" ]] || { echo "Tracked mutation after attempt ${attempt}"; git diff --name-only "$PARENT"; exit 1; }
+          done
+          echo 'TARGETED_ATTEMPTS_CAPTURED=3'
+
+      - name: Classify residual and emit detailed diagnostic receipt
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const dir = process.env.EVIDENCE_DIR;
+          const target = process.env.TARGET_TITLE;
+          const attempts = [];
+
+          function collectTests(report) {
+            const rows = [];
+            function walk(suite, parents = [], inheritedFile = '') {
+              const prefix = [...parents, suite.title || ''].filter(Boolean);
+              const suiteFile = suite.file || inheritedFile || '';
+              for (const spec of suite.specs || []) {
+                const file = spec.file || suiteFile || '';
+                for (const test of spec.tests || []) {
+                  const last = (test.results || []).at(-1) || {};
+                  rows.push({
+                    file,
+                    title: [...prefix, spec.title || '', test.title || ''].filter(Boolean).join(' > '),
+                    status: test.status || last.status || 'unknown',
+                    expectedStatus: test.expectedStatus || 'passed',
+                    duration: last.duration ?? null,
+                    errors: [...(last.errors || []), ...(last.error ? [last.error] : [])].map((error) => ({
+                      message: error?.message || '',
+                      stack: error?.stack || '',
+                      snippet: error?.snippet || ''
+                    })),
+                    attachments: (last.attachments || []).map((attachment) => ({
+                      name: attachment.name || '',
+                      contentType: attachment.contentType || '',
+                      path: attachment.path || ''
+                    }))
+                  });
+                }
+              }
+              for (const child of suite.suites || []) walk(child, prefix, suiteFile);
+            }
+            for (const suite of report.suites || []) walk(suite);
+            return rows;
+          }
+
+          for (let attempt = 1; attempt <= 3; attempt += 1) {
+            const reportPath = path.join(dir, `attempt-${attempt}.json`);
+            const rcPath = path.join(dir, `attempt-${attempt}.rc`);
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            const rc = Number(fs.readFileSync(rcPath, 'utf8').trim());
+            const tests = collectTests(report);
+            if (tests.length !== 1) throw new Error(`Attempt ${attempt}: expected exactly 1 selected test, got ${tests.length}`);
+            const row = tests[0];
+            if (!row.title.includes(target)) throw new Error(`Attempt ${attempt}: selected title drift: ${row.title}`);
+            const failureText = row.errors.map((error) => `${error.message}\n${error.stack}\n${error.snippet}`).join('\n---\n').trim();
+            const errorSignature = failureText
+              ? crypto.createHash('sha256').update(failureText).digest('hex')
+              : null;
+            const passed = rc === 0 && (row.status === 'expected' || row.status === 'passed');
+            attempts.push({ attempt, rc, passed, errorSignature, ...row });
+          }
+
+          const passCount = attempts.filter((row) => row.passed).length;
+          const failCount = attempts.length - passCount;
+          const signatures = [...new Set(attempts.filter((row) => !row.passed).map((row) => row.errorSignature || 'NO_ERROR_SIGNATURE'))];
+          let classification;
+          if (failCount === 0) classification = 'NOT_REPRODUCED_ON_EXACT_PARENT_POSSIBLE_FLAKE_TIMING_OR_ENVIRONMENT_DRIFT';
+          else if (passCount > 0) classification = 'NONDETERMINISTIC_FLAKINESS_OR_TIMING_REPRODUCED';
+          else if (signatures.length === 1) classification = 'DETERMINISTIC_REPRODUCTION_SAME_ERROR_SIGNATURE';
+          else classification = 'REPRODUCIBLE_WITH_ERROR_SIGNATURE_DRIFT';
+
+          const receipt = {
+            checkpoint: 'UX-QA-DEBT-008-CLOSURE-RESIDUAL-R2A',
+            diagnosticOnly: true,
+            parent: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            targetSpec: process.env.TARGET_SPEC,
+            targetBlob: process.env.TARGET_BLOB,
+            targetTitle: process.env.TARGET_TITLE,
+            priorR2Run: Number(process.env.R2_RUN),
+            priorR2Job: Number(process.env.R2_JOB),
+            priorBrowserUnexpected: Number(process.env.R2_EXPECTED_BROWSER_UNEXPECTED),
+            attemptCount: attempts.length,
+            passCount,
+            failCount,
+            uniqueFailureSignatures: signatures,
+            classification,
+            environmentDriftAssessment: 'COMPARE_ATTACHED_R2_JOB_LOG_AND_CURRENT_RUNNER_ENVIRONMENT',
+            criteriaRelaxed: 0,
+            permanentTestMutation: false,
+            productMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            supabaseInvocation: false,
+            stagingProduction: false,
+            issueMutation: false,
+            prMutation: false,
+            readyForReview: false,
+            merge: false,
+            attempts
+          };
+          fs.writeFileSync(path.join(dir, 'diagnostic-receipt.json'), JSON.stringify(receipt, null, 2));
+          console.log('UX_QA_DEBT_008_CLOSURE_RESIDUAL_R2A=' + JSON.stringify(receipt));
+          NODE
+
+      - name: Prove permanent repository state remained untouched
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ -d ../qa008-closure-residual-r2a-parent ]]; then
+            cd ../qa008-closure-residual-r2a-parent
+            git reset --hard "$PARENT"
+            [[ "$(git rev-parse HEAD)" == "$PARENT" ]] || { echo 'Permanent-parent worktree HEAD drift'; exit 1; }
+            [[ "$(git rev-parse HEAD^{tree})" == "$PARENT_TREE" ]] || { echo 'Permanent-parent worktree TREE drift'; exit 1; }
+            [[ "$(git rev-parse "$TARGET_SPEC")" == "$TARGET_BLOB" ]] || { echo 'Permanent target blob drift'; exit 1; }
+            [[ -z "$(git diff --name-only "$PARENT")" ]] || { echo 'Tracked diagnostic mutation detected'; git diff --name-only "$PARENT"; exit 1; }
+          fi
+          echo 'NO_PERSISTENT_REPOSITORY_MUTATION=PASS'
+
+      - name: Upload residual diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008-closure-residual-r2a-${{ github.run_id }}
+          path: ${{ runner.temp }}/qa008-closure-residual-r2a
+          if-no-files-found: warn
+          retention-days: 14
