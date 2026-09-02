@@ -1,0 +1,346 @@
+name: TEMP UX-QA-DEBT-008F C1b Header Rail Differential Recovery
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-008f-messages-desktop-header-c1b-rail-differential-recovery
+
+permissions:
+  contents: read
+
+jobs:
+  rail-differential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PARENT: a50b9faa83c975e3c70b01a7185d178445fc2d8c
+      PARENT_TREE: 25273d0bc3754badfd27360ca2d613e0a17c2fd3
+      C1: afe003ac7b45b776359d60c0aa9a93853a2d7942
+      C1_TREE: a91cff6e2fef82c05522e314eafa339752aea8f5
+      C1_BRANCH: diag/ux-qa-debt-008f-messages-desktop-header-c1
+      PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
+      TEMP_PATH: .github/workflows/0000-temp-ux-qa-debt-008f-messages-desktop-header-c1b-rail-differential-recovery.yml
+      GUARD_PATH: scripts/test-header-rail-contract.js
+      GUARD_BLOB: a22d001094f6e0a5de131c51003b11ab95d923c2
+      MOBILE_PATH: assets/css/pages/chat-mobile-navigation.css
+      MOBILE_PARENT_BLOB: 8ff7c626c1bf20f8814cb27ff6ce6e7bffa1491e
+      MOBILE_C1_BLOB: 4b891d87603798a02cdc316b7427b6b15e471b0c
+      RESPONSIVE_PATH: assets/css/pages/chat-responsive-state.css
+      RESPONSIVE_PARENT_BLOB: 4a77ff3f0a9befd89a8294be65d014a5eddb7b6c
+      RESPONSIVE_C1_BLOB: acfb52d38d0416672cbbebdbd1467090940cd185
+
+    steps:
+      - name: Checkout C1b branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze diagnostic scope and authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1^")" = "$PARENT"
+          test "$(git rev-list --count "$PARENT"..HEAD)" = "1"
+
+          mapfile -t changed < <(git diff --name-only "$PARENT"..HEAD)
+          test "${#changed[@]}" = "1"
+          test "${changed[0]}" = "$TEMP_PATH"
+
+          remote_parent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          remote_c1="$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')"
+          test "$remote_parent" = "$PARENT"
+          test "$remote_c1" = "$C1"
+
+          test "$(git rev-parse "$PARENT:$GUARD_PATH")" = "$GUARD_BLOB"
+          test "$(git rev-parse "$C1:$GUARD_PATH")" = "$GUARD_BLOB"
+          test "$(git rev-parse "$PARENT:$MOBILE_PATH")" = "$MOBILE_PARENT_BLOB"
+          test "$(git rev-parse "$C1:$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git rev-parse "$PARENT:$RESPONSIVE_PATH")" = "$RESPONSIVE_PARENT_BLOB"
+          test "$(git rev-parse "$C1:$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+
+          test "$(git rev-parse "$PARENT:package.json")" = "$(git rev-parse "$C1:package.json")"
+          test "$(git rev-parse "$PARENT:package-lock.json")" = "$(git rev-parse "$C1:package-lock.json")"
+          git diff --check "$PARENT"..HEAD
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies once
+        run: npm ci
+
+      - name: Install Chromium once
+        run: npx playwright install chromium
+
+      - name: Capture parent header rail report
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1b-evidence"
+          mkdir -p "$evidence"
+          git checkout --detach "$PARENT"
+          git reset --hard "$PARENT"
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PARENT_TREE"
+          test "$(git rev-parse "HEAD:$GUARD_PATH")" = "$GUARD_BLOB"
+          rm -f reports/header-rail-contract-report.json reports/header-rail-contract-report.md
+          set +e
+          node "$GUARD_PATH"
+          rc=$?
+          set -e
+          test "$rc" = "0" -o "$rc" = "1"
+          test -s reports/header-rail-contract-report.json
+          test -s reports/header-rail-contract-report.md
+          node -e 'JSON.parse(require("fs").readFileSync("reports/header-rail-contract-report.json", "utf8"))'
+          cp reports/header-rail-contract-report.json "$evidence/parent-header-rail-contract-report.json"
+          cp reports/header-rail-contract-report.md "$evidence/parent-header-rail-contract-report.md"
+          printf '%s\n' "$rc" > "$evidence/parent-exit-code.txt"
+          git reset --hard "$PARENT"
+          git clean -f -- reports/header-rail-contract-report.json reports/header-rail-contract-report.md
+
+      - name: Capture C1 header rail report
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1b-evidence"
+          git checkout --detach "$C1"
+          git reset --hard "$C1"
+          test "$(git rev-parse HEAD)" = "$C1"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$C1_TREE"
+          test "$(git rev-parse "HEAD:$GUARD_PATH")" = "$GUARD_BLOB"
+          test "$(git rev-parse "HEAD:$MOBILE_PATH")" = "$MOBILE_C1_BLOB"
+          test "$(git rev-parse "HEAD:$RESPONSIVE_PATH")" = "$RESPONSIVE_C1_BLOB"
+          rm -f reports/header-rail-contract-report.json reports/header-rail-contract-report.md
+          set +e
+          node "$GUARD_PATH"
+          rc=$?
+          set -e
+          test "$rc" = "0" -o "$rc" = "1"
+          test -s reports/header-rail-contract-report.json
+          test -s reports/header-rail-contract-report.md
+          node -e 'JSON.parse(require("fs").readFileSync("reports/header-rail-contract-report.json", "utf8"))'
+          cp reports/header-rail-contract-report.json "$evidence/c1-header-rail-contract-report.json"
+          cp reports/header-rail-contract-report.md "$evidence/c1-header-rail-contract-report.md"
+          printf '%s\n' "$rc" > "$evidence/c1-exit-code.txt"
+          git reset --hard "$C1"
+          git clean -f -- reports/header-rail-contract-report.json reports/header-rail-contract-report.md
+
+      - name: Build structured parent C1 differential
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/c1b-evidence"
+          EVIDENCE_DIR="$evidence" node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const dir = process.env.EVIDENCE_DIR;
+          const parent = JSON.parse(fs.readFileSync(path.join(dir, 'parent-header-rail-contract-report.json'), 'utf8'));
+          const candidate = JSON.parse(fs.readFileSync(path.join(dir, 'c1-header-rail-contract-report.json'), 'utf8'));
+          const parentExit = Number(fs.readFileSync(path.join(dir, 'parent-exit-code.txt'), 'utf8').trim());
+          const candidateExit = Number(fs.readFileSync(path.join(dir, 'c1-exit-code.txt'), 'utf8').trim());
+
+          const expectedViewports = [
+            'mobile-390x844',
+            'tablet-810x1080',
+            'tablet-820x1180',
+            'tablet-1180x820',
+            'desktop-1366x768',
+            'desktop-1760x900',
+          ];
+          const allowedMessagesViewports = new Set(['desktop-1366x768', 'desktop-1760x900']);
+          const allowedProperties = new Set(['left', 'right', 'width']);
+
+          const invariantErrors = [];
+          if (JSON.stringify(parent.pages) !== JSON.stringify(candidate.pages)) invariantErrors.push('pages drift');
+          if (JSON.stringify(parent.viewports) !== JSON.stringify(candidate.viewports)) invariantErrors.push('viewports drift');
+          if (JSON.stringify(parent.viewports) !== JSON.stringify(expectedViewports)) invariantErrors.push('unexpected guard viewport authority');
+          if (parent.tolerance !== candidate.tolerance) invariantErrors.push('tolerance drift');
+          if (![0, 1].includes(parentExit) || ![0, 1].includes(candidateExit)) invariantErrors.push('unexpected guard exit code');
+
+          const keyOf = failure => `${failure.page}|${failure.viewport}|${failure.property}`;
+          const normalizeFailure = failure => ({
+            page: failure.page,
+            viewport: failure.viewport,
+            property: failure.property,
+            expected: failure.expected,
+            actual: failure.actual,
+            difference: failure.difference,
+            headerSelector: failure.headerSelector ?? null,
+            contentSelector: failure.contentSelector ?? null,
+          });
+          const stableString = value => JSON.stringify(value);
+
+          function indexFailures(report, label) {
+            const map = new Map();
+            for (const raw of report.failures || []) {
+              const failure = normalizeFailure(raw);
+              const key = keyOf(failure);
+              if (map.has(key)) throw new Error(`${label} duplicate failure key: ${key}`);
+              map.set(key, failure);
+            }
+            return map;
+          }
+
+          const parentMap = indexFailures(parent, 'parent');
+          const candidateMap = indexFailures(candidate, 'candidate');
+          const keys = [...new Set([...parentMap.keys(), ...candidateMap.keys()])].sort();
+          const entries = [];
+          const counts = { unchanged: 0, added: 0, removed: 0, changed: 0 };
+
+          for (const key of keys) {
+            const before = parentMap.get(key) || null;
+            const after = candidateMap.get(key) || null;
+            let classification;
+            if (!before) classification = 'added';
+            else if (!after) classification = 'removed';
+            else if (stableString(before) === stableString(after)) classification = 'unchanged';
+            else classification = 'changed';
+            counts[classification] += 1;
+            entries.push({ key, classification, parent: before, candidate: after });
+          }
+
+          const deltas = entries.filter(entry => entry.classification !== 'unchanged');
+          const unrelated = deltas.filter(entry => (entry.candidate || entry.parent).page !== 'mensagens.html');
+          const breakpointDrift = deltas.filter(entry => {
+            const item = entry.candidate || entry.parent;
+            return item.page === 'mensagens.html' && !allowedMessagesViewports.has(item.viewport);
+          });
+          const propertyDrift = deltas.filter(entry => {
+            const item = entry.candidate || entry.parent;
+            return item.page === 'mensagens.html' && allowedMessagesViewports.has(item.viewport) && !allowedProperties.has(item.property);
+          });
+          const messagesEntries = entries.filter(entry => (entry.candidate || entry.parent).page === 'mensagens.html');
+          const messagesDeltas = deltas.filter(entry => (entry.candidate || entry.parent).page === 'mensagens.html');
+
+          let classification = 'C1A_PASS_HEADER_RAIL_DIFFERENTIAL_SCOPED_TO_MENSAGENS_DESKTOP';
+          if (invariantErrors.length) classification = 'C1A_FAIL_REPORT_AUTHORITY_DRIFT';
+          else if (unrelated.length) classification = 'C1A_FAIL_UNRELATED_DIFFERENTIAL';
+          else if (breakpointDrift.length) classification = 'C1A_FAIL_BREAKPOINT_DIFFERENTIAL';
+          else if (propertyDrift.length) classification = 'C1A_FAIL_PROPERTY_DIFFERENTIAL';
+          else if (messagesDeltas.length > 6) classification = 'C1A_FAIL_EXCESS_MESSAGES_DESKTOP_DIFFERENTIAL';
+
+          const status = classification.startsWith('C1A_PASS_') ? 'PASS' : 'FAIL';
+          const differential = {
+            status,
+            classification,
+            parent: { sha: process.env.PARENT, failureCount: (parent.failures || []).length, reportStatus: parent.status, exitCode: parentExit },
+            candidate: { sha: process.env.C1, failureCount: (candidate.failures || []).length, reportStatus: candidate.status, exitCode: candidateExit },
+            tolerance: parent.tolerance,
+            counts,
+            deltaCount: deltas.length,
+            invariantErrors,
+            unrelated,
+            breakpointDrift,
+            propertyDrift,
+            messagesEntries,
+            messagesDeltas,
+            entries,
+          };
+
+          fs.writeFileSync(path.join(dir, 'differential.json'), `${JSON.stringify(differential, null, 2)}\n`);
+          const md = [
+            '# UX-QA-DEBT-008F C1b header-rail differential recovery',
+            '',
+            `Status: **${status}**`,
+            `Classification: \`${classification}\``,
+            `Parent failures: ${differential.parent.failureCount}`,
+            `C1 failures: ${differential.candidate.failureCount}`,
+            `Unchanged: ${counts.unchanged}`,
+            `Added: ${counts.added}`,
+            `Removed: ${counts.removed}`,
+            `Changed: ${counts.changed}`,
+            `Delta count: ${deltas.length}`,
+            '',
+            '## Mensagens differential',
+            '',
+            messagesDeltas.length
+              ? '| key | class | parent diff | C1 diff |\n|---|---|---:|---:|\n' + messagesDeltas.map(entry => `| ${entry.key} | ${entry.classification} | ${entry.parent?.difference ?? ''} | ${entry.candidate?.difference ?? ''} |`).join('\n')
+              : 'No Mensagens failure-key deltas.',
+            '',
+            '## Invariant errors',
+            '',
+            invariantErrors.length ? invariantErrors.map(value => `- ${value}`).join('\n') : 'None.',
+          ];
+          fs.writeFileSync(path.join(dir, 'differential.md'), `${md.join('\n')}\n`);
+
+          const receipt = {
+            boundary: 'UX-QA-DEBT-008F-C1b',
+            status,
+            classification,
+            parentSha: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            c1Sha: process.env.C1,
+            c1Tree: process.env.C1_TREE,
+            guardBlob: process.env.GUARD_BLOB,
+            parentFailureCount: differential.parent.failureCount,
+            candidateFailureCount: differential.candidate.failureCount,
+            counts,
+            deltaCount: deltas.length,
+            messagesDeltaCount: messagesDeltas.length,
+            unrelatedDeltaCount: unrelated.length,
+            breakpointDriftCount: breakpointDrift.length,
+            propertyDriftCount: propertyDrift.length,
+            invariantErrors,
+          };
+          fs.writeFileSync(path.join(dir, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+          console.log(`UX_QA_DEBT_008F_C1B=${JSON.stringify(receipt)}`);
+          NODE
+
+      - name: Governance gates and derivative hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$GITHUB_SHA"
+          git reset --hard "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PARENT"..HEAD
+
+          mapfile -t dirty < <(git diff --name-only)
+          for path in "${dirty[@]}"; do
+            case "$path" in
+              docs/HOME-AUTHORITY-CLASSIFICATION.md|docs/PAGE-ASSET-AUTHORITY-MATRIX.md) ;;
+              *) echo "unexpected tracked audit derivative: $path" >&2; exit 1 ;;
+            esac
+          done
+
+          git reset --hard "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Revalidate immutable refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_parent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          remote_c1="$(git ls-remote origin "refs/heads/$C1_BRANCH" | awk '{print $1}')"
+          test "$remote_parent" = "$PARENT"
+          test "$remote_c1" = "$C1"
+          test "$(git rev-parse "$C1^{tree}")" = "$C1_TREE"
+          test "$(git rev-parse "$C1^")" = "$PARENT"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+
+      - name: Upload C1b differential evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-008f-c1b-header-rail-differential-recovery
+          path: ${{ runner.temp }}/c1b-evidence
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Assert C1b classification
+        shell: bash
+        run: |
+          set -euo pipefail
+          receipt="$RUNNER_TEMP/c1b-evidence/receipt.json"
+          test -s "$receipt"
+          node -e 'const r=require(process.argv[1]); console.log(`C1b ${r.status}: ${r.classification}`); if(r.status!=="PASS") process.exit(1)' "$receipt"
