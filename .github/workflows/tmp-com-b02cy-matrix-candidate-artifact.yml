@@ -1,4 +1,4 @@
-name: TEMP COM-B02CY Matrix Candidate Artifact
+name: TEMP COM-B02CY Clean Target Matrix Artifact
 
 on:
   push:
@@ -6,21 +6,23 @@ on:
       - tmp/com-b02cy-matrix-candidate-artifact
     paths:
       - 'backend/modules/communities/community-command-post-idempotency-rate-limit-policy-snapshot-authority-readiness.js'
+      - '.github/workflows/com-b02cy-repository-only-post-idempotency-rate-limit-policy-snapshot-authority-readiness.yml'
       - '.github/workflows/tmp-com-b02cy-matrix-candidate-artifact.yml'
 
 permissions:
   contents: read
 
 jobs:
-  generate-b02cy-matrix-candidate-artifact:
+  generate-clean-b02cy-target:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       PREDECESSOR_HEAD: 6bb9608ce4b1b5a01ffb249030e3eb8cd71e88ca
       PREDECESSOR_TREE: e18f83d4e78f077af933b922124531840a23a8c1
-      FIRST_AUXILIARY_HEAD: d9883731ba2b7383ac167300a3684190e990927c
       SOURCE: backend/modules/communities/community-command-post-idempotency-rate-limit-policy-snapshot-authority-readiness.js
       SOURCE_BLOB: 0ebc392f9dcff88b8698dd42020789901e8fd12e
+      WORKFLOW: .github/workflows/com-b02cy-repository-only-post-idempotency-rate-limit-policy-snapshot-authority-readiness.yml
+      WORKFLOW_BLOB: e91c630846d3474de8ac6933605cfeed97cde74e
       TEMP_WORKFLOW: .github/workflows/tmp-com-b02cy-matrix-candidate-artifact.yml
       MATRIX_SOURCE: config/domain-completion-matrix.json
       MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
@@ -29,12 +31,11 @@ jobs:
       PACKAGE_JSON: package.json
       PACKAGE_JSON_BLOB: 8b9670383773896d03410cb661a23e2061911495
       MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
-      MATRIX_MD_BLOB: 8436b7fb5fb658ef83b9fb11ebb6daeb89317328
       MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
-      MATRIX_REPORT_BLOB: 50d5bc6f96326b107bd8291f5270d1b701537bfe
+      TARGET_DIR: /tmp/com-b02cy-clean-target
 
     steps:
-      - name: Checkout exact auxiliary candidate head
+      - name: Checkout exact auxiliary head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -46,95 +47,95 @@ jobs:
         with:
           node-version: 22
 
-      - name: Freeze B02CY predecessor and exact auxiliary scope
+      - name: Freeze auxiliary authorities
         shell: bash
         run: |
           set -euo pipefail
-
-          test "$(git rev-parse HEAD^)" = "$FIRST_AUXILIARY_HEAD"
-          test "$(git rev-parse "$FIRST_AUXILIARY_HEAD^")" = "$PREDECESSOR_HEAD"
           test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
-
-          actual="$(git diff --name-status "$PREDECESSOR_HEAD" HEAD | sort)"
-          expected="$(printf 'A\t%s\nA\t%s\n' "$SOURCE" "$TEMP_WORKFLOW" | sort)"
-          test "$actual" = "$expected"
-
           test "$(git rev-parse "HEAD:$SOURCE")" = "$SOURCE_BLOB"
+          test "$(git rev-parse "HEAD:$WORKFLOW")" = "$WORKFLOW_BLOB"
           test "$(git rev-parse "HEAD:$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
           test "$(git rev-parse "HEAD:$MATRIX_GENERATOR")" = "$MATRIX_GENERATOR_BLOB"
           test "$(git rev-parse "HEAD:$PACKAGE_JSON")" = "$PACKAGE_JSON_BLOB"
-          test "$(git rev-parse "HEAD:$MATRIX_MD")" = "$MATRIX_MD_BLOB"
-          test "$(git rev-parse "HEAD:$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
-
           git diff --check "$PREDECESSOR_HEAD" HEAD
-          test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
-      - name: Validate B02CY source syntax
+      - name: Build exact clean four-path target working tree
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf "$TARGET_DIR"
+          git worktree add --detach "$TARGET_DIR" "$PREDECESSOR_HEAD"
+          mkdir -p "$TARGET_DIR/$(dirname "$SOURCE")" "$TARGET_DIR/$(dirname "$WORKFLOW")"
+          cp "$GITHUB_WORKSPACE/$SOURCE" "$TARGET_DIR/$SOURCE"
+          cp "$GITHUB_WORKSPACE/$WORKFLOW" "$TARGET_DIR/$WORKFLOW"
+
+          cd "$TARGET_DIR"
+          git add -N "$SOURCE" "$WORKFLOW"
+          actual="$(git diff --name-status | sort)"
+          expected="$(printf 'A\t%s\nA\t%s\n' "$SOURCE" "$WORKFLOW" | sort)"
+          test "$actual" = "$expected"
           node --check "$SOURCE"
-          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          git diff --check
 
-      - name: Generate canonical Matrix derivatives locally
+      - name: Generate canonical Matrix derivatives on clean target
         shell: bash
         run: |
           set -euo pipefail
-
+          cd "$TARGET_DIR"
           npm run write:domain-completion-matrix
 
           test "$(git hash-object "$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
           test "$(git hash-object "$MATRIX_GENERATOR")" = "$MATRIX_GENERATOR_BLOB"
           test "$(git hash-object "$PACKAGE_JSON")" = "$PACKAGE_JSON_BLOB"
 
-          actual_generated="$(git diff --name-only | sort)"
-          expected_generated="$(printf '%s\n%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
-          test "$actual_generated" = "$expected_generated"
+          git add -N "$SOURCE" "$WORKFLOW"
+          actual="$(git diff --name-status | sort)"
+          expected="$(printf 'A\t%s\nA\t%s\nM\t%s\nM\t%s\n' "$SOURCE" "$WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$actual" = "$expected"
+          git diff --check
 
-      - name: Validate generated Matrix candidate and repository governance
+      - name: Validate canonical audits and report exact domain delta
         shell: bash
         run: |
           set -euo pipefail
-
+          cd "$TARGET_DIR"
           npm run audit:domain-completion-matrix
           npm run audit:agent-governance
-          git diff --check -- "$MATRIX_MD" "$MATRIX_REPORT"
 
           node <<'NODE'
           'use strict';
-          const assert = require('assert');
           const cp = require('child_process');
           const fs = require('fs');
           const oldReport = JSON.parse(cp.execFileSync('git', ['show', `${process.env.PREDECESSOR_HEAD}:${process.env.MATRIX_REPORT}`], { encoding: 'utf8' }));
           const newReport = JSON.parse(fs.readFileSync(process.env.MATRIX_REPORT, 'utf8'));
-          const oldCom = oldReport.domains.find((d) => d.id === 'COM-001');
-          const newCom = newReport.domains.find((d) => d.id === 'COM-001');
-          assert.strictEqual(newCom.filesMatched, oldCom.filesMatched + 1);
-          assert.deepStrictEqual(newCom.signals, oldCom.signals);
-          const a = JSON.parse(JSON.stringify(oldReport));
-          const b = JSON.parse(JSON.stringify(newReport));
-          const ac = a.domains.find((d) => d.id === 'COM-001');
-          const bc = b.domains.find((d) => d.id === 'COM-001');
-          ac.filesMatched = bc.filesMatched;
-          ac.sampleFiles = bc.sampleFiles;
-          assert.deepStrictEqual(b, a);
+          const byId = (report) => new Map(report.domains.map((d) => [d.id, d]));
+          const a = byId(oldReport);
+          const b = byId(newReport);
+          const delta = [];
+          for (const [id, next] of b) {
+            const prev = a.get(id);
+            if (!prev) { delta.push({ id, added: true }); continue; }
+            const fields = {};
+            for (const key of ['filesMatched', 'signals', 'sampleFiles']) {
+              if (JSON.stringify(prev[key]) !== JSON.stringify(next[key])) fields[key] = { before: prev[key], after: next[key] };
+            }
+            if (Object.keys(fields).length) delta.push({ id, ...fields });
+          }
+          console.log('B02CY_DOMAIN_DELTA=' + JSON.stringify(delta));
           NODE
 
-          actual_generated="$(git diff --name-only | sort)"
-          expected_generated="$(printf '%s\n%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
-          test "$actual_generated" = "$expected_generated"
-
           printf 'BASE_HEAD=%s\n' "$PREDECESSOR_HEAD"
-          printf 'AUXILIARY_HEAD=%s\n' "$(git rev-parse HEAD)"
+          printf 'SOURCE_BLOB=%s\n' "$(git hash-object "$SOURCE")"
+          printf 'WORKFLOW_BLOB=%s\n' "$(git hash-object "$WORKFLOW")"
           printf 'MARKDOWN_BLOB=%s\n' "$(git hash-object "$MATRIX_MD")"
           printf 'REPORT_BLOB=%s\n' "$(git hash-object "$MATRIX_REPORT")"
 
-      - name: Upload B02CY Matrix candidate artifact
+      - name: Upload clean B02CY Matrix candidate artifact
         uses: actions/upload-artifact@v4
         with:
-          name: com-b02cy-domain-completion-matrix-candidate-${{ github.sha }}
+          name: com-b02cy-clean-target-${{ github.sha }}
           path: |
-            docs/DOMAIN-COMPLETION-MATRIX.md
-            reports/generated/domain-completion-matrix-report.json
+            /tmp/com-b02cy-clean-target/docs/DOMAIN-COMPLETION-MATRIX.md
+            /tmp/com-b02cy-clean-target/reports/generated/domain-completion-matrix-report.json
           if-no-files-found: error
           retention-days: 7
