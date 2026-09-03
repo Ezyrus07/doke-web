@@ -65,26 +65,26 @@ jobs:
           if text.count(nav003) != 1:
               raise SystemExit('NAV003 Resultados initializer contract missing before NAV002 materialization')
           old = """      syncElementContract(currentHeader, nextHeader);
-      currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
-        return node.cloneNode(true);
-      }));
-      currentContent.replaceWith(nextContent.cloneNode(true));
-      Array.prototype.slice.call(currentShell.children).forEach(function (node) {
-"""
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                currentContent.replaceWith(nextContent.cloneNode(true));
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
           new = """      syncElementContract(currentHeader, nextHeader);
-      currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
-        return node.cloneNode(true);
-      }));
-      var replacementContent = nextContent.cloneNode(true);
-      currentContent.replaceWith(replacementContent);
-      var replacementPageNodes = Array.prototype.map.call(nextPage.childNodes, function (node) {
-        if (node === nextHeader) return currentHeader;
-        if (node === nextContent) return replacementContent;
-        return node.cloneNode(true);
-      });
-      currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
-      Array.prototype.slice.call(currentShell.children).forEach(function (node) {
-"""
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                var replacementContent = nextContent.cloneNode(true);
+                currentContent.replaceWith(replacementContent);
+                var replacementPageNodes = Array.prototype.map.call(nextPage.childNodes, function (node) {
+                  if (node === nextHeader) return currentHeader;
+                  if (node === nextContent) return replacementContent;
+                  return node.cloneNode(true);
+                });
+                currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
           if text.count(old) != 1:
               raise SystemExit(f'Historical R3 replaceShell preimage count={text.count(old)}; stop without adaptation')
           updated = text.replace(old, new, 1)
