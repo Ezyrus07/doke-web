@@ -1,0 +1,541 @@
+name: TEMP UX-NAV-DEBT-002 Requal After NAV003 R4
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-requal-after-nav003-r4-run
+
+permissions:
+  contents: read
+
+jobs:
+  requalify:
+    runs-on: windows-latest
+    timeout-minutes: 85
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+      PARENT_TREE: 9e5e8cf0e9f4515a58420fea61eeb4a36eaffe7f
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-requal-after-nav003-r4.yml
+      ROUTER_PATH: assets/js/core/stable-shell-router.js
+      SEARCH_PATH: assets/js/pages/search-data.js
+      ROUTER_PREIMAGE: f3b4d3f303967055173e418244dc0d4b3a1b0e55
+      SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      R3_CONTROLLER: a0578cf7675d5138f43d4b25c77100c89aa0cee1
+      R3_RUN: '33170783257'
+      R3_JOB: '98847137626'
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact lineage and NAV003 preimages
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$ROUTER_PATH")" == "$ROUTER_PREIMAGE" ]] || { echo 'NAV003 router preimage drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$SEARCH_PATH")" == "$SEARCH_BLOB" ]] || { echo 'NAV003 search-data preimage drift'; exit 1; }
+          current_route_init="$(git show "$PARENT:$ROUTER_PATH" | grep -F "'/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults']" | wc -l | tr -d ' ')"
+          [[ "$current_route_init" == '1' ]] || { echo 'NAV003 Resultados initializer order missing or duplicated'; exit 1; }
+          echo "TEMP_SHA=$head"
+          echo "R3_PROVENANCE=$R3_CONTROLLER/$R3_RUN/$R3_JOB"
+          echo 'LINEAGE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'PARENT_TREE=PASS'
+          echo 'NAV003_PREIMAGES=PASS'
+
+      - name: Materialize exact historical NAV002 mechanism runner-only
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../nav002-r4-parent "$PARENT"
+          git worktree add --detach ../nav002-r4-candidate "$PARENT"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('../nav002-r4-candidate/assets/js/core/stable-shell-router.js')
+          text = path.read_text(encoding='utf-8')
+          nav003 = "    '/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults'],"
+          if text.count(nav003) != 1:
+              raise SystemExit('NAV003 Resultados initializer contract missing before NAV002 materialization')
+          old = """      syncElementContract(currentHeader, nextHeader);
+      currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+        return node.cloneNode(true);
+      }));
+      currentContent.replaceWith(nextContent.cloneNode(true));
+      Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+"""
+          new = """      syncElementContract(currentHeader, nextHeader);
+      currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+        return node.cloneNode(true);
+      }));
+      var replacementContent = nextContent.cloneNode(true);
+      currentContent.replaceWith(replacementContent);
+      var replacementPageNodes = Array.prototype.map.call(nextPage.childNodes, function (node) {
+        if (node === nextHeader) return currentHeader;
+        if (node === nextContent) return replacementContent;
+        return node.cloneNode(true);
+      });
+      currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
+      Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+"""
+          if text.count(old) != 1:
+              raise SystemExit(f'Historical R3 replaceShell preimage count={text.count(old)}; stop without adaptation')
+          updated = text.replace(old, new, 1)
+          if updated.count(nav003) != 1:
+              raise SystemExit('NAV003 initializer contract changed by NAV002 materialization')
+          path.write_text(updated, encoding='utf-8', newline='\n')
+          PY
+
+          mapfile -t product_changed < <(git -C ../nav002-r4-candidate diff --name-only "$PARENT")
+          [[ ${#product_changed[@]} -eq 1 && "${product_changed[0]}" == "$ROUTER_PATH" ]] || { printf 'Candidate scope mismatch: %s\n' "${product_changed[*]}"; exit 1; }
+          if git -C ../nav002-r4-candidate diff -U0 "$PARENT" -- "$ROUTER_PATH" | grep '^+' | grep -Eiq 'resultados|doke-public-footer'; then
+            echo 'Candidate contains route/footer hardcoding in added lines'
+            exit 1
+          fi
+          [[ -z "$(git -C ../nav002-r4-candidate diff --name-only "$PARENT" -- "$SEARCH_PATH" resultados.html assets/css config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/validation tests/visual)" ]] || { echo 'Forbidden candidate scope mutation'; exit 1; }
+          git -C ../nav002-r4-candidate diff --check "$PARENT"
+          node --check ../nav002-r4-candidate/$ROUTER_PATH
+
+          git -C ../nav002-r4-candidate config user.name doke-diagnostic
+          git -C ../nav002-r4-candidate config user.email doke-diagnostic@users.noreply.github.com
+          git -C ../nav002-r4-candidate add "$ROUTER_PATH"
+          git -C ../nav002-r4-candidate commit -m 'test(ux): requalify generic page sibling reconciliation after NAV-003'
+
+          candidate_sha="$(git -C ../nav002-r4-candidate rev-parse HEAD)"
+          candidate_tree="$(git -C ../nav002-r4-candidate rev-parse HEAD^{tree})"
+          router_blob="$(git -C ../nav002-r4-candidate rev-parse HEAD:$ROUTER_PATH)"
+          search_blob="$(git -C ../nav002-r4-candidate rev-parse HEAD:$SEARCH_PATH)"
+          patch_sha="$(git -C ../nav002-r4-candidate diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+          [[ "$search_blob" == "$SEARCH_BLOB" ]] || { echo "NAV003 search-data changed: $search_blob"; exit 1; }
+          [[ "$(git -C ../nav002-r4-candidate show HEAD:$ROUTER_PATH | grep -F "'/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults']" | wc -l | tr -d ' ')" == '1' ]] || { echo 'NAV003 initializer order not preserved'; exit 1; }
+          cat > "$RUNNER_TEMP/nav002-r4-identity.json" <<EOF
+          {"candidateSha":"$candidate_sha","candidateTree":"$candidate_tree","routerBlob":"$router_blob","searchBlob":"$search_blob","patchSha256":"$patch_sha"}
+          EOF
+          echo "CANDIDATE_SHA=$candidate_sha"
+          echo "CANDIDATE_TREE=$candidate_tree"
+          echo "ROUTER_BLOB=$router_blob"
+          echo "SEARCH_DATA_BLOB=$search_blob"
+          echo "PATCH_SHA256=$patch_sha"
+          echo 'CANDIDATE_SCOPE=ONE_ROUTER_FILE'
+          echo 'HARDCODED_ROUTE_OR_FOOTER=false'
+          echo 'NAV003_INITIALIZERS_PRESERVED=PASS'
+          echo 'MATRIX_MUTATION=false'
+          echo 'SNAPSHOT_MUTATION=false'
+          echo 'PRODUCT_REMOTE_MUTATION=false'
+
+      - name: Install dependencies and Chromium once
+        run: |
+          set -euo pipefail
+          cd ../nav002-r4-candidate
+          npm ci
+          npx playwright install chromium
+          cd ..
+          cp -a nav002-r4-candidate/node_modules nav002-r4-parent/node_modules
+
+      - name: Run governance and syntax gates
+        run: |
+          set -euo pipefail
+          cd ../nav002-r4-candidate
+          node --check "$ROUTER_PATH"
+          node --check "$SEARCH_PATH"
+          git diff --check "$PARENT" HEAD
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard HEAD
+          [[ "$(git rev-parse HEAD:$SEARCH_PATH)" == "$SEARCH_BLOB" ]] || { echo 'search-data drift after audits'; exit 1; }
+          [[ "$(git show HEAD:$ROUTER_PATH | grep -F "'/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults']" | wc -l | tr -d ' ')" == '1' ]] || { echo 'NAV003 initializer contract lost after audits'; exit 1; }
+          echo 'MINIMUM_GOVERNANCE_GATES=PASS'
+
+      - name: Require nine static qualification gates green
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const { spawnSync } = require('node:child_process');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const roots = { parent: path.resolve('../nav002-r4-parent'), candidate: path.resolve('../nav002-r4-candidate') };
+          const commands = [
+            ['navigationLifecycleAudit', 'npm run audit:navigation-lifecycle-contract'],
+            ['navigationLifecycleCore', 'npm run test:navigation-lifecycle-core-contract'],
+            ['navigationLifecycleFinalization', 'npm run test:navigation-lifecycle-finalization-contract'],
+            ['shellRouterScrollAudit', 'npm run audit:shell-router-scroll-reset'],
+            ['responsiveBoundaries', 'npm run audit:responsive-boundaries'],
+            ['desktopBase', 'npm run audit:desktop-base'],
+            ['sharedHeader', 'npm run audit:shared-app-header-contract'],
+            ['resultsDensity', 'npm run test:results-card-density-contract'],
+            ['resultsHeaderRail', 'npm run test:results-header-rail-contract']
+          ];
+          function run(root, command) {
+            const out = spawnSync(command, { cwd: root, shell: true, encoding: 'utf8', env: process.env, maxBuffer: 40 * 1024 * 1024 });
+            return { rc: Number.isInteger(out.status) ? out.status : 1, output: ((out.stdout || '') + '\n' + (out.stderr || '')).slice(-8000) };
+          }
+          const rows = commands.map(([name, command]) => ({ name, parent: run(roots.parent, command), candidate: run(roots.candidate, command) }));
+          const parentFailures = rows.filter(r => r.parent.rc !== 0).map(r => r.name);
+          const candidateFailures = rows.filter(r => r.candidate.rc !== 0).map(r => r.name);
+          const receipt = { rows, parentFailures, candidateFailures, parentGreen: parentFailures.length === 0, candidateGreen: candidateFailures.length === 0 };
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/nav002-r4-static.json', JSON.stringify(receipt));
+          console.log('UX_NAV_DEBT_002_R4_STATIC=' + JSON.stringify({ parentFailures, candidateFailures, parentGreen: receipt.parentGreen, candidateGreen: receipt.candidateGreen }));
+          if (!receipt.parentGreen || !receipt.candidateGreen) throw new Error('Static qualification not green');
+          console.log('STATIC_FAILURES_PARENT=0');
+          console.log('STATIC_FAILURES_CANDIDATE=0');
+          NODE
+
+      - name: Prove composition geometry and NAV003 lifecycle convergence
+        run: |
+          set -euo pipefail
+          python -m http.server 4173 --directory ../nav002-r4-parent > "$RUNNER_TEMP/nav002-r4-parent-server.log" 2>&1 &
+          p1=$!
+          python -m http.server 4174 --directory ../nav002-r4-candidate > "$RUNNER_TEMP/nav002-r4-candidate-server.log" 2>&1 &
+          p2=$!
+          cleanup() { kill "$p1" "$p2" 2>/dev/null || true; }
+          trap cleanup EXIT
+          for port in 4173 4174; do
+            ok=0
+            for i in {1..30}; do
+              if curl -fsS "http://127.0.0.1:${port}/index.html" >/dev/null; then ok=1; break; fi
+              sleep 1
+            done
+            [[ "$ok" == 1 ]] || { echo "Server $port did not become ready"; exit 1; }
+          done
+          cd ../nav002-r4-candidate
+          node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const bases = { parent: 'http://127.0.0.1:4173', candidate: 'http://127.0.0.1:4174' };
+          const viewports = [
+            { name: 'desktop', width: 1366, height: 768 },
+            { name: 'tablet', width: 820, height: 1180 },
+            { name: 'mobile', width: 390, height: 844 }
+          ];
+          const r3 = v => Math.round(Number(v || 0) * 1000) / 1000;
+          const delta = (a, b) => r3(Math.abs(Number(a || 0) - Number(b || 0)));
+
+          async function waitStable(page) {
+            await page.waitForLoadState('domcontentloaded');
+            if (page.url().includes('/resultados.html')) {
+              await page.waitForFunction(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                return form && form.getAttribute('data-filter-authority') === '20260805-ux-filters-001-v1' && document.querySelectorAll('[data-results-filter-status]').length === 1;
+              }, null, { timeout: 10000 });
+            }
+            await page.waitForTimeout(900);
+          }
+
+          async function snapshot(page) {
+            return page.evaluate(() => {
+              const pageNode = document.querySelector('.page');
+              const footer = pageNode && pageNode.querySelector(':scope > .doke-public-footer');
+              const header = pageNode && pageNode.querySelector(':scope > [data-app-header], :scope > .app-header');
+              const main = pageNode && pageNode.querySelector(':scope > .page__content');
+              const form = document.querySelector('[data-results-filters-form]');
+              const footerRect = footer && footer.getBoundingClientRect();
+              const pageRect = pageNode && pageNode.getBoundingClientRect();
+              const keyFor = (node) => {
+                if (node === header) return 'HEADER';
+                if (node === main) return 'CONTENT';
+                const id = node.id ? `#${node.id}` : '';
+                const cls = typeof node.className === 'string' && node.className.trim() ? '.' + node.className.trim().split(/\s+/).sort().join('.') : '';
+                return `${node.tagName}${id}${cls}`;
+              };
+              return {
+                path: location.pathname,
+                pageChildren: pageNode ? Array.from(pageNode.children).map(keyFor) : [],
+                footer: footerRect ? { present: true, left: footerRect.left, top: footerRect.top, width: footerRect.width, height: footerRect.height } : { present: false },
+                pageHeight: pageRect ? pageRect.height : 0,
+                scrollY: window.scrollY,
+                noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+                statusCount: document.querySelectorAll('[data-results-filter-status]').length,
+                authority: form?.getAttribute('data-filter-authority') || '',
+                contract: form?.getAttribute('data-filter-contract') || '',
+                state: form?.getAttribute('data-filter-state') || '',
+                dirty: form?.getAttribute('data-filter-dirty') || '',
+                filterInitializer: typeof window.DokeInitSearchFilterState === 'function',
+                resultsInitializer: typeof window.DokeInitSearchResults === 'function',
+                installation: Boolean(window.Doke?.searchFilterStateInstallation),
+                mainFocused: document.activeElement === main,
+                routeFocusTemporary: Boolean(main && main.getAttribute('data-doke-route-focus-temporary') === 'true')
+              };
+            });
+          }
+
+          async function direct(base, path, viewport) {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto(base + path, { waitUntil: 'domcontentloaded' });
+            await waitStable(page);
+            const state = await snapshot(page);
+            await browser.close();
+            return { state, errors };
+          }
+
+          async function roundTrip(base, viewport) {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto(base + '/index.html', { waitUntil: 'domcontentloaded' });
+            await waitStable(page);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function');
+            await page.evaluate(() => {
+              window.__nav002Header = document.querySelector('.page > [data-app-header], .page > .app-header');
+              window.__nav002Sidebar = document.querySelector('.app-shell > .sidebar, [data-shell-sidebar]');
+            });
+            const homeBefore = await snapshot(page);
+            await page.evaluate(() => window.DokeNavigate('/resultados.html'));
+            await page.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+            await waitStable(page);
+            const identityResults = await page.evaluate(() => ({
+              header: window.__nav002Header === document.querySelector('.page > [data-app-header], .page > .app-header'),
+              sidebar: window.__nav002Sidebar === document.querySelector('.app-shell > .sidebar, [data-shell-sidebar]')
+            }));
+            const results = await snapshot(page);
+            await page.evaluate(() => { window.__nav002FirstInstallation = window.Doke?.searchFilterStateInstallation || null; });
+
+            const urlBeforeDraft = page.url();
+            const drafted = await page.evaluate(() => {
+              const form = document.querySelector('[data-results-filters-form]');
+              const checkbox = form?.querySelector('input[name="guaranteed"]');
+              if (!checkbox) return false;
+              checkbox.checked = !checkbox.checked;
+              checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+              return true;
+            });
+            if (drafted) {
+              await page.waitForFunction(() => document.querySelector('[data-results-filters-form]')?.getAttribute('data-filter-dirty') === 'true');
+              assert.equal(page.url(), urlBeforeDraft, 'Draft filter mutation must not mutate URL');
+              await page.evaluate(() => window.Doke?.searchFilterStateInstallation?.cancel?.());
+              await page.waitForFunction(() => document.querySelector('[data-results-filters-form]')?.getAttribute('data-filter-dirty') === 'false');
+            }
+
+            await page.evaluate(() => window.DokeNavigate('/index.html'));
+            await page.waitForFunction(() => location.pathname.endsWith('/index.html'));
+            await waitStable(page);
+            const identityHome = await page.evaluate(() => ({
+              header: window.__nav002Header === document.querySelector('.page > [data-app-header], .page > .app-header'),
+              sidebar: window.__nav002Sidebar === document.querySelector('.app-shell > .sidebar, [data-shell-sidebar]')
+            }));
+            const homeAfter = await snapshot(page);
+            const homeLeak = await page.evaluate(() => document.querySelectorAll('[data-results-filter-status], [data-filter-authority]').length);
+
+            await page.evaluate(() => window.DokeNavigate('/resultados.html'));
+            await page.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+            await waitStable(page);
+            const second = await snapshot(page);
+            const freshInstallation = await page.evaluate(() => Boolean(window.__nav002FirstInstallation && window.Doke?.searchFilterStateInstallation && window.__nav002FirstInstallation !== window.Doke.searchFilterStateInstallation));
+            await browser.close();
+            return { homeBefore, results, homeAfter, second, identityResults, identityHome, homeLeak, freshInstallation, drafted, errors };
+          }
+
+          (async () => {
+            const desktop = viewports[0];
+            const parentDirect = await direct(bases.parent, '/resultados.html', desktop);
+            const parentRoute = await roundTrip(bases.parent, desktop);
+            assert.equal(parentDirect.state.footer.present, true, 'Current parent direct Resultados must contain footer');
+            assert.equal(parentRoute.results.footer.present, false, 'Current parent must still reproduce NAV002 missing-footer defect');
+            assert.equal(parentDirect.state.statusCount, 1, 'Current NAV003 parent direct filter authority must be installed');
+            assert.equal(parentRoute.results.statusCount, 1, 'Current NAV003 parent navigation filter authority must be installed');
+            assert.equal(parentRoute.results.authority, '20260805-ux-filters-001-v1', 'Current parent must preserve NAV003 authority under navigation');
+
+            const receipts = [];
+            for (const viewport of viewports) {
+              const directResults = await direct(bases.candidate, '/resultados.html', viewport);
+              const directHome = await direct(bases.candidate, '/index.html', viewport);
+              const routed = await roundTrip(bases.candidate, viewport);
+              const d = directResults.state;
+              const n = routed.results;
+
+              assert.deepEqual(d.pageChildren, n.pageChildren, `${viewport.name}: Resultados child set/order must converge`);
+              assert.deepEqual(directHome.state.pageChildren, routed.homeBefore.pageChildren, `${viewport.name}: Home negative control before navigation must converge`);
+              assert.deepEqual(directHome.state.pageChildren, routed.homeAfter.pageChildren, `${viewport.name}: Home child set/order after return must converge`);
+              assert.equal(routed.identityResults.header, true, `${viewport.name}: live header identity must be preserved into Resultados`);
+              assert.equal(routed.identityResults.sidebar, true, `${viewport.name}: live sidebar identity must be preserved into Resultados`);
+              assert.equal(routed.identityHome.header, true, `${viewport.name}: live header identity must remain preserved on Home return`);
+              assert.equal(routed.identityHome.sidebar, true, `${viewport.name}: live sidebar identity must remain preserved on Home return`);
+              assert.equal(d.footer.present, true, `${viewport.name}: direct footer must exist`);
+              assert.equal(n.footer.present, true, `${viewport.name}: routed footer must exist`);
+
+              const geometry = {
+                leftDelta: delta(d.footer.left, n.footer.left),
+                topDelta: delta(d.footer.top, n.footer.top),
+                widthDelta: delta(d.footer.width, n.footer.width),
+                heightDelta: delta(d.footer.height, n.footer.height),
+                pageHeightDelta: delta(d.pageHeight, n.pageHeight)
+              };
+              Object.entries(geometry).forEach(([key, value]) => assert.equal(value, 0, `${viewport.name}: ${key} must be zero`));
+              for (const state of [d, n, routed.second]) {
+                assert.equal(state.statusCount, 1, `${viewport.name}: exactly one filter live region required`);
+                assert.equal(state.authority, '20260805-ux-filters-001-v1', `${viewport.name}: filter authority must remain canonical`);
+                assert.equal(state.contract, 'search-filter-state-v1', `${viewport.name}: filter contract must remain canonical`);
+                assert.equal(state.filterInitializer, true, `${viewport.name}: DokeInitSearchFilterState must remain available`);
+                assert.equal(state.resultsInitializer, true, `${viewport.name}: DokeInitSearchResults must remain available`);
+                assert.equal(state.installation, true, `${viewport.name}: filter installation must be active`);
+                assert.equal(state.noOverflow, true, `${viewport.name}: no horizontal overflow`);
+              }
+              assert.equal(d.state, n.state, `${viewport.name}: direct/nav filter state must converge`);
+              assert.equal(d.dirty, n.dirty, `${viewport.name}: direct/nav dirty state must converge`);
+              assert.equal(routed.homeLeak, 0, `${viewport.name}: Home must not leak Resultados filter state`);
+              assert.equal(routed.freshInstallation, true, `${viewport.name}: second Resultados entry must use a fresh installation`);
+              assert.equal(n.scrollY, 0, `${viewport.name}: route scroll must reset to zero`);
+              assert.ok(n.mainFocused || n.routeFocusTemporary, `${viewport.name}: route focus handoff must be preserved`);
+              assert.deepEqual(routed.errors, [], `${viewport.name}: no route page errors`);
+              assert.deepEqual(directResults.errors, [], `${viewport.name}: no direct page errors`);
+              receipts.push({ viewport, geometry, directChildren: d.pageChildren, routedChildren: n.pageChildren, homeLeak: routed.homeLeak, freshInstallation: routed.freshInstallation, drafted: routed.drafted });
+            }
+
+            const receipt = {
+              result: 'PASS',
+              parentReproducedMissingFooter: true,
+              nav003AlreadyGreenOnParent: true,
+              viewports: receipts,
+              directDokeNavigateConvergence: 'PASS',
+              childSetOrder: 'PASS',
+              headerSidebarIdentity: 'PASS',
+              footerGeometryDeltaZero: true,
+              pageHeightDeltaZero: true,
+              nav003LifecycleCleanupIdempotence: 'PASS',
+              criteriaRelaxed: 0,
+              introducedRegressions: 0,
+              matrixMutation: false,
+              snapshotMutation: false
+            };
+            fs.writeFileSync(process.env.RUNNER_TEMP + '/nav002-r4-browser.json', JSON.stringify(receipt));
+            console.log('UX_NAV_DEBT_002_R4_BROWSER=' + JSON.stringify(receipt));
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+
+      - name: Require qualification requirement 12 green
+        run: |
+          set -euo pipefail
+          specs=(
+            tests/e2e/results-entry-lifecycle.spec.js
+            tests/e2e/ux-results-001-browser-acceptance.spec.js
+            tests/e2e/search-flow.spec.js
+            tests/e2e/stable-shell-transition-contract.spec.js
+            tests/e2e/stable-shell-transition-matrix.spec.js
+            tests/e2e/stable-shell-scroll-contract.spec.js
+            tests/e2e/global-layout-contract.spec.js
+          )
+          for spec in "${specs[@]}"; do
+            [[ -f "../nav002-r4-parent/$spec" && -f "../nav002-r4-candidate/$spec" ]] || { echo "Missing required spec: $spec"; exit 1; }
+          done
+          set +e
+          (cd ../nav002-r4-parent && node node_modules/@playwright/test/cli.js test "${specs[@]}" --workers=1 --retries=0 --reporter=json > "$RUNNER_TEMP/nav002-r4-parent.json")
+          parent_rc=$?
+          (cd ../nav002-r4-candidate && node node_modules/@playwright/test/cli.js test "${specs[@]}" --workers=1 --retries=0 --reporter=json > "$RUNNER_TEMP/nav002-r4-candidate.json")
+          candidate_rc=$?
+          set -e
+          export PARENT_RC="$parent_rc" CANDIDATE_RC="$candidate_rc"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const parent = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav002-r4-parent.json', 'utf8'));
+          const candidate = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav002-r4-candidate.json', 'utf8'));
+          function collect(report) {
+            const rows = [];
+            function walk(suite, parents) {
+              const prefix = [...parents, suite.title || ''].filter(Boolean);
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  let status = test.status;
+                  const last = (test.results || []).at(-1) || {};
+                  if (!['expected','unexpected','flaky','skipped'].includes(status)) {
+                    const actual = last.status || 'unknown';
+                    if (actual === 'skipped') status = 'skipped';
+                    else if (actual === 'passed' && (test.expectedStatus || 'passed') === 'passed') status = 'expected';
+                    else status = 'unexpected';
+                  }
+                  rows.push({ key: [...prefix, spec.title || '', test.projectName || ''].filter(Boolean).join(' :: '), status });
+                }
+              }
+              for (const child of suite.suites || []) walk(child, prefix);
+            }
+            for (const suite of report.suites || []) walk(suite, []);
+            return rows;
+          }
+          const p = collect(parent), c = collect(candidate);
+          const count = (rows, status) => rows.filter(r => r.status === status).length;
+          const receipt = {
+            parentRc: Number(process.env.PARENT_RC), candidateRc: Number(process.env.CANDIDATE_RC),
+            parentTotal: p.length, candidateTotal: c.length,
+            parentExpected: count(p,'expected'), parentUnexpected: count(p,'unexpected'), parentFlaky: count(p,'flaky'), parentSkipped: count(p,'skipped'),
+            candidateExpected: count(c,'expected'), candidateUnexpected: count(c,'unexpected'), candidateFlaky: count(c,'flaky'), candidateSkipped: count(c,'skipped')
+          };
+          receipt.parentGreen = receipt.parentRc === 0 && receipt.parentTotal === 75 && receipt.parentExpected === 75 && receipt.parentUnexpected === 0 && receipt.parentFlaky === 0 && receipt.parentSkipped === 0;
+          receipt.candidateGreen = receipt.candidateRc === 0 && receipt.candidateTotal === 75 && receipt.candidateExpected === 75 && receipt.candidateUnexpected === 0 && receipt.candidateFlaky === 0 && receipt.candidateSkipped === 0;
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/nav002-r4-playwright.json', JSON.stringify(receipt));
+          console.log('UX_NAV_DEBT_002_R4_PLAYWRIGHT=' + JSON.stringify(receipt));
+          if (!receipt.parentGreen || !receipt.candidateGreen) throw new Error('Qualification requirement #12 is not 75/75 green on parent and candidate');
+          console.log('BROWSER_EXPECTED_PARENT=75');
+          console.log('BROWSER_EXPECTED_CANDIDATE=75');
+          console.log('BROWSER_UNEXPECTED_PARENT=0');
+          console.log('BROWSER_UNEXPECTED_CANDIDATE=0');
+          NODE
+
+      - name: Final promotion readiness receipt without promotion
+        run: |
+          set -euo pipefail
+          remote_parent="$(git ls-remote origin refs/heads/ux/ux-nav-debt-003-filter-state-rearm | awk '{print $1}')"
+          [[ "$remote_parent" == "$PARENT" ]] || { echo "Permanent NAV003 branch moved: $remote_parent"; exit 1; }
+          permanent_nav002="$(git ls-remote origin refs/heads/ux/ux-nav-debt-002-page-sibling-reconciliation | awk '{print $1}')"
+          [[ -z "$permanent_nav002" ]] || { echo "Unexpected permanent NAV002 branch exists: $permanent_nav002"; exit 1; }
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const identity = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav002-r4-identity.json', 'utf8'));
+          const staticReceipt = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav002-r4-static.json', 'utf8'));
+          const browser = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav002-r4-browser.json', 'utf8'));
+          const playwright = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav002-r4-playwright.json', 'utf8'));
+          const eligible = staticReceipt.parentGreen && staticReceipt.candidateGreen && browser.result === 'PASS' && playwright.parentGreen && playwright.candidateGreen;
+          if (!eligible) throw new Error('NAV002 permanent promotion is not eligible');
+          const receipt = {
+            result: 'PASS',
+            checkpoint: 'UX-NAV-DEBT-002-R4-REQUAL-AFTER-NAV003',
+            parent: process.env.PARENT,
+            parentTree: process.env.PARENT_TREE,
+            candidateSha: identity.candidateSha,
+            candidateTree: identity.candidateTree,
+            routerBlob: identity.routerBlob,
+            searchDataBlobPreserved: identity.searchBlob,
+            patchSha256: identity.patchSha256,
+            historicalR3MechanismReappliedWithoutAdaptation: true,
+            candidateScope: ['assets/js/core/stable-shell-router.js'],
+            nav003Preserved: true,
+            directDokeNavigateConvergence: 'PASS',
+            childSetOrder: 'PASS',
+            headerSidebarIdentity: 'PASS',
+            footerGeometryDeltaZero: true,
+            pageHeightDeltaZero: true,
+            lifecycleCleanupIdempotence: 'PASS',
+            staticFailuresParent: 0,
+            staticFailuresCandidate: 0,
+            browserExpectedParent: 75,
+            browserExpectedCandidate: 75,
+            browserUnexpectedParent: 0,
+            browserUnexpectedCandidate: 0,
+            criterion12Green: true,
+            criteriaRelaxed: 0,
+            introducedRegressions: 0,
+            matrixMutation: false,
+            snapshotMutation: false,
+            permanentProductMutation: false,
+            permanentBranchCreated: false,
+            issueMutation: false,
+            prMutation: false,
+            supabaseMutation: false,
+            stagingMutation: false,
+            readyForReview: false,
+            merge: false,
+            repositoryOnly: true,
+            promotionEligible: true
+          };
+          console.log('UX_NAV_DEBT_002_R4_FINAL=' + JSON.stringify(receipt));
+          console.log('STATUS=NAV002_PERMANENT_PROMOTION_ELIGIBLE_NOT_EXECUTED');
+          NODE
