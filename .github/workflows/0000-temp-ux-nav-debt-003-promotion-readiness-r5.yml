@@ -1,4 +1,4 @@
-name: TEMP UX-NAV-DEBT-003 Promotion Readiness R5
+name: TEMP UX-NAV-DEBT-003 Permanent Promotion Certifier
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
       - diag/ux-nav-debt-003-promotion-readiness-r5-run
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  requalify:
+  promote_and_certify:
     runs-on: windows-latest
     timeout-minutes: 70
     defaults:
@@ -18,42 +18,47 @@ jobs:
     env:
       PARENT: b260bfb59241d15f5cee76dedd2b60e115919425
       PARENT_TREE: bbe1dc29f352908a7603e194215eb7ca0a3b9c43
+      PERMANENT_BRANCH: ux/ux-nav-debt-003-filter-state-rearm
+      PREVIOUS_PERMANENT_BRANCH: qa/ux-qa-debt-008e-results-header-rail-contract
       WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-003-promotion-readiness-r5.yml
       BASE_ROUTER_BLOB: 453d9f1bdd6bda9690692117e1f42c0719535c06
       BASE_SEARCH_BLOB: 1ee0c15efbf028f203b295f0051cb9a6c628446e
       EXPECTED_ROUTER_BLOB: f3b4d3f303967055173e418244dc0d4b3a1b0e55
       EXPECTED_SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
       EXPECTED_PATCH_SHA256: b7efeb26db11ba08512399d8915647ae9649d3eb38de630d1f16fe96acbd7e87
+      EXPECTED_TREE: 9e5e8cf0e9f4515a58420fea61eeb4a36eaffe7f
 
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Checkout controller
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
 
-      - name: Freeze exact parent and TEMP-only controller scope
+      - name: Freeze authorization and identity
         run: |
           set -euo pipefail
           head="$(git rev-parse HEAD)"
-          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
-          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
           [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
-          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
-          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
-          [[ "$(git rev-parse "$PARENT:assets/js/core/stable-shell-router.js")" == "$BASE_ROUTER_BLOB" ]] || { echo 'Base router drift'; exit 1; }
-          [[ "$(git rev-parse "$PARENT:assets/js/pages/search-data.js")" == "$BASE_SEARCH_BLOB" ]] || { echo 'Base search-data drift'; exit 1; }
-          echo "TEMP_SHA=$head"
-          echo 'LINEAGE=PASS'
-          echo 'TEMP_SCOPE=PASS'
-          echo 'PARENT_TREE=PASS'
-          echo 'R4_PREIMAGE_EQUIVALENCE=PASS'
+          mapfile -t controller_changed < <(git diff --name-only "$PARENT" "$head")
+          [[ ${#controller_changed[@]} -eq 1 && "${controller_changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'Controller scope mismatch: %s\n' "${controller_changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:assets/js/core/stable-shell-router.js")" == "$BASE_ROUTER_BLOB" ]] || { echo 'Router preimage drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:assets/js/pages/search-data.js")" == "$BASE_SEARCH_BLOB" ]] || { echo 'Search-data preimage drift'; exit 1; }
+          target_remote="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          [[ "$target_remote" == "$PARENT" ]] || { echo "Permanent branch start mismatch: $target_remote"; exit 1; }
+          previous_remote="$(git ls-remote origin "refs/heads/$PREVIOUS_PERMANENT_BRANCH" | awk '{print $1}')"
+          [[ "$previous_remote" == "$PARENT" ]] || { echo "Previous permanent branch moved: $previous_remote"; exit 1; }
+          echo "CONTROLLER_SHA=$head"
+          echo 'PARENT_IDENTITY=PASS'
+          echo 'R4_PREIMAGE_DRIFT=false'
+          echo 'PERMANENT_BRANCH_START=PASS'
+          echo 'PREVIOUS_PERMANENT_UNTOUCHED=PASS'
 
-      - name: Materialize exact frozen NAV-003 candidate runner-only
+      - name: Materialize exact NAV-003 bytes and push permanent branch
         run: |
           set -euo pipefail
-          git worktree add --detach ../nav003-r5-parent "$PARENT"
-          git worktree add --detach ../nav003-r5-candidate "$PARENT"
+          git worktree add --detach ../nav003-permanent "$PARENT"
 
-          python - ../nav003-r5-candidate <<'PY'
+          python - ../nav003-permanent <<'PY'
           from pathlib import Path
           import sys
           root = Path(sys.argv[1])
@@ -75,65 +80,82 @@ jobs:
           router.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
           PY
 
-          mapfile -t product_changed < <(git -C ../nav003-r5-candidate diff --name-only "$PARENT")
-          [[ ${#product_changed[@]} -eq 2 ]] || { printf 'Candidate file count mismatch: %s\n' "${product_changed[*]}"; exit 1; }
-          printf '%s\n' "${product_changed[@]}" | sort > "$RUNNER_TEMP/nav003-r5-files.txt"
-          printf '%s\n' 'assets/js/core/stable-shell-router.js' 'assets/js/pages/search-data.js' | sort > "$RUNNER_TEMP/nav003-r5-expected.txt"
-          diff -u "$RUNNER_TEMP/nav003-r5-expected.txt" "$RUNNER_TEMP/nav003-r5-files.txt"
-          [[ -z "$(git -C ../nav003-r5-candidate diff --name-only "$PARENT" -- resultados.html assets/css config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/validation tests/visual)" ]] || { echo 'Forbidden scope mutation'; exit 1; }
+          mapfile -t changed < <(git -C ../nav003-permanent diff --name-only "$PARENT")
+          [[ ${#changed[@]} -eq 2 ]] || { printf 'Candidate file count mismatch: %s\n' "${changed[*]}"; exit 1; }
+          printf '%s\n' "${changed[@]}" | sort > "$RUNNER_TEMP/nav003-permanent-files.txt"
+          printf '%s\n' 'assets/js/core/stable-shell-router.js' 'assets/js/pages/search-data.js' | sort > "$RUNNER_TEMP/nav003-permanent-expected.txt"
+          diff -u "$RUNNER_TEMP/nav003-permanent-expected.txt" "$RUNNER_TEMP/nav003-permanent-files.txt"
+          [[ -z "$(git -C ../nav003-permanent diff --name-only "$PARENT" -- config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/BASELINE-VISUAL-APPROVED.md docs/validation tests/visual)" ]] || { echo 'Forbidden Matrix/snapshot mutation'; exit 1; }
 
-          git -C ../nav003-r5-candidate config user.name doke-diagnostic
-          git -C ../nav003-r5-candidate config user.email doke-diagnostic@users.noreply.github.com
-          git -C ../nav003-r5-candidate add assets/js/core/stable-shell-router.js assets/js/pages/search-data.js
-          git -C ../nav003-r5-candidate commit -m 'test(ux): requalify NAV-003 promotion readiness'
+          git -C ../nav003-permanent config user.name doke-ux
+          git -C ../nav003-permanent config user.email doke-ux@users.noreply.github.com
+          git -C ../nav003-permanent add assets/js/core/stable-shell-router.js assets/js/pages/search-data.js
+          git -C ../nav003-permanent commit -m 'fix(nav): rearm Resultados filter state on stable-shell navigation'
 
-          candidate_sha="$(git -C ../nav003-r5-candidate rev-parse HEAD)"
-          candidate_tree="$(git -C ../nav003-r5-candidate rev-parse HEAD^{tree})"
-          router_blob="$(git -C ../nav003-r5-candidate rev-parse HEAD:assets/js/core/stable-shell-router.js)"
-          search_blob="$(git -C ../nav003-r5-candidate rev-parse HEAD:assets/js/pages/search-data.js)"
-          patch_sha="$(git -C ../nav003-r5-candidate diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+          candidate_sha="$(git -C ../nav003-permanent rev-parse HEAD)"
+          candidate_tree="$(git -C ../nav003-permanent rev-parse HEAD^{tree})"
+          candidate_parent="$(git -C ../nav003-permanent rev-parse HEAD^)"
+          router_blob="$(git -C ../nav003-permanent rev-parse HEAD:assets/js/core/stable-shell-router.js)"
+          search_blob="$(git -C ../nav003-permanent rev-parse HEAD:assets/js/pages/search-data.js)"
+          patch_sha="$(git -C ../nav003-permanent diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+
+          [[ "$candidate_parent" == "$PARENT" ]] || { echo "Candidate parent mismatch: $candidate_parent"; exit 1; }
+          [[ "$candidate_tree" == "$EXPECTED_TREE" ]] || { echo "Candidate TREE mismatch: $candidate_tree"; exit 1; }
           [[ "$router_blob" == "$EXPECTED_ROUTER_BLOB" ]] || { echo "Router candidate blob mismatch: $router_blob"; exit 1; }
           [[ "$search_blob" == "$EXPECTED_SEARCH_BLOB" ]] || { echo "Search candidate blob mismatch: $search_blob"; exit 1; }
           [[ "$patch_sha" == "$EXPECTED_PATCH_SHA256" ]] || { echo "Candidate patch SHA mismatch: $patch_sha"; exit 1; }
+
+          git -C ../nav003-permanent push origin "$candidate_sha:refs/heads/$PERMANENT_BRANCH"
+          git fetch origin "$PERMANENT_BRANCH"
+          [[ "$(git rev-parse "origin/$PERMANENT_BRANCH")" == "$candidate_sha" ]] || { echo 'Remote permanent SHA mismatch after push'; exit 1; }
+          [[ "$(git rev-parse "origin/$PERMANENT_BRANCH^{tree}")" == "$EXPECTED_TREE" ]] || { echo 'Remote permanent TREE mismatch after push'; exit 1; }
+
+          echo "PERMANENT_SHA=$candidate_sha" >> "$GITHUB_ENV"
+          echo "PERMANENT_TREE=$candidate_tree" >> "$GITHUB_ENV"
           echo "CANDIDATE_SHA=$candidate_sha"
           echo "CANDIDATE_TREE=$candidate_tree"
           echo "ROUTER_BLOB=$router_blob"
           echo "SEARCH_DATA_BLOB=$search_blob"
           echo "PATCH_SHA256=$patch_sha"
-          echo 'EXACT_NAV003_BYTES=PASS'
-          echo 'CANDIDATE_SCOPE=PASS'
+          echo 'EXACT_TWO_OWNER_PROMOTION=PASS'
+          echo 'MATRIX_MUTATION=false'
+          echo 'SNAPSHOT_MUTATION=false'
 
-      - name: Install dependencies and Chromium once
+      - name: Install certification dependencies
         run: |
           set -euo pipefail
-          cd ../nav003-r5-candidate
+          cd ../nav003-permanent
           npm ci
           npx playwright install chromium
-          cd ..
-          cp -a nav003-r5-candidate/node_modules nav003-r5-parent/node_modules
 
-      - name: Run minimum governance and syntax gates
+      - name: Validate syntax governance and permanent identity
         run: |
           set -euo pipefail
-          cd ../nav003-r5-candidate
+          cd ../nav003-permanent
           node --check assets/js/core/stable-shell-router.js
           node --check assets/js/pages/search-data.js
           git diff --check "$PARENT" HEAD
           npm run audit:domain-completion-matrix
           npm run audit:agent-governance
           git reset --hard HEAD
+          [[ "$(git rev-parse HEAD)" == "$PERMANENT_SHA" ]] || { echo 'Permanent SHA drift during governance'; exit 1; }
+          [[ "$(git rev-parse HEAD^)" == "$PARENT" ]] || { echo 'Permanent parent drift'; exit 1; }
+          [[ "$(git rev-parse HEAD^{tree})" == "$EXPECTED_TREE" ]] || { echo 'Permanent TREE drift'; exit 1; }
           [[ "$(git rev-parse HEAD:assets/js/core/stable-shell-router.js)" == "$EXPECTED_ROUTER_BLOB" ]] || exit 1
           [[ "$(git rev-parse HEAD:assets/js/pages/search-data.js)" == "$EXPECTED_SEARCH_BLOB" ]] || exit 1
+          mapfile -t changed < <(git diff --name-only "$PARENT" HEAD)
+          [[ ${#changed[@]} -eq 2 ]] || exit 1
           echo 'MINIMUM_GOVERNANCE_GATES=PASS'
+          echo 'PERMANENT_IDENTITY=PASS'
 
-      - name: Require static qualification green on parent and candidate
+      - name: Validate NAV-003 static qualification contracts
         run: |
           set -euo pipefail
           node - <<'NODE'
           const { spawnSync } = require('node:child_process');
           const fs = require('node:fs');
           const path = require('node:path');
-          const roots = { parent: path.resolve('../nav003-r5-parent'), candidate: path.resolve('../nav003-r5-candidate') };
+          const root = path.resolve('../nav003-permanent');
           const commands = [
             ['navigationLifecycleAudit', 'npm run audit:navigation-lifecycle-contract'],
             ['navigationLifecycleCore', 'npm run test:navigation-lifecycle-core-contract'],
@@ -145,36 +167,34 @@ jobs:
             ['resultsDensity', 'npm run test:results-card-density-contract'],
             ['resultsHeaderRail', 'npm run test:results-header-rail-contract']
           ];
-          function run(root, command) {
+          function run(command) {
             const out = spawnSync(command, { cwd: root, shell: true, encoding: 'utf8', env: process.env, maxBuffer: 40 * 1024 * 1024 });
             const rc = Number.isInteger(out.status) ? out.status : 1;
             return { rc, output: ((out.stdout || '') + '\n' + (out.stderr || '')).slice(-8000) };
           }
-          const rows = commands.map(([name, command]) => ({ name, parent: run(roots.parent, command), candidate: run(roots.candidate, command) }));
-          const parentFailures = rows.filter(r => r.parent.rc !== 0).map(r => r.name);
-          const candidateFailures = rows.filter(r => r.candidate.rc !== 0).map(r => r.name);
-          const receipt = { rows, parentFailures, candidateFailures, parentGreen: parentFailures.length === 0, candidateGreen: candidateFailures.length === 0 };
-          fs.writeFileSync(process.env.RUNNER_TEMP + '/nav003-r5-static.json', JSON.stringify(receipt));
-          console.log('UX_NAV_DEBT_003_R5_STATIC=' + JSON.stringify({ parentFailures, candidateFailures, parentGreen: receipt.parentGreen, candidateGreen: receipt.candidateGreen }));
-          if (!receipt.parentGreen || !receipt.candidateGreen) throw new Error('Static qualification not green');
-          console.log('STATIC_FAILURES_PARENT=0');
-          console.log('STATIC_FAILURES_CANDIDATE=0');
+          const rows = commands.map(([name, command]) => ({ name, ...run(command) }));
+          const failures = rows.filter(r => r.rc !== 0).map(r => r.name);
+          const receipt = { total: rows.length, failures, green: failures.length === 0 };
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/nav003-permanent-static.json', JSON.stringify(receipt));
+          console.log('UX_NAV_DEBT_003_PERMANENT_STATIC=' + JSON.stringify(receipt));
+          if (!receipt.green || receipt.total !== 9) throw new Error('Permanent static qualification not green');
+          console.log('STATIC_FAILURES=0');
           NODE
 
-      - name: Re-prove direct and DokeNavigate lifecycle convergence
+      - name: Validate direct navigation lifecycle cleanup and idempotence
         run: |
           set -euo pipefail
-          python -m http.server 4175 --directory ../nav003-r5-candidate > "$RUNNER_TEMP/nav003-r5-server.log" 2>&1 &
+          python -m http.server 4176 --directory ../nav003-permanent > "$RUNNER_TEMP/nav003-permanent-server.log" 2>&1 &
           server=$!
           cleanup() { kill "$server" 2>/dev/null || true; }
           trap cleanup EXIT
           ok=0
           for i in {1..30}; do
-            if curl -fsS 'http://127.0.0.1:4175/index.html' >/dev/null; then ok=1; break; fi
+            if curl -fsS 'http://127.0.0.1:4176/index.html' >/dev/null; then ok=1; break; fi
             sleep 1
           done
-          [[ "$ok" == 1 ]] || { echo 'Candidate server did not become ready'; exit 1; }
-          cd ../nav003-r5-candidate
+          [[ "$ok" == 1 ]] || { echo 'Permanent candidate server did not become ready'; exit 1; }
+          cd ../nav003-permanent
           node - <<'NODE'
           const { chromium } = require('@playwright/test');
           const assert = require('node:assert/strict');
@@ -214,7 +234,7 @@ jobs:
               const errors = [];
               page.on('pageerror', e => errors.push(String(e?.message || e)));
 
-              await page.goto('http://127.0.0.1:4175/resultados.html', { waitUntil: 'domcontentloaded' });
+              await page.goto('http://127.0.0.1:4176/resultados.html', { waitUntil: 'domcontentloaded' });
               await waitResults(page);
               const direct = await readSnapshot(page);
               assert.equal(direct.statusCount, 1);
@@ -227,7 +247,7 @@ jobs:
               assert.equal(direct.installation, true);
               assert.equal(direct.noOverflow, true);
 
-              await page.goto('http://127.0.0.1:4175/index.html', { waitUntil: 'domcontentloaded' });
+              await page.goto('http://127.0.0.1:4176/index.html', { waitUntil: 'domcontentloaded' });
               await page.waitForFunction(() => typeof window.DokeNavigate === 'function');
               await page.evaluate(() => window.DokeNavigate('/resultados.html'));
               await page.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
@@ -237,7 +257,7 @@ jobs:
                 assert.deepEqual(nav[key], direct[key], `direct/nav divergence at ${viewport.name}: ${key}`);
               }
 
-              await page.evaluate(() => { window.__nav003R5First = window.Doke?.searchFilterStateInstallation || null; });
+              await page.evaluate(() => { window.__nav003PermanentFirst = window.Doke?.searchFilterStateInstallation || null; });
               const urlBeforeDraft = page.url();
               const drafted = await page.evaluate(() => {
                 const form = document.querySelector('[data-results-filters-form]');
@@ -265,7 +285,7 @@ jobs:
               await waitResults(page);
               const second = await page.evaluate(() => ({
                 statusCount: document.querySelectorAll('[data-results-filter-status]').length,
-                freshInstallation: Boolean(window.__nav003R5First && window.Doke?.searchFilterStateInstallation && window.__nav003R5First !== window.Doke.searchFilterStateInstallation),
+                freshInstallation: Boolean(window.__nav003PermanentFirst && window.Doke?.searchFilterStateInstallation && window.__nav003PermanentFirst !== window.Doke.searchFilterStateInstallation),
                 noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth
               }));
               assert.equal(second.statusCount, 1);
@@ -276,11 +296,11 @@ jobs:
               await page.close();
             }
             await browser.close();
-            console.log('UX_NAV_DEBT_003_R5_VIEWPORT_LIFECYCLE=' + JSON.stringify({ result: 'PASS', receipts, criteriaRelaxed: 0, introducedRegressions: 0 }));
+            console.log('UX_NAV_DEBT_003_PERMANENT_VIEWPORT_LIFECYCLE=' + JSON.stringify({ result: 'PASS', receipts, criteriaRelaxed: 0, introducedRegressions: 0 }));
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
 
-      - name: Require qualification requirement 12 green on parent and candidate
+      - name: Validate qualification requirement 12
         run: |
           set -euo pipefail
           specs=(
@@ -293,19 +313,16 @@ jobs:
             tests/e2e/global-layout-contract.spec.js
           )
           for spec in "${specs[@]}"; do
-            [[ -f "../nav003-r5-parent/$spec" && -f "../nav003-r5-candidate/$spec" ]] || { echo "Missing required spec: $spec"; exit 1; }
+            [[ -f "../nav003-permanent/$spec" ]] || { echo "Missing required spec: $spec"; exit 1; }
           done
           set +e
-          (cd ../nav003-r5-parent && node node_modules/@playwright/test/cli.js test "${specs[@]}" --workers=1 --retries=0 --reporter=json > "$RUNNER_TEMP/nav003-r5-parent.json")
-          parent_rc=$?
-          (cd ../nav003-r5-candidate && node node_modules/@playwright/test/cli.js test "${specs[@]}" --workers=1 --retries=0 --reporter=json > "$RUNNER_TEMP/nav003-r5-candidate.json")
+          (cd ../nav003-permanent && node node_modules/@playwright/test/cli.js test "${specs[@]}" --workers=1 --retries=0 --reporter=json > "$RUNNER_TEMP/nav003-permanent-playwright.json")
           candidate_rc=$?
           set -e
-          export PARENT_RC="$parent_rc" CANDIDATE_RC="$candidate_rc"
+          export CANDIDATE_RC="$candidate_rc"
           node - <<'NODE'
           const fs = require('node:fs');
-          const parent = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-r5-parent.json', 'utf8'));
-          const candidate = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-r5-candidate.json', 'utf8'));
+          const report = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-permanent-playwright.json', 'utf8'));
           function collect(report) {
             const rows = [];
             function walk(suite, parents) {
@@ -329,53 +346,67 @@ jobs:
             for (const suite of report.suites || []) walk(suite, []);
             return rows;
           }
-          const p = collect(parent), c = collect(candidate);
-          if (p.length !== c.length) throw new Error(`Playwright test-count drift parent=${p.length} candidate=${c.length}`);
-          const count = (rows, status) => rows.filter(r => r.status === status).length;
+          const rows = collect(report);
+          const count = status => rows.filter(r => r.status === status).length;
           const receipt = {
-            parentRc: Number(process.env.PARENT_RC), candidateRc: Number(process.env.CANDIDATE_RC),
-            parentTotal: p.length, candidateTotal: c.length,
-            parentExpected: count(p,'expected'), parentUnexpected: count(p,'unexpected'), parentFlaky: count(p,'flaky'), parentSkipped: count(p,'skipped'),
-            candidateExpected: count(c,'expected'), candidateUnexpected: count(c,'unexpected'), candidateFlaky: count(c,'flaky'), candidateSkipped: count(c,'skipped')
+            rc: Number(process.env.CANDIDATE_RC),
+            total: rows.length,
+            expected: count('expected'),
+            unexpected: count('unexpected'),
+            flaky: count('flaky'),
+            skipped: count('skipped')
           };
-          receipt.parentGreen = receipt.parentRc === 0 && receipt.parentUnexpected === 0 && receipt.parentFlaky === 0;
-          receipt.candidateGreen = receipt.candidateRc === 0 && receipt.candidateUnexpected === 0 && receipt.candidateFlaky === 0;
-          fs.writeFileSync(process.env.RUNNER_TEMP + '/nav003-r5-playwright.json', JSON.stringify(receipt));
-          console.log('UX_NAV_DEBT_003_R5_PLAYWRIGHT=' + JSON.stringify(receipt));
-          if (!receipt.parentGreen || !receipt.candidateGreen) throw new Error('Qualification requirement #12 is not fully green');
-          console.log('BROWSER_UNEXPECTED_PARENT=0');
-          console.log('BROWSER_UNEXPECTED_CANDIDATE=0');
+          receipt.green = receipt.rc === 0 && receipt.total === 75 && receipt.expected === 75 && receipt.unexpected === 0 && receipt.flaky === 0 && receipt.skipped === 0;
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/nav003-permanent-requirement12.json', JSON.stringify(receipt));
+          console.log('UX_NAV_DEBT_003_PERMANENT_REQUIREMENT_12=' + JSON.stringify(receipt));
+          if (!receipt.green) throw new Error('Qualification requirement #12 is not fully green');
+          console.log('BROWSER_TOTAL=75');
+          console.log('BROWSER_EXPECTED=75');
+          console.log('BROWSER_UNEXPECTED=0');
+          console.log('BROWSER_FLAKY=0');
+          console.log('BROWSER_SKIPPED=0');
           NODE
 
-      - name: Final promotion-readiness receipt
+      - name: Emit permanent certification receipt
         run: |
           set -euo pipefail
+          git fetch origin "$PERMANENT_BRANCH" "$PREVIOUS_PERMANENT_BRANCH"
+          [[ "$(git rev-parse "origin/$PERMANENT_BRANCH")" == "$PERMANENT_SHA" ]] || { echo 'Permanent ref drift before receipt'; exit 1; }
+          [[ "$(git rev-parse "origin/$PERMANENT_BRANCH^{tree}")" == "$EXPECTED_TREE" ]] || { echo 'Permanent TREE drift before receipt'; exit 1; }
+          [[ "$(git rev-parse "origin/$PREVIOUS_PERMANENT_BRANCH")" == "$PARENT" ]] || { echo 'Previous permanent branch moved'; exit 1; }
           node - <<'NODE'
           const fs = require('node:fs');
-          const staticMap = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-r5-static.json', 'utf8'));
-          const playwright = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-r5-playwright.json', 'utf8'));
-          const promotionEligible = Boolean(staticMap.parentGreen && staticMap.candidateGreen && playwright.parentGreen && playwright.candidateGreen);
-          if (!promotionEligible) throw new Error('NAV-003 permanent promotion is not eligible');
+          const staticReceipt = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-permanent-static.json', 'utf8'));
+          const requirement12 = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/nav003-permanent-requirement12.json', 'utf8'));
+          if (!staticReceipt.green || !requirement12.green) throw new Error('Certification receipts are not green');
           const receipt = {
             result: 'PASS',
-            checkpoint: 'UX-NAV-DEBT-003-R5-PROMOTION-READINESS',
+            checkpoint: 'UX-NAV-DEBT-003-PERMANENT-CERTIFICATION',
+            permanentBranch: process.env.PERMANENT_BRANCH,
+            permanentSha: process.env.PERMANENT_SHA,
+            permanentTree: process.env.EXPECTED_TREE,
             parent: process.env.PARENT,
             parentTree: process.env.PARENT_TREE,
-            exactNav003Bytes: true,
+            routerBlob: process.env.EXPECTED_ROUTER_BLOB,
+            searchDataBlob: process.env.EXPECTED_SEARCH_BLOB,
+            patchSha256: process.env.EXPECTED_PATCH_SHA256,
+            exactTwoOwnerPromotion: true,
             r4PreimageDrift: false,
+            governanceSyntax: 'PASS',
+            nav003Contract: 'PASS',
             directDokeNavigateConvergence: 'PASS',
             lifecycleCleanupIdempotence: 'PASS',
-            staticFailuresParent: 0,
-            staticFailuresCandidate: 0,
-            browserUnexpectedParent: 0,
-            browserUnexpectedCandidate: 0,
             criterion12Green: true,
+            browserTotal: requirement12.total,
+            browserExpected: requirement12.expected,
+            browserUnexpected: requirement12.unexpected,
+            browserFlaky: requirement12.flaky,
+            browserSkipped: requirement12.skipped,
             criteriaRelaxed: 0,
             introducedRegressions: 0,
             matrixMutation: false,
             snapshotMutation: false,
-            permanentProductMutation: false,
-            permanentBranchCreated: false,
+            previousPermanentMutation: false,
             issueMutation: false,
             prMutation: false,
             supabaseMutation: false,
@@ -383,8 +414,8 @@ jobs:
             readyForReview: false,
             merge: false,
             repositoryOnly: true,
-            promotionEligible: true
+            permanentCertified: true
           };
-          console.log('UX_NAV_DEBT_003_R5_FINAL=' + JSON.stringify(receipt));
-          console.log('STATUS=NAV003_PERMANENT_PROMOTION_ELIGIBLE_NOT_EXECUTED');
+          console.log('UX_NAV_DEBT_003_PERMANENT_FINAL=' + JSON.stringify(receipt));
+          console.log('STATUS=NAV003_PERMANENT_BRANCH_CERTIFIED_STOP');
           NODE
