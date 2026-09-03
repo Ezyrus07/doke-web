@@ -880,7 +880,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 122 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 28 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 123 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 28 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `comunidade.html`, `comunidade-interna.html`.
 
@@ -1146,7 +1146,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3408 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 809 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3409 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 809 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
