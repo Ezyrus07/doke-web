@@ -1,0 +1,259 @@
+name: TEMP UX-NAV-DEBT-002 R4e Requirement12 Classifier
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-r4e-requirement12-classifier-run
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: windows-latest
+    timeout-minutes: 55
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+      PARENT_TREE: 9e5e8cf0e9f4515a58420fea61eeb4a36eaffe7f
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-r4e-requirement12-classifier.yml
+      ROUTER_PATH: assets/js/core/stable-shell-router.js
+      SEARCH_PATH: assets/js/pages/search-data.js
+      ROUTER_PREIMAGE: f3b4d3f303967055173e418244dc0d4b3a1b0e55
+      SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      EXPECTED_CANDIDATE_TREE: 5b3a7ca62dfb4e483688aeb7220df13b507b4cdb
+      EXPECTED_ROUTER_BLOB: 0beec015cf84f42db370f920750ea116447476bb
+      EXPECTED_PATCH_SHA256: 6efc14416814d7ff2d7d5033c40d47d2158d2070bac521d1baba8998903c0654
+      R4D_RUN: '33827021202'
+      R4D_JOB: '100881751248'
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze lineage and reconstruct exact R4c candidate runner-only
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4e-evidence"
+          mkdir -p "$evidence"
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$ROUTER_PATH")" == "$ROUTER_PREIMAGE" ]] || { echo 'Router preimage drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$SEARCH_PATH")" == "$SEARCH_BLOB" ]] || { echo 'Search-data preimage drift'; exit 1; }
+          [[ "$(git show "$PARENT:$ROUTER_PATH" | grep -F "'/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults']" | wc -l | tr -d ' ')" == '1' ]] || { echo 'NAV003 initializer contract drift'; exit 1; }
+
+          git worktree add --detach ../nav002-r4e-parent "$PARENT"
+          git worktree add --detach ../nav002-r4e-candidate "$PARENT"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('../nav002-r4e-candidate/assets/js/core/stable-shell-router.js')
+          text = path.read_text(encoding='utf-8')
+          nav003 = "    '/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults'],"
+          old = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                currentContent.replaceWith(nextContent.cloneNode(true));
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          new = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                var replacementContent = nextContent.cloneNode(true);
+                currentContent.replaceWith(replacementContent);
+                var replacementPageNodes = Array.prototype.map.call(nextPage.childNodes, function (node) {
+                  if (node === nextHeader) return currentHeader;
+                  if (node === nextContent) return replacementContent;
+                  return node.cloneNode(true);
+                });
+                currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          if text.count(nav003) != 1:
+              raise SystemExit('NAV003 initializer missing before NAV002 reconstruction')
+          if text.count(old) != 1:
+              raise SystemExit(f'Historical R4c preimage count={text.count(old)}; stop without adaptation')
+          updated = text.replace(old, new, 1)
+          if updated.count(nav003) != 1:
+              raise SystemExit('NAV003 initializer changed by NAV002 reconstruction')
+          path.write_text(updated, encoding='utf-8', newline='\n')
+          PY
+
+          mapfile -t product_changed < <(git -C ../nav002-r4e-candidate diff --name-only "$PARENT")
+          [[ ${#product_changed[@]} -eq 1 && "${product_changed[0]}" == "$ROUTER_PATH" ]] || { printf 'Candidate scope mismatch: %s\n' "${product_changed[*]}"; exit 1; }
+          if git -C ../nav002-r4e-candidate diff -U0 "$PARENT" -- "$ROUTER_PATH" | grep '^+' | grep -Eiq 'resultados|doke-public-footer'; then
+            echo 'Candidate contains route/footer hardcoding in added lines'; exit 1
+          fi
+          [[ -z "$(git -C ../nav002-r4e-candidate diff --name-only "$PARENT" -- "$SEARCH_PATH" resultados.html assets/css config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/validation tests/visual)" ]] || { echo 'Forbidden candidate scope mutation'; exit 1; }
+          git -C ../nav002-r4e-candidate diff --check "$PARENT"
+          node --check ../nav002-r4e-candidate/$ROUTER_PATH
+          git -C ../nav002-r4e-candidate config user.name doke-diagnostic
+          git -C ../nav002-r4e-candidate config user.email doke-diagnostic@users.noreply.github.com
+          git -C ../nav002-r4e-candidate add "$ROUTER_PATH"
+          git -C ../nav002-r4e-candidate commit -m 'test(ux): reconstruct exact NAV002 r4c candidate for requirement12 classifier'
+          candidate_sha="$(git -C ../nav002-r4e-candidate rev-parse HEAD)"
+          candidate_tree="$(git -C ../nav002-r4e-candidate rev-parse HEAD^{tree})"
+          router_blob="$(git -C ../nav002-r4e-candidate rev-parse HEAD:$ROUTER_PATH)"
+          search_blob="$(git -C ../nav002-r4e-candidate rev-parse HEAD:$SEARCH_PATH)"
+          patch_sha="$(git -C ../nav002-r4e-candidate diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+          [[ "$candidate_tree" == "$EXPECTED_CANDIDATE_TREE" ]] || { echo "Candidate TREE mismatch: $candidate_tree"; exit 1; }
+          [[ "$router_blob" == "$EXPECTED_ROUTER_BLOB" ]] || { echo "Router blob mismatch: $router_blob"; exit 1; }
+          [[ "$search_blob" == "$SEARCH_BLOB" ]] || { echo "Search-data blob mismatch: $search_blob"; exit 1; }
+          [[ "$patch_sha" == "$EXPECTED_PATCH_SHA256" ]] || { echo "Patch SHA256 mismatch: $patch_sha"; exit 1; }
+          cat > "$evidence/identity.json" <<EOF
+          {"controllerSha":"$head","parent":"$PARENT","parentTree":"$PARENT_TREE","candidateSha":"$candidate_sha","candidateTree":"$candidate_tree","routerPreimage":"$ROUTER_PREIMAGE","routerBlob":"$router_blob","searchBlob":"$search_blob","patchSha256":"$patch_sha","r4dRun":"$R4D_RUN","r4dJob":"$R4D_JOB","classifierOnly":true,"repositoryOnly":true,"productRemoteMutation":false,"matrixMutation":false,"snapshotMutation":false,"issueMutation":false,"prMutation":false,"merge":false,"supabaseMutation":false,"stagingMutation":false}
+          EOF
+          echo 'R4C_IDENTITY=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'CLASSIFIER_ONLY=true'
+
+      - name: Install dependencies and Chromium once
+        run: |
+          set -euo pipefail
+          cd ../nav002-r4e-candidate
+          npm ci
+          npx playwright install chromium
+          cd ..
+          cp -a nav002-r4e-candidate/node_modules nav002-r4e-parent/node_modules
+
+      - name: Execute exact requirement 12 suites once per side
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4e-evidence"
+          specs=(
+            tests/e2e/results-entry-lifecycle.spec.js
+            tests/e2e/ux-results-001-browser-acceptance.spec.js
+            tests/e2e/search-flow.spec.js
+            tests/e2e/stable-shell-transition-contract.spec.js
+            tests/e2e/stable-shell-transition-matrix.spec.js
+            tests/e2e/stable-shell-scroll-contract.spec.js
+            tests/e2e/global-layout-contract.spec.js
+          )
+          for spec in "${specs[@]}"; do
+            [[ -f "../nav002-r4e-parent/$spec" && -f "../nav002-r4e-candidate/$spec" ]] || { echo "Missing required spec: $spec"; exit 1; }
+          done
+          printf '%s\n' "${specs[@]}" > "$evidence/specs.txt"
+          set +e
+          (cd ../nav002-r4e-parent && node node_modules/@playwright/test/cli.js test "${specs[@]}" --reporter=json --workers=1 --retries=0 > "$evidence/parent-playwright.json")
+          parent_rc=$?
+          (cd ../nav002-r4e-candidate && node node_modules/@playwright/test/cli.js test "${specs[@]}" --reporter=json --workers=1 --retries=0 > "$evidence/candidate-playwright.json")
+          candidate_rc=$?
+          set -e
+          printf '%s\n' "$parent_rc" > "$evidence/parent-rc.txt"
+          printf '%s\n' "$candidate_rc" > "$evidence/candidate-rc.txt"
+          echo "PARENT_RC=$parent_rc"
+          echo "CANDIDATE_RC=$candidate_rc"
+
+      - name: Classify exact failure signature
+        if: always()
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4e-evidence"
+          node - "$evidence" <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const dir = process.argv[2];
+          const parentPath = path.join(dir, 'parent-playwright.json');
+          const candidatePath = path.join(dir, 'candidate-playwright.json');
+          const identityPath = path.join(dir, 'identity.json');
+          const normalize = value => String(value || '')
+            .replace(/\x1b\[[0-9;]*m/g, '')
+            .replace(/nav002-r4e-(?:parent|candidate)/g, '<WORKTREE>')
+            .replace(/[A-Z]:\\[^\n:]+/g, '<PATH>')
+            .replace(/\\/g, '/');
+          function collect(report) {
+            const rows = [];
+            function walk(suite, parents) {
+              const prefix = [...parents, suite.title || ''].filter(Boolean);
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  const results = test.results || [];
+                  const last = results.at(-1) || {};
+                  let status = test.status;
+                  if (!['expected','unexpected','flaky','skipped'].includes(status)) {
+                    const actual = last.status || 'unknown';
+                    if (actual === 'skipped') status = 'skipped';
+                    else if (actual === 'passed' && (test.expectedStatus || 'passed') === 'passed') status = 'expected';
+                    else status = 'unexpected';
+                  }
+                  const key = [spec.file || '', ...prefix, spec.title || '', test.projectName || ''].filter(Boolean).join(' :: ');
+                  const errorItems = [];
+                  for (const e of (last.errors || [])) errorItems.push(e?.message || e?.stack || e?.value || JSON.stringify(e));
+                  if (last.error) errorItems.push(last.error?.message || last.error?.stack || last.error?.value || JSON.stringify(last.error));
+                  const errors = normalize(errorItems.filter(Boolean).join('\n'));
+                  const signature = crypto.createHash('sha256').update(errors).digest('hex');
+                  rows.push({ key, status, errors: errors.slice(0, 5000), signature });
+                }
+              }
+              for (const child of suite.suites || []) walk(child, prefix);
+            }
+            for (const suite of report.suites || []) walk(suite, []);
+            return rows;
+          }
+          function readJson(file) {
+            return JSON.parse(fs.readFileSync(file, 'utf8'));
+          }
+          const identity = fs.existsSync(identityPath) ? readJson(identityPath) : null;
+          if (!fs.existsSync(parentPath) || !fs.existsSync(candidatePath)) {
+            const receipt = { result: 'INCOMPLETE', classification: 'REPORT_MISSING', identity, parentReportPresent: fs.existsSync(parentPath), candidateReportPresent: fs.existsSync(candidatePath), promotionEligible: false, classifierOnly: true, repositoryOnly: true };
+            fs.writeFileSync(path.join(dir, 'classification.json'), JSON.stringify(receipt, null, 2));
+            console.log('R4E_CLASSIFICATION=' + JSON.stringify(receipt));
+            process.exit(0);
+          }
+          const parent = collect(readJson(parentPath));
+          const candidate = collect(readJson(candidatePath));
+          const count = (rows, status) => rows.filter(r => r.status === status).length;
+          const pu = new Map(parent.filter(r => r.status === 'unexpected').map(r => [r.key, r]));
+          const cu = new Map(candidate.filter(r => r.status === 'unexpected').map(r => [r.key, r]));
+          const candidateOnlyFailures = [...cu.keys()].filter(key => !pu.has(key));
+          const parentOnlyFailures = [...pu.keys()].filter(key => !cu.has(key));
+          const sharedFailures = [...cu.keys()].filter(key => pu.has(key));
+          const sharedFailureSignatureChanges = sharedFailures.filter(key => cu.get(key).signature !== pu.get(key).signature);
+          const parentTotal = parent.length;
+          const candidateTotal = candidate.length;
+          const parentExpected = count(parent, 'expected');
+          const candidateExpected = count(candidate, 'expected');
+          const parentUnexpected = count(parent, 'unexpected');
+          const candidateUnexpected = count(candidate, 'unexpected');
+          const parentFlaky = count(parent, 'flaky');
+          const candidateFlaky = count(candidate, 'flaky');
+          const parentSkipped = count(parent, 'skipped');
+          const candidateSkipped = count(candidate, 'skipped');
+          let classification = 'UNCLASSIFIED';
+          if (parentTotal !== 75 || candidateTotal !== 75) classification = 'TEST_COUNT_DRIFT';
+          else if (candidateOnlyFailures.length) classification = 'CANDIDATE_ONLY_REPRODUCED';
+          else if (sharedFailures.length) classification = 'SHARED_FAILURE';
+          else if (parentOnlyFailures.length) classification = 'PARENT_ONLY_FAILURE';
+          else if (parentExpected === 75 && candidateExpected === 75 && parentUnexpected === 0 && candidateUnexpected === 0 && parentFlaky === 0 && candidateFlaky === 0 && parentSkipped === 0 && candidateSkipped === 0) classification = 'INTERMITTENT_NOT_REPRODUCED';
+          const receipt = {
+            result: 'PASS', checkpoint: 'UX-NAV-DEBT-002-R4E-REQUIREMENT12-CLASSIFIER', classification, identity,
+            parentTotal, candidateTotal, parentExpected, candidateExpected, parentUnexpected, candidateUnexpected,
+            parentFlaky, candidateFlaky, parentSkipped, candidateSkipped,
+            candidateOnlyFailures, parentOnlyFailures, sharedFailures, sharedFailureSignatureChanges,
+            parentUnexpectedDetails: [...pu.values()].map(({key, errors, signature}) => ({key, errors, signature})),
+            candidateUnexpectedDetails: [...cu.values()].map(({key, errors, signature}) => ({key, errors, signature})),
+            criteriaRelaxed: 0, productRemoteMutation: false, matrixMutation: false, snapshotMutation: false,
+            issueMutation: false, prMutation: false, readyForReview: false, merge: false, supabaseMutation: false, stagingMutation: false,
+            permanentProductMutation: false, permanentBranchCreated: false, repositoryOnly: true, classifierOnly: true, promotionEligible: false
+          };
+          fs.writeFileSync(path.join(dir, 'classification.json'), JSON.stringify(receipt, null, 2));
+          console.log('R4E_CLASSIFICATION=' + JSON.stringify(receipt));
+          NODE
+
+      - name: Upload R4e classifier evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nav002-r4e-requirement12-classifier
+          path: ${{ runner.temp }}/nav002-r4e-evidence
+          if-no-files-found: error
+          retention-days: 7
