@@ -1,0 +1,390 @@
+name: TEMP UX-NAV-DEBT-002 R4c Semantic Fence D3
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-r4c-semantic-fence-d3-run
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+      PARENT_TREE: 9e5e8cf0e9f4515a58420fea61eeb4a36eaffe7f
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-r4c-semantic-fence-d3.yml
+      ROUTER_PATH: assets/js/core/stable-shell-router.js
+      SEARCH_PATH: assets/js/pages/search-data.js
+      ROUTER_PREIMAGE: f3b4d3f303967055173e418244dc0d4b3a1b0e55
+      SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      EXPECTED_CANDIDATE_TREE: 5b3a7ca62dfb4e483688aeb7220df13b507b4cdb
+      EXPECTED_ROUTER_BLOB: 0beec015cf84f42db370f920750ea116447476bb
+      EXPECTED_PATCH_SHA256: 6efc14416814d7ff2d7d5033c40d47d2158d2070bac521d1baba8998903c0654
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller lineage and exact NAV003 preimages
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$ROUTER_PATH")" == "$ROUTER_PREIMAGE" ]] || { echo 'NAV003 router preimage drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$SEARCH_PATH")" == "$SEARCH_BLOB" ]] || { echo 'NAV003 search-data preimage drift'; exit 1; }
+          echo "TEMP_SHA=$head"
+          echo 'LINEAGE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'PARENT_TREE=PASS'
+          echo 'NAV003_PREIMAGES=PASS'
+
+      - name: Reconstruct exact R4c candidate runner-only and freeze identity
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../nav002-r4c-d3-candidate "$PARENT"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('../nav002-r4c-d3-candidate/assets/js/core/stable-shell-router.js')
+          text = path.read_text(encoding='utf-8')
+          nav003 = "    '/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults'],"
+          if text.count(nav003) != 1:
+              raise SystemExit('NAV003 Resultados initializer contract missing before NAV002 materialization')
+          old = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                currentContent.replaceWith(nextContent.cloneNode(true));
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          new = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                var replacementContent = nextContent.cloneNode(true);
+                currentContent.replaceWith(replacementContent);
+                var replacementPageNodes = Array.prototype.map.call(nextPage.childNodes, function (node) {
+                  if (node === nextHeader) return currentHeader;
+                  if (node === nextContent) return replacementContent;
+                  return node.cloneNode(true);
+                });
+                currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Historical R3 replaceShell preimage count={text.count(old)}; stop without adaptation')
+          updated = text.replace(old, new, 1)
+          if updated.count(nav003) != 1:
+              raise SystemExit('NAV003 initializer contract changed by NAV002 materialization')
+          path.write_text(updated, encoding='utf-8', newline='\n')
+          PY
+          mapfile -t changed < <(git -C ../nav002-r4c-d3-candidate diff --name-only "$PARENT")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$ROUTER_PATH" ]] || { printf 'Candidate scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          if git -C ../nav002-r4c-d3-candidate diff -U0 "$PARENT" -- "$ROUTER_PATH" | grep '^+' | grep -Eiq 'resultados|doke-public-footer'; then
+            echo 'Candidate contains route/footer hardcoding in added lines'
+            exit 1
+          fi
+          git -C ../nav002-r4c-d3-candidate diff --check "$PARENT"
+          node --check ../nav002-r4c-d3-candidate/$ROUTER_PATH
+          git -C ../nav002-r4c-d3-candidate config user.name doke-diagnostic
+          git -C ../nav002-r4c-d3-candidate config user.email doke-diagnostic@users.noreply.github.com
+          git -C ../nav002-r4c-d3-candidate add "$ROUTER_PATH"
+          git -C ../nav002-r4c-d3-candidate commit -m 'test(ux): reconstruct exact NAV002 r4c candidate for D3 semantic-fence diagnosis'
+          candidate_tree="$(git -C ../nav002-r4c-d3-candidate rev-parse HEAD^{tree})"
+          router_blob="$(git -C ../nav002-r4c-d3-candidate rev-parse HEAD:$ROUTER_PATH)"
+          search_blob="$(git -C ../nav002-r4c-d3-candidate rev-parse HEAD:$SEARCH_PATH)"
+          patch_sha="$(git -C ../nav002-r4c-d3-candidate diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+          [[ "$candidate_tree" == "$EXPECTED_CANDIDATE_TREE" ]] || { echo "Candidate TREE mismatch: $candidate_tree"; exit 1; }
+          [[ "$router_blob" == "$EXPECTED_ROUTER_BLOB" ]] || { echo "Router blob mismatch: $router_blob"; exit 1; }
+          [[ "$search_blob" == "$SEARCH_BLOB" ]] || { echo "Search blob mismatch: $search_blob"; exit 1; }
+          [[ "$patch_sha" == "$EXPECTED_PATCH_SHA256" ]] || { echo "Patch SHA256 mismatch: $patch_sha"; exit 1; }
+          echo "CANDIDATE_TREE=$candidate_tree"
+          echo "ROUTER_BLOB=$router_blob"
+          echo "SEARCH_DATA_BLOB=$search_blob"
+          echo "PATCH_SHA256=$patch_sha"
+          echo 'R4C_IDENTITY=PASS'
+          echo 'PRODUCT_REMOTE_MUTATION=false'
+          echo 'MATRIX_MUTATION=false'
+          echo 'SNAPSHOT_MUTATION=false'
+
+      - name: Install dependencies and Chromium once
+        run: |
+          set -euo pipefail
+          cd ../nav002-r4c-d3-candidate
+          npm ci
+          npx playwright install chromium
+
+      - name: Diagnose semantic terminality geometry
+        run: |
+          set -euo pipefail
+          python -m http.server 4175 --directory ../nav002-r4c-d3-candidate > "$RUNNER_TEMP/nav002-r4c-d3-server.log" 2>&1 &
+          pid=$!
+          cleanup() { kill "$pid" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ok=0
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:4175/index.html" >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          [[ "$ok" == 1 ]] || { echo 'Diagnostic server did not become ready'; exit 1; }
+          cd ../nav002-r4c-d3-candidate
+          node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const base = 'http://127.0.0.1:4175';
+          const viewport = { width: 820, height: 1180 };
+          const round3 = v => Math.round(Number(v || 0) * 1000) / 1000;
+
+          async function waitSemanticStable(page) {
+            await page.waitForLoadState('domcontentloaded');
+            if (page.url().includes('/resultados.html')) {
+              await page.waitForFunction(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                const boundary = document.querySelector('[data-state-boundary="resultados"]');
+                return Boolean(
+                  form &&
+                  boundary &&
+                  form.getAttribute('data-filter-authority') === '20260805-ux-filters-001-v1' &&
+                  document.querySelectorAll('[data-results-filter-status]').length === 1 &&
+                  boundary.dataset.resultsUiReady === 'true' &&
+                  boundary.getAttribute('aria-busy') === 'false'
+                );
+              }, null, { timeout: 10000 });
+            }
+            await page.evaluate(async () => {
+              if (document.fonts?.ready) await document.fonts.ready;
+            });
+            await page.waitForFunction(() => !document.fonts || document.fonts.status === 'loaded', null, { timeout: 10000 });
+            await page.evaluate(() => new Promise(resolve => {
+              requestAnimationFrame(() => requestAnimationFrame(resolve));
+            }));
+          }
+
+          async function capture(page, label) {
+            return page.evaluate((phaseLabel) => {
+              const main = document.querySelector('.page > .page__content');
+              const boundary = document.querySelector('[data-state-boundary="resultados"]');
+              if (!main) throw new Error('main .page__content missing');
+              const rect = main.getBoundingClientRect();
+              const pathFor = node => {
+                const parts = [];
+                let cur = node;
+                while (cur && cur !== main) {
+                  const parent = cur.parentElement;
+                  if (!parent) break;
+                  parts.push(Array.prototype.indexOf.call(parent.children, cur));
+                  cur = parent;
+                }
+                return parts.reverse().join('/');
+              };
+              const captureNode = node => {
+                const r = node.getBoundingClientRect();
+                const s = getComputedStyle(node);
+                return {
+                  path: pathFor(node),
+                  tag: node.tagName,
+                  className: typeof node.className === 'string' ? node.className : '',
+                  rect: {
+                    x: r.x, y: r.y, top: r.top, right: r.right,
+                    bottom: r.bottom, left: r.left, width: r.width, height: r.height
+                  },
+                  offsetHeight: node.offsetHeight,
+                  scrollHeight: node.scrollHeight,
+                  display: s.display,
+                  position: s.position,
+                  height: s.height,
+                  minHeight: s.minHeight
+                };
+              };
+              return {
+                label: phaseLabel,
+                documentReadyState: document.readyState,
+                fontsStatus: document.fonts ? document.fonts.status : 'unsupported',
+                boundary: boundary ? {
+                  ariaBusy: boundary.getAttribute('aria-busy'),
+                  resultsUiReady: boundary.dataset.resultsUiReady || null,
+                  pageHydration: boundary.dataset.pageHydration || null,
+                  viewState: boundary.dataset.viewState || null
+                } : null,
+                main: {
+                  rect: {
+                    x: rect.x, y: rect.y, top: rect.top, right: rect.right,
+                    bottom: rect.bottom, left: rect.left, width: rect.width, height: rect.height
+                  },
+                  offsetHeight: main.offsetHeight,
+                  scrollHeight: main.scrollHeight,
+                  childCount: main.children.length
+                },
+                descendants: Array.from(main.querySelectorAll('*')).map(captureNode)
+              };
+            }, label);
+          }
+
+          async function direct(browser) {
+            const context = await browser.newContext({ viewport });
+            const page = await context.newPage();
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto(base + '/resultados.html', { waitUntil: 'domcontentloaded' });
+            await waitSemanticStable(page);
+            const result = await capture(page, 'semanticReady');
+            await context.close();
+            return { capture: result, errors };
+          }
+
+          async function routed(browser) {
+            const context = await browser.newContext({ viewport });
+            const page = await context.newPage();
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto(base + '/index.html', { waitUntil: 'domcontentloaded' });
+            await waitSemanticStable(page);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function');
+            await page.evaluate(() => window.DokeNavigate('/resultados.html'));
+            await page.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+            await waitSemanticStable(page);
+            const result = await capture(page, 'semanticReady');
+            await context.close();
+            return { capture: result, errors };
+          }
+
+          const numericDelta = (a, b) => round3(Math.abs(Number(a || 0) - Number(b || 0)));
+
+          function compare(d, r) {
+            const dMap = new Map(d.descendants.map(n => [n.path, n]));
+            const rMap = new Map(r.descendants.map(n => [n.path, n]));
+            const paths = Array.from(new Set([...dMap.keys(), ...rMap.keys()]));
+            let divergentCount = 0;
+            let firstDivergence = null;
+            for (const path of paths) {
+              const a = dMap.get(path);
+              const b = rMap.get(path);
+              let divergent = !a || !b;
+              if (a && b) {
+                divergent =
+                  numericDelta(a.rect.x, b.rect.x) !== 0 ||
+                  numericDelta(a.rect.y, b.rect.y) !== 0 ||
+                  numericDelta(a.rect.width, b.rect.width) !== 0 ||
+                  numericDelta(a.rect.height, b.rect.height) !== 0 ||
+                  numericDelta(a.offsetHeight, b.offsetHeight) !== 0 ||
+                  numericDelta(a.scrollHeight, b.scrollHeight) !== 0 ||
+                  a.display !== b.display ||
+                  a.position !== b.position ||
+                  a.height !== b.height ||
+                  a.minHeight !== b.minHeight;
+              }
+              if (divergent) {
+                divergentCount += 1;
+                if (!firstDivergence) firstDivergence = { path, direct: a || null, routed: b || null };
+              }
+            }
+            return {
+              mainHeightDelta: numericDelta(d.main.rect.height, r.main.rect.height),
+              mainBottomDelta: numericDelta(d.main.rect.bottom, r.main.rect.bottom),
+              descendantCount: { direct: d.descendants.length, routed: r.descendants.length },
+              divergentCount,
+              firstDivergence,
+              directBoundary: d.boundary,
+              routedBoundary: r.boundary,
+              directFontsStatus: d.fontsStatus,
+              routedFontsStatus: r.fontsStatus
+            };
+          }
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const repeats = [];
+            for (let repeat = 1; repeat <= 3; repeat += 1) {
+              const d = await direct(browser);
+              const r = await routed(browser);
+              assert.deepEqual(d.errors, [], `repeat ${repeat}: direct page errors`);
+              assert.deepEqual(r.errors, [], `repeat ${repeat}: routed page errors`);
+              const diagnosis = compare(d.capture, r.capture);
+              repeats.push({ repeat, diagnosis });
+              console.log(`D3_REPEAT_${repeat}=` + JSON.stringify(diagnosis));
+            }
+            await browser.close();
+
+            const allSemanticReady = repeats.every(({ diagnosis: x }) =>
+              x.directBoundary?.resultsUiReady === 'true' &&
+              x.routedBoundary?.resultsUiReady === 'true' &&
+              x.directBoundary?.ariaBusy === 'false' &&
+              x.routedBoundary?.ariaBusy === 'false' &&
+              x.directFontsStatus === 'loaded' &&
+              x.routedFontsStatus === 'loaded'
+            );
+            const mainParity = repeats.every(({ diagnosis: x }) =>
+              x.mainHeightDelta === 0 &&
+              x.mainBottomDelta === 0 &&
+              x.descendantCount.direct === x.descendantCount.routed
+            );
+            const descendantParity = repeats.every(({ diagnosis: x }) => x.divergentCount === 0);
+            const classification =
+              allSemanticReady && mainParity && descendantParity
+                ? 'SEMANTIC_FENCE_FULL_GEOMETRY_PARITY'
+                : allSemanticReady && mainParity
+                  ? 'SEMANTIC_FENCE_MAIN_PARITY_WITH_DESCENDANT_RESIDUAL'
+                  : 'SEMANTIC_FENCE_GEOMETRY_DIVERGENCE_REPRODUCED';
+
+            const evidence = {
+              viewport,
+              fence: {
+                nav003Authority: '20260805-ux-filters-001-v1',
+                exactFilterStatusCount: 1,
+                resultsUiReady: true,
+                ariaBusy: false,
+                fontsLoaded: true,
+                postFenceLayoutFlush: 'two-animation-frames',
+                arbitrarySleepMs: 0
+              },
+              repeats: repeats.map(({ repeat, diagnosis }) => ({ repeat, ...diagnosis })),
+              allSemanticReady,
+              mainParity,
+              descendantParity,
+              classification,
+              criterionPreserved: 'topDelta=0',
+              productRemoteMutation: false,
+              matrixMutation: false,
+              snapshotMutation: false,
+              criteriaRelaxed: 0
+            };
+            fs.writeFileSync(
+              process.env.RUNNER_TEMP + '/nav002-r4c-semantic-fence-d3.json',
+              JSON.stringify(evidence, null, 2)
+            );
+            fs.appendFileSync(
+              process.env.GITHUB_STEP_SUMMARY,
+              [
+                'classification=' + classification,
+                'allSemanticReady=' + allSemanticReady,
+                'mainParity=' + mainParity,
+                'descendantParity=' + descendantParity,
+                'arbitrarySleepMs=0',
+                'criteriaRelaxed=0',
+                'productRemoteMutation=false',
+                'matrixMutation=false',
+                'snapshotMutation=false'
+              ].join('\n') + '\n'
+            );
+            console.log('D3_EVIDENCE=' + JSON.stringify(evidence));
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+
+      - name: Upload D3 semantic-fence diagnostic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: nav002-r4c-semantic-fence-d3
+          path: ${{ runner.temp }}/nav002-r4c-semantic-fence-d3.json
+          if-no-files-found: error
+          retention-days: 7
