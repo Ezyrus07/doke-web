@@ -1,0 +1,460 @@
+name: TEMP UX-NAV-DEBT-002 R4c Tablet TopDelta D1
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-r4c-tablet-topdelta-d1-run
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+      PARENT_TREE: 9e5e8cf0e9f4515a58420fea61eeb4a36eaffe7f
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-r4c-tablet-topdelta-d1.yml
+      ROUTER_PATH: assets/js/core/stable-shell-router.js
+      SEARCH_PATH: assets/js/pages/search-data.js
+      ROUTER_PREIMAGE: f3b4d3f303967055173e418244dc0d4b3a1b0e55
+      SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      EXPECTED_CANDIDATE_TREE: 5b3a7ca62dfb4e483688aeb7220df13b507b4cdb
+      EXPECTED_ROUTER_BLOB: 0beec015cf84f42db370f920750ea116447476bb
+      EXPECTED_PATCH_SHA256: 6efc14416814d7ff2d7d5033c40d47d2158d2070bac521d1baba8998903c0654
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller lineage and exact NAV003 preimages
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$ROUTER_PATH")" == "$ROUTER_PREIMAGE" ]] || { echo 'NAV003 router preimage drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$SEARCH_PATH")" == "$SEARCH_BLOB" ]] || { echo 'NAV003 search-data preimage drift'; exit 1; }
+          echo "TEMP_SHA=$head"
+          echo 'LINEAGE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'PARENT_TREE=PASS'
+          echo 'NAV003_PREIMAGES=PASS'
+
+      - name: Reconstruct exact R4c candidate runner-only and freeze identity
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../nav002-r4c-d1-candidate "$PARENT"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('../nav002-r4c-d1-candidate/assets/js/core/stable-shell-router.js')
+          text = path.read_text(encoding='utf-8')
+          nav003 = "    '/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults'],"
+          if text.count(nav003) != 1:
+              raise SystemExit('NAV003 Resultados initializer contract missing before NAV002 materialization')
+          old = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                currentContent.replaceWith(nextContent.cloneNode(true));
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          new = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                var replacementContent = nextContent.cloneNode(true);
+                currentContent.replaceWith(replacementContent);
+                var replacementPageNodes = Array.prototype.map.call(nextPage.childNodes, function (node) {
+                  if (node === nextHeader) return currentHeader;
+                  if (node === nextContent) return replacementContent;
+                  return node.cloneNode(true);
+                });
+                currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Historical R3 replaceShell preimage count={text.count(old)}; stop without adaptation')
+          updated = text.replace(old, new, 1)
+          if updated.count(nav003) != 1:
+              raise SystemExit('NAV003 initializer contract changed by NAV002 materialization')
+          path.write_text(updated, encoding='utf-8', newline='\n')
+          PY
+          mapfile -t changed < <(git -C ../nav002-r4c-d1-candidate diff --name-only "$PARENT")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$ROUTER_PATH" ]] || { printf 'Candidate scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          if git -C ../nav002-r4c-d1-candidate diff -U0 "$PARENT" -- "$ROUTER_PATH" | grep '^+' | grep -Eiq 'resultados|doke-public-footer'; then
+            echo 'Candidate contains route/footer hardcoding in added lines'
+            exit 1
+          fi
+          git -C ../nav002-r4c-d1-candidate diff --check "$PARENT"
+          node --check ../nav002-r4c-d1-candidate/$ROUTER_PATH
+          git -C ../nav002-r4c-d1-candidate config user.name doke-diagnostic
+          git -C ../nav002-r4c-d1-candidate config user.email doke-diagnostic@users.noreply.github.com
+          git -C ../nav002-r4c-d1-candidate add "$ROUTER_PATH"
+          git -C ../nav002-r4c-d1-candidate commit -m 'test(ux): reconstruct exact NAV002 r4c candidate for tablet geometry diagnosis'
+          candidate_tree="$(git -C ../nav002-r4c-d1-candidate rev-parse HEAD^{tree})"
+          router_blob="$(git -C ../nav002-r4c-d1-candidate rev-parse HEAD:$ROUTER_PATH)"
+          search_blob="$(git -C ../nav002-r4c-d1-candidate rev-parse HEAD:$SEARCH_PATH)"
+          patch_sha="$(git -C ../nav002-r4c-d1-candidate diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+          [[ "$candidate_tree" == "$EXPECTED_CANDIDATE_TREE" ]] || { echo "Candidate TREE mismatch: $candidate_tree"; exit 1; }
+          [[ "$router_blob" == "$EXPECTED_ROUTER_BLOB" ]] || { echo "Router blob mismatch: $router_blob"; exit 1; }
+          [[ "$search_blob" == "$SEARCH_BLOB" ]] || { echo "Search blob mismatch: $search_blob"; exit 1; }
+          [[ "$patch_sha" == "$EXPECTED_PATCH_SHA256" ]] || { echo "Patch SHA256 mismatch: $patch_sha"; exit 1; }
+          echo "CANDIDATE_TREE=$candidate_tree"
+          echo "ROUTER_BLOB=$router_blob"
+          echo "SEARCH_DATA_BLOB=$search_blob"
+          echo "PATCH_SHA256=$patch_sha"
+          echo 'R4C_IDENTITY=PASS'
+          echo 'PRODUCT_REMOTE_MUTATION=false'
+          echo 'MATRIX_MUTATION=false'
+          echo 'SNAPSHOT_MUTATION=false'
+
+      - name: Install dependencies and Chromium once
+        run: |
+          set -euo pipefail
+          cd ../nav002-r4c-d1-candidate
+          npm ci
+          npx playwright install chromium
+
+      - name: Diagnose tablet direct versus DokeNavigate geometry only
+        run: |
+          set -euo pipefail
+          python -m http.server 4174 --directory ../nav002-r4c-d1-candidate > "$RUNNER_TEMP/nav002-r4c-d1-server.log" 2>&1 &
+          pid=$!
+          cleanup() { kill "$pid" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ok=0
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:4174/index.html" >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          [[ "$ok" == 1 ]] || { echo 'Diagnostic server did not become ready'; exit 1; }
+          cd ../nav002-r4c-d1-candidate
+          node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const base = 'http://127.0.0.1:4174';
+          const viewport = { width: 820, height: 1180 };
+          const round3 = v => Math.round(Number(v || 0) * 1000) / 1000;
+          const nodeOrder = ['html', 'body', 'shell', 'page', 'header', 'main', 'footer'];
+
+          async function waitCertificationStable(page) {
+            await page.waitForLoadState('domcontentloaded');
+            if (page.url().includes('/resultados.html')) {
+              await page.waitForFunction(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                return form && form.getAttribute('data-filter-authority') === '20260805-ux-filters-001-v1' && document.querySelectorAll('[data-results-filter-status]').length === 1;
+              }, null, { timeout: 10000 });
+            }
+            await page.waitForTimeout(900);
+          }
+
+          async function waitFrames(page, count) {
+            await page.evaluate(async n => {
+              for (let i = 0; i < n; i += 1) await new Promise(resolve => requestAnimationFrame(resolve));
+            }, count);
+          }
+
+          async function capture(page, label) {
+            return page.evaluate((phaseLabel) => {
+              const html = document.documentElement;
+              const body = document.body;
+              const shell = document.querySelector('.app-shell');
+              const pageNode = document.querySelector('.page');
+              const header = pageNode && pageNode.querySelector(':scope > [data-app-header], :scope > .app-header');
+              const main = pageNode && pageNode.querySelector(':scope > .page__content');
+              const footer = pageNode && pageNode.querySelector(':scope > .doke-public-footer');
+              const form = document.querySelector('[data-results-filters-form]');
+              const keyFor = (node) => {
+                if (!node) return null;
+                if (node === html) return 'HTML';
+                if (node === body) return 'BODY';
+                if (node === shell) return 'SHELL';
+                if (node === pageNode) return 'PAGE';
+                if (node === header) return 'HEADER';
+                if (node === main) return 'CONTENT';
+                if (node === footer) return 'FOOTER';
+                const id = node.id ? `#${node.id}` : '';
+                const cls = typeof node.className === 'string' && node.className.trim() ? '.' + node.className.trim().split(/\s+/).sort().join('.') : '';
+                return `${node.tagName}${id}${cls}`;
+              };
+              const styleOf = (node) => {
+                if (!node) return null;
+                const s = getComputedStyle(node);
+                return {
+                  display: s.display,
+                  position: s.position,
+                  height: s.height,
+                  minHeight: s.minHeight,
+                  marginTop: s.marginTop,
+                  marginRight: s.marginRight,
+                  marginBottom: s.marginBottom,
+                  marginLeft: s.marginLeft,
+                  paddingTop: s.paddingTop,
+                  paddingRight: s.paddingRight,
+                  paddingBottom: s.paddingBottom,
+                  paddingLeft: s.paddingLeft,
+                  borderTopWidth: s.borderTopWidth,
+                  borderRightWidth: s.borderRightWidth,
+                  borderBottomWidth: s.borderBottomWidth,
+                  borderLeftWidth: s.borderLeftWidth,
+                  lineHeight: s.lineHeight,
+                  transform: s.transform,
+                  boxSizing: s.boxSizing,
+                  fontFamily: s.fontFamily,
+                  fontSize: s.fontSize,
+                  fontWeight: s.fontWeight
+                };
+              };
+              const info = (node) => {
+                if (!node) return null;
+                const r = node.getBoundingClientRect();
+                return {
+                  key: keyFor(node),
+                  rect: { x: r.x, y: r.y, top: r.top, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height },
+                  offsetTop: node.offsetTop,
+                  offsetLeft: node.offsetLeft,
+                  offsetWidth: node.offsetWidth,
+                  offsetHeight: node.offsetHeight,
+                  offsetParent: keyFor(node.offsetParent),
+                  style: styleOf(node)
+                };
+              };
+              const nodes = { html: info(html), body: info(body), shell: info(shell), page: info(pageNode), header: info(header), main: info(main), footer: info(footer) };
+              const pageChildren = pageNode ? Array.from(pageNode.children).map(info) : [];
+              return {
+                label: phaseLabel,
+                now: performance.now(),
+                readyState: document.readyState,
+                path: location.pathname,
+                nodes,
+                pageChildren,
+                pageChildOrder: pageChildren.map(x => x && x.key),
+                documentMetrics: {
+                  htmlScrollHeight: html.scrollHeight,
+                  htmlClientHeight: html.clientHeight,
+                  htmlScrollWidth: html.scrollWidth,
+                  htmlClientWidth: html.clientWidth,
+                  bodyScrollHeight: body.scrollHeight,
+                  bodyClientHeight: body.clientHeight,
+                  bodyScrollWidth: body.scrollWidth,
+                  bodyClientWidth: body.clientWidth
+                },
+                fonts: {
+                  supported: Boolean(document.fonts),
+                  status: document.fonts ? document.fonts.status : 'unsupported'
+                },
+                initializers: {
+                  filter: typeof window.DokeInitSearchFilterState === 'function',
+                  results: typeof window.DokeInitSearchResults === 'function'
+                },
+                filter: {
+                  statusCount: document.querySelectorAll('[data-results-filter-status]').length,
+                  authority: form?.getAttribute('data-filter-authority') || '',
+                  contract: form?.getAttribute('data-filter-contract') || '',
+                  state: form?.getAttribute('data-filter-state') || '',
+                  dirty: form?.getAttribute('data-filter-dirty') || '',
+                  installation: Boolean(window.Doke?.searchFilterStateInstallation),
+                  installationKeys: window.Doke?.searchFilterStateInstallation ? Object.keys(window.Doke.searchFilterStateInstallation).sort() : []
+                },
+                navigation: {
+                  scrollX: window.scrollX,
+                  scrollY: window.scrollY,
+                  activeElement: keyFor(document.activeElement),
+                  mainFocused: document.activeElement === main,
+                  routeFocusTemporary: Boolean(main && main.getAttribute('data-doke-route-focus-temporary') === 'true')
+                }
+              };
+            }, label);
+          }
+
+          async function collectPhases(page) {
+            const phases = [];
+            phases.push(await capture(page, 'certificationReady'));
+            await page.evaluate(() => document.fonts ? document.fonts.ready : Promise.resolve());
+            phases.push(await capture(page, 'fontsReady'));
+            await waitFrames(page, 1);
+            phases.push(await capture(page, 'raf1'));
+            await waitFrames(page, 1);
+            phases.push(await capture(page, 'raf2'));
+            await waitFrames(page, 2);
+            phases.push(await capture(page, 'raf4'));
+            await waitFrames(page, 4);
+            phases.push(await capture(page, 'raf8'));
+            await page.waitForTimeout(100);
+            phases.push(await capture(page, 'after100ms'));
+            await page.waitForTimeout(400);
+            phases.push(await capture(page, 'after500ms'));
+            return phases;
+          }
+
+          async function direct(browser) {
+            const context = await browser.newContext({ viewport });
+            const page = await context.newPage();
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto(base + '/resultados.html', { waitUntil: 'domcontentloaded' });
+            await waitCertificationStable(page);
+            const phases = await collectPhases(page);
+            await context.close();
+            return { phases, errors };
+          }
+
+          async function routed(browser) {
+            const context = await browser.newContext({ viewport });
+            const page = await context.newPage();
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto(base + '/index.html', { waitUntil: 'domcontentloaded' });
+            await waitCertificationStable(page);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function');
+            await page.evaluate(() => window.DokeNavigate('/resultados.html'));
+            await page.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+            await waitCertificationStable(page);
+            const phases = await collectPhases(page);
+            await context.close();
+            return { phases, errors };
+          }
+
+          function diffObject(a, b) {
+            const out = {};
+            for (const key of Object.keys(a || {})) {
+              if ((a || {})[key] !== (b || {})[key]) out[key] = { direct: (a || {})[key], routed: (b || {})[key] };
+            }
+            return out;
+          }
+
+          function geometryDelta(a, b) {
+            if (!a || !b) return { missing: { direct: Boolean(a), routed: Boolean(b) } };
+            const out = {};
+            for (const key of ['x','y','top','right','bottom','left','width','height']) {
+              const d = round3(Math.abs(Number(a.rect[key] || 0) - Number(b.rect[key] || 0)));
+              if (d !== 0) out[`rect.${key}`] = d;
+            }
+            for (const key of ['offsetTop','offsetLeft','offsetWidth','offsetHeight']) {
+              const d = round3(Math.abs(Number(a[key] || 0) - Number(b[key] || 0)));
+              if (d !== 0) out[key] = d;
+            }
+            if (a.offsetParent !== b.offsetParent) out.offsetParent = { direct: a.offsetParent, routed: b.offsetParent };
+            return out;
+          }
+
+          function summarizePhase(directPhase, routedPhase) {
+            const geometry = {};
+            const styleDiffs = {};
+            let firstGeometryDivergence = null;
+            for (const name of nodeOrder) {
+              geometry[name] = geometryDelta(directPhase.nodes[name], routedPhase.nodes[name]);
+              styleDiffs[name] = diffObject(directPhase.nodes[name]?.style || {}, routedPhase.nodes[name]?.style || {});
+              if (!firstGeometryDivergence && Object.keys(geometry[name]).length) firstGeometryDivergence = name;
+            }
+            const childGeometry = [];
+            const count = Math.max(directPhase.pageChildren.length, routedPhase.pageChildren.length);
+            for (let i = 0; i < count; i += 1) {
+              childGeometry.push({
+                index: i,
+                directKey: directPhase.pageChildren[i]?.key || null,
+                routedKey: routedPhase.pageChildren[i]?.key || null,
+                geometry: geometryDelta(directPhase.pageChildren[i], routedPhase.pageChildren[i]),
+                styleDiffs: diffObject(directPhase.pageChildren[i]?.style || {}, routedPhase.pageChildren[i]?.style || {})
+              });
+            }
+            return {
+              label: directPhase.label,
+              footerTopDelta: round3(Math.abs(Number(directPhase.nodes.footer?.rect.top || 0) - Number(routedPhase.nodes.footer?.rect.top || 0))),
+              firstGeometryDivergence,
+              geometry,
+              styleDiffs,
+              childOrderEqual: JSON.stringify(directPhase.pageChildOrder) === JSON.stringify(routedPhase.pageChildOrder),
+              childGeometry,
+              documentMetricDiffs: diffObject(directPhase.documentMetrics, routedPhase.documentMetrics),
+              fonts: { direct: directPhase.fonts, routed: routedPhase.fonts },
+              initializers: { direct: directPhase.initializers, routed: routedPhase.initializers },
+              filter: { direct: directPhase.filter, routed: routedPhase.filter },
+              navigation: { direct: directPhase.navigation, routed: routedPhase.navigation }
+            };
+          }
+
+          const allEqual = values => values.length > 0 && values.every(v => v === values[0]);
+          const phaseByLabel = (run, label) => run.summaries.find(x => x.label === label);
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const runs = [];
+            for (let repeat = 1; repeat <= 3; repeat += 1) {
+              const d = await direct(browser);
+              const r = await routed(browser);
+              assert.deepEqual(d.errors, [], `repeat ${repeat}: direct page errors`);
+              assert.deepEqual(r.errors, [], `repeat ${repeat}: routed page errors`);
+              assert.equal(d.phases.length, r.phases.length, `repeat ${repeat}: phase count`);
+              const summaries = d.phases.map((p, i) => summarizePhase(p, r.phases[i]));
+              for (const s of summaries) {
+                assert.equal(s.childOrderEqual, true, `repeat ${repeat} ${s.label}: page child order drift`);
+                assert.equal(s.filter.direct.statusCount, 1, `repeat ${repeat} ${s.label}: direct filter live-region count`);
+                assert.equal(s.filter.routed.statusCount, 1, `repeat ${repeat} ${s.label}: routed filter live-region count`);
+                assert.equal(s.filter.direct.authority, '20260805-ux-filters-001-v1', `repeat ${repeat} ${s.label}: direct authority`);
+                assert.equal(s.filter.routed.authority, '20260805-ux-filters-001-v1', `repeat ${repeat} ${s.label}: routed authority`);
+                assert.equal(s.initializers.direct.filter && s.initializers.direct.results, true, `repeat ${repeat} ${s.label}: direct initializers`);
+                assert.equal(s.initializers.routed.filter && s.initializers.routed.results, true, `repeat ${repeat} ${s.label}: routed initializers`);
+              }
+              const initialDirect = d.phases.find(x => x.label === 'certificationReady');
+              const initialRouted = r.phases.find(x => x.label === 'certificationReady');
+              const settledDirect = d.phases.find(x => x.label === 'after500ms');
+              const settledRouted = r.phases.find(x => x.label === 'after500ms');
+              console.log(`DIAG_CAPTURE_REPEAT_${repeat}=` + JSON.stringify({ certificationReady: { direct: initialDirect, routed: initialRouted }, after500ms: { direct: settledDirect, routed: settledRouted } }));
+              console.log(`DIAG_PHASE_SUMMARY_REPEAT_${repeat}=` + JSON.stringify(summaries));
+              runs.push({ repeat, direct: d, routed: r, summaries });
+            }
+            await browser.close();
+
+            const cert = runs.map(run => phaseByLabel(run, 'certificationReady').footerTopDelta);
+            const fonts = runs.map(run => phaseByLabel(run, 'fontsReady').footerTopDelta);
+            const raf8 = runs.map(run => phaseByLabel(run, 'raf8').footerTopDelta);
+            const settled = runs.map(run => phaseByLabel(run, 'after500ms').footerTopDelta);
+            let classification;
+            if (settled.every(v => v === 0) && cert.some(v => v !== 0)) {
+              classification = fonts.every(v => v === 0) ? 'FONT_READINESS_LAYOUT_DRIFT_SETTLES_TO_ZERO' : 'TIMING_LAYOUT_DRIFT_SETTLES_TO_ZERO';
+            } else if (allEqual(cert) && allEqual(settled) && cert[0] === settled[0] && settled[0] !== 0) {
+              classification = 'DETERMINISTIC_PERSISTENT_GEOMETRY_DELTA';
+            } else if (allEqual(settled) && settled[0] !== 0) {
+              classification = 'LATE_LAYOUT_SETTLES_TO_STABLE_NONZERO_DELTA';
+            } else {
+              classification = 'UNSTABLE_TIMING_OR_SUBPIXEL_GEOMETRY_DRIFT';
+            }
+            const settledFirst = runs.map(run => phaseByLabel(run, 'after500ms').firstGeometryDivergence);
+            const certFirst = runs.map(run => phaseByLabel(run, 'certificationReady').firstGeometryDivergence);
+            const firstComponent = allEqual(settledFirst) ? settledFirst[0] : (allEqual(certFirst) ? certFirst[0] : null);
+            const firstSummary = phaseByLabel(runs[0], settled[0] === 0 ? 'certificationReady' : 'after500ms');
+            const styleDiffAtFirst = firstComponent ? firstSummary.styleDiffs[firstComponent] : {};
+            const rootCauseShape = firstComponent ? (Object.keys(styleDiffAtFirst || {}).length ? 'COMPUTED_STYLE_DIVERGENCE_AT_FIRST_COMPONENT' : 'GEOMETRY_DIVERGENCE_WITH_EQUAL_COMPUTED_STYLE_AT_FIRST_COMPONENT') : 'FIRST_COMPONENT_NOT_STABLE_ACROSS_REPEATS';
+            const result = {
+              viewport,
+              repeats: 3,
+              criterionPreserved: 'topDelta=0',
+              certificationReadyTopDeltas: cert,
+              fontsReadyTopDeltas: fonts,
+              raf8TopDeltas: raf8,
+              after500msTopDeltas: settled,
+              certificationFirstGeometryDivergence: certFirst,
+              settledFirstGeometryDivergence: settledFirst,
+              firstComponent,
+              rootCauseShape,
+              classification,
+              criteriaRelaxed: 0,
+              productRemoteMutation: false,
+              matrixMutation: false,
+              snapshotMutation: false
+            };
+            fs.writeFileSync(process.env.RUNNER_TEMP + '/nav002-r4c-tablet-topdelta-d1.json', JSON.stringify({ result, runs }));
+            console.log('DIAG_CLASSIFICATION=' + JSON.stringify(result));
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
