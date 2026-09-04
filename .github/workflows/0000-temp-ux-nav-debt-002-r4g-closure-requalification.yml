@@ -1,0 +1,424 @@
+name: TEMP UX-NAV-DEBT-002 R4g Closure Requalification
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-r4g-closure-requalification-run
+
+permissions:
+  contents: read
+
+jobs:
+  requalify:
+    runs-on: windows-latest
+    timeout-minutes: 95
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+      PARENT_TREE: 9e5e8cf0e9f4515a58420fea61eeb4a36eaffe7f
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-r4g-closure-requalification.yml
+      ROUTER_PATH: assets/js/core/stable-shell-router.js
+      SEARCH_PATH: assets/js/pages/search-data.js
+      ROUTER_PREIMAGE: f3b4d3f303967055173e418244dc0d4b3a1b0e55
+      SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      FILTER_AUTHORITY: 20260805-ux-filters-001-v1
+      R4F_CONTROLLER: 8b451fdf16047d6f3cf40ac5962aa5af7b22bf78
+      R4F_HISTORICAL_CANDIDATE_SHA: 2016f5b088acef1ed1963ba1a286fd681fda4cdc
+      EXPECTED_CANDIDATE_TREE: d3203764606f9708b4f795f531cb77384b210610
+      EXPECTED_ROUTER_BLOB: 4d0ec8aa1fe4b6679fac2b98a3060b2e9f9924ea
+      EXPECTED_PATCH_SHA256: f5e52e379440230b2a02fa555b5db3ba048539bd38cea747ec183e313b56cfd5
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact lineage and reconstruct exact R4f content
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4g-evidence"
+          mkdir -p "$evidence"
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$ROUTER_PATH")" == "$ROUTER_PREIMAGE" ]] || { echo 'Router preimage drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$SEARCH_PATH")" == "$SEARCH_BLOB" ]] || { echo 'Search-data preimage drift'; exit 1; }
+          [[ "$(git show "$PARENT:$ROUTER_PATH" | grep -F "'/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults']" | wc -l | tr -d ' ')" == '1' ]] || { echo 'NAV003 initializer contract drift'; exit 1; }
+          git worktree add --detach ../nav002-r4g-parent "$PARENT"
+          git worktree add --detach ../nav002-r4g-candidate "$PARENT"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('../nav002-r4g-candidate/assets/js/core/stable-shell-router.js')
+          text = path.read_text(encoding='utf-8')
+          nav003 = "    '/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults'],"
+          if text.count(nav003) != 1:
+              raise SystemExit('NAV003 initializer missing before R4g materialization')
+          anchor = """  function replaceShell(nextDoc, path) {
+          """
+          helper = """  function isPersistentPageChromeNode(node) {
+            if (!node || node.nodeType !== 1 || typeof node.matches !== 'function') return false;
+            return node.matches('nav, [role="navigation"]');
+          }
+
+          function replaceShell(nextDoc, path) {
+          """
+          if text.count(anchor) != 1:
+              raise SystemExit(f'replaceShell anchor count={text.count(anchor)}')
+          text = text.replace(anchor, helper, 1)
+          old = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                currentContent.replaceWith(nextContent.cloneNode(true));
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          new = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                var replacementContent = nextContent.cloneNode(true);
+                currentContent.replaceWith(replacementContent);
+                var persistentPageChrome = Array.prototype.filter.call(currentPage.children, function (node) {
+                  return node !== currentHeader && node !== replacementContent && isPersistentPageChromeNode(node);
+                });
+                var replacementPageNodes = Array.prototype.reduce.call(nextPage.childNodes, function (nodes, node) {
+                  if (node === nextHeader) {
+                    nodes.push(currentHeader);
+                    return nodes;
+                  }
+                  if (node === nextContent) {
+                    nodes.push(replacementContent);
+                    return nodes;
+                  }
+                  if (isPersistentPageChromeNode(node)) return nodes;
+                  nodes.push(node.cloneNode(true));
+                  return nodes;
+                }, []);
+                persistentPageChrome.forEach(function (node) { replacementPageNodes.push(node); });
+                currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'R4f replaceShell preimage count={text.count(old)}; stop without adaptation')
+          updated = text.replace(old, new, 1)
+          if updated.count(nav003) != 1:
+              raise SystemExit('NAV003 initializer changed by R4g materialization')
+          path.write_text(updated, encoding='utf-8', newline='\n')
+          PY
+          mapfile -t product_changed < <(git -C ../nav002-r4g-candidate diff --name-only "$PARENT")
+          [[ ${#product_changed[@]} -eq 1 && "${product_changed[0]}" == "$ROUTER_PATH" ]] || { printf 'Candidate scope mismatch: %s\n' "${product_changed[*]}"; exit 1; }
+          if git -C ../nav002-r4g-candidate diff -U0 "$PARENT" -- "$ROUTER_PATH" | grep '^+' | grep -Eiq 'resultados|doke-public-footer'; then
+            echo 'Candidate contains route/footer hardcoding in added lines'; exit 1
+          fi
+          [[ -z "$(git -C ../nav002-r4g-candidate diff --name-only "$PARENT" -- "$SEARCH_PATH" resultados.html assets/css config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/validation tests/visual)" ]] || { echo 'Forbidden candidate scope mutation'; exit 1; }
+          git -C ../nav002-r4g-candidate diff --check "$PARENT"
+          node --check ../nav002-r4g-candidate/$ROUTER_PATH
+          git -C ../nav002-r4g-candidate add "$ROUTER_PATH"
+          candidate_tree="$(git -C ../nav002-r4g-candidate write-tree)"
+          router_blob="$(git -C ../nav002-r4g-candidate rev-parse ":$ROUTER_PATH")"
+          search_blob="$(git -C ../nav002-r4g-candidate rev-parse "$PARENT:$SEARCH_PATH")"
+          patch_sha="$(git -C ../nav002-r4g-candidate diff "$PARENT" --binary | sha256sum | awk '{print $1}')"
+          [[ "$candidate_tree" == "$EXPECTED_CANDIDATE_TREE" ]] || { echo "Candidate TREE mismatch: $candidate_tree"; exit 1; }
+          [[ "$router_blob" == "$EXPECTED_ROUTER_BLOB" ]] || { echo "Router blob mismatch: $router_blob"; exit 1; }
+          [[ "$search_blob" == "$SEARCH_BLOB" ]] || { echo "Search-data blob mismatch: $search_blob"; exit 1; }
+          [[ "$patch_sha" == "$EXPECTED_PATCH_SHA256" ]] || { echo "Patch SHA256 mismatch: $patch_sha"; exit 1; }
+          git -C ../nav002-r4g-candidate diff "$PARENT" --binary > "$evidence/r4f-candidate.patch"
+          git -C ../nav002-r4g-candidate config user.name doke-diagnostic
+          git -C ../nav002-r4g-candidate config user.email doke-diagnostic@users.noreply.github.com
+          git -C ../nav002-r4g-candidate commit -m 'test(ux): reconstruct exact R4f content for R4g closure'
+          reconstructed_sha="$(git -C ../nav002-r4g-candidate rev-parse HEAD)"
+          cat > "$evidence/identity.json" <<EOF
+          {"controllerSha":"$head","r4fController":"$R4F_CONTROLLER","parent":"$PARENT","parentTree":"$PARENT_TREE","historicalR4fCandidateSha":"$R4F_HISTORICAL_CANDIDATE_SHA","reconstructedCandidateSha":"$reconstructed_sha","candidateTree":"$candidate_tree","routerPreimage":"$ROUTER_PREIMAGE","routerBlob":"$router_blob","searchBlob":"$search_blob","patchSha256":"$patch_sha","candidateScope":["$ROUTER_PATH"],"candidateContentFrozen":true,"criteriaRelaxed":0,"repositoryOnly":true,"candidateRunnerOnly":true,"productRemoteMutation":false,"matrixMutation":false,"snapshotMutation":false,"issueMutation":false,"prMutation":false,"merge":false,"supabaseMutation":false,"stagingMutation":false,"productionMutation":false}
+          EOF
+          echo "R4F_HISTORICAL_CANDIDATE_SHA=$R4F_HISTORICAL_CANDIDATE_SHA"
+          echo "RECONSTRUCTED_CANDIDATE_SHA=$reconstructed_sha"
+          echo "CANDIDATE_TREE=$candidate_tree"
+          echo "ROUTER_BLOB=$router_blob"
+          echo "PATCH_SHA256=$patch_sha"
+          echo 'R4F_CONTENT_IDENTITY=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'HARDCODED_ROUTE_OR_FOOTER=false'
+
+      - name: Install dependencies and Chromium once
+        run: |
+          set -euo pipefail
+          cd ../nav002-r4g-candidate
+          npm ci
+          npx playwright install chromium
+          cd ..
+          cp -a nav002-r4g-candidate/node_modules nav002-r4g-parent/node_modules
+
+      - name: Run minimum governance and syntax gates
+        run: |
+          set -euo pipefail
+          cd ../nav002-r4g-candidate
+          node --check "$ROUTER_PATH"
+          node --check "$SEARCH_PATH"
+          git diff --check "$PARENT" HEAD
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard HEAD
+          [[ "$(git rev-parse HEAD^{tree})" == "$EXPECTED_CANDIDATE_TREE" ]] || { echo 'Candidate tree drift after governance audits'; exit 1; }
+          [[ "$(git rev-parse HEAD:$ROUTER_PATH)" == "$EXPECTED_ROUTER_BLOB" ]] || { echo 'Router blob drift after governance audits'; exit 1; }
+          [[ "$(git rev-parse HEAD:$SEARCH_PATH)" == "$SEARCH_BLOB" ]] || { echo 'Search-data drift after governance audits'; exit 1; }
+          [[ "$(git show HEAD:$ROUTER_PATH | grep -F "'/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults']" | wc -l | tr -d ' ')" == '1' ]] || { echo 'NAV003 initializer contract lost after audits'; exit 1; }
+          echo 'MINIMUM_GOVERNANCE_GATES=PASS'
+
+      - name: Run nine static qualification gates
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4g-evidence"
+          node - "$evidence" <<'NODE'
+          const { spawnSync } = require('node:child_process');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const evidence = process.argv[2];
+          const roots = { parent: path.resolve('../nav002-r4g-parent'), candidate: path.resolve('../nav002-r4g-candidate') };
+          const commands = [
+            ['navigationLifecycleAudit', 'npm run audit:navigation-lifecycle-contract'],
+            ['navigationLifecycleCore', 'npm run test:navigation-lifecycle-core-contract'],
+            ['navigationLifecycleFinalization', 'npm run test:navigation-lifecycle-finalization-contract'],
+            ['shellRouterScrollAudit', 'npm run audit:shell-router-scroll-reset'],
+            ['responsiveBoundaries', 'npm run audit:responsive-boundaries'],
+            ['desktopBase', 'npm run audit:desktop-base'],
+            ['sharedHeader', 'npm run audit:shared-app-header-contract'],
+            ['resultsDensity', 'npm run test:results-card-density-contract'],
+            ['resultsHeaderRail', 'npm run test:results-header-rail-contract']
+          ];
+          function run(root, command) {
+            const out = spawnSync(command, { cwd: root, shell: true, encoding: 'utf8', env: process.env, maxBuffer: 40 * 1024 * 1024 });
+            return { rc: Number.isInteger(out.status) ? out.status : 1, output: ((out.stdout || '') + '\n' + (out.stderr || '')).slice(-10000) };
+          }
+          const rows = commands.map(([name, command]) => ({ name, parent: run(roots.parent, command), candidate: run(roots.candidate, command) }));
+          const parentFailures = rows.filter(r => r.parent.rc !== 0).map(r => r.name);
+          const candidateFailures = rows.filter(r => r.candidate.rc !== 0).map(r => r.name);
+          const receipt = { rows, parentFailures, candidateFailures, parentGreen: parentFailures.length === 0, candidateGreen: candidateFailures.length === 0, expectedGateCount: 9, criteriaRelaxed: 0 };
+          fs.writeFileSync(path.join(evidence, 'static-gates.json'), JSON.stringify(receipt, null, 2));
+          console.log('R4G_STATIC=' + JSON.stringify({ parentFailures, candidateFailures, parentGreen: receipt.parentGreen, candidateGreen: receipt.candidateGreen }));
+          NODE
+          git -C ../nav002-r4g-parent reset --hard "$PARENT"
+          git -C ../nav002-r4g-candidate reset --hard HEAD
+          [[ "$(git -C ../nav002-r4g-candidate rev-parse HEAD^{tree})" == "$EXPECTED_CANDIDATE_TREE" ]] || { echo 'Candidate tree drift after static gates'; exit 1; }
+          [[ "$(git -C ../nav002-r4g-candidate rev-parse HEAD:$ROUTER_PATH)" == "$EXPECTED_ROUTER_BLOB" ]] || { echo 'Router blob drift after static gates'; exit 1; }
+
+      - name: Prove geometry lifecycle and stabilized pedidos identity
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4g-evidence"
+          python -m http.server 4174 --directory ../nav002-r4g-candidate > "$evidence/candidate-server.log" 2>&1 &
+          server=$!
+          cleanup() { kill "$server" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ok=0
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:4174/index.html" >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          [[ "$ok" == 1 ]] || { echo 'Candidate server did not become ready'; exit 1; }
+          cd ../nav002-r4g-candidate
+          node - "$evidence" <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const assert = require('node:assert/strict');
+          const evidence = process.argv[2];
+          const base = 'http://127.0.0.1:4174';
+          const authority = process.env.FILTER_AUTHORITY;
+          const viewports = [
+            { name: 'desktop', width: 1366, height: 768 },
+            { name: 'tablet', width: 820, height: 1180 },
+            { name: 'mobile', width: 390, height: 844 }
+          ];
+          const authenticatedSession = { provider: 'mock', sessionStatus: 'active', accountStatus: 'active', user: { id: 'global-layout-client', role: 'client', name: 'Cliente Layout', email: 'layout@example.test', accountStatus: 'active' } };
+          const r3 = n => Math.round(Number(n || 0) * 1000) / 1000;
+          const delta = (a, b) => r3(Math.abs(Number(a || 0) - Number(b || 0)));
+          async function waitStable(page) {
+            await page.waitForLoadState('domcontentloaded');
+            if (page.url().includes('/resultados.html')) {
+              await page.waitForFunction((expectedAuthority) => {
+                const form = document.querySelector('[data-results-filters-form]');
+                const boundary = document.querySelector('[data-state-boundary="resultados"]');
+                return Boolean(form && boundary && form.getAttribute('data-filter-authority') === expectedAuthority && document.querySelectorAll('[data-results-filter-status]').length === 1 && boundary.dataset.resultsUiReady === 'true' && boundary.getAttribute('aria-busy') === 'false');
+              }, authority, { timeout: 10000 });
+            }
+            await page.evaluate(async () => { if (document.fonts?.ready) await document.fonts.ready; });
+            await page.waitForFunction(() => !document.fonts || document.fonts.status === 'loaded', null, { timeout: 10000 });
+            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+          }
+          async function waitForLayoutStable(page) {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.addStyleTag({ content: `*, *::before, *::after { animation-duration: 0.001s !important; animation-delay: 0s !important; transition-duration: 0.001s !important; transition-delay: 0s !important; caret-color: transparent !important; }` });
+            await page.waitForTimeout(250);
+          }
+          async function installOfficialProbePreconditions(page) {
+            await page.route('https://unpkg.com/**', route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '' }));
+            await page.addInitScript(session => { localStorage.setItem('doke.auth.session.v1', JSON.stringify(session)); }, authenticatedSession);
+          }
+          async function snapshot(page) {
+            return page.evaluate(() => {
+              const pageNode = document.querySelector('.page');
+              const footer = pageNode && pageNode.querySelector(':scope > .doke-public-footer');
+              const pageRect = pageNode && pageNode.getBoundingClientRect();
+              const footerRect = footer && footer.getBoundingClientRect();
+              const form = document.querySelector('[data-results-filters-form]');
+              const boundary = document.querySelector('[data-state-boundary="resultados"]');
+              const keyFor = node => { const id = node.id ? '#' + node.id : ''; const cls = typeof node.className === 'string' && node.className.trim() ? '.' + node.className.trim().split(/\s+/).sort().join('.') : ''; return `${node.tagName}${id}${cls}`; };
+              return { path: location.pathname, pageChildren: pageNode ? Array.from(pageNode.children).map(keyFor) : [], footer: footerRect ? { present: true, left: footerRect.left, top: footerRect.top, width: footerRect.width, height: footerRect.height } : { present: false }, pageHeight: pageRect ? pageRect.height : 0, scrollY: window.scrollY, noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth, statusCount: document.querySelectorAll('[data-results-filter-status]').length, authority: form ? form.getAttribute('data-filter-authority') : null, resultsUiReady: boundary ? boundary.dataset.resultsUiReady || null : null, ariaBusy: boundary ? boundary.getAttribute('aria-busy') : null, bodyPage: document.body && document.body.dataset.page || null };
+            });
+          }
+          async function direct(browser, route, viewport) {
+            const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
+            const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(String(error?.message || error)));
+            await page.goto(base + route); await waitStable(page); const state = await snapshot(page); await context.close(); return { state, errors };
+          }
+          async function navigate(page, route) {
+            await page.evaluate(async target => { const result = window.DokeNavigate(target); if (result && typeof result.then === 'function') await result; }, route);
+            await page.waitForURL(new RegExp(route.replace('.', '\\.'))); await waitStable(page);
+          }
+          async function roundTrip(browser, viewport) {
+            const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
+            const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(String(error?.message || error)));
+            await page.goto(base + '/index.html'); await waitStable(page);
+            await page.evaluate(() => { window.__r4gStableNodes = { header: document.querySelector('[data-app-header]'), sidebar: document.querySelector('.sidebar') }; window.scrollTo(0, Math.min(500, Math.max(0, document.documentElement.scrollHeight - innerHeight))); });
+            const homeBefore = await snapshot(page); await navigate(page, '/resultados.html'); const results = await snapshot(page);
+            const identityResults = await page.evaluate(() => ({ header: window.__r4gStableNodes.header === document.querySelector('[data-app-header]'), sidebar: window.__r4gStableNodes.sidebar === document.querySelector('.sidebar') }));
+            await page.evaluate(() => { window.__r4gFirstInstallation = window.Doke && window.Doke.searchFilterStateInstallation; });
+            await navigate(page, '/index.html'); const homeAfter = await snapshot(page);
+            const identityHome = await page.evaluate(() => ({ header: window.__r4gStableNodes.header === document.querySelector('[data-app-header]'), sidebar: window.__r4gStableNodes.sidebar === document.querySelector('.sidebar') }));
+            const homeLeak = await page.evaluate(() => document.querySelectorAll('[data-results-filter-status]').length);
+            await navigate(page, '/resultados.html'); const secondResults = await snapshot(page);
+            const freshInstallation = await page.evaluate(() => Boolean(window.__r4gFirstInstallation) && window.__r4gFirstInstallation !== (window.Doke && window.Doke.searchFilterStateInstallation));
+            await context.close(); return { homeBefore, results, homeAfter, secondResults, identityResults, identityHome, homeLeak, freshInstallation, errors };
+          }
+          async function pedidosIdentityProbe(browser) {
+            const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, isMobile: false, hasTouch: false });
+            const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(String(error?.message || error)));
+            await installOfficialProbePreconditions(page); await page.goto(base + '/index.html'); await waitForLayoutStable(page);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function', null, { timeout: 10000 });
+            await page.evaluate(() => { window.__r4gPedidoNodes = { header: document.querySelector('[data-app-header]'), sidebar: document.querySelector('.sidebar'), bottomNavigation: document.querySelector('[data-doke-mobile-bottom-nav], [data-bottom-nav], .bottom-nav, .doke-bottom-nav') }; window.__r4gInitialDocumentNavigationCount = performance.getEntriesByType('navigation').length; });
+            const initial = await page.evaluate(() => ({ bottomPresent: Boolean(window.__r4gPedidoNodes.bottomNavigation) }));
+            await page.evaluate(async () => { const result = window.DokeNavigate('/pedidos.html'); if (result && typeof result.then === 'function') await result; });
+            await page.waitForURL(/\/pedidos\.html(?:$|[?#])/); await waitForLayoutStable(page);
+            const state = await page.evaluate(() => ({ header: window.__r4gPedidoNodes.header === document.querySelector('[data-app-header]'), sidebar: window.__r4gPedidoNodes.sidebar === document.querySelector('.sidebar'), bottomNavigation: window.__r4gPedidoNodes.bottomNavigation === document.querySelector('[data-doke-mobile-bottom-nav], [data-bottom-nav], .bottom-nav, .doke-bottom-nav'), bottomPresentAfter: Boolean(document.querySelector('[data-doke-mobile-bottom-nav], [data-bottom-nav], .bottom-nav, .doke-bottom-nav')), adapter: document.body.dataset.dokeNavigationAdapter, documentNavigationCount: performance.getEntriesByType('navigation').length, initialDocumentNavigationCount: window.__r4gInitialDocumentNavigationCount }));
+            await context.close(); return { initial, state, errors };
+          }
+          (async () => {
+            const browser = await chromium.launch({ headless: true }); const rows = [];
+            try {
+              for (const viewport of viewports) {
+                const directResults = await direct(browser, '/resultados.html', viewport); const directHome = await direct(browser, '/index.html', viewport); const routed = await roundTrip(browser, viewport); const d = directResults.state; const n = routed.results;
+                const geometry = { leftDelta: delta(d.footer.left, n.footer.left), topDelta: delta(d.footer.top, n.footer.top), widthDelta: delta(d.footer.width, n.footer.width), heightDelta: delta(d.footer.height, n.footer.height), pageHeightDelta: delta(d.pageHeight, n.pageHeight) };
+                assert.deepEqual(d.pageChildren, n.pageChildren, `${viewport.name}: Resultados child set/order must converge`);
+                assert.deepEqual(directHome.state.pageChildren, routed.homeBefore.pageChildren, `${viewport.name}: Home pre-navigation child set/order must converge`);
+                assert.deepEqual(directHome.state.pageChildren, routed.homeAfter.pageChildren, `${viewport.name}: Home return child set/order must converge`);
+                assert.equal(routed.identityResults.header, true); assert.equal(routed.identityResults.sidebar, true); assert.equal(routed.identityHome.header, true); assert.equal(routed.identityHome.sidebar, true);
+                assert.equal(d.footer.present, true); assert.equal(n.footer.present, true); Object.entries(geometry).forEach(([key, value]) => assert.equal(value, 0, `${viewport.name}: ${key} must be zero`));
+                assert.equal(n.statusCount, 1); assert.equal(n.authority, authority); assert.equal(n.resultsUiReady, 'true'); assert.equal(n.ariaBusy, 'false'); assert.equal(routed.homeLeak, 0); assert.equal(routed.freshInstallation, true); assert.equal(n.scrollY, 0); assert.equal(n.noOverflow, true); assert.equal(d.noOverflow, true); assert.deepEqual(routed.errors, []); assert.deepEqual(directResults.errors, []);
+                rows.push({ viewport, geometry, directChildren: d.pageChildren, routedChildren: n.pageChildren, homeChildren: routed.homeAfter.pageChildren, freshInstallation: routed.freshInstallation });
+              }
+              const pedidos = await pedidosIdentityProbe(browser);
+              assert.equal(pedidos.initial.bottomPresent, true); assert.equal(pedidos.state.header, true); assert.equal(pedidos.state.sidebar, true); assert.equal(pedidos.state.bottomNavigation, true); assert.equal(pedidos.state.bottomPresentAfter, true); assert.equal(pedidos.state.adapter, 'stable-shell'); assert.equal(pedidos.state.documentNavigationCount, pedidos.state.initialDocumentNavigationCount); assert.deepEqual(pedidos.errors, []);
+              const receipt = { result: 'PASS', criteriaRelaxed: 0, semanticFence: { resultsUiReady: true, ariaBusyFalse: true, fontsTerminal: true, layoutFlush: 'two-animation-frames', arbitrarySleepMs: 0 }, pedidosProbeFence: { authenticatedSession: true, deterministicExternalAssets: true, networkIdle: true, animationNeutralization: true, stabilizationMs: 250, copiedFromOfficialGlobalLayoutContract: true }, viewports: rows, pedidosIdentityProbe: pedidos, childSetOrder: 'PASS', headerSidebarIdentity: 'PASS', bottomNavigationIdentityDesktop: 'PASS', footerGeometryExactZero: 'PASS', nav003Lifecycle: 'PASS' };
+              fs.writeFileSync(path.join(evidence, 'geometry-lifecycle.json'), JSON.stringify(receipt, null, 2)); console.log('R4G_GEOMETRY_LIFECYCLE=' + JSON.stringify(receipt));
+            } catch (error) {
+              const receipt = { result: 'FAIL', criteriaRelaxed: 0, error: String(error?.stack || error), viewports: rows }; fs.writeFileSync(path.join(evidence, 'geometry-lifecycle.json'), JSON.stringify(receipt, null, 2)); console.log('R4G_GEOMETRY_LIFECYCLE=' + JSON.stringify(receipt));
+            } finally { await browser.close(); }
+          })().catch(error => { const receipt = { result: 'FAIL', criteriaRelaxed: 0, error: String(error?.stack || error) }; fs.writeFileSync(path.join(evidence, 'geometry-lifecycle.json'), JSON.stringify(receipt, null, 2)); console.log('R4G_GEOMETRY_LIFECYCLE=' + JSON.stringify(receipt)); });
+          NODE
+
+      - name: Run exact requirement 12 suites once per side
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4g-evidence"
+          specs=(
+            tests/e2e/results-entry-lifecycle.spec.js
+            tests/e2e/ux-results-001-browser-acceptance.spec.js
+            tests/e2e/search-flow.spec.js
+            tests/e2e/stable-shell-transition-contract.spec.js
+            tests/e2e/stable-shell-transition-matrix.spec.js
+            tests/e2e/stable-shell-scroll-contract.spec.js
+            tests/e2e/global-layout-contract.spec.js
+          )
+          for spec in "${specs[@]}"; do
+            [[ -f "../nav002-r4g-parent/$spec" && -f "../nav002-r4g-candidate/$spec" ]] || { echo "Missing required spec: $spec"; exit 1; }
+          done
+          printf '%s\n' "${specs[@]}" > "$evidence/specs.txt"
+          set +e
+          (cd ../nav002-r4g-parent && node node_modules/@playwright/test/cli.js test "${specs[@]}" --reporter=json --workers=1 --retries=0 > "$evidence/parent-playwright.json")
+          parent_rc=$?
+          (cd ../nav002-r4g-candidate && node node_modules/@playwright/test/cli.js test "${specs[@]}" --reporter=json --workers=1 --retries=0 > "$evidence/candidate-playwright.json")
+          candidate_rc=$?
+          set -e
+          printf '%s\n' "$parent_rc" > "$evidence/parent-rc.txt"
+          printf '%s\n' "$candidate_rc" > "$evidence/candidate-rc.txt"
+          echo "PARENT_RC=$parent_rc"
+          echo "CANDIDATE_RC=$candidate_rc"
+
+      - name: Classify R4g closure
+        if: always()
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4g-evidence"
+          node - "$evidence" <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const dir = process.argv[2];
+          const exists = name => fs.existsSync(path.join(dir, name));
+          const read = name => JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+          const readText = name => fs.readFileSync(path.join(dir, name), 'utf8').trim();
+          const normalize = value => String(value || '').replace(/\x1b\[[0-9;]*m/g, '').replace(/nav002-r4g-(?:parent|candidate)/g, '<WORKTREE>').replace(/[A-Z]:\\[^\n:]+/g, '<PATH>').replace(/\\/g, '/');
+          function collect(report) {
+            const rows = [];
+            function walk(suite, parents) {
+              const prefix = [...parents, suite.title || ''].filter(Boolean);
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  const results = test.results || []; const last = results.at(-1) || {}; let status = test.status;
+                  if (!['expected','unexpected','flaky','skipped'].includes(status)) {
+                    const actual = last.status || 'unknown'; if (actual === 'skipped') status = 'skipped'; else if (actual === 'passed' && (test.expectedStatus || 'passed') === 'passed') status = 'expected'; else status = 'unexpected';
+                  }
+                  const key = [spec.file || '', ...prefix, spec.title || '', test.projectName || ''].filter(Boolean).join(' :: ');
+                  const errorItems = []; for (const e of (last.errors || [])) errorItems.push(e?.message || e?.stack || e?.value || JSON.stringify(e)); if (last.error) errorItems.push(last.error?.message || last.error?.stack || last.error?.value || JSON.stringify(last.error));
+                  const errors = normalize(errorItems.filter(Boolean).join('\n')); const signature = crypto.createHash('sha256').update(errors).digest('hex'); rows.push({ key, status, errors: errors.slice(0, 5000), signature });
+                }
+              }
+              for (const child of suite.suites || []) walk(child, prefix);
+            }
+            for (const suite of report.suites || []) walk(suite, []); return rows;
+          }
+          const required = ['identity.json','static-gates.json','geometry-lifecycle.json','parent-playwright.json','candidate-playwright.json','parent-rc.txt','candidate-rc.txt'];
+          const missing = required.filter(name => !exists(name)); let receipt;
+          if (missing.length) {
+            receipt = { result: 'INCOMPLETE', classification: 'R4G_EVIDENCE_MISSING', missing, criteriaRelaxed: 0, qualificationSignal: false, permanentPromotionAuthorized: false };
+          } else {
+            const identity = read('identity.json'); const staticGates = read('static-gates.json'); const geometry = read('geometry-lifecycle.json'); const parent = collect(read('parent-playwright.json')); const candidate = collect(read('candidate-playwright.json')); const parentRc = Number(readText('parent-rc.txt')); const candidateRc = Number(readText('candidate-rc.txt')); const count = (rows, status) => rows.filter(r => r.status === status).length;
+            const pu = new Map(parent.filter(r => r.status === 'unexpected').map(r => [r.key, r])); const cu = new Map(candidate.filter(r => r.status === 'unexpected').map(r => [r.key, r]));
+            const candidateOnlyFailures = [...cu.keys()].filter(key => !pu.has(key)).map(key => cu.get(key)); const parentOnlyFailures = [...pu.keys()].filter(key => !cu.has(key)).map(key => pu.get(key)); const sharedFailures = [...cu.keys()].filter(key => pu.has(key)).map(key => ({ key, parent: pu.get(key), candidate: cu.get(key) }));
+            const summary = { parent: { total: parent.length, expected: count(parent, 'expected'), unexpected: count(parent, 'unexpected'), flaky: count(parent, 'flaky'), skipped: count(parent, 'skipped'), rc: parentRc }, candidate: { total: candidate.length, expected: count(candidate, 'expected'), unexpected: count(candidate, 'unexpected'), flaky: count(candidate, 'flaky'), skipped: count(candidate, 'skipped'), rc: candidateRc } };
+            const identityGreen = identity.candidateContentFrozen === true && identity.parent === process.env.PARENT && identity.parentTree === process.env.PARENT_TREE && identity.historicalR4fCandidateSha === process.env.R4F_HISTORICAL_CANDIDATE_SHA && identity.candidateTree === process.env.EXPECTED_CANDIDATE_TREE && identity.routerBlob === process.env.EXPECTED_ROUTER_BLOB && identity.searchBlob === process.env.SEARCH_BLOB && identity.patchSha256 === process.env.EXPECTED_PATCH_SHA256;
+            const staticGreen = staticGates.expectedGateCount === 9 && staticGates.parentGreen === true && staticGates.candidateGreen === true && staticGates.parentFailures.length === 0 && staticGates.candidateFailures.length === 0;
+            const geometryGreen = geometry.result === 'PASS' && geometry.criteriaRelaxed === 0 && geometry.childSetOrder === 'PASS' && geometry.headerSidebarIdentity === 'PASS' && geometry.bottomNavigationIdentityDesktop === 'PASS' && geometry.footerGeometryExactZero === 'PASS' && geometry.nav003Lifecycle === 'PASS';
+            const requirement12Green = summary.parent.total === 75 && summary.candidate.total === 75 && summary.parent.expected === 75 && summary.candidate.expected === 75 && summary.parent.unexpected === 0 && summary.candidate.unexpected === 0 && summary.parent.flaky === 0 && summary.candidate.flaky === 0 && summary.parent.skipped === 0 && summary.candidate.skipped === 0 && parentRc === 0 && candidateRc === 0 && candidateOnlyFailures.length === 0 && parentOnlyFailures.length === 0 && sharedFailures.length === 0;
+            let classification = 'R4G_DIAGNOSTIC_GREEN'; if (!identityGreen) classification = 'R4G_IDENTITY_FAIL'; else if (!staticGreen) classification = 'R4G_STATIC_FAIL'; else if (!geometryGreen) classification = 'R4G_GEOMETRY_OR_LIFECYCLE_FAIL'; else if (!requirement12Green) classification = 'R4G_REQUIREMENT12_FAIL';
+            const qualificationSignal = classification === 'R4G_DIAGNOSTIC_GREEN'; receipt = { result: qualificationSignal ? 'PASS' : 'FAIL', classification, identity, staticGates, geometry, summary, candidateOnlyFailures, parentOnlyFailures, sharedFailures, identityGreen, staticGreen, geometryGreen, requirement12Green, criteriaRelaxed: 0, introducedRegressions: candidateOnlyFailures.length, qualificationSignal, permanentPromotionAuthorized: false, productRemoteMutation: false, matrixMutation: false, snapshotMutation: false, issueMutation: false, prMutation: false, merge: false, supabaseMutation: false, stagingMutation: false, productionMutation: false };
+          }
+          fs.writeFileSync(path.join(dir, 'classification.json'), JSON.stringify(receipt, null, 2)); console.log('R4G_CLASSIFICATION=' + JSON.stringify(receipt)); if (receipt.qualificationSignal !== true) process.exit(1);
+          NODE
+
+      - name: Upload R4g evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nav002-r4g-closure-requalification
+          path: ${{ runner.temp }}/nav002-r4g-evidence
+          retention-days: 7
+          if-no-files-found: warn
