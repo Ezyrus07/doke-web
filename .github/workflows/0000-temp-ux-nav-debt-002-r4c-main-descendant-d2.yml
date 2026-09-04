@@ -1,0 +1,463 @@
+name: TEMP UX-NAV-DEBT-002 R4c Main Descendant D2
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-r4c-main-descendant-d2-run
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+      PARENT_TREE: 9e5e8cf0e9f4515a58420fea61eeb4a36eaffe7f
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-r4c-main-descendant-d2.yml
+      ROUTER_PATH: assets/js/core/stable-shell-router.js
+      SEARCH_PATH: assets/js/pages/search-data.js
+      ROUTER_PREIMAGE: f3b4d3f303967055173e418244dc0d4b3a1b0e55
+      SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      EXPECTED_CANDIDATE_TREE: 5b3a7ca62dfb4e483688aeb7220df13b507b4cdb
+      EXPECTED_ROUTER_BLOB: 0beec015cf84f42db370f920750ea116447476bb
+      EXPECTED_PATCH_SHA256: 6efc14416814d7ff2d7d5033c40d47d2158d2070bac521d1baba8998903c0654
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller lineage and exact NAV003 preimages
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$head")"
+          [[ ${#lineage[@]} -eq 2 && "${lineage[1]}" == "$PARENT" ]] || { echo 'TEMP lineage mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$head")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$ROUTER_PATH")" == "$ROUTER_PREIMAGE" ]] || { echo 'NAV003 router preimage drift'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$SEARCH_PATH")" == "$SEARCH_BLOB" ]] || { echo 'NAV003 search-data preimage drift'; exit 1; }
+          echo "TEMP_SHA=$head"
+          echo 'LINEAGE=PASS'
+          echo 'TEMP_SCOPE=PASS'
+          echo 'PARENT_TREE=PASS'
+          echo 'NAV003_PREIMAGES=PASS'
+
+      - name: Reconstruct exact R4c candidate runner-only and freeze identity
+        run: |
+          set -euo pipefail
+          git worktree add --detach ../nav002-r4c-d2-candidate "$PARENT"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('../nav002-r4c-d2-candidate/assets/js/core/stable-shell-router.js')
+          text = path.read_text(encoding='utf-8')
+          nav003 = "    '/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults'],"
+          if text.count(nav003) != 1:
+              raise SystemExit('NAV003 Resultados initializer contract missing before NAV002 materialization')
+          old = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                currentContent.replaceWith(nextContent.cloneNode(true));
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          new = """      syncElementContract(currentHeader, nextHeader);
+                currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+                  return node.cloneNode(true);
+                }));
+                var replacementContent = nextContent.cloneNode(true);
+                currentContent.replaceWith(replacementContent);
+                var replacementPageNodes = Array.prototype.map.call(nextPage.childNodes, function (node) {
+                  if (node === nextHeader) return currentHeader;
+                  if (node === nextContent) return replacementContent;
+                  return node.cloneNode(true);
+                });
+                currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
+                Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Historical R3 replaceShell preimage count={text.count(old)}; stop without adaptation')
+          updated = text.replace(old, new, 1)
+          if updated.count(nav003) != 1:
+              raise SystemExit('NAV003 initializer contract changed by NAV002 materialization')
+          path.write_text(updated, encoding='utf-8', newline='\n')
+          PY
+          mapfile -t changed < <(git -C ../nav002-r4c-d2-candidate diff --name-only "$PARENT")
+          [[ ${#changed[@]} -eq 1 && "${changed[0]}" == "$ROUTER_PATH" ]] || { printf 'Candidate scope mismatch: %s\n' "${changed[*]}"; exit 1; }
+          if git -C ../nav002-r4c-d2-candidate diff -U0 "$PARENT" -- "$ROUTER_PATH" | grep '^+' | grep -Eiq 'resultados|doke-public-footer'; then
+            echo 'Candidate contains route/footer hardcoding in added lines'
+            exit 1
+          fi
+          git -C ../nav002-r4c-d2-candidate diff --check "$PARENT"
+          node --check ../nav002-r4c-d2-candidate/$ROUTER_PATH
+          git -C ../nav002-r4c-d2-candidate config user.name doke-diagnostic
+          git -C ../nav002-r4c-d2-candidate config user.email doke-diagnostic@users.noreply.github.com
+          git -C ../nav002-r4c-d2-candidate add "$ROUTER_PATH"
+          git -C ../nav002-r4c-d2-candidate commit -m 'test(ux): reconstruct exact NAV002 r4c candidate for D2 descendant diagnosis'
+          candidate_tree="$(git -C ../nav002-r4c-d2-candidate rev-parse HEAD^{tree})"
+          router_blob="$(git -C ../nav002-r4c-d2-candidate rev-parse HEAD:$ROUTER_PATH)"
+          search_blob="$(git -C ../nav002-r4c-d2-candidate rev-parse HEAD:$SEARCH_PATH)"
+          patch_sha="$(git -C ../nav002-r4c-d2-candidate diff "$PARENT" HEAD --binary | sha256sum | awk '{print $1}')"
+          [[ "$candidate_tree" == "$EXPECTED_CANDIDATE_TREE" ]] || { echo "Candidate TREE mismatch: $candidate_tree"; exit 1; }
+          [[ "$router_blob" == "$EXPECTED_ROUTER_BLOB" ]] || { echo "Router blob mismatch: $router_blob"; exit 1; }
+          [[ "$search_blob" == "$SEARCH_BLOB" ]] || { echo "Search blob mismatch: $search_blob"; exit 1; }
+          [[ "$patch_sha" == "$EXPECTED_PATCH_SHA256" ]] || { echo "Patch SHA256 mismatch: $patch_sha"; exit 1; }
+          echo "CANDIDATE_TREE=$candidate_tree"
+          echo "ROUTER_BLOB=$router_blob"
+          echo "SEARCH_DATA_BLOB=$search_blob"
+          echo "PATCH_SHA256=$patch_sha"
+          echo 'R4C_IDENTITY=PASS'
+          echo 'PRODUCT_REMOTE_MUTATION=false'
+          echo 'MATRIX_MUTATION=false'
+          echo 'SNAPSHOT_MUTATION=false'
+
+      - name: Install dependencies and Chromium once
+        run: |
+          set -euo pipefail
+          cd ../nav002-r4c-d2-candidate
+          npm ci
+          npx playwright install chromium
+
+      - name: Diagnose main descendant geometry only
+        run: |
+          set -euo pipefail
+          python -m http.server 4175 --directory ../nav002-r4c-d2-candidate > "$RUNNER_TEMP/nav002-r4c-d2-server.log" 2>&1 &
+          pid=$!
+          cleanup() { kill "$pid" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ok=0
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:4175/index.html" >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          [[ "$ok" == 1 ]] || { echo 'Diagnostic server did not become ready'; exit 1; }
+          cd ../nav002-r4c-d2-candidate
+          node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const base = 'http://127.0.0.1:4175';
+          const viewport = { width: 820, height: 1180 };
+          const round3 = v => Math.round(Number(v || 0) * 1000) / 1000;
+
+          async function waitCertificationStable(page) {
+            await page.waitForLoadState('domcontentloaded');
+            if (page.url().includes('/resultados.html')) {
+              await page.waitForFunction(() => {
+                const form = document.querySelector('[data-results-filters-form]');
+                return form &&
+                  form.getAttribute('data-filter-authority') === '20260805-ux-filters-001-v1' &&
+                  document.querySelectorAll('[data-results-filter-status]').length === 1;
+              }, null, { timeout: 10000 });
+            }
+            await page.waitForTimeout(900);
+          }
+
+          async function captureMain(page, label) {
+            return page.evaluate((phaseLabel) => {
+              const main = document.querySelector('.page > .page__content');
+              if (!main) throw new Error('main .page__content missing');
+              const pathFor = node => {
+                const parts = [];
+                let cur = node;
+                while (cur && cur !== main) {
+                  const parent = cur.parentElement;
+                  if (!parent) break;
+                  const index = Array.prototype.indexOf.call(parent.children, cur);
+                  parts.push(index);
+                  cur = parent;
+                }
+                return parts.reverse().join('/');
+              };
+              const descriptor = node => {
+                const id = node.id ? `#${node.id}` : '';
+                const cls = typeof node.className === 'string' && node.className.trim()
+                  ? '.' + node.className.trim().split(/\s+/).sort().join('.')
+                  : '';
+                return `${node.tagName}${id}${cls}`;
+              };
+              const loadingState = node => ({
+                documentReadyState: document.readyState,
+                fontsStatus: document.fonts ? document.fonts.status : 'unsupported',
+                ariaBusy: node.getAttribute('aria-busy'),
+                hidden: node.hidden,
+                image: node.tagName === 'IMG' ? {
+                  complete: node.complete,
+                  naturalWidth: node.naturalWidth,
+                  naturalHeight: node.naturalHeight,
+                  currentSrc: node.currentSrc || '',
+                  loading: node.loading || '',
+                  decoding: node.decoding || ''
+                } : null
+              });
+              const captureNode = node => {
+                const r = node.getBoundingClientRect();
+                const s = getComputedStyle(node);
+                return {
+                  path: pathFor(node),
+                  selector: descriptor(node),
+                  ancestors: (() => {
+                    const out = [];
+                    let cur = node.parentElement;
+                    while (cur && cur !== main) {
+                      out.push({ path: pathFor(cur), selector: descriptor(cur) });
+                      cur = cur.parentElement;
+                    }
+                    out.push({ path: 'MAIN', selector: descriptor(main) });
+                    return out.reverse();
+                  })(),
+                  rect: {
+                    x: r.x, y: r.y, top: r.top, right: r.right,
+                    bottom: r.bottom, left: r.left, width: r.width, height: r.height
+                  },
+                  offsetHeight: node.offsetHeight,
+                  scrollHeight: node.scrollHeight,
+                  display: s.display,
+                  position: s.position,
+                  height: s.height,
+                  minHeight: s.minHeight,
+                  margins: {
+                    top: s.marginTop, right: s.marginRight,
+                    bottom: s.marginBottom, left: s.marginLeft
+                  },
+                  paddings: {
+                    top: s.paddingTop, right: s.paddingRight,
+                    bottom: s.paddingBottom, left: s.paddingLeft
+                  },
+                  childCount: node.children.length,
+                  loadingState: loadingState(node)
+                };
+              };
+              const mainRect = main.getBoundingClientRect();
+              return {
+                label: phaseLabel,
+                main: {
+                  rect: {
+                    x: mainRect.x, y: mainRect.y, top: mainRect.top, right: mainRect.right,
+                    bottom: mainRect.bottom, left: mainRect.left,
+                    width: mainRect.width, height: mainRect.height
+                  },
+                  offsetHeight: main.offsetHeight,
+                  scrollHeight: main.scrollHeight,
+                  childCount: main.children.length
+                },
+                descendants: Array.from(main.querySelectorAll('*')).map(captureNode)
+              };
+            }, label);
+          }
+
+          async function direct(browser) {
+            const context = await browser.newContext({ viewport });
+            const page = await context.newPage();
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto(base + '/resultados.html', { waitUntil: 'domcontentloaded' });
+            await waitCertificationStable(page);
+            const capture = await captureMain(page, 'certificationReady');
+            await context.close();
+            return { capture, errors };
+          }
+
+          async function routed(browser) {
+            const context = await browser.newContext({ viewport });
+            const page = await context.newPage();
+            const errors = [];
+            page.on('pageerror', e => errors.push(String(e?.message || e)));
+            await page.goto(base + '/index.html', { waitUntil: 'domcontentloaded' });
+            await waitCertificationStable(page);
+            await page.waitForFunction(() => typeof window.DokeNavigate === 'function');
+            await page.evaluate(() => window.DokeNavigate('/resultados.html'));
+            await page.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+            await waitCertificationStable(page);
+            const capture = await captureMain(page, 'certificationReady');
+            await context.close();
+            return { capture, errors };
+          }
+
+          function numericDelta(a, b) {
+            return round3(Math.abs(Number(a || 0) - Number(b || 0)));
+          }
+
+          function compareNode(d, r) {
+            if (!d || !r) {
+              return { structural: true, directPresent: Boolean(d), routedPresent: Boolean(r) };
+            }
+            const rect = {};
+            for (const key of ['x','y','top','right','bottom','left','width','height']) {
+              const delta = numericDelta(d.rect[key], r.rect[key]);
+              if (delta !== 0) rect[key] = delta;
+            }
+            const offsetHeight = numericDelta(d.offsetHeight, r.offsetHeight);
+            const scrollHeight = numericDelta(d.scrollHeight, r.scrollHeight);
+            const style = {};
+            for (const key of ['display','position','height','minHeight']) {
+              if (d[key] !== r[key]) style[key] = { direct: d[key], routed: r[key] };
+            }
+            const margins = {};
+            for (const key of ['top','right','bottom','left']) {
+              if (d.margins[key] !== r.margins[key]) margins[key] = { direct: d.margins[key], routed: r.margins[key] };
+            }
+            const paddings = {};
+            for (const key of ['top','right','bottom','left']) {
+              if (d.paddings[key] !== r.paddings[key]) paddings[key] = { direct: d.paddings[key], routed: r.paddings[key] };
+            }
+            return {
+              structural: false,
+              rect,
+              offsetHeight,
+              scrollHeight,
+              style,
+              margins,
+              paddings,
+              childCount: d.childCount === r.childCount ? null : { direct: d.childCount, routed: r.childCount },
+              loadingStateEqual: JSON.stringify(d.loadingState) === JSON.stringify(r.loadingState)
+            };
+          }
+
+          function hasGeometryDelta(cmp) {
+            if (cmp.structural) return true;
+            return Object.keys(cmp.rect).length > 0 ||
+              cmp.offsetHeight !== 0 ||
+              cmp.scrollHeight !== 0 ||
+              Object.keys(cmp.style).length > 0 ||
+              Object.keys(cmp.margins).length > 0 ||
+              Object.keys(cmp.paddings).length > 0 ||
+              Boolean(cmp.childCount);
+          }
+
+          function diagnosePair(directCapture, routedCapture) {
+            const dMap = new Map(directCapture.descendants.map(n => [n.path, n]));
+            const rMap = new Map(routedCapture.descendants.map(n => [n.path, n]));
+            const allPaths = Array.from(new Set([...dMap.keys(), ...rMap.keys()]))
+              .sort((a, b) => {
+                const aa = a.split('/').map(Number), bb = b.split('/').map(Number);
+                const len = Math.max(aa.length, bb.length);
+                for (let i = 0; i < len; i += 1) {
+                  if (aa[i] === undefined) return -1;
+                  if (bb[i] === undefined) return 1;
+                  if (aa[i] !== bb[i]) return aa[i] - bb[i];
+                }
+                return 0;
+              });
+            const divergent = [];
+            for (const path of allPaths) {
+              const d = dMap.get(path) || null;
+              const r = rMap.get(path) || null;
+              const comparison = compareNode(d, r);
+              if (hasGeometryDelta(comparison)) {
+                divergent.push({
+                  path,
+                  selector: d?.selector || r?.selector || null,
+                  ancestors: d?.ancestors || r?.ancestors || [],
+                  direct: d,
+                  routed: r,
+                  comparison
+                });
+              }
+            }
+            const dimensionDivergent = divergent.filter(x =>
+              x.comparison.structural ||
+              x.comparison.offsetHeight !== 0 ||
+              x.comparison.scrollHeight !== 0 ||
+              x.comparison.rect?.height !== undefined ||
+              x.comparison.rect?.width !== undefined ||
+              Object.keys(x.comparison.style || {}).length ||
+              Object.keys(x.comparison.margins || {}).length ||
+              Object.keys(x.comparison.paddings || {}).length ||
+              x.comparison.childCount
+            );
+            const firstDescendant = divergent[0] || null;
+            const firstDimensionDescendant = dimensionDivergent[0] || null;
+            return {
+              criterionPreserved: 'topDelta=0',
+              directMain: directCapture.main,
+              routedMain: routedCapture.main,
+              mainHeightDelta: numericDelta(directCapture.main.rect.height, routedCapture.main.rect.height),
+              mainBottomDelta: numericDelta(directCapture.main.rect.bottom, routedCapture.main.rect.bottom),
+              descendantCount: { direct: directCapture.descendants.length, routed: routedCapture.descendants.length },
+              firstDescendant,
+              firstDimensionDescendant,
+              divergentCount: divergent.length,
+              divergentPreview: divergent.slice(0, 20)
+            };
+          }
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const repeats = [];
+            for (let repeat = 1; repeat <= 3; repeat += 1) {
+              const d = await direct(browser);
+              const r = await routed(browser);
+              assert.deepEqual(d.errors, [], `repeat ${repeat}: direct page errors`);
+              assert.deepEqual(r.errors, [], `repeat ${repeat}: routed page errors`);
+              const diagnosis = diagnosePair(d.capture, r.capture);
+              repeats.push({ repeat, diagnosis });
+              console.log(`D2_REPEAT_${repeat}=` + JSON.stringify(diagnosis));
+            }
+            await browser.close();
+
+            const nonzero = repeats.filter(x =>
+              x.diagnosis.mainHeightDelta !== 0 ||
+              x.diagnosis.mainBottomDelta !== 0 ||
+              x.diagnosis.divergentCount !== 0
+            );
+            const selected = nonzero[0] || repeats[0];
+            const evidence = {
+              viewport,
+              repeats: repeats.map(x => ({
+                repeat: x.repeat,
+                mainHeightDelta: x.diagnosis.mainHeightDelta,
+                mainBottomDelta: x.diagnosis.mainBottomDelta,
+                descendantCount: x.diagnosis.descendantCount,
+                firstDescendant: x.diagnosis.firstDescendant,
+                firstDimensionDescendant: x.diagnosis.firstDimensionDescendant,
+                divergentCount: x.diagnosis.divergentCount
+              })),
+              selectedRepeat: selected.repeat,
+              node: selected.diagnosis.firstDimensionDescendant || selected.diagnosis.firstDescendant,
+              criterionPreserved: 'topDelta=0',
+              productRemoteMutation: false,
+              matrixMutation: false,
+              snapshotMutation: false
+            };
+            fs.writeFileSync(
+              process.env.RUNNER_TEMP + '/nav002-r4c-main-descendant-d2.json',
+              JSON.stringify(evidence, null, 2)
+            );
+            const n = evidence.node;
+            const summary = [
+              'criterionPreserved=topDelta=0',
+              'selectedRepeat=' + JSON.stringify(evidence.selectedRepeat),
+              'node=' + JSON.stringify(n?.selector || null),
+              'path=' + JSON.stringify(n?.path || null),
+              'ancestors=' + JSON.stringify(n?.ancestors || []),
+              'rect=' + JSON.stringify({ direct: n?.direct?.rect || null, routed: n?.routed?.rect || null }),
+              'offsetHeight=' + JSON.stringify({ direct: n?.direct?.offsetHeight ?? null, routed: n?.routed?.offsetHeight ?? null }),
+              'scrollHeight=' + JSON.stringify({ direct: n?.direct?.scrollHeight ?? null, routed: n?.routed?.scrollHeight ?? null }),
+              'display=' + JSON.stringify({ direct: n?.direct?.display ?? null, routed: n?.routed?.display ?? null }),
+              'position=' + JSON.stringify({ direct: n?.direct?.position ?? null, routed: n?.routed?.position ?? null }),
+              'height=' + JSON.stringify({ direct: n?.direct?.height ?? null, routed: n?.routed?.height ?? null }),
+              'minHeight=' + JSON.stringify({ direct: n?.direct?.minHeight ?? null, routed: n?.routed?.minHeight ?? null }),
+              'margins=' + JSON.stringify({ direct: n?.direct?.margins ?? null, routed: n?.routed?.margins ?? null }),
+              'paddings=' + JSON.stringify({ direct: n?.direct?.paddings ?? null, routed: n?.routed?.paddings ?? null }),
+              'childCount=' + JSON.stringify({ direct: n?.direct?.childCount ?? null, routed: n?.routed?.childCount ?? null }),
+              'loadingState=' + JSON.stringify({ direct: n?.direct?.loadingState ?? null, routed: n?.routed?.loadingState ?? null })
+            ].join('\n') + '\n';
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
+            console.log('D2_EVIDENCE=' + JSON.stringify(evidence));
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+
+      - name: Upload D2 descendant diagnostic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: nav002-r4c-main-descendant-d2
+          path: ${{ runner.temp }}/nav002-r4c-main-descendant-d2.json
+          if-no-files-found: error
+          retention-days: 7
