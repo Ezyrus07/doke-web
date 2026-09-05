@@ -1,0 +1,79 @@
+name: COM-B01 Policy Approval Evidence Packet Adapter
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-policy-approval-evidence-packet-adapter.js'
+      - 'config/com-b01-policy-approval-evidence-packet-adapter-boundary.json'
+      - 'tests/fixtures/com-b01-policy-approval-evidence-packet-adapter-cases.json'
+      - 'scripts/audit-com-b01-policy-approval-evidence-packet-adapter.js'
+      - 'scripts/test-com-b01-policy-approval-evidence-packet-adapter.js'
+      - 'docs/COM-B01-POLICY-APPROVAL-EVIDENCE-PACKET-ADAPTER.md'
+      - '.github/workflows/com-b01-policy-approval-evidence-packet-adapter.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-policy-approval-evidence-packet-adapter.js'
+      - 'config/com-b01-policy-approval-evidence-packet-adapter-boundary.json'
+      - 'tests/fixtures/com-b01-policy-approval-evidence-packet-adapter-cases.json'
+      - 'scripts/audit-com-b01-policy-approval-evidence-packet-adapter.js'
+      - 'scripts/test-com-b01-policy-approval-evidence-packet-adapter.js'
+      - 'docs/COM-B01-POLICY-APPROVAL-EVIDENCE-PACKET-ADAPTER.md'
+      - '.github/workflows/com-b01-policy-approval-evidence-packet-adapter.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard authorized source lineage and protected blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTHORIZED_SOURCE_HEAD='5eb51438fa6a89e1a3c8587eabeab16153d18855'
+          git cat-file -e "${AUTHORIZED_SOURCE_HEAD}^{commit}"
+          git merge-base --is-ancestor "$AUTHORIZED_SOURCE_HEAD" HEAD
+
+          test "$(git rev-parse ${AUTHORIZED_SOURCE_HEAD}:backend/modules/communities/community-policy-operational-integration-gate.js)" = '4c4424401b52060303735f178058a34d138ff42c'
+          test "$(git rev-parse ${AUTHORIZED_SOURCE_HEAD}:config/com-b01-server-owned-policy-approval-evidence-template.json)" = 'e98a7fcb57706a17edae9bd3bbaaa36c42801817'
+          test "$(git rev-parse ${AUTHORIZED_SOURCE_HEAD}:docs/validation/COM-B01-POLICY-APPROVAL-EVIDENCE-TEMPLATE-CERTIFICATION.json)" = '517479c1e1ae92226422fd0d27f77c73f4665738'
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-policy-operational-integration-gate.js)" = '4c4424401b52060303735f178058a34d138ff42c'
+          test "$(git rev-parse HEAD:config/com-b01-server-owned-policy-approval-evidence-template.json)" = 'e98a7fcb57706a17edae9bd3bbaaa36c42801817'
+          test "$(git rev-parse HEAD:docs/validation/COM-B01-POLICY-APPROVAL-EVIDENCE-TEMPLATE-CERTIFICATION.json)" = '517479c1e1ae92226422fd0d27f77c73f4665738'
+
+      - name: Verify adapter JavaScript syntax
+        run: node --check backend/modules/communities/community-policy-approval-evidence-packet-adapter.js
+
+      - name: Audit adapter boundary
+        run: node scripts/audit-com-b01-policy-approval-evidence-packet-adapter.js
+
+      - name: Run adapter conformance
+        run: node scripts/test-com-b01-policy-approval-evidence-packet-adapter.js
+
+      - name: Regress canonical COM-B01 gate audit
+        run: node scripts/audit-com-b01-policy-operational-integration-gate.js
+
+      - name: Regress canonical COM-B01 gate conformance
+        run: node scripts/test-com-b01-policy-operational-integration-gate.js
+
+      - name: Audit Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Audit agent governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check
