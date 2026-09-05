@@ -660,7 +660,12 @@
     });
   }
 
-  function replaceShell(nextDoc, path) {
+  function isPersistentPageChromeNode(node) {
+  if (!node || node.nodeType !== 1 || typeof node.matches !== 'function') return false;
+  return node.matches('nav, [role="navigation"]');
+}
+
+function replaceShell(nextDoc, path) {
     var currentShell = document.querySelector('.app-shell');
     var nextShell = nextDoc.querySelector('.app-shell');
     if (!currentShell || !nextShell) {
@@ -688,7 +693,26 @@
       currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
         return node.cloneNode(true);
       }));
-      currentContent.replaceWith(nextContent.cloneNode(true));
+      var replacementContent = nextContent.cloneNode(true);
+      currentContent.replaceWith(replacementContent);
+      var persistentPageChrome = Array.prototype.filter.call(currentPage.children, function (node) {
+        return node !== currentHeader && node !== replacementContent && isPersistentPageChromeNode(node);
+      });
+      var replacementPageNodes = Array.prototype.reduce.call(nextPage.childNodes, function (nodes, node) {
+        if (node === nextHeader) {
+          nodes.push(currentHeader);
+          return nodes;
+        }
+        if (node === nextContent) {
+          nodes.push(replacementContent);
+          return nodes;
+        }
+        if (isPersistentPageChromeNode(node)) return nodes;
+        nodes.push(node.cloneNode(true));
+        return nodes;
+      }, []);
+      persistentPageChrome.forEach(function (node) { replacementPageNodes.push(node); });
+      currentPage.replaceChildren.apply(currentPage, replacementPageNodes);
       Array.prototype.slice.call(currentShell.children).forEach(function (node) {
         if (node === currentSidebar || node === currentPage) return;
         node.remove();
