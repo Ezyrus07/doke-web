@@ -1,0 +1,530 @@
+name: TEMP UX-QA-DEBT-005 Post NAV Win32 Candidate Artifact R13
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-post-nav-win32-candidate-artifact-r13
+
+permissions:
+  contents: read
+
+env:
+  PRODUCT_HEAD: 943930ffc31403872151fa76560460e97a619a13
+  PRODUCT_TREE: d3203764606f9708b4f795f531cb77384b210610
+  NAV003: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+  STACK_BASE: b260bfb59241d15f5cee76dedd2b60e115919425
+  PERMANENT_BRANCH: ux/ux-nav-debt-002-route-owned-page-reconciliation
+  WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-post-nav-win32-candidate-artifact-r13.yml
+  SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+  OLD_SNAPSHOT_BLOB: 1580b5410bcce1ea5424d5528356291a0f288c4e
+  DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+jobs:
+  qualify-win32-artifact:
+    runs-on: windows-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact product identity, stack and preimage
+        shell: bash
+        run: |
+          set -euo pipefail
+          controller="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$controller")"
+          test "${#lineage[@]}" -eq 2
+          test "${lineage[1]}" = "$PRODUCT_HEAD"
+
+          mapfile -t controller_changed < <(git diff-tree --no-commit-id --name-only -r "$controller")
+          test "${#controller_changed[@]}" -eq 1
+          test "${controller_changed[0]}" = "$WORKFLOW_PATH"
+
+          test "$(git rev-parse "$PRODUCT_HEAD^{tree}")" = "$PRODUCT_TREE"
+          test "$(git rev-parse "$PRODUCT_HEAD^")" = "$NAV003"
+          test "$(git rev-parse "$NAV003^")" = "$STACK_BASE"
+          test "$(git rev-parse "$PRODUCT_HEAD:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+
+          permanent_remote="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$permanent_remote" = "$PRODUCT_HEAD"
+
+          mapfile -t product_delta < <(git diff --name-only "$PRODUCT_HEAD" "$controller")
+          test "${#product_delta[@]}" -eq 1
+          test "${product_delta[0]}" = "$WORKFLOW_PATH"
+          git diff --check "$PRODUCT_HEAD" "$controller"
+
+          evidence="$RUNNER_TEMP/qa005-r13-evidence"
+          mkdir -p "$evidence"
+          node - "$evidence/identity.json" "$controller" <<'NODE'
+          const fs = require('node:fs');
+          const [out, controller] = process.argv.slice(2);
+          fs.writeFileSync(out, JSON.stringify({
+            result: 'PASS',
+            controllerSha: controller,
+            controllerScope: [process.env.WORKFLOW_PATH],
+            productHead: process.env.PRODUCT_HEAD,
+            productTree: process.env.PRODUCT_TREE,
+            nav003: process.env.NAV003,
+            stackBase: process.env.STACK_BASE,
+            permanentBranch: process.env.PERMANENT_BRANCH,
+            snapshotPath: process.env.SNAPSHOT,
+            oldSnapshotBlob: process.env.OLD_SNAPSHOT_BLOB,
+            repositoryOnly: true,
+            artifactOnly: true,
+            productMutation: false,
+            permanentBranchMutation: false,
+            prMutation: false,
+            issueMutation: false,
+            matrixMutation: false,
+            snapshotMutation: false,
+            merge: false,
+            supabaseMutation: false,
+            migrationMutation: false,
+            stagingMutation: false,
+            productionMutation: false
+          }, null, 2));
+          NODE
+          echo "IDENTITY_FREEZE=PASS"
+          echo "OLD_BASELINE_IDENTITY=PASS"
+          echo "TEMP_SCOPE=PASS"
+
+      - name: Prepare exact product worktree and locked Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          product_dir="$RUNNER_TEMP/qa005-r13-product"
+          git worktree add --detach "$product_dir" "$PRODUCT_HEAD" >/dev/null
+          cd "$product_dir"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          test "$(git rev-parse HEAD)" = "$PRODUCT_HEAD"
+          test "$(git rev-parse HEAD^{tree})" = "$PRODUCT_TREE"
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+          cp "$SNAPSHOT" "$RUNNER_TEMP/qa005-r13-old-baseline.png"
+          echo "PRODUCT_WORKTREE=PASS"
+
+      - name: Minimum repository governance on exact product HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-r13-product"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard "$PRODUCT_HEAD" >/dev/null
+          git diff --quiet
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+          echo "MINIMUM_GOVERNANCE=PASS"
+
+      - name: Generate and freeze candidate via canonical Playwright update path
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-r13-product"
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js \
+            --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" \
+            --update-snapshots --workers=1 --retries=0
+
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$SNAPSHOT"
+          test -s "$SNAPSHOT"
+
+          candidate_blob="$(git hash-object "$SNAPSHOT")"
+          candidate_sha256="$(sha256sum "$SNAPSHOT" | awk '{print $1}')"
+          candidate_bytes="$(wc -c < "$SNAPSHOT" | tr -d ' ')"
+          test "$candidate_blob" != "$OLD_SNAPSHOT_BLOB"
+
+          evidence="$RUNNER_TEMP/qa005-r13-evidence"
+          cp "$SNAPSHOT" "$evidence/resultados-desktop-1366x768-win32.candidate.png"
+          printf '%s\n' "$candidate_blob" > "$evidence/candidate-blob.txt"
+          printf '%s\n' "$candidate_sha256" > "$evidence/candidate-sha256.txt"
+          printf '%s\n' "$candidate_bytes" > "$evidence/candidate-bytes.txt"
+
+          {
+            echo "CANDIDATE_BLOB=$candidate_blob"
+            echo "CANDIDATE_SHA256=$candidate_sha256"
+            echo "CANDIDATE_BYTES=$candidate_bytes"
+          } >> "$GITHUB_ENV"
+
+          node - "$evidence/provenance.json" "$candidate_blob" "$candidate_sha256" "$candidate_bytes" <<'NODE'
+          const fs = require('node:fs');
+          const [out, candidateBlob, candidateSha256, candidateBytes] = process.argv.slice(2);
+          const png = fs.readFileSync(process.env.SNAPSHOT);
+          if (png.toString('hex', 0, 8) !== '89504e470d0a1a0a') throw new Error('candidate is not a PNG');
+          const width = png.readUInt32BE(16);
+          const height = png.readUInt32BE(20);
+          if (width !== 1366 || height !== 768) throw new Error(`candidate dimensions ${width}x${height}`);
+          fs.writeFileSync(out, JSON.stringify({
+            result: 'PASS',
+            generationPath: 'repository Playwright visual test --update-snapshots',
+            runnerOS: process.platform,
+            productHead: process.env.PRODUCT_HEAD,
+            productTree: process.env.PRODUCT_TREE,
+            snapshotPath: process.env.SNAPSHOT,
+            oldSnapshotBlob: process.env.OLD_SNAPSHOT_BLOB,
+            candidateBlob,
+            candidateSha256,
+            candidateBytes: Number(candidateBytes),
+            dimensions: { width, height },
+            candidateScope: [process.env.SNAPSHOT],
+            criteriaRelaxed: 0,
+            productMutation: false,
+            repositoryCandidateCommit: false,
+            permanentSnapshotMutation: false
+          }, null, 2));
+          NODE
+          echo "ONE_FILE_BINARY_CANDIDATE=PASS"
+          echo "CANDIDATE_BLOB=$candidate_blob"
+          echo "CANDIDATE_SHA256=$candidate_sha256"
+          echo "CANDIDATE_BYTES=$candidate_bytes"
+
+      - name: Candidate passes canonical visual test three times
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-r13-product"
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js \
+            --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" \
+            --repeat-each=3 --workers=1 --retries=0
+          test "$(git hash-object "$SNAPSHOT")" = "$CANDIDATE_BLOB"
+          test "$(sha256sum "$SNAPSHOT" | awk '{print $1}')" = "$CANDIDATE_SHA256"
+          test "$(wc -c < "$SNAPSHOT" | tr -d ' ')" = "$CANDIDATE_BYTES"
+          printf '%s\n' '{"result":"PASS","canonicalRuns":3,"workers":1,"retries":0,"criteriaRelaxed":0}' > "$RUNNER_TEMP/qa005-r13-evidence/visual.json"
+          echo "VISUAL_QUALIFICATION=PASS"
+          echo "VISUAL_REPEAT_COUNT=3"
+          echo "CRITERIA_RELAXED=0"
+
+      - name: Old preimage fails and frozen candidate passes under unchanged criteria
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-r13-product"
+          cp "$RUNNER_TEMP/qa005-r13-old-baseline.png" "$SNAPSHOT"
+          test "$(git hash-object "$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js \
+            --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" \
+            --workers=1 --retries=0 > "$RUNNER_TEMP/qa005-r13-old-baseline-negative.log" 2>&1
+          old_rc=$?
+          set -e
+          cat "$RUNNER_TEMP/qa005-r13-old-baseline-negative.log"
+          test "$old_rc" -ne 0
+          grep -Eqi "Screenshot comparison failed|pixels?.*different|toHaveScreenshot|exceeded" "$RUNNER_TEMP/qa005-r13-old-baseline-negative.log"
+
+          evidence="$RUNNER_TEMP/qa005-r13-evidence"
+          cp "$RUNNER_TEMP/qa005-r13-old-baseline-negative.log" "$evidence/old-baseline-negative.log"
+          cp "$evidence/resultados-desktop-1366x768-win32.candidate.png" "$SNAPSHOT"
+          test "$(git hash-object "$SNAPSHOT")" = "$CANDIDATE_BLOB"
+
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js \
+            --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" \
+            --workers=1 --retries=0
+          printf '%s\n' '{"result":"PASS","oldPreimageFails":true,"candidateRestoredPasses":true,"criteriaRelaxed":0}' > "$RUNNER_TEMP/qa005-r13-evidence/negative.json"
+          echo "NEGATIVE_PREIMAGE_PROOF=PASS"
+          echo "CANDIDATE_RESTORED_AND_GREEN=PASS"
+          echo "CRITERIA_RELAXED=0"
+
+      - name: Official Resultados direct-load and stable-shell contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-r13-product"
+          node node_modules/@playwright/test/cli.js test tests/e2e/global-layout-contract.spec.js \
+            --grep "resultados.html keeps structural layout contract|index -> pedidos -> mensagens -> resultados -> notificacoes preserves shell and history" \
+            --workers=1 --retries=0
+          printf '%s\n' '{"result":"PASS","officialGlobalLayoutContract":true,"workers":1,"retries":0}' > "$RUNNER_TEMP/qa005-r13-evidence/official-layout.json"
+          echo "OFFICIAL_DIRECT_AND_STABLE_SHELL=PASS"
+
+      - name: Direct-load versus stable-shell geometry parity at 1366x768
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-r13-product"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const http = require('node:http');
+          const { spawn } = require('node:child_process');
+          const { chromium } = require('@playwright/test');
+
+          const evidence = path.join(process.env.RUNNER_TEMP, 'qa005-r13-evidence');
+          const baseURL = 'http://127.0.0.1:5500';
+          const server = spawn(process.execPath, ['scripts/serve-static-site.js', '--host=127.0.0.1', '--port=5500'], {
+            env: { ...process.env, DOKE_E2E_DISABLE_REMOTE_SERVICES: '1' },
+            stdio: ['ignore', 'pipe', 'pipe']
+          });
+
+          const waitForServer = () => new Promise((resolve, reject) => {
+            let attempts = 0;
+            const probe = () => {
+              attempts += 1;
+              const req = http.get(`${baseURL}/index.html`, (res) => {
+                res.resume();
+                if (res.statusCode === 200) return resolve();
+                if (attempts >= 80) return reject(new Error(`static server status ${res.statusCode}`));
+                setTimeout(probe, 250);
+              });
+              req.on('error', () => {
+                if (attempts >= 80) return reject(new Error('static server unavailable'));
+                setTimeout(probe, 250);
+              });
+            };
+            probe();
+          });
+
+          const deterministic = async (page) => {
+            await page.route('https://unpkg.com/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ contentType: 'text/css', body: '' }));
+            await page.route('https://fonts.gstatic.com/**', (route) => route.abort());
+            await page.addInitScript(() => {
+              localStorage.setItem('doke.auth.session.v1', JSON.stringify({
+                provider: 'mock',
+                sessionStatus: 'active',
+                accountStatus: 'active',
+                user: {
+                  id: 'qa005-r13-client',
+                  role: 'client',
+                  name: 'QA005 R13',
+                  email: 'qa005-r13@example.test',
+                  accountStatus: 'active'
+                }
+              }));
+            });
+          };
+
+          const stabilize = async (page) => {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.waitForFunction(() => document.body?.dataset.page === 'resultados', null, { timeout: 30000 });
+            await page.waitForFunction(() => !document.querySelector('[aria-busy="true"]'), null, { timeout: 30000 }).catch(() => {});
+            await page.addStyleTag({
+              content: '*,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important;transition-delay:0s!important;caret-color:transparent!important}'
+            });
+            await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+          };
+
+          const signature = (page) => page.evaluate(() => {
+            const visible = (el) => {
+              if (!el) return false;
+              const r = el.getBoundingClientRect();
+              const s = getComputedStyle(el);
+              return r.width > 0 && r.height > 0 && s.display !== 'none' && s.visibility !== 'hidden';
+            };
+            const first = (selectors) => {
+              for (const selector of selectors) {
+                const el = Array.from(document.querySelectorAll(selector)).find(visible);
+                if (el) return el;
+              }
+              return null;
+            };
+            const read = (el) => {
+              if (!el) return null;
+              const r = el.getBoundingClientRect();
+              const s = getComputedStyle(el);
+              return {
+                left: Math.round(r.left * 10) / 10,
+                top: Math.round(r.top * 10) / 10,
+                width: Math.round(r.width * 10) / 10,
+                height: Math.round(r.height * 10) / 10,
+                display: s.display,
+                position: s.position,
+                gridTemplateColumns: s.gridTemplateColumns,
+                gap: s.gap,
+                paddingLeft: s.paddingLeft,
+                paddingRight: s.paddingRight
+              };
+            };
+            const page = document.querySelector('.page');
+            const root = document.documentElement;
+            return {
+              bodyPage: document.body?.dataset.page || '',
+              overflow: root.scrollWidth > root.clientWidth + 1,
+              page: read(page),
+              header: read(first(['[data-app-header] .app-header__inner', '[data-app-header]', '.app-header__inner'])),
+              workspace: read(first(['.search-results-workspace', '.page__content-inner'])),
+              searchbar: read(first(['.results-searchbar', '.doke-search-pill'])),
+              layout: read(first(['.results-layout', '.results-main'])),
+              footer: read(first(['.page > .doke-public-footer', '.doke-public-footer'])),
+              pageChildren: page ? Array.from(page.children).map((node) => `${node.tagName}${node.id ? `#${node.id}` : ''}${node.className ? `.${String(node.className).trim().replace(/\s+/g, '.')}` : ''}`) : []
+            };
+          });
+
+          const compare = (direct, routed) => {
+            if (direct.bodyPage !== 'resultados' || routed.bodyPage !== 'resultados') {
+              throw new Error(`body[data-page] mismatch direct=${direct.bodyPage} routed=${routed.bodyPage}`);
+            }
+            if (direct.overflow || routed.overflow) {
+              throw new Error(`horizontal overflow direct=${direct.overflow} routed=${routed.overflow}`);
+            }
+            if (!direct.footer || !routed.footer) {
+              throw new Error('Resultados footer missing on direct or stable-shell path');
+            }
+            if (JSON.stringify(direct.pageChildren) !== JSON.stringify(routed.pageChildren)) {
+              throw new Error(`route-owned child-set drift direct=${JSON.stringify(direct.pageChildren)} routed=${JSON.stringify(routed.pageChildren)}`);
+            }
+            const deltas = {};
+            for (const key of ['page', 'header', 'workspace', 'searchbar', 'layout', 'footer']) {
+              if (!direct[key] || !routed[key]) throw new Error(`${key} missing`);
+              deltas[key] = {};
+              for (const metric of ['left', 'top', 'width', 'height']) {
+                const delta = Math.round(Math.abs(direct[key][metric] - routed[key][metric]) * 10) / 10;
+                deltas[key][metric] = delta;
+                if (delta > 1) throw new Error(`${key}.${metric} geometry delta ${delta}px`);
+              }
+              for (const prop of ['display', 'position', 'gridTemplateColumns', 'gap', 'paddingLeft', 'paddingRight']) {
+                if (direct[key][prop] !== routed[key][prop]) {
+                  throw new Error(`${key}.${prop} computed-style drift direct=${direct[key][prop]} routed=${routed[key][prop]}`);
+                }
+              }
+            }
+            return deltas;
+          };
+
+          (async () => {
+            let browser;
+            try {
+              await waitForServer();
+              browser = await chromium.launch();
+              const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+
+              const directPage = await context.newPage();
+              await deterministic(directPage);
+              await directPage.goto(`${baseURL}/resultados.html?q=qa005-r13`, { waitUntil: 'domcontentloaded' });
+              await stabilize(directPage);
+              const direct = await signature(directPage);
+
+              const routedPage = await context.newPage();
+              await deterministic(routedPage);
+              await routedPage.goto(`${baseURL}/index.html`, { waitUntil: 'domcontentloaded' });
+              await routedPage.waitForLoadState('networkidle').catch(() => {});
+              await routedPage.waitForFunction(() => typeof window.DokeNavigate === 'function', null, { timeout: 30000 });
+              await routedPage.evaluate(async () => {
+                const result = window.DokeNavigate('/resultados.html?q=qa005-r13');
+                if (result && typeof result.then === 'function') await result;
+              });
+              await routedPage.waitForURL(/\/resultados\.html(?:[?#]|$)/, { timeout: 30000 });
+              await stabilize(routedPage);
+              const routed = await signature(routedPage);
+
+              const deltas = compare(direct, routed);
+              const receipt = {
+                result: 'PASS',
+                viewport: { width: 1366, height: 768 },
+                direct,
+                routed,
+                deltas,
+                criteriaRelaxed: 0,
+                horizontalOverflow: false,
+                routeOwnedChildSetParity: true
+              };
+              fs.writeFileSync(path.join(evidence, 'geometry.json'), JSON.stringify(receipt, null, 2));
+              console.log('DIRECT_STABLE_GEOMETRY=' + JSON.stringify(receipt));
+            } finally {
+              if (browser) await browser.close().catch(() => {});
+              server.kill();
+            }
+          })().catch((error) => {
+            fs.writeFileSync(path.join(evidence, 'geometry-failure.txt'), String(error?.stack || error));
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+          echo "DIRECT_STABLE_GEOMETRY=PASS"
+
+      - name: Emit certification receipt
+        if: always()
+        shell: bash
+        run: |
+          evidence="$RUNNER_TEMP/qa005-r13-evidence"
+          mkdir -p "$evidence"
+          node - "$evidence" <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const dir = process.argv[2];
+
+          const load = (name) => {
+            const file = path.join(dir, name);
+            if (!fs.existsSync(file)) return null;
+            try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+            catch (error) { return { result: 'INVALID', error: String(error) }; }
+          };
+
+          const identity = load('identity.json');
+          const provenance = load('provenance.json');
+          const visual = load('visual.json');
+          const negative = load('negative.json');
+          const officialLayout = load('official-layout.json');
+          const geometry = load('geometry.json');
+          const candidatePath = path.join(dir, 'resultados-desktop-1366x768-win32.candidate.png');
+          const reasons = [];
+
+          for (const [name, value] of Object.entries({ identity, provenance, visual, negative, officialLayout, geometry })) {
+            if (!value) reasons.push(`${name}:missing`);
+            else if (value.result !== 'PASS') reasons.push(`${name}:${value.result}`);
+          }
+          if (!fs.existsSync(candidatePath)) reasons.push('candidate:missing');
+          if (provenance) {
+            if (provenance.productHead !== process.env.PRODUCT_HEAD) reasons.push('productHead:mismatch');
+            if (provenance.productTree !== process.env.PRODUCT_TREE) reasons.push('productTree:mismatch');
+            if (provenance.oldSnapshotBlob !== process.env.OLD_SNAPSHOT_BLOB) reasons.push('oldSnapshotBlob:mismatch');
+            if (provenance.criteriaRelaxed !== 0) reasons.push('provenance:criteria-relaxed');
+            if (provenance.dimensions?.width !== 1366 || provenance.dimensions?.height !== 768) reasons.push('candidate:dimensions');
+          }
+          if (visual?.criteriaRelaxed !== 0) reasons.push('visual:criteria-relaxed');
+          if (negative?.criteriaRelaxed !== 0) reasons.push('negative:criteria-relaxed');
+          if (geometry?.criteriaRelaxed !== 0) reasons.push('geometry:criteria-relaxed');
+
+          const pass = reasons.length === 0;
+          const receipt = {
+            result: pass ? 'PASS' : 'INCOMPLETE',
+            classification: pass
+              ? 'UX_QA_DEBT_005_WIN32_CANDIDATE_ARTIFACT_CERTIFIED'
+              : 'UX_QA_DEBT_005_WIN32_CANDIDATE_ARTIFACT_INCOMPLETE',
+            reasons,
+            productHead: process.env.PRODUCT_HEAD,
+            productTree: process.env.PRODUCT_TREE,
+            snapshotPath: process.env.SNAPSHOT,
+            oldSnapshotBlob: process.env.OLD_SNAPSHOT_BLOB,
+            candidateBlob: provenance?.candidateBlob || null,
+            candidateSha256: provenance?.candidateSha256 || null,
+            candidateBytes: provenance?.candidateBytes ?? null,
+            dimensions: provenance?.dimensions || null,
+            generationPath: provenance?.generationPath || null,
+            visualQualification: visual,
+            negativePreimageProof: negative,
+            officialDirectStableShellContract: officialLayout,
+            directStableShellGeometry: geometry?.result === 'PASS',
+            geometryMaxAllowedDeltaPx: 1,
+            criteriaRelaxed: 0,
+            repositoryOnly: true,
+            artifactOnly: true,
+            candidateCommitCreated: false,
+            permanentPromotionAuthorized: false,
+            productMutation: false,
+            permanentBranchMutation: false,
+            permanentSnapshotMutation: false,
+            prMutation: false,
+            issueMutation: false,
+            matrixMutation: false,
+            merge: false,
+            supabaseMutation: false,
+            migrationMutation: false,
+            stagingMutation: false,
+            productionMutation: false
+          };
+          fs.writeFileSync(path.join(dir, 'certification.json'), JSON.stringify(receipt, null, 2));
+          console.log('UX_QA_DEBT_005_WIN32_CERTIFICATION=' + JSON.stringify(receipt));
+          if (!pass) process.exit(1);
+          NODE
+
+      - name: Upload candidate and certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-005-win32-candidate-r13
+          path: ${{ runner.temp }}/qa005-r13-evidence
+          if-no-files-found: warn
+          retention-days: 7
