@@ -1,0 +1,127 @@
+{
+  "contractId": "com-b03b-r2-ephemeral-auth-recovery-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b03b-r1-postgres-changes-recovery-readiness-v1",
+    "COM-B03B-R1-POSTGRES-CHANGES-AUTHENTICATED-SUBSCRIPTION-STAGING-CANARY"
+  ],
+  "scope": "repository_only_preinstalled_recovery",
+  "status": "repository_recovery_certified_new_authorization_required",
+  "rootCause": {
+    "failedRun": 31270466400,
+    "failedCanaryJob": 93135463750,
+    "failedArtifact": 9025452077,
+    "artifactSha256": "df2852e9a153b48e8b8d42f300179dedd4db1dba53de2236571af30672efd215",
+    "code": "DOKE_COM_B03B_R1_SYNTHETIC_LOGIN_FAILED",
+    "class": "shared_staging_auth_fixture_drift",
+    "r1AuthorizationConsumed": true,
+    "r1AuthorizationReusableAfterFailure": false,
+    "r1TriggerImmutable": true,
+    "persistentDomainResidue": 0,
+    "communityPostsPublicationObservedAfterR1": true
+  },
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_R2_EPHEMERAL_AUTH_IDENTITY_LIFECYCLE_AND_REALTIME_SUBSCRIPTION_CANARY_ON_DOKE_STAGING",
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "r1AuthorizationReusable": false,
+    "consumptionBoundary": "new_single_file_r2_trigger_commit_after_repository_certification"
+  },
+  "transportPlan": {
+    "community_posts": {
+      "transport": "authenticated_postgres_changes",
+      "publication": "supabase_realtime",
+      "table": "public.community_posts",
+      "publicationMode": "verify_existing_only",
+      "publicationMutationAllowed": false,
+      "rlsRequired": true
+    },
+    "channel_presence": {
+      "transport": "private_presence",
+      "authorizationTable": "realtime.messages"
+    },
+    "channel_typing": {
+      "transport": "private_broadcast",
+      "authorizationTable": "realtime.messages"
+    },
+    "channel_messages": {
+      "transport": "blocked",
+      "blocker": "REMOTE_CANONICAL_CHANNEL_MESSAGE_AUTHORITY_REQUIRED"
+    }
+  },
+  "identityPlan": {
+    "sharedCanaryCredentialAllowed": false,
+    "sharedEmail": "cliente@doke.local",
+    "ephemeralAuthIdentityRequired": true,
+    "emailPattern": "com-b03b-r2-<nonce>@doke.local",
+    "randomPasswordInProcessMemoryOnly": true,
+    "emailConfirmedByAdminApi": true,
+    "matchingPublicUserRowRequired": true,
+    "role": "client",
+    "authUserCleanupRequired": true,
+    "publicUserCleanupRequired": true,
+    "rawCredentialsInEvidenceAllowed": false,
+    "materializedByCanonicalAuthTrigger": "public.handle_new_auth_user_doke",
+    "manualPublicUserInsertAllowed": false
+  },
+  "futureCanary": {
+    "scope": [
+      "community_posts",
+      "channel_presence",
+      "channel_typing"
+    ],
+    "excludedTopics": [
+      "channel_messages"
+    ],
+    "publicationVerificationRequired": true,
+    "publicationMutationAllowed": false,
+    "ephemeralAuthIdentityLifecycleAllowed": true,
+    "authIdentityCleanupRequired": true,
+    "syntheticDomainFixtureLifecycleAllowed": true,
+    "syntheticDomainCleanupRequired": true,
+    "persistentResidueAllowed": false,
+    "serverVerifiedSessionRequired": true,
+    "privateBroadcastPresenceChannelsOnly": true,
+    "publicRealtimeChannelAllowed": false,
+    "anonymousPrivateCommunityPostDeliveryMustBeSuppressed": true,
+    "temporaryRealtimePoliciesMustBeRemoved": true,
+    "channelsMustBeRemoved": true
+  },
+  "requiredSecretsAtExecution": [
+    "SUPABASE_ACCESS_TOKEN",
+    "SUPABASE_DB_PASSWORD"
+  ],
+  "forbiddenSharedSecretsAtExecution": [
+    "DOKE_STAGING_CLIENT_PASSWORD"
+  ],
+  "authorityBeforeNewTrigger": {
+    "repositoryRecoveryAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "realtimePublicationMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "syntheticDomainFixtureAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "nextAction": "obtain_exact_new_single_use_authorization_then_create_single_file_r2_trigger",
+  "certification": {
+    "head": "ec96ac7de5acde5ce993026445e63c854dc3c066",
+    "runId": 31271150906,
+    "certifyJobId": 93137229486,
+    "result": "success",
+    "authorizeJobResult": "skipped",
+    "canaryJobResult": "skipped",
+    "stagingAccessExecuted": false
+  }
+}

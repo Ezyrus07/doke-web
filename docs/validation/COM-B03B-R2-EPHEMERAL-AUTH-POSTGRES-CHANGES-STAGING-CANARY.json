@@ -1,0 +1,103 @@
+{
+  "validationId": "COM-B03B-R2-EPHEMERAL-AUTH-POSTGRES-CHANGES-STAGING-CANARY",
+  "domain": "COM-001",
+  "contractId": "com-b03b-r2-ephemeral-auth-recovery-readiness-v1",
+  "status": "failed_closed_postgres_changes_delivery_timeout",
+  "trigger": {
+    "head": "27e79102003d2d69bdbee8a7aa458cd6f5f6a05d",
+    "workflowInstallHead": "cee06997352e16a90a283e11a3cb65833ad5242b",
+    "singleFileBoundaryVerified": true
+  },
+  "workflow": {
+    "runId": 31274450631,
+    "runAttempt": 1,
+    "certifyJobId": 93145668665,
+    "certifyResult": "success",
+    "authorizeJobId": 93145691097,
+    "authorizeResult": "success",
+    "canaryJobId": 93145797071,
+    "canaryResult": "failure"
+  },
+  "artifact": {
+    "id": 9026609141,
+    "name": "com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary-31274450631",
+    "sha256": "532904533e4c21508dcc6f2d95cdc1274b357a78868792cec3938b7a0dadcaf0"
+  },
+  "authorization": {
+    "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_R2_EPHEMERAL_AUTH_IDENTITY_LIFECYCLE_AND_REALTIME_SUBSCRIPTION_CANARY_ON_DOKE_STAGING",
+    "consumed": true,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "mustNotBeRerun": true
+  },
+  "scope": [
+    "community_posts",
+    "channel_presence",
+    "channel_typing"
+  ],
+  "excludedTopics": [
+    "channel_messages"
+  ],
+  "failure": {
+    "code": "DOKE_COM_B03B_R2_POSTGRES_CHANGES_TIMEOUT",
+    "stage": "authenticated_community_posts_postgres_changes_delivery",
+    "interpretation": "the ephemeral authenticated identity, canonical account materialization, login, Realtime foundation checks and channel subscription boundary completed, but the synthetic community_posts INSERT was not observed by the authenticated postgres_changes callback before the bounded timeout"
+  },
+  "confirmedBeforeFailure": {
+    "projectHealthy": true,
+    "communityPostsPublicationPresent": true,
+    "communityPostsRlsEnabled": true,
+    "ephemeralAuthIdentityCreated": true,
+    "canonicalPublicAccountMaterialized": true,
+    "ephemeralPasswordLoginVerified": true,
+    "serverVerifiedSession": true,
+    "temporaryRealtimePoliciesInstalled": true,
+    "privateSyntheticCommunityCreated": true,
+    "authenticatedPostgresChangesChannelSubscribed": true,
+    "anonymousPostgresChangesChannelSubscribed": true,
+    "syntheticPostInsertAttempted": true,
+    "presenceCanaryReached": false,
+    "typingCanaryReached": false
+  },
+  "effects": {
+    "stagingRealtimePublicationMutationExecuted": false,
+    "ephemeralAuthIdentityLifecycleExecuted": true,
+    "temporarySyntheticDomainMutationExecuted": true,
+    "publicTrafficEnabled": false,
+    "runtimeDeployed": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "cleanup": {
+    "temporaryPoliciesRemoved": true,
+    "syntheticDomainFixtureRemoved": true,
+    "persistentDomainResidue": 0,
+    "ephemeralAuthIdentityRemoved": true,
+    "persistentIdentityResidue": 0
+  },
+  "diagnosticUncertainty": {
+    "rlsVisibilityAfterInsertProvenThroughDataApi": false,
+    "postgresChangesExtensionReadyMessageObserved": false,
+    "replicationConnectionReadyMessageObserved": false,
+    "filteredPostSubscriptionUsed": false,
+    "eventEmissionVsAuthorizationVsClientDispatchDistinguished": false
+  },
+  "rootCauseBoundary": {
+    "class": "postgres_changes_delivery_path_unresolved",
+    "notEstablished": [
+      "database_publication_absence",
+      "ephemeral_auth_failure",
+      "persistent_fixture_residue",
+      "production_or_public_runtime_side_effect"
+    ],
+    "nextRecoveryDirection": "instrument the authenticated postgres_changes delivery path before choosing between continued Postgres Changes and a database-triggered private Broadcast architecture"
+  },
+  "governance": {
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "maturityPromoted": false,
+    "productionGate": "blocked",
+    "mergeAuthorized": false
+  },
+  "nextBoundary": "COM-B03B-R3 repository-only delivery diagnostic recovery; any new staging execution requires a new single-use authorization"
+}

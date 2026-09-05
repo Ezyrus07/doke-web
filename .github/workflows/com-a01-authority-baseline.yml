@@ -1,0 +1,46 @@
+name: COM-A01 Authority Baseline
+
+on:
+  pull_request:
+    paths:
+      - 'config/com-a01-authority-baseline.json'
+      - 'docs/COM-A01-AUTHORITY-BASELINE.md'
+      - 'scripts/audit-com-a01-authority-baseline.js'
+      - 'scripts/test-com-a01-authority-baseline.js'
+      - '.github/workflows/com-a01-authority-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  com-a01-authority-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Syntax
+        run: |
+          node --check scripts/audit-com-a01-authority-baseline.js
+          node --check scripts/test-com-a01-authority-baseline.js
+
+      - name: Audit community authority baseline
+        run: node scripts/audit-com-a01-authority-baseline.js
+
+      - name: Community authority conformance
+        run: node scripts/test-com-a01-authority-baseline.js
+
+      - name: REP-A05 predecessor regression
+        run: |
+          node scripts/audit-rep-a05-rehire-transaction-readiness.js
+          node scripts/test-rep-a05-rehire-transaction-readiness.js
+
+      - name: Diff hygiene
+        run: git diff --check

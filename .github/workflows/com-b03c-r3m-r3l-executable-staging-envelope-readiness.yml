@@ -1,0 +1,184 @@
+name: COM-B03C-R3M R3L Executable Staging Envelope Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3m.js
+      - config/com-b03c-r3m-r3l-executable-staging-envelope-readiness.json
+      - scripts/test-com-b03c-r3m-r3l-executable-staging-envelope-readiness.js
+      - docs/validation/COM-B03C-R3M-R3L-EXECUTABLE-STAGING-ENVELOPE-READINESS.json
+      - .github/workflows/com-b03c-r3m-r3l-executable-staging-envelope-readiness.yml
+      - scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js
+      - scripts/verify-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+      - backend/modules/communities/community-realtime-private-auth-r3l.js
+      - docs/validation/COM-B03C-R3L-SINGLE-USE-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-DIAGNOSTIC-READINESS.json
+      - config/domain-completion-matrix.json
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - reports/generated/domain-completion-matrix-report.json
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
+
+permissions: { contents: read }
+concurrency:
+  group: com-b03c-r3m-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3m.js
+          node --check scripts/test-com-b03c-r3m-r3l-executable-staging-envelope-readiness.js
+          node --check scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js
+          node --check scripts/verify-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+      - name: COM-B03C-R3M repository executable envelope readiness
+        if: github.event_name == 'pull_request'
+        run: node scripts/test-com-b03c-r3m-r3l-executable-staging-envelope-readiness.js
+      - name: Preserve R3L authorization lifecycle guard
+        if: github.event_name == 'pull_request'
+        run: node scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+      - name: Pre-authorization staging hard-block
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
+          set +e
+          output="$(node scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js 2>&1)"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R3L_STAGING_AUTHORIZATION_REQUIRED'
+      - name: Trigger commit continuity
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          TRIGGER=config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
+          test -f "${TRIGGER}"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "${TRIGGER}"
+      - name: Domain completion matrix audit
+        if: github.event_name == 'pull_request'
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance audit
+        if: github.event_name == 'pull_request'
+        run: npm run audit:agent-governance
+      - name: Governance invariants
+        if: github.event_name == 'pull_request'
+        run: |
+          node - <<'NODE'
+          const e=require('./docs/validation/COM-B03C-R3M-R3L-EXECUTABLE-STAGING-ENVELOPE-READINESS.json');
+          if(e.checkpoint?.maturity!==3||e.checkpoint?.productionGate!=='blocked')process.exit(1);
+          if(e.predecessor?.canonicalRecertification?.head!=='a922f2408fdb851184b3e7de8c2017831ecfd95d'||e.predecessor?.canonicalRecertification?.run!==31385654634||e.predecessor?.canonicalRecertification?.certifyJob!==93445354346||e.predecessor?.canonicalRecertification?.status!=='success')process.exit(1);
+          if(e.implementation?.totalExecutionCaseCount!==17||e.implementation?.futureCredentialWiringPrepared!==true||e.implementation?.r3lExecutorInvocationPrepared!==true||e.implementation?.independentVerifierPrepared!==true||e.implementation?.sanitizedArtifactUploadPrepared!==true)process.exit(1);
+          if(e.futureAuthorization?.defined!==true||e.futureAuthorization?.received!==false||e.futureAuthorization?.consumed!==false||e.futureAuthorization?.triggerExists!==false||e.futureAuthorization?.singleUse!==true||e.futureAuthorization?.reusableAfterFailure!==false)process.exit(1);
+          for(const k of ['triggerCreationAuthority','stagingReadAuthority','stagingMutationAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','authIdentityLifecycleAuthority','realtimePolicyLifecycleAuthority','realtimeSubscriptionAuthority','runtimePolicyChangeAuthority','productionAuthority','pullRequestMergeAuthority'])if(e.authority?.[k]!==false)process.exit(1);
+          for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','authIdentityMutationExecuted','realtimePolicyMutationExecuted','realtimeSubscriptionExecuted','runtimePolicyChangeExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
+          if(e.exactRootCauseProven!==false||e.causalPromotionAllowed!==false)process.exit(1);
+          NODE
+      - name: Diff hygiene
+        if: github.event_name == 'pull_request'
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+
+  authorize:
+    if: github.event_name == 'push'
+    needs: certify
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - name: Validate single-use R3L authorization trigger
+        shell: bash
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          TRIGGER=config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
+          test -f "${TRIGGER}"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "${TRIGGER}"
+          node - <<'NODE'
+          const t=require('./config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json');
+          const r=require('./backend/modules/communities/community-realtime-private-auth-r3l');
+          if(t.contractId!==r.TRIGGER_CONTRACT_ID||t.status!==r.TRIGGER_STATUS||t.authorization?.phrase!==r.REQUIRED_AUTHORIZATION_PHRASE)process.exit(1);
+          for(const k of ['received','consumed','executionAttempted','singleUse'])if(t.authorization?.[k]!==true)process.exit(1);
+          if(t.authorization?.reusableAfterFailure!==false||t.authorization?.predecessorAuthorizationReusable!==false)process.exit(1);
+          if(t.target?.environment!=='staging'||t.target?.projectId!==r.REQUIRED_PROJECT_ID||t.target?.branch!==r.REQUIRED_BRANCH||t.target?.pullRequest!==r.REQUIRED_PULL_REQUEST)process.exit(1);
+          if(!/^[a-f0-9]{40}$/.test(String(t.workflowInstallHead||'')))process.exit(1);
+          const a=r.evaluateStagingAuthorization({
+            authorizationPhrase:t.authorization.phrase,
+            authorizationConsumed:false,
+            executionAttempted:false,
+            singleUse:true,
+            reusableAfterFailure:false,
+            predecessorAuthorizationReusable:false,
+            runAttempt:Number(process.env.GITHUB_RUN_ATTEMPT),
+            targetEnvironment:t.target.environment,
+            projectId:t.target.projectId,
+            branch:t.target.branch,
+            pullRequest:t.target.pullRequest,
+            differentialProbeCount:16,
+            totalExecutionCaseCount:17,
+            negativeControlId:'negative_control',
+            executionCaseIds:[...r.EXECUTION_CASE_IDS],
+            sameSyntheticIdentityAcrossCases:true,
+            sameAccessTokenAcrossCases:true,
+            sameTopicAcrossCases:true,
+            freshRealtimeClientPerCase:true,
+            exactlyTwoTemporaryPoliciesPerCase:true,
+            structuralGateBeforeProbe:true,
+            cleanupAfterEveryCase:true,
+            syntheticIdentityCleanupFinally:true,
+            zeroResidueRequired:true,
+            runtimePolicyChangeAuthorized:false,
+            productionAuthorized:false,
+            mergeAuthorized:false
+          });
+          if(a.decision!=='authorized_for_single_bounded_evaluation_context_differential_presence_diagnostic')process.exit(1);
+          NODE
+
+  canary:
+    if: github.event_name == 'push'
+    needs: authorize
+    runs-on: ubuntu-24.04
+    environment: doke-staging
+    env:
+      COM_B03C_R3L_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03C_R3L_SINGLE_USE_EVALUATION_CONTEXT_DIFFERENTIAL_PRESENCE_DIAGNOSTIC_ON_DOKE_STAGING
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      COM_B03C_R3L_REPORT_PATH: reports/generated/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING.json
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Install canary-only dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+      - name: Execute bounded R3L differential Presence diagnostic
+        id: execute
+        continue-on-error: true
+        run: node scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js
+      - name: Verify sanitized R3L differential evidence
+        if: always()
+        run: node scripts/verify-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js reports/generated/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING.json
+      - name: Upload sanitized R3L differential evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-r3l-differential-presence-${{ github.run_id }}
+          path: reports/generated/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Propagate diagnostic result
+        if: steps.execute.outcome != 'success'
+        run: exit 1

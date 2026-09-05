@@ -1,0 +1,136 @@
+{
+  "validationId": "COM-B03C-R4G-PRESENCE-ONLY-TERMINAL-OBSERVATION-ENVELOPE-READINESS",
+  "contractId": "com-b03c-r4g-presence-only-terminal-observation-envelope-readiness-v1",
+  "status": "repository_terminal_observation_envelope_certified_no_remote_authority",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "predecessorR4f": {
+    "evidenceHead": "7fd98abce7aa3473cde8228f68d791e5ee493ef4",
+    "run": 31505091909,
+    "job": 93824520417,
+    "conclusion": "success",
+    "matrixRun": 31505091839,
+    "matrixJob": 93824516890,
+    "matrixConclusion": "success",
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false
+  },
+  "envelope": {
+    "kind": "r4g_repository_terminal_observation_envelope",
+    "reusesR3gSanitizer": true,
+    "historicalR3gModified": false,
+    "historicalR3vModified": false,
+    "terminalStatusPreservedSanitized": true,
+    "counterCorrelation": [
+      "broadcastDelta",
+      "presenceDelta"
+    ],
+    "syntheticCaseCount": 7,
+    "syntheticCases": [
+      "subscribed",
+      "rls_rejected",
+      "auth_rejected",
+      "timed_out",
+      "closed",
+      "unknown",
+      "counter_divergence"
+    ],
+    "rawRemoteErrorPersistenceAllowed": false
+  },
+  "authority": {
+    "repositoryExecutableObservation": true,
+    "triggerCreation": false,
+    "remoteExecution": false,
+    "remoteCredentialRead": false,
+    "remoteDependencyLoad": false,
+    "network": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "realtimeSubscription": false,
+    "authIdentityLifecycle": false,
+    "runtimeChange": false,
+    "production": false,
+    "merge": false
+  },
+  "effects": {
+    "stagingAccessExecuted": false,
+    "remoteCredentialReadExecuted": false,
+    "remoteDependencyLoadExecuted": false,
+    "networkAccessExecuted": false,
+    "databaseConnectionExecuted": false,
+    "databaseQueryAgainstRemoteExecuted": false,
+    "realtimeSubscriptionAgainstRemoteExecuted": false,
+    "authIdentityMutationExecuted": false,
+    "runtimePolicyChangeExecuted": false,
+    "triggerCreated": false,
+    "productionExecuted": false,
+    "mergeExecuted": false
+  },
+  "certificationHistory": {
+    "initialBoundaryCommit": {
+      "head": "a94c5098572858fe2cfaf497b6cacdbae75b55f9",
+      "parent": "7fd98abce7aa3473cde8228f68d791e5ee493ef4",
+      "changedFiles": 5,
+      "r4gRun": 31508483501,
+      "r4gJob": 93836013243,
+      "r4gConclusion": "failure",
+      "syntaxPassed": true,
+      "repositoryExecutableObservationPassed": true,
+      "noRemoteAuthorityPassed": true,
+      "failedStep": "Historical adapters unchanged",
+      "failureReason": "guard_compared_entire_pull_request_history_instead_of_r4g_boundary_delta",
+      "stagingExecuted": false
+    },
+    "guardScopeCorrection": {
+      "head": "a628ddb7d8e49975b5ff46b36c4da856548f1c1a",
+      "parent": "a94c5098572858fe2cfaf497b6cacdbae75b55f9",
+      "scope": "r4f_evidence_head_to_r4g_head_only",
+      "guardRemoved": false,
+      "r4gRun": 31508701686,
+      "r4gJob": 93836738310,
+      "r4gConclusion": "failure",
+      "syntaxPassed": true,
+      "repositoryExecutableObservationPassed": true,
+      "noRemoteAuthorityPassed": true,
+      "historicalAdaptersUnchangedPassed": true,
+      "failedStep": "Domain Completion Matrix",
+      "failureReason": "generated_domain_completion_matrix_stale",
+      "matrixRun": 31508701543,
+      "matrixJob": 93836737724,
+      "matrixConclusion": "failure",
+      "stagingExecuted": false
+    },
+    "canonicalMatrixReconciliation": {
+      "writerInstallHead": "e715812e705d852ae271d857b3669ad489799f1b",
+      "writerRun": 31509132900,
+      "writerJob": 93838199674,
+      "writerConclusion": "success",
+      "writerOutputCommit": "7c32c9c4fb5bf67928ad04d79e6ff954a5ac4647",
+      "writerOutputs": [
+        "docs/DOMAIN-COMPLETION-MATRIX.md",
+        "reports/generated/domain-completion-matrix-report.json"
+      ],
+      "matrixSourceChanged": false,
+      "com001FilesMatchedBefore": 64,
+      "com001FilesMatchedAfter": 65,
+      "maturityChanged": false,
+      "workflowRestoredHead": "690bdc098487ed65f03648283d0710c3e48fcaf6",
+      "workflowRestoredBlob": "299108d86dc097ba090392ebe9f218f6849e74ad",
+      "workflowPermissions": "contents: read"
+    },
+    "restoredHeadCertification": {
+      "head": "690bdc098487ed65f03648283d0710c3e48fcaf6",
+      "r4gRun": 31509291782,
+      "r4gJob": 93838834654,
+      "r4gConclusion": "success",
+      "matrixRun": 31509291955,
+      "matrixJob": 93838729071,
+      "matrixConclusion": "success",
+      "stagingExecuted": false
+    }
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "After R4G evidence-head certification, design R4H as a separate fresh head-bound single-use hosted observation authorization lifecycle for the terminal-status envelope. R4H must remain repository-only until a new explicit authorization is received. Do not reuse R4E authorization, do not create a hosted trigger during R4G, and do not execute staging by repetition."
+}

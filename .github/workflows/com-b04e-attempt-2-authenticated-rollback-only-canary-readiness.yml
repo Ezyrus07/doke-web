@@ -1,0 +1,82 @@
+name: COM-B04E Attempt 2 Rollback-only Canary Readiness
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/runtime/staging/community-moderation-rollback-canary-attempt-2.js'
+      - 'scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js'
+      - 'scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js'
+      - 'scripts/audit-com-b04e-attempt-2-readiness.js'
+      - 'scripts/audit-com-b04e-attempt-2-execution-envelope.js'
+      - 'docs/COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.md'
+      - 'docs/validation/COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.json'
+      - '.github/workflows/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.yml'
+      - '.github/workflows/com-b04e-attempt-2-authenticated-rollback-only-canary-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/runtime/staging/community-moderation-rollback-canary-attempt-2.js
+          node --check scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          node --check scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          node --check scripts/audit-com-b04e-attempt-2-readiness.js
+          node --check scripts/audit-com-b04e-attempt-2-execution-envelope.js
+      - name: COM-B04E attempt-2 conformance
+        run: node scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+      - name: COM-B04E attempt-2 readiness audit
+        run: node scripts/audit-com-b04e-attempt-2-readiness.js
+      - name: Repository-only fail-closed checks
+        shell: bash
+        run: |
+          grep -F "activationMode: 'disabled'" backend/runtime/staging/community-moderation-rollback-canary-attempt-2.js
+          grep -F 'COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED' backend/runtime/staging/community-moderation-rollback-canary-attempt-2.js
+          grep -F 'verifyAttempt1Closure()' scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          grep -F 'BEGIN ISOLATION LEVEL SERIALIZABLE READ WRITE' scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          grep -F 'SET LOCAL ROLE service_role' scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          grep -F "client.query('ROLLBACK')" scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          ! grep -F "client.query('COMMIT')" scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          ! grep -R -F 'SUPABASE_SERVICE_ROLE_KEY' \
+            backend/runtime/staging/community-moderation-rollback-canary-attempt-2.js \
+            scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js \
+            .github/workflows/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.yml
+          ! grep -R -F 'supabase functions deploy' \
+            .github/workflows/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.yml
+      - name: COM-B04D regression
+        run: |
+          node scripts/test-com-b04d-moderation-runtime-composition-readiness.js
+          node scripts/audit-com-b04d-moderation-runtime-composition-readiness.js
+          node scripts/audit-com-b04d-domain-matrix-reconciliation.js
+      - name: COM-B04C regression
+        run: |
+          node scripts/audit-com-b04c-moderation-persistence-staging-verification.js
+          node scripts/audit-com-b04c-domain-matrix-reconciliation.js
+      - name: COM-B04B regression
+        run: |
+          node scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js
+          node scripts/test-com-b04b-immutable-moderation-persistence-readiness.js
+          node scripts/audit-com-b04b-domain-matrix-reconciliation.js
+      - name: COM-B04 regression
+        run: |
+          node scripts/audit-com-b04-moderation-case-authority.js
+          node scripts/test-com-b04-moderation-case-authority.js
+          node scripts/audit-com-b04-domain-matrix-reconciliation.js
+      - name: Diff hygiene
+        run: git diff --check

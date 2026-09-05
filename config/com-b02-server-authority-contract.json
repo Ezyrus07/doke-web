@@ -1,0 +1,92 @@
+{
+  "contractId": "com-b02-server-authority-contract-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-a02-canonical-discovery-membership-v1",
+    "com-a03-governance-discipline-ledger-v1",
+    "com-b01-policy-operational-integration-gate-v1"
+  ],
+  "scope": "repository_only",
+  "status": "server_authority_contract_complete_runtime_blocked",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "callerAuthority": {
+    "source": "server_verified_session",
+    "supportedAssuranceLevels": ["aal1", "aal2"],
+    "clientActorOverrideAllowed": false,
+    "anonymousMutationAllowed": false
+  },
+  "discovery": {
+    "publicEnumerable": true,
+    "privateEnumerableForNonmembers": false,
+    "inviteOnlyEnumerable": false,
+    "inviteOnlyReadableForInvitee": true,
+    "canonicalServerProjectionRequired": true
+  },
+  "membership": {
+    "activeBanBlocksMembership": true,
+    "publicJoinOnlyForPublicCommunity": true,
+    "privateEntryRequiresRequestOrInvite": true,
+    "ownerTransferRequiredBeforeLastOwnerLeaves": true,
+    "expectedRevisionRequired": true,
+    "idempotencyRequired": true
+  },
+  "roles": {
+    "canonicalRoles": ["owner", "admin", "moderator", "member"],
+    "ownerOrAdminRequired": true,
+    "adminCannotAssignOwnerOrAdmin": true,
+    "selfOwnerElevationAllowed": false,
+    "expectedRevisionRequired": true
+  },
+  "repositoryPort": {
+    "kind": "supabase_server_repository_port",
+    "requiredMethods": [
+      "loadCanonicalState",
+      "claimIdempotencyKey",
+      "appendEvent",
+      "commitProjection"
+    ],
+    "directClientSupabaseAccessAllowed": false,
+    "credentialsEmbedded": false,
+    "connectionPerformed": false
+  },
+  "authority": {
+    "contractAuthority": true,
+    "serverBoundaryAuthority": true,
+    "repositoryPortAuthority": true,
+    "communityWriteAuthority": false,
+    "membershipWriteAuthority": false,
+    "roleWriteAuthority": false,
+    "databaseAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "COM-B03",
+    "COM-B04",
+    "AUTH-001",
+    "ADM-B03",
+    "ADM-B04",
+    "LEGAL-B01",
+    "LEGAL-B03",
+    "LEGAL-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realCommunityCreated": false,
+    "realMembershipChanged": false,
+    "realRoleChanged": false,
+    "realUserDataChanged": false,
+    "productionChanges": false
+  },
+  "nextSublot": "COM-B02B Supabase repository adapter and immutable migration readiness"
+}

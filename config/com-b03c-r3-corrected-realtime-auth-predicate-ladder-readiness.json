@@ -1,0 +1,199 @@
+{
+  "contractId": "com-b03c-r3-corrected-realtime-authorization-predicate-ladder-readiness-v1",
+  "status": "repository_corrected_predicate_ladder_certified_new_authorization_required",
+  "domain": "COM-001",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "base": "rep/rep-001-baseline-audit",
+    "baseSha": "71aca60204a736d219d03f1ec20378932d08c26e",
+    "predecessorEvidenceHead": "4b55ce30924351d3f09bc3e4a8b6ffcecefb11a9",
+    "matrixVersion": "1.3.113",
+    "maturity": 3
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R2A-STAGING-RESIDUE-CLEANUP-READINESS",
+    "status": "staging_cleanup_completed_zero_residue_proven",
+    "r2RunId": 31285574756,
+    "r2CanaryJobId": 93173744054,
+    "r2AuthorizationConsumed": true,
+    "r2AuthorizationReusable": false,
+    "r2PredicateConclusionValid": false,
+    "r2RootCauseClass": "realtime_client_listener_registration_order_harness_failure",
+    "r2aRunId": 31286571759,
+    "r2aCanaryJobId": 93176495040,
+    "r2aArtifactId": 9030027436,
+    "r2aZeroResidueProven": true,
+    "r2aPolicyResidueAfter": 0,
+    "r2aSyntheticAuthResidueAfter": 0,
+    "r2aSyntheticDbRowsAfter": 0,
+    "predecessorAuthorizationReusable": false
+  },
+  "design": {
+    "scope": [
+      "channel_presence",
+      "channel_typing"
+    ],
+    "blockedTopics": [
+      "community_posts",
+      "channel_messages"
+    ],
+    "predicateRungs": [
+      "authenticated_basic",
+      "topic_only",
+      "auth_uid_only",
+      "extension_only",
+      "full_conjunction"
+    ],
+    "diagnosticAxes": [
+      "read_join",
+      "write_action"
+    ],
+    "listenerOrderingRecovery": {
+      "listenerRegistrationBeforeSubscribe": true,
+      "presenceObserverRegisteredBeforeSubscribe": true,
+      "broadcastObserverRegisteredBeforeSubscribe": true,
+      "waiterTimerArmedOnlyAfterAction": true,
+      "noPreJoinRejectableWaiterPromise": true,
+      "earlyEventBuffer": true
+    },
+    "readJoinAxis": {
+      "purpose": "isolate SELECT-side private-channel authorization at join",
+      "selectUsesRungPredicate": true,
+      "insertControlPredicate": "true",
+      "writeActionExecuted": false
+    },
+    "writeActionAxis": {
+      "purpose": "isolate INSERT-side authorization only after a private join is allowed",
+      "selectControlPredicate": "true",
+      "insertUsesRungPredicate": true,
+      "presenceAction": "track",
+      "typingAction": "broadcast_send"
+    },
+    "negativeControl": {
+      "required": true,
+      "readSelectPredicate": "false",
+      "insertPredicate": "true",
+      "expected": "authenticated_private_join_denied"
+    },
+    "cacheIsolation": {
+      "freshSyntheticTopicPerRung": true,
+      "freshRealtimeClientPerRung": true,
+      "jwtAppliedBeforeChannelCreation": true
+    },
+    "featureIsolation": {
+      "presenceChannelBroadcastConfigOmitted": true,
+      "typingChannelPresenceDisabled": true
+    },
+    "policies": {
+      "prefix": "com_b03c_r3_",
+      "temporaryOnly": true,
+      "mutuallyExclusivePerRung": true,
+      "introspectedBeforeEachJoin": true,
+      "droppedAfterEachRung": true,
+      "allCreatedDefinitionsTrackedGlobally": true,
+      "outerCleanupFallback": true,
+      "postExecutionZeroResidueVerification": true,
+      "role": "authenticated"
+    },
+    "identity": {
+      "emailPrefix": "com-b03c-r3-",
+      "emailSuffix": "@doke.local",
+      "purpose": "realtime-auth-predicate-ladder-r3",
+      "name": "COM-B03C-R3 Canary",
+      "role": "client",
+      "outerCleanupFallback": true,
+      "postExecutionZeroResidueVerification": true
+    },
+    "diagnostics": {
+      "sanitized": true,
+      "rawRemoteErrorPersistenceAllowed": false,
+      "messageHashOnly": true,
+      "reportAlwaysWritten": true,
+      "artifactAlwaysUploaded": true
+    },
+    "successGate": {
+      "negativeControlMustDenyBoth": true,
+      "authenticatedBasicReadMustJoinPresenceAndTyping": true,
+      "authenticatedBasicWriteMustAllowPresenceAndTypingActions": true
+    }
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03C_R3_CORRECTED_REALTIME_AUTHORIZATION_PREDICATE_LADDER_ON_DOKE_STAGING",
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "predecessorAuthorizationReusable": false,
+    "triggerPath": "config/com-b03c-r3-corrected-realtime-auth-predicate-ladder-staging-trigger.json",
+    "triggerExists": false
+  },
+  "futureCanaryBoundary": {
+    "targetEnvironment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "ephemeralAuthIdentityLifecycleAllowedOnlyAfterAuthorization": true,
+    "realtimeMessagesPolicyLifecycleAllowedOnlyAfterAuthorization": true,
+    "privateRealtimeSubscriptionAllowedOnlyAfterAuthorization": true,
+    "ephemeralPresenceAndBroadcastActionsAllowedOnlyAfterAuthorization": true,
+    "listenerRegistrationBeforeSubscribeRequired": true,
+    "waiterTimerArmedOnlyAfterActionRequired": true,
+    "earlyEventBufferRequired": true,
+    "perRungCleanupRequired": true,
+    "outerCleanupFallbackRequired": true,
+    "globalPolicyTrackingRequired": true,
+    "postExecutionZeroResidueVerificationRequired": true,
+    "reportAlwaysWrittenRequired": true,
+    "communityPostsExecutionAllowed": false,
+    "channelMessagesExecutionAllowed": false,
+    "domainMutationAllowed": false,
+    "publicationMutationAllowed": false,
+    "persistentResidueAllowed": false,
+    "runtimeDeployAllowed": false,
+    "productionAllowed": false,
+    "mergeAllowed": false,
+    "realUserMutationAllowed": false
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "realtimePolicyLifecycleAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "ephemeralRealtimeActionAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "implementation": {
+    "implementationCommit": "c54854832cecb25c64bb2aaf990eba8d2088fc2e",
+    "files": [
+      "backend/modules/communities/community-realtime-private-auth-r3.js",
+      "config/com-b03c-r3-corrected-realtime-auth-predicate-ladder-readiness.json",
+      "scripts/test-com-b03c-r3-corrected-realtime-auth-predicate-ladder-readiness.js",
+      "scripts/execute-com-b03c-r3-corrected-realtime-auth-predicate-ladder-staging-canary.js",
+      "scripts/verify-com-b03c-r3-corrected-realtime-auth-predicate-ladder-staging-canary-evidence.js",
+      ".github/workflows/com-b03c-r3-corrected-realtime-auth-predicate-ladder-staging-canary.yml"
+    ]
+  },
+  "certification": {
+    "localReadinessChecks": "96/96",
+    "initialRunId": 31287527733,
+    "initialCertifyJobId": 93178960607,
+    "initialCertifyResult": "success",
+    "initialAuthorizeJobId": 93179056166,
+    "initialAuthorizeResult": "skipped",
+    "initialCanaryJobId": 93179056239,
+    "initialCanaryResult": "skipped",
+    "syntax": true,
+    "r2aZeroResiduePredecessor": true,
+    "correctedListenerOrderBoundary": true,
+    "r2aRegression": true,
+    "diffHygiene": true,
+    "stagingAccessExecuted": false,
+    "remoteEffectsExecuted": false
+  }
+}

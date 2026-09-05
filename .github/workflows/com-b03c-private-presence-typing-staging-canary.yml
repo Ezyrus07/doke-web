@@ -1,0 +1,170 @@
+name: COM-B03C Private Presence Typing Staging Canary
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-realtime-private-presence-typing-readiness.js'
+      - 'config/com-b03c-private-presence-typing-readiness.json'
+      - 'scripts/test-com-b03c-private-presence-typing-readiness.js'
+      - 'scripts/execute-com-b03c-private-presence-typing-staging-canary.js'
+      - 'scripts/verify-com-b03c-private-presence-typing-staging-canary-evidence.js'
+      - 'backend/modules/communities/community-realtime-private-auth-r1.js'
+      - 'config/com-b03c-r1-private-realtime-auth-recovery-readiness.json'
+      - 'scripts/test-com-b03c-r1-private-realtime-auth-recovery-readiness.js'
+      - 'scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js'
+      - 'scripts/verify-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary-evidence.js'
+      - '.github/workflows/com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.yml'
+      - 'docs/validation/COM-B03C-R1-PRIVATE-REALTIME-AUTH-RECOVERY-READINESS.json'
+      - '.github/workflows/com-b03c-private-presence-typing-staging-canary.yml'
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b03c-private-presence-typing-staging-trigger.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-presence-typing-readiness.js
+          node --check scripts/test-com-b03c-private-presence-typing-readiness.js
+          node --check scripts/execute-com-b03c-private-presence-typing-staging-canary.js
+          node --check scripts/verify-com-b03c-private-presence-typing-staging-canary-evidence.js
+          node --check backend/modules/communities/community-realtime-private-auth-r1.js
+          node --check scripts/test-com-b03c-r1-private-realtime-auth-recovery-readiness.js
+          node --check scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
+          node --check scripts/verify-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary-evidence.js
+      - name: COM-B03C readiness
+        run: node scripts/test-com-b03c-private-presence-typing-readiness.js
+      - name: COM-B03C-R1 recovery readiness
+        run: node scripts/test-com-b03c-r1-private-realtime-auth-recovery-readiness.js
+      - name: COM-B03B-R3 regression
+        run: node scripts/test-com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.js
+      - name: COM-B03B-R2 regression
+        run: node scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js
+      - name: COM-B03 repository regression
+        run: |
+          node scripts/test-com-b03-community-realtime-channel-scale-policy.js
+          node scripts/audit-com-b03-community-realtime-channel-scale-policy.js
+      - name: Fail-closed and scope boundary
+        shell: bash
+        run: |
+          grep -F '"received": false' config/com-b03c-private-presence-typing-readiness.json
+          grep -F '"consumed": false' config/com-b03c-private-presence-typing-readiness.json
+          grep -F '"executionAttempted": false' config/com-b03c-private-presence-typing-readiness.json
+          grep -F '"communityPostsExecutionAllowed": false' config/com-b03c-private-presence-typing-readiness.json
+          grep -F '"channelMessagesExecutionAllowed": false' config/com-b03c-private-presence-typing-readiness.json
+          grep -F '"domainMutationAllowed": false' config/com-b03c-private-presence-typing-readiness.json
+          grep -F '"publicationMutationAllowed": false' config/com-b03c-private-presence-typing-readiness.json
+          grep -F "realtime.messages.extension = 'presence'" scripts/execute-com-b03c-private-presence-typing-staging-canary.js
+          grep -F "realtime.messages.extension = 'broadcast'" scripts/execute-com-b03c-private-presence-typing-staging-canary.js
+          ! grep -F 'community_posts' scripts/execute-com-b03c-private-presence-typing-staging-canary.js
+          ! grep -E '^[[:space:]]+DOKE_STAGING_CLIENT_PASSWORD:' .github/workflows/com-b03c-private-presence-typing-staging-canary.yml
+      - name: COM-B03C-R1 fail-closed recovery boundary
+        shell: bash
+        run: |
+          grep -F '"received": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"consumed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"executionAttempted": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"explicitPresenceEnabledRequired": true' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"noOrphanedPresenceWaiterRequired": true' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"policyIntrospectionRequired": true' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"communityPostsExecutionAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"channelMessagesExecutionAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"domainMutationAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"publicationMutationAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F 'presence:{enabled:true' scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
+          grep -F 'const join=await subscribeDiagnostic' scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
+          ! grep -E '^[[:space:]]+DOKE_STAGING_CLIENT_PASSWORD:' .github/workflows/com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.yml
+      - name: Diff hygiene
+        run: git diff --check
+
+  authorize:
+    if: github.event_name == 'push' && github.run_attempt == 1
+    needs: certify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Validate single-use COM-B03C trigger boundary
+        env:
+          REQUIRED_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03C_AUTHENTICATED_PRIVATE_PRESENCE_AND_TYPING_CANARY_ON_DOKE_STAGING
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const cp = require('child_process');
+          const trigger = JSON.parse(fs.readFileSync('config/com-b03c-private-presence-typing-staging-trigger.json', 'utf8'));
+          const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+          if (trigger.contractId !== 'com-b03c-private-presence-typing-staging-trigger-v1') throw new Error('TRIGGER_CONTRACT_MISMATCH');
+          if (trigger.status !== 'authorization_consumed_execution_pending') throw new Error('TRIGGER_STATUS_MISMATCH');
+          if (trigger.authorization?.phrase !== process.env.REQUIRED_AUTHORIZATION) throw new Error('AUTHORIZATION_MISMATCH');
+          if (trigger.authorization?.received !== true || trigger.authorization?.consumed !== true || trigger.authorization?.executionAttempted !== true) throw new Error('AUTHORIZATION_NOT_CONSUMED');
+          if (trigger.authorization?.singleUse !== true || trigger.authorization?.reusableAfterFailure !== false || trigger.authorization?.r3AuthorizationReusable !== false) throw new Error('SINGLE_USE_CONTRACT_MISMATCH');
+          if (trigger.target?.environment !== 'staging' || trigger.target?.projectId !== 'zwkczgewzbsorbrjuzpb') throw new Error('TARGET_MISMATCH');
+          if (trigger.target?.branch !== 'com/com-001-baseline-audit' || trigger.target?.pullRequest !== 61) throw new Error('PR_BOUNDARY_MISMATCH');
+          if (!same([...(trigger.canary?.scope || [])].sort(), ['channel_presence','channel_typing'])) throw new Error('SCOPE_MISMATCH');
+          if (trigger.canary?.ephemeralAuthIdentityLifecycleAllowed !== true || trigger.canary?.authIdentityCleanupRequired !== true) throw new Error('EPHEMERAL_AUTH_BOUNDARY_REQUIRED');
+          if (trigger.canary?.realtimeMessagesPolicyLifecycleAllowed !== true || trigger.canary?.realtimePolicyCleanupRequired !== true || trigger.canary?.exactTopicAndExtensionPoliciesRequired !== true) throw new Error('POLICY_BOUNDARY_REQUIRED');
+          if (trigger.canary?.privateChannelsOnly !== true || trigger.canary?.serverVerifiedSessionRequired !== true || trigger.canary?.anonymousDenialRequired !== true) throw new Error('PRIVATE_CHANNEL_BOUNDARY_REQUIRED');
+          if (trigger.canary?.communityPostsExecutionAllowed !== false || trigger.canary?.channelMessagesExecutionAllowed !== false) throw new Error('OUT_OF_SCOPE_EXECUTION_PROHIBITED');
+          if (trigger.canary?.domainMutationAllowed !== false || trigger.canary?.publicationMutationAllowed !== false || trigger.canary?.persistentResidueAllowed !== false) throw new Error('ZERO_PERSISTENT_EFFECT_BOUNDARY_REQUIRED');
+          const parent = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          if (trigger.workflowInstallHead !== parent) throw new Error('INSTALL_HEAD_BINDING_MISMATCH');
+          const files = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\r?\n/).filter(Boolean);
+          if (!same(files, ['config/com-b03c-private-presence-typing-staging-trigger.json'])) throw new Error('TRIGGER_DIFF_NOT_SINGLE_FILE');
+          console.log('COM-B03C single-use private Presence/Typing trigger authorized.');
+          NODE
+
+  canary:
+    if: github.event_name == 'push' && github.run_attempt == 1
+    needs: authorize
+    environment: staging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      COM_B03C_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03C_AUTHENTICATED_PRIVATE_PRESENCE_AND_TYPING_CANARY_ON_DOKE_STAGING
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      GITHUB_TOKEN: ${{ github.token }}
+      COM_B03C_REPORT_PATH: reports/generated/COM-B03C-PRIVATE-PRESENCE-TYPING-STAGING-CANARY.json
+    steps:
+      - name: Checkout authorized COM-B03C trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install canary-only runtime dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+      - name: Execute authenticated private Presence and Typing canary
+        run: node scripts/execute-com-b03c-private-presence-typing-staging-canary.js
+      - name: Verify sanitized COM-B03C evidence
+        run: node scripts/verify-com-b03c-private-presence-typing-staging-canary-evidence.js
+      - name: Upload sanitized COM-B03C evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-private-presence-typing-${{ github.run_id }}
+          path: reports/generated/COM-B03C-PRIVATE-PRESENCE-TYPING-STAGING-CANARY.json
+          if-no-files-found: error
+          retention-days: 30

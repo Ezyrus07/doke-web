@@ -1,0 +1,104 @@
+name: COM-B02CD Governance Recovery Quarantine Certification
+# retrigger: governance recovery quarantine certification
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-execution.js'
+      - 'config/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.json'
+      - 'scripts/test-com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.js'
+      - '.github/workflows/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-governance-recovery-quarantine:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 0590e64b75a640880ac00485d2a678b6ac3092e7
+      PREDECESSOR_TREE: 3e0122015344206918cf4a06047730d8e92e88e1
+      HISTORICAL_PROOF_HEAD: f671d8a93157353bb58b5edf8a4351706461d0ac
+      HISTORICAL_PROOF_TREE: fa4fe8ce737e941dcad4944d496e511e37ab1267
+      HISTORICAL_PROOF_RUN_ID: '32652016270'
+      HISTORICAL_PROOF_JOB_ID: '97224998719'
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-execution.js
+      CONFIG: config/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.json
+      TEST: scripts/test-com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.js
+      WORKFLOW: .github/workflows/com-b02cd-repository-only-deterministic-synthetic-continuation-state-register-execution.yml
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze predecessor historical proof and exact recovery scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git rev-parse "$HISTORICAL_PROOF_HEAD^{tree}")" = "$HISTORICAL_PROOF_TREE"
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          git merge-base --is-ancestor "$HISTORICAL_PROOF_HEAD" HEAD
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          expected4="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
+          expected6="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" "$TEST" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | grep -v -E '(^|/)0000-temp-com-b02cd-' | sort)"
+          test "$actual" = "$expected4" || test "$actual" = "$expected6"
+          test -z "$(git ls-files '.github/workflows/0000-temp-com-b02cd-*')"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify quarantine statically without execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          test "$HISTORICAL_PROOF_RUN_ID" = '32652016270'
+          test "$HISTORICAL_PROOF_JOB_ID" = '97224998719'
+          grep -F '"status": "QUARANTINED_NOT_REPOSITORY_CERTIFIED"' "$CONFIG"
+          grep -F '"continuationStateStorageAuthority": true' "$CONFIG"
+          grep -F '"operationMethodInvocationAuthority": false' "$CONFIG"
+          grep -F '"registryOperationInvocationAuthority": false' "$CONFIG"
+          grep -F '"registryRegisterAuthority": false' "$CONFIG"
+          grep -F '"acceptedAsAuthorizedBoundary": false' "$CONFIG"
+          grep -F 'technical_effect_observed_authority_mismatch_quarantined' "$TARGET" "$CONFIG" "$TEST"
+          ! grep -E 'registerOpaqueContinuationState\(|registry\.set\(|new Map\(|executeRepositoryOnlyDeterministicSyntheticRegister' "$TARGET" "$TEST"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+
+      - name: Matrix governance frozen surfaces and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD

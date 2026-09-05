@@ -1,0 +1,105 @@
+{
+  "contractId": "com-b03b-realtime-publication-authenticated-subscription-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b03-realtime-channel-scale-policy-v1",
+    "com-b02d-community-composition-root-canary-readiness-v1"
+  ],
+  "scope": "repository_only",
+  "status": "repository_ready_partial_staging_authorization_required",
+  "rootCause": "The certified scale policy defines admission, privacy, leases, backpressure and delivery semantics but intentionally grants no Realtime publication/subscription authority. Community posts are remotely persisted, while channel messages still lack a canonical remote persistence and event authority.",
+  "transportPlan": {
+    "community_posts": {
+      "transport": "private_broadcast_from_database",
+      "durability": "durable",
+      "sourceAuthority": "public.community_posts",
+      "serverAuthoritativeEnvelopeRequired": true,
+      "realtimeAuthorizationRequired": true,
+      "stagingActivationEligible": true
+    },
+    "channel_presence": {
+      "transport": "private_presence",
+      "durability": "ephemeral",
+      "sourceAuthority": "authenticated_private_channel",
+      "realtimeAuthorizationRequired": true,
+      "stagingActivationEligible": true
+    },
+    "channel_typing": {
+      "transport": "private_broadcast",
+      "durability": "ephemeral",
+      "sourceAuthority": "authenticated_private_channel",
+      "serverAuthoritativeEnvelopeRequired": true,
+      "realtimeAuthorizationRequired": true,
+      "stagingActivationEligible": true
+    },
+    "channel_messages": {
+      "transport": "blocked",
+      "durability": "durable",
+      "sourceAuthority": null,
+      "serverAuthoritativeEnvelopeRequired": true,
+      "realtimeAuthorizationRequired": true,
+      "stagingActivationEligible": false,
+      "blocker": "REMOTE_CANONICAL_CHANNEL_MESSAGE_AUTHORITY_REQUIRED"
+    }
+  },
+  "stagingCanary": {
+    "requiredAuthorizationPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_REALTIME_PUBLICATION_AND_AUTHENTICATED_SUBSCRIPTION_CANARY_ON_DOKE_STAGING",
+    "authorizationReceived": false,
+    "authorizationConsumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "targetEnvironment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "pullRequest": 61,
+    "branch": "com/com-001-baseline-audit",
+    "allowedScope": [
+      "community_posts",
+      "channel_presence",
+      "channel_typing"
+    ],
+    "excludedTopics": [
+      "channel_messages"
+    ],
+    "privateChannelsOnly": true,
+    "serverVerifiedSessionRequired": true,
+    "publicRealtimeChannelAllowed": false,
+    "persistentDomainMutationAllowed": false
+  },
+  "authority": {
+    "repositoryContractAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimePublicationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "persistentDomainMutationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "effects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "realtimePublicationChanges": false,
+    "realtimeChannelsCreated": false,
+    "subscriptionsCreated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "blockers": [
+    {
+      "id": "COM-B03B-B01",
+      "severity": "high",
+      "category": "channel_message_authority",
+      "description": "channel_messages cannot be activated because community channels/messages do not yet have a canonical remote persistence and server-authoritative event source."
+    },
+    {
+      "id": "COM-B03B-B02",
+      "severity": "high",
+      "category": "staging_authorization",
+      "description": "Any Realtime publication mutation or authenticated staging subscription canary requires the exact single-use COM-B03B authorization phrase."
+    }
+  ],
+  "nextAction": "obtain exact COM-B03B staging authorization only for the bounded three-topic scope; keep channel_messages blocked"
+}

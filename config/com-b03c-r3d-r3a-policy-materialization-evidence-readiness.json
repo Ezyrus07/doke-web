@@ -1,0 +1,92 @@
+{
+  "validationId": "COM-B03C-R3D-R3A-POLICY-MATERIALIZATION-EVIDENCE-READINESS",
+  "contractId": "com-b03c-r3d-r3a-policy-materialization-evidence-readiness-v1",
+  "status": "repository_r3a_policy_materialization_evidence_gap_isolated_no_staging_authority",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "base": "rep/rep-001-baseline-audit",
+    "preparedFromHead": "72c535c93ff7eb227337bcfca3a15b6880833466",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R3C-REALTIME-MESSAGES-POLICY-CATALOG-STAGING-ATTEMPT",
+    "status": "staging_read_only_policy_catalog_observed_no_mutation_performed",
+    "r3cAttempt2AuthorizationConsumed": true,
+    "r3cAttempt2AuthorizationReusable": false,
+    "currentPersistentPolicyCount": 0,
+    "remoteMutation": false,
+    "presenceExactRootCauseProven": false
+  },
+  "historicalR3aExecutor": {
+    "path": "scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js",
+    "twoTemporaryPoliciesPerCase": true,
+    "selectPredicateUnderTest": true,
+    "insertControlTrue": true,
+    "policyCreateTransactionCommittedBeforeSubscribe": true,
+    "ownPolicyNamesInspectedBeforeSubscribe": true,
+    "freshRealtimeClientPerCase": true,
+    "presenceEnabled": true,
+    "presenceListenerBeforeSubscribe": true,
+    "ownPoliciesDroppedPerCaseFinally": true,
+    "ownPolicyAbsenceVerifiedAfterDrop": true,
+    "r3aZeroResidueProven": true
+  },
+  "observabilityGap": {
+    "complexSelectQualExactMaterializationCaptured": false,
+    "permissiveCapturedPerCase": false,
+    "completeCaseTimePolicyCatalogCaptured": false,
+    "policyInspectionReturnedOnlyCountAndBoolean": true,
+    "statement": "R3A proved that its two named policies existed with the expected command and authenticated role, but did not preserve permissive or the stored complex SELECT qual and did not freeze the complete realtime.messages policy catalog at each case immediately before Realtime authorization.",
+    "presenceExactRootCauseProven": false,
+    "supabasePresenceGenericallyBrokenProven": false
+  },
+  "externalSemantics": {
+    "supabaseAuthorizationCacheScopedToConnectionDocumented": true,
+    "r3aFreshClientPerCase": true,
+    "sameConnectionCachePromotedAsCrossCaseCause": false,
+    "arbitrarySleepProhibitedWithoutEvidence": true
+  },
+  "futureEvidenceRequirements": {
+    "policySnapshotColumns": ["policyname", "permissive", "roles", "cmd", "qual", "with_check"],
+    "exactStoredPolicySnapshotRequired": true,
+    "completeCatalogAtCaseTimeRequired": true,
+    "policyCountAndCommandSplitRequired": true,
+    "expectedVsStoredPredicateEvidenceRequired": true,
+    "snapshotBeforeRealtimeSubscribeRequired": true,
+    "perCaseCleanupInventoryRequired": true,
+    "causalPromotionBlockedUntilNewEvidence": true
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "triggerCreationAuthority": false,
+    "authorizationPhraseDefined": false,
+    "realtimePolicyMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "realUserMutationAuthority": false
+  },
+  "prohibitions": {
+    "r3aRerun": true,
+    "newStagingTrigger": true,
+    "newAuthorizationPhrase": true,
+    "arbitraryTimingSleepAsFix": true,
+    "communityPostsReexecution": true,
+    "channelMessagesExecution": true,
+    "publicationMutation": true,
+    "runtimeDeploy": true,
+    "production": true,
+    "merge": true,
+    "realUserMutation": true
+  },
+  "nextBoundary": "repository certification only; after certification, design a separately authorized diagnostic only if it captures the exact stored per-case policy materialization and full case-time policy inventory before Realtime subscription"
+}

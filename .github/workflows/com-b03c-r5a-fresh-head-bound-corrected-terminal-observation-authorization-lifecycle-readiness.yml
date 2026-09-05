@@ -1,0 +1,66 @@
+name: COM-B03C-R5A Fresh Head-Bound Corrected Terminal Observation Authorization Lifecycle Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5a.js'
+      - 'config/com-b03c-r5a-fresh-head-bound-corrected-terminal-observation-authorization-lifecycle-readiness.json'
+      - 'docs/validation/COM-B03C-R5A-FRESH-HEAD-BOUND-CORRECTED-TERMINAL-OBSERVATION-AUTHORIZATION-LIFECYCLE-READINESS.json'
+      - 'scripts/test-com-b03c-r5a-fresh-head-bound-corrected-terminal-observation-authorization-lifecycle-readiness.js'
+      - '.github/workflows/com-b03c-r5a-fresh-head-bound-corrected-terminal-observation-authorization-lifecycle-readiness.yml'
+      - 'backend/modules/communities/community-realtime-private-auth-r4z.js'
+      - 'scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js'
+      - 'docs/validation/COM-B03C-R4Z-CORRECTED-TERMINAL-BRIDGE-READINESS.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r5a.js
+          node --check scripts/test-com-b03c-r5a-fresh-head-bound-corrected-terminal-observation-authorization-lifecycle-readiness.js
+      - name: R5A repository fresh authorization lifecycle readiness
+        run: node scripts/test-com-b03c-r5a-fresh-head-bound-corrected-terminal-observation-authorization-lifecycle-readiness.js
+      - name: Remote execution hard block
+        run: |
+          node - <<'NODE'
+          const r5a = require('./backend/modules/communities/community-realtime-private-auth-r5a');
+          try {
+            r5a.assertRemoteExecutionBoundaryAbsent();
+            process.exit(1);
+          } catch (error) {
+            if (error?.code !== r5a.REMOTE_EXECUTION_BLOCK_CODE) throw error;
+          }
+          NODE
+      - name: Certified R4Z evidence and corrected bridge preserved
+        run: |
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r4z.js)" = "37f9a8597e1b2ee21b3c742a3a1f4490549bc640"
+          test "$(git rev-parse HEAD:scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js)" = "ff083f29e43b2f85045b23bf8f12a4b354fb0005"
+          test "$(git rev-parse HEAD:docs/validation/COM-B03C-R4Z-CORRECTED-TERMINAL-BRIDGE-READINESS.json)" = "e8fb7f90021a5129bd01597f6e4e98564bd9b65f"
+      - name: Repository-only workflow surface
+        run: |
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5a-fresh-head-bound-corrected-terminal-observation-authorization-lifecycle-readiness.yml)" != ""
+          ! grep -nE 'secrets\.|environment:|workflow_dispatch:|repository_dispatch:|schedule:' .github/workflows/com-b03c-r5a-fresh-head-bound-corrected-terminal-observation-authorization-lifecycle-readiness.yml
+          ! test -e config/com-b03c-r5b-r5a-fresh-authorization-consumption.json
+          ! test -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

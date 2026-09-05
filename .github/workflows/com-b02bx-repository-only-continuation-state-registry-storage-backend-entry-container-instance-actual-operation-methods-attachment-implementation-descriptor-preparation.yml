@@ -1,0 +1,102 @@
+name: COM-B02BX Repository-Only Actual Operation Methods Attachment Implementation Descriptor Preparation
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.js'
+      - 'config/com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.json'
+      - 'scripts/test-com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.js'
+      - '.github/workflows/com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: f595784d9d62a07252a47ef0ee9c790ecc0a481a
+      PREDECESSOR_TREE: 5ccc93a7624d770b1e8d046355546262431f636b
+      B02BW_MODULE_BLOB: f7ca12013d9c7eb7cbcec295268bb9583af6ae6c
+      B02BW_CONFIG_BLOB: ea847eb1f34e78ec647ab246eef71ff089f8f05e
+      B02BU_MODULE_BLOB: ead15b75489c9f7c57439a00badf9b6e02d4d415
+      B02BO_BINDING_BLOB: 16da9ada3a308535e5515a242ac381c54c7c2fc4
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.js
+      CONFIG: config/com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.json
+      TEST: scripts/test-com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.js
+      WORKFLOW: .github/workflows/com-b02bx-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-implementation-descriptor-preparation.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze lineage and exact authorized scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          expected="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.js)" = "$B02BW_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02bw-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment-contract.json)" = "$B02BW_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-materialization.js)" = "$B02BU_MODULE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-method-references-binding.js)" = "$B02BO_BINDING_BLOB"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          ! git ls-tree -r --name-only HEAD | grep 'repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment\.js'
+          ! git ls-tree -r --name-only HEAD | grep '^\.github/workflows/temp-com-b02bx-'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax semantic and hard-block B02BX descriptor preparation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          ! grep -E 'Object\.definePropert(y|ies)\(' "$TARGET"
+          ! grep -E '\.(call|apply)[[:space:]]*\(|Reflect\.apply[[:space:]]*\(' "$TARGET"
+          ! grep -E "require\(['\"][^'\"]*executable-operation-method-references-binding['\"]\)" "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E 'callableReferenceIncluded[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'executableReferencesCopiedToTarget[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'targetMutationPerformedByBoundary[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'attachmentAppliedToEntryContainerInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'executableOperationMethodsInvoked[[:space:]]*:[[:space:]]*true' "$TARGET"
+          test "$(grep -Fc 'executableReferenceExternalToDescriptor: true' "$TARGET")" -ge 1
+          test "$(grep -Fc 'targetMutationPerformedByBoundary: false' "$TARGET")" -ge 2
+          test "$(grep -Fc 'operationMethodsAttachedToInstance: false' "$TARGET")" -ge 2
+
+      - name: Frozen repository surfaces and Matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"

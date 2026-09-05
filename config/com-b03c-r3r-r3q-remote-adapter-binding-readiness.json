@@ -1,0 +1,100 @@
+{
+  "contractId": "com-b03c-r3r-r3q-remote-adapter-binding-readiness-v1",
+  "validationId": "COM-B03C-R3R-R3Q-REMOTE-ADAPTER-BINDING-READINESS",
+  "status": "repository_remote_adapter_binding_contract_ready_two_db_observation_primitives_unbound_no_remote_authority",
+  "domain": "COM-001",
+  "boundary": "COM-B03C-R3R",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "predecessor": {
+    "validationId": "COM-B03C-R3Q-REPOSITORY-EXECUTABLE-OBSERVATION-ENVELOPE-READINESS",
+    "status": "repository_executable_observation_envelope_certified_no_remote_authority",
+    "head": "5238dc5474b8735f4b6269866a5b0c8bafbd1f41",
+    "recertRun": 31401690653,
+    "recertJob": 93497971761,
+    "recertSuccess": true,
+    "matrixRecertRun": 31401690681,
+    "matrixRecertJob": 93497971321,
+    "matrixRecertSuccess": true
+  },
+  "continuity": {
+    "r3qContractId": "com-b03c-r3q-repository-executable-observation-envelope-readiness-v1",
+    "r3gContractId": "com-b03c-r3g-remote-adapter-wiring-readiness-v1",
+    "r3kContractId": "com-b03c-r3k-differential-remote-adapter-lifecycle-readiness-v1",
+    "adapterMethods": [
+      "preflight",
+      "snapshotPolicies",
+      "installInstrumentation",
+      "runPresenceReadEffectiveGate",
+      "readCounters",
+      "switchToPresenceOnlyPolicy",
+      "runPresenceOnlyJoin",
+      "cleanup",
+      "assertZeroResidue"
+    ],
+    "requiredR3gExecutorExports": [
+      "buildPgDbAdapter",
+      "buildSupabaseRealtimeAdapter",
+      "buildManagementAdapter",
+      "prepareRemoteRuntime"
+    ],
+    "requiredR3kExecutorExports": [
+      "prepareRemoteRuntime",
+      "buildFutureLifecyclePlan",
+      "buildRepositoryAdapters"
+    ]
+  },
+  "binding": {
+    "fullyBound": false,
+    "missingCapabilities": [
+      "instrumentation_counter_read",
+      "instrumentation_residue_inspection"
+    ],
+    "statementPayloadsDeferred": true,
+    "executableSqlPrepared": false
+  },
+  "controls": {
+    "bindingDescriptorComplete": true,
+    "allR3qMethodsClassified": true,
+    "r3gAdapterBuildersReusedByReference": true,
+    "r3kLifecycleReusedByReference": true,
+    "r3gHardBlockVerifiedBeforeCredentials": true,
+    "r3gHardBlockVerifiedBeforeDependencies": true,
+    "r3kHardBlockVerifiedBeforeCredentials": true,
+    "r3kHardBlockVerifiedBeforeDependencies": true,
+    "bindingGapFailsClosed": true,
+    "counterReadGapExplicit": true,
+    "instrumentationResidueGapExplicit": true,
+    "statementPayloadsDeferred": true,
+    "noExecutableSqlPrepared": true,
+    "noCredentialValuesPrepared": true,
+    "noRemoteDependenciesLoaded": true,
+    "noRemoteClientInstantiated": true,
+    "noRemoteExecutionPathActivated": true,
+    "noCausalPromotionWithoutRemoteObservation": true
+  },
+  "prohibitedPreparation": {
+    "authorizationPhraseDefined": false,
+    "triggerPrepared": false,
+    "stagingEnvironmentJobPrepared": false,
+    "workflowSecretsReferenced": false,
+    "remoteCredentialLoadingPrepared": false,
+    "remoteDependencyLoadingPrepared": false,
+    "instrumentationSqlPrepared": false,
+    "counterReadSqlPrepared": false,
+    "residueInspectionSqlPrepared": false,
+    "supabaseClientPrepared": false,
+    "pgClientPrepared": false,
+    "remoteExecutorPrepared": false,
+    "stagingReadPrepared": false,
+    "stagingMutationPrepared": false,
+    "runtimePolicyChangePrepared": false,
+    "runtimeDeployPrepared": false,
+    "productionPrepared": false,
+    "mergePrepared": false
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "Certify a repository-only constrained database-observation primitive for instrumentation counter reads and instrumentation residue inspection. Do not define staging authorization, trigger, secrets, environment jobs or remote execution in R3R."
+}

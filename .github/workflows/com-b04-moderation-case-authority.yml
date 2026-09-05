@@ -1,0 +1,70 @@
+name: COM-B04 Moderation Case Authority
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-moderation-case-authority.js'
+      - 'config/com-b04-moderation-case-authority.json'
+      - 'tests/fixtures/com-b04-moderation-case-cases.json'
+      - 'scripts/test-com-b04-moderation-case-authority.js'
+      - 'scripts/audit-com-b04-moderation-case-authority.js'
+      - 'scripts/audit-com-b04-domain-matrix-reconciliation.js'
+      - 'docs/COM-B04-MODERATION-CASE-AUTHORITY.md'
+      - 'docs/validation/COM-B04-MODERATION-CASE-AUTHORITY.json'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'config/domain-completion-matrix-refresh.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/domain-completion-matrix-sync.yml'
+      - '.github/workflows/com-b04-moderation-case-authority.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b04-moderation-case-authority:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-moderation-case-authority.js
+          node --check scripts/test-com-b04-moderation-case-authority.js
+          node --check scripts/audit-com-b04-moderation-case-authority.js
+          node --check scripts/audit-com-b04-domain-matrix-reconciliation.js
+          node --check scripts/audit-com-b03-domain-matrix-reconciliation.js
+      - name: Audit COM-B04
+        run: node scripts/audit-com-b04-moderation-case-authority.js
+      - name: Conformance COM-B04
+        run: node scripts/test-com-b04-moderation-case-authority.js
+      - name: Audit COM-B04 domain matrix reconciliation
+        run: node scripts/audit-com-b04-domain-matrix-reconciliation.js
+      - name: Audit canonical domain matrix drift
+        run: npm run audit:domain-completion-matrix
+      - name: COM-A05 predecessor regression
+        run: |
+          node scripts/audit-com-a05-moderation-appeal-media-readiness.js
+          node scripts/test-com-a05-moderation-appeal-media-readiness.js
+      - name: COM-A03 predecessor regression
+        run: |
+          node scripts/audit-com-a03-governance-discipline-ledger.js
+          node scripts/test-com-a03-governance-discipline-ledger.js
+      - name: COM-B03 predecessor regression
+        run: |
+          node scripts/audit-com-b03-community-realtime-channel-scale-policy.js
+          node scripts/test-com-b03-community-realtime-channel-scale-policy.js
+          node scripts/audit-com-b03-domain-matrix-reconciliation.js
+      - name: COM-B02D predecessor regression
+        run: |
+          node scripts/audit-com-b02d-community-composition-root-canary-readiness.js
+          node scripts/audit-com-b02d-authenticated-read-only-canary-attempt-2.js
+          node scripts/test-com-b02d-community-composition-root-canary-readiness.js
+      - name: Diff hygiene
+        run: git diff --check

@@ -1,0 +1,120 @@
+{
+  "validationId": "COM-B03B-R2-EPHEMERAL-AUTH-RECOVERY-READINESS",
+  "domain": "COM-001",
+  "contractId": "com-b03b-r2-ephemeral-auth-recovery-readiness-v1",
+  "status": "repository_recovery_certified_new_authorization_required",
+  "scope": "repository_only_preinstalled_recovery",
+  "rootCause": {
+    "r1Run": 31270466400,
+    "r1CanaryJob": 93135463750,
+    "r1Artifact": 9025452077,
+    "r1ArtifactSha256": "df2852e9a153b48e8b8d42f300179dedd4db1dba53de2236571af30672efd215",
+    "r1FailureCode": "DOKE_COM_B03B_R1_SYNTHETIC_LOGIN_FAILED",
+    "class": "shared_staging_auth_fixture_drift",
+    "r1AuthorizationConsumed": true,
+    "r1AuthorizationReusableAfterFailure": false,
+    "r1PersistentDomainResidue": 0,
+    "communityPostsPublicationObservedAfterR1": true
+  },
+  "implementation": {
+    "head": "ec96ac7de5acde5ce993026445e63c854dc3c066",
+    "metadataHead": "ae95713a29907d1fc81ba7de59ea15e0cdcf490b",
+    "files": [
+      "backend/modules/communities/community-realtime-ephemeral-auth-recovery.js",
+      "config/com-b03b-r2-ephemeral-auth-recovery-readiness.json",
+      "scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js",
+      "scripts/execute-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.js",
+      "scripts/verify-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary-evidence.js",
+      ".github/workflows/com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.yml"
+    ]
+  },
+  "certification": {
+    "primary": {
+      "head": "ec96ac7de5acde5ce993026445e63c854dc3c066",
+      "runId": 31271150906,
+      "certifyJobId": 93137229486,
+      "result": "success",
+      "authorizeJobId": 93137344040,
+      "authorizeResult": "skipped",
+      "canaryJobId": 93137344415,
+      "canaryResult": "skipped"
+    },
+    "metadata": {
+      "head": "ae95713a29907d1fc81ba7de59ea15e0cdcf490b",
+      "runId": 31271244351,
+      "certifyJobId": 93137489446,
+      "result": "success",
+      "authorizeJobId": 93137539616,
+      "authorizeResult": "skipped",
+      "canaryJobId": 93137539524,
+      "canaryResult": "skipped"
+    },
+    "checks": [
+      "syntax",
+      "COM-B03B-R2 recovery readiness",
+      "COM-B03B-R1 regression",
+      "COM-B03B repository regression",
+      "COM-B03 regression",
+      "fail-closed and secret-boundary checks",
+      "diff hygiene"
+    ],
+    "stagingAccessExecuted": false
+  },
+  "transportPlan": {
+    "community_posts": {
+      "transport": "authenticated_postgres_changes",
+      "publication": "supabase_realtime",
+      "publicationMode": "verify_existing_only",
+      "publicationMutationAllowed": false
+    },
+    "channel_presence": {
+      "transport": "private_presence"
+    },
+    "channel_typing": {
+      "transport": "private_broadcast"
+    },
+    "channel_messages": {
+      "transport": "blocked",
+      "blocker": "REMOTE_CANONICAL_CHANNEL_MESSAGE_AUTHORITY_REQUIRED"
+    }
+  },
+  "identityPlan": {
+    "ownership": "com_owned_ephemeral_supabase_auth_identity",
+    "sharedCanaryCredentialAllowed": false,
+    "randomPasswordInProcessMemoryOnly": true,
+    "canonicalMaterializationTrigger": "public.handle_new_auth_user_doke",
+    "manualPublicUserInsertAllowed": false,
+    "authIdentityCleanupRequired": true,
+    "publicAccountCascadeCleanupRequired": true,
+    "rawCredentialsInEvidenceAllowed": false
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_R2_EPHEMERAL_AUTH_IDENTITY_LIFECYCLE_AND_REALTIME_SUBSCRIPTION_CANARY_ON_DOKE_STAGING",
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "r1AuthorizationReusable": false
+  },
+  "authority": {
+    "repositoryRecoveryAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "realtimePublicationMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "syntheticDomainFixtureAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "governance": {
+    "matrixTargetVersion": "1.3.113",
+    "maturity": 3,
+    "maturityPromoted": false,
+    "userFacingAuthority": "hybrid",
+    "serverAuthority": "partial",
+    "productionGate": "blocked"
+  },
+  "nextBoundary": "exact new single-use COM-B03B-R2 staging authorization after canonical matrix reconciliation"
+}

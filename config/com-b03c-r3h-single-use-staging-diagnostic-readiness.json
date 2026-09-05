@@ -1,0 +1,104 @@
+{
+  "validationId": "COM-B03C-R3H-SINGLE-USE-STAGING-DIAGNOSTIC-READINESS",
+  "contractId": "com-b03c-r3h-single-use-ephemeral-policy-identity-presence-diagnostic-readiness-v1",
+  "status": "repository_single_use_staging_diagnostic_boundary_ready_new_authorization_required",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "preparedFromHead": "90e45247b469f6fd2ad4c77f4f3a3b5477abd266",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R3G-REMOTE-ADAPTER-WIRING-READINESS",
+    "status": "repository_remote_adapter_wiring_certified_no_staging_authority",
+    "evidenceHead": "90e45247b469f6fd2ad4c77f4f3a3b5477abd266",
+    "recertificationRun": 31341929330,
+    "recertificationJob": 93317026708,
+    "recertified": true
+  },
+  "futureAuthorization": {
+    "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B03C_R3H_SINGLE_USE_EPHEMERAL_POLICY_IDENTITY_AND_PRESENCE_DIAGNOSTIC_ON_DOKE_STAGING",
+    "defined": true,
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "predecessorAuthorizationReusable": false,
+    "triggerExists": false
+  },
+  "futureTrigger": {
+    "contractId": "com-b03c-r3h-single-use-ephemeral-policy-identity-presence-diagnostic-trigger-v1",
+    "path": "config/com-b03c-r3h-case-time-policy-snapshot-presence-diagnostic-staging-trigger.json",
+    "statusWhenCreated": "authorization_consumed_execution_pending",
+    "mustBeSingleFileCommit": true,
+    "parentMustEqualCertifiedWorkflowInstallHead": true,
+    "runAttemptMustBeOne": true
+  },
+  "scope": [
+    "auth.users:single_synthetic_identity",
+    "public.synthetic_account_materialization:single_identity",
+    "realtime.messages:temporary_policy_lifecycle",
+    "pg_policies:case_time_full_catalog_snapshots",
+    "realtime:private_presence_read_join"
+  ],
+  "limits": {
+    "syntheticAuthUsers": 1,
+    "concurrentTemporaryPolicies": 2,
+    "policiesPerCase": 2,
+    "cases": 9,
+    "realtimeClientsPerCase": 1
+  },
+  "controls": {
+    "sameIdentityTokenTopicAcrossCases": true,
+    "fullCatalogBeforeEachCase": true,
+    "fullCatalogAfterInstallBeforeSubscribe": true,
+    "fullCatalogAfterCleanup": true,
+    "preSubscribeStructuralGate": true,
+    "negativeControl": true,
+    "perCaseCleanup": true,
+    "finalZeroResidue": true,
+    "sanitizedEvidence": true,
+    "independentEvidenceVerifier": true,
+    "artifactUpload": true,
+    "communityPostsExecution": false,
+    "channelMessagesExecution": false,
+    "publicationMutation": false,
+    "runtimeDeploy": false,
+    "production": false,
+    "merge": false
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "triggerCreationAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "syntheticAccountMaterializationAuthority": false,
+    "realtimePolicyLifecycleAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "effects": {
+    "stagingAccessExecuted": false,
+    "remoteCredentialReadExecuted": false,
+    "remoteDependencyLoadExecuted": false,
+    "authIdentityMutationExecuted": false,
+    "realtimePolicyMutationExecuted": false,
+    "realtimeSubscriptionExecuted": false,
+    "publicationMutationExecuted": false,
+    "runtimeDeployExecuted": false,
+    "productionExecuted": false,
+    "mergeExecuted": false,
+    "syntheticAccountMaterializationExecuted": false,
+    "generalDomainMutationExecuted": false
+  },
+  "exactRootCauseProven": false,
+  "nextBoundary": "repository-only certification of R3H. Do not create the trigger or access staging until a fresh exact explicit authorization is received after certification."
+}

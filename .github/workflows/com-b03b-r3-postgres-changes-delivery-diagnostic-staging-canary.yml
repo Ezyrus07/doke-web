@@ -1,0 +1,140 @@
+name: COM-B03B-R3 Postgres Changes Delivery Diagnostic Staging Canary
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-realtime-postgres-changes-delivery-diagnostic-recovery.js'
+      - 'config/com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.json'
+      - 'scripts/test-com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.js'
+      - 'scripts/execute-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary.js'
+      - 'scripts/verify-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary-evidence.js'
+      - '.github/workflows/com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary.yml'
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b03b-r3-postgres-changes-delivery-diagnostic-staging-trigger.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-postgres-changes-delivery-diagnostic-recovery.js
+          node --check scripts/test-com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.js
+          node --check scripts/execute-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary.js
+          node --check scripts/verify-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary-evidence.js
+      - name: COM-B03B-R3 diagnostic readiness
+        run: node scripts/test-com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.js
+      - name: COM-B03B-R2 regression
+        run: node scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js
+      - name: COM-B03B repository regression
+        run: node scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js
+      - name: COM-B03 regression
+        run: |
+          node scripts/test-com-b03-community-realtime-channel-scale-policy.js
+          node scripts/audit-com-b03-community-realtime-channel-scale-policy.js
+      - name: Fail-closed and diagnostic boundary
+        shell: bash
+        run: |
+          grep -F '"received": false' config/com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.json
+          grep -F '"consumed": false' config/com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.json
+          grep -F '"executionAttempted": false' config/com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.json
+          grep -F '"publicationMutationAllowed": false' config/com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.json
+          grep -F '"presenceOrTypingExecutionAllowed": false' config/com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.json
+          grep -F '"supabaseJsVersion": "2.112.2"' config/com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.json
+          grep -F 'filter: `id=eq.${postId}`' scripts/execute-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary.js
+          grep -F 'replication_ready: true' scripts/execute-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary.js
+          grep -F "postsChannel.on('system'" scripts/execute-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary.js
+          ! grep -E '^[[:space:]]+DOKE_STAGING_CLIENT_PASSWORD:' .github/workflows/com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary.yml
+      - name: Diff hygiene
+        run: git diff --check
+
+  authorize:
+    if: github.event_name == 'push' && github.run_attempt == 1
+    needs: certify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Validate single-use R3 trigger boundary
+        env:
+          REQUIRED_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03B_R3_AUTHENTICATED_POSTGRES_CHANGES_DELIVERY_DIAGNOSTIC_ON_DOKE_STAGING
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const cp = require('child_process');
+          const trigger = JSON.parse(fs.readFileSync('config/com-b03b-r3-postgres-changes-delivery-diagnostic-staging-trigger.json', 'utf8'));
+          const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+          if (trigger.contractId !== 'com-b03b-r3-postgres-changes-delivery-diagnostic-staging-trigger-v1') throw new Error('TRIGGER_CONTRACT_MISMATCH');
+          if (trigger.status !== 'authorization_consumed_execution_pending') throw new Error('TRIGGER_STATUS_MISMATCH');
+          if (trigger.authorization?.phrase !== process.env.REQUIRED_AUTHORIZATION) throw new Error('AUTHORIZATION_MISMATCH');
+          if (trigger.authorization?.received !== true || trigger.authorization?.consumed !== true || trigger.authorization?.executionAttempted !== true) throw new Error('AUTHORIZATION_NOT_CONSUMED');
+          if (trigger.authorization?.singleUse !== true || trigger.authorization?.reusableAfterFailure !== false || trigger.authorization?.r2AuthorizationReusable !== false) throw new Error('SINGLE_USE_CONTRACT_MISMATCH');
+          if (trigger.target?.environment !== 'staging' || trigger.target?.projectId !== 'zwkczgewzbsorbrjuzpb') throw new Error('TARGET_MISMATCH');
+          if (trigger.target?.branch !== 'com/com-001-baseline-audit' || trigger.target?.pullRequest !== 61) throw new Error('PR_BOUNDARY_MISMATCH');
+          if (!same([...(trigger.canary?.scope || [])].sort(), ['community_posts'])) throw new Error('SCOPE_MISMATCH');
+          if (trigger.canary?.publicationVerificationRequired !== true || trigger.canary?.publicationMutationAllowed !== false) throw new Error('PUBLICATION_VERIFY_ONLY_REQUIRED');
+          if (trigger.canary?.filteredPostgresChangesSubscriptionRequired !== true || trigger.canary?.authenticatedDataApiVisibilityProbeRequired !== true || trigger.canary?.replicationSystemObservabilityRequired !== true) throw new Error('DIAGNOSTIC_BOUNDARY_REQUIRED');
+          if (trigger.canary?.ephemeralAuthIdentityLifecycleAllowed !== true || trigger.canary?.authIdentityCleanupRequired !== true) throw new Error('EPHEMERAL_AUTH_BOUNDARY_REQUIRED');
+          if (trigger.canary?.syntheticDomainFixtureLifecycleAllowed !== true || trigger.canary?.syntheticDomainCleanupRequired !== true || trigger.canary?.persistentResidueAllowed !== false) throw new Error('ZERO_RESIDUE_BOUNDARY_REQUIRED');
+          if (trigger.canary?.presenceOrTypingExecutionAllowed !== false) throw new Error('POSTS_ONLY_REQUIRED');
+          const parent = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          if (trigger.workflowInstallHead !== parent) throw new Error('INSTALL_HEAD_BINDING_MISMATCH');
+          const files = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\r?\n/).filter(Boolean);
+          if (!same(files, ['config/com-b03b-r3-postgres-changes-delivery-diagnostic-staging-trigger.json'])) throw new Error('TRIGGER_DIFF_NOT_SINGLE_FILE');
+          console.log('COM-B03B-R3 single-use staging diagnostic trigger authorized.');
+          NODE
+
+  canary:
+    if: github.event_name == 'push' && github.run_attempt == 1
+    needs: authorize
+    environment: staging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      COM_B03B_R3_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03B_R3_AUTHENTICATED_POSTGRES_CHANGES_DELIVERY_DIAGNOSTIC_ON_DOKE_STAGING
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      GITHUB_TOKEN: ${{ github.token }}
+      COM_B03B_R3_REPORT_PATH: reports/generated/COM-B03B-R3-POSTGRES-CHANGES-DELIVERY-DIAGNOSTIC-STAGING-CANARY.json
+    steps:
+      - name: Checkout authorized R3 trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install diagnostic runtime dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+      - name: Execute authenticated Postgres Changes delivery diagnostic
+        run: node scripts/execute-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary.js
+      - name: Verify sanitized R3 diagnostic evidence
+        run: node scripts/verify-com-b03b-r3-postgres-changes-delivery-diagnostic-staging-canary-evidence.js
+      - name: Upload sanitized R3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03b-r3-postgres-changes-delivery-diagnostic-${{ github.run_id }}
+          path: reports/generated/COM-B03B-R3-POSTGRES-CHANGES-DELIVERY-DIAGNOSTIC-STAGING-CANARY.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,48 @@
+name: COM-B03C-R5D Corrected Terminal Observation Execution Envelope Readiness
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5d.js'
+      - 'scripts/test-com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.js'
+      - 'scripts/execute-com-b03c-r5d-corrected-terminal-observation-envelope.js'
+      - 'config/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-EXECUTION-ENVELOPE-READINESS.json'
+      - '.github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+permissions: {contents: read}
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: npm}
+      - run: npm ci --ignore-scripts
+      - name: Syntax and repository contracts
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r5d.js
+          node --check scripts/test-com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.js
+          node --check scripts/execute-com-b03c-r5d-corrected-terminal-observation-envelope.js
+          node scripts/test-com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.js
+          node scripts/execute-com-b03c-r5d-corrected-terminal-observation-envelope.js --repository-self-test
+      - name: Frozen bindings and no remote authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/com-b03c-r5b-r5a-fresh-authorization-consumption.json)" = "a2ed29dc6a44f9d62f5159dfeabd2c769f677b50"
+          test "$(git rev-parse HEAD:scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js)" = "ff083f29e43b2f85045b23bf8f12a4b354fb0005"
+          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          ! grep -Eq '^[[:space:]]*push:' .github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml
+          ! grep -Eq '^[[:space:]]*environment:' .github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml
+          ! grep -Eq 'secrets\.' .github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

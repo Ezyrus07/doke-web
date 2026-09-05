@@ -1,0 +1,27 @@
+{
+  "contractId": "com-b02c-staging-migration-application-authorization-v1",
+  "validPacket": {
+    "authorizationPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B02C_SERVER_AUTHORITY_MIGRATION_ON_DOKE_STAGING",
+    "targetEnvironment": "staging",
+    "migrationPath": "supabase/migrations/20260805121500_com_b02b_server_authority.sql",
+    "migrationGitBlobSha": "fd74f6abc029023c4e0972b32b35daca975c3d57",
+    "productionAllowed": false,
+    "authorizationConsumed": false,
+    "executionAttempted": false
+  },
+  "expected": {
+    "total": 8,
+    "authorized": 1,
+    "blocked": 7
+  },
+  "cases": [
+    {"name":"missing packet","mutation":"missing","expectedDecision":"blocked_repository_only"},
+    {"name":"exact packet","mutation":"none","expectedDecision":"authorized_for_single_staging_execution"},
+    {"name":"phrase mismatch","mutation":"phrase","expectedDecision":"blocked_repository_only"},
+    {"name":"production target blocked","mutation":"environment","expectedDecision":"blocked_repository_only"},
+    {"name":"migration path mismatch","mutation":"path","expectedDecision":"blocked_repository_only"},
+    {"name":"migration blob mismatch","mutation":"blob","expectedDecision":"blocked_repository_only"},
+    {"name":"production permission blocked","mutation":"production","expectedDecision":"blocked_repository_only"},
+    {"name":"consumed authorization blocked","mutation":"consumed","expectedDecision":"blocked_repository_only"}
+  ]
+}

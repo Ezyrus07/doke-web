@@ -1,0 +1,55 @@
+name: COM-B03C-R3S Constrained Observation Primitives Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r3s.js'
+      - 'config/com-b03c-r3s-constrained-observation-primitives-readiness.json'
+      - 'scripts/test-com-b03c-r3s-constrained-observation-primitives-readiness.js'
+      - 'docs/validation/COM-B03C-R3S-CONSTRAINED-OBSERVATION-PRIMITIVES-READINESS.json'
+      - '.github/workflows/com-b03c-r3s-constrained-observation-primitives-readiness.yml'
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3s.js
+          node --check scripts/test-com-b03c-r3s-constrained-observation-primitives-readiness.js
+          node -e "JSON.parse(require('fs').readFileSync('config/com-b03c-r3s-constrained-observation-primitives-readiness.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('docs/validation/COM-B03C-R3S-CONSTRAINED-OBSERVATION-PRIMITIVES-READINESS.json','utf8'))"
+      - name: R3S constrained observation primitives
+        run: node scripts/test-com-b03c-r3s-constrained-observation-primitives-readiness.js
+      - name: Pre-remote hard block
+        run: |
+          test ! -e config/com-b03c-r3s-constrained-observation-primitives-staging-trigger.json
+          node - <<'NODE'
+          const r=require('./backend/modules/communities/community-realtime-private-auth-r3s');
+          const c=require('./config/com-b03c-r3s-constrained-observation-primitives-readiness.json');
+          const e=require('./docs/validation/COM-B03C-R3S-CONSTRAINED-OBSERVATION-PRIMITIVES-READINESS.json');
+          for(const value of Object.values(c.prohibitedPreparation)) if(value !== false) process.exit(1);
+          if(r.COUNTER_READ_DESCRIPTOR.sql !== null || r.RESIDUE_INSPECTION_DESCRIPTOR.sql !== null) process.exit(1);
+          if(r.COUNTER_READ_DESCRIPTOR.executableSqlPrepared !== false || r.RESIDUE_INSPECTION_DESCRIPTOR.executableSqlPrepared !== false) process.exit(1);
+          if(e.authority?.remoteAdapterBinding !== false || e.authority?.remoteExecution !== false || e.authority?.stagingRead !== false || e.authority?.stagingMutation !== false) process.exit(1);
+          if(e.effects?.stagingAccessExecuted !== false || e.effects?.remoteCredentialReadExecuted !== false || e.effects?.remoteDependencyLoadExecuted !== false || e.effects?.remoteClientInstantiated !== false || e.effects?.databaseQueryExecuted !== false) process.exit(1);
+          if(e.exactRootCauseProven !== false || e.causalPromotionAllowed !== false) process.exit(1);
+          try { r.assertRemoteObservationBoundaryAbsent(); process.exit(1); } catch (error) { if(error?.code !== r.REMOTE_EXECUTION_BLOCK_CODE) throw error; }
+          NODE
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

@@ -1,0 +1,47 @@
+name: COM-A02 Canonical Discovery and Membership
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-membership-command.js'
+      - 'config/com-a02-canonical-discovery-membership.json'
+      - 'tests/fixtures/com-a02-membership-command-cases.json'
+      - 'docs/COM-A02-CANONICAL-DISCOVERY-MEMBERSHIP.md'
+      - 'scripts/audit-com-a02-canonical-discovery-membership.js'
+      - 'scripts/test-com-a02-canonical-discovery-membership.js'
+      - '.github/workflows/com-a02-canonical-discovery-membership.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  com-a02-canonical-discovery-membership:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-membership-command.js
+          node --check scripts/audit-com-a02-canonical-discovery-membership.js
+          node --check scripts/test-com-a02-canonical-discovery-membership.js
+      - name: Audit COM-A02
+        run: node scripts/audit-com-a02-canonical-discovery-membership.js
+      - name: Conformance COM-A02
+        run: node scripts/test-com-a02-canonical-discovery-membership.js
+      - name: COM-A01 regression
+        run: |
+          node scripts/audit-com-a01-authority-baseline.js
+          node scripts/test-com-a01-authority-baseline.js
+      - name: REP-A05 predecessor regression
+        run: |
+          node scripts/audit-rep-a05-rehire-transaction-readiness.js
+          node scripts/test-rep-a05-rehire-transaction-readiness.js
+      - name: Diff hygiene
+        run: git diff --check

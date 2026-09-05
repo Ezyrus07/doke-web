@@ -1,0 +1,107 @@
+name: COM-B02V Module Route Loader Repository-Only Orchestration Surface Integration
+# B02V certifier retrigger marker.
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/module-route-loader.js'
+      - 'config/com-b02v-module-route-loader-repository-only-orchestration-surface-integration.json'
+      - 'scripts/test-com-b02v-module-route-loader-repository-only-orchestration-surface-integration.js'
+      - '.github/workflows/com-b02v-module-route-loader-repository-only-orchestration-surface-integration.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02v-module-route-loader-repository-only-orchestration-surface-integration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02U predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=c4526c03fd8ab0260e4d99473570a5284d6b61f8
+          git merge-base --is-ancestor "$BASE" HEAD
+          test "$(git rev-parse HEAD:config/com-b02u-command-handler-route-handler-orchestration-surface-integration.json)" = "f3c76888e3ccc9c8323097d76e138095e2906471"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02v-module-route-loader-repository-only-orchestration-surface-integration.yml \
+            backend/shared/http/module-route-loader.js \
+            config/com-b02v-module-route-loader-repository-only-orchestration-surface-integration.json \
+            scripts/test-com-b02v-module-route-loader-repository-only-orchestration-surface-integration.js | sort)"
+          expected_reconciled="$(printf '%s\n' \
+            .github/workflows/com-b02v-module-route-loader-repository-only-orchestration-surface-integration.yml \
+            backend/shared/http/module-route-loader.js \
+            config/com-b02v-module-route-loader-repository-only-orchestration-surface-integration.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02v-module-route-loader-repository-only-orchestration-surface-integration.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$expected_reconciled"
+
+      - name: Syntax and semantic loader surface conformance
+        run: |
+          node --check backend/shared/http/module-route-loader.js
+          node --check scripts/test-com-b02v-module-route-loader-repository-only-orchestration-surface-integration.js
+          node scripts/test-com-b02v-module-route-loader-repository-only-orchestration-surface-integration.js
+
+      - name: Active handler isolation and remote effects remain blocked
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'getRepositoryOnlySurface' backend/shared/http/module-route-loader.js
+          grep -F 'repositoryOnlySurfaces' backend/shared/http/module-route-loader.js
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/shared/http/module-route-loader.js
+          node - <<'NODE'
+          const loader=require('./backend/shared/http/module-route-loader');
+          const communities=require('./backend/modules/communities/route-handlers');
+          const b=require('./config/com-b02v-module-route-loader-repository-only-orchestration-surface-integration.json');
+          for(const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand','executeModerationCommand']){
+            if(loader.getRepositoryOnlySurface('communities',name)!==null)throw new Error(`B02V_ACTIVE_HANDLER_LEAK:${name}`);
+            if(loader.getHandler('communities',name)!==communities.handlers[name])throw new Error(`B02V_ACTIVE_HANDLER_DRIFT:${name}`);
+          }
+          if(b.authorization.type!=='standing_repository_only_chat_authority'||b.authorization.received!==true||b.authorization.reusable!==true||b.authorization.singleUse!==false||b.authorization.sensitiveBoundariesExcluded!==true)throw new Error('B02V_AUTHORIZATION_DRIFT');
+          if(b.authority.moduleRouteLoaderRepositoryOnlySurfaceMutationAuthority!==true)throw new Error('B02V_MISSING_LOADER_SURFACE_AUTHORITY');
+          for(const k of ['moduleRouteLoaderActiveHandlerMutationAuthority','activeExecuteHandlerMutationAuthority','routeHandlerMutationAuthority','routeRegistryMutationAuthority','credentialSourceBindingAuthority','credentialReadAuthority','repositoryOperationInvocationAuthority','rpcExecutionAuthority','networkAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','migrationApplicationAuthority','runtimeActivationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02V_FORBIDDEN_AUTHORITY:${k}`);
+          for(const k of ['activeHandlerMapChanged','activeExecuteHandlerBehaviorChanged','routeHandlersChanged','routeRegistryChanged','b02uImplementationChanged','credentialSourceBound','credentialReadImplemented','repositoryOperationInvoked','rpcExecuted','networkExecuted','stagingReadExecuted','stagingMutationExecuted','migrationApplied','runtimeActivated','productionChanged','pullRequestMerged','readyForReviewChanged'])if(b.effects[k]!==false)throw new Error(`B02V_FORBIDDEN_EFFECT:${k}`);
+          if(b.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H'||b.functionalCheckpoint.exactRootCauseProven!==false||b.functionalCheckpoint.causalPromotionAllowed!==false||b.functionalCheckpoint.privatePresencePromotionAllowed!==false||b.functionalCheckpoint.r5iCreated!==false||b.functionalCheckpoint.r5iInferred!==false)throw new Error('B02V_FUNCTIONAL_CHECKPOINT_DRIFT');
+          NODE
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=c4526c03fd8ab0260e4d99473570a5284d6b61f8
+          git diff --check "$BASE" HEAD

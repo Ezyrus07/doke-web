@@ -1,0 +1,53 @@
+name: COM-B02B Supabase Repository Migration Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-supabase-repository-adapter.js'
+      - 'supabase/migrations/20260805121500_com_b02b_server_authority.sql'
+      - 'config/com-b02b-supabase-repository-migration-readiness.json'
+      - 'scripts/audit-com-b02b-supabase-repository-migration-readiness.js'
+      - 'scripts/test-com-b02b-supabase-repository-migration-readiness.js'
+      - 'docs/COM-B02B-SUPABASE-REPOSITORY-MIGRATION-READINESS.md'
+      - 'docs/validation/COM-B02B-SUPABASE-REPOSITORY-MIGRATION-READINESS.json'
+      - '.github/workflows/com-b02b-supabase-repository-migration-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b02b-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-supabase-repository-adapter.js
+          node --check scripts/audit-com-b02b-supabase-repository-migration-readiness.js
+          node --check scripts/test-com-b02b-supabase-repository-migration-readiness.js
+      - name: Audit COM-B02B
+        run: node scripts/audit-com-b02b-supabase-repository-migration-readiness.js
+      - name: Conformance COM-B02B
+        run: node scripts/test-com-b02b-supabase-repository-migration-readiness.js
+      - name: COM-B02 predecessor regression
+        run: |
+          node scripts/audit-com-b02-server-authority-contract.js
+          node scripts/test-com-b02-server-authority-contract.js
+      - name: COM-B01 regression
+        run: |
+          node scripts/audit-com-b01-policy-operational-integration-gate.js
+          node scripts/test-com-b01-policy-operational-integration-gate.js
+      - name: SQL fail-closed assertions
+        run: |
+          grep -q '^begin;' supabase/migrations/20260805121500_com_b02b_server_authority.sql
+          grep -q 'to service_role' supabase/migrations/20260805121500_com_b02b_server_authority.sql
+          ! grep -q 'to authenticated' supabase/migrations/20260805121500_com_b02b_server_authority.sql
+          grep -q 'com_commit_event_projection_v1' supabase/migrations/20260805121500_com_b02b_server_authority.sql
+      - name: Diff hygiene
+        run: git diff --check

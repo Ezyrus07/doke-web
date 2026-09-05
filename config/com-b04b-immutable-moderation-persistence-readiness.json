@@ -1,0 +1,106 @@
+{
+  "contractId": "com-b04b-immutable-moderation-persistence-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b04-moderation-case-authority-v1"
+  ],
+  "scope": "repository_only",
+  "status": "repository_contract_certified_migration_not_applied",
+  "sourceHead": "f5c9135c44ba9413684ab05e4fbfc7bb86d2755e",
+  "adapterPrepared": true,
+  "migrationPrepared": true,
+  "migrationApplied": false,
+  "runtimeIntegrated": false,
+  "stagingValidated": false,
+  "rpcAuthority": "service_role_only",
+  "transactionBoundary": "single_security_definer_rpc",
+  "isolation": "serializable",
+  "rollbackOnFailure": true,
+  "migrationPath": "supabase/migrations/20260805205800_com_b04b_moderation_persistence.sql",
+  "requiredTables": [
+    "com_moderation_private.case_projection",
+    "com_moderation_private.case_event",
+    "com_moderation_private.command_idempotency",
+    "com_moderation_private.evidence_record",
+    "com_moderation_private.decision_record",
+    "com_moderation_private.sanction_event",
+    "com_moderation_private.appeal_event",
+    "com_moderation_private.media_review_event"
+  ],
+  "appendOnlyTables": [
+    "com_moderation_private.case_event",
+    "com_moderation_private.evidence_record",
+    "com_moderation_private.decision_record",
+    "com_moderation_private.sanction_event",
+    "com_moderation_private.appeal_event",
+    "com_moderation_private.media_review_event"
+  ],
+  "requiredRpcs": [
+    "com_moderation_load_case_v1",
+    "com_moderation_commit_case_command_v1"
+  ],
+  "logicalRepositoryMethods": [
+    "loadCanonicalCase",
+    "claimIdempotencyKey",
+    "appendModerationEvent",
+    "insertDecisionRecord",
+    "compareAndSwapCaseProjection",
+    "appendSanctionEvent",
+    "appendAppealEvent",
+    "appendMediaReviewEvent"
+  ],
+  "invariants": {
+    "eventAndProjectionAtomic": true,
+    "specializedRecordsShareEventRevision": true,
+    "idempotencyCommittedInsideTransaction": true,
+    "caseProjectionUsesCompareAndSwap": true,
+    "eventHashChainRequired": true,
+    "ledgerTablesRejectUpdateAndDelete": true,
+    "rawEvidencePayloadAllowed": false,
+    "browserTableAccessAllowed": false,
+    "authenticatedRpcAccessAllowed": false
+  },
+  "authority": {
+    "browserRpcAuthority": false,
+    "authenticatedRoleRpcAuthority": false,
+    "serviceRoleRpcAuthorityPrepared": true,
+    "migrationExecutionAuthority": false,
+    "moderationWriteAuthority": false,
+    "sanctionWriteAuthority": false,
+    "appealWriteAuthority": false,
+    "mediaWriteAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "migrationApplied": false,
+    "deployment": false,
+    "credentialsConfigured": false,
+    "realReportCreated": false,
+    "realContentChanged": false,
+    "realSanctionApplied": false,
+    "realAppealChanged": false,
+    "realMediaChanged": false,
+    "productionChanges": false,
+    "pullRequestMerged": false
+  },
+  "nextSublot": "COM-B04C migration application authorization and staging structural verification",
+  "certifiedRepositoryHead": "e6ef05ebf0241a5f3a0d3b9f25304e77fda68861",
+  "certification": {
+    "sourceHead": "cb0d3ce15cd6e42e26fd67f41d0c568305faeefe",
+    "canonicalCommit": "e6ef05ebf0241a5f3a0d3b9f25304e77fda68861",
+    "run": 31060030246,
+    "job": 92485763612,
+    "result": "success",
+    "audit": "156/156",
+    "conformance": "21/21",
+    "matrixReconciliation": "85/85",
+    "predecessorContinuity": "82/82",
+    "globalMatrix": "passed"
+  }
+}

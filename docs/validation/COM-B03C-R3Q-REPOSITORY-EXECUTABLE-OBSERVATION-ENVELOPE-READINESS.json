@@ -1,0 +1,108 @@
+{
+  "validationId": "COM-B03C-R3Q-REPOSITORY-EXECUTABLE-OBSERVATION-ENVELOPE-READINESS",
+  "contractId": "com-b03c-r3q-repository-executable-observation-envelope-readiness-v1",
+  "status": "repository_executable_observation_envelope_certified_no_remote_authority",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "preparedFromHead": "9edd894e6f7f97a681b6fef85ec2b20977478a27",
+  "initialBoundaryCommit": "25a21c87be989b29c965d70523d70e3d56f0b8c4",
+  "predecessor": {
+    "validationId": "COM-B03C-R3P-HOSTED-RUNTIME-OBSERVATION-HARNESS-READINESS",
+    "status": "repository_synthetic_two_probe_harness_certified_no_remote_authority",
+    "head": "9edd894e6f7f97a681b6fef85ec2b20977478a27",
+    "recertRun": 31399720856,
+    "recertJob": 93491364924,
+    "recertSuccess": true
+  },
+  "envelope": {
+    "mode": "synthetic_repository",
+    "entrypoint": "executeRepositoryObservationEnvelope",
+    "adapterKind": "synthetic_repository",
+    "remoteCapable": false,
+    "remoteDependencies": false,
+    "executableSqlPrepared": false,
+    "supabaseClientPrepared": false,
+    "pgClientPrepared": false,
+    "remoteExecutorPrepared": false,
+    "cleanupInFinally": true,
+    "zeroResidueRequired": true
+  },
+  "coverage": {
+    "classifications": [
+      "hosted_presence_extension_selection_diverged",
+      "hosted_presence_read_effective_gate_diverged",
+      "hosted_presence_only_or_join_diverged",
+      "hosted_runtime_observation_matches_pinned_presence_path"
+    ],
+    "failurePaths": [
+      "remote-capable adapter rejected",
+      "forbidden remote method rejected",
+      "baseline policy snapshot incomplete",
+      "probe failure still executes cleanup",
+      "zero residue missing"
+    ]
+  },
+  "certificationHistory": {
+    "initialFailClosed": {
+      "head": "25a21c87be989b29c965d70523d70e3d56f0b8c4",
+      "run": 31400794914,
+      "job": 93494964476,
+      "conclusion": "failure",
+      "failedStep": "Domain Completion Matrix",
+      "reason": "derived matrix artifacts stale after R3Q inventory expansion",
+      "syntaxPassed": true,
+      "executableEnvelopePassed": true,
+      "preRemoteHardBlockPassed": true
+    },
+    "canonicalMatrixReconciliation": {
+      "writerInstallHead": "257bddf596b93b135aba0745b602e1a74afb87e2",
+      "writerRun": 31400988006,
+      "writerJob": 93495611568,
+      "writerConclusion": "success",
+      "writerOutputCommit": "19d844d3e92274963cc799d59e96e3b133052f50",
+      "writerOutputs": [
+        "docs/DOMAIN-COMPLETION-MATRIX.md",
+        "reports/generated/domain-completion-matrix-report.json"
+      ],
+      "matrixSourceChanged": false,
+      "workflowRestoredHead": "639fc4528a5d4bcbdf48837574a407047e811f47",
+      "workflowPermissions": "contents: read"
+    },
+    "normalHeadCertification": {
+      "head": "639fc4528a5d4bcbdf48837574a407047e811f47",
+      "r3qRun": 31401079003,
+      "r3qJob": 93495923438,
+      "r3qConclusion": "success",
+      "matrixRun": 31401079780,
+      "matrixJob": 93495929208,
+      "matrixConclusion": "success",
+      "runAttempt": 1
+    }
+  },
+  "authority": {
+    "repositoryExecutableEnvelope": true,
+    "remoteAdapterBinding": false,
+    "remoteExecution": false,
+    "triggerCreation": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "runtimeChange": false,
+    "production": false,
+    "merge": false
+  },
+  "effects": {
+    "stagingAccessExecuted": false,
+    "remoteCredentialReadExecuted": false,
+    "remoteDependencyLoadExecuted": false,
+    "authIdentityMutationExecuted": false,
+    "realtimePolicyMutationExecuted": false,
+    "realtimeSubscriptionExecuted": false,
+    "runtimePolicyChangeExecuted": false,
+    "productionExecuted": false,
+    "mergeExecuted": false
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "Certify a separate repository-only remote-adapter binding boundary for the R3Q envelope. No staging authorization, trigger, secrets, environment job or remote execution is authorized by R3Q."
+}

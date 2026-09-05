@@ -1,0 +1,126 @@
+name: COM-B02CK Repository-Only Registry-Backed Resume Integration Readiness
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - 'backend/shared/http/repository-only-registry-backed-resume-integration-readiness.js'
+      - 'config/com-b02ck-repository-only-registry-backed-resume-integration-readiness.json'
+      - 'scripts/test-com-b02ck-repository-only-registry-backed-resume-integration-readiness.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-registry-backed-resume-integration-readiness:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: c40b9dab87b2ce79d82543ea0c08ce78f99a1339
+      PREDECESSOR_TREE: 09f89d5062b36c6c04f02f32ce2a53d2ce5dcd88
+      PREDECESSOR_RUN_ID: '32967534682'
+      PREDECESSOR_JOB_ID: '98173351054'
+      TARGET: backend/shared/http/repository-only-registry-backed-resume-integration-readiness.js
+      TARGET_BLOB: cc2ee3d27e193955801721e738015f71bdee40e6
+      CONFIG: config/com-b02ck-repository-only-registry-backed-resume-integration-readiness.json
+      CONFIG_BLOB: c05ada48908d7ec3c755313fd68d4fcccf1034d9
+      TEST: scripts/test-com-b02ck-repository-only-registry-backed-resume-integration-readiness.js
+      TEST_BLOB: 6579383de8c650615a4140b773cdd75ccd765218
+      WORKFLOW: .github/workflows/com-b02ck-repository-only-registry-backed-resume-integration-readiness.yml
+      B02CJ_CONFIG: config/com-b02cj-repository-only-route-resume-surface-controlled-invocation.json
+      B02CJ_CONFIG_BLOB: 0c441b3327101d820c9ad3e06894a70007385912
+      B02CC_CONFIG: config/com-b02cc-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-operation-method-invocation.json
+      B02CC_CONFIG_BLOB: 77f054bdaac72dbd28845c8dac45282ddbfb0bd4
+      B02CG_CONFIG: config/com-b02cg-repository-only-deterministic-synthetic-continuation-state-register-resolve-release-execution.json
+      B02CG_CONFIG_BLOB: ba706830e76d53d5c9fc22a7ba4cf9d86474fa45
+      B02BY_CONFIG: config/com-b02by-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-attachment.json
+      B02BY_CONFIG_BLOB: 9c208880dab4b7bef1356593f87f77d933c89bff
+      DISPATCHER: backend/shared/http/repository-only-route-resume-dispatcher.js
+      DISPATCHER_BLOB: 4a8da53cca4ef27777c550e91f28a4abe5bbe542
+      CARRIER: backend/shared/http/repository-only-route-continuation-carrier-contract.js
+      CARRIER_BLOB: fb7448f83fe385e94a2be61685f612d9e27d949f
+      OP_IMPL: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-methods-implementation.js
+      OP_IMPL_BLOB: 99d804721a5d350dcf8e59dd935937e24561e094
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CJ certification and exact B02CK readiness scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          test "$(git rev-list --count "$PREDECESSOR_HEAD..HEAD")" = '6'
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$PREDECESSOR_RUN_ID" = '32967534682'
+          test "$PREDECESSOR_JOB_ID" = '98173351054'
+          expected="$(printf '%s\n' "$TARGET" "$CONFIG" "$TEST" "$MATRIX_MD" "$MATRIX_REPORT" "$WORKFLOW" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02CJ_CONFIG)" = "$B02CJ_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02CC_CONFIG)" = "$B02CC_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02CG_CONFIG)" = "$B02CG_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02BY_CONFIG)" = "$B02BY_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$DISPATCHER)" = "$DISPATCHER_BLOB"
+          test "$(git rev-parse HEAD:$CARRIER)" = "$CARRIER_BLOB"
+          test "$(git rev-parse HEAD:$OP_IMPL)" = "$OP_IMPL_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '0000-temp-com-b02ck-*' -print -quit)"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify registry-backed resume integration readiness only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          grep -F '"boundaryId": "COM-B02CK"' "$CONFIG"
+          grep -F '"repositoryOnlyRegistryBackedResumeIntegrationReadinessAuthority": true' "$CONFIG"
+          grep -F '"permanentRegistryStorageExecutionImplementationAuthority": false' "$CONFIG"
+          grep -F '"dispatcherRegistryLookupIntegrationAuthority": false' "$CONFIG"
+          grep -F '"registryLookupAuthority": false' "$CONFIG"
+          grep -F '"resumeSurfaceInvocationAuthority": false' "$CONFIG"
+          grep -F '"networkAuthority": false' "$CONFIG"
+          grep -F '"productionAuthority": false' "$CONFIG"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET" "$TEST"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+
+      - name: Matrix governance and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD

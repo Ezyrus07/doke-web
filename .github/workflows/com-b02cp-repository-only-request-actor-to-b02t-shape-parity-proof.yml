@@ -1,0 +1,137 @@
+name: COM-B02CP Repository-Only Request Actor to B02T Shape Parity Proof
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.json'
+      - 'scripts/test-com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02cp-request-actor-shape-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 694c296251b776578e145f714d52fe5a9f1c7581
+      PREDECESSOR_TREE: a1f86a0983343cf6843a513fc86323fa4f99c7fc
+      RECOVERY_HEAD: b334f279f33f5e3cda0c5d0fd3ac8d8f2b60991c
+      RECOVERY_TREE: a1f86a0983343cf6843a513fc86323fa4f99c7fc
+      CANDIDATE_HEAD: 1243735eb9d2b103631696df2caabb74ca0e6002
+      CANDIDATE_TREE: af64788bb85ea324352480c16f8189b14890f022
+      MATRIX_DERIVATIVE_HEAD: 80a132adc0950a3e520717809a8834c9eea07c52
+      MATRIX_DERIVATIVE_TREE: cd4e745cbb048de95e2ac6c54d051e2022697499
+      CONFIG: config/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.json
+      CONFIG_BLOB: da35896958b65d56e8e70b8fecf08e4e7b053a57
+      TEST: scripts/test-com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.js
+      TEST_BLOB: 3123400104735bde50418a291f6b008431369e53
+      WORKFLOW: .github/workflows/com-b02cp-repository-only-request-actor-to-b02t-shape-parity-proof.yml
+      B02T: backend/modules/communities/community-command-handler-repository-orchestration.js
+      B02T_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
+      B02S: backend/modules/communities/community-command-handler-repository-binding-surface.js
+      B02S_BLOB: 0778690aaaf428247159a08eac83a38796888f41
+      B02R: backend/modules/communities/community-command-runtime-repository-binding-composition.js
+      B02R_BLOB: cfc3bd8790d99b1ee61bf52fa93fd2bb2a6bf3bc
+      B02Q: backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js
+      B02Q_BLOB: 384c3a452b7e0e66d1bf2ddfeebb341c8b36f3c9
+      B02P: backend/modules/communities/community-command-runtime-binding-integration-implementation.js
+      B02P_BLOB: 19a5918f91df57ce991ff25e9fbd7eb15ecdfc2f
+      B02O: backend/modules/communities/community-command-runtime-binding-integration-contract.js
+      B02O_BLOB: ed1536920e281bd3fda3c35f6b4d71a2fbf6107f
+      B02M: backend/modules/communities/community-command-runtime-binding-adapter-implementation.js
+      B02M_BLOB: 233e241fa9da0494d0d350c9ac686168e508d2e2
+      B02L: backend/modules/communities/community-command-runtime-binding-adapter-contract.js
+      B02L_BLOB: c48eabab7bb5b37b6a1663a051b3a8a6223cd0c9
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_MD_BLOB: 3ac79a6d1f31739d6918f14a1f14aa599b5bda12
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_REPORT_BLOB: 0510229125aa28d2c3775d766821e9348d302c81
+
+    steps:
+      - name: Checkout exact certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze candidate, matrix derivatives, dependencies and exact reconciled scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$MATRIX_DERIVATIVE_HEAD"
+          test "$(git rev-parse "$MATRIX_DERIVATIVE_HEAD^{tree}")" = "$MATRIX_DERIVATIVE_TREE"
+          test "$(git rev-parse "$MATRIX_DERIVATIVE_HEAD^")" = "$CANDIDATE_HEAD"
+          test "$(git rev-parse "$CANDIDATE_HEAD^{tree}")" = "$CANDIDATE_TREE"
+          test "$(git rev-parse "$CANDIDATE_HEAD^")" = "$RECOVERY_HEAD"
+          test "$(git rev-parse "$RECOVERY_HEAD^{tree}")" = "$RECOVERY_TREE"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$RECOVERY_TREE" = "$PREDECESSOR_TREE"
+          test -z "$(git diff --name-only "$PREDECESSOR_HEAD" "$RECOVERY_HEAD")"
+
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02T)" = "$B02T_BLOB"
+          test "$(git rev-parse HEAD:$B02S)" = "$B02S_BLOB"
+          test "$(git rev-parse HEAD:$B02R)" = "$B02R_BLOB"
+          test "$(git rev-parse HEAD:$B02Q)" = "$B02Q_BLOB"
+          test "$(git rev-parse HEAD:$B02P)" = "$B02P_BLOB"
+          test "$(git rev-parse HEAD:$B02O)" = "$B02O_BLOB"
+          test "$(git rev-parse HEAD:$B02M)" = "$B02M_BLOB"
+          test "$(git rev-parse HEAD:$B02L)" = "$B02L_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_MD)" = "$MATRIX_MD_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_REPORT)" = "$MATRIX_REPORT_BLOB"
+
+          candidate_expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" | sort)"
+          candidate_actual="$(git diff --name-only "$PREDECESSOR_HEAD" "$CANDIDATE_HEAD" | sort)"
+          test "$candidate_actual" = "$candidate_expected"
+
+          derivative_expected="$(printf '%s\n' "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          derivative_actual="$(git diff --name-only "$CANDIDATE_HEAD" "$MATRIX_DERIVATIVE_HEAD" | sort)"
+          test "$derivative_actual" = "$derivative_expected"
+
+          reconciliation_actual="$(git diff --name-only "$MATRIX_DERIVATIVE_HEAD" HEAD | sort)"
+          test "$reconciliation_actual" = "$WORKFLOW"
+
+          final_expected="$(printf '%s\n' "$CONFIG" "$TEST" "$WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          final_actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$final_actual" = "$final_expected"
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify repository-only request actor parity at B02T
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if grep -Eq 'execute(Membership|Governance|Content)Command|resumeRepositoryOnlyCommandHandlerOrchestration[[:space:]]*\(' "$TEST"; then
+            echo "B02CP must not invoke active handlers or the B02T resume surface" >&2
+            exit 1
+          fi
+
+          grep -F 'beginRepositoryOnlyCommandHandlerOrchestration' "$TEST" >/dev/null
+          grep -F 'adapterState.mappedRequest' "$TEST" >/dev/null
+
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TEST"
+          node "$TEST"
+          git diff --check "$PREDECESSOR_HEAD" HEAD

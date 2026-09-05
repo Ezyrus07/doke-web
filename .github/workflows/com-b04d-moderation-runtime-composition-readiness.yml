@@ -1,0 +1,78 @@
+name: COM-B04D Moderation Runtime Composition Readiness
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'config/com-b04d-moderation-runtime-composition-readiness.json'
+      - 'scripts/test-com-b04d-moderation-runtime-composition-readiness.js'
+      - 'scripts/audit-com-b04d-moderation-runtime-composition-readiness.js'
+      - 'scripts/audit-com-b04d-domain-matrix-reconciliation.js'
+      - 'docs/COM-B04D-MODERATION-RUNTIME-COMPOSITION-READINESS.md'
+      - 'docs/validation/COM-B04D-MODERATION-RUNTIME-COMPOSITION-READINESS.json'
+      - '.github/workflows/com-b04d-moderation-runtime-composition-readiness.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'config/com-b04d-moderation-runtime-composition-readiness.json'
+      - 'scripts/test-com-b04d-moderation-runtime-composition-readiness.js'
+      - 'scripts/audit-com-b04d-moderation-runtime-composition-readiness.js'
+      - 'scripts/audit-com-b04d-domain-matrix-reconciliation.js'
+      - 'docs/COM-B04D-MODERATION-RUNTIME-COMPOSITION-READINESS.md'
+      - 'docs/validation/COM-B04D-MODERATION-RUNTIME-COMPOSITION-READINESS.json'
+      - '.github/workflows/com-b04d-moderation-runtime-composition-readiness.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b04d-runtime-composition-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-moderation-runtime-composition.js
+          node --check scripts/test-com-b04d-moderation-runtime-composition-readiness.js
+          node --check scripts/audit-com-b04d-moderation-runtime-composition-readiness.js
+          node --check scripts/audit-com-b04d-domain-matrix-reconciliation.js
+      - name: COM-B04D conformance
+        run: node scripts/test-com-b04d-moderation-runtime-composition-readiness.js
+      - name: COM-B04D audit
+        run: node scripts/audit-com-b04d-moderation-runtime-composition-readiness.js
+      - name: COM-B04D matrix reconciliation
+        run: node scripts/audit-com-b04d-domain-matrix-reconciliation.js
+      - name: COM-B04C regression
+        run: |
+          node scripts/audit-com-b04c-moderation-persistence-staging-verification.js
+          node scripts/audit-com-b04c-domain-matrix-reconciliation.js
+      - name: COM-B04B regression
+        run: |
+          node scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js
+          node scripts/test-com-b04b-immutable-moderation-persistence-readiness.js
+          node scripts/audit-com-b04b-domain-matrix-reconciliation.js
+      - name: COM-B04 regression
+        run: |
+          node scripts/audit-com-b04-moderation-case-authority.js
+          node scripts/test-com-b04-moderation-case-authority.js
+          node scripts/audit-com-b04-domain-matrix-reconciliation.js
+      - name: Canonical matrix drift
+        run: npm run audit:domain-completion-matrix
+      - name: Diff hygiene
+        run: git diff --check

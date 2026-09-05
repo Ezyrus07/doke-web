@@ -1,0 +1,62 @@
+#!/usr/bin/env node
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const reportPath = path.resolve(process.env.COM_B03B_REPORT_PATH ||
+  'reports/generated/COM-B03B-REALTIME-PUBLICATION-AUTHENTICATED-SUBSCRIPTION-STAGING-CANARY.json');
+if (!fs.existsSync(reportPath)) throw new Error('DOKE_COM_B03B_EVIDENCE_MISSING');
+const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+
+assert.equal(report.validationId, 'COM-B03B-REALTIME-PUBLICATION-AUTHENTICATED-SUBSCRIPTION-STAGING-CANARY');
+assert.equal(report.contractId, 'com-b03b-realtime-publication-authenticated-subscription-readiness-v1');
+assert.equal(report.status, 'authenticated_private_realtime_canary_passed');
+assert.deepEqual([...report.scope].sort(), ['channel_presence', 'channel_typing', 'community_posts']);
+assert.deepEqual(report.excludedTopics, ['channel_messages']);
+assert.equal(report.execution?.runAttempt, 1);
+assert.equal(report.execution?.result, 'success');
+assert.equal(report.pullRequest?.number, 61);
+assert.equal(report.pullRequest?.state, 'open');
+assert.equal(report.pullRequest?.draft, true);
+assert.equal(report.pullRequest?.merged, false);
+assert.equal(report.project?.id, 'zwkczgewzbsorbrjuzpb');
+assert.equal(report.project?.name, 'doke-web-staging');
+assert.equal(report.project?.status, 'ACTIVE_HEALTHY');
+assert.equal(report.actor?.source, 'server_verified_authenticated_session');
+assert.match(report.actor?.actorSha256 || '', /^[a-f0-9]{64}$/);
+assert.equal(report.actor?.rawIdentifierExposed, false);
+assert.equal(report.foundation?.messages_present, true);
+assert.equal(report.foundation?.topic_function_present, true);
+assert.equal(report.foundation?.send_function_present, true);
+assert.equal(report.foundation?.messages_published, true);
+assert.equal(report.foundation?.messages_rls_enabled, true);
+assert.equal(report.result?.exactScopeEnforced, true);
+assert.equal(report.result?.channelMessagesExcluded, true);
+assert.equal(report.result?.communityPosts?.transport, 'private_broadcast_from_database');
+assert.equal(report.result?.communityPosts?.databaseOriginated, true);
+assert.equal(report.result?.communityPosts?.privateSubscriptionAuthenticated, true);
+assert.equal(report.result?.communityPosts?.delivered, true);
+assert.equal(report.result?.communityPosts?.domainRowsPersisted, 0);
+assert.equal(report.result?.channelPresence?.transport, 'private_presence');
+assert.equal(report.result?.channelPresence?.tracked, true);
+assert.equal(report.result?.channelPresence?.syncObserved, true);
+assert.equal(report.result?.channelTyping?.transport, 'private_broadcast');
+assert.equal(report.result?.channelTyping?.sent, true);
+assert.equal(report.result?.channelTyping?.received, true);
+assert.equal(report.result?.anonymousPrivateSubscriptionDenied, true);
+assert.equal(report.result?.temporaryPoliciesRemoved, true);
+assert.equal(report.result?.channelsRemoved, true);
+assert.equal(report.result?.persistentDomainMutation, false);
+assert.equal(report.effects?.persistentDomainMutationExecuted, false);
+assert.equal(report.effects?.publicTrafficEnabled, false);
+assert.equal(report.effects?.runtimeDeployed, false);
+assert.equal(report.effects?.productionChanged, false);
+assert.equal(report.effects?.pullRequestMerged, false);
+assert.deepEqual(Object.keys(report.topicFingerprints || {}).sort(), ['channel_presence', 'channel_typing', 'community_posts']);
+for (const value of Object.values(report.topicFingerprints || {})) assert.match(value, /^[a-f0-9]{64}$/);
+const raw = JSON.stringify(report);
+assert.equal(raw.includes('cliente@doke.local'), false);
+assert.equal(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/.test(raw), false);
+console.log('COM-B03B staging canary evidence verified.');

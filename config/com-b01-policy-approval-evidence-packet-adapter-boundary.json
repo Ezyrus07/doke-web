@@ -1,0 +1,115 @@
+{
+  "contractId": "com-b01-policy-approval-evidence-packet-adapter-v1",
+  "sourceBoundaryId": "COM-B01",
+  "boundaryClass": "approval_evidence_to_canonical_policy_packet_adapter",
+  "scope": "repository_only",
+  "status": "repository_only_adapter_materialized_current_evidence_blocked",
+  "authorizedSourceHead": "5eb51438fa6a89e1a3c8587eabeab16153d18855",
+  "canonicalGateContractId": "com-b01-policy-operational-integration-gate-v1",
+  "templateSchemaId": "com-b01-server-owned-policy-approval-evidence-template-v1",
+  "protectedSourceBlobs": {
+    "backend/modules/communities/community-policy-operational-integration-gate.js": "4c4424401b52060303735f178058a34d138ff42c",
+    "config/com-b01-server-owned-policy-approval-evidence-template.json": "e98a7fcb57706a17edae9bd3bbaaa36c42801817",
+    "docs/validation/COM-B01-POLICY-APPROVAL-EVIDENCE-TEMPLATE-CERTIFICATION.json": "517479c1e1ae92226422fd0d27f77c73f4665738"
+  },
+  "mapping": {
+    "policyMetadata.semanticVersion": "policyVersion",
+    "policyMetadata.policyHash": "policyHash",
+    "policyMetadata.effectiveAtUtc": "effectiveAt",
+    "adapterInput.policyAuthorId": "policyAuthorId",
+    "adapterInput.policyDomains": "policyDomains",
+    "reviewerEvidence[].reviewerIdentity": "approvals[].actorId",
+    "reviewerEvidence[].role": "approvals[].reviewerRole",
+    "reviewerEvidence[].decision": "approvals[].decision",
+    "reviewerEvidence[].evidenceReference.policyHash": "approvals[].policyHash",
+    "reviewerEvidence[].evidenceReference.policyVersion": "approvals[].policyVersion",
+    "reviewerEvidence[].timestamp": "approvals[].occurredAt"
+  },
+  "evidenceReferenceContract": {
+    "referenceType": "sha256",
+    "referenceHashRequired": true,
+    "policyHashBindingRequired": true,
+    "policyVersionBindingRequired": true,
+    "rawDocumentForbidden": true,
+    "referencePresenceAloneGrantsApproval": false
+  },
+  "nonMappedMetadata": {
+    "policyMetadata.supersedesHash": "validated_as_null_or_sha256_but_not_emitted_to_canonical_evaluator_packet"
+  },
+  "requiredReviewerRoles": [
+    "trust_safety",
+    "legal",
+    "privacy",
+    "security",
+    "community_operations"
+  ],
+  "requiredPolicyDomains": [
+    "community_discovery_membership",
+    "roles_permissions_discipline",
+    "content_realtime_rate_limits",
+    "reports_moderation_appeals",
+    "media_quarantine_scanning"
+  ],
+  "currentMaterializedEvidence": {
+    "templateStatus": "approval_evidence_incomplete",
+    "approvalComplete": false,
+    "approvedPolicyPresent": false,
+    "policyApprovalAuthority": false,
+    "reviewersWithEvidence": 0,
+    "expectedAdapterDecision": "blocked_repository_only",
+    "canonicalPolicyPacketReady": false
+  },
+  "preservedBlockers": [
+    "COM-B02",
+    "COM-B03",
+    "COM-B04",
+    "AUTH-001",
+    "ADM-B03",
+    "ADM-B04",
+    "LEGAL-B01",
+    "LEGAL-B03",
+    "LEGAL-B04"
+  ],
+  "authority": {
+    "repositoryOnlyContractAuthority": true,
+    "policyApprovalGranted": false,
+    "policyApprovalAuthority": false,
+    "policyValueSelectionAuthority": false,
+    "policyValueMaterializationAuthority": false,
+    "snapshotReadInvocationAuthority": false,
+    "rateLimitConsumeAuthority": false,
+    "handlerRuntimeAuthority": false,
+    "repositoryOperationAuthority": false,
+    "credentialReadAuthority": false,
+    "rpcAuthority": false,
+    "supabaseAuthority": false,
+    "realtimeAuthority": false,
+    "stagingAuthority": false,
+    "migrationAuthority": false,
+    "deploymentAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "prohibitedEffects": {
+    "reviewersInvented": false,
+    "approvalGranted": false,
+    "policyValuesSelected": false,
+    "policyValuesMaterialized": false,
+    "snapshotReadInvoked": false,
+    "rateLimitConsumeExecuted": false,
+    "handlerExecuted": false,
+    "repositoryOperationExecuted": false,
+    "credentialsRead": false,
+    "rpcExecuted": false,
+    "networkExecuted": false,
+    "supabaseOperationExecuted": false,
+    "realtimeExecuted": false,
+    "stagingExecuted": false,
+    "migrationApplied": false,
+    "deploymentExecuted": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  }
+}

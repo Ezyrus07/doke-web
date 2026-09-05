@@ -1,0 +1,95 @@
+{
+  "contractId": "com-b02c-staging-migration-application-authorization-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b02b-supabase-repository-migration-readiness-v1"
+  ],
+  "scope": "staging_application_evidence",
+  "status": "staging_migration_applied_and_structurally_verified",
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B02C_SERVER_AUTHORITY_MIGRATION_ON_DOKE_STAGING",
+    "received": true,
+    "receivedAt": "2026-08-05T12:34:00-03:00",
+    "source": "explicit_user_message",
+    "consumed": true,
+    "consumedAt": "2026-08-05T15:35:39Z",
+    "singleUse": true,
+    "reusableAfterFailure": false
+  },
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "productionAllowed": false
+  },
+  "migration": {
+    "repositoryPath": "supabase/migrations/20260805121500_com_b02b_server_authority.sql",
+    "repositoryGitBlobSha": "fd74f6abc029023c4e0972b32b35daca975c3d57",
+    "prepared": true,
+    "applied": true,
+    "appliedName": "com_b02b_server_authority",
+    "supabaseRecordedVersion": "20260805153539"
+  },
+  "executor": {
+    "installed": false,
+    "credentialsConfigured": false,
+    "executionAttempted": true,
+    "successfulExecutions": 1,
+    "failedExecutions": 0,
+    "mechanism": "supabase_mcp_apply_migration"
+  },
+  "verification": {
+    "migrationHistoryContainsExpectedVersion": true,
+    "privateSchemaExists": true,
+    "communityStateTableExists": true,
+    "communityEventTableExists": true,
+    "commandIdempotencyTableExists": true,
+    "rlsEnabledOnAllPrivateTables": true,
+    "anonHasNoTableAccess": true,
+    "authenticatedHasNoTableAccess": true,
+    "anonHasNoRpcExecute": true,
+    "authenticatedHasNoRpcExecute": true,
+    "serviceRoleHasExpectedRpcExecute": true,
+    "serviceRoleReadRpcExecuted": true,
+    "allRpcsSecurityDefiner": true,
+    "allRpcsFixedSearchPath": true,
+    "eventProjectionUsesForUpdate": true,
+    "eventAndProjectionCommitAtomic": true,
+    "domainRowsCreated": 0
+  },
+  "advisors": {
+    "comSpecificSecurityWarnOrErrorCount": 0,
+    "comSpecificPerformanceLintCount": 0,
+    "expectedPrivateRlsNoPolicyInfoCount": 3
+  },
+  "authority": {
+    "authorizationContractAuthority": true,
+    "singleExecutionAuthorization": false,
+    "migrationExecutionAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "runtimeMutationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "observedEffects": {
+    "databaseConnection": true,
+    "migrationApplied": true,
+    "stagingRead": true,
+    "stagingMutation": true,
+    "schemaCreated": true,
+    "tablesCreated": 3,
+    "functionsCreated": 3,
+    "domainRowsCreated": 0,
+    "credentialsPersisted": false,
+    "runtimeDeployed": false,
+    "realCommunityChanged": false,
+    "realMembershipChanged": false,
+    "realRoleChanged": false,
+    "realUserDataChanged": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "evidencePath": "docs/validation/COM-B02C-STAGING-MIGRATION-APPLICATION.json",
+  "nextAction": "prepare_separate_server_composition_and_authenticated_canary_authorization"
+}

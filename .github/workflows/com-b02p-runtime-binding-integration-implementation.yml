@@ -1,0 +1,131 @@
+name: COM-B02P Runtime Binding Integration Implementation
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-command-runtime-binding-integration-implementation.js'
+      - 'config/com-b02p-runtime-binding-integration-implementation.json'
+      - 'scripts/test-com-b02p-runtime-binding-integration-implementation.js'
+      - '.github/workflows/com-b02p-runtime-binding-integration-implementation.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02p-runtime-binding-integration-implementation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02O predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=07c6624462fd6c9133b4d7b3ba5026af9b45bb4b
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git merge-base --is-ancestor "$BASE" HEAD
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-contract.js)" = "ed1536920e281bd3fda3c35f6b4d71a2fbf6107f"
+          test "$(git rev-parse HEAD:config/com-b02o-runtime-binding-integration-contract.json)" = "e221b62821eb801f90ac37ec5534d7cc7c5524a4"
+          test "$(git rev-parse HEAD:scripts/test-com-b02o-runtime-binding-integration-contract.js)" = "d221aad0156bc373e5493690fd33ee469c19775b"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02o-runtime-binding-integration-contract.yml)" = "ca07fccdc435a404d526cf4435a3213f684008a0"
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-adapter-implementation.js)" = "233e241fa9da0494d0d350c9ac686168e508d2e2"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-adapter-contract.js)" = "c48eabab7bb5b37b6a1663a051b3a8a6223cd0c9"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = "38cd77fd6d3cf0c9f13d4c35ed000b9831481840"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "990ee5c8895446f44cdcd5819101f0b3d5370e63"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = "1ff7621973be5ef38aa5e033b91f5b75216b9ec1"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-implementation.js)" = "19a5918f91df57ce991ff25e9fbd7eb15ecdfc2f"
+          test "$(git rev-parse HEAD:config/com-b02p-runtime-binding-integration-implementation.json)" = "686d9035e6510867fe8989ca60e91bc8be20106a"
+          test "$(git rev-parse HEAD:scripts/test-com-b02p-runtime-binding-integration-implementation.js)" = "d4ce1c90b2870ff64671366ab4fbf7626c960f86"
+
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02p-runtime-binding-integration-implementation.yml \
+            backend/modules/communities/community-command-runtime-binding-integration-implementation.js \
+            config/com-b02p-runtime-binding-integration-implementation.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02p-runtime-binding-integration-implementation.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected"
+
+      - name: Syntax and semantic integration-implementation conformance
+        run: |
+          node --check backend/modules/communities/community-command-runtime-binding-integration-implementation.js
+          node --check scripts/test-com-b02p-runtime-binding-integration-implementation.js
+          node scripts/test-com-b02p-runtime-binding-integration-implementation.js
+
+      - name: Integration implementation remains unbound and fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/modules/communities/community-command-runtime-binding-integration-implementation.js
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E 'createCommunitySupabaseRepository\(|createCommandSourceRepository\(' "$TARGET"
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+
+          node - <<'NODE'
+          const impl = require('./backend/modules/communities/community-command-runtime-binding-integration-implementation');
+          const b02o = require('./backend/modules/communities/community-command-runtime-binding-integration-contract');
+          const b02b = require('./backend/modules/communities/community-supabase-repository-adapter');
+          const b02i = require('./backend/modules/communities/community-command-source-repository-contract');
+          const handlers = require('./backend/modules/communities/route-handlers');
+          const loader = require('./backend/shared/http/module-route-loader');
+          const cfg = require('./config/com-b02p-runtime-binding-integration-implementation.json');
+
+          if (impl.CONTRACT_ID !== 'com-b02p-runtime-binding-integration-implementation-v1') throw new Error('B02P_CONTRACT_DRIFT');
+          if (impl.PREDECESSOR_CONTRACT_ID !== b02o.CONTRACT_ID) throw new Error('B02P_B02O_PREDECESSOR_DRIFT');
+          const inspection = impl.inspectIntegrationImplementation();
+          if (inspection.canonicalStateReadRepositoryContractId !== b02b.CONTRACT_ID) throw new Error('B02P_B02B_READ_DRIFT');
+          if (inspection.commandSourceRepositoryContractId !== b02i.CONTRACT_ID) throw new Error('B02P_B02I_COMMAND_DRIFT');
+          if (inspection.repositoryExecutorBound !== false || inspection.runtimeActivated !== false || inspection.rpcExecuted !== false || inspection.networkExecuted !== false) throw new Error('B02P_SCOPE_DRIFT');
+
+          for (const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand']) {
+            if (loader.getHandler('communities', name) !== handlers[name]) throw new Error(`B02P_ACTIVE_HANDLER_DRIFT:${name}`);
+          }
+          for (const name of ['beginRuntimeBindingIntegration','createRepositoryOnlyCandidateHandler']) {
+            if (loader.getHandler('communities', name) !== null) throw new Error(`B02P_RUNTIME_EXPOSED:${name}`);
+          }
+
+          if (cfg.authorization.type !== 'standing_repository_only' || cfg.authorization.sensitiveBoundariesExcluded !== true) throw new Error('B02P_AUTHORIZATION_DRIFT');
+          for (const key of ['runtimeHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','repositoryExecutorBindingAuthority','runtimeActivationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','rpcExecutionAuthority','networkAuthority','realtimeActivationAuthority','credentialReadAuthority','identityLifecycleRemoteAuthority','realCommunityMutationAuthority','migrationApplicationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority']) {
+            if (cfg.authority[key] !== false) throw new Error(`B02P_FORBIDDEN_AUTHORITY:${key}`);
+          }
+          NODE
+
+          ! git diff --name-only 07c6624462fd6c9133b4d7b3ba5026af9b45bb4b HEAD | grep '^supabase/migrations/'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check 07c6624462fd6c9133b4d7b3ba5026af9b45bb4b HEAD

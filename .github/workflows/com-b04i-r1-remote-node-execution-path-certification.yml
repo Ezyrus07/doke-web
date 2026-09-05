@@ -1,0 +1,81 @@
+name: COM-B04I-R1 Remote Node Recovery Certification
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b04i-r1-remote-node-execution-path-recovery.json'
+      - 'scripts/audit-com-b04i-r1-remote-node-execution-path-recovery.js'
+      - 'docs/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.md'
+      - 'docs/validation/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json'
+      - '.github/workflows/com-b04i-r1-remote-node-execution-path-recovery.yml'
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - 'config/com-b04i-r1-remote-node-execution-path-recovery.json'
+      - 'scripts/audit-com-b04i-r1-remote-node-execution-path-recovery.js'
+      - 'docs/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.md'
+      - 'docs/validation/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json'
+      - '.github/workflows/com-b04i-r1-remote-node-execution-path-recovery.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check scripts/audit-com-b04i-r1-remote-node-execution-path-recovery.js
+          node --check scripts/test-com-b04i-staging-live-composition-route-canary.js
+      - name: COM-B04I-R1 certified lifecycle audit
+        run: node scripts/audit-com-b04i-r1-remote-node-execution-path-recovery.js
+      - name: Local handler composition conformance
+        run: node scripts/test-com-b04i-staging-live-composition-route-canary.js
+      - name: Default handler remains fail closed
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert');
+          const handlers = require('./backend/modules/communities/route-handlers');
+          handlers.executeModerationCommand({}).then(
+            () => { throw new Error('COM_B04I_R1_DEFAULT_HANDLER_MUST_FAIL_CLOSED'); },
+            (error) => {
+              assert.equal(error.status, 503);
+              assert.equal(error.code, 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED');
+              assert.equal(error.runtimeActivated, false);
+              assert.equal(error.stagingTrafficEnabled, false);
+              assert.equal(error.realModerationEnabled, false);
+            }
+          );
+          NODE
+      - name: COM-B04H regression
+        run: |
+          node scripts/test-com-b04h-live-composition-activation-readiness.js
+          node scripts/audit-com-b04h-live-composition-activation-readiness.js
+      - name: COM-B04G regression
+        run: |
+          node scripts/test-com-b04g-route-runtime-wiring-execution.js
+          node scripts/audit-com-b04g-route-runtime-wiring-execution.js
+      - name: Certified repository-only security boundary
+        shell: bash
+        run: |
+          grep -F 'remote_node_execution_path_recovered_certified' config/com-b04i-r1-remote-node-execution-path-recovery.json
+          grep -F '"artifactId": 8978795625' docs/validation/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json
+          grep -F 'config/com-b04i-r1-archived-never-trigger.json' .github/workflows/com-b04i-r1-remote-node-execution-path-recovery.yml
+          ! grep -R -E 'SUPABASE_(ACCESS_TOKEN|DB_PASSWORD|SERVICE_ROLE_KEY)|environment:[[:space:]]+staging|secrets[.]' \
+            .github/workflows/com-b04i-r1-remote-node-execution-path-recovery.yml \
+            .github/workflows/com-b04i-r1-remote-node-execution-path-certification.yml \
+            scripts/execute-com-b04i-r1-remote-node-execution-path-recovery.js \
+            config/com-b04i-r1-remote-node-execution-path-recovery.json
+      - name: Diff hygiene
+        run: git diff --check

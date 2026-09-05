@@ -1,0 +1,115 @@
+name: COM-B02W Route Registry Repository-Only Surface Descriptor Integration
+# B02W certifier retrigger marker.
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-surface-descriptor.js'
+      - 'config/com-b02w-route-registry-repository-only-surface-descriptor-integration.json'
+      - 'scripts/test-com-b02w-route-registry-repository-only-surface-descriptor-integration.js'
+      - '.github/workflows/com-b02w-route-registry-repository-only-surface-descriptor-integration.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02w-route-registry-repository-only-surface-descriptor-integration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02V predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=db56a9b2512fa96a6818a30fbef6986e66cca377
+          git merge-base --is-ancestor "$BASE" HEAD
+          test "$(git rev-parse HEAD:config/com-b02v-module-route-loader-repository-only-orchestration-surface-integration.json)" = "abf50281c52ff2e8ae000ec0a06732ecd6a925b2"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-repository-orchestration.js)" = "f094ddc01a3f05975794bafb925d64f146a51ea2"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02w-route-registry-repository-only-surface-descriptor-integration.yml \
+            backend/shared/http/repository-only-route-surface-descriptor.js \
+            config/com-b02w-route-registry-repository-only-surface-descriptor-integration.json \
+            scripts/test-com-b02w-route-registry-repository-only-surface-descriptor-integration.js | sort)"
+          expected_reconciled="$(printf '%s\n' \
+            .github/workflows/com-b02w-route-registry-repository-only-surface-descriptor-integration.yml \
+            backend/shared/http/repository-only-route-surface-descriptor.js \
+            config/com-b02w-route-registry-repository-only-surface-descriptor-integration.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02w-route-registry-repository-only-surface-descriptor-integration.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$expected_reconciled"
+
+      - name: Syntax and semantic descriptor conformance
+        run: |
+          node --check backend/shared/http/repository-only-route-surface-descriptor.js
+          node --check scripts/test-com-b02w-route-registry-repository-only-surface-descriptor-integration.js
+          node scripts/test-com-b02w-route-registry-repository-only-surface-descriptor-integration.js
+
+      - name: Active route and remote effects remain blocked
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'repository_only_route_surface_descriptor' backend/shared/http/repository-only-route-surface-descriptor.js
+          grep -F 'composeMembershipCommandRepositoryOnly' backend/shared/http/repository-only-route-surface-descriptor.js
+          grep -F 'composeGovernanceCommandRepositoryOnly' backend/shared/http/repository-only-route-surface-descriptor.js
+          grep -F 'composeContentCommandRepositoryOnly' backend/shared/http/repository-only-route-surface-descriptor.js
+          grep -F 'resumeCommandRepositoryOnlySurface' backend/shared/http/repository-only-route-surface-descriptor.js
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/shared/http/repository-only-route-surface-descriptor.js
+          node - <<'NODE'
+          const registry=require('./backend/shared/http/route-registry');
+          const loader=require('./backend/shared/http/module-route-loader');
+          const communities=require('./backend/modules/communities/route-handlers');
+          const b=require('./config/com-b02w-route-registry-repository-only-surface-descriptor-integration.json');
+          for(const [routeName,handlerName] of Object.entries({
+            'communities.membership.command':'executeMembershipCommand',
+            'communities.governance.command':'executeGovernanceCommand',
+            'communities.content.command':'executeContentCommand'
+          })){
+            const route=registry.findRouteByName(routeName);
+            if(!route||route.handler!==handlerName)throw new Error(`B02W_ACTIVE_ROUTE_DRIFT:${routeName}`);
+            if(loader.getHandler('communities',handlerName)!==communities.handlers[handlerName])throw new Error(`B02W_ACTIVE_HANDLER_DRIFT:${routeName}`);
+          }
+          if(b.implementation.executableReferencesExposed!==false)throw new Error('B02W_EXECUTABLE_REFERENCE_EXPOSURE');
+          if(b.effects.routeRegistryChanged!==false||b.effects.moduleRouteLoaderChanged!==false||b.effects.activeExecuteHandlerBehaviorChanged!==false)throw new Error('B02W_ACTIVE_SURFACE_MUTATION');
+          if(b.effects.repositoryOperationInvoked!==false||b.effects.rpcExecuted!==false||b.effects.networkExecuted!==false||b.effects.runtimeActivated!==false)throw new Error('B02W_REMOTE_EFFECT_DRIFT');
+          NODE
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=db56a9b2512fa96a6818a30fbef6986e66cca377
+          git diff --check "$BASE" HEAD

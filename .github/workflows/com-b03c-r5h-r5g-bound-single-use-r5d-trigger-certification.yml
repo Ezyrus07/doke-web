@@ -1,0 +1,73 @@
+name: COM-B03C-R5H R5G-Bound Single-Use R5D Trigger Certification
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5h.js'
+      - 'config/com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.json'
+      - 'scripts/test-com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.js'
+      - 'docs/validation/COM-B03C-R5H-R5G-BOUND-SINGLE-USE-R5D-TRIGGER-CERTIFICATION.json'
+      - '.github/workflows/com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.yml'
+      - 'config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'docs/HOME-AUTHORITY-CLASSIFICATION.md'
+      - 'docs/PAGE-ASSET-AUTHORITY-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r5h.js
+          node --check scripts/test-com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.js
+      - name: R5H repository trigger certification
+        run: node scripts/test-com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.js
+      - name: Frozen trigger and certified lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor c857c2f56986cadb1621399b01ee82b92fd11648 HEAD
+          test "$(git rev-parse 3e0f5d1de27099009b4f778f6e40e3e944e00ec1^)" = "4fc3577316f6426c12cebdd12bb6374e5c45a5f7"
+          test "$(git diff --name-only 4fc3577316f6426c12cebdd12bb6374e5c45a5f7 3e0f5d1de27099009b4f778f6e40e3e944e00ec1)" = "config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json"
+          test "$(git rev-parse HEAD:config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json)" = "0d8b8a39104a1de003f9097a867e51b2313bb750"
+          test "$(git rev-parse HEAD:config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json)" = "12a1e21253759ae334ee6c9bf423cfe3ea7d27f4"
+          test "$(git rev-parse HEAD:config/com-b03c-r5b-r5a-fresh-authorization-consumption.json)" = "a2ed29dc6a44f9d62f5159dfeabd2c769f677b50"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5d.js)" = "7cde416f2922230bae6b1e4b1e48fdfaf411da99"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5g.js)" = "53227cbe72e5de06d0a8d7d70520e4dc01cde9e8"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h.js)" = "a8f20583aa78554bcb01da8b6cb6e1e17dd99370"
+          test ! -e .github/workflows/com-b03c-r5h-trigger-certification-matrix-writer-temp.yml
+      - name: Remote execution hard block
+        run: |
+          node - <<'NODE'
+          const r5h = require('./backend/modules/communities/community-realtime-private-auth-r5h');
+          try { r5h.assertRemoteExecutionBoundaryAbsent(); process.exit(1); }
+          catch (error) { if (error?.code !== r5h.REMOTE_EXECUTION_BLOCK_CODE) throw error; }
+          NODE
+      - name: Repository-only workflow surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.yml
+          ! grep -nE '^[[:space:]]*(environment:|workflow_dispatch:|repository_dispatch:|schedule:|push:)|^[[:space:]]+secrets\.' "$workflow"
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check

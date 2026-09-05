@@ -1,0 +1,88 @@
+name: COM-B03C-R3J Evaluation Context Differential Harness Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3j.js
+      - config/com-b03c-r3j-evaluation-context-differential-harness-readiness.json
+      - scripts/execute-com-b03c-r3j-evaluation-context-differential-harness.js
+      - scripts/verify-com-b03c-r3j-evaluation-context-differential-report.js
+      - scripts/test-com-b03c-r3j-evaluation-context-differential-harness-readiness.js
+      - docs/validation/COM-B03C-R3J-EVALUATION-CONTEXT-DIFFERENTIAL-HARNESS-READINESS.json
+      - .github/workflows/com-b03c-r3j-evaluation-context-differential-harness-readiness.yml
+      - backend/modules/communities/community-realtime-private-auth-r3i.js
+      - docs/validation/COM-B03C-R3I-REALTIME-AUTHORIZATION-EVALUATION-CONTEXT-READINESS.json
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - reports/generated/domain-completion-matrix-report.json
+
+permissions: { contents: read }
+concurrency:
+  group: com-b03c-r3j-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3j.js
+          node --check scripts/execute-com-b03c-r3j-evaluation-context-differential-harness.js
+          node --check scripts/verify-com-b03c-r3j-evaluation-context-differential-report.js
+          node --check scripts/test-com-b03c-r3j-evaluation-context-differential-harness-readiness.js
+      - name: COM-B03C-R3J repository differential harness readiness
+        run: node scripts/test-com-b03c-r3j-evaluation-context-differential-harness-readiness.js
+      - name: Repository synthetic executor self-test
+        run: node scripts/execute-com-b03c-r3j-evaluation-context-differential-harness.js --repository-self-test
+      - name: Repository-only remote hard-block
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r3j-evaluation-context-differential-staging-trigger.json
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const files=[
+            '.github/workflows/com-b03c-r3j-evaluation-context-differential-harness-readiness.yml',
+            'backend/modules/communities/community-realtime-private-auth-r3j.js',
+            'config/com-b03c-r3j-evaluation-context-differential-harness-readiness.json',
+            'docs/validation/COM-B03C-R3J-EVALUATION-CONTEXT-DIFFERENTIAL-HARNESS-READINESS.json',
+            'scripts/execute-com-b03c-r3j-evaluation-context-differential-harness.js',
+            'scripts/verify-com-b03c-r3j-evaluation-context-differential-report.js',
+            'scripts/test-com-b03c-r3j-evaluation-context-differential-harness-readiness.js'
+          ];
+          const forbidden=[
+            ['environment:', ' doke-staging'].join(''),
+            ['SUPABASE_', 'ACCESS_TOKEN'].join(''),
+            ['SUPABASE_', 'DB_PASSWORD'].join(''),
+            ['I_EXPLICITLY_', 'AUTHORIZE_COM_B03C_R3J'].join('')
+          ];
+          for(const file of files){
+            const text=fs.readFileSync(file,'utf8');
+            for(const token of forbidden)if(text.includes(token)){
+              console.error(`Forbidden remote token in ${file}`);
+              process.exit(1);
+            }
+          }
+          NODE
+      - name: Domain completion matrix audit
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance audit
+        run: npm run audit:agent-governance
+      - name: Governance invariants
+        run: |
+          node - <<'NODE'
+          const e=require('./docs/validation/COM-B03C-R3J-EVALUATION-CONTEXT-DIFFERENTIAL-HARNESS-READINESS.json');
+          if(e.checkpoint?.maturity!==3||e.checkpoint?.productionGate!=='blocked')process.exit(1);
+          if(e.predecessor?.finalRecertificationStatus!=='success'||e.predecessor?.remoteAuthority!==false||e.predecessor?.exactRootCauseProven!==false)process.exit(1);
+          if(e.implementation?.differentialProbeCount!==16||e.implementation?.negativeControlCount!==1||e.implementation?.totalExecutionCaseCount!==17||e.implementation?.negativeControlFixedFalse!==true||e.implementation?.causalPromotionAllowed!==false)process.exit(1);
+          for(const k of ['remoteExecutorPrepared','triggerPrepared','authorizationPhraseDefined','stagingEnvironmentJobPrepared','remoteCredentialLoadingPrepared','remoteDependencyLoadingPrepared','runtimePolicyChangePrepared'])if(e.remoteBoundary?.[k]!==false)process.exit(1);
+          for(const k of ['remoteExecutionAuthority','triggerCreationAuthority','stagingReadAuthority','stagingMutationAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority'])if(e.authority?.[k]!==false)process.exit(1);
+          for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','policyMutationExecuted','realtimeSubscriptionExecuted','runtimeDeployExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
+          if(e.exactRootCauseProven!==false)process.exit(1);
+          NODE
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

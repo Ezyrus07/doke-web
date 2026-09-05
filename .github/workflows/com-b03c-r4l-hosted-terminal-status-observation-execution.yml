@@ -1,0 +1,197 @@
+name: COM-B03C-R4L Hosted Terminal Status Observation Execution
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4l.js'
+      - 'config/com-b03c-r4l-hosted-terminal-status-observation-workflow-installation-readiness.json'
+      - 'scripts/test-com-b03c-r4l-hosted-terminal-status-observation-workflow-installation-readiness.js'
+      - 'scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js'
+      - 'scripts/verify-com-b03c-r4l-single-use-hosted-terminal-status-observation-report.js'
+      - 'docs/validation/COM-B03C-R4L-HOSTED-TERMINAL-STATUS-OBSERVATION-WORKFLOW-INSTALLATION-READINESS.json'
+      - '.github/workflows/com-b03c-r4l-hosted-terminal-status-observation-execution.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r4l-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4l.js
+          node --check scripts/test-com-b03c-r4l-hosted-terminal-status-observation-workflow-installation-readiness.js
+          node --check scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js
+          node --check scripts/verify-com-b03c-r4l-single-use-hosted-terminal-status-observation-report.js
+      - name: R4L repository hosted workflow installation readiness
+        if: github.event_name == 'pull_request'
+        run: node scripts/test-com-b03c-r4l-hosted-terminal-status-observation-workflow-installation-readiness.js
+      - name: R4L executor repository self-test
+        if: github.event_name == 'pull_request'
+        run: node scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js --repository-self-test
+      - name: Current repository-only hard block
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json
+          set +e
+          output="$(node scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js 2>&1)"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R4L_SINGLE_FILE_TRIGGER_REQUIRED'
+      - name: Historical R4J R4K R4I and R4G boundaries unchanged
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          R4K_FINAL_HEAD=21446d7ba3d359873bb2bf491568c53178d69174
+          test -z "$(git diff --name-only "$R4K_FINAL_HEAD" "${{ github.event.pull_request.head.sha }}" -- \
+            backend/modules/communities/community-realtime-private-auth-r4j.js \
+            scripts/execute-com-b03c-r4j-hosted-terminal-status-observation-envelope.js \
+            config/com-b03c-r4j-hosted-terminal-status-observation-execution-envelope-readiness.json \
+            docs/validation/COM-B03C-R4J-HOSTED-TERMINAL-STATUS-OBSERVATION-EXECUTION-ENVELOPE-READINESS.json \
+            .github/workflows/com-b03c-r4j-hosted-terminal-status-observation-execution-envelope-readiness.yml \
+            backend/modules/communities/community-realtime-private-auth-r4k.js \
+            config/com-b03c-r4k-r4j-lineage-reconciliation-readiness.json \
+            docs/validation/COM-B03C-R4K-R4J-LINEAGE-RECONCILIATION-READINESS.json \
+            .github/workflows/com-b03c-r4k-r4j-lineage-reconciliation-readiness.yml \
+            backend/modules/communities/community-realtime-private-auth-r4i.js \
+            config/com-b03c-r4i-r4h-terminal-observation-authorization-consumption.json \
+            docs/validation/COM-B03C-R4I-R4H-TERMINAL-OBSERVATION-AUTHORIZATION-CONSUMPTION.json \
+            backend/modules/communities/community-realtime-private-auth-r4g.js \
+            scripts/execute-com-b03c-r4g-presence-only-terminal-observation-envelope.js \
+            config/com-b03c-r4g-presence-only-terminal-observation-envelope-readiness.json \
+            docs/validation/COM-B03C-R4G-PRESENCE-ONLY-TERMINAL-OBSERVATION-ENVELOPE-READINESS.json)"
+      - name: Trigger commit continuity
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          TRIGGER=config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json
+          test -f "$TRIGGER"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$TRIGGER"
+          node - <<'NODE'
+          const cp = require('node:child_process');
+          const r4l = require('./backend/modules/communities/community-realtime-private-auth-r4l');
+          const receipt = require('./config/com-b03c-r4i-r4h-terminal-observation-authorization-consumption.json').receipt;
+          const trigger = require('./config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse','HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff','--name-only','HEAD^','HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const result = r4l.validateFutureTriggerCommit({
+            trigger,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            hostedWorkflowCertified: true,
+            authorizationReceipt: receipt
+          });
+          if (result.decision !== 'r4l_future_trigger_valid_authority_available_for_this_attempt') process.exit(1);
+          NODE
+      - name: Domain Completion Matrix
+        if: github.event_name == 'pull_request'
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        if: github.event_name == 'pull_request'
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        if: github.event_name == 'pull_request'
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+
+  authorize:
+    if: github.event_name == 'push'
+    needs: certify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Authorize exact single-use R4J terminal observation trigger
+        shell: bash
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          TRIGGER=config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json
+          test -f "$TRIGGER"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$TRIGGER"
+          node - <<'NODE'
+          const cp = require('node:child_process');
+          const r4l = require('./backend/modules/communities/community-realtime-private-auth-r4l');
+          const receipt = require('./config/com-b03c-r4i-r4h-terminal-observation-authorization-consumption.json').receipt;
+          const trigger = require('./config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse','HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff','--name-only','HEAD^','HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const result = r4l.authorizeFutureTriggerExecution({
+            trigger,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            hostedWorkflowCertified: true,
+            authorizationReceipt: receipt
+          });
+          if (result.decision !== r4l.AUTHORIZED_DECISION) process.exit(1);
+          if (result.remoteExecutionAuthority !== true || result.remoteCredentialReadAuthority !== true ||
+              result.remoteDependencyLoadAuthority !== true || result.networkAuthority !== true ||
+              result.stagingReadAuthority !== true || result.stagingMutationAuthority !== true ||
+              result.realtimeSubscriptionAuthority !== true || result.authIdentityLifecycleAuthority !== true ||
+              result.runtimeChangeAuthority !== false || result.productionAuthority !== false ||
+              result.pullRequestMergeAuthority !== false) process.exit(1);
+          NODE
+
+  canary:
+    if: github.event_name == 'push'
+    needs: authorize
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: doke-staging
+    env:
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      COM_B03C_R4L_REPORT_PATH: reports/generated/COM-B03C-R4L-SINGLE-USE-HOSTED-TERMINAL-STATUS-OBSERVATION.json
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Install canary-only dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+      - name: Execute single-use hosted terminal status observation
+        id: execute
+        continue-on-error: true
+        run: node scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js
+      - name: Verify sanitized terminal status observation evidence
+        if: always()
+        run: node scripts/verify-com-b03c-r4l-single-use-hosted-terminal-status-observation-report.js reports/generated/COM-B03C-R4L-SINGLE-USE-HOSTED-TERMINAL-STATUS-OBSERVATION.json
+      - name: Upload sanitized terminal status observation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-r4l-terminal-status-observation-${{ github.run_id }}
+          path: reports/generated/COM-B03C-R4L-SINGLE-USE-HOSTED-TERMINAL-STATUS-OBSERVATION.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Propagate terminal status observation result
+        if: steps.execute.outcome != 'success'
+        run: exit 1

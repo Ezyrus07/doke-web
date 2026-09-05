@@ -1,0 +1,331 @@
+name: COM-B02CX Post-Materialization Repository Certification
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/com-b02cx-post-materialization-repository-certification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02cx-post-materialization-repository-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PREDECESSOR_HEAD: 9525d7d12f0d1de3e19aa4d84c5952c0161b9f0d
+      PREDECESSOR_TREE: 53ce636fc0d2a0fda53ddb27a7f2eca8c21b7421
+      B02CX_HEAD: 0b578cda5aceb45f39d80dcb9e17e1f1827e1eda
+      B02CX_TREE: 7bff78ddf938ed56fcdaa12ef8062e6e051cb5c4
+      ARTIFACT_HEAD: cf06cf41981e7d350efc37f7147905b83196311f
+      ARTIFACT_TREE: 0cf48ae23408ab4ccba1f0518a1402cd6211cca1
+      MATERIALIZER_HEAD: cd6fde30a9b1d2586753e2da0e90e18e2c9da504
+      MATERIALIZER_TREE: f4086f5523544f597ccb3d7c8df374e34cfe5151
+      MATERIALIZED_HEAD: fb58b5b31767f1ec95e566073416d37b66f1b2b5
+      MATERIALIZED_TREE: 1ba041b03862a81b65d8b2bac1336d9c2bef2a0e
+      SOURCE: backend/modules/communities/community-command-post-idempotency-external-authority-projection-implementation.js
+      SOURCE_BLOB: 9ad0ac01bc002ba007bb424dd23e6f41cff99bbd
+      ORIGINAL_WORKFLOW: .github/workflows/com-b02cx-repository-only-post-idempotency-external-authority-projection-implementation.yml
+      ORIGINAL_WORKFLOW_BLOB: e4a701b2c6a1ccf917d3598b07b8eed1b50c85a7
+      CERTIFIER: .github/workflows/com-b02cx-post-materialization-repository-certification.yml
+      TEMP_WORKFLOW: .github/workflows/tmp-com-b02cx-matrix-candidate-artifact.yml
+      ARTIFACT_TEMP_BLOB: fdd62c21139cd995b85f4499153ee7541ea89947
+      MATERIALIZER_TEMP_BLOB: a64ccc6a5082334edcf9da343a1a55243009fce8
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_GENERATOR: scripts/audit-domain-completion-matrix.js
+      MATRIX_GENERATOR_BLOB: f60d9b9efc8a191822b34d39d4e9137a59b8727e
+      PACKAGE_JSON: package.json
+      PACKAGE_JSON_BLOB: 8b9670383773896d03410cb661a23e2061911495
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_MD_BLOB: 8436b7fb5fb658ef83b9fb11ebb6daeb89317328
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_REPORT_BLOB: 50d5bc6f96326b107bd8291f5270d1b701537bfe
+
+    steps:
+      - name: Checkout exact certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Freeze B02CX lineage and exact post-materialization scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$MATERIALIZED_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git rev-parse "$B02CX_HEAD^")" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$B02CX_HEAD^{tree}")" = "$B02CX_TREE"
+          test "$(git rev-parse "$ARTIFACT_HEAD^")" = "$B02CX_HEAD"
+          test "$(git rev-parse "$ARTIFACT_HEAD^{tree}")" = "$ARTIFACT_TREE"
+          test "$(git rev-parse "$MATERIALIZER_HEAD^")" = "$ARTIFACT_HEAD"
+          test "$(git rev-parse "$MATERIALIZER_HEAD^{tree}")" = "$MATERIALIZER_TREE"
+          test "$(git rev-parse "$MATERIALIZED_HEAD^")" = "$MATERIALIZER_HEAD"
+          test "$(git rev-parse "$MATERIALIZED_HEAD^{tree}")" = "$MATERIALIZED_TREE"
+
+          b02cx_scope="$(git diff --name-status "$PREDECESSOR_HEAD" "$B02CX_HEAD" | sort)"
+          expected_b02cx="$(printf 'A\t%s\nA\t%s\n' "$SOURCE" "$ORIGINAL_WORKFLOW" | sort)"
+          test "$b02cx_scope" = "$expected_b02cx"
+
+          artifact_scope="$(git diff --name-status "$B02CX_HEAD" "$ARTIFACT_HEAD" | sort)"
+          test "$artifact_scope" = "$(printf 'A\t%s' "$TEMP_WORKFLOW")"
+          test "$(git rev-parse "$ARTIFACT_HEAD:$TEMP_WORKFLOW")" = "$ARTIFACT_TEMP_BLOB"
+
+          materializer_scope="$(git diff --name-status "$ARTIFACT_HEAD" "$MATERIALIZER_HEAD" | sort)"
+          test "$materializer_scope" = "$(printf 'M\t%s' "$TEMP_WORKFLOW")"
+          test "$(git rev-parse "$MATERIALIZER_HEAD:$TEMP_WORKFLOW")" = "$MATERIALIZER_TEMP_BLOB"
+
+          materialized_scope="$(git diff --name-status "$MATERIALIZER_HEAD" "$MATERIALIZED_HEAD" | sort)"
+          expected_materialized="$(printf 'D\t%s\nM\t%s\nM\t%s\n' "$TEMP_WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$materialized_scope" = "$expected_materialized"
+
+          certifier_scope="$(git diff --name-status "$MATERIALIZED_HEAD" HEAD | sort)"
+          test "$certifier_scope" = "$(printf 'A\t%s' "$CERTIFIER")"
+
+          final_scope="$(git diff --name-status "$PREDECESSOR_HEAD" HEAD | sort)"
+          expected_final="$(printf 'A\t%s\nA\t%s\nA\t%s\nM\t%s\nM\t%s\n' "$SOURCE" "$ORIGINAL_WORKFLOW" "$CERTIFIER" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$final_scope" = "$expected_final"
+
+          test ! -e "$TEMP_WORKFLOW"
+          test "$(git rev-parse "HEAD:$SOURCE")" = "$SOURCE_BLOB"
+          test "$(git rev-parse "HEAD:$ORIGINAL_WORKFLOW")" = "$ORIGINAL_WORKFLOW_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_GENERATOR")" = "$MATRIX_GENERATOR_BLOB"
+          test "$(git rev-parse "HEAD:$PACKAGE_JSON")" = "$PACKAGE_JSON_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_MD")" = "$MATRIX_MD_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_REPORT")" = "$MATRIX_REPORT_BLOB"
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Validate syntax and repository governance on final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$SOURCE"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Prove B02CX repository-only external-authority projection
+        shell: bash
+        env:
+          SOURCE_PATH: ${{ github.workspace }}/backend/modules/communities/community-command-post-idempotency-external-authority-projection-implementation.js
+          PROOF_PATH: ${{ runner.temp }}/com-b02cx-post-materialization-repository-certification-proof.json
+        run: |
+          set -euo pipefail
+          TEST="$RUNNER_TEMP/test-com-b02cx-post-materialization-repository-certification.js"
+          cat > "$TEST" <<'NODE'
+          'use strict';
+          const assert = require('assert');
+          const fs = require('fs');
+          const implementation = require(process.env.SOURCE_PATH);
+
+          assert.strictEqual(implementation.BOUNDARY_ID, 'COM-B02CX');
+          assert.strictEqual(implementation.PREDECESSOR_CONTRACT_ID, 'com-b02cw-repository-only-post-idempotency-external-authority-projection-contract-v1');
+          assert.strictEqual(implementation.PREDECESSOR_BOUNDARY_ID, 'COM-B02CW');
+          assert.strictEqual(implementation.PREDECESSOR_HEAD, process.env.PREDECESSOR_HEAD);
+          assert.strictEqual(implementation.PREDECESSOR_TREE, process.env.PREDECESSOR_TREE);
+
+          const replay = implementation.beginPostIdempotencyExternalAuthorityProjection({
+            command: 'invite_member', claimState: 'existing',
+            selectorContext: { targetUserId: 'target-user' },
+            trustedDomainContext: { targetStatus: 'client_value_must_not_survive' }
+          });
+          assert.strictEqual(replay.stage, implementation.STAGES.COMPLETED_REPLAY_TERMINAL);
+          assert.strictEqual(replay.replayTerminal, true);
+          assert.deepStrictEqual(replay.pendingReads, []);
+          assert.strictEqual(replay.projection, null);
+          assert.strictEqual(replay.externalAuthorityReadExecuted, false);
+          assert.strictEqual(replay.readPortInvoked, false);
+
+          const target = implementation.beginPostIdempotencyExternalAuthorityProjection({
+            command: 'invite_member', claimState: 'new',
+            selectorContext: { targetUserId: 'target-user' },
+            trustedDomainContext: { membership: { role: 'owner' }, targetStatus: 'client_value_must_not_survive' }
+          });
+          assert.strictEqual(target.stage, implementation.STAGES.AWAITING_EXTERNAL_AUTHORITY_RESULTS);
+          assert.strictEqual(target.pendingReads.length, 1);
+          assert.strictEqual(target.pendingReads[0].portId, 'canonical_target_status_read');
+          assert.strictEqual(target.pendingReads[0].field, 'targetStatus');
+          assert.deepStrictEqual(target.pendingReads[0].selector, { targetUserId: 'target-user' });
+          assert.strictEqual(target.pendingReads[0].invoke, false);
+          assert.strictEqual(target.pendingReads[0].portInvoked, false);
+          assert.strictEqual(target.pendingReads[0].executorBound, false);
+          assert.strictEqual(target.externalAuthorityReadExecuted, false);
+          assert.strictEqual(target.readPortInvoked, false);
+
+          const targetDone = implementation.resumeWithExternalAuthorityResults(target, {
+            targetStatus: { source: 'canonical_server', complete: true, targetStatus: 'active' }
+          });
+          assert.strictEqual(targetDone.stage, implementation.STAGES.COMPLETED_WITH_PROJECTION);
+          assert.strictEqual(targetDone.externalAuthorityResultsValidated, true);
+          assert.strictEqual(targetDone.projection.trustedDomainContext.targetStatus, 'active');
+          assert.deepStrictEqual(targetDone.projection.trustedDomainContext.membership, { role: 'owner' });
+          assert.deepStrictEqual(targetDone.projection.projectedFields, ['targetStatus']);
+          assert.strictEqual(targetDone.externalAuthorityReadExecuted, false);
+          assert.strictEqual(targetDone.readPortInvoked, false);
+
+          const clientTargetRejected = implementation.resumeWithExternalAuthorityResults(target, {
+            targetStatus: { source: 'client', complete: true, targetStatus: 'active' }
+          });
+          assert.strictEqual(clientTargetRejected.decision, 'blocked_repository_only');
+          assert.strictEqual(clientTargetRejected.details.reason, 'TARGET_STATUS_CANONICAL_SOURCE_REQUIRED');
+
+          const rate = implementation.beginPostIdempotencyExternalAuthorityProjection({
+            command: 'send_message', claimState: 'new', bypassSlowMode: false,
+            selectorContext: { actorId: 'actor-user', communityId: 'community-1' }
+          });
+          assert.strictEqual(rate.stage, implementation.STAGES.AWAITING_EXTERNAL_AUTHORITY_RESULTS);
+          assert.strictEqual(rate.pendingReads.length, 1);
+          assert.strictEqual(rate.pendingReads[0].portId, 'canonical_rate_limit_snapshot_read');
+          assert.deepStrictEqual(rate.pendingReads[0].selector, { actorId: 'actor-user', communityId: 'community-1', command: 'send_message' });
+          assert.strictEqual(rate.pendingReads[0].invoke, false);
+
+          const rateDone = implementation.resumeWithExternalAuthorityResults(rate, {
+            rateLimit: { source: 'canonical_server', complete: true, limit: 10, used: 1, resetAt: '2026-09-01T00:00:00.000Z' }
+          });
+          assert.strictEqual(rateDone.stage, implementation.STAGES.COMPLETED_WITH_PROJECTION);
+          assert.deepStrictEqual(rateDone.projection.trustedDomainContext.rateLimit, {
+            source: 'canonical_server', complete: true, limit: 10, used: 1, resetAt: '2026-09-01T00:00:00.000Z'
+          });
+          assert.strictEqual(rateDone.rateLimitConsumed, false);
+          assert.strictEqual(rateDone.readPortInvoked, false);
+
+          const invalidRate = implementation.resumeWithExternalAuthorityResults(rate, {
+            rateLimit: { source: 'canonical_server', complete: true, limit: 0, used: 1, resetAt: 'invalid' }
+          });
+          assert.strictEqual(invalidRate.decision, 'blocked_repository_only');
+
+          const bypass = implementation.beginPostIdempotencyExternalAuthorityProjection({
+            command: 'send_message', claimState: 'new', bypassSlowMode: true,
+            selectorContext: { actorId: 'actor-user', communityId: 'community-1' },
+            trustedDomainContext: { bypassSlowMode: true, rateLimit: { source: 'client' } }
+          });
+          assert.strictEqual(bypass.stage, implementation.STAGES.COMPLETED_WITHOUT_EXTERNAL_AUTHORITY);
+          assert.deepStrictEqual(bypass.pendingReads, []);
+          assert.strictEqual(Object.prototype.hasOwnProperty.call(bypass.projection.trustedDomainContext, 'rateLimit'), false);
+          assert.strictEqual(bypass.projection.trustedDomainContext.bypassSlowMode, true);
+          assert.strictEqual(bypass.readPortInvoked, false);
+
+          const unrelated = implementation.beginPostIdempotencyExternalAuthorityProjection({
+            command: 'request_join', claimState: 'new',
+            trustedDomainContext: { targetStatus: 'client_value_must_not_survive' }
+          });
+          assert.strictEqual(unrelated.stage, implementation.STAGES.COMPLETED_WITHOUT_EXTERNAL_AUTHORITY);
+          assert.deepStrictEqual(unrelated.pendingReads, []);
+          assert.strictEqual(Object.prototype.hasOwnProperty.call(unrelated.projection.trustedDomainContext, 'targetStatus'), false);
+
+          const authority = {
+            repositoryOnlyExternalAuthorityProjectionImplementationAuthority: true,
+            externalAuthorityReadPortBindingAuthority: false,
+            externalAuthorityReadInvocationAuthority: false,
+            handlerInvocationAuthority: false,
+            repositoryOperationInvocationAuthority: false,
+            credentialReadAuthority: false,
+            rpcExecutionAuthority: false,
+            networkAuthority: false,
+            supabaseAuthority: false,
+            stagingDeploymentAuthority: false,
+            stagingTrafficAuthority: false,
+            realtimeActivationAuthority: false,
+            runtimeActivationAuthority: false,
+            rateLimitMutationAuthority: false,
+            migrationApplicationAuthority: false,
+            productionAuthority: false,
+            pullRequestMergeAuthority: false,
+            readyForReviewAuthority: false
+          };
+          const packet = {
+            predecessorContractId: implementation.PREDECESSOR_CONTRACT_ID,
+            predecessorBoundaryId: implementation.PREDECESSOR_BOUNDARY_ID,
+            predecessorHead: implementation.PREDECESSOR_HEAD,
+            predecessorTree: implementation.PREDECESSOR_TREE,
+            implementationMaterialized: true,
+            stepwiseProjectionImplementation: true,
+            externalAuthorityReadDescriptorsImplemented: true,
+            externalAuthorityEnvelopeValidationImplemented: true,
+            projectionPacketImplemented: true,
+            replayTerminatesBeforeExternalAuthorityRead: true,
+            externalAuthorityProjectionOnlyAfterNewClaim: true,
+            canonicalBypassSkipsRateLimitRead: true,
+            clientExternalAuthorityProhibited: true,
+            b02cwChanged: false, b02cvChanged: false, b02iChanged: false,
+            b02lChanged: false, b02mChanged: false, b02tChanged: false, b02jChanged: false,
+            routeHandlersChanged: false, moduleRouteLoaderChanged: false,
+            stagingApiRuntimeChanged: false, supabaseAdapterChanged: false,
+            matrixSourceChanged: false, matrixDerivativesChanged: false,
+            externalAuthorityReadPortBindingImplemented: false,
+            externalAuthorityReadPortInvocationImplemented: false,
+            externalAuthorityReadExecuted: false,
+            handlerInvoked: false, repositoryOperationInvoked: false,
+            credentialReadExecuted: false, rpcExecuted: false, networkExecuted: false,
+            supabaseOperationExecuted: false, stagingReadExecuted: false,
+            stagingMutationExecuted: false, rateLimitConsumeImplemented: false,
+            runtimeActivated: false, realtimeActivated: false,
+            migrationApplied: false, productionChanged: false,
+            authority
+          };
+          const certification = implementation.evaluateBoundaryCertification(packet);
+          assert.strictEqual(certification.ready, true);
+          assert.deepStrictEqual(certification.blockers, []);
+          const invocationViolation = implementation.evaluateBoundaryCertification({ ...packet, externalAuthorityReadPortInvocationImplemented: true });
+          assert.strictEqual(invocationViolation.ready, false);
+          assert(invocationViolation.blockers.includes('READ_PORT_INVOCATION_MUST_REMAIN_ABSENT'));
+          const bindingViolation = implementation.evaluateBoundaryCertification({ ...packet, externalAuthorityReadPortBindingImplemented: true });
+          assert.strictEqual(bindingViolation.ready, false);
+
+          const sourceText = fs.readFileSync(process.env.SOURCE_PATH, 'utf8');
+          for (const token of ['.rpc(', '.from(', 'fetch(', 'createClient(', 'SUPABASE_SERVICE_ROLE_KEY']) {
+            assert.strictEqual(sourceText.includes(token), false, `prohibited token: ${token}`);
+          }
+
+          fs.writeFileSync(process.env.PROOF_PATH, JSON.stringify({
+            boundaryId: implementation.BOUNDARY_ID,
+            sourceBlob: process.env.SOURCE_BLOB,
+            materializedHead: process.env.MATERIALIZED_HEAD,
+            materializedTree: process.env.MATERIALIZED_TREE,
+            certificationReady: certification.ready,
+            blockers: certification.blockers,
+            replayTerminal: true,
+            canonicalTargetProjection: true,
+            canonicalRateLimitProjection: true,
+            canonicalBypassSkipsRead: true,
+            clientExternalAuthorityRejected: true,
+            prohibitedRemoteTokensAbsent: true,
+            externalAuthorityReadExecuted: false,
+            readPortInvoked: false,
+            handlerInvoked: false,
+            repositoryOperationInvoked: false,
+            credentialReadExecuted: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            supabaseOperationExecuted: false,
+            stagingReadExecuted: false,
+            stagingMutationExecuted: false,
+            runtimeActivated: false,
+            realtimeActivated: false,
+            migrationApplied: false,
+            productionChanged: false,
+            authority
+          }, null, 2));
+          NODE
+          PROOF_PATH="$PROOF_PATH" node "$TEST"
+
+      - name: Upload B02CX repository-only certification proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02cx-post-materialization-repository-certification-${{ github.sha }}
+          path: ${{ runner.temp }}/com-b02cx-post-materialization-repository-certification-proof.json
+          if-no-files-found: error
+          retention-days: 14

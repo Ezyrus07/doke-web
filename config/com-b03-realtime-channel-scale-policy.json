@@ -1,0 +1,111 @@
+{
+  "contractId": "com-b03-realtime-channel-scale-policy-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-a04-content-realtime-rate-limit-v1",
+    "com-b02d-community-composition-root-canary-readiness-v1"
+  ],
+  "scope": "repository_only",
+  "status": "repository_contract_certified_runtime_blocked",
+  "runtimeIntegrated": false,
+  "realtimePublicationConfigured": false,
+  "subscriptionCreated": false,
+  "stagingValidated": false,
+  "topics": [
+    "channel_messages",
+    "channel_presence",
+    "channel_typing",
+    "community_posts"
+  ],
+  "visibility": {
+    "supported": ["public", "private", "invite_only"],
+    "activeMembershipRequired": true,
+    "privateVisibilityGrantRequired": true,
+    "activeBanBlocksRealtime": true,
+    "channelRoleGateRequired": true,
+    "unknownVisibilityFailsClosed": true
+  },
+  "lease": {
+    "minimumSeconds": 30,
+    "maximumSeconds": 900,
+    "membershipRevalidationSeconds": 60,
+    "maximumTopicsPerLease": 4,
+    "teardownRequired": true,
+    "duplicateScopeReused": true,
+    "mixedCommunityAndChannelScopesAllowed": false
+  },
+  "channelCaps": {
+    "canonicalServerSnapshotRequired": true,
+    "maximumConcurrentPerSession": 8,
+    "maximumConcurrentPerActor": 12,
+    "maximumConcurrentPerCommunity": 6
+  },
+  "delivery": {
+    "serverAuthoritativeEnvelopeRequired": true,
+    "maximumPayloadBytes": 16384,
+    "maximumEventAgeMs": 30000,
+    "maximumFutureSkewMs": 5000,
+    "deduplicateByEventId": true,
+    "orderedBySequence": true,
+    "maximumSequenceGap": 100,
+    "queueHighWatermark": 64,
+    "queueHardLimit": 96,
+    "ephemeralTopicsCoalesceLatest": true,
+    "durableTopicsRequireResyncOnOverflow": true,
+    "sensitivePayloadAllowed": false
+  },
+  "resume": {
+    "canonicalCursorRequiredWhenPresent": true,
+    "maximumCursorAgeMs": 300000,
+    "revisionAheadConflicts": true,
+    "expiredCursorRequiresResync": true
+  },
+  "reconnect": {
+    "strategy": "exponential_full_jitter",
+    "baseMs": 500,
+    "maximumMs": 30000,
+    "maximumAttempts": 8,
+    "resumeCursorRequiredAfterDisconnect": true
+  },
+  "certification": {
+    "certifiedHead": "e06736234b6597ff9ae4e6e86edcf71ff42c1232",
+    "run": 31053750957,
+    "job": 92466625904,
+    "result": "success",
+    "audit": "176/176",
+    "conformance": "180/180",
+    "comA04Regression": "158/158 + 196/196",
+    "comB02dRegression": "136/136 + 132/132 + 17/17",
+    "comB02cRegression": "153/153 + 8/8",
+    "comB02bRegression": "44/44 + 6/6",
+    "comB02Regression": "76/76 + 18/18",
+    "diffHygiene": "success"
+  },
+  "authority": {
+    "contractAuthority": true,
+    "scalePolicyAuthority": true,
+    "realtimeSubscriptionAuthority": false,
+    "realtimePublicationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "realtimePublicationChanges": false,
+    "realtimeChannelsCreated": false,
+    "subscriptionsCreated": false,
+    "routesRegistered": false,
+    "runtimeIntegrated": false,
+    "deployments": false,
+    "productionChanges": false,
+    "pullRequestMerged": false
+  },
+  "nextBoundary": "COM-B03B publication and authenticated subscription readiness requires separate authorization"
+}

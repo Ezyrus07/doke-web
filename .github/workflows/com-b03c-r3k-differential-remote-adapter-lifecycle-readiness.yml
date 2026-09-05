@@ -1,0 +1,105 @@
+name: COM-B03C-R3K Differential Remote Adapter Lifecycle Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3k.js
+      - config/com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.json
+      - scripts/execute-com-b03c-r3k-differential-remote-adapter-lifecycle.js
+      - scripts/verify-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js
+      - scripts/test-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js
+      - docs/validation/COM-B03C-R3K-DIFFERENTIAL-REMOTE-ADAPTER-LIFECYCLE-READINESS.json
+      - .github/workflows/com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.yml
+      - backend/modules/communities/community-realtime-private-auth-r3j.js
+      - scripts/execute-com-b03c-r3j-evaluation-context-differential-harness.js
+      - docs/validation/COM-B03C-R3J-EVALUATION-CONTEXT-DIFFERENTIAL-HARNESS-READINESS.json
+      - backend/modules/communities/community-realtime-private-auth-r3g.js
+      - scripts/execute-com-b03c-r3g-remote-adapter-staging-diagnostic.js
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - reports/generated/domain-completion-matrix-report.json
+
+permissions: { contents: read }
+concurrency:
+  group: com-b03c-r3k-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3k.js
+          node --check scripts/execute-com-b03c-r3k-differential-remote-adapter-lifecycle.js
+          node --check scripts/verify-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js
+          node --check scripts/test-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js
+      - name: COM-B03C-R3K repository remote adapter lifecycle readiness
+        run: node scripts/test-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js
+      - name: Repository-only adapter lifecycle self-test
+        shell: bash
+        run: |
+          mkdir -p reports/generated
+          node scripts/execute-com-b03c-r3k-differential-remote-adapter-lifecycle.js --repository-self-test > reports/generated/COM-B03C-R3K-DIFFERENTIAL-REMOTE-ADAPTER-LIFECYCLE-SELF-TEST.json
+          node scripts/verify-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js reports/generated/COM-B03C-R3K-DIFFERENTIAL-REMOTE-ADAPTER-LIFECYCLE-SELF-TEST.json
+      - name: Pre-authorization credential and dependency hard-block
+        shell: bash
+        run: |
+          set +e
+          output="$(node scripts/execute-com-b03c-r3k-differential-remote-adapter-lifecycle.js 2>&1)"
+          code=$?
+          set -e
+          test "$code" -ne 0
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R3K_REMOTE_AUTHORIZATION_BOUNDARY_REQUIRED'
+      - name: Repository safety guards
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r3k-evaluation-context-differential-staging-trigger.json
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const files=[
+            '.github/workflows/com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.yml',
+            'backend/modules/communities/community-realtime-private-auth-r3k.js',
+            'config/com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.json',
+            'docs/validation/COM-B03C-R3K-DIFFERENTIAL-REMOTE-ADAPTER-LIFECYCLE-READINESS.json',
+            'scripts/execute-com-b03c-r3k-differential-remote-adapter-lifecycle.js',
+            'scripts/verify-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js',
+            'scripts/test-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js'
+          ];
+          const forbidden=[
+            ['secrets', '.'].join(''),
+            ['environment:', ' doke-staging'].join(''),
+            ['process.env.', 'SUPABASE_'].join(''),
+            ['I_EXPLICITLY_', 'AUTHORIZE_COM_B03C_R3K'].join('')
+          ];
+          for(const file of files){
+            const text=fs.readFileSync(file,'utf8');
+            for(const token of forbidden)if(text.includes(token)){
+              console.error(`Forbidden remote token in ${file}`);
+              process.exit(1);
+            }
+          }
+          NODE
+      - name: Domain completion matrix audit
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance audit
+        run: npm run audit:agent-governance
+      - name: Governance invariants
+        run: |
+          node - <<'NODE'
+          const e=require('./docs/validation/COM-B03C-R3K-DIFFERENTIAL-REMOTE-ADAPTER-LIFECYCLE-READINESS.json');
+          if(e.checkpoint?.maturity!==3||e.checkpoint?.productionGate!=='blocked')process.exit(1);
+          if(e.predecessor?.evidenceHeadRecertificationStatus!=='success'||e.predecessor?.remoteAuthority!==false||e.predecessor?.exactRootCauseProven!==false)process.exit(1);
+          if(e.implementation?.executionCaseIds?.length!==17||e.implementation?.remoteRunnablePathPrepared!==false||e.implementation?.causalPromotionAllowed!==false)process.exit(1);
+          if(e.futureLifecycle?.triggerExists!==false||e.futureLifecycle?.authorizationPhraseDefined!==false||e.futureLifecycle?.runAttemptMustBeOneWhenEventuallyAuthorized!==true)process.exit(1);
+          for(const k of ['remoteExecutorPrepared','triggerPrepared','authorizationPhraseDefined','stagingEnvironmentJobPrepared','workflowSecretsReferenced','remoteCredentialLoadingPrepared','remoteDependencyLoadingPrepared','runtimePolicyChangePrepared'])if(e.remoteBoundary?.[k]!==false)process.exit(1);
+          for(const k of ['remoteExecutionAuthority','triggerCreationAuthority','stagingReadAuthority','stagingMutationAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','authIdentityLifecycleAuthority','realtimePolicyLifecycleAuthority','realtimeSubscriptionAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority'])if(e.authority?.[k]!==false)process.exit(1);
+          for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','policyMutationExecuted','authIdentityMutationExecuted','realtimeSubscriptionExecuted','runtimeDeployExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
+          if(e.exactRootCauseProven!==false)process.exit(1);
+          NODE
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

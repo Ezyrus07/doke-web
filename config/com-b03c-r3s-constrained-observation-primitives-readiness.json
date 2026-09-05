@@ -1,0 +1,123 @@
+{
+  "contractId": "com-b03c-r3s-constrained-observation-primitives-readiness-v1",
+  "validationId": "COM-B03C-R3S-CONSTRAINED-OBSERVATION-PRIMITIVES-READINESS",
+  "status": "repository_constrained_observation_primitives_ready_no_remote_authority",
+  "domain": "COM-001",
+  "boundary": "COM-B03C-R3S",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "predecessor": {
+    "validationId": "COM-B03C-R3R-R3Q-REMOTE-ADAPTER-BINDING-READINESS",
+    "status": "repository_remote_adapter_binding_contract_certified_two_db_observation_primitives_unbound_no_remote_authority",
+    "head": "68ad5828918692a63bfb98032db39ef700be71d3",
+    "recertRun": 31404268281,
+    "recertJob": 93506626950,
+    "recertSuccess": true,
+    "matrixRecertRun": 31404269125,
+    "matrixRecertJob": 93506629487,
+    "matrixRecertSuccess": true
+  },
+  "continuity": {
+    "r3rContractId": "com-b03c-r3r-r3q-remote-adapter-binding-readiness-v1",
+    "r3qContractId": "com-b03c-r3q-repository-executable-observation-envelope-readiness-v1",
+    "requiredCapabilities": [
+      "instrumentation_counter_read",
+      "instrumentation_residue_inspection"
+    ],
+    "counterPhases": [
+      "baseline_before_probe",
+      "after_presence_read_effective_gate",
+      "after_presence_only_join",
+      "after_cleanup"
+    ],
+    "counterIds": [
+      "broadcast_rls_evaluations",
+      "presence_rls_evaluations"
+    ],
+    "residueCountFields": [
+      "policyCount",
+      "functionCount",
+      "sequenceCount"
+    ],
+    "forbiddenExecutorMethods": [
+      "query",
+      "connect",
+      "createClient",
+      "loadCredentials",
+      "loadRemoteDependencies",
+      "executeSql",
+      "mutate",
+      "deploy",
+      "push",
+      "merge"
+    ]
+  },
+  "descriptors": {
+    "counterRead": {
+      "id": "com-b03c-r3s-instrumentation-counter-read-v1",
+      "capability": "instrumentation_counter_read",
+      "resultShape": "counter_snapshot_v1",
+      "ownershipScope": "single_use_instrumentation_ownership_token",
+      "executableSqlPrepared": false
+    },
+    "residueInspection": {
+      "id": "com-b03c-r3s-instrumentation-residue-inspection-v1",
+      "capability": "instrumentation_residue_inspection",
+      "resultShape": "scoped_residue_counts_v1",
+      "ownershipScope": "single_use_instrumentation_ownership_token",
+      "objectKinds": [
+        "policy",
+        "function",
+        "sequence"
+      ],
+      "executableSqlPrepared": false
+    }
+  },
+  "controls": {
+    "descriptorOnlyObservationContract": true,
+    "counterReadDescriptorPinned": true,
+    "residueInspectionDescriptorPinned": true,
+    "syntheticExecutorOnly": true,
+    "remoteCapableExecutorRejected": true,
+    "genericDatabaseMethodsRejected": true,
+    "singleUseOwnershipScopeRequired": true,
+    "exactCounterPhasesPinned": true,
+    "exactCounterIdsPinned": true,
+    "exactCounterShapeRequired": true,
+    "safeNonnegativeCounterValuesRequired": true,
+    "residueCountsOnly": true,
+    "exactResidueShapeRequired": true,
+    "safeNonnegativeResidueCountsRequired": true,
+    "zeroResidueDerivedOnlyFromScopedCounts": true,
+    "noExecutableSqlPrepared": true,
+    "noCredentialValuesPrepared": true,
+    "noRemoteDependenciesLoaded": true,
+    "noRemoteClientInstantiated": true,
+    "noRemoteExecutionPathActivated": true,
+    "noCausalPromotionWithoutRemoteObservation": true
+  },
+  "prohibitedPreparation": {
+    "authorizationPhraseDefined": false,
+    "triggerPrepared": false,
+    "stagingEnvironmentJobPrepared": false,
+    "workflowSecretsReferenced": false,
+    "remoteCredentialLoadingPrepared": false,
+    "remoteDependencyLoadingPrepared": false,
+    "instrumentationSqlPrepared": false,
+    "counterReadSqlPrepared": false,
+    "residueInspectionSqlPrepared": false,
+    "supabaseClientPrepared": false,
+    "pgClientPrepared": false,
+    "remoteExecutorPrepared": false,
+    "stagingReadPrepared": false,
+    "stagingMutationPrepared": false,
+    "runtimePolicyChangePrepared": false,
+    "runtimeDeployPrepared": false,
+    "productionPrepared": false,
+    "mergePrepared": false
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "Compose the complete R3Q adapter repository-only using R3S observation primitives plus existing R3G/R3K bindings. Do not define staging authorization, trigger, secrets, environment jobs or remote execution in R3S."
+}

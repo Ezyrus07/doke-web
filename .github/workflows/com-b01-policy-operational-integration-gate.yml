@@ -1,0 +1,63 @@
+name: COM-B01 Policy Operational Integration Gate
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-policy-operational-integration-gate.js'
+      - 'config/com-b01-policy-operational-integration-gate.json'
+      - 'tests/fixtures/com-b01-policy-operational-gate-cases.json'
+      - 'docs/COM-B01-POLICY-OPERATIONAL-INTEGRATION-GATE.md'
+      - 'docs/validation/COM-B01-POLICY-OPERATIONAL-INTEGRATION-GATE.json'
+      - 'scripts/audit-com-b01-policy-operational-integration-gate.js'
+      - 'scripts/test-com-b01-policy-operational-integration-gate.js'
+      - '.github/workflows/com-b01-policy-operational-integration-gate.yml'
+      - 'backend/modules/communities/community-moderation-media-contract.js'
+      - 'config/com-a05-moderation-appeal-media-readiness.json'
+      - 'scripts/audit-com-a05-moderation-appeal-media-readiness.js'
+      - 'scripts/test-com-a05-moderation-appeal-media-readiness.js'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b01-policy-operational-integration-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-policy-operational-integration-gate.js
+          node --check scripts/audit-com-b01-policy-operational-integration-gate.js
+          node --check scripts/test-com-b01-policy-operational-integration-gate.js
+      - name: Audit COM-B01
+        run: node scripts/audit-com-b01-policy-operational-integration-gate.js
+      - name: Conformance COM-B01
+        run: node scripts/test-com-b01-policy-operational-integration-gate.js
+      - name: COM-A05 predecessor regression
+        run: |
+          node scripts/audit-com-a05-moderation-appeal-media-readiness.js
+          node scripts/test-com-a05-moderation-appeal-media-readiness.js
+      - name: COM-A04 regression
+        run: |
+          node scripts/audit-com-a04-content-realtime-rate-limit.js
+          node scripts/test-com-a04-content-realtime-rate-limit.js
+      - name: COM-A03 regression
+        run: |
+          node scripts/audit-com-a03-governance-discipline-ledger.js
+          node scripts/test-com-a03-governance-discipline-ledger.js
+      - name: COM-A02 regression
+        run: |
+          node scripts/audit-com-a02-canonical-discovery-membership.js
+          node scripts/test-com-a02-canonical-discovery-membership.js
+      - name: COM-A01 regression
+        run: |
+          node scripts/audit-com-a01-authority-baseline.js
+          node scripts/test-com-a01-authority-baseline.js
+      - name: Diff hygiene
+        run: git diff --check

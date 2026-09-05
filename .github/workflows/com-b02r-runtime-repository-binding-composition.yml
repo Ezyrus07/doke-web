@@ -1,0 +1,151 @@
+name: COM-B02R B02P-B02Q Runtime Repository Binding Composition
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-command-runtime-repository-binding-composition.js'
+      - 'config/com-b02r-runtime-repository-binding-composition.json'
+      - 'scripts/test-com-b02r-runtime-repository-binding-composition.js'
+      - '.github/workflows/com-b02r-runtime-repository-binding-composition.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02r-runtime-repository-binding-composition-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02Q predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=f591dbe67594ef48a01fafb293fff2318721c072
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git merge-base --is-ancestor "$BASE" HEAD
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js)" = "384c3a452b7e0e66d1bf2ddfeebb341c8b36f3c9"
+          test "$(git rev-parse HEAD:config/com-b02q-repository-executor-service-role-provider-binding.json)" = "47d7b4207fe572f37bd4a327a7e6e8a18df65c7a"
+          test "$(git rev-parse HEAD:scripts/test-com-b02q-repository-executor-service-role-provider-binding.js)" = "f9427758c4c08bd928fb2e0f3a616ba4c93bbf15"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02q-repository-executor-service-role-provider-binding.yml)" = "f1bcdab921089b8d94517ebcc394dd5408f408ff"
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-implementation.js)" = "19a5918f91df57ce991ff25e9fbd7eb15ecdfc2f"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-contract.js)" = "ed1536920e281bd3fda3c35f6b4d71a2fbf6107f"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = "38cd77fd6d3cf0c9f13d4c35ed000b9831481840"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "990ee5c8895446f44cdcd5819101f0b3d5370e63"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = "1ff7621973be5ef38aa5e033b91f5b75216b9ec1"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-repository-binding-composition.js)" = "cfc3bd8790d99b1ee61bf52fa93fd2bb2a6bf3bc"
+          test "$(git rev-parse HEAD:config/com-b02r-runtime-repository-binding-composition.json)" = "4a5f808ea433e26d3af9a6ccaa44a4c608dc5f6b"
+          test "$(git rev-parse HEAD:scripts/test-com-b02r-runtime-repository-binding-composition.js)" = "9ce6d59108004f603ea3a9a9b828220c5d57129d"
+
+          required="$(printf '%s\n' \
+            .github/workflows/com-b02r-runtime-repository-binding-composition.yml \
+            backend/modules/communities/community-command-runtime-repository-binding-composition.js \
+            config/com-b02r-runtime-repository-binding-composition.json \
+            scripts/test-com-b02r-runtime-repository-binding-composition.js | sort)"
+          allowed="$(printf '%s\n' \
+            .github/workflows/com-b02r-runtime-repository-binding-composition.yml \
+            backend/modules/communities/community-command-runtime-repository-binding-composition.js \
+            config/com-b02r-runtime-repository-binding-composition.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02r-runtime-repository-binding-composition.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          while IFS= read -r path; do
+            grep -Fxq "$path" <<<"$actual"
+          done <<<"$required"
+          unexpected="$(comm -23 <(printf '%s\n' "$actual") <(printf '%s\n' "$allowed"))"
+          test -z "$unexpected"
+
+      - name: Syntax and semantic B02P-B02Q composition conformance
+        run: |
+          node --check backend/modules/communities/community-command-runtime-repository-binding-composition.js
+          node --check scripts/test-com-b02r-runtime-repository-binding-composition.js
+          node -e "JSON.parse(require('fs').readFileSync('config/com-b02r-runtime-repository-binding-composition.json','utf8'))"
+          node scripts/test-com-b02r-runtime-repository-binding-composition.js
+
+      - name: Composition remains credentialless remote-inert and non-invoking
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/modules/communities/community-command-runtime-repository-binding-composition.js
+          ! grep -E 'process\.env|Deno\.env|Bun\.env|createClient\(|fetch\(|https?://|SUPABASE_SERVICE_ROLE_KEY|SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.rpc\(' "$TARGET"
+          grep -F "repositoryBinding.bindRepositoryOperation" "$TARGET"
+          grep -F "repositoryOperationInvoked: false" "$TARGET"
+          grep -F "credentialSourceBound: false" "$TARGET"
+          grep -F "remoteClientBound: false" "$TARGET"
+          grep -F "runtimeActivated: false" "$TARGET"
+
+          node - <<'NODE'
+          const composition = require('./backend/modules/communities/community-command-runtime-repository-binding-composition');
+          const b02p = require('./backend/modules/communities/community-command-runtime-binding-integration-implementation');
+          const b02q = require('./backend/modules/communities/community-command-repository-executor-service-role-provider-binding');
+          const handlers = require('./backend/modules/communities/route-handlers');
+          const loader = require('./backend/shared/http/module-route-loader');
+          const cfg = require('./config/com-b02r-runtime-repository-binding-composition.json');
+
+          if (composition.CONTRACT_ID !== 'com-b02r-runtime-repository-binding-composition-v1') throw new Error('B02R_CONTRACT_DRIFT');
+          if (composition.PREDECESSOR_CONTRACT_ID !== b02q.CONTRACT_ID) throw new Error('B02R_B02Q_PREDECESSOR_DRIFT');
+          const inspection = composition.inspectCompositionBinding();
+          if (inspection.integrationImplementationContractId !== b02p.CONTRACT_ID || inspection.repositoryBindingContractId !== b02q.CONTRACT_ID) throw new Error('B02R_COMPOSITION_LINEAGE_DRIFT');
+          if (inspection.automaticOperationBindingCompositionDefined !== true || inspection.stepwiseCompositionDefined !== true) throw new Error('B02R_COMPOSITION_MISSING');
+          const required = ['loadCanonicalState','claimIdempotencyKey','createCommunityProjectionOutcome','commitEventProjectionOutcome'].sort();
+          if (JSON.stringify(inspection.requiredOperations.slice().sort()) !== JSON.stringify(required)) throw new Error('B02R_REQUIRED_OPERATIONS_DRIFT');
+          for (const key of ['credentialSourceBound','credentialReferenceBound','credentialMaterialBound','credentialReadImplemented','remoteClientBound','remoteCapabilityBound','repositoryOperationInvoked','activeRuntimeHandlersChanged','moduleRouteLoaderChanged','runtimeActivated','rpcExecuted','networkExecuted','realCommunityMutationExecuted','migrationApplied','productionChanged']) {
+            if (inspection[key] !== false) throw new Error(`B02R_REMOTE_EFFECT_DRIFT:${key}`);
+          }
+
+          for (const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand']) {
+            if (loader.getHandler('communities', name) !== handlers[name]) throw new Error(`B02R_ACTIVE_HANDLER_DRIFT:${name}`);
+          }
+          for (const name of ['beginComposition','composeIntegrationState','resumeWithCanonicalState','resumeWithIdempotencyClaim','resumeWithRepositoryWrite']) {
+            if (loader.getHandler('communities', name) !== null) throw new Error(`B02R_RUNTIME_EXPOSED:${name}`);
+          }
+
+          if (cfg.authorization.type !== 'explicit_single_use_repository_only' || cfg.authorization.singleUse !== true || cfg.authorization.consumedByBoundary !== 'COM-B02R' || cfg.authorization.genericNextAuthorized !== false) throw new Error('B02R_AUTHORIZATION_DRIFT');
+          if (cfg.authority.repositoryOnlyCompositionBindingAuthority !== true || cfg.authority.b02pToB02qCompositionAuthority !== true) throw new Error('B02R_COMPOSITION_AUTHORITY_DRIFT');
+          for (const key of ['credentialSourceBindingAuthority','credentialReadAuthority','remoteClientBindingAuthority','repositoryOperationInvocationAuthority','runtimeHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','runtimeActivationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','rpcExecutionAuthority','networkAuthority','realtimeActivationAuthority','identityLifecycleRemoteAuthority','realCommunityMutationAuthority','migrationApplicationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority']) {
+            if (cfg.authority[key] !== false) throw new Error(`B02R_FORBIDDEN_AUTHORITY:${key}`);
+          }
+          if (cfg.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || cfg.functionalCheckpoint.exactRootCauseProven !== false || cfg.functionalCheckpoint.r5iCreated !== false || cfg.functionalCheckpoint.r5iInferred !== false) throw new Error('B02R_FUNCTIONAL_CHECKPOINT_DRIFT');
+          if (cfg.nextActionAfterCertification !== 'stop_and_require_fresh_explicit_authorization_before_any_subsequent_boundary') throw new Error('B02R_NEXT_ACTION_DRIFT');
+          NODE
+
+          ! git diff --name-only f591dbe67594ef48a01fafb293fff2318721c072 HEAD | grep '^supabase/migrations/'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check f591dbe67594ef48a01fafb293fff2318721c072 HEAD

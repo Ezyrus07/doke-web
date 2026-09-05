@@ -1,0 +1,35 @@
+{
+  "validActor": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "role": "client",
+    "status": "active",
+    "authenticated": true
+  },
+  "validAuthorizationPacket": {
+    "authorizationPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B02D_AUTHENTICATED_READ_ONLY_CANARY_ON_DOKE_STAGING",
+    "targetEnvironment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "migrationVersion": "20260805153539",
+    "readOnly": true,
+    "mutationAllowed": false,
+    "authorizationConsumed": false,
+    "executionAttempted": false
+  },
+  "authorizationCases": [
+    { "name": "valid", "mutation": null, "expectedDecision": "authorized_for_single_authenticated_read_only_canary" },
+    { "name": "missing", "mutation": "missing", "expectedDecision": "blocked_repository_only" },
+    { "name": "phrase", "mutation": "phrase", "expectedDecision": "blocked_repository_only" },
+    { "name": "environment", "mutation": "environment", "expectedDecision": "blocked_repository_only" },
+    { "name": "project", "mutation": "project", "expectedDecision": "blocked_repository_only" },
+    { "name": "migration", "mutation": "migration", "expectedDecision": "blocked_repository_only" },
+    { "name": "readOnly", "mutation": "readOnly", "expectedDecision": "blocked_repository_only" },
+    { "name": "consumed", "mutation": "consumed", "expectedDecision": "blocked_repository_only" },
+    { "name": "attempted", "mutation": "attempted", "expectedDecision": "blocked_repository_only" }
+  ],
+  "expected": {
+    "authorizationTotal": 9,
+    "authorized": 1,
+    "blocked": 8,
+    "repositoryRpcCalls": 1
+  }
+}

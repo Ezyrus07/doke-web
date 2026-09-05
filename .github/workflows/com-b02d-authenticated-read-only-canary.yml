@@ -1,0 +1,74 @@
+name: COM-B02D Authenticated Read-Only Canary
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b02d-authenticated-read-only-canary-attempt-2.json'
+
+permissions:
+  contents: read
+
+jobs:
+  authorize:
+    runs-on: ubuntu-24.04
+    outputs:
+      execute: ${{ steps.one_shot.outputs.execute }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: one_shot
+        name: Require one-shot attempt 2 envelope addition
+        shell: bash
+        run: |
+          if git diff-tree --no-commit-id --name-only --diff-filter=A -r "${{ github.event.before }}" "${{ github.sha }}" \
+            | grep -Fxq 'config/com-b02d-authenticated-read-only-canary-attempt-2.json'; then
+            echo 'execute=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'execute=false' >> "$GITHUB_OUTPUT"
+          fi
+
+  authenticated-read-only-canary:
+    needs: authorize
+    if: needs.authorize.outputs.execute == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      NODE_ENV: test
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      COM_B02D_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B02D_AUTHENTICATED_READ_ONLY_CANARY_ON_DOKE_STAGING
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      COM_B02D_REPORT_PATH: reports/generated/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-2.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Audit attempt 2 execution surface
+        run: node scripts/audit-com-b02d-authenticated-read-only-canary-attempt-2.js
+      - name: Preserve readiness and predecessor contracts
+        run: |
+          node scripts/audit-com-b02d-community-composition-root-canary-readiness.js
+          node scripts/test-com-b02d-community-composition-root-canary-readiness.js
+          node scripts/audit-com-b02c-staging-migration-application-authorization.js
+          node scripts/test-com-b02c-staging-migration-application-authorization.js
+          node scripts/audit-com-b02b-supabase-repository-migration-readiness.js
+          node scripts/test-com-b02b-supabase-repository-migration-readiness.js
+          node scripts/audit-com-b02-server-authority-contract.js
+          node scripts/test-com-b02-server-authority-contract.js
+      - name: Execute authenticated read-only canary attempt 2
+        run: node scripts/execute-com-b02d-authenticated-read-only-canary-attempt-2.js
+      - name: Upload sanitized attempt 2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02d-authenticated-read-only-canary-attempt-2-${{ github.run_id }}
+          path: reports/generated/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-2.json
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,121 @@
+{
+  "validationId": "COM-B03C-R3P-HOSTED-RUNTIME-OBSERVATION-HARNESS-READINESS",
+  "contractId": "com-b03c-r3p-hosted-runtime-observation-harness-readiness-v1",
+  "status": "repository_synthetic_two_probe_harness_certified_no_remote_authority",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "preparedFromHead": "b2577a0451e6fda3e7fc8d1a973666d88de02e73",
+  "initialBoundaryCommit": "c3f9479491e17d739c77726b648a7efafee016d9",
+  "predecessor": {
+    "validationId": "COM-B03C-R3O-HOSTED-RUNTIME-OBSERVATION-READINESS",
+    "status": "repository_hosted_runtime_observation_contract_certified_no_remote_authority",
+    "head": "b2577a0451e6fda3e7fc8d1a973666d88de02e73",
+    "recertRun": 31396727790,
+    "recertJob": 93481336148,
+    "recertSuccess": true
+  },
+  "harness": {
+    "probeIds": [
+      "presence_read_effective_gate",
+      "presence_only_join"
+    ],
+    "observationPhases": [
+      "baseline_before_probe",
+      "after_presence_read_effective_gate",
+      "after_presence_only_join",
+      "after_cleanup"
+    ],
+    "counters": [
+      "broadcast_rls_evaluations",
+      "presence_rls_evaluations"
+    ],
+    "syntheticScenarioIds": [
+      "extension_selection_diverged",
+      "presence_read_effective_gate_diverged",
+      "presence_only_or_join_diverged",
+      "pinned_presence_path_match"
+    ],
+    "classifierAuthority": "com-b03c-r3o-hosted-runtime-observation-readiness-v1",
+    "remoteDependencies": false,
+    "executableSqlPrepared": false,
+    "supabaseClientPrepared": false,
+    "remoteExecutorPrepared": false
+  },
+  "coverage": {
+    "classificationOutcomes": [
+      "hosted_presence_extension_selection_diverged",
+      "hosted_presence_read_effective_gate_diverged",
+      "hosted_presence_only_or_join_diverged",
+      "hosted_runtime_observation_matches_pinned_presence_path"
+    ],
+    "invalidLifecycle": [
+      "same client reused across probes",
+      "same topic reused across probes",
+      "counter regression",
+      "cleanup performs additional evaluation",
+      "zero residue missing"
+    ]
+  },
+  "certificationHistory": {
+    "initialFailClosed": {
+      "head": "c3f9479491e17d739c77726b648a7efafee016d9",
+      "run": 31398721456,
+      "job": 93488041759,
+      "conclusion": "failure",
+      "failedStep": "Domain Completion Matrix",
+      "reason": "derived matrix artifacts stale after R3P inventory expansion",
+      "syntaxPassed": true,
+      "syntheticHarnessPassed": true,
+      "preRemoteHardBlockPassed": true
+    },
+    "canonicalMatrixReconciliation": {
+      "writerInstallHead": "5a96ca64c672568f8ac13af81a0cfb7b87787ef7",
+      "writerRun": 31398958015,
+      "writerJob": 93488818893,
+      "writerConclusion": "success",
+      "writerOutputCommit": "f1237dfb42b4ecb296898251308276729c55d713",
+      "writerOutputs": [
+        "docs/DOMAIN-COMPLETION-MATRIX.md",
+        "reports/generated/domain-completion-matrix-report.json"
+      ],
+      "matrixSourceChanged": false,
+      "workflowRestoredHead": "7bd9df7f7edf680078d811abf12705320add1de5",
+      "workflowPermissions": "contents: read"
+    },
+    "normalHeadCertification": {
+      "head": "7bd9df7f7edf680078d811abf12705320add1de5",
+      "r3pRun": 31399080121,
+      "r3pJob": 93489226084,
+      "r3pConclusion": "success",
+      "matrixRun": 31399079656,
+      "matrixJob": 93489225268,
+      "matrixConclusion": "success",
+      "runAttempt": 1
+    }
+  },
+  "authority": {
+    "repositoryHarness": true,
+    "remoteExecution": false,
+    "triggerCreation": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "runtimeChange": false,
+    "production": false,
+    "merge": false
+  },
+  "effects": {
+    "stagingAccessExecuted": false,
+    "remoteCredentialReadExecuted": false,
+    "remoteDependencyLoadExecuted": false,
+    "authIdentityMutationExecuted": false,
+    "realtimePolicyMutationExecuted": false,
+    "realtimeSubscriptionExecuted": false,
+    "runtimePolicyChangeExecuted": false,
+    "productionExecuted": false,
+    "mergeExecuted": false
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "Certify a separate repository-only executable envelope for the future R3O instrumentation lifecycle. No staging authorization, trigger, secrets, environment job or remote executor is authorized by R3P."
+}

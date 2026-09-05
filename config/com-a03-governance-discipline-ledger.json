@@ -1,0 +1,119 @@
+{
+  "contractId": "com-a03-governance-discipline-ledger-v1",
+  "domain": "COM-001",
+  "sourceHead": "6ece93b07cc112aac67c0c5ab0db44c24f567fdf",
+  "scope": "repository_only",
+  "status": "contract_complete_runtime_blocked",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "roles": {
+    "system": ["owner", "moderator", "member"],
+    "systemRolesImmutable": true,
+    "customRolesVersioned": true,
+    "selfPromotionAllowed": false,
+    "ownershipTransferHandledElsewhere": true,
+    "permissionCeilingRequired": true,
+    "rankCeilingRequired": true,
+    "baseMemberRoleRequired": true
+  },
+  "permissions": [
+    "pinMessages", "deleteMessages", "addMembers", "removeMembers", "editCommunity",
+    "manageRoles", "manageChannels", "mentionRoles", "bypassSlowMode", "moderateMembers"
+  ],
+  "ownerOnlyPermissions": ["editCommunity", "manageRoles"],
+  "commands": [
+    "create_role", "update_role", "delete_role", "assign_role", "revoke_role",
+    "apply_ban", "lift_ban", "apply_mute", "lift_mute",
+    "apply_restriction", "lift_restriction", "expire_sanction"
+  ],
+  "decisions": ["accept", "replay", "reject", "conflict", "unavailable"],
+  "discipline": {
+    "types": ["ban", "mute", "restriction"],
+    "states": ["active", "lifted", "expired", "superseded"],
+    "reasonRequired": true,
+    "selfDisciplineAllowed": false,
+    "equalOrHigherRankTargetAllowed": false,
+    "ownerTargetAllowed": false,
+    "permanentBanOwnerOnlyPolicyBoundary": true,
+    "temporaryMaximumDays": { "ban": 365, "mute": 30, "restriction": 90 },
+    "expiryRequiresSystemWorker": true,
+    "silentDeletionAllowed": false
+  },
+  "audit": {
+    "appendOnly": true,
+    "hashChained": true,
+    "revisionMonotonic": true,
+    "correctionsSupersede": true,
+    "rawSensitiveDataAllowed": false
+  },
+  "identity": {
+    "clientRequestId": "uuid_required",
+    "idempotencyKey": "sha256_actor_command_request",
+    "intentFingerprint": "sha256_immutable_intent",
+    "subjectKey": "sha256_community_target_role_or_sanction",
+    "lostResponseReplay": true,
+    "payloadDriftDecision": "conflict"
+  },
+  "authority": {
+    "contractAuthority": true,
+    "roleContractAuthority": true,
+    "disciplineContractAuthority": true,
+    "auditContractAuthority": true,
+    "roleWriteAuthority": false,
+    "disciplineWriteAuthority": false,
+    "auditWriteAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "COM-B02", "COM-B03", "COM-B04", "AUTH-001",
+    "ADM-B03", "ADM-B04", "LEGAL-B01", "LEGAL-B03", "LEGAL-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realRoleCreated": false,
+    "realRoleAssigned": false,
+    "realBanApplied": false,
+    "realMuteApplied": false,
+    "realRestrictionApplied": false,
+    "realAuditEventWritten": false,
+    "realUserDataChanged": false,
+    "productionChanges": false
+  },
+  "matrixIntegration": {
+    "integrated": true,
+    "refreshCommit": "64a75f19bfe88880971160f7169da6f81dcf9d73",
+    "refreshRun": 30968804038,
+    "refreshJob": 92188471055,
+    "temporaryWorkflowRemovalCommit": "6f349ddf0388a0735eb7c55b8f4470d5e3cab64a",
+    "temporaryWorkflowPresent": false
+  },
+  "initialCertification": {
+    "run": 30968731527,
+    "job": 92188252986,
+    "audit": "142/142",
+    "conformance": "107/107",
+    "regressions": "COM-A02, COM-A01 and REP-A05 success"
+  },
+  "finalCertification": {
+    "head": "159f4de2a156d6431bfbd15637fcbfb21ec0e9aa",
+    "run": 30969183972,
+    "job": 92189610031,
+    "payMatrixRun": 30969184021,
+    "payMatrixJob": 92189610130,
+    "result": "success"
+  },
+  "nextSublots": [
+    "COM-A04 canonical posts channels messages realtime and rate-limit authority",
+    "COM-A05 reports sanctions restoration appeals and media-moderation readiness"
+  ]
+}

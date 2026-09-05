@@ -1,0 +1,121 @@
+# retrigger: final static certification after TEMP removal
+name: COM-B02CF Authorized Single-Use Register Resolve Execution Certification
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-resolve-execution.js'
+      - 'config/com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.json'
+      - 'scripts/test-com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.js'
+      - '.github/workflows/com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-authorized-register-resolve-proof:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: e4b74dbac4821521a65a2d24b6e59bbad4fd1928
+      PREDECESSOR_TREE: c149f1c1de85e5e63ded7e18470e26059494bc62
+      PREDECESSOR_RUN_ID: '32723087958'
+      PREDECESSOR_JOB_ID: '97418474387'
+      EXECUTION_PROOF_HEAD: 7a674db2fea15eff9ee2210aaffc682f1c792439
+      EXECUTION_PROOF_TREE: 5657838c8dab400dee28ab9c411cdc736965e2c1
+      EXECUTION_PROOF_RUN_ID: '32725256676'
+      EXECUTION_PROOF_JOB_ID: '97424982777'
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-continuation-state-register-resolve-execution.js
+      TARGET_BLOB: 625741a92467c37ea5b268791f330502989dfd92
+      CONFIG: config/com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.json
+      CONFIG_BLOB: 20559d236373135f89187e3eda6e6f5ea88e53a8
+      TEST: scripts/test-com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.js
+      TEST_BLOB: a36ebdc807e3ed4077944db0a860c3328a1648d8
+      WORKFLOW: .github/workflows/com-b02cf-repository-only-deterministic-synthetic-continuation-state-register-resolve-execution.yml
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_MD_BLOB: 257a5fddaa70f8b94bd4defc699be8a66073070d
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+      MATRIX_REPORT_BLOB: 1a28456df5ec8b6d759d5e304545ec6072851550
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CE predecessor, B02CF execution proof, and exact final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$PREDECESSOR_RUN_ID" = '32723087958'
+          test "$PREDECESSOR_JOB_ID" = '97418474387'
+          test "$(git rev-parse "$EXECUTION_PROOF_HEAD^{tree}")" = "$EXECUTION_PROOF_TREE"
+          test "$EXECUTION_PROOF_RUN_ID" = '32725256676'
+          test "$EXECUTION_PROOF_JOB_ID" = '97424982777'
+          expected="$(printf '%s\n' "$TARGET" "$CONFIG" "$TEST" "$WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '0000-temp-com-b02cf-*' -print -quit)"
+          test "$(git rev-parse HEAD:$TARGET)" = "$TARGET_BLOB"
+          test "$(git rev-parse HEAD:$CONFIG)" = "$CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$TEST)" = "$TEST_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_MD)" = "$MATRIX_MD_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_REPORT)" = "$MATRIX_REPORT_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Certify frozen authorized register resolve proof without reexecution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          grep -F '"status": "EXECUTION_PROVEN_REPOSITORY_CERTIFICATION_CANDIDATE"' "$CONFIG"
+          grep -F '"runId": 32725256676' "$CONFIG"
+          grep -F '"jobId": 97424982777' "$CONFIG"
+          grep -F '"authorizationConsumed": true' "$CONFIG"
+          grep -F '"registryRegisterExecuted": true' "$CONFIG"
+          grep -F '"registryLookupExecuted": true' "$CONFIG"
+          grep -F '"registryResolveExecuted": true' "$CONFIG"
+          grep -F '"registryReleaseExecuted": false' "$CONFIG"
+          grep -F '"executableSurfaceRemoved": true' "$CONFIG"
+          grep -F '"singleUseExecutorRemoved": true' "$CONFIG"
+          grep -F '"reexecutionAllowed": false' "$CONFIG"
+          ! grep -F 'executeRepositoryOnlyDeterministicSyntheticRegisterResolve' "$TARGET"
+          ! grep -E 'new Map|registry\.set\(|registry\.get\(|registry\.delete\(' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+
+      - name: Matrix governance, frozen runtime surfaces, and diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_MD)" = "$MATRIX_MD_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_REPORT)" = "$MATRIX_REPORT_BLOB"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD

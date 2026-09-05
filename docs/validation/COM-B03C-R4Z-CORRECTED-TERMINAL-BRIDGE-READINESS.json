@@ -1,0 +1,92 @@
+{
+  "validationId": "COM-B03C-R4Z-CORRECTED-TERMINAL-BRIDGE-READINESS",
+  "contractId": "com-b03c-r4z-corrected-terminal-bridge-readiness-v1",
+  "status": "repository_corrected_terminal_bridge_certified_no_remote_authority",
+  "predecessor": {
+    "r4yEvidenceHead": "219c8989bfcbcee115889a43f41c4854b9bbbf12",
+    "r4yEvidenceBlob": "adc37d3ddc9b5698c7d4dc5e8911d119cc5923a5",
+    "r4yContractId": "com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness-v1",
+    "r4yFinalRun": 31696197640,
+    "r4yFinalJob": 94434415918,
+    "r4yFinalConclusion": "success",
+    "independentMatrixRun": 31696197823,
+    "independentMatrixJob": 94434417764,
+    "independentMatrixConclusion": "success"
+  },
+  "historicalHarness": {
+    "r4lBlob": "d611f52376a5495e50389183c9d6df3a93e1f64b",
+    "r4lMutationAllowed": false,
+    "r4wMutationAllowed": false,
+    "r4xMutationAllowed": false,
+    "r4yMutationAllowed": false,
+    "r4wTerminalObservationContaminated": true
+  },
+  "correctedBridge": {
+    "asset": "scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js",
+    "separateFromHistoricalR4l": true,
+    "awaitsObservationInsideTry": true,
+    "cleanupBeginsOnlyAfterObservationSettlement": true,
+    "removeChannelRemainsInFinally": true,
+    "preservesSubscribedOutcomeBeforeCleanup": true,
+    "preservesChannelErrorOutcomeBeforeCleanup": true,
+    "preservesTimedOutOutcomeBeforeCleanup": true,
+    "observerRejectionSettlesBeforeCleanup": true,
+    "cleanupStillRunsAfterObserverRejection": true,
+    "rawRemoteErrorPersisted": false
+  },
+  "scopeClarification": {
+    "harnessRootCauseProven": true,
+    "correctedTerminalBridgeReady": true,
+    "privatePresenceExactRootCauseProven": false,
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false,
+    "inference": "R4Z repairs only the diagnostic lifetime race proven by R4Y. It does not change historical R4L/R4W/R4X/R4Y evidence and it does not itself re-observe staging. The corrected bridge must be used only in a future separately authorized single-use remote observation if such an observation is later approved."
+  },
+  "repositoryBoundary": {
+    "triggerExists": false,
+    "remoteExecutionAuthority": false,
+    "remoteCredentialReadAuthority": false,
+    "remoteDependencyLoadAuthority": false,
+    "networkAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "runtimeChangeAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false
+  },
+  "authorization": {
+    "previousAuthorizationConsumed": true,
+    "previousAuthorizationReusable": false,
+    "retryAllowed": false,
+    "freshAuthorizationRequiredForAnyFutureRemoteAttempt": true
+  },
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "repositoryCertification": {
+    "preFreezeHead": "d7924f18ccbaf81f6df59c7061efaa97ca54e006",
+    "r4zRun": 31697354735,
+    "r4zJob": 94438162922,
+    "r4zRunAttempt": 1,
+    "r4zConclusion": "success",
+    "independentMatrixRun": 31697354664,
+    "independentMatrixJob": 94438081617,
+    "independentMatrixRunAttempt": 1,
+    "independentMatrixConclusion": "success",
+    "matrixWriterInstallHead": "3d4bc048087a97e05c7dd37930201e95e121ec08",
+    "matrixWriterRun": 31697208600,
+    "matrixWriterJob": 94437612956,
+    "matrixWriterConclusion": "success",
+    "matrixOutputHead": "4bce29e33173785301a57e21cab3a5adceca31ff",
+    "matrixWorkflowRestoredHead": "d7924f18ccbaf81f6df59c7061efaa97ca54e006",
+    "canonicalMatrixWorkflowBlob": "299108d86dc097ba090392ebe9f218f6849e74ad",
+    "canonicalMatrixWorkflowContentsRead": true,
+    "stagingExecutedInR4z": false,
+    "remoteExecutionAuthority": false
+  },
+  "nextBoundary": "After final R4Z evidence-head certification, create a separate fresh head-bound single-use authorization lifecycle for one corrected terminal observation against staging. That future authorization must bind the certified R4Z evidence head and corrected bridge semantics, run_attempt=1, non-reusability after failure, zero-residue cleanup, and no production or merge authority."
+}

@@ -1,0 +1,116 @@
+{
+  "validationId": "COM-B03C-R4C-PG-INT8-COUNTER-CODEC-COMPATIBILITY-READINESS",
+  "contractId": "com-b03c-r4c-pg-int8-counter-codec-compatibility-readiness-v1",
+  "status": "repository_pg_int8_counter_codec_compatibility_certified_no_remote_authority",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "finding": {
+    "r4bObservedFailurePhase": "baseline_counter_read",
+    "r3uCounterSqlOutputType": "bigint",
+    "pgInt8Oid": 20,
+    "r3sCounterContract": "nonnegative Number.isSafeInteger",
+    "legacyPgInt8TextMismatchReproducedRepositoryOnly": true,
+    "codecBridgePrepared": true,
+    "bridgeScope": "exact R3U counterRead SQL result only",
+    "historicalR3vModified": false,
+    "historicalR3sModified": false,
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false
+  },
+  "r4bStagingEvidence": {
+    "evidenceHead": "8c79cba46396b092f9b115f88b7a2e2e423062f8",
+    "triggerCommit": "1db885835085838be294c2e07ecb676ad0f1540b",
+    "run": 31487894136,
+    "certifyJob": 93767389865,
+    "certifyConclusion": "success",
+    "authorizeJob": 93767490426,
+    "authorizeConclusion": "success",
+    "canaryJob": 93767594558,
+    "canaryConclusion": "failure",
+    "artifactId": 9099871582,
+    "artifactDigest": "sha256:e66a07e7e8beae71857b2863cecb7deea2788c3f8b18ddef7e9224546b32a07e",
+    "failureCode": "DOKE_COM_B03C_R3Y_PHASE_BASELINE_COUNTER_READ_FAILED",
+    "failurePhase": "baseline_counter_read",
+    "identityCleanupSucceeded": true,
+    "instrumentationInstalled": false,
+    "zeroResidueProven": false,
+    "authorizationReusable": false,
+    "rawRemoteErrorExposed": false
+  },
+  "r4bSingleUseCleanup": {
+    "cleanupHead": "bec476c9c55189269026f3ded31570f5e832236e",
+    "cleanupRun": 31488128482,
+    "cleanupCertifyJob": 93768108224,
+    "cleanupCertifyConclusion": "failure",
+    "expectedFailedStep": "Execution trigger commit continuity",
+    "cleanupAuthorizeJob": 93768204418,
+    "cleanupAuthorizeConclusion": "skipped",
+    "cleanupCanaryJob": 93768204991,
+    "cleanupCanaryConclusion": "skipped",
+    "secondStagingExecutionOccurred": false
+  },
+  "authority": {
+    "repositoryCodecCompatibility": true,
+    "remoteExecution": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "remoteCredentialRead": false,
+    "remoteDependencyLoad": false,
+    "network": false,
+    "runtimeChange": false,
+    "production": false,
+    "merge": false
+  },
+  "effects": {
+    "stagingAccessExecutedInR4c": false,
+    "remoteCredentialReadExecutedInR4c": false,
+    "remoteDependencyLoadExecutedInR4c": false,
+    "networkAccessExecutedInR4c": false,
+    "databaseConnectionExecutedInR4c": false,
+    "databaseQueryAgainstRemoteExecutedInR4c": false,
+    "realtimeSubscriptionExecutedInR4c": false,
+    "runtimePolicyChangeExecutedInR4c": false,
+    "productionExecuted": false,
+    "mergeExecuted": false
+  },
+  "certificationHistory": {
+    "initialFailClosed": {
+      "head": "565e79a182c8a7dfffc8b5991688ae681fd25e10",
+      "r4cRun": 31489165493,
+      "r4cJob": 93771339192,
+      "r4cConclusion": "failure",
+      "syntaxPassed": true,
+      "codecCompatibilityPassed": true,
+      "r4bStagingEvidenceContinuityPassed": true,
+      "remoteHardBlockPassed": true,
+      "failedStep": "Domain Completion Matrix",
+      "stagingExecuted": false
+    },
+    "canonicalMatrixReconciliation": {
+      "writerInstallHead": "6c9468aebbac4ce988fbb20d94ecf86304a25dfa",
+      "writerRun": 31489462790,
+      "writerJob": 93772268397,
+      "writerConclusion": "success",
+      "writerOutputCommit": "9573b1cff66bde93dbdf3b29fb93f18433bbf4fd",
+      "writerOutputs": [
+        "docs/DOMAIN-COMPLETION-MATRIX.md",
+        "reports/generated/domain-completion-matrix-report.json"
+      ],
+      "matrixSourceChanged": false,
+      "workflowRestoredHead": "e913422855b0c35f7303f814edf497e6fef56e1f",
+      "workflowRestoredBlob": "299108d86dc097ba090392ebe9f218f6849e74ad",
+      "workflowPermissions": "contents: read"
+    },
+    "normalHeadCertification": {
+      "head": "e913422855b0c35f7303f814edf497e6fef56e1f",
+      "r4cRun": 31489650423,
+      "r4cJob": 93772850002,
+      "r4cConclusion": "success",
+      "matrixRun": 31489650210,
+      "matrixJob": 93772849536,
+      "matrixConclusion": "success"
+    }
+  },
+  "nextBoundary": "After R4C evidence-head certification, create a separate fresh head-bound single-use authorization lifecycle for an R4C-bridged staging retry. R4B authorization remains consumed and non-reusable."
+}

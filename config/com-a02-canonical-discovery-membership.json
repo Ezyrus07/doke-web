@@ -1,0 +1,117 @@
+{
+  "contractId": "com-a02-canonical-discovery-membership-v1",
+  "domain": "COM-001",
+  "sourceHead": "30b84d4b1b12890ffeb54cfcb7ad71777f58237d",
+  "scope": "repository_only",
+  "status": "contract_complete_runtime_blocked",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "integrationEvidence": {
+    "initialCertificationRun": 30967313644,
+    "initialCertificationJob": 92183967947,
+    "matrixRefreshCommit": "5d05cae886243cfbad61a384542f8c56e10de5ea",
+    "matrixRefreshRun": 30967409096,
+    "matrixRefreshJob": 92184259851,
+    "temporaryWorkflowRemovalCommit": "7301db362d65d345bd40c38e804dbfb238d34fe3"
+  },
+  "discovery": {
+    "canonicalSource": "canonical_server",
+    "states": ["visible", "private_not_enumerable", "unavailable"],
+    "publicEnumerable": true,
+    "privateEnumerableForNonmembers": false,
+    "inviteOnlyEnumerableForNonmembers": false,
+    "staleOrIncompleteAuthority": false
+  },
+  "commands": [
+    "create_community",
+    "join_public",
+    "request_join",
+    "cancel_join_request",
+    "invite_member",
+    "revoke_invite",
+    "accept_invite",
+    "reject_invite",
+    "approve_join_request",
+    "reject_join_request",
+    "leave_community"
+  ],
+  "decisions": ["accept", "replay", "reject", "conflict", "unavailable"],
+  "identity": {
+    "clientRequestId": "uuid_required",
+    "idempotencyKey": "sha256_actor_command_request",
+    "intentFingerprint": "sha256_immutable_intent",
+    "membershipSubjectKey": "sha256_community_target_membership",
+    "lostResponseReplay": true,
+    "payloadDriftDecision": "conflict"
+  },
+  "membership": {
+    "canonicalInitialRole": "member",
+    "selfJoinPublicOnly": true,
+    "privateJoinRequiresRequestOrInvitation": true,
+    "oneActiveMembershipPerCommunityUser": true,
+    "oneActiveInvitationPerCommunityUser": true,
+    "oneActiveJoinRequestPerCommunityUser": true,
+    "activeBanBlocksEntry": true,
+    "ownerLeaveRequiresTransfer": true,
+    "invitationMaximumDays": 30,
+    "revisionCheckRequired": true
+  },
+  "commandEffects": {
+    "writeAuthorized": false,
+    "membershipAuthority": false,
+    "roleElevationAllowed": false,
+    "paymentAuthority": false,
+    "notificationAuthority": false,
+    "analyticsWriteAuthority": false
+  },
+  "authority": {
+    "contractAuthority": true,
+    "discoveryContractAuthority": true,
+    "membershipCommandContractAuthority": true,
+    "communityWriteAuthority": false,
+    "membershipWriteAuthority": false,
+    "invitationWriteAuthority": false,
+    "joinRequestWriteAuthority": false,
+    "roleAuthority": false,
+    "disciplineAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "COM-B02",
+    "COM-B03",
+    "COM-B04",
+    "AUTH-001",
+    "ADM-B03",
+    "ADM-B04",
+    "LEGAL-B01",
+    "LEGAL-B03",
+    "LEGAL-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realCommunityCreated": false,
+    "realMembershipChanged": false,
+    "realInvitationChanged": false,
+    "realJoinRequestChanged": false,
+    "realRoleChanged": false,
+    "realNotificationCreated": false,
+    "realAnalyticsWritten": false,
+    "realUserDataChanged": false,
+    "productionChanges": false
+  },
+  "nextSublots": [
+    "COM-A03 canonical roles permissions bans mutes restrictions and audit ledger",
+    "COM-A04 canonical posts channels messages realtime and rate-limit authority",
+    "COM-A05 reports sanctions restoration appeals and media-moderation readiness"
+  ]
+}

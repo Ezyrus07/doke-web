@@ -1,0 +1,85 @@
+name: COM-B04G Route Runtime Wiring Authorization Lifecycle
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-moderation-route-runtime-wiring-authorization.js'
+      - 'config/com-b04g-route-runtime-wiring-authorization-readiness.json'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/shared/http/module-route-loader.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'scripts/test-com-b04g-route-runtime-wiring-execution.js'
+      - 'scripts/audit-com-b04g-route-runtime-wiring-execution.js'
+      - 'docs/COM-B04G-ROUTE-RUNTIME-WIRING-EXECUTION.md'
+      - 'docs/validation/COM-B04G-ROUTE-RUNTIME-WIRING-EXECUTION.json'
+      - '.github/workflows/com-b04g-route-runtime-wiring-authorization-readiness.yml'
+      - '.github/workflows/com-b04g-route-runtime-wiring-execution.yml'
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'config/domain-completion-matrix.json'
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-moderation-route-runtime-wiring-authorization.js'
+      - 'config/com-b04g-route-runtime-wiring-authorization-readiness.json'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/shared/http/module-route-loader.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'scripts/test-com-b04g-route-runtime-wiring-execution.js'
+      - 'scripts/audit-com-b04g-route-runtime-wiring-execution.js'
+      - 'docs/COM-B04G-ROUTE-RUNTIME-WIRING-EXECUTION.md'
+      - 'docs/validation/COM-B04G-ROUTE-RUNTIME-WIRING-EXECUTION.json'
+      - '.github/workflows/com-b04g-route-runtime-wiring-authorization-readiness.yml'
+      - '.github/workflows/com-b04g-route-runtime-wiring-execution.yml'
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'config/domain-completion-matrix.json'
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-moderation-route-runtime-wiring-authorization.js
+          node --check backend/shared/http/route-registry.js
+          node --check backend/shared/http/module-route-loader.js
+          node --check backend/modules/communities/route-handlers.js
+          node --check scripts/test-com-b04g-route-runtime-wiring-execution.js
+          node --check scripts/audit-com-b04g-route-runtime-wiring-execution.js
+      - name: COM-B04G consumed execution conformance
+        run: node scripts/test-com-b04g-route-runtime-wiring-execution.js
+      - name: COM-B04G consumed lifecycle audit
+        run: node scripts/audit-com-b04g-route-runtime-wiring-execution.js
+      - name: Authorization lifecycle
+        shell: bash
+        run: |
+          grep -F 'authorization_consumed_repository_wiring_completed_pending_certification' config/com-b04g-route-runtime-wiring-authorization-readiness.json
+          grep -F '"received": true' config/com-b04g-route-runtime-wiring-authorization-readiness.json
+          grep -F '"consumed": true' config/com-b04g-route-runtime-wiring-authorization-readiness.json
+          grep -F '"executionAttempted": true' config/com-b04g-route-runtime-wiring-authorization-readiness.json
+          grep -F "'communities.moderation.command'" backend/shared/http/route-registry.js
+          grep -F "require('../../modules/communities/route-handlers')" backend/shared/http/module-route-loader.js
+          grep -F 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+      - name: Fail-closed boundary
+        shell: bash
+        run: |
+          ! grep -R -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env' backend/modules/communities/route-handlers.js
+          ! grep -R -F 'community-moderation-runtime-composition' backend/modules/communities/route-handlers.js
+          grep -F "Object.freeze(['disabled', 'local_test_double'])" backend/modules/communities/community-moderation-runtime-composition.js
+          grep -F 'COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED' backend/modules/communities/community-moderation-runtime-composition.js
+      - name: COM-B04E regression
+        run: |
+          node scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          node scripts/audit-com-b04e-attempt-2-readiness.js
+      - name: Diff hygiene
+        run: git diff --check

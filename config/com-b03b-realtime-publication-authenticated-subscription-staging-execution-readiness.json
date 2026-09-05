@@ -1,0 +1,89 @@
+{
+  "contractId": "com-b03b-realtime-publication-authenticated-subscription-staging-execution-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b03b-realtime-publication-authenticated-subscription-readiness-v1"
+  ],
+  "scope": "repository_only_preinstalled_executor",
+  "status": "repository_execution_readiness_pending_certification",
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_REALTIME_PUBLICATION_AND_AUTHENTICATED_SUBSCRIPTION_CANARY_ON_DOKE_STAGING",
+    "received": true,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "consumptionBoundary": "single_file_trigger_commit_after_repository_certification"
+  },
+  "canary": {
+    "scope": [
+      "community_posts",
+      "channel_presence",
+      "channel_typing"
+    ],
+    "excludedTopics": [
+      "channel_messages"
+    ],
+    "privateChannelsOnly": true,
+    "serverVerifiedSessionRequired": true,
+    "publicRealtimeChannelAllowed": false,
+    "persistentDomainMutationAllowed": false,
+    "syntheticPersona": "cliente@doke.local",
+    "temporaryRealtimeRls": "exact_canary_uid_and_topics_only",
+    "temporaryPoliciesMustBeRemoved": true,
+    "channelsMustBeRemoved": true,
+    "anonymousNegativeSubscriptionRequired": true,
+    "communityPostsTransport": "private_broadcast_from_database",
+    "presenceTransport": "private_presence",
+    "typingTransport": "private_broadcast"
+  },
+  "preflight": {
+    "requiredSecretsCheckedBeforeStagingAccess": [
+      "SUPABASE_ACCESS_TOKEN",
+      "SUPABASE_DB_PASSWORD",
+      "DOKE_STAGING_CLIENT_PASSWORD"
+    ],
+    "projectMustBeActiveHealthy": true,
+    "pullRequestMustRemainOpenDraftUnmerged": true,
+    "workflowRerunAllowed": false,
+    "publishableKeyRetrievedFromManagementApi": true,
+    "realtimeMessagesPublicationMustAlreadyExist": true,
+    "noPublicCommunityRealtimePublicationMutation": true
+  },
+  "authorityBeforeTrigger": {
+    "repositoryExecutorAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimePublicationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "persistentDomainMutationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "expectedEffectsAfterAuthorizedCanary": {
+    "temporaryRealtimeAuthorizationPolicyMutation": true,
+    "privateRealtimeChannels": true,
+    "databaseOriginatedBroadcast": true,
+    "presenceTrack": true,
+    "typingBroadcast": true,
+    "persistentCommunityPostRows": false,
+    "channelMessages": false,
+    "publicTraffic": false,
+    "runtimeDeployment": false,
+    "production": false,
+    "pullRequestMerge": false
+  },
+  "failureSemantics": {
+    "missingCanaryPassword": "fail_closed_before_staging_access",
+    "missingRealtimeFoundation": "fail_closed",
+    "privateSubscriptionFailure": "fail_closed",
+    "cleanupFailure": "fail_closed",
+    "authorizationReusableAfterFailure": false
+  }
+}

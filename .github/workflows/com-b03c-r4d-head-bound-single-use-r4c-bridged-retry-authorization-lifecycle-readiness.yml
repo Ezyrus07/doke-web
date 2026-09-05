@@ -1,0 +1,64 @@
+name: COM-B03C-R4D Head-Bound R4C-Bridged Retry Authorization Lifecycle Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4d.js'
+      - 'scripts/test-com-b03c-r4d-head-bound-single-use-r4c-bridged-retry-authorization-lifecycle-readiness.js'
+      - 'config/com-b03c-r4d-head-bound-single-use-r4c-bridged-retry-authorization-lifecycle-readiness.json'
+      - 'config/com-b03c-r4d-single-use-r4c-bridged-retry-trigger.json'
+      - 'docs/validation/COM-B03C-R4D-HEAD-BOUND-SINGLE-USE-R4C-BRIDGED-RETRY-AUTHORIZATION-LIFECYCLE-READINESS.json'
+      - '.github/workflows/com-b03c-r4d-head-bound-single-use-r4c-bridged-retry-authorization-lifecycle-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4d.js
+          node --check scripts/test-com-b03c-r4d-head-bound-single-use-r4c-bridged-retry-authorization-lifecycle-readiness.js
+      - name: R4D head-bound R4C-bridged retry authorization lifecycle
+        run: node scripts/test-com-b03c-r4d-head-bound-single-use-r4c-bridged-retry-authorization-lifecycle-readiness.js
+      - name: Pre-authorization remote hard block
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r4d-single-use-r4c-bridged-retry-trigger.json
+          set +e
+          output="$(node - <<'NODE' 2>&1
+          const r4d = require('./backend/modules/communities/community-realtime-private-auth-r4d');
+          r4d.assertRemoteExecutionBoundaryAbsent();
+          NODE
+          )"
+          code=$?
+          set -e
+          test "$code" -ne 0
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R4D_REMOTE_EXECUTION_BOUNDARY_REQUIRED'
+      - name: R4C evidence continuity
+        run: |
+          node - <<'NODE'
+          const e=require('./docs/validation/COM-B03C-R4C-PG-INT8-COUNTER-CODEC-COMPATIBILITY-READINESS.json');
+          if(e.contractId!=='com-b03c-r4c-pg-int8-counter-codec-compatibility-readiness-v1') process.exit(1);
+          if(e.status!=='repository_pg_int8_counter_codec_compatibility_certified_no_remote_authority') process.exit(1);
+          if(e.finding?.codecBridgePrepared!==true) process.exit(1);
+          if(e.finding?.historicalR3vModified!==false||e.finding?.historicalR3sModified!==false) process.exit(1);
+          if(e.r4bStagingEvidence?.authorizationReusable!==false) process.exit(1);
+          if(e.finding?.exactRootCauseProven!==false||e.finding?.causalPromotionAllowed!==false) process.exit(1);
+          NODE
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

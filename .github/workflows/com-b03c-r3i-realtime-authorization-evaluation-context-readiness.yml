@@ -1,0 +1,59 @@
+name: COM-B03C-R3I Realtime Authorization Evaluation Context Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3i.js
+      - config/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.json
+      - scripts/test-com-b03c-r3i-realtime-authorization-evaluation-context-readiness.js
+      - docs/validation/COM-B03C-R3I-REALTIME-AUTHORIZATION-EVALUATION-CONTEXT-READINESS.json
+      - docs/validation/COM-B03C-R3I-UPSTREAM-REALTIME-AUTHORIZATION-SOURCE-EVIDENCE.json
+      - .github/workflows/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.yml
+      - docs/validation/COM-B03C-R3H-SINGLE-USE-STAGING-DIAGNOSTIC-READINESS.json
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - reports/generated/domain-completion-matrix-report.json
+
+permissions: { contents: read }
+concurrency:
+  group: com-b03c-r3i-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3i.js
+          node --check scripts/test-com-b03c-r3i-realtime-authorization-evaluation-context-readiness.js
+      - name: COM-B03C-R3I repository evaluation-context differential readiness
+        run: node scripts/test-com-b03c-r3i-realtime-authorization-evaluation-context-readiness.js
+      - name: Repository-only remote hard-block
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r3i-realtime-authorization-evaluation-context-staging-trigger.json
+          ! grep -R "environment: doke-staging" .github/workflows/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.yml
+          ! grep -R "SUPABASE_ACCESS_TOKEN\|SUPABASE_DB_PASSWORD" .github/workflows/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.yml
+          ! grep -R "I_EXPLICITLY_AUTHORIZE_COM_B03C_R3I" backend/modules/communities/community-realtime-private-auth-r3i.js config/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.json docs/validation/COM-B03C-R3I-REALTIME-AUTHORIZATION-EVALUATION-CONTEXT-READINESS.json
+      - name: Domain completion matrix audit
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance audit
+        run: npm run audit:agent-governance
+      - name: Governance invariants
+        run: |
+          node - <<'NODE'
+          const e=require('./docs/validation/COM-B03C-R3I-REALTIME-AUTHORIZATION-EVALUATION-CONTEXT-READINESS.json');
+          if(e.checkpoint?.maturity!==3||e.checkpoint?.productionGate!=='blocked')process.exit(1);
+          if(e.predecessor?.authorizationConsumed!==true||e.predecessor?.authorizationReusable!==false||e.predecessor?.triggerAbsent!==true||e.predecessor?.zeroResidueProven!==true)process.exit(1);
+          if(e.remoteBoundary?.remoteExecutorPrepared!==false||e.remoteBoundary?.triggerPrepared!==false||e.remoteBoundary?.authorizationPhraseDefined!==false||e.remoteBoundary?.stagingEnvironmentJobPrepared!==false||e.remoteBoundary?.runtimePolicyChangePrepared!==false)process.exit(1);
+          for(const k of ['remoteExecutionAuthority','triggerCreationAuthority','stagingReadAuthority','stagingMutationAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority'])if(e.authority?.[k]!==false)process.exit(1);
+          for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','policyMutationExecuted','realtimeSubscriptionExecuted','runtimeDeployExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
+          if(e.exactRootCauseProven!==false)process.exit(1);
+          NODE
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

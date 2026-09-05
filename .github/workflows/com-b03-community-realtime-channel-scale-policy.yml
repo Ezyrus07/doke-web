@@ -1,0 +1,73 @@
+name: COM-B03 Community Realtime Channel Scale Policy
+
+# Final certification trigger after deterministic matrix synchronization.
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-realtime-channel-scale-policy.js'
+      - 'config/com-b03-realtime-channel-scale-policy.json'
+      - 'tests/fixtures/com-b03-community-realtime-channel-cases.json'
+      - 'scripts/test-com-b03-community-realtime-channel-scale-policy.js'
+      - 'scripts/audit-com-b03-community-realtime-channel-scale-policy.js'
+      - 'scripts/audit-com-b03-domain-matrix-reconciliation.js'
+      - 'docs/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.md'
+      - 'docs/validation/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.json'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'config/domain-completion-matrix-refresh.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/domain-completion-matrix-sync.yml'
+      - '.github/workflows/com-b03-community-realtime-channel-scale-policy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b03-realtime-scale:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-channel-scale-policy.js
+          node --check scripts/test-com-b03-community-realtime-channel-scale-policy.js
+          node --check scripts/audit-com-b03-community-realtime-channel-scale-policy.js
+          node --check scripts/audit-com-b03-domain-matrix-reconciliation.js
+      - name: Audit COM-B03
+        run: node scripts/audit-com-b03-community-realtime-channel-scale-policy.js
+      - name: Conformance COM-B03
+        run: node scripts/test-com-b03-community-realtime-channel-scale-policy.js
+      - name: Audit COM-B03 domain matrix reconciliation
+        run: node scripts/audit-com-b03-domain-matrix-reconciliation.js
+      - name: Audit canonical domain matrix drift
+        run: npm run audit:domain-completion-matrix
+      - name: COM-A04 predecessor regression
+        run: |
+          node scripts/audit-com-a04-content-realtime-rate-limit.js
+          node scripts/test-com-a04-content-realtime-rate-limit.js
+      - name: COM-B02D predecessor regression
+        run: |
+          node scripts/audit-com-b02d-community-composition-root-canary-readiness.js
+          node scripts/audit-com-b02d-authenticated-read-only-canary-attempt-2.js
+          node scripts/test-com-b02d-community-composition-root-canary-readiness.js
+      - name: COM-B02C regression
+        run: |
+          node scripts/audit-com-b02c-staging-migration-application-authorization.js
+          node scripts/test-com-b02c-staging-migration-application-authorization.js
+      - name: COM-B02B regression
+        run: |
+          node scripts/audit-com-b02b-supabase-repository-migration-readiness.js
+          node scripts/test-com-b02b-supabase-repository-migration-readiness.js
+      - name: COM-B02 regression
+        run: |
+          node scripts/audit-com-b02-server-authority-contract.js
+          node scripts/test-com-b02-server-authority-contract.js
+      - name: Diff hygiene
+        run: git diff --check

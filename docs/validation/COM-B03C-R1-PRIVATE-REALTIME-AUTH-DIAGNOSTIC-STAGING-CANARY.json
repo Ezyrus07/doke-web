@@ -1,0 +1,133 @@
+{
+  "validationId": "COM-B03C-R1-PRIVATE-REALTIME-AUTH-DIAGNOSTIC-STAGING-CANARY",
+  "domain": "COM-001",
+  "contractId": "com-b03c-r1-private-realtime-authorization-diagnostic-readiness-v1",
+  "status": "failed_closed_private_realtime_authorization_diagnostic",
+  "trigger": {
+    "head": "02ab23f07ad6d20c42567da62c84038af2f7166a",
+    "workflowInstallHead": "b0c885172b08aa378d04ece2da309c050f4e58d7",
+    "singleFileBoundaryVerified": true
+  },
+  "workflow": {
+    "runId": 31284272139,
+    "runAttempt": 1,
+    "event": "push",
+    "certifyJobId": 93170360372,
+    "certifyResult": "success",
+    "authorizeJobId": 93170378051,
+    "authorizeResult": "success",
+    "canaryJobId": 93170438507,
+    "canaryResult": "failure"
+  },
+  "artifact": {
+    "id": 9029350268,
+    "name": "com-b03c-r1-private-realtime-auth-31284272139",
+    "sha256": "dbf61debcfb29b23ae07431db92c6c505c32255404ad20a56f7f71e4025c6d4d",
+    "sizeBytes": 1793
+  },
+  "authorization": {
+    "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B03C_R1_PRIVATE_REALTIME_AUTHORIZATION_DIAGNOSTIC_ON_DOKE_STAGING",
+    "consumed": true,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "mustNotBeRerun": true,
+    "predecessorAuthorizationReusable": false
+  },
+  "scope": [
+    "channel_presence",
+    "channel_typing"
+  ],
+  "blockedTopics": [
+    "community_posts",
+    "channel_messages"
+  ],
+  "project": {
+    "id": "zwkczgewzbsorbrjuzpb",
+    "name": "doke-web-staging",
+    "status": "ACTIVE_HEALTHY",
+    "region": "us-west-2"
+  },
+  "foundation": {
+    "realtimeMessagesPresent": true,
+    "realtimeTopicFunctionPresent": true,
+    "realtimeMessagesRlsEnabled": true
+  },
+  "policyInspection": {
+    "policyCount": 4,
+    "allChecksPassed": true,
+    "presenceReadPolicyVerified": true,
+    "presenceWritePolicyVerified": true,
+    "broadcastReadPolicyVerified": true,
+    "broadcastWritePolicyVerified": true,
+    "authenticatedRolePresent": true,
+    "exactTopicLiteralPresent": true,
+    "extensionLiteralPresent": true,
+    "authUidPresent": true
+  },
+  "diagnostics": {
+    "presence": {
+      "subscribed": false,
+      "joinStatus": "CHANNEL_ERROR",
+      "classification": "realtime_rls_authorization_rejected",
+      "trackReached": false,
+      "syncObserved": false,
+      "anonymousDenialProbeReached": false,
+      "rawSubscribeErrorExposed": false,
+      "messageSha256": "f9832b9d9b6cb10e843fe4260c96e0e442e446836ab4db8d5f354fcb3ad9f9f8"
+    },
+    "typing": {
+      "subscribed": false,
+      "joinStatus": "CHANNEL_ERROR",
+      "classification": "realtime_rls_authorization_rejected",
+      "sendReached": false,
+      "received": false,
+      "anonymousDenialProbeReached": false,
+      "rawSubscribeErrorExposed": false,
+      "messageSha256": "2b13f469c6fa9416473b9af0526db93b5bd76ce399894db18f0cff6effcbde52"
+    }
+  },
+  "harness": {
+    "supabaseJsVersion": "2.112.2",
+    "sanitizedSubscribeDiagnostics": true,
+    "explicitPresenceEnabled": true,
+    "orphanPresenceWaiterRemoved": true,
+    "presenceTypingDiagnosticsSeparated": true,
+    "jwtAppliedBeforeChannelCreation": true
+  },
+  "cleanup": {
+    "temporaryPoliciesRemoved": true,
+    "ephemeralAuthIdentityRemoved": true,
+    "persistentIdentityResidue": 0,
+    "persistentDomainResidue": 0
+  },
+  "effects": {
+    "ephemeralAuthIdentityLifecycleExecuted": true,
+    "temporaryRealtimePolicyLifecycleExecuted": true,
+    "privateEphemeralRealtimeChannelsCreated": true,
+    "communityPostsReexecuted": false,
+    "channelMessagesExecuted": false,
+    "domainMutationExecuted": false,
+    "publicationMutationExecuted": false,
+    "publicTrafficEnabled": false,
+    "runtimeDeployed": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "persistentResidue": false
+  },
+  "interpretation": {
+    "jwtFailureClassified": false,
+    "policyPresenceAndStaticShapeVerified": true,
+    "privatePresenceTransportProven": false,
+    "privateTypingTransportProven": false,
+    "rootCauseFullyResolved": false,
+    "refinedRootCauseClass": "realtime_messages_rls_runtime_semantics_or_authorization_context",
+    "nextRepositoryBoundary": "COM-B03C-R2 decompose exact synthetic-topic Realtime Authorization predicates in fail-closed stages without reusing R1 authorization"
+  },
+  "governance": {
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "maturityPromoted": false,
+    "productionGate": "blocked",
+    "mergeAuthorized": false
+  }
+}

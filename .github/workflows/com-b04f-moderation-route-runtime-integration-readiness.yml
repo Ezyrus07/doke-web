@@ -1,0 +1,62 @@
+name: COM-B04F Historical Route Runtime Readiness Continuity
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-moderation-route-runtime-readiness.js'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/shared/http/module-route-loader.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'config/com-b04g-route-runtime-wiring-authorization-readiness.json'
+      - 'scripts/test-com-b04g-route-runtime-wiring-execution.js'
+      - 'scripts/audit-com-b04g-route-runtime-wiring-execution.js'
+      - '.github/workflows/com-b04f-moderation-route-runtime-integration-readiness.yml'
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'config/domain-completion-matrix.json'
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-moderation-route-runtime-readiness.js'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/shared/http/module-route-loader.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'config/com-b04g-route-runtime-wiring-authorization-readiness.json'
+      - 'scripts/test-com-b04g-route-runtime-wiring-execution.js'
+      - 'scripts/audit-com-b04g-route-runtime-wiring-execution.js'
+      - '.github/workflows/com-b04f-moderation-route-runtime-integration-readiness.yml'
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'config/domain-completion-matrix.json'
+
+permissions:
+  contents: read
+
+jobs:
+  continuity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Historical COM-B04F contract remains immutable
+        run: |
+          test "$(git rev-parse HEAD:backend/modules/communities/community-moderation-route-runtime-readiness.js)" = "e3af9ea714d81f77b6e08d270e5afe6897fc67a2"
+          node --check backend/modules/communities/community-moderation-route-runtime-readiness.js
+          grep -F "registrationAllowed: false" backend/modules/communities/community-moderation-route-runtime-readiness.js
+          grep -F "runtimeWiringAllowed: false" backend/modules/communities/community-moderation-route-runtime-readiness.js
+          grep -F "nextSublot: 'COM-B04G'" backend/modules/communities/community-moderation-route-runtime-readiness.js
+      - name: Authorized successor wiring is blocked-only
+        run: |
+          node scripts/test-com-b04g-route-runtime-wiring-execution.js
+          node scripts/audit-com-b04g-route-runtime-wiring-execution.js
+      - name: Live composition remains disabled
+        run: |
+          grep -F "Object.freeze(['disabled', 'local_test_double'])" backend/modules/communities/community-moderation-runtime-composition.js
+          grep -F 'COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED' backend/modules/communities/community-moderation-runtime-composition.js
+          grep -F 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+      - name: Diff hygiene
+        run: git diff --check

@@ -1,0 +1,220 @@
+name: COM-B03C R5H Extension Classification Probe Execution Wiring Specification
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b03c-r5h-extension-classification-execution-wiring-spec-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Frozen certified harness implementation lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-harness-specification.json)" = "8611bc7cffd54d813248988b3b4fcf9bd894384c"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-execution-boundary.json)" = "91bd2165cd2023ee6d873f3c6ccd0c696d3c7723"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js)" = "723d33aea011a28766b819fa823aad82f341aba3"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-harness-implementation-boundary.json)" = "b046c20c7ec572bf38af1780b64a703fe4ce4880"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-harness-implementation-boundary.yml)" = "6eddb17cd9ac4a406432c21a99e3aa23060ce99e"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.json)" = "0eab5e1ba23bcbd8adfd5b54bad16acb8a1b1e0d"
+
+      - name: Exact repository-only push scope
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          spec=config/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.json
+          workflow=.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.yml
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-specification-matrix-materialization-temp.yml
+          installation_scope="$(printf '%s\n' "$spec" "$workflow" | sort)"
+          maintenance_scope="$workflow"
+          materialization_scope="$(printf '%s\n' "$temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only HEAD^ HEAD | sort)"
+          if [ "$actual" = "$installation_scope" ]; then
+            test "$(git rev-parse HEAD^)" = "34ee92754663542114a0a34a2377e042929439e8"
+          elif [ "$actual" != "$maintenance_scope" ] && [ "$actual" != "$materialization_scope" ]; then
+            printf 'Unexpected repository-only push scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
+
+      - name: Static no-runtime no-remote-capability boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          spec=config/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.json
+          workflow=.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.yml
+          ! grep -Eqi 'supabase|process\.env|secrets\.|https?://' "$spec"
+          ! grep -Eq 'secrets\.|SUPABASE_|process\.env|environment:[[:space:]]*' "$workflow"
+          ! grep -Eq '^  (authorize|canary|execute|deploy):' "$workflow"
+
+      - name: Certify execution wiring specification repository-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const spec = require('./config/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.json');
+          const parent = require('./config/com-b03c-r5h-extension-classification-probe-harness-implementation-boundary.json');
+          const harness = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js');
+
+          if (spec.contractId !== 'com-b03c-r5h-extension-classification-probe-execution-wiring-specification-v1') throw new Error('WIRING_SPEC_CONTRACT_DRIFT');
+          if (spec.repositoryContext.parentCertifiedHarnessHead !== '34ee92754663542114a0a34a2377e042929439e8') throw new Error('PARENT_HARNESS_HEAD_DRIFT');
+          if (spec.repositoryContext.parentCertifiedHarnessTree !== 'a91c3c5add25d9e3d57bf86597a7612ef3c7dc59') throw new Error('PARENT_HARNESS_TREE_DRIFT');
+          if (spec.repositoryContext.parentHarnessCertificationRun !== 31921844957 || spec.repositoryContext.parentHarnessCertificationJob !== 95102808855) throw new Error('PARENT_HARNESS_CERTIFICATION_DRIFT');
+          if (spec.repositoryContext.parentHarnessBoundaryBlob !== 'b046c20c7ec572bf38af1780b64a703fe4ce4880' || spec.repositoryContext.parentHarnessModuleBlob !== '723d33aea011a28766b819fa823aad82f341aba3') throw new Error('PARENT_HARNESS_BLOB_DRIFT');
+          if (spec.repositoryContext.matrixVersion !== '1.3.113' || spec.repositoryContext.maturity !== 3 || spec.repositoryContext.productionGate !== 'blocked') throw new Error('MATRIX_STATE_DRIFT');
+
+          if (spec.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || spec.functionalCheckpoint.r5iCreated !== false || spec.functionalCheckpoint.r5iInferred !== false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+
+          if (parent.contractId !== 'com-b03c-r5h-extension-classification-probe-harness-implementation-boundary-v1') throw new Error('PARENT_IMPLEMENTATION_CONTRACT_DRIFT');
+          if (parent.governance.executionHarnessDefined !== true || parent.governance.executableHarnessPresent !== true || parent.governance.transportBound !== false || parent.governance.executionWiringDefined !== false) throw new Error('PARENT_IMPLEMENTATION_STATE_DRIFT');
+          if (harness.CONTRACT_ID !== 'com-b03c-r5h-extension-classification-probe-harness-implementation-v1') throw new Error('HARNESS_MODULE_CONTRACT_DRIFT');
+          for (const forbiddenExport of ['execute','run','subscribe','createClient','bindRuntime','authorize']) {
+            if (Object.prototype.hasOwnProperty.call(harness, forbiddenExport)) throw new Error(`REMOTE_ENTRYPOINT_EXPORT_FORBIDDEN:${forbiddenExport}`);
+          }
+
+          const wiring = spec.executionWiringSpecification;
+          for (const key of [
+            'repositoryOnlySpecification','specificationDefined','runtimeAdapterInterfaceSpecified',
+            'targetEnvironmentBindingContractSpecified','targetResourceBindingContractSpecified',
+            'credentialProviderContractSpecified','identityLifecycleContractSpecified',
+            'realtimeClientFactoryContractSpecified','observationExecutorContractSpecified',
+            'evidenceRecorderContractSpecified','cleanupVerifierContractSpecified',
+            'authorizationEvaluatorContractSpecified','executionEntrypointContractSpecified',
+            'executionWorkflowContractSpecified','harnessInvocationContractSpecified',
+            'repositorySelfTestMayExercisePureContractsOnly'
+          ]) {
+            if (wiring[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          for (const key of [
+            'executionWiringDefined','executionWiringImplemented','concreteTargetEnvironmentSpecified',
+            'concreteTargetResourceSpecified','credentialMaterialSpecified','credentialProviderBound',
+            'syntheticIdentityMaterialSpecified','identityLifecycleBound','realtimeClientFactoryBound',
+            'runtimeAdapterBound','networkEndpointSpecified','remoteClientImportSpecified',
+            'executionCommandSpecified','executionEntrypointEnabled','executionWorkflowDefined',
+            'authorizationEvaluatorImplemented','executionAuthorizationReceiptPathDefined',
+            'triggerPathDefined','processEnvironmentReadSpecified','secretNameSpecified'
+          ]) {
+            if (wiring[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+
+          const expectedSlots = [
+            'runtime_adapter','target_environment','target_resource','credential_provider',
+            'synthetic_identity_lifecycle','realtime_client_factory',
+            'sanitized_evidence_recorder','cleanup_verifier'
+          ];
+          if (JSON.stringify(spec.abstractBindingSlots.map((slot) => slot.id)) !== JSON.stringify(expectedSlots)) throw new Error('ABSTRACT_BINDING_SLOTS_DRIFT');
+          for (const slot of spec.abstractBindingSlots) {
+            if (slot.requiredForFutureExecution !== true || slot.specifiedAsInterfaceOnly !== true || slot.bound !== false || slot.concreteValuePresent !== false) throw new Error(`BINDING_SLOT_INVALID:${slot.id}`);
+          }
+          const envSlot = spec.abstractBindingSlots.find((slot) => slot.id === 'target_environment');
+          if (!envSlot || envSlot.futureExecutionMustBeNonProductionStaging !== true) throw new Error('FUTURE_TARGET_CLASS_DRIFT');
+
+          const expectedCases = [
+            ['extension_is_null', 'extension IS NULL', 'extension_unavailable_or_null'],
+            ['extension_equals_presence', "extension = 'presence'", 'extension_expected_presence_value'],
+            ['extension_non_null_not_presence', "extension IS NOT NULL AND extension <> 'presence'", 'extension_unexpected_non_null_value']
+          ];
+          const actualCases = spec.observationProtocol.cases.map(({id,predicate,expectedClassification}) => [id,predicate,expectedClassification]);
+          if (JSON.stringify(actualCases) !== JSON.stringify(expectedCases)) throw new Error('OBSERVATION_CASES_DRIFT');
+          for (const key of [
+            'exactlyOneObservationPerCase','deterministicCaseOrderRequired','caseOrderCannotBeUsedAsCausalEvidence',
+            'sameSyntheticIdentityEnvelopeAcrossCases','sameUniqueTopicEnvelopeAcrossCases',
+            'freshRealtimeClientPerObservation','clientDisposedAfterEachObservation','observationsMustNotOverlap',
+            'privatePresenceOnlyChannel','singleSyntheticIdentity','identityProvisionedBeforeFirstObservationOnly',
+            'identityCleanupAfterFinalObservationRequired','zeroResidueRequired','sanitizedEvidenceOnly',
+            'rawRemoteErrorCaptureForbidden','rawCredentialCaptureForbidden','rawIdentityCaptureForbidden',
+            'rawRemotePayloadCaptureForbidden','terminalStatusAloneCannotProveCause',
+            'crossCaseComparisonRequiredForCausalConclusion'
+          ]) {
+            if (spec.observationProtocol[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+
+          for (const key of [
+            'wiringSpecificationMustBeRepositoryCertified','wiringImplementationMustBeSeparateRepositoryBoundary',
+            'wiringImplementationMustBeRepositoryCertified','targetBindingMustBeExplicitAndExact',
+            'targetMustBeNonProductionStaging','credentialProviderMustBeBoundOnlyAfterApplicableBoundaryCertification',
+            'syntheticIdentityLifecycleMustBeBoundOnlyAfterApplicableBoundaryCertification',
+            'futureAuthorizationMustBeFresh','futureAuthorizationMustBeExplicit','futureAuthorizationMustBeSingleUse',
+            'futureAuthorizationMustBindExactCertifiedWiringHead','futureAuthorizationMustBindExactStagingResource',
+            'futureReceiptMustBeSeparateSingleFileCommit','receiptParentMustEqualAuthorizedHead',
+            'futureTriggerMustBeSeparateCanonicalBoundary','runAttemptOneRequired',
+            'priorR5dAuthorizationReuseForbidden','priorR5dReceiptReuseForbidden','priorR5dTriggerReuseForbidden'
+          ]) {
+            if (spec.futureExecutionPreconditions[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          if (spec.futureExecutionPreconditions.genericContinuationGrantsRemoteAuthority !== false) throw new Error('GENERIC_CONTINUATION_MUST_NOT_AUTHORIZE_REMOTE');
+
+          for (const key of ['exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed','privateTypingBroadcastProven','channelMessagesCanonicalRemoteAuthority']) {
+            if (spec.causalState[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+
+          const gov = spec.governance;
+          for (const key of [
+            'repositoryOnlyDefinition','executionBoundaryDefined','executionHarnessSpecificationDefined',
+            'executionHarnessDefined','executableHarnessPresent','executionWiringSpecificationDefined'
+          ]) {
+            if (gov[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          for (const key of [
+            'transportBound','executionEntryPointExported','executionWiringDefined','executionWiringImplemented',
+            'targetEnvironmentBound','targetResourceBound','runtimeAdapterBound','credentialProviderBound',
+            'identityLifecycleBound','realtimeClientFactoryBound','executionWorkflowDefined',
+            'authorizationEvaluatorDefined','triggerCreated','receiptCreated',
+            'explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority',
+            'remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority',
+            'stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority',
+            'authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority',
+            'pullRequestMergeAuthority','readyForReviewAuthority'
+          ]) {
+            if (gov[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+          NODE
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^ HEAD
+          fi

@@ -1,0 +1,48 @@
+name: COM-B02C Staging Migration Application Evidence
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-staging-migration-authorization-gate.js'
+      - 'config/com-b02c-staging-migration-application-authorization.json'
+      - 'tests/fixtures/com-b02c-staging-migration-authorization-cases.json'
+      - 'scripts/test-com-b02c-staging-migration-application-authorization.js'
+      - 'scripts/audit-com-b02c-staging-migration-application-authorization.js'
+      - 'docs/COM-B02C-STAGING-MIGRATION-APPLICATION-AUTHORIZATION.md'
+      - 'docs/validation/COM-B02C-STAGING-MIGRATION-APPLICATION.json'
+      - 'supabase/migrations/20260805121500_com_b02b_server_authority.sql'
+      - '.github/workflows/com-b02c-staging-migration-application-authorization.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b02c-application-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-staging-migration-authorization-gate.js
+          node --check scripts/test-com-b02c-staging-migration-application-authorization.js
+          node --check scripts/audit-com-b02c-staging-migration-application-authorization.js
+      - name: Audit COM-B02C
+        run: node scripts/audit-com-b02c-staging-migration-application-authorization.js
+      - name: Conformance COM-B02C
+        run: node scripts/test-com-b02c-staging-migration-application-authorization.js
+      - name: COM-B02B predecessor regression
+        run: |
+          node scripts/audit-com-b02b-supabase-repository-migration-readiness.js
+          node scripts/test-com-b02b-supabase-repository-migration-readiness.js
+      - name: COM-B02 regression
+        run: |
+          node scripts/audit-com-b02-server-authority-contract.js
+          node scripts/test-com-b02-server-authority-contract.js
+      - name: Diff hygiene
+        run: git diff --check

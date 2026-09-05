@@ -1,0 +1,137 @@
+{
+  "validationId": "COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY",
+  "contractId": "com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-composition-canary-v1",
+  "domain": "COM-001",
+  "status": "authenticated_rollback_only_canary_passed",
+  "authorization": {
+    "source": "explicit_user_message",
+    "receivedAt": "2026-08-05T23:39:00-03:00",
+    "singleUse": true,
+    "consumed": true,
+    "consumedByRun": 31067102891,
+    "reusableAfterFailure": false,
+    "phraseSha256": "6f74e694096750d0d7454274527dc4c4b87a21139354a83fa86001f45e71b4c0"
+  },
+  "previousAttempt": {
+    "run": 31065331290,
+    "status": "authorization_consumed_pre_execution_audit_failed",
+    "authorizationConsumed": true,
+    "executorStarted": false,
+    "databaseConnectionAttempted": false,
+    "rollbackScopedMutationExecuted": false,
+    "persistentResidue": false
+  },
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "pullRequest": 61,
+    "branch": "com/com-001-baseline-audit",
+    "migrationVersions": [
+      "20260806004634",
+      "20260806004832"
+    ]
+  },
+  "preflight": {
+    "readExecuted": true,
+    "projectStatus": "ACTIVE_HEALTHY",
+    "postgresVersion": "17.6",
+    "requiredMigrations": 2,
+    "loadRpcPresent": true,
+    "commitRpcPresent": true,
+    "serviceRoleLoadExecute": true,
+    "serviceRoleCommitExecute": true,
+    "authenticatedCommitBlocked": true,
+    "activeAuthenticatedSessionCount": 20,
+    "pgcryptoDigestAvailable": true,
+    "moderationLedgerRowsBeforeCanary": 0
+  },
+  "execution": {
+    "attempted": true,
+    "workflowRunAttempt": 1,
+    "run": 31067102891,
+    "authorizationJob": 92506997430,
+    "job": 92507013853,
+    "head": "bbe3b52354a7e540a27cadb30c30159fb531485e",
+    "result": "success",
+    "startedAt": "2026-08-06T02:58:48.796Z",
+    "completedAt": "2026-08-06T02:58:51.434Z",
+    "artifact": {
+      "id": 8954212159,
+      "name": "com-b04e-attempt-2-authenticated-rollback-only-canary-31067102891",
+      "sizeBytes": 1696,
+      "digest": "sha256:46e17bee0b21b76cfbb1e185ae9fe05eea7f6793091871e15b4f63f09dcbc510",
+      "expiresAt": "2026-08-20T02:58:51Z",
+      "sanitized": true
+    }
+  },
+  "expected": {
+    "authenticatedSessionVerified": true,
+    "coreCompositionActivationMode": "disabled",
+    "coreLivePathBlocked": true,
+    "outerIsolation": "serializable",
+    "transactionRolledBack": true,
+    "initialEvidenceMaterialized": true,
+    "persistentResidue": false,
+    "rawIdentifiersExposed": false
+  },
+  "observed": {
+    "authenticatedSessionVerified": true,
+    "actorSource": "server_verified_authenticated_session",
+    "assuranceLevel": "aal1",
+    "actorRole": "professional",
+    "actorSha256": "cdaebb5b5ccbd3be33a6b175232a93d4f07be5aa17bc9f2425f04e38c8a75e30",
+    "sessionSha256": "5130cc50ac91a2d658fa4205bc6f6de1edabe2ff4d2ee3d2084fb4f0b8be56dc",
+    "rawIdentifiersExposed": false,
+    "coreCompositionActivationMode": "disabled",
+    "coreLivePathBlocked": true,
+    "domainDecision": "accept",
+    "domainReason": "MODERATION_CASE_OPEN_ACCEPTED",
+    "transactionIsolation": "serializable",
+    "transactionRolledBack": true,
+    "atomicRpcBoundary": "single_security_definer_rpc",
+    "revisionObservedInsideTransaction": 1,
+    "eventHash": "ed7f465eaaad4d6db2955a8bb5c59fdb5866a85fa72c7607cffe62902e8cd856",
+    "caseIdSha256": "beea9704863d82417026c0be58604d7a8412060a241013d3d3f8f727d7510878",
+    "initialEvidenceMaterialized": true,
+    "countDeltaInsideTransaction": {
+      "caseProjection": 1,
+      "caseEvent": 1,
+      "commandIdempotency": 1,
+      "evidenceRecord": 1,
+      "decisionRecord": 0,
+      "sanctionEvent": 0,
+      "appealEvent": 0,
+      "mediaReviewEvent": 0
+    },
+    "countsRestoredAfterRollback": true,
+    "persistentResidue": false
+  },
+  "postflight": {
+    "readExecuted": true,
+    "caseProjectionRows": 0,
+    "caseEventRows": 0,
+    "commandIdempotencyRows": 0,
+    "evidenceRecordRows": 0,
+    "decisionRecordRows": 0,
+    "sanctionEventRows": 0,
+    "appealEventRows": 0,
+    "mediaReviewEventRows": 0,
+    "syntheticCaseAbsent": true,
+    "syntheticEventAbsent": true,
+    "syntheticCommandAbsent": true,
+    "syntheticEvidenceAbsent": true,
+    "persistentResidue": false
+  },
+  "effects": {
+    "stagingReadExecuted": true,
+    "rollbackScopedMutationExecuted": true,
+    "persistentStagingMutationExecuted": false,
+    "routeRegistered": false,
+    "runtimeDeployed": false,
+    "realModerationExecuted": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "conclusion": "Authenticated staging composition and atomic persistence handoff are canary-certified under mandatory rollback. No live runtime authority was granted."
+}

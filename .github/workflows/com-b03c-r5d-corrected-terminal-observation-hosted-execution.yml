@@ -1,0 +1,312 @@
+name: COM-B03C R5D Corrected Terminal Observation Hosted Execution Boundary
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5d-hosted-execution.js'
+      - 'config/com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.json'
+      - 'scripts/test-com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.js'
+      - 'scripts/execute-com-b03c-r5d-corrected-terminal-observation-hosted-execution.js'
+      - 'scripts/verify-com-b03c-r5d-corrected-terminal-observation-hosted-execution-report.js'
+      - 'docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION-BOUNDARY.json'
+      - '.github/workflows/com-b03c-r5d-corrected-terminal-observation-hosted-execution.yml'
+      - 'backend/modules/communities/community-realtime-private-auth-r5d.js'
+      - 'backend/modules/communities/community-realtime-private-auth-r5h.js'
+      - 'scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js'
+      - 'config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json'
+      - 'config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5d-hosted-execution.js'
+      - 'config/com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.json'
+      - 'scripts/test-com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.js'
+      - 'scripts/execute-com-b03c-r5d-corrected-terminal-observation-hosted-execution.js'
+      - 'scripts/verify-com-b03c-r5d-corrected-terminal-observation-hosted-execution-report.js'
+      - 'docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION-BOUNDARY.json'
+      - '.github/workflows/com-b03c-r5d-corrected-terminal-observation-hosted-execution.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'config/com-b03c-r5d-single-use-corrected-terminal-observation-execution-authorization-consumption.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b03c-r5d-hosted-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      execution_mode: ${{ steps.mode.outputs.execution_mode }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Determine repository-install versus single-use execution receipt mode
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          RECEIPT=config/com-b03c-r5d-single-use-corrected-terminal-observation-execution-authorization-consumption.json
+          if [ "${{ github.event_name }}" = "push" ]; then
+            changed="$(git diff --name-only HEAD^ HEAD)"
+            if [ "$changed" = "$RECEIPT" ]; then
+              echo "execution_mode=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "execution_mode=false" >> "$GITHUB_OUTPUT"
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r5d-hosted-execution.js
+          node --check scripts/test-com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.js
+          node --check scripts/execute-com-b03c-r5d-corrected-terminal-observation-hosted-execution.js
+          node --check scripts/verify-com-b03c-r5d-corrected-terminal-observation-hosted-execution-report.js
+
+      - name: Repository-only hosted execution boundary
+        if: steps.mode.outputs.execution_mode != 'true'
+        run: node scripts/test-com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.js
+
+      - name: Executor repository self-test
+        if: steps.mode.outputs.execution_mode != 'true'
+        run: node scripts/execute-com-b03c-r5d-corrected-terminal-observation-hosted-execution.js --repository-self-test
+
+      - name: Verifier repository self-test
+        if: steps.mode.outputs.execution_mode != 'true'
+        run: node scripts/verify-com-b03c-r5d-corrected-terminal-observation-hosted-execution-report.js --repository-self-test
+
+      - name: Legacy R5D remote hard block preserved
+        if: steps.mode.outputs.execution_mode != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          output="$(node scripts/execute-com-b03c-r5d-corrected-terminal-observation-envelope.js 2>&1)"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R5D_REMOTE_EXECUTION_NOT_AUTHORIZED'
+
+      - name: Frozen R5H and corrected R4Z lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h.js)" = "a8f20583aa78554bcb01da8b6cb6e1e17dd99370"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5d.js)" = "7cde416f2922230bae6b1e4b1e48fdfaf411da99"
+          test "$(git rev-parse HEAD:scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js)" = "ff083f29e43b2f85045b23bf8f12a4b354fb0005"
+          test "$(git rev-parse HEAD:config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json)" = "0d8b8a39104a1de003f9097a867e51b2313bb750"
+          test "$(git rev-parse HEAD:config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json)" = "12a1e21253759ae334ee6c9bf423cfe3ea7d27f4"
+
+      - name: Execution authorization receipt absent during boundary installation
+        if: steps.mode.outputs.execution_mode != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e config/com-b03c-r5d-single-use-corrected-terminal-observation-execution-authorization-consumption.json
+
+      - name: Exact repository-only installation scope
+        if: steps.mode.outputs.execution_mode != 'true' && github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=2eb32ef8bddf5e3f801a75bda4044b7a509e17c6
+          expected_boundary="$(
+            printf '%s\n' \
+              .github/workflows/com-b03c-r5d-corrected-terminal-observation-hosted-execution.yml \
+              backend/modules/communities/community-realtime-private-auth-r5d-hosted-execution.js \
+              config/com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.json \
+              docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION-BOUNDARY.json \
+              scripts/execute-com-b03c-r5d-corrected-terminal-observation-hosted-execution.js \
+              scripts/test-com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.js \
+              scripts/verify-com-b03c-r5d-corrected-terminal-observation-hosted-execution-report.js |
+              sort
+          )"
+          expected_reconciled="$(
+            printf '%s\n' \
+              .github/workflows/com-b03c-r5d-corrected-terminal-observation-hosted-execution.yml \
+              backend/modules/communities/community-realtime-private-auth-r5d-hosted-execution.js \
+              config/com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.json \
+              config/domain-completion-matrix.json \
+              docs/DOMAIN-COMPLETION-MATRIX.md \
+              docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION-BOUNDARY.json \
+              reports/generated/domain-completion-matrix-report.json \
+              scripts/execute-com-b03c-r5d-corrected-terminal-observation-hosted-execution.js \
+              scripts/test-com-b03c-r5d-corrected-terminal-observation-hosted-execution-boundary.js \
+              scripts/verify-com-b03c-r5d-corrected-terminal-observation-hosted-execution-report.js |
+              sort
+          )"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected_boundary" || test "$actual" = "$expected_reconciled"
+
+      - name: Exact single-use execution receipt commit
+        if: steps.mode.outputs.execution_mode == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          RECEIPT=config/com-b03c-r5d-single-use-corrected-terminal-observation-execution-authorization-consumption.json
+          test -f "$RECEIPT"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$RECEIPT"
+          node - <<'NODE'
+          const cp = require('node:child_process');
+          const boundary = require('./backend/modules/communities/community-realtime-private-auth-r5d-hosted-execution');
+          const receipt = require('./config/com-b03c-r5d-single-use-corrected-terminal-observation-execution-authorization-consumption.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const triggerBlob = cp.execFileSync('git', ['rev-parse', `HEAD:${boundary.TRIGGER_PATH}`], { encoding: 'utf8' }).trim();
+          const result = boundary.validateConsumedExecutionAuthorizationReceipt({
+            receipt,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            triggerBlob
+          });
+          if (result.decision !== 'r5d_consumed_execution_authorization_receipt_valid_for_single_use_attempt') {
+            throw new Error(result.reason || 'R5D_HOSTED_RECEIPT_INVALID');
+          }
+          NODE
+
+      - name: Current PR remains open draft unmerged on execution trigger
+        if: steps.mode.outputs.execution_mode == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          json="$(gh api repos/${GITHUB_REPOSITORY}/pulls/61)"
+          test "$(jq -r '.state' <<<"$json")" = "open"
+          test "$(jq -r '.draft' <<<"$json")" = "true"
+          test "$(jq -r '.merged' <<<"$json")" = "false"
+          test "$(jq -r '.head.ref' <<<"$json")" = "com/com-001-baseline-audit"
+          test "$(jq -r '.base.ref' <<<"$json")" = "rep/rep-001-baseline-audit"
+          test "$(jq -r '.head.sha' <<<"$json")" = "$GITHUB_SHA"
+
+      - name: Domain Completion Matrix
+        if: steps.mode.outputs.execution_mode != 'true'
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        if: steps.mode.outputs.execution_mode != 'true'
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^ HEAD
+          fi
+
+  authorize:
+    if: needs.certify.outputs.execution_mode == 'true'
+    needs: certify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Authorize exact single-use corrected terminal observation execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          node - <<'NODE'
+          const cp = require('node:child_process');
+          const boundary = require('./backend/modules/communities/community-realtime-private-auth-r5d-hosted-execution');
+          const receipt = require('./config/com-b03c-r5d-single-use-corrected-terminal-observation-execution-authorization-consumption.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const triggerBlob = cp.execFileSync('git', ['rev-parse', `HEAD:${boundary.TRIGGER_PATH}`], { encoding: 'utf8' }).trim();
+          const result = boundary.authorizeExecution({
+            receipt,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            triggerBlob
+          });
+          if (result.decision !== boundary.AUTHORIZED_DECISION) throw new Error(result.reason || 'R5D_HOSTED_AUTHORIZATION_FAILED');
+          if (
+            result.remoteExecutionAuthority !== true ||
+            result.remoteCredentialReadAuthority !== true ||
+            result.remoteDependencyLoadAuthority !== true ||
+            result.networkAuthority !== true ||
+            result.stagingReadAuthority !== true ||
+            result.stagingMutationAuthority !== true ||
+            result.realtimeSubscriptionAuthority !== true ||
+            result.authIdentityLifecycleAuthority !== true ||
+            result.runtimeChangeAuthority !== false ||
+            result.productionAuthority !== false ||
+            result.pullRequestMergeAuthority !== false
+          ) throw new Error('R5D_HOSTED_AUTHORIZATION_SCOPE_INVALID');
+          NODE
+
+  canary:
+    if: needs.certify.outputs.execution_mode == 'true'
+    needs: [certify, authorize]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: doke-staging
+    env:
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      COM_B03C_R5D_HOSTED_REPORT_PATH: reports/generated/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install canary-only dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+
+      - name: Execute corrected terminal observation single-use staging attempt
+        id: execute
+        continue-on-error: true
+        run: node scripts/execute-com-b03c-r5d-corrected-terminal-observation-hosted-execution.js
+
+      - name: Verify sanitized corrected terminal observation evidence
+        if: always()
+        run: node scripts/verify-com-b03c-r5d-corrected-terminal-observation-hosted-execution-report.js reports/generated/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json
+
+      - name: Upload sanitized corrected terminal observation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-r5d-corrected-terminal-observation-${{ github.run_id }}
+          path: reports/generated/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Propagate corrected terminal observation execution result
+        if: steps.execute.outcome != 'success'
+        run: exit 1

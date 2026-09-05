@@ -1,0 +1,130 @@
+{
+  "validationId": "COM-B03C-R3Y-HOSTED-RUNTIME-OBSERVATION-STAGING-SUMMARY",
+  "contractId": "com-b03c-r3y-fresh-single-use-hosted-runtime-execution-lifecycle-readiness-v1",
+  "status": "single_use_hosted_runtime_attempt_failed_before_observation_phase_attribution_required",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "authorization": {
+    "evidenceHead": "2dc7596277b9ffa73389456e1445068888ab76ab",
+    "receiptId": "e761c60ceac0d879c66954da0d5f5d00934919e7da2bf5bc46ea91974846660e",
+    "singleUse": true,
+    "consumed": true,
+    "reusable": false,
+    "predecessorAuthorizationReusable": false,
+    "plaintextPersisted": false
+  },
+  "trigger": {
+    "path": "config/com-b03c-r3y-single-use-hosted-runtime-observation-trigger.json",
+    "commit": "fb2b3d0ff32cbc5ebda040a08c06cd9df4716752",
+    "parentHead": "2dc7596277b9ffa73389456e1445068888ab76ab",
+    "changedFileCount": 1,
+    "runAttempt": 1,
+    "removed": true,
+    "cleanupHead": "92f1fa7fa823de34caaad5325be100282cb1822d"
+  },
+  "execution": {
+    "run": 31448335475,
+    "certifyJob": 93647256565,
+    "certifyConclusion": "success",
+    "authorizeJob": 93647309897,
+    "authorizeConclusion": "success",
+    "canaryJob": 93647477234,
+    "canaryConclusion": "failure",
+    "executorStepOutcome": "failure",
+    "sanitizedVerifierStepConclusion": "success",
+    "artifactUploadStepConclusion": "success",
+    "artifact": {
+      "id": 9085405962,
+      "name": "com-b03c-r3y-hosted-runtime-observation-31448335475",
+      "digest": "sha256:f575eebfca409d10983c49c20a9bf5feebac0e9390bd9d7a578470af64d6d371",
+      "sizeBytes": 1123,
+      "retentionDays": 30
+    }
+  },
+  "sanitizedObservation": {
+    "projectPreflight": {
+      "id": "zwkczgewzbsorbrjuzpb",
+      "name": "doke-web-staging",
+      "status": "ACTIVE_HEALTHY",
+      "region": "us-west-2"
+    },
+    "databaseConnectionReachedByControlFlow": true,
+    "databaseConnectivityProbeReachedByControlFlow": true,
+    "apiKeyDiscoveryReachedByControlFlow": true,
+    "identityCreated": true,
+    "identityCleanupAttempted": true,
+    "identityCleanupSucceeded": true,
+    "instrumentationInstalled": false,
+    "cleanupAttempted": false,
+    "cleanupFailure": null,
+    "residueCounts": null,
+    "zeroResidueProven": false,
+    "baselinePolicySnapshotComplete": false,
+    "baselineRestored": false,
+    "classification": null,
+    "observation": null,
+    "deltas": null,
+    "hostedRuntimeObservationExecuted": false,
+    "executionFailure": {
+      "code": "DOKE_COM_B03C_R3Y_REMOTE_FAILURE",
+      "rawRemoteErrorExposed": false
+    }
+  },
+  "rootCauseNarrowing": {
+    "completedBeforeFailure": [
+      "fresh head-bound authorization validation",
+      "credential and canary dependency loading",
+      "Supabase staging project identity preflight",
+      "API key discovery",
+      "Postgres connection establishment and select-1 connectivity probe",
+      "R3V SQL-plan binding verification",
+      "synthetic admin identity creation"
+    ],
+    "failureWindow": [
+      "synthetic identity sign-in transport/runtime before a typed R3Y login failure can be emitted",
+      "initial realtime.messages policy snapshot",
+      "initial instrumentation counter read"
+    ],
+    "instrumentationMutationReached": false,
+    "whyCleanupAttemptedIsFalse": "executeTwoProbeObservation performs baseline policy and counter reads before entering its instrumentation try/finally block; a failure in those pre-install reads leaves cleanupAttempted false while still preventing instrumentation installation",
+    "exactFailurePhaseProven": false,
+    "exactRootCauseProven": false
+  },
+  "cleanupRun": {
+    "run": 31448521960,
+    "certifyJob": 93647811171,
+    "certifyConclusion": "failure",
+    "expectedFailedStep": "Trigger commit continuity",
+    "authorizeJob": 93647871769,
+    "authorizeConclusion": "skipped",
+    "canaryJob": 93647871961,
+    "canaryConclusion": "skipped",
+    "secondRemoteExecutionOccurred": false
+  },
+  "authorityAfterAttempt": {
+    "stagingExecutionAuthority": false,
+    "authorizationReusable": false,
+    "triggerExists": false,
+    "runtimePolicyChangeAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "causalPromotionAllowed": false
+  },
+  "effects": {
+    "stagingAccessExecuted": true,
+    "remoteCredentialReadExecuted": true,
+    "remoteDependencyLoadExecuted": true,
+    "networkAccessExecuted": true,
+    "databaseConnectionExecuted": true,
+    "databaseConnectivityProbeExecuted": true,
+    "authIdentityMutationExecuted": true,
+    "authIdentityCleanupExecuted": true,
+    "realtimeSubscriptionExecuted": false,
+    "instrumentationInstalledOnRemote": false,
+    "runtimePolicyChangeExecuted": false,
+    "productionExecuted": false,
+    "mergeExecuted": false
+  },
+  "nextBoundary": "COM-B03C-R3Z repository-only phase-attribution and pre-install failure hardening. Add sanitized phase codes around sign-in, baseline policy snapshot, and baseline counter read; preserve no-raw-error guarantees and do not create a new staging authorization or trigger."
+}

@@ -1,0 +1,63 @@
+name: COM-B02D Community Composition Root Canary Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/runtime/staging/community-composition-root.js'
+      - 'config/com-b02d-community-composition-root-canary-readiness.json'
+      - 'config/com-b02d-authenticated-read-only-canary-execution.json'
+      - 'config/com-b02d-authenticated-read-only-canary-attempt-2.json'
+      - 'tests/fixtures/com-b02d-community-composition-root-cases.json'
+      - 'scripts/test-com-b02d-community-composition-root-canary-readiness.js'
+      - 'scripts/audit-com-b02d-community-composition-root-canary-readiness.js'
+      - 'scripts/execute-com-b02d-authenticated-read-only-canary-attempt-2.js'
+      - 'scripts/audit-com-b02d-authenticated-read-only-canary-attempt-2.js'
+      - 'docs/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.md'
+      - 'docs/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-EXECUTION.md'
+      - 'docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json'
+      - 'docs/validation/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-1.json'
+      - 'docs/validation/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-2.json'
+      - '.github/workflows/com-b02d-authenticated-read-only-canary.yml'
+      - '.github/workflows/com-b02d-community-composition-root-canary-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b02d-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/runtime/staging/community-composition-root.js
+          node --check scripts/test-com-b02d-community-composition-root-canary-readiness.js
+          node --check scripts/audit-com-b02d-community-composition-root-canary-readiness.js
+          node --check scripts/execute-com-b02d-authenticated-read-only-canary-attempt-2.js
+          node --check scripts/audit-com-b02d-authenticated-read-only-canary-attempt-2.js
+      - name: Audit COM-B02D readiness
+        run: node scripts/audit-com-b02d-community-composition-root-canary-readiness.js
+      - name: Audit COM-B02D attempt 2 success
+        run: node scripts/audit-com-b02d-authenticated-read-only-canary-attempt-2.js
+      - name: Conformance COM-B02D
+        run: node scripts/test-com-b02d-community-composition-root-canary-readiness.js
+      - name: COM-B02C predecessor regression
+        run: |
+          node scripts/audit-com-b02c-staging-migration-application-authorization.js
+          node scripts/test-com-b02c-staging-migration-application-authorization.js
+      - name: COM-B02B regression
+        run: |
+          node scripts/audit-com-b02b-supabase-repository-migration-readiness.js
+          node scripts/test-com-b02b-supabase-repository-migration-readiness.js
+      - name: COM-B02 regression
+        run: |
+          node scripts/audit-com-b02-server-authority-contract.js
+          node scripts/test-com-b02-server-authority-contract.js
+      - name: Diff hygiene
+        run: git diff --check

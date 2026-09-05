@@ -1,0 +1,93 @@
+{
+  "contractId": "com-b03b-r3-postgres-changes-delivery-diagnostic-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b03b-r2-ephemeral-auth-recovery-readiness-v1",
+    "COM-B03B-R2-EPHEMERAL-AUTH-POSTGRES-CHANGES-STAGING-CANARY"
+  ],
+  "scope": "repository_only_preinstalled_delivery_diagnostic",
+  "status": "repository_diagnostic_certified_new_authorization_required",
+  "rootCause": {
+    "failedRun": 31274450631,
+    "failedCanaryJob": 93145797071,
+    "failedArtifact": 9026609141,
+    "artifactSha256": "532904533e4c21508dcc6f2d95cdc1274b357a78868792cec3938b7a0dadcaf0",
+    "code": "DOKE_COM_B03B_R2_POSTGRES_CHANGES_TIMEOUT",
+    "class": "postgres_changes_delivery_path_unresolved",
+    "r2AuthorizationConsumed": true,
+    "r2AuthorizationReusableAfterFailure": false,
+    "persistentDomainResidue": 0,
+    "persistentIdentityResidue": 0,
+    "ephemeralAuthSucceeded": true,
+    "communityPostsPublicationObserved": true
+  },
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_R3_AUTHENTICATED_POSTGRES_CHANGES_DELIVERY_DIAGNOSTIC_ON_DOKE_STAGING",
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "r2AuthorizationReusable": false,
+    "consumptionBoundary": "single_file_r3_trigger_commit_after_repository_certification"
+  },
+  "diagnosticPlan": {
+    "scope": [
+      "community_posts"
+    ],
+    "deferredTopics": [
+      "channel_presence",
+      "channel_typing"
+    ],
+    "blockedTopics": [
+      "channel_messages"
+    ],
+    "supabaseJsVersion": "2.112.2",
+    "publicationVerificationRequired": true,
+    "publicationMutationAllowed": false,
+    "ephemeralAuthIdentityLifecycleAllowed": true,
+    "authIdentityCleanupRequired": true,
+    "filteredPostgresChangesSubscription": "id=eq.<synthetic_post_id>",
+    "serverBindingIdRequired": true,
+    "postgresChangesSystemStatusRequired": true,
+    "replicationConnectionReadyStatusRequired": true,
+    "authenticatedDataApiVisibilityProbeRequired": true,
+    "anonymousDataApiNonVisibilityProbeRequired": true,
+    "syntheticDomainFixtureLifecycleAllowed": true,
+    "syntheticDomainCleanupRequired": true,
+    "persistentResidueAllowed": false,
+    "presenceOrTypingExecutionAllowed": false
+  },
+  "decisionRule": {
+    "ifDataApiVisibilityFails": "classify_as_rls_or_data_api_authorization_failure",
+    "ifReplicationReadinessFails": "classify_as_realtime_replication_subscription_failure",
+    "ifDataApiVisibleAndReplicationReadyButEventTimesOut": "classify_as_postgres_changes_delivery_failure_and_recommend_database_triggered_private_broadcast_for_production",
+    "ifEventDelivered": "postgres_changes_viable_for_bounded_flow_but_broadcast_remains_preferred_for_scale"
+  },
+  "authorityBeforeTrigger": {
+    "repositoryDiagnosticAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "realtimePublicationMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "nextAction": "obtain_exact_new_single_use_r3_authorization_then_create_single_file_r3_trigger",
+  "certification": {
+    "head": "f174d6f0f95d8adb3cb91f5476970f9000688c9c",
+    "runId": 31274980784,
+    "certifyJobId": 93146990436,
+    "result": "success",
+    "authorizeJobResult": "skipped",
+    "canaryJobResult": "skipped",
+    "stagingAccessExecuted": false
+  }
+}

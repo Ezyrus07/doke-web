@@ -1,0 +1,69 @@
+name: COM-B03C-R5B R5A-Bound Corrected Terminal Observation Authorization Issuance Consumption Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5b.js'
+      - 'config/com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.json'
+      - 'docs/validation/COM-B03C-R5B-R5A-BOUND-CORRECTED-TERMINAL-OBSERVATION-AUTHORIZATION-ISSUANCE-CONSUMPTION-READINESS.json'
+      - 'scripts/test-com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.js'
+      - '.github/workflows/com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r5b-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r5b.js
+          node --check scripts/test-com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.js
+          node -e "JSON.parse(require('node:fs').readFileSync('config/com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.json','utf8'))"
+          node -e "JSON.parse(require('node:fs').readFileSync('docs/validation/COM-B03C-R5B-R5A-BOUND-CORRECTED-TERMINAL-OBSERVATION-AUTHORIZATION-ISSUANCE-CONSUMPTION-READINESS.json','utf8'))"
+      - name: R5B repository authorization issuance consumption readiness
+        run: node scripts/test-com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.js
+      - name: Remote execution hard block
+        run: |
+          node - <<'NODE'
+          const r5b = require('./backend/modules/communities/community-realtime-private-auth-r5b');
+          try { r5b.assertRemoteExecutionBoundaryAbsent(); process.exit(1); }
+          catch (error) { if (error.code !== r5b.REMOTE_EXECUTION_BLOCK_CODE) throw error; }
+          NODE
+      - name: Certified R5A evidence and corrected bridge preserved
+        shell: bash
+        run: |
+          set -euo pipefail
+          R5A_HEAD=2bf75e3452aa87109f10c986e2e60715d770407e
+          test "$(git rev-parse "$R5A_HEAD:docs/validation/COM-B03C-R5A-FRESH-HEAD-BOUND-CORRECTED-TERMINAL-OBSERVATION-AUTHORIZATION-LIFECYCLE-READINESS.json")" = "279478d9d7512fbeb47f44300135fbc5ed31a294"
+          test "$(git rev-parse "$R5A_HEAD:scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js")" = "ff083f29e43b2f85045b23bf8f12a4b354fb0005"
+      - name: Repository-only workflow surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e config/com-b03c-r5b-r5a-fresh-authorization-consumption.json
+          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          ! grep -Eq '^\s*push:' .github/workflows/com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.yml
+          ! grep -Eq '^\s*environment:' .github/workflows/com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.yml
+          ! grep -Eq 'secrets\.' .github/workflows/com-b03c-r5b-r5a-bound-corrected-terminal-observation-authorization-issuance-consumption-readiness.yml
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

@@ -1,0 +1,109 @@
+# canonical certification retrigger after materialization
+name: COM-B02CB Repository-Only Deterministic Synthetic Invocation Harness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.js'
+      - 'config/com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.json'
+      - 'scripts/test-com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.js'
+      - '.github/workflows/com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: b3ac2f9e03509ace9c136031566388d7d22d64c7
+      PREDECESSOR_TREE: ce909ee45af929445617e8460e3168558cc6fbfb
+      B02CA_MODULE_BLOB: ecd88f35ef281aafcd19109f0924787323c3346e
+      B02CA_CONFIG_BLOB: 1b564562fe48031448ec07a5f8ba736e0bb7c8fd
+      B02CA_TEST_BLOB: ccb3bf9694f3f87cdd9d1554f52b0eb9963bf2b1
+      B02CA_WORKFLOW_BLOB: 5ae25ecd6f2d98c0ea596fdb19814c5b6a8f0334
+      B02BJ_IMPLEMENTATION_BLOB: 99d804721a5d350dcf8e59dd935937e24561e094
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      COMMUNITY_ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.js
+      CONFIG: config/com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.json
+      TEST: scripts/test-com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.js
+      WORKFLOW: .github/workflows/com-b02cb-repository-only-continuation-state-registry-storage-backend-entry-container-instance-deterministic-synthetic-invocation-harness.yml
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze certified predecessor lineage and exact harness scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          expected4="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
+          expected6="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json "$TEST" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected4" || test "$actual" = "$expected6"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-invocation-readiness.js)" = "$B02CA_MODULE_BLOB"
+          test "$(git rev-parse HEAD:config/com-b02ca-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-invocation-readiness.json)" = "$B02CA_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:scripts/test-com-b02ca-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-invocation-readiness.js)" = "$B02CA_TEST_BLOB"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02ca-repository-only-continuation-state-registry-storage-backend-entry-container-instance-actual-operation-methods-invocation-readiness.yml)" = "$B02CA_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-executable-operation-methods-implementation.js)" = "$B02BJ_IMPLEMENTATION_BLOB"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          ! git ls-tree -r --name-only HEAD | grep '^\.github/workflows/temp-com-b02cb-'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax semantic strict harness non-invocation and single-use authority invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          ! grep -F 'Object.defineProperty(' "$TARGET" "$TEST"
+          ! grep -E '(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)[[:space:]]*\(' "$TARGET" "$TEST"
+          ! grep -E '\.(call|apply)[[:space:]]*\(|Reflect\.apply[[:space:]]*\(' "$TARGET" "$TEST"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET" "$TEST"
+          test "$(grep -Fc 'deterministicRepositoryOnlySyntheticInvocationHarnessMaterialized: harnessMaterialized' "$TARGET")" -ge 1
+          test "$(grep -Fc 'harnessInvokesOperationMethods: false' "$TARGET")" -ge 1
+          ! grep -E 'executableOperationMethodsInvoked[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'continuationStateStored[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryOperationInvoked[[:space:]]*:[[:space:]]*true' "$TARGET"
+          grep -F '"kind": "single_use_repository_only_deterministic_synthetic_invocation_harness_materialization"' "$CONFIG"
+          grep -F '"source": "user_explicit_authorization_com_001_post_b02ca_deterministic_synthetic_invocation_harness_materialization"' "$CONFIG"
+          grep -F '"singleUse": true' "$CONFIG"
+          grep -F '"reusable": false' "$CONFIG"
+          ! grep -F 'reusableWithinRepositoryOnlySequence' "$CONFIG" "$TARGET"
+          ! grep -F 'standing_general_repository_only_deterministic_synthetic_invocation_harness_subset' "$CONFIG" "$TARGET"
+          expected_next='stop_and_require_fresh_explicit_authorization_before_any_deterministic_repository_only_synthetic_operation_method_invocation_or_continuation_state_storage_registry_execution_or_sensitive_scope'
+          test "$(grep -Fh "$expected_next" "$TARGET" "$CONFIG" | wc -l | tr -d ' ')" -ge 2
+
+      - name: Frozen repository surfaces and Matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "$COMMUNITY_ROUTE_HANDLERS_BLOB"
