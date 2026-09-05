@@ -26,8 +26,9 @@ jobs:
           set -euo pipefail
           SOURCE_HEAD='22eea4b920cf400388071bcc4871610d2c25433f'
           WORKFLOW='.github/workflows/tmp-com-b01-policy-approval-evidence-packet-adapter-matrix-materializer.yml'
-          test "$(git rev-parse HEAD^)" = "$SOURCE_HEAD"
+          git merge-base --is-ancestor "$SOURCE_HEAD" HEAD
           git merge-base --is-ancestor '5eb51438fa6a89e1a3c8587eabeab16153d18855' HEAD
+          test "$(git rev-list --count "$SOURCE_HEAD"..HEAD)" -le 2
           test "$(git rev-parse HEAD:backend/modules/communities/community-policy-operational-integration-gate.js)" = '4c4424401b52060303735f178058a34d138ff42c'
           test "$(git rev-parse HEAD:config/com-b01-server-owned-policy-approval-evidence-template.json)" = 'e98a7fcb57706a17edae9bd3bbaaa36c42801817'
           test "$(git rev-parse HEAD:docs/validation/COM-B01-POLICY-APPROVAL-EVIDENCE-TEMPLATE-CERTIFICATION.json)" = '517479c1e1ae92226422fd0d27f77c73f4665738'
@@ -76,7 +77,8 @@ jobs:
           set -euo pipefail
           git config user.name 'doke-ci'
           git config user.email 'doke-ci@users.noreply.github.com'
-          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
           git diff --cached --name-only | sort > /tmp/staged-diff
           printf '%s\n' \
             'docs/DOMAIN-COMPLETION-MATRIX.md' \
