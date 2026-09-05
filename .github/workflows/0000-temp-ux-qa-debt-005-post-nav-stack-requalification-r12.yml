@@ -1,0 +1,444 @@
+name: TEMP UX-QA-DEBT-005 Post NAV Stack Requalification R12
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-post-nav-stack-requalification-r12
+
+permissions:
+  contents: read
+
+jobs:
+  requalify:
+    runs-on: windows-latest
+    timeout-minutes: 100
+    defaults:
+      run:
+        shell: bash
+    env:
+      STACK_BASE: b260bfb59241d15f5cee76dedd2b60e115919425
+      NAV003: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+      PRODUCT_HEAD: 943930ffc31403872151fa76560460e97a619a13
+      PRODUCT_TREE: d3203764606f9708b4f795f531cb77384b210610
+      PRODUCT_BRANCH: ux/ux-nav-debt-002-route-owned-page-reconciliation
+      NAV003_BRANCH: ux/ux-nav-debt-003-filter-state-rearm
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-post-nav-stack-requalification-r12.yml
+      ROUTER_PATH: assets/js/core/stable-shell-router.js
+      SEARCH_PATH: assets/js/pages/search-data.js
+      ROUTER_BLOB: 4d0ec8aa1fe4b6679fac2b98a3060b2e9f9924ea
+      SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      BASELINE_PATH: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+      BASELINE_BLOB: 1580b5410bcce1ea5424d5528356291a0f288c4e
+      BASELINE_SHA256: 88ba2b9f7135974bb4ae0a0d5741c57e255b2ccf3ce5f717e43eea665a3175e1
+      FILTER_AUTHORITY: 20260805-ux-filters-001-v1
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact stack, controller scope and baseline identity
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qa005-r12-evidence"
+          mkdir -p "$evidence"
+          controller="$(git rev-parse HEAD)"
+          read -ra controller_lineage <<< "$(git rev-list --parents -n1 "$controller")"
+          [[ ${#controller_lineage[@]} -eq 2 && "${controller_lineage[1]}" == "$PRODUCT_HEAD" ]] || { echo 'Controller lineage mismatch'; exit 1; }
+          mapfile -t controller_changed < <(git diff-tree --no-commit-id --name-only -r "$controller")
+          [[ ${#controller_changed[@]} -eq 1 && "${controller_changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'Controller scope mismatch: %s\n' "${controller_changed[*]}"; exit 1; }
+
+          [[ "$(git rev-parse "$PRODUCT_HEAD^{tree}")" == "$PRODUCT_TREE" ]] || { echo 'Product TREE drift'; exit 1; }
+          [[ "$(git rev-parse "$PRODUCT_HEAD^")" == "$NAV003" ]] || { echo 'NAV002 parent drift'; exit 1; }
+          [[ "$(git rev-parse "$NAV003^")" == "$STACK_BASE" ]] || { echo 'NAV003 parent drift'; exit 1; }
+          [[ "$(git rev-parse "$PRODUCT_HEAD:$ROUTER_PATH")" == "$ROUTER_BLOB" ]] || { echo 'Router blob drift'; exit 1; }
+          [[ "$(git rev-parse "$PRODUCT_HEAD:$SEARCH_PATH")" == "$SEARCH_BLOB" ]] || { echo 'Search-data blob drift'; exit 1; }
+          [[ "$(git rev-parse "$PRODUCT_HEAD:$BASELINE_PATH")" == "$BASELINE_BLOB" ]] || { echo 'Win32 baseline blob drift'; exit 1; }
+          baseline_sha="$(git show "$PRODUCT_HEAD:$BASELINE_PATH" | sha256sum | awk '{print $1}')"
+          [[ "$baseline_sha" == "$BASELINE_SHA256" ]] || { echo "Win32 baseline SHA256 drift: $baseline_sha"; exit 1; }
+
+          product_remote="$(git ls-remote origin "refs/heads/$PRODUCT_BRANCH" | awk '{print $1}')"
+          nav003_remote="$(git ls-remote origin "refs/heads/$NAV003_BRANCH" | awk '{print $1}')"
+          [[ "$product_remote" == "$PRODUCT_HEAD" ]] || { echo "Permanent NAV002 branch drift: $product_remote"; exit 1; }
+          [[ "$nav003_remote" == "$NAV003" ]] || { echo "Permanent NAV003 branch drift: $nav003_remote"; exit 1; }
+
+          git worktree add --detach ../qa005-r12-product "$PRODUCT_HEAD"
+          cat > "$evidence/identity.json" <<EOF
+          {"controller":"$controller","stackBase":"$STACK_BASE","nav003":"$NAV003","productHead":"$PRODUCT_HEAD","productTree":"$PRODUCT_TREE","routerBlob":"$ROUTER_BLOB","searchBlob":"$SEARCH_BLOB","baselineBlob":"$BASELINE_BLOB","baselineSha256":"$baseline_sha","controllerScope":["$WORKFLOW_PATH"],"repositoryOnly":true,"snapshotMutation":false,"permanentBranchMutation":false,"issueMutation":false,"prMutation":false,"matrixMutation":false,"merge":false,"supabaseMutation":false,"migrationMutation":false,"stagingMutation":false,"productionMutation":false}
+          EOF
+          echo "CONTROLLER_SHA=$controller"
+          echo 'STACK_LINEAGE=PASS'
+          echo 'PRODUCT_TREE=PASS'
+          echo 'BASELINE_IDENTITY=PASS'
+          echo 'PERMANENT_REFS=PASS'
+          echo 'TEMP_SCOPE=PASS'
+
+      - name: Install exact-product dependencies and Chromium
+        run: |
+          set -euo pipefail
+          cd ../qa005-r12-product
+          npm ci
+          npx playwright install chromium
+
+      - name: Validate syntax and minimum governance on exact product HEAD
+        run: |
+          set -euo pipefail
+          cd ../qa005-r12-product
+          node --check "$ROUTER_PATH"
+          node --check "$SEARCH_PATH"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard "$PRODUCT_HEAD"
+          [[ "$(git rev-parse HEAD)" == "$PRODUCT_HEAD" ]] || { echo 'Product HEAD drift after governance'; exit 1; }
+          [[ "$(git rev-parse HEAD^{tree})" == "$PRODUCT_TREE" ]] || { echo 'Product TREE drift after governance'; exit 1; }
+          [[ "$(git rev-parse HEAD:$ROUTER_PATH)" == "$ROUTER_BLOB" ]] || { echo 'Router drift after governance'; exit 1; }
+          [[ "$(git rev-parse HEAD:$SEARCH_PATH)" == "$SEARCH_BLOB" ]] || { echo 'Search-data drift after governance'; exit 1; }
+          [[ "$(git rev-parse HEAD:$BASELINE_PATH)" == "$BASELINE_BLOB" ]] || { echo 'Baseline drift after governance'; exit 1; }
+          echo 'MINIMUM_GOVERNANCE_GATES=PASS'
+
+      - name: Run nine static qualification gates
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qa005-r12-evidence"
+          node - "$evidence" <<'NODE'
+          const { spawnSync } = require('node:child_process');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const evidence = process.argv[2];
+          const root = path.resolve('../qa005-r12-product');
+          const commands = [
+            ['navigationLifecycleAudit', 'npm run audit:navigation-lifecycle-contract'],
+            ['navigationLifecycleCore', 'npm run test:navigation-lifecycle-core-contract'],
+            ['navigationLifecycleFinalization', 'npm run test:navigation-lifecycle-finalization-contract'],
+            ['shellRouterScrollAudit', 'npm run audit:shell-router-scroll-reset'],
+            ['responsiveBoundaries', 'npm run audit:responsive-boundaries'],
+            ['desktopBase', 'npm run audit:desktop-base'],
+            ['sharedHeader', 'npm run audit:shared-app-header-contract'],
+            ['resultsDensity', 'npm run test:results-card-density-contract'],
+            ['resultsHeaderRail', 'npm run test:results-header-rail-contract']
+          ];
+          function run(command) {
+            const out = spawnSync(command, { cwd: root, shell: true, encoding: 'utf8', env: process.env, maxBuffer: 40 * 1024 * 1024 });
+            return { rc: Number.isInteger(out.status) ? out.status : 1, output: ((out.stdout || '') + '\n' + (out.stderr || '')).slice(-8000) };
+          }
+          const rows = commands.map(([name, command]) => ({ name, ...run(command) }));
+          const failures = rows.filter(r => r.rc !== 0).map(r => r.name);
+          const receipt = { total: rows.length, failures, green: rows.length === 9 && failures.length === 0, rows, criteriaRelaxed: 0 };
+          fs.writeFileSync(path.join(evidence, 'static-gates.json'), JSON.stringify(receipt, null, 2));
+          console.log('UX_QA_DEBT_005_R12_STATIC=' + JSON.stringify({ total: receipt.total, failures, green: receipt.green, criteriaRelaxed: 0 }));
+          NODE
+          git -C ../qa005-r12-product reset --hard "$PRODUCT_HEAD"
+          [[ "$(git -C ../qa005-r12-product rev-parse HEAD^{tree})" == "$PRODUCT_TREE" ]] || { echo 'Product TREE drift after static gates'; exit 1; }
+          [[ "$(git -C ../qa005-r12-product rev-parse HEAD:$BASELINE_PATH)" == "$BASELINE_BLOB" ]] || { echo 'Baseline drift after static gates'; exit 1; }
+
+      - name: Requalify direct-load vs stable-shell geometry and lifecycle
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qa005-r12-evidence"
+          python -m http.server 4175 --directory ../qa005-r12-product > "$evidence/server.log" 2>&1 &
+          server=$!
+          cleanup() { kill "$server" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ok=0
+          for i in {1..30}; do
+            if curl -fsS 'http://127.0.0.1:4175/index.html' >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          [[ "$ok" == 1 ]] || { echo 'Product server did not become ready'; exit 1; }
+          cd ../qa005-r12-product
+          node - "$evidence" <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const evidence = process.argv[2];
+          const base = 'http://127.0.0.1:4175';
+          const authority = process.env.FILTER_AUTHORITY;
+          const viewports = [
+            { name: 'desktop', width: 1366, height: 768 },
+            { name: 'tablet', width: 820, height: 1180 },
+            { name: 'mobile', width: 390, height: 844 }
+          ];
+          const authenticatedSession = {
+            provider: 'mock', sessionStatus: 'active', accountStatus: 'active',
+            user: { id: 'qa005-r12-client', role: 'client', name: 'Cliente QA005', email: 'qa005@example.test', accountStatus: 'active' }
+          };
+          function round(value) { return Math.round(Number(value || 0) * 10) / 10; }
+          function delta(a, b) { return Math.abs(round(a) - round(b)); }
+          async function prepare(page) {
+            await page.addInitScript((session) => localStorage.setItem('doke.auth.session.v1', JSON.stringify(session)), authenticatedSession);
+            await page.route('https://unpkg.com/**', route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '' }));
+            await page.route('https://fonts.gstatic.com/**', route => route.abort());
+          }
+          async function waitReady(page) {
+            await page.waitForFunction((expectedAuthority) => {
+              const boundary = document.querySelector('[data-state-boundary="resultados"]');
+              const form = document.querySelector('[data-results-filters-form]');
+              return Boolean(
+                boundary && boundary.dataset.resultsUiReady === 'true' && boundary.getAttribute('aria-busy') === 'false' &&
+                form && form.getAttribute('data-filter-authority') === expectedAuthority &&
+                document.querySelectorAll('[data-results-filter-status]').length === 1 &&
+                document.querySelector('.page > .doke-public-footer')
+              );
+            }, authority, { timeout: 15000 });
+            await page.waitForTimeout(300);
+          }
+          async function snap(page) {
+            return page.evaluate(() => {
+              const rect = (el) => {
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { left: r.left, top: r.top, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
+              };
+              const signature = (el) => {
+                if (!el) return null;
+                const classes = String(el.className || '').trim().split(/\s+/).filter(Boolean).sort().join('.');
+                const landmark = el.getAttribute('role') || '';
+                return `${el.tagName.toLowerCase()}#${el.id || ''}.${classes}|role=${landmark}`;
+              };
+              const pageEl = document.querySelector('.page');
+              const footer = document.querySelector('.page > .doke-public-footer');
+              const form = document.querySelector('[data-results-filters-form]');
+              const workspace = document.querySelector('.search-results-workspace');
+              const boundary = document.querySelector('[data-state-boundary="resultados"]');
+              const main = document.querySelector('main');
+              return {
+                pageChildren: pageEl ? Array.from(pageEl.children).map(signature) : [],
+                pageRect: rect(pageEl),
+                footerRect: rect(footer),
+                filterRect: rect(form),
+                workspaceRect: rect(workspace),
+                footerCount: document.querySelectorAll('.page > .doke-public-footer').length,
+                filterChildren: form ? form.children.length : -1,
+                filterStatusCount: document.querySelectorAll('[data-results-filter-status]').length,
+                filterAuthority: form?.getAttribute('data-filter-authority') || '',
+                filterContract: form?.getAttribute('data-filter-contract') || '',
+                filterState: form?.getAttribute('data-filter-state') || '',
+                filterDirty: form?.getAttribute('data-filter-dirty') || '',
+                resultsUiReady: boundary?.dataset.resultsUiReady || '',
+                ariaBusy: boundary?.getAttribute('aria-busy') || '',
+                noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+                activeInMain: Boolean(main && (document.activeElement === main || main.contains(document.activeElement))),
+                activeTag: document.activeElement?.tagName || null,
+                scrollY: window.scrollY,
+                resultsInstallation: Boolean(window.Doke?.searchFilterStateInstallation)
+              };
+            });
+          }
+          function compareRects(name, a, b, failures) {
+            if (!a || !b) { failures.push(`${name}:missing-rect`); return; }
+            for (const key of ['left','top','width','height','right','bottom']) {
+              if (delta(a[key], b[key]) !== 0) failures.push(`${name}.${key}:delta=${delta(a[key], b[key])}`);
+            }
+          }
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const receipts = [];
+            const failures = [];
+            for (const viewport of viewports) {
+              const direct = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+              await prepare(direct);
+              const directErrors = [];
+              direct.on('pageerror', e => directErrors.push(String(e?.message || e)));
+              await direct.goto(`${base}/resultados.html`, { waitUntil: 'domcontentloaded' });
+              await waitReady(direct);
+              const directSnap = await snap(direct);
+
+              const nav = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+              await prepare(nav);
+              const navErrors = [];
+              nav.on('pageerror', e => navErrors.push(String(e?.message || e)));
+              await nav.goto(`${base}/index.html`, { waitUntil: 'domcontentloaded' });
+              await nav.waitForFunction(() => typeof window.DokeNavigate === 'function');
+              await nav.evaluate(() => {
+                window.__qa005R12Marker = `marker-${Date.now()}`;
+                window.__qa005R12NavigationCount = performance.getEntriesByType('navigation').length;
+                window.__qa005R12Shell = {
+                  header: document.querySelector('[data-app-header]'),
+                  sidebar: document.querySelector('.sidebar'),
+                  bottom: document.querySelector('[data-doke-mobile-bottom-nav], [data-bottom-nav], .bottom-nav, .doke-bottom-nav')
+                };
+                window.scrollTo(0, Math.min(600, Math.max(0, document.documentElement.scrollHeight - innerHeight)));
+              });
+              await nav.evaluate(async () => {
+                const value = window.DokeNavigate('/resultados.html');
+                if (value && typeof value.then === 'function') await value;
+              });
+              await nav.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+              await waitReady(nav);
+              const firstInstallation = await nav.evaluate(() => window.Doke?.searchFilterStateInstallation || null);
+              const navSnap = await snap(nav);
+              const shellIdentity = await nav.evaluate(() => ({
+                markerPresent: typeof window.__qa005R12Marker === 'string',
+                documentNavigationStable: performance.getEntriesByType('navigation').length === window.__qa005R12NavigationCount,
+                adapter: document.body.dataset.dokeNavigationAdapter || '',
+                headerIdentity: window.__qa005R12Shell.header === document.querySelector('[data-app-header]'),
+                sidebarIdentity: window.__qa005R12Shell.sidebar === document.querySelector('.sidebar'),
+                bottomIdentity: window.__qa005R12Shell.bottom === document.querySelector('[data-doke-mobile-bottom-nav], [data-bottom-nav], .bottom-nav, .doke-bottom-nav')
+              }));
+
+              await nav.evaluate(async () => {
+                const value = window.DokeNavigate('/index.html');
+                if (value && typeof value.then === 'function') await value;
+              });
+              await nav.waitForFunction(() => location.pathname.endsWith('/index.html'));
+              await nav.waitForTimeout(250);
+              const homeLeak = await nav.evaluate(() => document.querySelectorAll('[data-results-filter-status], [data-filter-authority]').length);
+              await nav.evaluate(async () => {
+                const value = window.DokeNavigate('/resultados.html');
+                if (value && typeof value.then === 'function') await value;
+              });
+              await nav.waitForFunction(() => location.pathname.endsWith('/resultados.html'));
+              await waitReady(nav);
+              const lifecycle = await nav.evaluate((first) => ({
+                statusCount: document.querySelectorAll('[data-results-filter-status]').length,
+                freshInstallation: Boolean(first && window.Doke?.searchFilterStateInstallation && first !== window.Doke.searchFilterStateInstallation),
+                noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+                resultsUiReady: document.querySelector('[data-state-boundary="resultados"]')?.dataset.resultsUiReady || '',
+                ariaBusy: document.querySelector('[data-state-boundary="resultados"]')?.getAttribute('aria-busy') || ''
+              }), firstInstallation);
+
+              const prefix = viewport.name;
+              if (JSON.stringify(directSnap.pageChildren) !== JSON.stringify(navSnap.pageChildren)) failures.push(`${prefix}:page-child-order`);
+              compareRects(`${prefix}:page`, directSnap.pageRect, navSnap.pageRect, failures);
+              compareRects(`${prefix}:footer`, directSnap.footerRect, navSnap.footerRect, failures);
+              compareRects(`${prefix}:filter`, directSnap.filterRect, navSnap.filterRect, failures);
+              compareRects(`${prefix}:workspace`, directSnap.workspaceRect, navSnap.workspaceRect, failures);
+              for (const [key, expected] of [['footerCount',1],['filterStatusCount',1],['filterAuthority',authority],['resultsUiReady','true'],['ariaBusy','false'],['noOverflow',true],['resultsInstallation',true]]) {
+                if (directSnap[key] !== expected) failures.push(`${prefix}:direct:${key}=${directSnap[key]}`);
+                if (navSnap[key] !== expected) failures.push(`${prefix}:nav:${key}=${navSnap[key]}`);
+              }
+              if (directSnap.filterChildren !== navSnap.filterChildren) failures.push(`${prefix}:filter-children:${directSnap.filterChildren}->${navSnap.filterChildren}`);
+              if (!navSnap.activeInMain) failures.push(`${prefix}:route-focus:${navSnap.activeTag}`);
+              if (Math.abs(navSnap.scrollY) > 1) failures.push(`${prefix}:scroll-reset:${navSnap.scrollY}`);
+              for (const [key, value] of Object.entries(shellIdentity)) {
+                if (key === 'adapter') { if (value !== 'stable-shell') failures.push(`${prefix}:adapter=${value}`); }
+                else if (value !== true) failures.push(`${prefix}:${key}=false`);
+              }
+              if (homeLeak !== 0) failures.push(`${prefix}:home-leak=${homeLeak}`);
+              if (lifecycle.statusCount !== 1) failures.push(`${prefix}:lifecycle-status=${lifecycle.statusCount}`);
+              if (!lifecycle.freshInstallation) failures.push(`${prefix}:fresh-installation=false`);
+              if (!lifecycle.noOverflow) failures.push(`${prefix}:lifecycle-overflow`);
+              if (lifecycle.resultsUiReady !== 'true' || lifecycle.ariaBusy !== 'false') failures.push(`${prefix}:lifecycle-terminal-state`);
+              if (directErrors.length) failures.push(`${prefix}:direct-pageerrors=${directErrors.join('|')}`);
+              if (navErrors.length) failures.push(`${prefix}:nav-pageerrors=${navErrors.join('|')}`);
+
+              receipts.push({ viewport, direct: directSnap, viaNav: navSnap, shellIdentity, homeLeak, lifecycle, directErrors, navErrors });
+              await direct.close();
+              await nav.close();
+            }
+            await browser.close();
+            const receipt = { result: failures.length ? 'FAIL' : 'PASS', failures, receipts, geometryDeltaRequired: 0, criteriaRelaxed: 0, introducedRegressions: failures.length ? null : 0 };
+            fs.writeFileSync(path.join(evidence, 'geometry-lifecycle.json'), JSON.stringify(receipt, null, 2));
+            console.log('UX_QA_DEBT_005_R12_GEOMETRY_LIFECYCLE=' + JSON.stringify({ result: receipt.result, failures, viewports: receipts.length, geometryDeltaRequired: 0, criteriaRelaxed: 0, introducedRegressions: receipt.introducedRegressions }));
+          })().catch(err => {
+            const receipt = { result: 'FAIL', failures: [String(err?.stack || err)], receipts: [], geometryDeltaRequired: 0, criteriaRelaxed: 0, introducedRegressions: null };
+            fs.writeFileSync(path.join(evidence, 'geometry-lifecycle.json'), JSON.stringify(receipt, null, 2));
+            console.log('UX_QA_DEBT_005_R12_GEOMETRY_LIFECYCLE=' + JSON.stringify(receipt));
+          });
+          NODE
+
+      - name: Run exact Requirement 12 suite
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qa005-r12-evidence"
+          specs=(
+            tests/e2e/results-entry-lifecycle.spec.js
+            tests/e2e/ux-results-001-browser-acceptance.spec.js
+            tests/e2e/search-flow.spec.js
+            tests/e2e/stable-shell-transition-contract.spec.js
+            tests/e2e/stable-shell-transition-matrix.spec.js
+            tests/e2e/stable-shell-scroll-contract.spec.js
+            tests/e2e/global-layout-contract.spec.js
+          )
+          for spec in "${specs[@]}"; do
+            [[ -f "../qa005-r12-product/$spec" ]] || { echo "Missing required spec: $spec"; exit 1; }
+          done
+          set +e
+          (cd ../qa005-r12-product && node node_modules/@playwright/test/cli.js test "${specs[@]}" --workers=1 --retries=0 --reporter=json > "$evidence/requirement12-raw.json")
+          rc=$?
+          set -e
+          export QA005_R12_RC="$rc"
+          node - "$evidence" <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const evidence = process.argv[2];
+          let report;
+          try { report = JSON.parse(fs.readFileSync(path.join(evidence, 'requirement12-raw.json'), 'utf8')); }
+          catch (err) {
+            const receipt = { rc: Number(process.env.QA005_R12_RC), total: 0, expected: 0, unexpected: 1, flaky: 0, skipped: 0, green: false, parseError: String(err) };
+            fs.writeFileSync(path.join(evidence, 'requirement12.json'), JSON.stringify(receipt, null, 2));
+            console.log('UX_QA_DEBT_005_R12_REQUIREMENT_12=' + JSON.stringify(receipt));
+            process.exit(0);
+          }
+          const rows = [];
+          function walk(suite, parents) {
+            const prefix = [...parents, suite.title || ''].filter(Boolean);
+            for (const spec of suite.specs || []) {
+              for (const test of spec.tests || []) {
+                let status = test.status;
+                const last = (test.results || []).at(-1) || {};
+                if (!['expected','unexpected','flaky','skipped'].includes(status)) {
+                  const actual = last.status || 'unknown';
+                  if (actual === 'skipped') status = 'skipped';
+                  else if (actual === 'passed' && (test.expectedStatus || 'passed') === 'passed') status = 'expected';
+                  else status = 'unexpected';
+                }
+                rows.push({ key: [...prefix, spec.title || '', test.projectName || ''].filter(Boolean).join(' :: '), status });
+              }
+            }
+            for (const child of suite.suites || []) walk(child, prefix);
+          }
+          for (const suite of report.suites || []) walk(suite, []);
+          const count = status => rows.filter(r => r.status === status).length;
+          const receipt = {
+            rc: Number(process.env.QA005_R12_RC), total: rows.length,
+            expected: count('expected'), unexpected: count('unexpected'), flaky: count('flaky'), skipped: count('skipped')
+          };
+          receipt.green = receipt.rc === 0 && receipt.total === 75 && receipt.expected === 75 && receipt.unexpected === 0 && receipt.flaky === 0 && receipt.skipped === 0;
+          fs.writeFileSync(path.join(evidence, 'requirement12.json'), JSON.stringify(receipt, null, 2));
+          console.log('UX_QA_DEBT_005_R12_REQUIREMENT_12=' + JSON.stringify(receipt));
+          NODE
+          git -C ../qa005-r12-product reset --hard "$PRODUCT_HEAD"
+          [[ "$(git -C ../qa005-r12-product rev-parse HEAD:$BASELINE_PATH)" == "$BASELINE_BLOB" ]] || { echo 'Baseline drift after Requirement 12'; exit 1; }
+
+      - name: Final classifier and no-mutation receipt
+        if: always()
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qa005-r12-evidence"
+          static_green=false
+          geometry_green=false
+          requirement_green=false
+          if [[ -f "$evidence/static-gates.json" ]]; then
+            static_green="$(node -e "const x=require(process.argv[1]); process.stdout.write(String(x.green===true))" "$evidence/static-gates.json")"
+          fi
+          if [[ -f "$evidence/geometry-lifecycle.json" ]]; then
+            geometry_green="$(node -e "const x=require(process.argv[1]); process.stdout.write(String(x.result==='PASS' && x.criteriaRelaxed===0 && x.introducedRegressions===0))" "$evidence/geometry-lifecycle.json")"
+          fi
+          if [[ -f "$evidence/requirement12.json" ]]; then
+            requirement_green="$(node -e "const x=require(process.argv[1]); process.stdout.write(String(x.green===true))" "$evidence/requirement12.json")"
+          fi
+
+          product_remote="$(git ls-remote origin "refs/heads/$PRODUCT_BRANCH" | awk '{print $1}')"
+          nav003_remote="$(git ls-remote origin "refs/heads/$NAV003_BRANCH" | awk '{print $1}')"
+          [[ "$product_remote" == "$PRODUCT_HEAD" ]] || { echo 'Permanent NAV002 ref changed during requalification'; exit 1; }
+          [[ "$nav003_remote" == "$NAV003" ]] || { echo 'Permanent NAV003 ref changed during requalification'; exit 1; }
+          [[ "$(git rev-parse "$PRODUCT_HEAD^{tree}")" == "$PRODUCT_TREE" ]] || { echo 'Product TREE changed'; exit 1; }
+          [[ "$(git rev-parse "$PRODUCT_HEAD:$BASELINE_PATH")" == "$BASELINE_BLOB" ]] || { echo 'Baseline blob changed'; exit 1; }
+          baseline_sha="$(git show "$PRODUCT_HEAD:$BASELINE_PATH" | sha256sum | awk '{print $1}')"
+          [[ "$baseline_sha" == "$BASELINE_SHA256" ]] || { echo 'Baseline SHA256 changed'; exit 1; }
+
+          if [[ "$static_green" == true && "$geometry_green" == true && "$requirement_green" == true ]]; then
+            classification='UX_QA_DEBT_005_POST_NAV_STACK_REQUALIFIED'
+            baseline_gate='UNBLOCKED_FOR_SEPARATE_EXPLICIT_AUTHORIZATION'
+            result='PASS'
+          else
+            classification='UX_QA_DEBT_005_STILL_BLOCKED'
+            baseline_gate='BLOCKED'
+            result='FAIL'
+          fi
+          echo "UX_QA_DEBT_005_R12_FINAL={\"result\":\"$result\",\"classification\":\"$classification\",\"stackBase\":\"$STACK_BASE\",\"nav003\":\"$NAV003\",\"productHead\":\"$PRODUCT_HEAD\",\"productTree\":\"$PRODUCT_TREE\",\"baselineBlob\":\"$BASELINE_BLOB\",\"baselineSha256\":\"$baseline_sha\",\"staticGreen\":$static_green,\"geometryLifecycleGreen\":$geometry_green,\"requirement12Green\":$requirement_green,\"baselineGenerationGate\":\"$baseline_gate\",\"criteriaRelaxed\":0,\"snapshotMutation\":false,\"permanentBranchMutation\":false,\"issueMutation\":false,\"prMutation\":false,\"matrixMutation\":false,\"merge\":false,\"supabaseMutation\":false,\"migrationMutation\":false,\"stagingMutation\":false,\"productionMutation\":false,\"repositoryOnly\":true}"
+          echo "STATUS=$classification"
+          [[ "$result" == PASS ]]
