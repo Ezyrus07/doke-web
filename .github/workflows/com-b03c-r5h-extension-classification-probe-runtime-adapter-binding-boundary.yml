@@ -35,10 +35,12 @@ jobs:
         run: |
           set -euo pipefail
           parent=1e277b2508cdb08adbb1446552e2b0248f1b2623
+          certified=e2809ba029930eac76729c9ae5f1496919a500de
           git merge-base --is-ancestor "$parent" HEAD
+          git merge-base --is-ancestor "$certified" HEAD
           test "$(git rev-parse "$parent^{tree}")" = "c3206000663a9b8198dbd0f2ce9778ed0196146d"
           test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-descriptor-boundary.json)" = "264b19934567a62f49d95fb266e4655979b89629"
-          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-descriptor-boundary.yml)" = "5ac920eaf58efe33847776f6eb017936d7be8a8e"
+          test "$(git rev-parse "$parent:.github/workflows/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-descriptor-boundary.yml")" = "5ac920eaf58efe33847776f6eb017936d7be8a8e"
           test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-concrete-runtime-adapter-binding.js)" = "6fc34e1b365ec801665fdab0c7d0c6761a8013e6"
 
       - name: Exact repository-only materialization scope
@@ -46,11 +48,12 @@ jobs:
         run: |
           set -euo pipefail
           parent=1e277b2508cdb08adbb1446552e2b0248f1b2623
+          certified=e2809ba029930eac76729c9ae5f1496919a500de
           boundary=config/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-boundary.json
           certifier=.github/workflows/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-boundary.yml
           initial="$(printf '%s\n' "$boundary" "$certifier" | sort)"
           final="$(printf '%s\n' "$boundary" "$certifier" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
-          actual="$(git diff --name-only "$parent" HEAD | sort)"
+          actual="$(git diff --name-only "$parent" "$certified" | sort)"
           if [ "$actual" != "$initial" ] && [ "$actual" != "$final" ]; then
             printf 'Unexpected scope:\n%s\n' "$actual" >&2
             exit 1

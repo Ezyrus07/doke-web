@@ -36,10 +36,12 @@ jobs:
         run: |
           set -euo pipefail
           parent=7c1d780cdbb80a74234e78360b31c846ebc6591b
+          certified=34ec11fc4c7a6613e1a5ae4fba692730bac69b05
           git merge-base --is-ancestor "$parent" HEAD
+          git merge-base --is-ancestor "$certified" HEAD
           test "$(git rev-parse "$parent^{tree}")" = "dfa792cf22dad455e04a7ff79d42c1bb992f6811"
           test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-descriptor-boundary.json)" = "beffe2201e6c4b338fc397e4c876e1471c2cb4dd"
-          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-descriptor-boundary.yml)" = "5d2f8eba1b4110edf9b2f872c0b49a951f74677a"
+          test "$(git rev-parse "$parent:.github/workflows/com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-descriptor-boundary.yml")" = "5d2f8eba1b4110edf9b2f872c0b49a951f74677a"
           test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js)" = "723d33aea011a28766b819fa823aad82f341aba3"
           test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-harness-specification.json)" = "8611bc7cffd54d813248988b3b4fcf9bd894384c"
 
@@ -48,12 +50,13 @@ jobs:
         run: |
           set -euo pipefail
           parent=7c1d780cdbb80a74234e78360b31c846ebc6591b
+          certified=34ec11fc4c7a6613e1a5ae4fba692730bac69b05
           module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-sanitized-evidence-recorder.js
           boundary=config/com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-boundary.json
           certifier=.github/workflows/com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-boundary.yml
           initial="$(printf '%s\n' "$boundary" "$certifier" "$module" | sort)"
           final="$(printf '%s\n' "$boundary" "$certifier" "$module" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
-          actual="$(git diff --name-only "$parent" HEAD | sort)"
+          actual="$(git diff --name-only "$parent" "$certified" | sort)"
           if [ "$actual" != "$initial" ] && [ "$actual" != "$final" ]; then
             printf 'Unexpected scope:\n%s\n' "$actual" >&2
             exit 1

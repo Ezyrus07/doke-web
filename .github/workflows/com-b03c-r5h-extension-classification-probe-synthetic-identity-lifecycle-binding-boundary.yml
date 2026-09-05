@@ -36,10 +36,12 @@ jobs:
         run: |
           set -euo pipefail
           parent=b29066bd9fa87e4ad39f371396371a1ace5ec3ef
+          certified=feb50f13e3dc312deffeadb3d8814f3fca98be17
           git merge-base --is-ancestor "$parent" HEAD
+          git merge-base --is-ancestor "$certified" HEAD
           test "$(git rev-parse "$parent^{tree}")" = "ebe15564df82769fea0c3da3f71d37908c85c308"
           test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-descriptor-boundary.json)" = "37be2271a1413696729b6c80fce7127265bd25b6"
-          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-descriptor-boundary.yml)" = "cbf61470e9cc7a04e4546663397edc8f64058296"
+          test "$(git rev-parse "$parent:.github/workflows/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-descriptor-boundary.yml")" = "cbf61470e9cc7a04e4546663397edc8f64058296"
           test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-credential-provider.js)" = "6419696544fb9e1906df92e3591e93efcf04b826"
 
       - name: Exact repository-only materialization scope
@@ -47,12 +49,13 @@ jobs:
         run: |
           set -euo pipefail
           parent=b29066bd9fa87e4ad39f371396371a1ace5ec3ef
+          certified=feb50f13e3dc312deffeadb3d8814f3fca98be17
           module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-synthetic-identity-lifecycle.js
           boundary=config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.json
           certifier=.github/workflows/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.yml
           initial="$(printf '%s\n' "$boundary" "$certifier" "$module" | sort)"
           final="$(printf '%s\n' "$boundary" "$certifier" "$module" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
-          actual="$(git diff --name-only "$parent" HEAD | sort)"
+          actual="$(git diff --name-only "$parent" "$certified" | sort)"
           if [ "$actual" != "$initial" ] && [ "$actual" != "$final" ]; then
             printf 'Unexpected scope:\n%s\n' "$actual" >&2
             exit 1

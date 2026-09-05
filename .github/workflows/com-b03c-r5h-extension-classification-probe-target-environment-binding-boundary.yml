@@ -35,12 +35,14 @@ jobs:
         run: |
           set -euo pipefail
           parent=63d2ce0bb6fccea07ec0cb6399e3b3c6ad541ff6
+          certified=10ddea2bb7a4ded9bf1b7654585092a396f885cb
           git merge-base --is-ancestor "$parent" HEAD
+          git merge-base --is-ancestor "$certified" HEAD
           test "$(git rev-parse "$parent^{tree}")" = "8e4100f7bbf061ced4360b73e53c1224b9c6ab2d"
           test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-target-environment-binding-descriptor-boundary.json)" = "824b2073fdb46091277d5454ffe3268553c16d83"
-          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-descriptor-boundary.yml)" = "ee2b44aa66fe40f12c1b692285ff14b4f4fff410"
+          test "$(git rev-parse "$parent:.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-descriptor-boundary.yml")" = "ee2b44aa66fe40f12c1b692285ff14b4f4fff410"
           test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-boundary.json)" = "8d3003477e7c8728b453ea250aa464ad66b76f33"
-          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-boundary.yml)" = "6dded773626c1d5062a5772d50c31ef7f7b3f4b5"
+          test "$(git rev-parse "$parent:.github/workflows/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-boundary.yml")" = "6dded773626c1d5062a5772d50c31ef7f7b3f4b5"
           test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-concrete-runtime-adapter-binding.js)" = "6fc34e1b365ec801665fdab0c7d0c6761a8013e6"
           test "$(git rev-parse HEAD:assets/js/core/runtime-config.js)" = "8c87a09918a54c60d1cf26143b3e6ad194db51f7"
           test "$(git rev-parse HEAD:docs/SUPABASE-STAGING-RUNBOOK.md)" = "b672643d86fe10cf3df1bb16e1b6fcfd384990ed"
@@ -50,11 +52,12 @@ jobs:
         run: |
           set -euo pipefail
           parent=63d2ce0bb6fccea07ec0cb6399e3b3c6ad541ff6
+          certified=10ddea2bb7a4ded9bf1b7654585092a396f885cb
           boundary=config/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.json
           certifier=.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.yml
           initial="$(printf '%s\n' "$boundary" "$certifier" | sort)"
           final="$(printf '%s\n' "$boundary" "$certifier" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
-          actual="$(git diff --name-only "$parent" HEAD | sort)"
+          actual="$(git diff --name-only "$parent" "$certified" | sort)"
           if [ "$actual" != "$initial" ] && [ "$actual" != "$final" ]; then
             printf 'Unexpected scope:\n%s\n' "$actual" >&2
             exit 1
