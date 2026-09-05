@@ -1,0 +1,269 @@
+name: TEMP UX-NAV-DEBT-002 Permanent Certifier R1
+
+on:
+  push:
+    branches:
+      - diag/ux-nav-debt-002-permanent-certifier-r1
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: windows-latest
+    timeout-minutes: 95
+    defaults:
+      run:
+        shell: bash
+    env:
+      PARENT: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+      PARENT_TREE: 9e5e8cf0e9f4515a58420fea61eeb4a36eaffe7f
+      PERMANENT_BRANCH: ux/ux-nav-debt-002-route-owned-page-reconciliation
+      PERMANENT_SHA: 943930ffc31403872151fa76560460e97a619a13
+      PERMANENT_TREE: d3203764606f9708b4f795f531cb77384b210610
+      WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-permanent-certifier-r1.yml
+      ROUTER_PATH: assets/js/core/stable-shell-router.js
+      SEARCH_PATH: assets/js/pages/search-data.js
+      ROUTER_PREIMAGE: f3b4d3f303967055173e418244dc0d4b3a1b0e55
+      SEARCH_BLOB: b42704c5df2f039bd6b68b3ead8153c92aa3de7c
+      FILTER_AUTHORITY: 20260805-ux-filters-001-v1
+      R4F_CONTROLLER: 8b451fdf16047d6f3cf40ac5962aa5af7b22bf78
+      R4F_HISTORICAL_CANDIDATE_SHA: 2016f5b088acef1ed1963ba1a286fd681fda4cdc
+      R4H_BRANCH: diag/ux-nav-debt-002-r4h-final-closure-run
+      R4H_CONTROLLER: 4dd6d5b10f0486760b63007b735322a5942bab14
+      R4H_WORKFLOW_PATH: .github/workflows/0000-temp-ux-nav-debt-002-r4h-final-closure.yml
+      R4H_WORKFLOW_BLOB: 0718271183ad2bf33501590820dc1d0a652aacde
+      EXPECTED_CANDIDATE_TREE: d3203764606f9708b4f795f531cb77384b210610
+      EXPECTED_ROUTER_BLOB: 4d0ec8aa1fe4b6679fac2b98a3060b2e9f9924ea
+      EXPECTED_PATCH_SHA256: f5e52e379440230b2a02fa555b5db3ba048539bd38cea747ec183e313b56cfd5
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze permanent identity and TEMP scope
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4h-evidence"
+          mkdir -p "$evidence"
+
+          controller="$(git rev-parse HEAD)"
+          read -ra controller_lineage <<< "$(git rev-list --parents -n1 "$controller")"
+          [[ ${#controller_lineage[@]} -eq 2 && "${controller_lineage[1]}" == "$PERMANENT_SHA" ]] || { echo 'TEMP controller lineage mismatch'; exit 1; }
+          mapfile -t controller_changed < <(git diff-tree --no-commit-id --name-only -r "$controller")
+          [[ ${#controller_changed[@]} -eq 1 && "${controller_changed[0]}" == "$WORKFLOW_PATH" ]] || { printf 'TEMP scope mismatch: %s\n' "${controller_changed[*]}"; exit 1; }
+
+          remote_permanent="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          [[ "$remote_permanent" == "$PERMANENT_SHA" ]] || { echo "Permanent branch ref drift: $remote_permanent"; exit 1; }
+
+          git fetch --no-tags origin "refs/heads/$R4H_BRANCH:refs/remotes/origin/$R4H_BRANCH"
+          [[ "$(git rev-parse "refs/remotes/origin/$R4H_BRANCH")" == "$R4H_CONTROLLER" ]] || { echo 'Historical R4h controller branch drift'; exit 1; }
+
+          read -ra permanent_lineage <<< "$(git rev-list --parents -n1 "$PERMANENT_SHA")"
+          [[ ${#permanent_lineage[@]} -eq 2 && "${permanent_lineage[1]}" == "$PARENT" ]] || { echo 'Permanent parent mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT^{tree}")" == "$PARENT_TREE" ]] || { echo 'Parent TREE mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PERMANENT_SHA^{tree}")" == "$PERMANENT_TREE" ]] || { echo 'Permanent TREE mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PARENT:$ROUTER_PATH")" == "$ROUTER_PREIMAGE" ]] || { echo 'Router preimage drift'; exit 1; }
+          [[ "$(git rev-parse "$PERMANENT_SHA:$ROUTER_PATH")" == "$EXPECTED_ROUTER_BLOB" ]] || { echo 'Permanent router blob mismatch'; exit 1; }
+          [[ "$(git rev-parse "$PERMANENT_SHA:$SEARCH_PATH")" == "$SEARCH_BLOB" ]] || { echo 'Permanent search-data blob mismatch'; exit 1; }
+          [[ "$(git show "$PERMANENT_SHA:$ROUTER_PATH" | grep -F "'/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults']" | wc -l | tr -d ' ')" == '1' ]] || { echo 'NAV003 initializer contract drift'; exit 1; }
+
+          mapfile -t product_changed < <(git diff --name-only "$PARENT" "$PERMANENT_SHA")
+          [[ ${#product_changed[@]} -eq 1 && "${product_changed[0]}" == "$ROUTER_PATH" ]] || { printf 'Permanent scope mismatch: %s\n' "${product_changed[*]}"; exit 1; }
+          [[ -z "$(git diff --name-only "$PARENT" "$PERMANENT_SHA" -- "$SEARCH_PATH" resultados.html assets/css config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/validation tests/visual)" ]] || { echo 'Forbidden permanent scope mutation'; exit 1; }
+          if git diff -U0 "$PARENT" "$PERMANENT_SHA" -- "$ROUTER_PATH" | grep '^+' | grep -Eiq 'resultados|doke-public-footer'; then
+            echo 'Permanent router contains route/footer hardcoding in added lines'; exit 1
+          fi
+          git diff --check "$PARENT" "$PERMANENT_SHA"
+          git show "$PERMANENT_SHA:$ROUTER_PATH" > "$RUNNER_TEMP/permanent-router.js"
+          node --check "$RUNNER_TEMP/permanent-router.js"
+
+          git worktree add --detach ../nav002-r4h-parent "$PARENT"
+          git worktree add --detach ../nav002-r4h-candidate "$PERMANENT_SHA"
+          patch_sha="$(git -C ../nav002-r4h-candidate diff "$PARENT" --binary | sha256sum | awk '{print $1}')"
+          [[ "$patch_sha" == "$EXPECTED_PATCH_SHA256" ]] || { echo "Patch SHA256 mismatch: $patch_sha"; exit 1; }
+
+          [[ "$(git rev-parse "$R4H_CONTROLLER:$R4H_WORKFLOW_PATH")" == "$R4H_WORKFLOW_BLOB" ]] || { echo 'Historical R4h workflow blob drift'; exit 1; }
+          git show "$R4H_CONTROLLER:$R4H_WORKFLOW_PATH" > "$RUNNER_TEMP/r4h.yml"
+
+          cat > "$evidence/identity.json" <<EOF
+          {"controllerSha":"$controller","permanentBranch":"$PERMANENT_BRANCH","permanentSha":"$PERMANENT_SHA","permanentTree":"$PERMANENT_TREE","r4fController":"$R4F_CONTROLLER","parent":"$PARENT","parentTree":"$PARENT_TREE","historicalR4fCandidateSha":"$R4F_HISTORICAL_CANDIDATE_SHA","reconstructedCandidateSha":"$PERMANENT_SHA","candidateTree":"$PERMANENT_TREE","routerPreimage":"$ROUTER_PREIMAGE","routerBlob":"$EXPECTED_ROUTER_BLOB","searchBlob":"$SEARCH_BLOB","patchSha256":"$patch_sha","candidateScope":["$ROUTER_PATH"],"candidateContentFrozen":true,"permanentShaUnderTest":true,"criteriaRelaxed":0,"repositoryOnly":true,"candidateRunnerOnly":false,"productRemoteMutation":false,"matrixMutation":false,"snapshotMutation":false,"issueMutation":false,"prMutation":false,"merge":false,"supabaseMutation":false,"stagingMutation":false,"productionMutation":false}
+          EOF
+          echo "PERMANENT_IDENTITY=PASS"
+          echo "PERMANENT_SHA=$PERMANENT_SHA"
+          echo "PERMANENT_TREE=$PERMANENT_TREE"
+          echo "ROUTER_BLOB=$EXPECTED_ROUTER_BLOB"
+          echo "PATCH_SHA256=$patch_sha"
+          echo "TEMP_SCOPE=PASS"
+
+      - name: Extract exact R4h gate scripts
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path(__import__('os').environ['RUNNER_TEMP']) / 'r4h.yml'
+          lines = source.read_text(encoding='utf-8').splitlines()
+          wanted = [
+              ('01-install.sh', 'Install dependencies and Chromium once'),
+              ('02-governance.sh', 'Run minimum governance and syntax gates'),
+              ('03-static.sh', 'Run nine static qualification gates'),
+              ('04-geometry.sh', 'Prove geometry lifecycle and bottom-navigation identity contract'),
+              ('05-requirement12.sh', 'Run exact requirement 12 suites once per side'),
+              ('06-r4h-classifier.sh', 'Classify R4h final closure'),
+          ]
+          out_dir = Path(__import__('os').environ['RUNNER_TEMP']) / 'r4h-extracted'
+          out_dir.mkdir(parents=True, exist_ok=True)
+
+          for filename, name in wanted:
+              marker = f'      - name: {name}'
+              try:
+                  start = lines.index(marker)
+              except ValueError:
+                  raise SystemExit(f'missing R4h step: {name}')
+              run_idx = None
+              for i in range(start + 1, min(len(lines), start + 8)):
+                  if lines[i] == '        run: |':
+                      run_idx = i
+                      break
+              if run_idx is None:
+                  raise SystemExit(f'missing run block: {name}')
+              body = []
+              for line in lines[run_idx + 1:]:
+                  if line.startswith('      - name: ') or line.startswith('      - uses: '):
+                      break
+                  if line.startswith('          '):
+                      body.append(line[10:])
+                  elif line == '':
+                      body.append('')
+                  else:
+                      raise SystemExit(f'unexpected indentation in {name}: {line!r}')
+              if not body:
+                  raise SystemExit(f'empty run block: {name}')
+              path = out_dir / filename
+              path.write_text('\n'.join(body) + '\n', encoding='utf-8', newline='\n')
+              print(f'EXTRACTED {name}: {len(body)} lines -> {path}')
+          PY
+
+      - name: Run exact R4h dependency gate
+        run: bash "$RUNNER_TEMP/r4h-extracted/01-install.sh"
+
+      - name: Run exact R4h governance gate
+        run: bash "$RUNNER_TEMP/r4h-extracted/02-governance.sh"
+
+      - name: Run exact R4h nine static gates
+        run: bash "$RUNNER_TEMP/r4h-extracted/03-static.sh"
+
+      - name: Run exact R4h geometry lifecycle gate
+        run: bash "$RUNNER_TEMP/r4h-extracted/04-geometry.sh"
+
+      - name: Run exact R4h requirement 12 gates
+        run: bash "$RUNNER_TEMP/r4h-extracted/05-requirement12.sh"
+
+      - name: Run exact R4h classifier over permanent SHA
+        if: always()
+        run: |
+          set -euo pipefail
+          script="$RUNNER_TEMP/r4h-extracted/06-r4h-classifier.sh"
+          if [[ ! -f "$script" ]]; then
+            evidence="$RUNNER_TEMP/nav002-r4h-evidence"
+            mkdir -p "$evidence"
+            printf '%s\n' '{"result":"INCOMPLETE","classification":"R4H_EXTRACT_MISSING","criteriaRelaxed":0,"qualificationSignal":false,"permanentPromotionAuthorized":false}' > "$evidence/classification.json"
+            exit 1
+          fi
+          bash "$script"
+
+      - name: Classify permanent certification
+        if: always()
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/nav002-r4h-evidence"
+          node - "$evidence" <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const dir = process.argv[2];
+          const target = path.join(dir, 'permanent-certification.json');
+          let receipt;
+          try {
+            const identity = JSON.parse(fs.readFileSync(path.join(dir, 'identity.json'), 'utf8'));
+            const r4h = JSON.parse(fs.readFileSync(path.join(dir, 'classification.json'), 'utf8'));
+            const identityGreen =
+              identity.permanentSha === process.env.PERMANENT_SHA &&
+              identity.permanentTree === process.env.PERMANENT_TREE &&
+              identity.permanentBranch === process.env.PERMANENT_BRANCH &&
+              identity.permanentShaUnderTest === true &&
+              identity.parent === process.env.PARENT &&
+              identity.parentTree === process.env.PARENT_TREE &&
+              identity.candidateTree === process.env.PERMANENT_TREE &&
+              identity.routerBlob === process.env.EXPECTED_ROUTER_BLOB &&
+              identity.searchBlob === process.env.SEARCH_BLOB &&
+              identity.patchSha256 === process.env.EXPECTED_PATCH_SHA256 &&
+              identity.candidateContentFrozen === true;
+            const r4hGreen =
+              r4h.result === 'PASS' &&
+              r4h.qualificationSignal === true &&
+              r4h.identityGreen === true &&
+              r4h.staticGreen === true &&
+              r4h.geometryGreen === true &&
+              r4h.requirement12Green === true &&
+              r4h.criteriaRelaxed === 0 &&
+              r4h.introducedRegressions === 0 &&
+              r4h.summary?.parent?.total === 75 &&
+              r4h.summary?.candidate?.total === 75 &&
+              r4h.summary?.parent?.expected === 75 &&
+              r4h.summary?.candidate?.expected === 75;
+            const pass = identityGreen && r4hGreen;
+            receipt = {
+              result: pass ? 'PASS' : 'FAIL',
+              classification: pass ? 'UX_NAV_DEBT_002_PERMANENT_CERTIFIED' : 'UX_NAV_DEBT_002_PERMANENT_CERTIFICATION_FAIL',
+              permanentBranch: process.env.PERMANENT_BRANCH,
+              permanentSha: process.env.PERMANENT_SHA,
+              permanentTree: process.env.PERMANENT_TREE,
+              parent: process.env.PARENT,
+              routerBlob: process.env.EXPECTED_ROUTER_BLOB,
+              patchSha256: process.env.EXPECTED_PATCH_SHA256,
+              identityGreen,
+              staticGreen: r4h.staticGreen === true,
+              geometryGreen: r4h.geometryGreen === true,
+              requirement12Green: r4h.requirement12Green === true,
+              summary: r4h.summary || null,
+              criteriaRelaxed: 0,
+              introducedRegressions: r4h.introducedRegressions ?? null,
+              permanentCertification: pass,
+              permanentPromotionAuthorized: false,
+              prMutation: false,
+              issueMutation: false,
+              matrixMutation: false,
+              snapshotMutation: false,
+              merge: false,
+              supabaseMutation: false,
+              stagingMutation: false,
+              productionMutation: false,
+              repositoryOnly: true
+            };
+          } catch (error) {
+            receipt = {
+              result: 'INCOMPLETE',
+              classification: 'UX_NAV_DEBT_002_PERMANENT_CERTIFICATION_EVIDENCE_MISSING',
+              error: String(error?.stack || error),
+              criteriaRelaxed: 0,
+              permanentCertification: false,
+              permanentPromotionAuthorized: false,
+              repositoryOnly: true
+            };
+          }
+          fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(target, JSON.stringify(receipt, null, 2));
+          console.log('UX_NAV_DEBT_002_PERMANENT_CERTIFICATION=' + JSON.stringify(receipt));
+          if (receipt.permanentCertification !== true) process.exit(1);
+          NODE
+
+      - name: Upload permanent certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nav002-permanent-certification-r1
+          path: ${{ runner.temp }}/nav002-r4h-evidence
+          retention-days: 7
+          if-no-files-found: warn
