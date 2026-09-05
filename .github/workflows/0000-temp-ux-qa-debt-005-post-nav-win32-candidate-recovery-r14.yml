@@ -1,0 +1,239 @@
+name: TEMP UX-QA-DEBT-005 Win32 Candidate Recovery R14
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-post-nav-win32-candidate-recovery-r14
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PRODUCT_HEAD: 943930ffc31403872151fa76560460e97a619a13
+  PRODUCT_TREE: d3203764606f9708b4f795f531cb77384b210610
+  NAV003: 62ef65be4584da138fe7bbdbbd0d958895535c3a
+  STACK_BASE: b260bfb59241d15f5cee76dedd2b60e115919425
+  PERMANENT_BRANCH: ux/ux-nav-debt-002-route-owned-page-reconciliation
+  WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-post-nav-win32-candidate-recovery-r14.yml
+  SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+  OLD_SNAPSHOT_BLOB: 1580b5410bcce1ea5424d5528356291a0f288c4e
+  CANDIDATE_BLOB: 0a8a5cdd14e4370f1f1ff2891c5456d9c7e2a39d
+  CANDIDATE_SHA256: 0c41439df0f5385ddeac0c8f2ae0c3a6a35074b3ff4e80de24a8b2d5240cbb20
+  CANDIDATE_BYTES: '141314'
+  R13_RUN_ID: '33939773280'
+  R13_ARTIFACT_ID: '9961426820'
+  R13_ARTIFACT_NAME: ux-qa-debt-005-win32-candidate-r13
+  R13_ARTIFACT_DIGEST: sha256:06e5cf92a094f35c253d408e8d96436b007324040b9d6be5c0e905873fdf1299
+  R13_CONTROLLER_SHA: c36d79269011b3bc0090747d407d8ea02c2b965f
+  DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+jobs:
+  recover-win32-candidate:
+    runs-on: windows-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze exact controller, product, stack and preimage
+        shell: bash
+        run: |
+          set -euo pipefail
+          controller="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$controller")"
+          test "${#lineage[@]}" -eq 2
+          test "${lineage[1]}" = "$PRODUCT_HEAD"
+          mapfile -t controller_changed < <(git diff-tree --no-commit-id --name-only -r "$controller")
+          test "${#controller_changed[@]}" -eq 1
+          test "${controller_changed[0]}" = "$WORKFLOW_PATH"
+          test "$(git rev-parse "$PRODUCT_HEAD^{tree}")" = "$PRODUCT_TREE"
+          test "$(git rev-parse "$PRODUCT_HEAD^")" = "$NAV003"
+          test "$(git rev-parse "$NAV003^")" = "$STACK_BASE"
+          test "$(git rev-parse "$PRODUCT_HEAD:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+          permanent_remote="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$permanent_remote" = "$PRODUCT_HEAD"
+          mapfile -t product_delta < <(git diff --name-only "$PRODUCT_HEAD" "$controller")
+          test "${#product_delta[@]}" -eq 1
+          test "${product_delta[0]}" = "$WORKFLOW_PATH"
+          git diff --check "$PRODUCT_HEAD" "$controller"
+          evidence="$RUNNER_TEMP/qa005-r14-evidence"
+          mkdir -p "$evidence"
+          node - "$evidence/identity.json" "$controller" <<'NODE'
+          const fs=require('node:fs'); const [out,controller]=process.argv.slice(2);
+          fs.writeFileSync(out,JSON.stringify({result:'PASS',controllerSha:controller,controllerScope:[process.env.WORKFLOW_PATH],productHead:process.env.PRODUCT_HEAD,productTree:process.env.PRODUCT_TREE,nav003:process.env.NAV003,stackBase:process.env.STACK_BASE,permanentBranch:process.env.PERMANENT_BRANCH,snapshotPath:process.env.SNAPSHOT,oldSnapshotBlob:process.env.OLD_SNAPSHOT_BLOB,frozenCandidateBlob:process.env.CANDIDATE_BLOB,frozenCandidateSha256:process.env.CANDIDATE_SHA256,frozenCandidateBytes:Number(process.env.CANDIDATE_BYTES),r13RunId:Number(process.env.R13_RUN_ID),r13ArtifactId:Number(process.env.R13_ARTIFACT_ID),repositoryOnly:true,artifactOnly:true,criteriaRelaxed:0,productMutation:false,permanentBranchMutation:false,permanentSnapshotMutation:false,prMutation:false,issueMutation:false,matrixMutation:false,merge:false,supabaseMutation:false,migrationMutation:false,stagingMutation:false,productionMutation:false},null,2));
+          NODE
+          echo "IDENTITY_FREEZE=PASS"
+
+      - name: Recover exact R13 candidate artifact and prove provenance
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' }
+          $meta = Invoke-RestMethod -Headers $headers -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:R13_ARTIFACT_ID" -Method Get
+          if ([string]$meta.id -ne $env:R13_ARTIFACT_ID) { throw 'artifact id mismatch' }
+          if ($meta.name -ne $env:R13_ARTIFACT_NAME) { throw 'artifact name mismatch' }
+          if ([string]$meta.workflow_run.id -ne $env:R13_RUN_ID) { throw 'artifact run mismatch' }
+          if ($meta.workflow_run.head_sha -ne $env:R13_CONTROLLER_SHA) { throw 'artifact controller mismatch' }
+          if ($meta.digest -ne $env:R13_ARTIFACT_DIGEST) { throw "artifact digest mismatch: $($meta.digest)" }
+          if ($meta.expired) { throw 'R13 artifact expired' }
+          $zip = Join-Path $env:RUNNER_TEMP 'qa005-r14-r13.zip'
+          $dir = Join-Path $env:RUNNER_TEMP 'qa005-r14-r13'
+          Invoke-WebRequest -Headers $headers -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:R13_ARTIFACT_ID/zip" -OutFile $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath $dir -Force
+          $candidate = Get-ChildItem -Path $dir -Recurse -File -Filter 'resultados-desktop-1366x768-win32.candidate.png' | Select-Object -First 1
+          if (-not $candidate) { throw 'candidate PNG missing from R13 artifact' }
+          $sha256 = (Get-FileHash -Algorithm SHA256 $candidate.FullName).Hash.ToLowerInvariant()
+          if ($sha256 -ne $env:CANDIDATE_SHA256) { throw "candidate sha256 mismatch: $sha256" }
+          if ($candidate.Length -ne [int64]$env:CANDIDATE_BYTES) { throw "candidate byte length mismatch: $($candidate.Length)" }
+          $evidence = Join-Path $env:RUNNER_TEMP 'qa005-r14-evidence'
+          Copy-Item $candidate.FullName (Join-Path $evidence 'resultados-desktop-1366x768-win32.candidate.png') -Force
+          $meta | ConvertTo-Json -Depth 8 | Out-File -Encoding utf8 (Join-Path $evidence 'r13-artifact-metadata.json')
+          Write-Host 'R13_ARTIFACT_PROVENANCE=PASS'
+
+      - name: Prepare exact product worktree and verify candidate blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          product_dir="$RUNNER_TEMP/qa005-r14-product"
+          evidence="$RUNNER_TEMP/qa005-r14-evidence"
+          git worktree add --detach "$product_dir" "$PRODUCT_HEAD" >/dev/null
+          cd "$product_dir"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          test "$(git rev-parse HEAD)" = "$PRODUCT_HEAD"
+          test "$(git rev-parse HEAD^{tree})" = "$PRODUCT_TREE"
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+          cp "$SNAPSHOT" "$RUNNER_TEMP/qa005-r14-old-baseline.png"
+          cp "$evidence/resultados-desktop-1366x768-win32.candidate.png" "$SNAPSHOT"
+          test "$(git hash-object "$SNAPSHOT")" = "$CANDIDATE_BLOB"
+          test "$(sha256sum "$SNAPSHOT" | awk '{print $1}')" = "$CANDIDATE_SHA256"
+          test "$(wc -c < "$SNAPSHOT" | tr -d ' ')" = "$CANDIDATE_BYTES"
+          node - "$evidence/provenance.json" <<'NODE'
+          const fs=require('node:fs'); const png=fs.readFileSync(process.env.SNAPSHOT); if(png.toString('hex',0,8)!=='89504e470d0a1a0a')throw new Error('candidate is not PNG'); const width=png.readUInt32BE(16),height=png.readUInt32BE(20); if(width!==1366||height!==768)throw new Error(`candidate dimensions ${width}x${height}`); fs.writeFileSync(process.argv[2],JSON.stringify({result:'PASS',source:'R13 artifact 9961426820',productHead:process.env.PRODUCT_HEAD,productTree:process.env.PRODUCT_TREE,oldSnapshotBlob:process.env.OLD_SNAPSHOT_BLOB,candidateBlob:process.env.CANDIDATE_BLOB,candidateSha256:process.env.CANDIDATE_SHA256,candidateBytes:Number(process.env.CANDIDATE_BYTES),dimensions:{width,height},candidateRegenerated:false,candidateCommitCreated:false,permanentSnapshotMutation:false,criteriaRelaxed:0},null,2));
+          NODE
+          echo "FROZEN_R13_CANDIDATE=PASS"
+
+      - name: Minimum repository governance on exact product HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qa005-r14-product"
+          git checkout -- "$SNAPSHOT"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard "$PRODUCT_HEAD" >/dev/null
+          git diff --quiet
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB"
+          cp "$RUNNER_TEMP/qa005-r14-evidence/resultados-desktop-1366x768-win32.candidate.png" "$SNAPSHOT"
+          test "$(git hash-object "$SNAPSHOT")" = "$CANDIDATE_BLOB"
+          echo "MINIMUM_GOVERNANCE=PASS"
+
+      - name: Canonical visual qualification in three isolated processes
+        shell: bash
+        run: |
+          set -u
+          cd "$RUNNER_TEMP/qa005-r14-product"
+          evidence="$RUNNER_TEMP/qa005-r14-evidence"
+          failures=0
+          for i in 1 2 3; do
+            cp "$evidence/resultados-desktop-1366x768-win32.candidate.png" "$SNAPSHOT"
+            test "$(git hash-object "$SNAPSHOT")" = "$CANDIDATE_BLOB" || exit 1
+            set +e
+            node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" --workers=1 --retries=0 > "$evidence/visual-run-$i.log" 2>&1
+            rc=$?
+            set -e
+            cat "$evidence/visual-run-$i.log"
+            printf '%s\n' "$rc" > "$evidence/visual-run-$i.rc"
+            if [ "$rc" -ne 0 ]; then failures=$((failures + 1)); fi
+            test "$(git hash-object "$SNAPSHOT")" = "$CANDIDATE_BLOB" || exit 1
+            test "$(sha256sum "$SNAPSHOT" | awk '{print $1}')" = "$CANDIDATE_SHA256" || exit 1
+            sleep 1
+          done
+          node - "$evidence/visual.json" "$failures" <<'NODE'
+          const fs=require('node:fs'); const [out,raw]=process.argv.slice(2); const failures=Number(raw); const runs=[1,2,3].map(i=>({run:i,rc:Number(fs.readFileSync(`${process.env.RUNNER_TEMP}/qa005-r14-evidence/visual-run-${i}.rc`,'utf8').trim())})); fs.writeFileSync(out,JSON.stringify({result:failures===0?'PASS':'FAIL',isolatedProcesses:true,canonicalRuns:3,workers:1,retries:0,runs,failures,criteriaRelaxed:0},null,2));
+          NODE
+          if [ "$failures" -ne 0 ]; then exit 1; fi
+          echo "VISUAL_QUALIFICATION_ISOLATED=PASS"
+
+      - name: Negative preimage proof under unchanged visual criteria
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          cd "$RUNNER_TEMP/qa005-r14-product"
+          evidence="$RUNNER_TEMP/qa005-r14-evidence"
+          cp "$RUNNER_TEMP/qa005-r14-old-baseline.png" "$SNAPSHOT"
+          test "$(git hash-object "$SNAPSHOT")" = "$OLD_SNAPSHOT_BLOB" || exit 1
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" --workers=1 --retries=0 > "$evidence/old-baseline-negative.log" 2>&1
+          old_rc=$?
+          set -e
+          cat "$evidence/old-baseline-negative.log"
+          if grep -Eqi "Screenshot comparison failed|pixels?.*different|toHaveScreenshot|exceeded" "$evidence/old-baseline-negative.log"; then mismatch=1; else mismatch=0; fi
+          cp "$evidence/resultados-desktop-1366x768-win32.candidate.png" "$SNAPSHOT"
+          test "$(git hash-object "$SNAPSHOT")" = "$CANDIDATE_BLOB" || exit 1
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" --workers=1 --retries=0 > "$evidence/candidate-restored.log" 2>&1
+          candidate_rc=$?
+          set -e
+          cat "$evidence/candidate-restored.log"
+          node - "$evidence/negative.json" "$old_rc" "$mismatch" "$candidate_rc" <<'NODE'
+          const fs=require('node:fs'); const [out,o,m,c]=process.argv.slice(2); const oldRc=Number(o),screenshotMismatch=Number(m)===1,candidateRc=Number(c); const pass=oldRc!==0&&screenshotMismatch&&candidateRc===0; fs.writeFileSync(out,JSON.stringify({result:pass?'PASS':'FAIL',oldPreimageRc:oldRc,oldPreimageFailsByScreenshotMismatch:screenshotMismatch,candidateRestoredRc:candidateRc,candidateRestoredPasses:candidateRc===0,workers:1,retries:0,criteriaRelaxed:0},null,2)); if(!pass)process.exit(1);
+          NODE
+          echo "NEGATIVE_PREIMAGE_PROOF=PASS"
+
+      - name: Official Resultados direct-load and stable-shell contracts
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          cd "$RUNNER_TEMP/qa005-r14-product"
+          evidence="$RUNNER_TEMP/qa005-r14-evidence"
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/e2e/global-layout-contract.spec.js --grep "resultados.html keeps structural layout contract|index -> pedidos -> mensagens -> resultados -> notificacoes preserves shell and history" --workers=1 --retries=0 > "$evidence/official-layout.log" 2>&1
+          rc=$?
+          set -e
+          cat "$evidence/official-layout.log"
+          node - "$evidence/official-layout.json" "$rc" <<'NODE'
+          const fs=require('node:fs'); const [out,raw]=process.argv.slice(2); const rc=Number(raw); fs.writeFileSync(out,JSON.stringify({result:rc===0?'PASS':'FAIL',rc,officialGlobalLayoutContract:rc===0,workers:1,retries:0,criteriaRelaxed:0},null,2)); if(rc!==0)process.exit(1);
+          NODE
+          echo "OFFICIAL_DIRECT_AND_STABLE_SHELL=PASS"
+
+      - name: Direct-load versus stable-shell geometry parity at 1366x768
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          cd "$RUNNER_TEMP/qa005-r14-product"
+          node <<'NODE'
+          const fs=require('node:fs'),path=require('node:path'),http=require('node:http'); const {spawn}=require('node:child_process'); const {chromium}=require('@playwright/test'); const evidence=path.join(process.env.RUNNER_TEMP,'qa005-r14-evidence'),baseURL='http://127.0.0.1:5500'; const server=spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'},stdio:['ignore','pipe','pipe']});
+          const waitForServer=()=>new Promise((resolve,reject)=>{let attempts=0;const probe=()=>{attempts++;const req=http.get(`${baseURL}/index.html`,res=>{res.resume();if(res.statusCode===200)return resolve();if(attempts>=80)return reject(new Error(`static server status ${res.statusCode}`));setTimeout(probe,250);});req.on('error',()=>{if(attempts>=80)return reject(new Error('static server unavailable'));setTimeout(probe,250);});};probe();});
+          const deterministic=async page=>{await page.route('https://unpkg.com/**',route=>route.fulfill({contentType:'application/javascript',body:''}));await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'application/javascript',body:''}));await page.route('https://fonts.googleapis.com/**',route=>route.fulfill({contentType:'text/css',body:''}));await page.route('https://fonts.gstatic.com/**',route=>route.abort());await page.addInitScript(()=>localStorage.setItem('doke.auth.session.v1',JSON.stringify({provider:'mock',sessionStatus:'active',accountStatus:'active',user:{id:'qa005-r14-client',role:'client',name:'QA005 R14',email:'qa005-r14@example.test',accountStatus:'active'}})));};
+          const stabilize=async page=>{await page.waitForLoadState('domcontentloaded');await page.waitForLoadState('networkidle').catch(()=>{});await page.waitForFunction(()=>document.body?.dataset.page==='resultados',null,{timeout:30000});await page.waitForFunction(()=>!document.querySelector('[aria-busy="true"]'),null,{timeout:30000}).catch(()=>{});await page.addStyleTag({content:'*,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important;transition-delay:0s!important;caret-color:transparent!important}'});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));};
+          const signature=page=>page.evaluate(()=>{const visible=el=>{if(!el)return false;const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const first=selectors=>{for(const selector of selectors){const el=Array.from(document.querySelectorAll(selector)).find(visible);if(el)return el;}return null;};const read=el=>{if(!el)return null;const r=el.getBoundingClientRect(),s=getComputedStyle(el);return{left:Math.round(r.left*10)/10,top:Math.round(r.top*10)/10,width:Math.round(r.width*10)/10,height:Math.round(r.height*10)/10,display:s.display,position:s.position,gridTemplateColumns:s.gridTemplateColumns,gap:s.gap,paddingLeft:s.paddingLeft,paddingRight:s.paddingRight};};const pageNode=document.querySelector('.page'),root=document.documentElement;return{bodyPage:document.body?.dataset.page||'',overflow:root.scrollWidth>root.clientWidth+1,page:read(pageNode),header:read(first(['[data-app-header] .app-header__inner','[data-app-header]','.app-header__inner'])),workspace:read(first(['.search-results-workspace','.page__content-inner'])),searchbar:read(first(['.results-searchbar','.doke-search-pill'])),layout:read(first(['.results-layout','.results-main'])),footer:read(first(['.page > .doke-public-footer','.doke-public-footer'])),pageChildren:pageNode?Array.from(pageNode.children).map(node=>`${node.tagName}${node.id?`#${node.id}`:''}${node.className?`.${String(node.className).trim().replace(/\s+/g,'.')}`:''}`):[]};});
+          const compare=(direct,routed)=>{if(direct.bodyPage!=='resultados'||routed.bodyPage!=='resultados')throw new Error(`body[data-page] mismatch direct=${direct.bodyPage} routed=${routed.bodyPage}`);if(direct.overflow||routed.overflow)throw new Error(`horizontal overflow direct=${direct.overflow} routed=${routed.overflow}`);if(!direct.footer||!routed.footer)throw new Error('Resultados footer missing on direct or stable-shell path');if(JSON.stringify(direct.pageChildren)!==JSON.stringify(routed.pageChildren))throw new Error(`route-owned child-set drift direct=${JSON.stringify(direct.pageChildren)} routed=${JSON.stringify(routed.pageChildren)}`);const deltas={};for(const key of ['page','header','workspace','searchbar','layout','footer']){if(!direct[key]||!routed[key])throw new Error(`${key} missing`);deltas[key]={};for(const metric of ['left','top','width','height']){const delta=Math.round(Math.abs(direct[key][metric]-routed[key][metric])*10)/10;deltas[key][metric]=delta;if(delta>1)throw new Error(`${key}.${metric} geometry delta ${delta}px`);}for(const prop of ['display','position','gridTemplateColumns','gap','paddingLeft','paddingRight'])if(direct[key][prop]!==routed[key][prop])throw new Error(`${key}.${prop} computed-style drift direct=${direct[key][prop]} routed=${routed[key][prop]}`);}return deltas;};
+          (async()=>{let browser;try{await waitForServer();browser=await chromium.launch();const context=await browser.newContext({viewport:{width:1366,height:768}});const directPage=await context.newPage();await deterministic(directPage);await directPage.goto(`${baseURL}/resultados.html?q=qa005-r14`,{waitUntil:'domcontentloaded'});await stabilize(directPage);const direct=await signature(directPage);const routedPage=await context.newPage();await deterministic(routedPage);await routedPage.goto(`${baseURL}/index.html`,{waitUntil:'domcontentloaded'});await routedPage.waitForLoadState('networkidle').catch(()=>{});await routedPage.waitForFunction(()=>typeof window.DokeNavigate==='function',null,{timeout:30000});await routedPage.evaluate(async()=>{const result=window.DokeNavigate('/resultados.html?q=qa005-r14');if(result&&typeof result.then==='function')await result;});await routedPage.waitForURL(/\/resultados\.html(?:[?#]|$)/,{timeout:30000});await stabilize(routedPage);const routed=await signature(routedPage);const deltas=compare(direct,routed);fs.writeFileSync(path.join(evidence,'geometry.json'),JSON.stringify({result:'PASS',viewport:{width:1366,height:768},direct,routed,deltas,criteriaRelaxed:0,horizontalOverflow:false,routeOwnedChildSetParity:true,geometryMaxAllowedDeltaPx:1},null,2));console.log('DIRECT_STABLE_GEOMETRY=PASS');}catch(error){fs.writeFileSync(path.join(evidence,'geometry.json'),JSON.stringify({result:'FAIL',error:String(error?.stack||error),criteriaRelaxed:0,geometryMaxAllowedDeltaPx:1},null,2));throw error;}finally{if(browser)await browser.close().catch(()=>{});server.kill();}})().catch(error=>{console.error(error);process.exit(1);});
+          NODE
+
+      - name: Emit R14 recovery certification receipt
+        if: always()
+        shell: bash
+        run: |
+          evidence="$RUNNER_TEMP/qa005-r14-evidence"
+          mkdir -p "$evidence"
+          node - "$evidence" <<'NODE'
+          const fs=require('node:fs'),path=require('node:path');const dir=process.argv[2];const load=name=>{const file=path.join(dir,name);if(!fs.existsSync(file))return null;try{return JSON.parse(fs.readFileSync(file,'utf8'));}catch(error){return{result:'INVALID',error:String(error)}}};const identity=load('identity.json'),provenance=load('provenance.json'),visual=load('visual.json'),negative=load('negative.json'),officialLayout=load('official-layout.json'),geometry=load('geometry.json');const reasons=[];for(const [name,value] of Object.entries({identity,provenance,visual,negative,officialLayout,geometry})){if(!value)reasons.push(`${name}:missing`);else if(value.result!=='PASS')reasons.push(`${name}:${value.result}`);}if(provenance){if(provenance.productHead!==process.env.PRODUCT_HEAD)reasons.push('productHead:mismatch');if(provenance.productTree!==process.env.PRODUCT_TREE)reasons.push('productTree:mismatch');if(provenance.oldSnapshotBlob!==process.env.OLD_SNAPSHOT_BLOB)reasons.push('oldSnapshotBlob:mismatch');if(provenance.candidateBlob!==process.env.CANDIDATE_BLOB)reasons.push('candidateBlob:mismatch');if(provenance.candidateSha256!==process.env.CANDIDATE_SHA256)reasons.push('candidateSha256:mismatch');if(provenance.candidateBytes!==Number(process.env.CANDIDATE_BYTES))reasons.push('candidateBytes:mismatch');if(provenance.criteriaRelaxed!==0)reasons.push('provenance:criteria-relaxed');}for(const value of [visual,negative,officialLayout,geometry])if(value&&value.criteriaRelaxed!==0)reasons.push('criteria-relaxed');const pass=reasons.length===0;const receipt={result:pass?'PASS':'INCOMPLETE',classification:pass?'UX_QA_DEBT_005_WIN32_CANDIDATE_R13_RECOVERY_CERTIFIED':'UX_QA_DEBT_005_WIN32_CANDIDATE_R13_RECOVERY_INCOMPLETE',reasons,productHead:process.env.PRODUCT_HEAD,productTree:process.env.PRODUCT_TREE,oldSnapshotBlob:process.env.OLD_SNAPSHOT_BLOB,candidateBlob:process.env.CANDIDATE_BLOB,candidateSha256:process.env.CANDIDATE_SHA256,candidateBytes:Number(process.env.CANDIDATE_BYTES),candidateSourceArtifactId:Number(process.env.R13_ARTIFACT_ID),candidateRegenerated:false,visualQualification:visual,negativePreimageProof:negative,officialDirectStableShellContract:officialLayout,directStableShellGeometry:geometry?.result==='PASS',geometryMaxAllowedDeltaPx:1,criteriaRelaxed:0,repositoryOnly:true,artifactOnly:true,candidateCommitCreated:false,permanentPromotionAuthorized:false,productMutation:false,permanentBranchMutation:false,permanentSnapshotMutation:false,prMutation:false,issueMutation:false,matrixMutation:false,merge:false,supabaseMutation:false,migrationMutation:false,stagingMutation:false,productionMutation:false};fs.writeFileSync(path.join(dir,'certification.json'),JSON.stringify(receipt,null,2));console.log('UX_QA_DEBT_005_R14_CERTIFICATION='+JSON.stringify(receipt));if(!pass)process.exit(1);
+          NODE
+
+      - name: Upload frozen candidate and R14 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ux-qa-debt-005-win32-candidate-recovery-r14
+          path: ${{ runner.temp }}/qa005-r14-evidence
+          if-no-files-found: warn
+          retention-days: 7
