@@ -80,7 +80,7 @@
 
   var ROUTE_INIT = {
     '/index.html': ['DokeInitHome'],
-    '/resultados.html': ['DokeInitSearchResults'],
+    '/resultados.html': ['DokeInitSearchFilterState', 'DokeInitSearchResults'],
     '/detalhe-anuncio.html': ['DokeInitDetailAd'],
     '/avaliacao-profissional.html': ['DokeInitReview'],
     '/ajuda.html': ['DokeInitHelpCenter'],

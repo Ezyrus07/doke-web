@@ -1221,8 +1221,15 @@ window.DokeSearchData = (() => {
   });
 
   Doke.searchFilterState = api;
-  if (Doke.searchFilterStateInstallation && Doke.searchFilterStateInstallation.cleanup) {
-    Doke.searchFilterStateInstallation.cleanup();
+
+  function installCanonicalSearchFilterState() {
+    if (Doke.searchFilterStateInstallation && Doke.searchFilterStateInstallation.cleanup) {
+      Doke.searchFilterStateInstallation.cleanup();
+    }
+    Doke.searchFilterStateInstallation = install();
+    return Doke.searchFilterStateInstallation;
   }
-  Doke.searchFilterStateInstallation = install();
+
+  root.DokeInitSearchFilterState = installCanonicalSearchFilterState;
+  installCanonicalSearchFilterState();
 }());
