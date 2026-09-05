@@ -1,0 +1,152 @@
+name: TEMP UX-QA-DEBT-005 Win32 Permanent Materialization Recovery R15
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-win32-permanent-materialization-recovery-r15
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  PARENT: 943930ffc31403872151fa76560460e97a619a13
+  PARENT_TREE: d3203764606f9708b4f795f531cb77384b210610
+  SOURCE_BRANCH: ux/ux-nav-debt-002-route-owned-page-reconciliation
+  TARGET_BRANCH: ux/ux-qa-debt-005-resultados-win32-baseline
+  CONTROLLER_PATH: .github/workflows/0000-temp-ux-qa-debt-005-win32-permanent-materialization-recovery-r15.yml
+  SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+  PREIMAGE_BLOB: 1580b5410bcce1ea5424d5528356291a0f288c4e
+  ARTIFACT_ID: '9962101920'
+  CANDIDATE_BLOB: 0a8a5cdd14e4370f1f1ff2891c5456d9c7e2a39d
+  CANDIDATE_SHA256: 0c41439df0f5385ddeac0c8f2ae0c3a6a35074b3ff4e80de24a8b2d5240cbb20
+  CANDIDATE_BYTES: '141314'
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze controller, source, parent and preimage
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-list --parents -n1 "$HEAD_SHA" | awk '{print $2}')" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$HEAD_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$CONTROLLER_PATH"
+          test "$(git rev-parse "$PARENT:$SNAPSHOT")" = "$PREIMAGE_BLOB"
+          source_remote="$(git ls-remote --heads origin "refs/heads/$SOURCE_BRANCH" | awk '{print $1}')"
+          test "$source_remote" = "$PARENT"
+          if git ls-remote --exit-code --heads origin "refs/heads/$TARGET_BRANCH" >/dev/null 2>&1; then
+            echo "Target branch already exists" >&2
+            exit 1
+          fi
+          echo FREEZE=PASS
+          echo PRODUCT_MUTATION=false
+
+      - name: Recover and verify exact certified R14 artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/r14-artifact"
+          curl --fail --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" \
+            -o "$RUNNER_TEMP/r14.zip"
+          unzip -q "$RUNNER_TEMP/r14.zip" -d "$RUNNER_TEMP/r14-artifact"
+          mapfile -t candidates < <(find "$RUNNER_TEMP/r14-artifact" -type f -name 'resultados-desktop-1366x768-win32.candidate.png')
+          test "${#candidates[@]}" -eq 1
+          candidate="${candidates[0]}"
+          test "$(sha256sum "$candidate" | awk '{print $1}')" = "$CANDIDATE_SHA256"
+          test "$(wc -c < "$candidate" | tr -d ' ')" = "$CANDIDATE_BYTES"
+          test "$(git hash-object --no-filters "$candidate")" = "$CANDIDATE_BLOB"
+          python - "$candidate" <<'PY'
+          import struct, sys
+          path = sys.argv[1]
+          with open(path, 'rb') as fh:
+              header = fh.read(24)
+          assert header[:8] == b'\x89PNG\r\n\x1a\n'
+          assert header[12:16] == b'IHDR'
+          width, height = struct.unpack('>II', header[16:24])
+          assert (width, height) == (1366, 768), (width, height)
+          PY
+          printf '%s\n' "$candidate" > "$RUNNER_TEMP/candidate-path"
+          echo ARTIFACT_IDENTITY=PASS
+          echo CANDIDATE_BLOB="$CANDIDATE_BLOB"
+          echo CANDIDATE_SHA256="$CANDIDATE_SHA256"
+          echo CANDIDATE_BYTES="$CANDIDATE_BYTES"
+
+      - name: Materialize exact one-file permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate="$(cat "$RUNNER_TEMP/candidate-path")"
+          work="$RUNNER_TEMP/qa005-permanent-r15"
+          git worktree add --detach "$work" "$PARENT" >/dev/null
+          cp "$candidate" "$work/$SNAPSHOT"
+          cd "$work"
+
+          test "$(git rev-parse HEAD)" = "$PARENT"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PARENT_TREE"
+          test "$(git rev-parse "$PARENT:$SNAPSHOT")" = "$PREIMAGE_BLOB"
+          test "$(git hash-object --no-filters "$SNAPSHOT")" = "$CANDIDATE_BLOB"
+          test "$(sha256sum "$SNAPSHOT" | awk '{print $1}')" = "$CANDIDATE_SHA256"
+          test "$(wc -c < "$SNAPSHOT" | tr -d ' ')" = "$CANDIDATE_BYTES"
+
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$SNAPSHOT"
+
+          source_remote="$(git ls-remote --heads origin "refs/heads/$SOURCE_BRANCH" | awk '{print $1}')"
+          test "$source_remote" = "$PARENT"
+          if git ls-remote --exit-code --heads origin "refs/heads/$TARGET_BRANCH" >/dev/null 2>&1; then
+            echo "Target branch appeared concurrently" >&2
+            exit 1
+          fi
+          test "$(git rev-parse "$PARENT:$SNAPSHOT")" = "$PREIMAGE_BLOB"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$SNAPSHOT"
+          mapfile -t staged < <(git diff --cached --name-only)
+          test "${#staged[@]}" -eq 1
+          test "${staged[0]}" = "$SNAPSHOT"
+
+          git commit -m "test(visual): materialize certified Resultados Win32 baseline"
+          commit="$(git rev-parse HEAD)"
+          tree="$(git rev-parse 'HEAD^{tree}')"
+          test "$(git rev-parse HEAD^)" = "$PARENT"
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$CANDIDATE_BLOB"
+          mapfile -t commit_paths < <(git diff-tree --no-commit-id --name-only -r HEAD)
+          test "${#commit_paths[@]}" -eq 1
+          test "${commit_paths[0]}" = "$SNAPSHOT"
+
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          remote="$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')"
+          test "$remote" = "$commit"
+
+          echo MATERIALIZATION=PASS
+          echo TARGET_BRANCH="$TARGET_BRANCH"
+          echo TARGET_COMMIT="$commit"
+          echo TARGET_TREE="$tree"
+          echo TARGET_PARENT="$PARENT"
+          echo TARGET_BLOB="$(git rev-parse "HEAD:$SNAPSHOT")"
+          echo CHANGED_PATH="$SNAPSHOT"
+          echo PR_MUTATION=false
+          echo ISSUE_MUTATION=false
+          echo MATRIX_MUTATION=false
+          echo MERGE=false
+          echo SUPABASE=false
+          echo MIGRATION=false
+          echo STAGING=false
+          echo PRODUCTION=false
