@@ -1,0 +1,429 @@
+name: TEMP UX-QA-DEBT-005 Permanent Certifier R17
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-005-permanent-certifier-r17
+
+permissions:
+  contents: read
+
+env:
+  PERMANENT_BRANCH: ux/ux-qa-debt-005-resultados-win32-baseline
+  PERMANENT_HEAD: f745ea1dd029bfc1c03c9a2f71e0f15c4ca86281
+  PERMANENT_TREE: be480460aed81423d2f76941e9da0267e5dc2782
+  PARENT: 943930ffc31403872151fa76560460e97a619a13
+  PARENT_TREE: d3203764606f9708b4f795f531cb77384b210610
+  SNAPSHOT: tests/visual/doke-visual-regression.spec.js-snapshots/resultados-desktop-1366x768-win32.png
+  BASELINE_BLOB: 0a8a5cdd14e4370f1f1ff2891c5456d9c7e2a39d
+  BASELINE_SHA256: 0c41439df0f5385ddeac0c8f2ae0c3a6a35074b3ff4e80de24a8b2d5240cbb20
+  BASELINE_BYTES: '141314'
+  PREIMAGE_BLOB: 1580b5410bcce1ea5424d5528356291a0f288c4e
+  WORKFLOW_PATH: .github/workflows/0000-temp-ux-qa-debt-005-permanent-certifier-r17.yml
+  DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+
+jobs:
+  certify:
+    runs-on: windows-latest
+    timeout-minutes: 110
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Freeze permanent identity, one-file scope and byte-safe baseline identity
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qa005-r17-evidence"
+          work="$RUNNER_TEMP/qa005-r17-product"
+          mkdir -p "$evidence"
+
+          controller="$(git rev-parse HEAD)"
+          read -ra lineage <<< "$(git rev-list --parents -n1 "$controller")"
+          test "${#lineage[@]}" -eq 2
+          test "${lineage[1]}" = "$PERMANENT_HEAD"
+          mapfile -t controller_changed < <(git diff-tree --no-commit-id --name-only -r "$controller")
+          test "${#controller_changed[@]}" -eq 1
+          test "${controller_changed[0]}" = "$WORKFLOW_PATH"
+
+          test "$(git rev-parse "$PERMANENT_HEAD^{tree}")" = "$PERMANENT_TREE"
+          test "$(git rev-parse "$PERMANENT_HEAD^")" = "$PARENT"
+          test "$(git rev-parse "$PARENT^{tree}")" = "$PARENT_TREE"
+          test "$(git rev-parse "$PERMANENT_HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          test "$(git rev-parse "$PARENT:$SNAPSHOT")" = "$PREIMAGE_BLOB"
+          test "$BASELINE_BLOB" != "$PREIMAGE_BLOB"
+
+          mapfile -t permanent_delta < <(git diff-tree --no-commit-id --name-only -r "$PERMANENT_HEAD")
+          test "${#permanent_delta[@]}" -eq 1
+          test "${permanent_delta[0]}" = "$SNAPSHOT"
+
+          permanent_remote="$(git ls-remote --heads origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$permanent_remote" = "$PERMANENT_HEAD"
+
+          git worktree add --detach "$work" "$PERMANENT_HEAD" >/dev/null
+          cd "$work"
+          test "$(git rev-parse HEAD)" = "$PERMANENT_HEAD"
+          test "$(git rev-parse HEAD^{tree})" = "$PERMANENT_TREE"
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+
+          node - "$SNAPSHOT" "$evidence/identity.json" "$controller" <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const [pngPath, out, controller] = process.argv.slice(2);
+          const png = fs.readFileSync(pngPath);
+          const gitBlob = crypto.createHash('sha1').update(Buffer.from(`blob ${png.length}\0`)).update(png).digest('hex');
+          const sha256 = crypto.createHash('sha256').update(png).digest('hex');
+          if (gitBlob !== process.env.BASELINE_BLOB) throw new Error(`baseline git blob ${gitBlob}`);
+          if (sha256 !== process.env.BASELINE_SHA256) throw new Error(`baseline sha256 ${sha256}`);
+          if (png.length !== Number(process.env.BASELINE_BYTES)) throw new Error(`baseline bytes ${png.length}`);
+          if (png.toString('hex', 0, 8) !== '89504e470d0a1a0a') throw new Error('permanent baseline is not PNG');
+          const width = png.readUInt32BE(16);
+          const height = png.readUInt32BE(20);
+          if (width !== 1366 || height !== 768) throw new Error(`baseline dimensions ${width}x${height}`);
+          fs.writeFileSync(out, JSON.stringify({
+            result: 'PASS', controllerSha: controller,
+            permanentBranch: process.env.PERMANENT_BRANCH,
+            permanentHead: process.env.PERMANENT_HEAD,
+            permanentTree: process.env.PERMANENT_TREE,
+            parent: process.env.PARENT, parentTree: process.env.PARENT_TREE,
+            snapshotPath: process.env.SNAPSHOT,
+            baselineBlob: gitBlob,
+            baselineSha256: sha256,
+            baselineBytes: png.length,
+            preimageBlob: process.env.PREIMAGE_BLOB,
+            dimensions: { width, height },
+            permanentDelta: [process.env.SNAPSHOT],
+            controllerScope: [process.env.WORKFLOW_PATH],
+            binaryVerification: 'node-fs-crypto-worktree',
+            criteriaRelaxed: 0, repositoryOnly: true, artifactOnly: true,
+            permanentBranchMutation: false, snapshotMutation: false,
+            prMutation: false, issueMutation: false, matrixMutation: false,
+            merge: false, supabaseMutation: false, migrationMutation: false,
+            stagingMutation: false, productionMutation: false
+          }, null, 2));
+          NODE
+          git diff --quiet
+          echo 'IDENTITY_FREEZE=PASS'
+          echo 'ONE_FILE_PERMANENT_SCOPE=PASS'
+          echo 'BYTE_SAFE_BASELINE_IDENTITY=PASS'
+
+      - name: Prepare exact permanent worktree and locked Chromium
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/qa005-r17-product"
+          cd "$work"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          test "$(git rev-parse HEAD)" = "$PERMANENT_HEAD"
+          test "$(git rev-parse HEAD^{tree})" = "$PERMANENT_TREE"
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          git diff --quiet
+          echo 'PERMANENT_WORKTREE=PASS'
+
+      - name: Minimum repository governance on exact permanent SHA
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/qa005-r17-product"
+          cd "$work"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard "$PERMANENT_HEAD" >/dev/null
+          git diff --quiet
+          test "$(git rev-parse HEAD^{tree})" = "$PERMANENT_TREE"
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          printf '%s\n' '{"result":"PASS","criteriaRelaxed":0}' > "$RUNNER_TEMP/qa005-r17-evidence/governance.json"
+          echo 'MINIMUM_GOVERNANCE=PASS'
+
+      - name: Run nine static post-NAV qualification gates
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/qa005-r17-product"
+          cd "$work"
+          npm run audit:navigation-lifecycle-contract
+          npm run test:navigation-lifecycle-core-contract
+          npm run test:navigation-lifecycle-finalization-contract
+          npm run audit:shell-router-scroll-reset
+          npm run audit:responsive-boundaries
+          npm run audit:desktop-base
+          npm run audit:shared-app-header-contract
+          npm run test:results-card-density-contract
+          npm run test:results-header-rail-contract
+          git reset --hard "$PERMANENT_HEAD" >/dev/null
+          git diff --quiet
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          printf '%s\n' '{"result":"PASS","gateCount":9,"criteriaRelaxed":0}' > "$RUNNER_TEMP/qa005-r17-evidence/static-gates.json"
+          echo 'STATIC_GATES=PASS'
+
+      - name: Permanent baseline passes canonical visual test three times
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/qa005-r17-product"
+          evidence="$RUNNER_TEMP/qa005-r17-evidence"
+          cd "$work"
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js \
+            --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" \
+            --repeat-each=3 --workers=1 --retries=0 | tee "$evidence/visual-stability.log"
+          git diff --quiet
+          node - "$SNAPSHOT" <<'NODE'
+          const fs=require('node:fs'),crypto=require('node:crypto');
+          const p=process.argv[2],b=fs.readFileSync(p);
+          const gitBlob=crypto.createHash('sha1').update(Buffer.from(`blob ${b.length}\0`)).update(b).digest('hex');
+          const sha256=crypto.createHash('sha256').update(b).digest('hex');
+          if(gitBlob!==process.env.BASELINE_BLOB||sha256!==process.env.BASELINE_SHA256||b.length!==Number(process.env.BASELINE_BYTES)) throw new Error(`baseline identity drift ${gitBlob} ${sha256} ${b.length}`);
+          NODE
+          printf '%s\n' '{"result":"PASS","canonicalRuns":3,"workers":1,"retries":0,"snapshotMutation":false,"criteriaRelaxed":0}' > "$evidence/visual-stability.json"
+          echo 'VISUAL_STABILITY=PASS'
+
+      - name: Old preimage fails and permanent baseline restores green under unchanged criteria
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/qa005-r17-product"
+          evidence="$RUNNER_TEMP/qa005-r17-evidence"
+          cd "$work"
+
+          git checkout "$PARENT" -- "$SNAPSHOT"
+          node - "$SNAPSHOT" <<'NODE'
+          const fs=require('node:fs'),crypto=require('node:crypto');
+          const b=fs.readFileSync(process.argv[2]);
+          const gitBlob=crypto.createHash('sha1').update(Buffer.from(`blob ${b.length}\0`)).update(b).digest('hex');
+          if(gitBlob!==process.env.PREIMAGE_BLOB) throw new Error(`preimage git blob ${gitBlob}`);
+          NODE
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js \
+            --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" \
+            --workers=1 --retries=0 > "$evidence/negative-preimage.log" 2>&1
+          old_rc=$?
+          set -e
+          cat "$evidence/negative-preimage.log"
+          test "$old_rc" -ne 0
+          grep -Eqi "Screenshot comparison failed|pixels?.*different|toHaveScreenshot|exceeded" "$evidence/negative-preimage.log"
+
+          git checkout "$PERMANENT_HEAD" -- "$SNAPSHOT"
+          node - "$SNAPSHOT" <<'NODE'
+          const fs=require('node:fs'),crypto=require('node:crypto');
+          const b=fs.readFileSync(process.argv[2]);
+          const gitBlob=crypto.createHash('sha1').update(Buffer.from(`blob ${b.length}\0`)).update(b).digest('hex');
+          const sha256=crypto.createHash('sha256').update(b).digest('hex');
+          if(gitBlob!==process.env.BASELINE_BLOB||sha256!==process.env.BASELINE_SHA256||b.length!==Number(process.env.BASELINE_BYTES)) throw new Error(`restored baseline identity ${gitBlob} ${sha256} ${b.length}`);
+          NODE
+          git reset --hard "$PERMANENT_HEAD" >/dev/null
+          node node_modules/@playwright/test/cli.js test tests/visual/doke-visual-regression.spec.js \
+            --grep "resultados mantém contrato visual e estrutural em desktop-1366x768" \
+            --workers=1 --retries=0
+          git diff --quiet
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          printf '%s\n' '{"result":"PASS","oldPreimageFails":true,"permanentBaselineRestoredPasses":true,"swapMethod":"git-checkout-path-restore","criteriaRelaxed":0}' > "$evidence/negative-preimage.json"
+          echo 'NEGATIVE_PREIMAGE_PROOF=PASS'
+
+      - name: Official Resultados direct-load and stable-shell contracts
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/qa005-r17-product"
+          evidence="$RUNNER_TEMP/qa005-r17-evidence"
+          cd "$work"
+          node node_modules/@playwright/test/cli.js test tests/e2e/global-layout-contract.spec.js \
+            --grep "resultados.html keeps structural layout contract|index -> pedidos -> mensagens -> resultados -> notificacoes preserves shell and history" \
+            --workers=1 --retries=0 | tee "$evidence/official-layout.log"
+          git diff --quiet
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          printf '%s\n' '{"result":"PASS","officialGlobalLayoutContract":true,"workers":1,"retries":0,"criteriaRelaxed":0}' > "$evidence/official-layout.json"
+          echo 'OFFICIAL_DIRECT_AND_STABLE_SHELL=PASS'
+
+      - name: Direct-load versus stable-shell geometry parity at 1366x768
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/qa005-r17-product"
+          evidence="$RUNNER_TEMP/qa005-r17-evidence"
+          cd "$work"
+          node - "$evidence" <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const http = require('node:http');
+          const { spawn } = require('node:child_process');
+          const { chromium } = require('@playwright/test');
+          const evidence = process.argv[2];
+          const baseURL = 'http://127.0.0.1:5500';
+          const server = spawn(process.execPath, ['scripts/serve-static-site.js', '--host=127.0.0.1', '--port=5500'], {
+            env: { ...process.env, DOKE_E2E_DISABLE_REMOTE_SERVICES: '1' }, stdio: ['ignore', 'pipe', 'pipe']
+          });
+          const waitServer = () => new Promise((resolve, reject) => {
+            let n = 0;
+            const probe = () => {
+              n += 1;
+              const req = http.get(`${baseURL}/index.html`, res => {
+                res.resume();
+                if (res.statusCode === 200) return resolve();
+                if (n >= 80) return reject(new Error(`server status ${res.statusCode}`));
+                setTimeout(probe, 250);
+              });
+              req.on('error', () => n >= 80 ? reject(new Error('server unavailable')) : setTimeout(probe, 250));
+            };
+            probe();
+          });
+          const deterministic = async page => {
+            await page.route('https://unpkg.com/**', r => r.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://cdn.jsdelivr.net/**', r => r.fulfill({ contentType: 'application/javascript', body: '' }));
+            await page.route('https://fonts.googleapis.com/**', r => r.fulfill({ contentType: 'text/css', body: '' }));
+            await page.route('https://fonts.gstatic.com/**', r => r.abort());
+            await page.addInitScript(() => localStorage.setItem('doke.auth.session.v1', JSON.stringify({
+              provider:'mock', sessionStatus:'active', accountStatus:'active',
+              user:{id:'qa005-r16-client',role:'client',name:'QA005 R16',email:'qa005-r16@example.test',accountStatus:'active'}
+            })));
+          };
+          const stabilize = async page => {
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle').catch(() => {});
+            await page.waitForFunction(() => document.body?.dataset.page === 'resultados', null, { timeout: 30000 });
+            await page.waitForFunction(() => document.querySelector('.page > .doke-public-footer'), null, { timeout: 30000 });
+            await page.addStyleTag({content:'*,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important;transition-delay:0s!important;caret-color:transparent!important}'});
+            await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+          };
+          const snap = page => page.evaluate(() => {
+            const visible = el => { if (!el) return false; const r=el.getBoundingClientRect(),s=getComputedStyle(el); return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'; };
+            const first = sels => { for (const s of sels) { const el=Array.from(document.querySelectorAll(s)).find(visible); if(el) return el; } return null; };
+            const read = el => { if(!el) return null; const r=el.getBoundingClientRect(),s=getComputedStyle(el); return {left:+r.left.toFixed(1),top:+r.top.toFixed(1),width:+r.width.toFixed(1),height:+r.height.toFixed(1),display:s.display,position:s.position,gridTemplateColumns:s.gridTemplateColumns,gap:s.gap,paddingLeft:s.paddingLeft,paddingRight:s.paddingRight}; };
+            const pageEl=document.querySelector('.page');
+            return {
+              bodyPage:document.body?.dataset.page||'', overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1,
+              page:read(pageEl), header:read(first(['[data-app-header] .app-header__inner','[data-app-header]','.app-header__inner'])),
+              workspace:read(first(['.search-results-workspace','.page__content-inner'])), searchbar:read(first(['.results-searchbar','.doke-search-pill'])),
+              layout:read(first(['.results-layout','.results-main'])), footer:read(first(['.page > .doke-public-footer','.doke-public-footer'])),
+              pageChildren:pageEl?Array.from(pageEl.children).map(n=>`${n.tagName}${n.id?`#${n.id}`:''}${n.className?`.`+String(n.className).trim().replace(/\s+/g,'.'):''}`):[]
+            };
+          });
+          const compare = (a,b) => {
+            if (a.bodyPage!=='resultados'||b.bodyPage!=='resultados') throw new Error('body page mismatch');
+            if (a.overflow||b.overflow) throw new Error(`overflow direct=${a.overflow} routed=${b.overflow}`);
+            if (!a.footer||!b.footer) throw new Error('footer missing');
+            if (JSON.stringify(a.pageChildren)!==JSON.stringify(b.pageChildren)) throw new Error('route-owned child-set drift');
+            const deltas={};
+            for (const key of ['page','header','workspace','searchbar','layout','footer']) {
+              if(!a[key]||!b[key]) throw new Error(`${key} missing`);
+              deltas[key]={};
+              for(const metric of ['left','top','width','height']) { const d=+Math.abs(a[key][metric]-b[key][metric]).toFixed(1); deltas[key][metric]=d; if(d>1) throw new Error(`${key}.${metric} delta ${d}`); }
+              for(const prop of ['display','position','gridTemplateColumns','gap','paddingLeft','paddingRight']) if(a[key][prop]!==b[key][prop]) throw new Error(`${key}.${prop} drift`);
+            }
+            return deltas;
+          };
+          (async()=>{
+            let browser;
+            try {
+              await waitServer();
+              browser=await chromium.launch();
+              const context=await browser.newContext({viewport:{width:1366,height:768}});
+              const directPage=await context.newPage(); await deterministic(directPage);
+              await directPage.goto(`${baseURL}/resultados.html?q=qa005-r16`,{waitUntil:'domcontentloaded'}); await stabilize(directPage); const direct=await snap(directPage);
+              const routedPage=await context.newPage(); await deterministic(routedPage);
+              await routedPage.goto(`${baseURL}/index.html`,{waitUntil:'domcontentloaded'}); await routedPage.waitForFunction(()=>typeof window.DokeNavigate==='function',null,{timeout:30000});
+              const navCount=await routedPage.evaluate(()=>performance.getEntriesByType('navigation').length);
+              const headerHandle=await routedPage.evaluateHandle(()=>document.querySelector('[data-app-header]'));
+              await routedPage.evaluate(async()=>{const x=window.DokeNavigate('/resultados.html?q=qa005-r16');if(x&&typeof x.then==='function')await x;});
+              await routedPage.waitForURL(/\/resultados\.html(?:[?#]|$)/,{timeout:30000}); await stabilize(routedPage); const routed=await snap(routedPage);
+              const shell=await routedPage.evaluate((count)=>({adapter:document.body.dataset.dokeNavigationAdapter||'',documentNavigationStable:performance.getEntriesByType('navigation').length===count}),navCount);
+              const headerIdentity=await routedPage.evaluate((header)=>header===document.querySelector('[data-app-header]'),headerHandle);
+              if(shell.adapter!=='stable-shell'||!shell.documentNavigationStable||!headerIdentity) throw new Error(`shell identity ${JSON.stringify({...shell,headerIdentity})}`);
+              const deltas=compare(direct,routed);
+              fs.writeFileSync(path.join(evidence,'geometry.json'),JSON.stringify({result:'PASS',viewport:{width:1366,height:768},direct,routed,deltas,shell:{...shell,headerIdentity},geometryMaxAllowedDeltaPx:1,routeOwnedChildSetParity:true,criteriaRelaxed:0},null,2));
+            } finally { if(browser) await browser.close().catch(()=>{}); server.kill(); }
+          })().catch(err=>{fs.writeFileSync(path.join(evidence,'geometry.json'),JSON.stringify({result:'FAIL',error:String(err?.stack||err),criteriaRelaxed:0},null,2));console.error(err);process.exit(1);});
+          NODE
+          git diff --quiet
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          echo 'DIRECT_STABLE_GEOMETRY=PASS'
+
+      - name: Run exact Requirement 12 regression suite
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/qa005-r17-product"
+          evidence="$RUNNER_TEMP/qa005-r17-evidence"
+          cd "$work"
+          specs=(
+            tests/e2e/results-entry-lifecycle.spec.js
+            tests/e2e/ux-results-001-browser-acceptance.spec.js
+            tests/e2e/search-flow.spec.js
+            tests/e2e/stable-shell-transition-contract.spec.js
+            tests/e2e/stable-shell-transition-matrix.spec.js
+            tests/e2e/stable-shell-scroll-contract.spec.js
+            tests/e2e/global-layout-contract.spec.js
+          )
+          for spec in "${specs[@]}"; do test -f "$spec"; done
+          set +e
+          node node_modules/@playwright/test/cli.js test "${specs[@]}" --workers=1 --retries=0 --reporter=json > "$evidence/requirement12-raw.json"
+          rc=$?
+          set -e
+          export QA005_R17_RC="$rc"
+          node - "$evidence" <<'NODE'
+          const fs=require('node:fs'),path=require('node:path');
+          const dir=process.argv[2]; let report;
+          try{report=JSON.parse(fs.readFileSync(path.join(dir,'requirement12-raw.json'),'utf8'));}catch(e){fs.writeFileSync(path.join(dir,'requirement12.json'),JSON.stringify({result:'FAIL',rc:Number(process.env.QA005_R17_RC),parseError:String(e),criteriaRelaxed:0},null,2));process.exit(1);}
+          const rows=[];
+          function walk(suite,parents=[]){const prefix=[...parents,suite.title||''].filter(Boolean);for(const spec of suite.specs||[])for(const test of spec.tests||[]){let status=test.status;const last=(test.results||[]).at(-1)||{};if(!['expected','unexpected','flaky','skipped'].includes(status)){const actual=last.status||'unknown';if(actual==='skipped')status='skipped';else if(actual==='passed'&&(test.expectedStatus||'passed')==='passed')status='expected';else status='unexpected';}rows.push(status);}for(const child of suite.suites||[])walk(child,prefix);}
+          for(const suite of report.suites||[])walk(suite);
+          const count=s=>rows.filter(x=>x===s).length;
+          const receipt={result:'PASS',rc:Number(process.env.QA005_R17_RC),total:rows.length,expected:count('expected'),unexpected:count('unexpected'),flaky:count('flaky'),skipped:count('skipped'),workers:1,retries:0,criteriaRelaxed:0};
+          receipt.green=receipt.rc===0&&receipt.total===75&&receipt.expected===75&&receipt.unexpected===0&&receipt.flaky===0&&receipt.skipped===0;
+          if(!receipt.green) receipt.result='FAIL';
+          fs.writeFileSync(path.join(dir,'requirement12.json'),JSON.stringify(receipt,null,2));
+          if(!receipt.green) process.exit(1);
+          NODE
+          git diff --quiet
+          test "$(git rev-parse "HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          echo 'REQUIREMENT_12=PASS'
+
+      - name: Final permanent classifier and no-mutation receipt
+        if: always()
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qa005-r17-evidence"
+          mkdir -p "$evidence"
+          node - "$evidence" <<'NODE'
+          const fs=require('node:fs'),path=require('node:path');
+          const dir=process.argv[2];
+          const load=n=>{const f=path.join(dir,n);if(!fs.existsSync(f))return null;try{return JSON.parse(fs.readFileSync(f,'utf8'));}catch(e){return{result:'INVALID',error:String(e)}}};
+          const files=['identity.json','governance.json','static-gates.json','visual-stability.json','negative-preimage.json','official-layout.json','geometry.json','requirement12.json'];
+          const receipts=Object.fromEntries(files.map(f=>[f,load(f)]));
+          const reasons=[];
+          for(const [name,value] of Object.entries(receipts)){if(!value)reasons.push(`${name}:missing`);else if(value.result!=='PASS')reasons.push(`${name}:${value.result}`);else if(value.criteriaRelaxed!==0)reasons.push(`${name}:criteria-relaxed`);}
+          if(receipts['requirement12.json']?.green!==true) reasons.push('requirement12:not-green');
+          const introducedRegressions=receipts['requirement12.json']?.green===true?0:null;
+          if(introducedRegressions!==0) reasons.push('introduced-regressions:unresolved');
+          const pass=reasons.length===0;
+          const receipt={
+            result:pass?'PASS':'INCOMPLETE',
+            classification:pass?'UX_QA_DEBT_005_PERMANENT_CERTIFIED':'UX_QA_DEBT_005_PERMANENT_CERTIFICATION_INCOMPLETE',
+            reasons, permanentBranch:process.env.PERMANENT_BRANCH, permanentHead:process.env.PERMANENT_HEAD,
+            permanentTree:process.env.PERMANENT_TREE, parent:process.env.PARENT, parentTree:process.env.PARENT_TREE,
+            snapshotPath:process.env.SNAPSHOT, baselineBlob:process.env.BASELINE_BLOB,
+            baselineSha256:process.env.BASELINE_SHA256, baselineBytes:Number(process.env.BASELINE_BYTES), preimageBlob:process.env.PREIMAGE_BLOB,
+            visualStability:receipts['visual-stability.json'], negativePreimageProof:receipts['negative-preimage.json'],
+            officialDirectStableShell:receipts['official-layout.json'], directStableGeometry:receipts['geometry.json']?.result==='PASS',
+            requirement12:receipts['requirement12.json'], staticGateCount:receipts['static-gates.json']?.gateCount||null,
+            introducedRegressions, criteriaRelaxed:0, repositoryOnly:true, artifactOnly:true, permanentCertification:pass,
+            permanentPromotionAuthorized:false, permanentBranchMutation:false, snapshotMutation:false,
+            prMutation:false, issueMutation:false, matrixMutation:false, merge:false,
+            supabaseMutation:false, migrationMutation:false, stagingMutation:false, runtimeMutation:false, productionMutation:false
+          };
+          fs.writeFileSync(path.join(dir,'permanent-certification.json'),JSON.stringify(receipt,null,2));
+          console.log('UX_QA_DEBT_005_PERMANENT_CERTIFICATION='+JSON.stringify(receipt));
+          if(!pass)process.exit(1);
+          NODE
+
+          permanent_remote="$(git ls-remote --heads origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$permanent_remote" = "$PERMANENT_HEAD"
+          test "$(git rev-parse "$PERMANENT_HEAD^{tree}")" = "$PERMANENT_TREE"
+          test "$(git rev-parse "$PERMANENT_HEAD^")" = "$PARENT"
+          test "$(git rev-parse "$PERMANENT_HEAD:$SNAPSHOT")" = "$BASELINE_BLOB"
+          test "$(git rev-parse "$PARENT:$SNAPSHOT")" = "$PREIMAGE_BLOB"
+          echo 'NO_MUTATION_RECEIPT=PASS'
+
+      - name: Upload permanent certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-qa-debt-005-permanent-certification-r17
+          path: ${{ runner.temp }}/qa005-r17-evidence
+          if-no-files-found: warn
+          retention-days: 7
