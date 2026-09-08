@@ -290,3 +290,60 @@ body.search-results-body :is(.results-summary, .results-filters .results-panel) 
 /* Desktop search geometry retired.
  * The canonical field/button dimensions live in components/search/search-bar.css;
  * resultados.html owns only placement in pages/search-results.css. */
+
+/* UX-VISUAL-001 — perceptible Resultados hierarchy pass.
+ * This stays inside the page-owned visual authority: no shared card/search anatomy
+ * is redefined here. The goal is to make search context, result volume and active
+ * filtering read as distinct information layers instead of one flat white field. */
+body.search-results-body .results-summary {
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg-soft) 100%);
+  box-shadow: var(--doke-surface-shadow);
+}
+
+body.search-results-body .results-summary__content h2 {
+  color: var(--color-heading);
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-tight);
+}
+
+body.search-results-body .results-summary__content p {
+  color: var(--color-text-muted);
+}
+
+body.search-results-body .results-summary__stats {
+  min-width: 112px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-soft);
+  text-align: center;
+}
+
+body.search-results-body .results-summary__stats strong {
+  color: var(--color-primary-strong);
+  font-weight: var(--doke-type-weight-display);
+}
+
+body.search-results-body .results-summary__stats span {
+  color: var(--color-primary-strong);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+body.search-results-body .results-active-chips > * {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+body.search-results-body .results-category-chip input:checked + span {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-weight: var(--font-weight-semibold);
+}
+
+@media (max-width: 960px) {
+  body.search-results-body .results-summary__stats {
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+  }
+}
