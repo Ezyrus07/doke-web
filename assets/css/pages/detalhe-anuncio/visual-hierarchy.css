@@ -418,3 +418,152 @@ body[data-page="detalhe-anuncio"] .provider-card__cta {
     transform: none;
   }
 }
+
+/* UX-VISUAL-003 — research-aligned refinement.
+ * Applies the canonical Visual Evolution Standard: one dominant action,
+ * common-region grouping without nested-card clutter, explicit gallery signposting,
+ * and a legible quantitative review summary.
+ */
+
+/* The hero stats already share a common region; individual mini-cards are redundant. */
+body[data-page="detalhe-anuncio"] .ad-detail-stats li {
+  min-height: 48px;
+  padding: 8px 10px;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Provider evidence is one confidence cluster, not three cards inside a card. */
+body[data-page="detalhe-anuncio"] .provider-card__stat {
+  padding: 8px 6px;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Hidden media must be signposted explicitly; the existing +N control becomes a truncation tile. */
+body[data-page="detalhe-anuncio"] .ad-gallery__more {
+  min-height: 100%;
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  background: linear-gradient(180deg, rgba(var(--color-primary-rgb), 0.10), rgba(var(--color-primary-rgb), 0.055));
+  color: var(--color-primary-strong, #0b4f86);
+  font-size: 0.98rem;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+body[data-page="detalhe-anuncio"] .ad-gallery__more::before {
+  content: "Ver mais";
+  color: var(--color-text-soft, #5f7390);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body[data-page="detalhe-anuncio"] .ad-gallery__more:hover {
+  background: rgba(var(--color-primary-rgb), 0.12);
+  box-shadow: none;
+}
+
+/* Controls layered on photography need affordance even though nested page controls stay flat elsewhere. */
+body[data-page="detalhe-anuncio"] :is(
+  .ad-gallery__favorite,
+  .ad-gallery__share,
+  .ad-gallery__nav
+) {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--detail-control-shadow);
+  backdrop-filter: blur(8px);
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .ad-gallery__favorite,
+  .ad-gallery__share,
+  .ad-gallery__nav
+):hover {
+  background: #fff;
+  box-shadow: var(--detail-control-shadow-hover);
+}
+
+/* Keep the primary conversion action dominant and quiet its sibling action. */
+body[data-page="detalhe-anuncio"] .ad-action-card__actions .doke-btn--ghost {
+  background: rgba(var(--color-primary-rgb), 0.045);
+  color: var(--color-primary-strong, #0b4f86);
+  box-shadow: none;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__actions .doke-btn--ghost:hover {
+  background: rgba(var(--color-primary-rgb), 0.075);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Ratings distribution is decision evidence and should read as a coherent summary before comments. */
+body[data-page="detalhe-anuncio"] .doke-reviews-panel__top {
+  gap: clamp(16px, 2.4vw, 28px);
+  padding: clamp(16px, 2vw, 22px);
+  border-radius: var(--radius-md);
+  background: var(--doke-surface-subtle, #f7fafd);
+}
+
+body[data-page="detalhe-anuncio"] .doke-reviews-scoreline__score {
+  color: var(--color-heading, #08234a);
+  font-size: clamp(2.7rem, 4vw, 3.5rem);
+}
+
+body[data-page="detalhe-anuncio"] .doke-reviews-bars {
+  max-width: 560px;
+  padding: 12px 14px;
+  border-radius: var(--radius-base);
+  background: #fff;
+}
+
+body[data-page="detalhe-anuncio"] .doke-review-filter {
+  border: 0;
+  background: var(--doke-surface-subtle, #f7fafd);
+  color: var(--color-text-soft, #5f7390);
+  box-shadow: none;
+}
+
+body[data-page="detalhe-anuncio"] .doke-review-filter.is-active {
+  border: 0;
+  background: rgba(var(--color-primary-rgb), 0.10);
+  color: var(--color-primary-strong, #0b4f86);
+  box-shadow: var(--doke-selection-ring, 0 0 0 3px rgba(42, 95, 144, .09));
+}
+
+body[data-page="detalhe-anuncio"] .doke-review-filter:hover {
+  background: rgba(var(--color-primary-rgb), 0.07);
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] .doke-reviews-panel__top {
+    padding: 14px;
+  }
+
+  body[data-page="detalhe-anuncio"] .doke-reviews-bars {
+    max-width: none;
+    width: 100%;
+    padding: 12px;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__more::before {
+    font-size: 0.62rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="detalhe-anuncio"] :is(
+    .ad-gallery__more,
+    .ad-gallery__favorite,
+    .ad-gallery__share,
+    .ad-gallery__nav,
+    .doke-review-filter
+  ) {
+    transition: none;
+    transform: none;
+  }
+}
