@@ -1,0 +1,178 @@
+/* Pedidos — decision detail hierarchy.
+ * UX-VISUAL-007 owns only the Pedidos detail-drawer decision layer:
+ * financial certainty, dispute/risk framing and timeline emphasis.
+ * Shared Pedidos/Mensagens detail anatomy remains in orders-details.css.
+ */
+
+body.orders-page-shell {
+  --orders-decision-line: rgba(20, 56, 95, 0.1);
+  --orders-decision-info-bg: rgba(244, 249, 255, 0.72);
+  --orders-decision-risk-bg: rgba(255, 248, 240, 0.76);
+  --orders-decision-risk-line: rgba(192, 102, 19, 0.42);
+}
+
+/* Financial certainty: keep money facts in the existing information region,
+ * but make the value pair easier to verify before acting.
+ */
+body.orders-page-shell .orders-detail-row:has([data-detail-budget]) {
+  margin-top: var(--doke-space-2, 8px);
+  padding-top: var(--doke-space-3, 12px);
+  border-top: 1px solid var(--orders-decision-line);
+}
+
+body.orders-page-shell .orders-detail-row:has([data-detail-payment]) {
+  padding-bottom: var(--doke-space-3, 12px);
+  border-bottom: 1px solid var(--orders-decision-line);
+}
+
+body.orders-page-shell :is(
+  [data-detail-budget],
+  [data-detail-payment]
+) {
+  color: var(--color-primary-strong, #0b4f86);
+  font-weight: var(--doke-type-weight-display, 800);
+}
+
+body.orders-page-shell [data-detail-deadline] {
+  font-weight: 750;
+}
+
+/* Receipt is supporting financial evidence, not the primary workflow action. */
+body.orders-page-shell [data-detail-receipt] {
+  min-height: var(--doke-control-height-md, 46px);
+  white-space: nowrap;
+}
+
+/* Dispute / cancellation-like states need explicit, contained status feedback.
+ * Do not turn every fact into a card and do not let support decisions compete
+ * visually with the user's main workflow action.
+ */
+body.orders-page-shell .orders-detail-dispute:not([hidden]) {
+  padding-inline: var(--doke-space-4, 16px);
+  padding-bottom: var(--doke-space-4, 16px);
+  border-left: 3px solid var(--orders-decision-risk-line);
+  border-radius: var(--doke-radius-lg, 22px);
+  background: var(--orders-decision-risk-bg);
+}
+
+body.orders-page-shell .orders-detail-dispute__header {
+  gap: var(--doke-space-3, 12px);
+}
+
+body.orders-page-shell .orders-detail-dispute__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height-xs, 32px);
+  padding-inline: var(--doke-space-3, 12px);
+  border-radius: var(--radius-pill);
+  background: rgba(192, 102, 19, 0.1);
+  color: #8b4a0f;
+  font-size: 0.76rem;
+  font-weight: var(--doke-type-weight-display, 800);
+}
+
+body.orders-page-shell .orders-detail-dispute__body {
+  gap: var(--doke-space-3, 12px);
+}
+
+body.orders-page-shell .orders-detail-dispute__item,
+body.orders-page-shell .orders-detail-dispute__response,
+body.orders-page-shell .orders-detail-dispute__analysis {
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-detail-dispute__analysis:not([hidden]) {
+  border-color: var(--orders-decision-risk-line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+body.orders-page-shell .orders-detail-dispute__analysis-title {
+  line-height: 1.25;
+}
+
+body.orders-page-shell .orders-detail-dispute__analysis-text,
+body.orders-page-shell .orders-detail-dispute__response p {
+  line-height: 1.5;
+}
+
+body.orders-page-shell .orders-detail-dispute__analysis-actions,
+body.orders-page-shell .orders-detail-dispute__actions,
+body.orders-page-shell .orders-detail-dispute__reply-actions {
+  gap: var(--doke-space-2, 8px);
+}
+
+body.orders-page-shell :is(
+  .orders-detail-dispute__button--release,
+  .orders-detail-dispute__button--refund
+) {
+  min-height: var(--doke-control-height-md, 46px);
+  background: #fff;
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-detail-dispute__button--primary {
+  min-height: var(--doke-control-height-lg, 54px);
+}
+
+/* Timeline: current step is the visual anchor; completed and future steps remain
+ * legible but subordinate. This keeps the drawer useful during long workflows.
+ */
+body.orders-page-shell .orders-detail-timeline__item.is-current > div {
+  margin-top: -2px;
+  padding: var(--doke-space-3, 12px);
+  border-radius: var(--doke-radius-md, 16px);
+  background: var(--orders-decision-info-bg);
+}
+
+body.orders-page-shell .orders-detail-timeline__item.is-current .orders-detail-timeline__date {
+  color: var(--color-primary-strong, #0b4f86);
+  font-weight: var(--doke-type-weight-display, 800);
+}
+
+body.orders-page-shell .orders-detail-timeline__item:not(.is-done):not(.is-current) {
+  opacity: 0.72;
+}
+
+body.orders-page-shell .orders-detail-timeline__item.is-done:not(.is-current) .orders-detail-timeline__title {
+  color: var(--color-text-muted, #50647c);
+}
+
+/* One dominant footer action. Secondary evidence/close actions stay compact. */
+body.orders-page-shell .orders-detail-actions {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--doke-space-2, 8px);
+}
+
+body.orders-page-shell .orders-detail-actions__button--primary {
+  min-width: 0;
+}
+
+body.orders-page-shell .orders-detail-actions__button--secondary {
+  min-height: var(--doke-control-height-md, 46px);
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-detail-dispute:not([hidden]) {
+    padding-inline: var(--doke-space-3, 12px);
+    padding-bottom: var(--doke-space-3, 12px);
+  }
+
+  body.orders-page-shell .orders-detail-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.orders-page-shell .orders-detail-actions__button--primary {
+    grid-column: 1 / -1;
+  }
+
+  body.orders-page-shell .orders-detail-actions__button--secondary {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.orders-page-shell .orders-detail-timeline__item,
+  body.orders-page-shell .orders-detail-actions__button {
+    transition: none;
+  }
+}
