@@ -1,0 +1,495 @@
+/* UX-VISUAL-015 — community discovery hierarchy.
+ * Late page-owned layer for the live discovery renderer. The runtime remains the
+ * source of truth for community identity, visibility, entry mode and request state.
+ */
+body[data-page="comunidade"] .communities-discovery-v2 {
+  --community-discovery-ink: #123b68;
+  --community-discovery-muted: #6f84a0;
+  --community-discovery-soft: #f4f8fc;
+  --community-discovery-soft-strong: #eaf3fa;
+  --community-discovery-primary: #245f92;
+  --community-discovery-primary-strong: #174f7d;
+  --community-discovery-success: #167966;
+  --community-discovery-success-soft: #edf9f6;
+  --community-discovery-warning: #96651d;
+  --community-discovery-warning-soft: #fff8e8;
+}
+
+/* Discovery heading: identity and purpose first; decorative motifs stay out of
+ * the reading path so the section scans like the rest of the Doke product. */
+body[data-page="comunidade"]
+  .communities-v2-section--discover
+  .communities-v2-section__heading--stack > div {
+  min-height: 0;
+  padding-inline-start: 0;
+}
+
+body[data-page="comunidade"]
+  .communities-v2-section--discover
+  .communities-v2-section__heading--stack > div::before {
+  display: none;
+  content: none;
+}
+
+body[data-page="comunidade"]
+  .communities-v2-section--discover
+  .communities-v2-section__heading h2 {
+  color: var(--community-discovery-ink);
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+body[data-page="comunidade"]
+  .communities-v2-section--discover
+  .communities-v2-section__heading span {
+  max-width: 62ch;
+  color: var(--community-discovery-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+/* Filters are navigation aids, not a second set of primary CTAs. */
+body[data-page="comunidade"] .communities-v2-filters {
+  gap: var(--doke-space-2, 8px);
+  margin-block: 0 var(--doke-space-2, 8px);
+}
+
+body[data-page="comunidade"] .communities-discovery-v2 .communities-filter {
+  min-height: 44px;
+  padding-inline: var(--doke-space-4, 16px);
+  border: 1px solid rgba(36, 95, 146, 0.10);
+  border-radius: var(--radius-pill, 999px);
+  background: #fff;
+  color: #405f7d;
+  box-shadow: none;
+  font-size: 0.78rem;
+  font-weight: 750;
+  transform: none;
+}
+
+body[data-page="comunidade"] .communities-discovery-v2 .communities-filter::before {
+  display: none;
+  content: none;
+}
+
+body[data-page="comunidade"] .communities-discovery-v2 .communities-filter:is(:hover, :focus-visible) {
+  border-color: rgba(36, 95, 146, 0.20);
+  background: var(--community-discovery-soft);
+  color: var(--community-discovery-primary-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="comunidade"] .communities-discovery-v2 .communities-filter.is-active,
+body[data-page="comunidade"] .communities-discovery-v2 .communities-filter[aria-pressed="true"] {
+  border-color: rgba(36, 95, 146, 0.18);
+  background: var(--community-discovery-soft-strong);
+  color: var(--community-discovery-primary-strong);
+  box-shadow: none;
+  font-weight: 850;
+}
+
+body[data-page="comunidade"] .communities-discovery-v2 .communities-filter:focus-visible {
+  outline: 2px solid var(--community-discovery-primary);
+  outline-offset: 2px;
+}
+
+/* Live runtime discovery cards. `comunidade.js` renders `.community-discover-card`;
+ * older `.community-card-v2` rules are intentionally not used as runtime truth. */
+body[data-page="comunidade"] .communities-v2-grid {
+  align-items: stretch;
+}
+
+body[data-page="comunidade"] .communities-v2-grid > .community-discover-card {
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: 138px minmax(0, 1fr);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-md, 16px);
+  background: #fff;
+  box-shadow: var(--doke-surface-shadow);
+  isolation: isolate;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+body[data-page="comunidade"] .communities-v2-grid > .community-discover-card:is(:hover, :focus-within) {
+  transform: translateY(-2px);
+  box-shadow: var(--doke-surface-shadow-hover);
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__cover {
+  position: relative;
+  min-height: 138px;
+  overflow: hidden;
+  padding: 0;
+  background: linear-gradient(135deg, #dfeaf4, #cbddeb);
+  background-size: cover;
+  background-position: center;
+  filter: none;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__cover > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(9, 34, 57, 0.02), rgba(9, 34, 57, 0.18));
+  pointer-events: none;
+}
+
+body[data-page="comunidade"] .community-discover-card:is(:hover, :focus-within) .community-card__cover {
+  background-size: cover;
+  filter: none;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__cover-badge {
+  position: absolute;
+  inset-block-start: var(--doke-space-3, 12px);
+  inset-inline-start: var(--doke-space-3, 12px);
+  z-index: 2;
+  min-height: 26px;
+  max-width: calc(100% - 24px);
+  padding-inline: 10px;
+  border: 0;
+  border-radius: var(--radius-pill, 999px);
+  background: rgba(255, 255, 255, 0.92);
+  color: #315f8c;
+  box-shadow: none;
+  font-size: 0.68rem;
+  line-height: 1;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: none;
+}
+
+body[data-page="comunidade"] .community-discover-card:is(:hover, :focus-within) .community-card__cover-badge {
+  background: rgba(255, 255, 255, 0.96);
+  transform: none;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__body {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: var(--doke-space-3, 12px);
+  align-content: start;
+  padding: var(--doke-space-4, 16px);
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__head {
+  min-width: 0;
+  display: block;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__head h2 {
+  margin: 0;
+  color: var(--community-discovery-ink);
+  font-size: 1.02rem;
+  line-height: 1.24;
+  font-weight: 850;
+  letter-spacing: -0.018em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body[data-page="comunidade"] .community-discover-card:is(:hover, :focus-within) .community-card__head h2 {
+  color: var(--community-discovery-ink);
+}
+
+body[data-page="comunidade"] .community-discover-card > .community-card__body > p {
+  margin: 0;
+  color: #5f7892;
+  font-size: 0.82rem;
+  line-height: 1.48;
+  font-weight: 550;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__meta {
+  width: max-content;
+  max-width: 100%;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 9px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--community-discovery-soft);
+  color: #56728e;
+  font-size: 0.68rem;
+  line-height: 1;
+  font-weight: 750;
+}
+
+body[data-page="comunidade"] .community-discover-card:has([data-community-public-join]) .community-card__meta {
+  background: var(--community-discovery-success-soft);
+  color: var(--community-discovery-success);
+}
+
+body[data-page="comunidade"] .community-discover-card:has([data-community-request]) .community-card__meta {
+  background: #eef4fa;
+  color: #3c6488;
+}
+
+/* Entry-mode text remains semantic truth. Action styling only establishes
+ * decision priority: immediate participation > request > pending status. */
+body[data-page="comunidade"] .community-discover-card .community-card__action {
+  width: 100%;
+  min-height: var(--doke-control-height-md, 46px);
+  margin: 0;
+  padding-inline: var(--doke-space-4, 16px);
+  border-radius: 12px;
+  box-shadow: none;
+  font-size: 0.82rem;
+  font-weight: 850;
+  transform: none;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__action.doke-btn--primary {
+  box-shadow: none;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__action.doke-btn--ghost {
+  border: 1px solid rgba(36, 95, 146, 0.14);
+  background: #fff;
+  color: var(--community-discovery-primary-strong);
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__action.doke-btn--ghost:is(:hover, :focus-visible) {
+  background: var(--community-discovery-soft);
+  border-color: rgba(36, 95, 146, 0.24);
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__action--pending,
+body[data-page="comunidade"] .community-discover-card .community-card__action:disabled {
+  border-color: rgba(150, 101, 29, 0.14);
+  background: var(--community-discovery-warning-soft);
+  color: var(--community-discovery-warning);
+  opacity: 1;
+  cursor: default;
+}
+
+body[data-page="comunidade"] .community-discover-card .community-card__action:focus-visible {
+  outline: 2px solid var(--community-discovery-primary);
+  outline-offset: 2px;
+}
+
+/* Continue where you left off: category/presence are context; identity and the
+ * return action are the primary scanning anchors. */
+body[data-page="comunidade"] .communities-v2-continue-grid > .community-continue-card {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--doke-surface-shadow);
+}
+
+body[data-page="comunidade"] .communities-v2-continue-grid > .community-continue-card:is(:hover, :focus-within) {
+  transform: translateY(-1px);
+  box-shadow: var(--doke-surface-shadow-hover);
+}
+
+body[data-page="comunidade"] .community-continue-card:not(:has(> img)) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-inline-start: var(--doke-space-4, 16px);
+}
+
+body[data-page="comunidade"] .community-continue-card .community-pill {
+  min-height: 22px;
+  padding-inline: 8px;
+  background: #eef4f9;
+  color: #55718d;
+  box-shadow: none;
+  font-size: 0.66rem;
+  font-weight: 750;
+}
+
+body[data-page="comunidade"] .community-continue-card h3 {
+  color: var(--community-discovery-ink);
+  font-size: 0.98rem;
+  line-height: 1.22;
+  font-weight: 850;
+}
+
+body[data-page="comunidade"] .community-continue-card :is(.community-activity, .community-continue-card__meta) {
+  color: #6d839b;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+body[data-page="comunidade"] .community-continue-card .community-open-button {
+  min-height: 42px;
+  padding-inline: 15px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--community-discovery-primary);
+  color: #fff;
+  box-shadow: none;
+  font-size: 0.78rem;
+  font-weight: 850;
+  transform: none;
+}
+
+body[data-page="comunidade"] .community-continue-card .community-open-button:is(:hover, :focus-visible) {
+  background: var(--community-discovery-primary-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="comunidade"] .community-continue-card .community-open-button:disabled {
+  background: #fff4f4;
+  color: #a74848;
+  opacity: 1;
+  cursor: default;
+}
+
+body[data-page="comunidade"] .community-continue-card .community-open-button:focus-visible {
+  outline: 2px solid var(--community-discovery-primary);
+  outline-offset: 2px;
+}
+
+/* Tablet keeps comparison density; mobile becomes a single readable stream. */
+@media (min-width: 761px) and (max-width: 1180px) {
+  body[data-page="comunidade"] .communities-v2-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade"] .communities-v2-section--discover .communities-v2-section__heading--stack {
+    align-items: flex-start;
+    margin-block: 0;
+  }
+
+  body[data-page="comunidade"] .communities-v2-section--discover .communities-v2-section__heading h2 {
+    font-size: 1.38rem;
+  }
+
+  body[data-page="comunidade"] .communities-v2-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    padding-block: 2px 4px;
+    scroll-snap-type: inline proximity;
+  }
+
+  body[data-page="comunidade"] .communities-v2-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="comunidade"] .communities-discovery-v2 .communities-filter {
+    flex: 0 0 auto;
+    min-height: 42px;
+    scroll-snap-align: start;
+  }
+
+  body[data-page="comunidade"] .communities-v2-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--doke-space-3, 12px);
+  }
+
+  body[data-page="comunidade"] .communities-v2-grid > .community-discover-card {
+    grid-template-rows: 132px minmax(0, 1fr);
+  }
+
+  body[data-page="comunidade"] .community-discover-card .community-card__cover {
+    min-height: 132px;
+  }
+
+  body[data-page="comunidade"] .community-discover-card .community-card__body {
+    gap: 10px;
+    padding: 14px;
+  }
+
+  body[data-page="comunidade"] .communities-v2-continue-grid > .community-continue-card {
+    grid-template-columns: 74px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  body[data-page="comunidade"] .community-continue-card:not(:has(> img)) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  body[data-page="comunidade"] .community-continue-card .community-open-button {
+    min-height: 40px;
+    padding-inline: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-page="comunidade"] .communities-v2-continue-grid > .community-continue-card:has(> img) {
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-areas:
+      "media content"
+      "action action";
+    padding: 10px;
+  }
+
+  body[data-page="comunidade"] .communities-v2-continue-grid > .community-continue-card:has(> img) > img {
+    grid-area: media;
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+  }
+
+  body[data-page="comunidade"] .communities-v2-continue-grid > .community-continue-card:has(> img) .community-continue-card__content {
+    grid-area: content;
+  }
+
+  body[data-page="comunidade"] .communities-v2-continue-grid > .community-continue-card:has(> img) .community-open-button {
+    grid-area: action;
+    width: 100%;
+  }
+
+  body[data-page="comunidade"] .community-continue-card:not(:has(> img)) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "content"
+      "action";
+    padding: 10px;
+  }
+
+  body[data-page="comunidade"] .community-continue-card:not(:has(> img)) .community-continue-card__content {
+    grid-area: content;
+  }
+
+  body[data-page="comunidade"] .community-continue-card:not(:has(> img)) .community-open-button {
+    grid-area: action;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="comunidade"] :is(
+    .community-discover-card,
+    .community-continue-card,
+    .community-card__action,
+    .community-open-button,
+    .communities-filter
+  ) {
+    transition: none;
+    transform: none;
+  }
+}
