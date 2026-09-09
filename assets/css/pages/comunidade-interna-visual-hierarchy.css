@@ -229,3 +229,124 @@ body[data-page="comunidade-interna"] :is(
     transform: none;
   }
 }
+
+/* UX-VISUAL-011 — channel navigation hierarchy.
+ * Current and unread truth already comes from runtime: .is-active / aria-current
+ * identify the open channel, while the unread badge owns unread count. Selection
+ * mode remains owned by the shared selectable-card contract and is excluded here.
+ */
+body[data-page="comunidade-interna"] .community-room-channel {
+  position: relative;
+  min-height: 68px;
+  transition: background-color 160ms ease;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout:not(.is-selection-mode)
+  .community-room-channel::before {
+  content: "";
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: transparent;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout:not(.is-selection-mode)
+  .community-room-channel:is(.is-active, [aria-current="page"])::before {
+  background: var(--color-primary, #2a5f90);
+}
+
+body[data-page="comunidade-interna"] .community-room-channel:focus-visible {
+  outline: 2px solid var(--color-primary, #2a5f90);
+  outline-offset: 2px;
+}
+
+/* Unread attention is deliberately weaker than current-location attention.
+ * A user can therefore distinguish "where I am" from "what needs attention". */
+body[data-page="comunidade-interna"]
+  .community-room-layout:not(.is-selection-mode)
+  .community-room-channel:not(.is-active):not([aria-current="page"]):has(.community-room-channel__badge:not([hidden])) {
+  background: rgba(42, 95, 144, 0.065);
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout:not(.is-selection-mode)
+  .community-room-channel:has(.community-room-channel__badge:not([hidden]))
+  .community-room-channel__name {
+  color: #123b68;
+  font-weight: var(--doke-type-weight-display, 800);
+}
+
+body[data-page="comunidade-interna"] .community-room-channel__name {
+  color: #173f69;
+  font-size: 0.94rem;
+  line-height: 1.25;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+body[data-page="comunidade-interna"] .community-room-channel__preview {
+  color: #6f84a0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout:not(.is-selection-mode)
+  .community-room-channel:has(.community-room-channel__badge:not([hidden]))
+  .community-room-channel__preview {
+  color: #335d85;
+  font-weight: 700;
+}
+
+body[data-page="comunidade-interna"] .community-room-channel__badge:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding-inline: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary, #2a5f90);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="comunidade-interna"] .community-room-channel__mute {
+  opacity: 0.62;
+  transition: opacity 160ms ease;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-channel:is(:hover, :focus-within)
+  .community-room-channel__mute,
+body[data-page="comunidade-interna"] .community-room-channel__mute:focus-visible {
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"] .community-room-channel {
+    min-height: 64px;
+  }
+
+  body[data-page="comunidade-interna"]
+    .community-room-layout:not(.is-selection-mode)
+    .community-room-channel::before {
+    inset-block: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="comunidade-interna"] :is(
+    .community-room-channel,
+    .community-room-channel__mute
+  ) {
+    transition: none;
+  }
+}
