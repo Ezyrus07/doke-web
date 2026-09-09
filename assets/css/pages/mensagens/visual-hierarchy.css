@@ -346,3 +346,173 @@ body[data-page="mensagens"].messages-page-shell .messages-composer__send:disable
     transition: none;
   }
 }
+
+/* UX-VISUAL-009 — in-thread reading hierarchy.
+ * The runtime already exposes semantic message grouping with
+ * .is-message-group-start / .is-message-group-continuation. This pass only
+ * expresses that hierarchy visually. Financial message cards are explicitly
+ * excluded because chat-financial-message-card.css owns their anatomy.
+ */
+body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+  scroll-padding-block: 24px 112px;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-row:not(.message-row--charge) {
+  margin-bottom: 4px;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-row.is-message-group-start:not(.message-row--charge) {
+  margin-top: 14px;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-row.is-message-group-start:not(.message-row--charge):first-child {
+  margin-top: 0;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-row.is-message-group-continuation:not(.message-row--charge) {
+  margin-top: 2px;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble:not(.message-bubble--charge) {
+  max-width: min(640px, 72%);
+  padding: 12px 15px;
+  border-radius: var(--radius-exact-20, var(--radius-lg));
+  background: #f7fafc;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble:not(.message-bubble--charge):not(.is-selected) {
+  box-shadow: 0 2px 10px rgba(24, 75, 118, 0.05);
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble--me:not(.message-bubble--charge) {
+  background: var(--messages-mine);
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble--me:not(.message-bubble--charge):not(.is-selected) {
+  box-shadow: 0 4px 14px rgba(22, 121, 111, 0.12);
+}
+
+/* Continuations stay visually attached to the previous message without hiding
+ * sender semantics: shared message-author.css already owns avatar/meta collapse. */
+body[data-page="mensagens"].messages-page-shell
+  .message-row.is-message-group-continuation:not(.message-row--me):not(.message-row--charge)
+  .message-bubble:not(.message-bubble--charge) {
+  border-start-start-radius: var(--radius-sm);
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-row.is-message-group-continuation.message-row--me:not(.message-row--charge)
+  .message-bubble:not(.message-bubble--charge) {
+  border-start-end-radius: var(--radius-sm);
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__meta {
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--messages-text-soft, #6c84a0);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble:not(.message-bubble--me) .message-bubble__meta > :first-child {
+  color: var(--messages-text, #143b68);
+  font-weight: 800;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble--me .message-bubble__meta {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble--me .message-bubble__meta > :first-child {
+  color: #fff;
+  font-weight: 800;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble:not(.message-bubble--charge) p {
+  line-height: 1.5;
+}
+
+/* Reply context is supporting evidence inside the message, not a nested card. */
+body[data-page="mensagens"].messages-page-shell .message-bubble__reply {
+  gap: 3px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-inline-start: 3px solid rgba(42, 95, 144, 0.42);
+  border-radius: var(--radius-sm);
+  background: rgba(42, 95, 144, 0.07);
+  box-shadow: none;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble__reply strong {
+  font-weight: 800;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble__reply--me {
+  border-inline-start-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Draft/reply surfaces support the composer rather than competing with it. */
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-reply-preview,
+  .messages-audio-draft,
+  .messages-image-draft
+) {
+  padding: 10px 12px;
+  background: #f6f9fc;
+  box-shadow: none;
+}
+
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-reply-preview__content,
+  .messages-audio-draft__meta,
+  .messages-image-draft__meta
+) strong {
+  font-weight: 800;
+}
+
+/* Message selection is a real keyboard-operable option state. Preserve the
+ * shared selection check while ensuring focus is independently visible. */
+body[data-page="mensagens"].messages-page-shell .message-bubble:focus-visible {
+  outline: 2px solid var(--messages-accent-strong, #1f4f7d);
+  outline-offset: 3px;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble--me:focus-visible {
+  outline-color: #fff;
+}
+
+@media (max-width: 760px) {
+  body[data-page="mensagens"].messages-page-shell
+    .message-row.is-message-group-start:not(.message-row--charge) {
+    margin-top: 12px;
+  }
+
+  body[data-page="mensagens"].messages-page-shell
+    .message-bubble:not(.message-bubble--charge) {
+    max-width: min(calc(100vw - 54px), 420px);
+    padding: 12px 13px;
+  }
+
+  body[data-page="mensagens"].messages-page-shell :is(
+    .messages-reply-preview,
+    .messages-audio-draft,
+    .messages-image-draft
+  ) {
+    padding: 9px 10px;
+  }
+}
