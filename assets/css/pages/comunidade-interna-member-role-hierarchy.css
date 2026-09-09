@@ -1,0 +1,297 @@
+/* UX-VISUAL-013 — community members, roles and permission hierarchy.
+ * Narrow late owner for administrative decision hierarchy only.
+ * Base card/form geometry remains owned by comunidade-interna-settings.css and
+ * comunidade-interna.css; this layer clarifies identity, authority, presence,
+ * checked permissions and destructive-action separation.
+ */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode {
+  --community-admin-owner-border: rgba(41, 143, 127, 0.30);
+  --community-admin-owner-bg: #f7fcfa;
+  --community-admin-owner-ink: #0f6f64;
+  --community-admin-role-bg: #eef5fb;
+  --community-admin-role-ink: #315f8c;
+  --community-admin-checked-bg: #f1f7fc;
+  --community-admin-checked-border: rgba(36, 95, 146, 0.28);
+  --community-admin-danger-bg: #fff7f7;
+  --community-admin-danger-border: rgba(198, 61, 61, 0.22);
+}
+
+/* Members are administrative records, not promotional cards. */
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-member-list {
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2 {
+  border-color: var(--community-settings-border, rgba(24, 75, 118, 0.12));
+  background: #fff;
+  box-shadow: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2:focus-within {
+  border-color: rgba(36, 95, 146, 0.30);
+  background: #fbfdff;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2--owner {
+  border-color: var(--community-admin-owner-border);
+  background: var(--community-admin-owner-bg);
+  box-shadow: inset 3px 0 0 rgba(41, 143, 127, 0.58);
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2__identity {
+  gap: 4px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2__identity > strong {
+  color: var(--community-settings-text, #0b3158);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  font-weight: 850;
+  letter-spacing: -0.012em;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2__subtitle {
+  color: var(--community-settings-muted, #647c99);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+/* Presence is useful context, but role/authority must remain the stronger fact. */
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2__subtitle.is-online {
+  color: #278274;
+  font-weight: 750;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  :is(.community-member-card-v2__owner-badge, .community-member-card-v2__role-badge) {
+  box-shadow: none;
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2__owner-badge {
+  border-color: rgba(41, 143, 127, 0.24);
+  background: rgba(41, 143, 127, 0.11);
+  color: var(--community-admin-owner-ink);
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-member-card-v2__role-badge {
+  border-color: rgba(36, 95, 146, 0.14);
+  background: var(--community-admin-role-bg);
+  color: var(--community-admin-role-ink);
+}
+
+/* Role assignment is an administrative control, never the page CTA. */
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-member__role-select {
+  border-color: var(--community-settings-border, rgba(24, 75, 118, 0.12));
+  background-color: var(--community-settings-surface-muted, #f5f9fd);
+  color: var(--community-settings-primary-strong, #174f7d);
+  box-shadow: none;
+  font-weight: 750;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-member__role-select:focus-visible {
+  outline: 2px solid var(--community-settings-primary, #245f92);
+  outline-offset: 2px;
+}
+
+/* Removing a member is intentionally separated from neutral role management. */
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-member__remove {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #b23a3a;
+  box-shadow: none;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-member__remove:is(:hover, :focus-visible) {
+  border-color: var(--community-admin-danger-border);
+  background: var(--community-admin-danger-bg);
+  color: #9f2f2f;
+  transform: none;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-member__remove:focus-visible {
+  outline: 2px solid rgba(178, 58, 58, 0.72);
+  outline-offset: 2px;
+}
+
+/* Roles are structural rows: color swatch -> role name -> supporting metadata. */
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-role-list {
+  gap: 8px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-role-item {
+  border-color: var(--community-settings-border, rgba(24, 75, 118, 0.12));
+  background: #fff;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-role-item:is(:hover, :focus-within) {
+  border-color: rgba(36, 95, 146, 0.24);
+  background: #fbfdff;
+  transform: none;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-role-item__swatch {
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-role-item strong {
+  color: var(--community-settings-text, #0b3158);
+  font-size: 0.9rem;
+  line-height: 1.25;
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-role-item span:not(.community-room-role-item__swatch) {
+  color: var(--community-settings-muted, #647c99);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+/* Permission rows communicate checked state redundantly through the native
+ * checkbox plus a restrained common-region treatment; color is never the sole cue. */
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-permissions {
+  gap: 7px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-permission {
+  border-color: var(--community-settings-border, rgba(24, 75, 118, 0.12));
+  background: #fff;
+  box-shadow: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-permission:has(input:checked) {
+  border-color: var(--community-admin-checked-border);
+  background: var(--community-admin-checked-bg);
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-permission:focus-within {
+  outline: 2px solid rgba(36, 95, 146, 0.46);
+  outline-offset: 2px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-permission strong {
+  color: var(--community-settings-text, #0b3158);
+  font-size: 0.84rem;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-room-permission small {
+  color: var(--community-settings-muted, #647c99);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  font-weight: 550;
+}
+
+/* Dangerous operations are visually isolated from everyday administration.
+ * Confirmation behavior remains entirely owned by the existing runtime/dialogs. */
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-settings-danger-card {
+  border: 1px solid var(--community-admin-danger-border);
+  background: var(--community-admin-danger-bg);
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-settings-danger-card .doke-btn--danger {
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-settings-danger-card .doke-btn--danger:is(:hover, :focus-visible) {
+  transform: none;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-layout.is-settings-mode
+  .community-settings-nav__item--danger {
+  margin-top: 2px;
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"]
+    .community-room-layout.is-settings-mode
+    .community-member-card-v2--owner {
+    box-shadow: inset 0 3px 0 rgba(41, 143, 127, 0.58);
+  }
+
+  body[data-page="comunidade-interna"]
+    .community-room-layout.is-settings-mode
+    .community-room-member__remove {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="comunidade-interna"]
+    .community-room-layout.is-settings-mode
+    :is(.community-member-card-v2, .community-room-permission) {
+    transition: none;
+  }
+}
