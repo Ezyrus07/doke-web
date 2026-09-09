@@ -1,0 +1,165 @@
+/* UX-VISUAL-010 — Mensagens financial state hierarchy.
+ * Base card geometry remains owned by chat-financial-message-card.css.
+ * This layer owns only financial state emphasis, information priority and
+ * primary/secondary action contrast after the generic Mensagens hierarchy.
+ */
+
+body[data-page="mensagens"].messages-page-shell .message-bubble--charge {
+  box-shadow: var(--doke-elevation-surface);
+}
+
+/* The amount is the primary decision fact. The receipt icon supports it rather
+ * than competing with it. */
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-icon {
+  color: #1f5f9d;
+  background: #edf5fb;
+  box-shadow: none;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-kicker {
+  color: #6b819d;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-value {
+  color: var(--chat-ink, #073264);
+  font-size: clamp(1.55rem, 2.8vw, 1.95rem);
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-text {
+  max-width: 46ch;
+  color: #486887;
+  font-weight: 600;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-details span {
+  border-color: transparent;
+  background: #f5f8fb;
+  color: #58738f;
+  font-weight: 700;
+}
+
+/* State remains explicit in text; color is supporting redundancy, never the
+ * only signal. Pending/attention, success and risk families stay distinct. */
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-status {
+  font-weight: 800;
+}
+
+body[data-page="mensagens"].messages-page-shell :is(
+  .message-bubble__charge-status--pending
+) {
+  color: #7a5800;
+  background: #fff6dc;
+  border-color: rgba(181, 128, 17, 0.24);
+}
+
+body[data-page="mensagens"].messages-page-shell :is(
+  .message-bubble__charge-status--approved,
+  .message-bubble__charge-status--paid,
+  .message-bubble__charge-status--completed,
+  .message-bubble__charge-status--reviewed
+) {
+  color: #0f756a;
+  background: rgba(41, 143, 127, 0.10);
+  border-color: rgba(41, 143, 127, 0.20);
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-status--rejected {
+  color: #9f2f38;
+  background: rgba(200, 63, 75, 0.08);
+  border-color: rgba(200, 63, 75, 0.20);
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-status--disputed {
+  color: #8a4f16;
+  background: #fff1e6;
+  border-color: rgba(184, 96, 29, 0.22);
+}
+
+/* Risk states receive a restrained structural cue while their labels continue
+ * to carry the actual meaning. */
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble--charge:has(.message-bubble__charge-status--rejected),
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble--charge:has(.message-bubble__charge-status--disputed) {
+  box-shadow: inset 3px 0 0 rgba(184, 96, 29, 0.34), var(--doke-elevation-surface);
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble--charge:has(.message-bubble__charge-status--rejected) {
+  box-shadow: inset 3px 0 0 rgba(200, 63, 75, 0.34), var(--doke-elevation-surface);
+}
+
+/* One primary action per financial decision. `doke-btn--ghost` is used by the
+ * runtime for reject/receipt/receivable secondary actions; restore that visual
+ * distinction instead of letting the base .charge-pay fill make every action
+ * look primary. */
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-actions {
+  gap: 10px;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-note {
+  color: #657f99;
+  font-weight: 700;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-pay {
+  min-block-size: 44px;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-pay:hover {
+  transform: none;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-pay.doke-btn--ghost {
+  border: 1px solid rgba(33, 103, 174, 0.14);
+  background: #eef5fb;
+  color: #1f5f9d;
+  box-shadow: none;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-pay.doke-btn--ghost:hover {
+  background: #e5eff8;
+  color: #184f83;
+  box-shadow: none;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble__charge-pay:focus-visible {
+  outline: 2px solid rgba(33, 103, 174, 0.44);
+  outline-offset: 3px;
+}
+
+/* Passive outcomes are status/evidence, not competing calls to action. */
+body[data-page="mensagens"].messages-page-shell
+  .message-bubble__charge-actions--passive .message-bubble__charge-meta {
+  min-block-size: 34px;
+  border-color: transparent;
+  background: #f5f8fb;
+  color: #58738f;
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  body[data-page="mensagens"].messages-page-shell .message-bubble__charge-topline {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  body[data-page="mensagens"].messages-page-shell .message-bubble__charge-value {
+    font-size: clamp(1.5rem, 7vw, 1.8rem);
+  }
+
+  body[data-page="mensagens"].messages-page-shell .message-bubble__charge-pay {
+    min-block-size: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="mensagens"].messages-page-shell .message-bubble__charge-pay {
+    transition: none;
+    transform: none;
+  }
+}
