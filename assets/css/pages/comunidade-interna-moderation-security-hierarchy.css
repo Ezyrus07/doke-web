@@ -1,0 +1,308 @@
+/* UX-VISUAL-014 — community moderation, requests, audit and security hierarchy.
+ * This is a narrow late visual layer. Runtime remains the source of truth for
+ * request status, discipline/ban state, audit events and moderation actions.
+ */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode {
+  --community-moderation-warning: #9a6517;
+  --community-moderation-warning-soft: #fff8e8;
+  --community-moderation-danger: #b43d3d;
+  --community-moderation-danger-soft: #fff5f5;
+  --community-moderation-success: #18796c;
+  --community-moderation-success-soft: #edf9f6;
+}
+
+/* Join requests are decision records, not promotional cards. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-room-request-item {
+  position: relative;
+  border-color: var(--community-settings-border, rgba(24, 75, 118, 0.12));
+  background: #fff;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-room-request-item:has(.community-room-request-item__status--pending) {
+  border-inline-start: 3px solid #d39a3b;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-room-request-item:has(.community-room-request-item__status--accepted) {
+  border-inline-start: 3px solid #2a927f;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-room-request-item:has(.community-room-request-item__status--rejected) {
+  border-inline-start: 3px solid #c85a5a;
+}
+
+body[data-page="comunidade-interna"] .community-room-request-item__name {
+  color: #103a64;
+  font-size: 0.98rem;
+  line-height: 1.25;
+  font-weight: 850;
+  letter-spacing: -0.012em;
+}
+
+body[data-page="comunidade-interna"] .community-room-request-item__meta {
+  color: #7187a1;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+body[data-page="comunidade-interna"] .community-room-request-item__status {
+  min-height: 26px;
+  padding-inline: 9px;
+  border: 1px solid transparent;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"] .community-room-request-item__status--pending {
+  border-color: rgba(154, 101, 23, 0.18);
+  background: var(--community-moderation-warning-soft);
+  color: var(--community-moderation-warning);
+}
+
+body[data-page="comunidade-interna"] .community-room-request-item__status--accepted {
+  border-color: rgba(24, 121, 108, 0.18);
+  background: var(--community-moderation-success-soft);
+  color: var(--community-moderation-success);
+}
+
+body[data-page="comunidade-interna"] .community-room-request-item__status--rejected {
+  border-color: rgba(180, 61, 61, 0.18);
+  background: var(--community-moderation-danger-soft);
+  color: var(--community-moderation-danger);
+}
+
+body[data-page="comunidade-interna"] .community-room-request-message {
+  color: #4f6d89;
+  font-weight: 550;
+}
+
+body[data-page="comunidade-interna"] .community-room-request-actions {
+  gap: 8px;
+}
+
+body[data-page="comunidade-interna"] .community-room-request-actions .doke-btn {
+  min-height: 44px;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-request-actions [data-community-request-resolve="rejected"] {
+  border-color: rgba(180, 61, 61, 0.18);
+  background: #fff;
+  color: var(--community-moderation-danger);
+}
+
+body[data-page="comunidade-interna"] .community-room-request-actions [data-community-request-resolve="rejected"]:is(:hover, :focus-visible) {
+  background: var(--community-moderation-danger-soft);
+}
+
+body[data-page="comunidade-interna"] .community-room-request-actions [data-community-request-resolve="accepted"] {
+  font-weight: 850;
+}
+
+/* Security overview: numbers first, labels second, without dashboard-card noise. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-stat {
+  min-width: 0;
+  padding: 14px 15px;
+  border: 1px solid var(--community-settings-border, rgba(24, 75, 118, 0.12));
+  border-radius: var(--community-settings-radius, 16px);
+  background: var(--community-settings-surface-muted, #f5f9fd);
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-security-stat strong {
+  color: #103a64;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  line-height: 1;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.035em;
+}
+
+body[data-page="comunidade-interna"] .community-security-stat span {
+  color: #6f86a2;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+/* Security category navigation keeps the selected state explicit and flat. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-tab {
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-tab[aria-selected="true"] {
+  border-color: rgba(36, 95, 146, 0.18);
+  background: var(--community-settings-primary-soft, #eaf3fa);
+  color: var(--community-settings-primary-strong, #174f7d);
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-tab:focus-visible {
+  outline: 2px solid var(--community-settings-primary, #245f92);
+  outline-offset: 2px;
+}
+
+/* Discipline, bans and violations are operational records. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--community-settings-border, rgba(24, 75, 118, 0.12));
+  border-radius: var(--community-settings-radius-sm, 13px);
+  background: #fff;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-security-item > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+body[data-page="comunidade-interna"] .community-security-item strong {
+  color: #123b68;
+  font-size: 0.88rem;
+  line-height: 1.3;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+body[data-page="comunidade-interna"] .community-security-item span {
+  color: #7187a1;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+body[data-page="comunidade-interna"] .community-security-item .doke-btn {
+  min-height: 40px;
+  border-color: rgba(36, 95, 146, 0.15);
+  background: #fff;
+  color: #315f8c;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-security-item .doke-btn:is(:hover, :focus-visible) {
+  background: #f2f7fb;
+}
+
+/* Audit is chronological evidence: event first, timestamp/context second. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-audit-list {
+  gap: 8px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-audit-item {
+  position: relative;
+  min-width: 0;
+  padding: 12px 14px 12px 16px;
+  border: 1px solid var(--community-settings-border, rgba(24, 75, 118, 0.12));
+  border-radius: var(--community-settings-radius-sm, 13px);
+  background: #fff;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-audit-item::before {
+  content: "";
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: #90a9bf;
+}
+
+body[data-page="comunidade-interna"] .community-audit-item strong {
+  color: #123b68;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-audit-item span {
+  color: #758ba3;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+/* Feedback and empty states explain state without becoming alerts by default. */
+body[data-page="comunidade-interna"] :is(
+  .community-room-request-feedback,
+  .community-security-feedback
+):not(:empty) {
+  padding: 10px 12px;
+  border: 1px solid rgba(36, 95, 146, 0.12);
+  border-radius: 12px;
+  background: #f4f8fc;
+  color: #315f8c;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+body[data-page="comunidade-interna"] .community-security-empty {
+  color: #7187a1;
+}
+
+body[data-page="comunidade-interna"] :is(
+  .community-room-request-actions .doke-btn,
+  .community-security-item .doke-btn,
+  .community-security-tab
+):focus-visible {
+  outline: 2px solid var(--community-settings-primary, #245f92);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-summary {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-stat {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 10px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-item {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="comunidade-interna"] .community-security-item .doke-btn {
+    justify-self: start;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-request-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-page="comunidade-interna"] .community-room-request-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="comunidade-interna"] :is(
+    .community-room-request-item,
+    .community-security-item,
+    .community-audit-item,
+    .community-security-tab
+  ) {
+    transition: none;
+    transform: none;
+  }
+}
