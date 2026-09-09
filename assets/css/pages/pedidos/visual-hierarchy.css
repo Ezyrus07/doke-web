@@ -206,3 +206,147 @@ body.orders-page-shell .orders-empty__card {
   border: 0;
   box-shadow: none;
 }
+
+/* UX-VISUAL-006 — operational status and action hierarchy.
+ * Keep compact cards compact by default. More detail is disclosed only when
+ * the order explicitly needs action or carries high operational risk.
+ */
+body.orders-page-shell .orders-command-summary__value {
+  font-size: clamp(1.55rem, 2.4vw, 2rem);
+  letter-spacing: var(--doke-type-tracking-display, -0.04em);
+}
+
+body.orders-page-shell .orders-command-summary__label {
+  margin-top: var(--doke-space-1, 4px);
+  font-size: 0.86rem;
+}
+
+body.orders-page-shell .orders-command-summary__hint {
+  margin-top: var(--doke-space-1, 4px);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+body.orders-page-shell[data-orders-audience="professional"]
+  .orders-command-summary__card:has([data-orders-command-value="action"]) {
+  background: linear-gradient(135deg, rgba(42, 95, 144, 0.08), #fff 72%);
+}
+
+body.orders-page-shell[data-orders-audience="professional"]
+  .orders-command-summary__card:has([data-orders-command-value="action"])
+  .orders-command-summary__value {
+  color: var(--color-primary-strong, #0b4f86);
+}
+
+body.orders-page-shell .orders-list .order-card:is(
+  [data-requires-action="true"],
+  [data-smart-risk="high"]
+) .order-card__next-action {
+  display: grid;
+  border-left: 3px solid var(--color-primary, #176db5);
+  background: var(--orders-muted-bg);
+}
+
+body.orders-page-shell .orders-list .order-card[data-smart-risk="high"] .order-card__next-action {
+  border-left-color: #c06613;
+  background: rgba(255, 249, 241, 0.94);
+}
+
+body.orders-page-shell .orders-list .order-card[data-smart-status="completed"] .order-card__next-action {
+  border-left-color: #1f8e5f;
+  background: rgba(242, 252, 247, 0.94);
+}
+
+body.orders-page-shell .orders-list .order-card .order-card__next-action-label {
+  font-size: 0.7rem;
+  letter-spacing: var(--doke-type-tracking-label, 0.08em);
+}
+
+body.orders-page-shell .orders-list .order-card .order-card__next-action-title {
+  font-size: 0.94rem;
+  line-height: 1.25;
+}
+
+body.orders-page-shell .orders-list .order-card .order-card__next-action-note {
+  line-height: 1.45;
+}
+
+/* Full order detail: current state and the next decision precede supporting data. */
+body.orders-page-shell .orders-detail-drawer__title {
+  max-width: 24ch;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  line-height: 1.12;
+  letter-spacing: var(--doke-type-tracking-display, -0.04em);
+}
+
+body.orders-page-shell .orders-detail-statusbar {
+  gap: var(--doke-space-2, 8px);
+}
+
+body.orders-page-shell .orders-detail-action {
+  border-left: 3px solid var(--color-primary, #176db5);
+  background: var(--doke-surface-subtle, #f7fafd);
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-detail-action__title {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+body.orders-page-shell .orders-detail-action__text {
+  line-height: 1.5;
+}
+
+body.orders-page-shell .orders-detail-section__eyebrow {
+  color: var(--color-text-muted, #50647c);
+  font-size: 0.72rem;
+  letter-spacing: var(--doke-type-tracking-label, 0.08em);
+}
+
+body.orders-page-shell .orders-detail-list {
+  border-radius: var(--doke-radius-lg, 22px);
+  background: var(--doke-surface-subtle, #f7fafd);
+}
+
+body.orders-page-shell .orders-detail-row dt {
+  color: var(--color-text-muted, #50647c);
+  font-weight: 700;
+}
+
+body.orders-page-shell .orders-detail-row dd {
+  color: var(--color-heading, #10233a);
+  font-weight: 750;
+}
+
+body.orders-page-shell .orders-detail-timeline__item.is-current .orders-detail-timeline__title {
+  color: var(--color-primary-strong, #0b4f86);
+  font-weight: var(--doke-type-weight-display, 800);
+}
+
+body.orders-page-shell .orders-detail-ai__box {
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-detail-actions__button--primary {
+  min-height: var(--doke-control-height-lg, 54px);
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-command-summary__value {
+    font-size: 1.5rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card:is(
+    [data-requires-action="true"],
+    [data-smart-risk="high"]
+  ) .order-card__next-action {
+    margin-inline: var(--doke-space-3, 12px);
+    margin-bottom: var(--doke-space-3, 12px);
+  }
+
+  body.orders-page-shell .orders-detail-drawer__title {
+    max-width: none;
+    font-size: 1.45rem;
+  }
+}
