@@ -350,3 +350,280 @@ body[data-page="comunidade-interna"] .community-room-channel__mute:focus-visible
     transition: none;
   }
 }
+
+/* UX-VISUAL-012 — channel thread content hierarchy.
+ * A community channel is a shared timeline, not a private-message transcript:
+ * author identity anchors each group, continuations stay compact, attachments
+ * remain subordinate to message text, and the composer owns one clear action.
+ */
+body[data-page="comunidade-interna"] .community-room-thread__body {
+  --community-thread-copy-max: 72ch;
+  --community-thread-group-gap: 14px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-thread__body
+  > .community-room-message.is-message-group-start {
+  margin-top: var(--community-thread-group-gap);
+  padding-block: 10px 8px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-thread__body
+  > .community-room-message.is-message-group-start:first-child {
+  margin-top: 0;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-thread__body
+  > .community-room-message.is-message-group-continuation {
+  padding-block: 3px 5px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-message.is-message-group-start
+  .message-bubble__meta {
+  min-height: 20px;
+  gap: 7px;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-message.is-message-group-start
+  .message-bubble__meta strong {
+  color: #123b68;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-message--self.is-message-group-start
+  .message-bubble__meta strong {
+  color: #147f70;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-message.is-message-group-start
+  .message-bubble__meta time {
+  color: #8094aa;
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
+body[data-page="comunidade-interna"] .community-room-message__bubble p {
+  max-width: var(--community-thread-copy-max);
+  color: #244f77;
+  font-size: 0.92rem;
+  line-height: 1.56;
+  font-weight: 500;
+}
+
+body[data-page="comunidade-interna"]
+  .community-room-message.is-message-group-continuation
+  .community-room-message__bubble p {
+  color: #315a80;
+}
+
+body[data-page="comunidade-interna"] .community-room-message__pin {
+  width: fit-content;
+  margin-top: 2px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: #edf4fa;
+  color: #315f8c;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+/* Media and files are part of the message group, not competing cards. */
+body[data-page="comunidade-interna"] .community-room-message :is(
+  .message-bubble__image,
+  .community-room-file-card,
+  .community-room-message__audio
+) {
+  margin-top: 6px;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-file-card,
+body[data-page="comunidade-interna"] .community-room-message__audio {
+  border-color: rgba(24, 75, 118, 0.10);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+/* Reply and draft surfaces use common-region grouping so their relationship to
+ * the pending message is obvious without looking like a second primary action. */
+body[data-page="comunidade-interna"] :is(
+  .community-composer-reply,
+  .community-room-attachment-draft,
+  .community-audio-draft
+) {
+  grid-column: 1 / -1;
+  min-width: 0;
+  border: 1px solid rgba(42, 95, 144, 0.10);
+  border-radius: 14px;
+  background: #f5f9fc;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-composer-reply {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px 9px 13px;
+  border-inline-start: 3px solid rgba(42, 95, 144, 0.48);
+}
+
+body[data-page="comunidade-interna"] .community-composer-reply > div {
+  min-width: 0;
+}
+
+body[data-page="comunidade-interna"] .community-composer-reply span {
+  display: block;
+  color: #7187a1;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  font-weight: 750;
+}
+
+body[data-page="comunidade-interna"] .community-composer-reply strong {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #123b68;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-page="comunidade-interna"] .community-composer-reply p {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: #55718d;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Composer is a stable input plane. Supporting tools stay quiet; send remains
+ * the only filled primary control in the message-authoring context. */
+body[data-page="comunidade-interna"] .community-room-composer {
+  border-top: 1px solid rgba(24, 75, 118, 0.09);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -8px 24px rgba(24, 75, 118, 0.035);
+}
+
+body[data-page="comunidade-interna"] .community-room-composer__field {
+  border: 1px solid rgba(24, 75, 118, 0.12);
+  border-radius: 16px;
+  background: #f8fbfe;
+  box-shadow: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer__field:focus-within {
+  border-color: rgba(42, 95, 144, 0.34);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.07);
+}
+
+body[data-page="comunidade-interna"] .community-room-composer__field textarea {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #173f69;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer__field textarea:focus {
+  outline: 0;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer__tools :is(
+  .community-room-composer__tool,
+  .doke-icon-btn
+),
+body[data-page="comunidade-interna"] .community-room-composer__emoji {
+  background: transparent;
+  color: #67819b;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer__tools :is(
+  .community-room-composer__tool,
+  .doke-icon-btn
+):is(:hover, :focus-visible),
+body[data-page="comunidade-interna"] .community-room-composer__emoji:is(:hover, :focus-visible) {
+  background: #edf5fb;
+  color: #2a5f90;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer__send {
+  border-radius: 14px;
+  box-shadow: none;
+  transition: opacity 160ms ease, background-color 160ms ease;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer__send:disabled {
+  opacity: 0.46;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] :is(
+  .community-room-composer__tool,
+  .community-room-composer__emoji,
+  .community-room-composer__send,
+  [data-community-reply-cancel]
+):focus-visible {
+  outline: 2px solid var(--color-primary, #2a5f90);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"] .community-room-thread__body {
+    --community-thread-copy-max: 100%;
+    --community-thread-group-gap: 10px;
+  }
+
+  body[data-page="comunidade-interna"]
+    .community-room-thread__body
+    > .community-room-message.is-message-group-start {
+    padding-block: 8px 6px;
+  }
+
+  body[data-page="comunidade-interna"]
+    .community-room-thread__body
+    > .community-room-message.is-message-group-continuation {
+    padding-block: 2px 4px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-message__bubble p {
+    font-size: 0.89rem;
+    line-height: 1.52;
+  }
+
+  body[data-page="comunidade-interna"] .community-composer-reply {
+    gap: 8px;
+    padding: 8px 8px 8px 11px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-composer {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="comunidade-interna"] :is(
+    .community-room-composer__field,
+    .community-room-composer__send
+  ) {
+    transition: none;
+  }
+}
