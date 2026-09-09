@@ -202,3 +202,147 @@ body[data-page="mensagens"].messages-page-shell .messages-empty__card {
   border: 0;
   box-shadow: none;
 }
+
+/* UX-VISUAL-008 — conversation, unread and response hierarchy.
+ * Scanning order: active conversation -> unread attention -> identity/context ->
+ * preview metadata. The composer keeps one unmistakable send action.
+ */
+body[data-page="mensagens"].messages-page-shell .message-item {
+  position: relative;
+  min-height: 82px;
+  transition: background-color 160ms ease;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item::before {
+  content: "";
+  position: absolute;
+  inset-block: 12px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: transparent;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item.is-active {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item.is-active::before {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.82);
+  outline-offset: 2px;
+}
+
+/* The runtime already owns unread truth through the visible counter. Visual
+ * attention derives from that semantic output instead of duplicating state. */
+body[data-page="mensagens"].messages-page-shell
+  .message-item:has(.message-item__badge:not([hidden])) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-item:has(.message-item__badge:not([hidden])) .message-item__line strong {
+  font-weight: var(--doke-type-weight-display, 800);
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-item:has(.message-item__badge:not([hidden])) .message-item__preview {
+  color: #fff;
+  font-weight: 700;
+}
+
+body[data-page="mensagens"].messages-page-shell
+  .message-item.is-active:has(.message-item__badge:not([hidden])) {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item__line strong {
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item__time {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item__preview {
+  color: rgba(255, 255, 255, 0.86);
+  line-height: 1.35;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item__status {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item__badge:not([hidden]) {
+  min-width: 30px;
+  min-height: 30px;
+  padding-inline: 9px;
+  background: #fff;
+  color: var(--messages-accent-strong, #1f4f7d);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Conversation identity is the anchor of the active thread. Order and other
+ * operational controls remain available but visually subordinate to the chat. */
+body[data-page="mensagens"].messages-page-shell .messages-thread__profile strong {
+  color: var(--messages-text, #143b68);
+  font-size: clamp(1.02rem, 1.4vw, 1.14rem);
+  font-weight: var(--doke-type-weight-display, 800);
+  letter-spacing: -0.02em;
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-thread__profile p {
+  color: var(--messages-text-soft, #6c84a0);
+  line-height: 1.35;
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-thread__action--order,
+body[data-page="mensagens"].messages-page-shell .messages-thread__link {
+  background: transparent;
+  color: var(--messages-accent-strong, #1f4f7d);
+}
+
+/* Send is the composer primary action. Attachment, emoji and audio tools remain
+ * neutral supporting controls. Existing JS continues to own disabled state. */
+body[data-page="mensagens"].messages-page-shell .messages-composer__send:not(:disabled) {
+  background: var(--messages-accent, #2a6fab);
+  color: #fff;
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-composer__send:not(:disabled):hover {
+  background: var(--messages-accent-strong, #1f4f7d);
+  transform: none;
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-composer__send:focus-visible {
+  outline: 0;
+  box-shadow: var(--messages-control-shadow-focus);
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-composer__send:disabled {
+  opacity: 0.48;
+}
+
+@media (max-width: 760px) {
+  body[data-page="mensagens"].messages-page-shell .message-item {
+    min-height: 78px;
+  }
+
+  body[data-page="mensagens"].messages-page-shell .message-item::before {
+    inset-block: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="mensagens"].messages-page-shell .message-item {
+    transition: none;
+  }
+}
