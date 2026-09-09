@@ -1,0 +1,432 @@
+/* UX-VISUAL-018 — wallet bank-account and payout-destination hierarchy.
+ * Narrow late owner for receiving-account setup, registered-account trust cues
+ * and the payout destination bridge. Runtime remains the source of account data.
+ */
+body[data-page="carteira"] {
+  --wallet-bank-divider: rgba(24, 75, 118, 0.10);
+  --wallet-bank-surface: #f8fbfd;
+  --wallet-bank-strong: #173f69;
+  --wallet-bank-muted: #6f8499;
+  --wallet-bank-success: #177663;
+  --wallet-bank-success-soft: #edf9f5;
+  --wallet-bank-attention: #8a641a;
+  --wallet-bank-attention-soft: #fff8e8;
+}
+
+/* The receiving account is operational infrastructure, not a promotional card. */
+body[data-page="carteira"] .wallet-bank-panel {
+  gap: var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] .wallet-bank-panel__header {
+  align-items: center;
+}
+
+body[data-page="carteira"] .wallet-bank-panel__header h2 {
+  margin: 0;
+  color: var(--wallet-bank-strong);
+  font-size: 1rem;
+  line-height: 1.2;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+body[data-page="carteira"] .wallet-bank-manage {
+  min-height: 38px;
+  padding-inline: 12px;
+  border-color: var(--wallet-bank-divider);
+  background: transparent;
+  color: #526f8d;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-bank-manage:is(:hover, :focus-visible) {
+  border-color: rgba(23, 79, 125, 0.18);
+  background: #f5f9fc;
+  color: var(--wallet-bank-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Empty state: missing payout destination is setup work, not an error state. */
+body[data-page="carteira"] .wallet-bank-panel.is-wallet-bank-empty {
+  border-color: rgba(23, 79, 125, 0.10);
+}
+
+body[data-page="carteira"] .wallet-empty-state--bank {
+  display: grid;
+  justify-items: start;
+  gap: var(--doke-space-2, 8px);
+  padding: var(--doke-space-5, 20px);
+  border: 1px dashed rgba(23, 79, 125, 0.18);
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-bank-surface);
+  box-shadow: none;
+  text-align: left;
+}
+
+body[data-page="carteira"] .wallet-empty-state--bank > strong {
+  color: var(--wallet-bank-strong);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  font-weight: 850;
+}
+
+body[data-page="carteira"] .wallet-empty-state--bank > p {
+  max-width: 42ch;
+  margin: 0;
+  color: var(--wallet-bank-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+body[data-page="carteira"] .wallet-bank-add-btn {
+  min-height: var(--doke-control-height-md, 46px);
+  margin-top: var(--doke-space-2, 8px);
+  padding-inline: var(--doke-space-4, 16px);
+  background: var(--doke-primary, #2a5f90);
+  color: #fff;
+  box-shadow: var(--doke-clean-control-shadow, 0 8px 20px rgba(15, 55, 90, 0.10));
+}
+
+body[data-page="carteira"] .wallet-bank-add-btn:is(:hover, :focus-visible) {
+  background: var(--doke-primary-strong, #174f7d);
+}
+
+/* Registered account: bank identity first, masked account second, payout key third. */
+body[data-page="carteira"] .wallet-bank-card--account {
+  justify-content: flex-start;
+  gap: var(--doke-space-3, 12px);
+  padding: var(--doke-space-4, 16px);
+  border: 1px solid rgba(23, 79, 125, 0.10);
+  border-radius: var(--radius-base, 14px);
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="carteira"] .wallet-bank-card--account:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="carteira"] .wallet-bank-card__mark--account {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm, 12px);
+  background: var(--wallet-bank-success-soft);
+  color: var(--wallet-bank-success);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-bank-card__content {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+body[data-page="carteira"] .wallet-bank-card__content > strong {
+  overflow: hidden;
+  color: var(--wallet-bank-strong);
+  font-size: 0.96rem;
+  line-height: 1.25;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-page="carteira"] .wallet-bank-card__content > p {
+  overflow: hidden;
+  margin: 0;
+  color: #59748f;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* PIX/key copy is supporting account data. Do not visually claim verification
+ * beyond whatever text the runtime actually provides. */
+body[data-page="carteira"] .wallet-bank-card__content > small {
+  overflow-wrap: anywhere;
+  color: var(--wallet-bank-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+/* Account metadata belongs to one common region rather than three mini-cards. */
+body[data-page="carteira"] .wallet-bank-details {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--wallet-bank-divider);
+  border-radius: var(--radius-base, 14px);
+  background: #fff;
+}
+
+body[data-page="carteira"] .wallet-bank-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: var(--doke-space-3, 12px);
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--wallet-bank-divider);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-bank-detail:last-child {
+  border-bottom: 0;
+}
+
+body[data-page="carteira"] .wallet-bank-detail > span {
+  color: #7b8fa3;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+body[data-page="carteira"] .wallet-bank-detail > strong {
+  min-width: 0;
+  color: #294d72;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  font-weight: 800;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* Payout timing remains runtime-owned but is the account-to-receivables bridge. */
+body[data-page="carteira"] [data-wallet-account-field="bankNextPayout"] {
+  color: var(--wallet-bank-attention);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bank form: identification first, payout routing details next, consequence last. */
+body[data-page="carteira"] .wallet-bank-modal__surface {
+  width: min(100%, 620px);
+}
+
+body[data-page="carteira"] .wallet-bank-modal__header {
+  align-items: flex-start;
+  gap: var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] .wallet-bank-modal__copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__eyebrow {
+  color: #6c8198;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__title {
+  color: var(--wallet-bank-strong);
+  font-size: clamp(1.3rem, 2vw, 1.65rem);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__description {
+  max-width: 52ch;
+  color: var(--wallet-bank-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__body {
+  display: grid;
+  gap: var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] .wallet-bank-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] .wallet-bank-modal__field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__field > span {
+  color: #395b7c;
+  font-size: 0.76rem;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__control,
+body[data-page="carteira"] .wallet-bank-modal__field .ui-select__trigger {
+  min-height: var(--doke-control-height-md, 46px);
+  border-color: rgba(23, 79, 125, 0.14);
+  background: #fff;
+  color: #1c4268;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__control:is(:hover, :focus, :focus-visible),
+body[data-page="carteira"] .wallet-bank-modal__field .ui-select__trigger:is(:hover, :focus-visible),
+body[data-page="carteira"] .wallet-bank-modal__field .ui-select.is-open .ui-select__trigger {
+  border-color: rgba(42, 95, 144, 0.34);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.10);
+}
+
+/* Specific error text remains the runtime authority; visual treatment only
+ * makes the correction state easy to locate. */
+body[data-page="carteira"] .wallet-bank-modal__error:not([hidden]) {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid #b5473e;
+  border-radius: 8px;
+  background: #fff5f4;
+  color: #8c3731;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+/* Account consequence is explicit, but not presented as a security
+ * certification: this account becomes the payout/withdraw destination. */
+body[data-page="carteira"] .wallet-bank-modal__note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(23, 79, 125, 0.12);
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-bank-surface);
+  color: #536f8b;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  font-weight: 650;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__note svg {
+  width: 18px;
+  height: 18px;
+  color: var(--wallet-bank-success);
+}
+
+body[data-page="carteira"] .wallet-bank-modal__actions {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 0.8fr);
+  justify-content: end;
+  gap: var(--doke-space-2, 8px);
+  padding-top: var(--doke-space-4, 16px);
+  border-top: 1px solid var(--wallet-bank-divider);
+}
+
+body[data-page="carteira"] .wallet-bank-modal__actions .doke-btn {
+  min-height: var(--doke-control-height-md, 46px);
+}
+
+body[data-page="carteira"] .wallet-bank-modal__actions .doke-btn--ghost {
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-bank-modal__actions .doke-btn--primary {
+  background: var(--doke-primary, #2a5f90);
+  color: #fff;
+  box-shadow: var(--doke-clean-control-shadow, 0 8px 20px rgba(15, 55, 90, 0.10));
+}
+
+body[data-page="carteira"] :is(
+  .wallet-bank-manage,
+  .wallet-bank-add-btn,
+  .wallet-bank-modal__actions .doke-btn
+):focus-visible {
+  outline: 2px solid var(--doke-primary, #2a5f90);
+  outline-offset: 2px;
+}
+
+/* The existing receivables authority remains responsible for payout schedule
+ * emphasis. This layer only aligns the side-column panels as one operational
+ * destination + schedule relationship. */
+body[data-page="carteira"] .wallet-side {
+  display: grid;
+  gap: var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] :is(.wallet-bank-panel, .wallet-receivables-panel) {
+  box-shadow: var(--doke-surface-shadow);
+}
+
+@media (max-width: 900px) {
+  body[data-page="carteira"] .wallet-bank-modal__surface {
+    width: min(100%, 600px);
+  }
+
+  body[data-page="carteira"] .wallet-bank-panel,
+  body[data-page="carteira"] .wallet-receivables-panel {
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-page="carteira"] .wallet-empty-state--bank {
+    padding: var(--doke-space-4, 16px);
+  }
+
+  body[data-page="carteira"] .wallet-bank-card--account {
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  body[data-page="carteira"] .wallet-bank-card__content > strong,
+  body[data-page="carteira"] .wallet-bank-card__content > p {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  body[data-page="carteira"] .wallet-bank-detail {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding-block: 11px;
+  }
+
+  body[data-page="carteira"] .wallet-bank-detail > strong {
+    text-align: left;
+  }
+
+  body[data-page="carteira"] .wallet-bank-modal__grid,
+  body[data-page="carteira"] .wallet-bank-modal__actions {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="carteira"] .wallet-bank-modal__actions .doke-btn--primary {
+    grid-row: 1;
+  }
+
+  body[data-page="carteira"] .wallet-bank-modal__actions .doke-btn--ghost {
+    grid-row: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="carteira"] :is(
+    .wallet-bank-manage,
+    .wallet-bank-add-btn,
+    .wallet-bank-modal__control,
+    .wallet-bank-modal__actions .doke-btn
+  ) {
+    transition: none;
+    transform: none;
+  }
+}
