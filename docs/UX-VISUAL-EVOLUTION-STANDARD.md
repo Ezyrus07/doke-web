@@ -110,6 +110,14 @@ This ordering may change only when the user task on the page materially differs.
 - Nested information blocks remain flat unless they are independently interactive.
 - Overlays/modals use the canonical overlay shadow; page surfaces must not imitate modal elevation.
 
+### 9.1 Neutral surface chrome
+
+- Neutral application cards and panels must not use decorative full-width top rails, gradient strips, color caps, or equivalent edge ornament solely to carry brand color.
+- Brand color should be expressed through Doke identity, the primary action, meaningful selection/state, purposeful illustration, or data visualization — not repeated frame decoration.
+- A rail or line is allowed when it communicates real state such as progress, current location, selection, loading, or status. Semantic lines must remain redundant with text, shape, position, or another non-color cue when needed for comprehension.
+- When the same decorative chrome appears across analogous pages, treat it as a design-system consistency issue. Normalize it through a shared authority instead of copying or varying the motif page by page.
+- New Visual Evolution work must compare analogous surfaces already present in Doke before introducing new card chrome, so auth, forms, checkout, detail, settings, wallet, community and other product areas continue to feel like one product.
+
 ## 10. Accessibility and state safety
 
 - Do not encode meaning using color alone.
