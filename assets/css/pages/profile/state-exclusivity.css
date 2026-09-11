@@ -1,7 +1,14 @@
-/* Public professional profile terminal-state exclusivity.
- * The ready feed must stay inert until page hydration clears its hidden state.
+/* Profile-family runtime state exclusivity.
+ * Ready-only surfaces, owner-only actions and runtime trust badges must stay inert
+ * until their canonical controller clears the hidden state.
  */
 body.profile-page-shell[data-page="perfil"][data-profile-contract="clean-v1"]
-  .profile-feed[data-profile-hydration-ready][hidden] {
+  .profile-feed[data-profile-hydration-ready][hidden],
+body.client-profile-shell[data-client-profile-contract]
+  [data-client-owner-public-action][hidden],
+body.client-profile-shell[data-client-profile-contract]
+  [data-client-public-action][hidden],
+body.client-profile-shell[data-client-profile-contract]
+  [data-profile-verified][hidden] {
   display: none;
 }
