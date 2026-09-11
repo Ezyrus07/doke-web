@@ -133,13 +133,15 @@
       root: boundary,
       skeletonSelectors: '[data-profile-hydration-skeleton]',
       readySelectors: '[data-profile-hydration-ready]',
+      emptySelectors: '[data-state-empty]',
       errorSelectors: '[data-state-error]',
       skeletonMode: 'hard-load',
       readyPolicy: 'after-skeleton',
       preserveReadyDuringHydration: true,
+      revealReadyOnEmpty: false,
       minDuration: 0,
       maxDuration: 8000,
-      hasItems: function () { return true; }
+      hasItems: function () { return boundary.dataset.experienceState === 'ready'; }
     });
     return clientHydration;
   }
