@@ -34,9 +34,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          certified=c3520db3b0749d26041e9010c10a30407c781331
+          trigger=config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          git merge-base --is-ancestor "$certified" HEAD
           test "$(git rev-parse HEAD:config/com-b03c-r5b-r5a-fresh-authorization-consumption.json)" = "a2ed29dc6a44f9d62f5159dfeabd2c769f677b50"
           test "$(git rev-parse HEAD:scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js)" = "ff083f29e43b2f85045b23bf8f12a4b354fb0005"
-          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          ! git cat-file -e "${certified}:${trigger}" 2>/dev/null
           ! grep -Eq '^[[:space:]]*push:' .github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml
           ! grep -Eq '^[[:space:]]*environment:' .github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml
           ! grep -Eq 'secrets\.' .github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml

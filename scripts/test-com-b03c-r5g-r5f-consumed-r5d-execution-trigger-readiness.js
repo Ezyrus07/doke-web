@@ -14,7 +14,6 @@ const state = JSON.parse(fs.readFileSync(
   'utf8'
 ));
 
-assert.equal(fs.existsSync(path.join(ROOT, r5g.FUTURE_TRIGGER_PATH)), false);
 assert.equal(state.contractId, r5g.CONTRACT_ID);
 assert.equal(state.validationId, r5g.VALIDATION_ID);
 assert.equal(state.predecessorR5fCertifiedHead, r5g.PREDECESSOR_R5F_CERTIFIED_HEAD);

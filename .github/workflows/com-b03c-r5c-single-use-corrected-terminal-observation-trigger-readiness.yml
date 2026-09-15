@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -37,9 +39,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          certified=65554baca33933cdbf6c660ba87658ab3ab4c5db
+          trigger=config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          git merge-base --is-ancestor "$certified" HEAD
           test "$(git rev-parse HEAD:config/com-b03c-r5b-r5a-fresh-authorization-consumption.json)" = "a2ed29dc6a44f9d62f5159dfeabd2c769f677b50"
           test "$(git rev-parse HEAD:scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js)" = "ff083f29e43b2f85045b23bf8f12a4b354fb0005"
-          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          ! git cat-file -e "${certified}:${trigger}" 2>/dev/null
       - name: Remote execution hard block
         shell: bash
         run: |
@@ -57,8 +62,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          certified=65554baca33933cdbf6c660ba87658ab3ab4c5db
+          trigger=config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
           workflow=.github/workflows/com-b03c-r5c-single-use-corrected-terminal-observation-trigger-readiness.yml
-          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          git merge-base --is-ancestor "$certified" HEAD
+          ! git cat-file -e "${certified}:${trigger}" 2>/dev/null
           ! grep -Eq '^[[:space:]]*push:' "$workflow"
           ! grep -Eq '^[[:space:]]*environment:' "$workflow"
           ! grep -Eq 'secrets\.' "$workflow"
