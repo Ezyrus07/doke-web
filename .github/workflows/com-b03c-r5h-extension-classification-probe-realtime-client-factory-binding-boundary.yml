@@ -1,0 +1,187 @@
+name: COM-B03C R5H Realtime Client Factory Binding Boundary
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-realtime-client-factory.js'
+      - 'config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-boundary.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-boundary.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Frozen certified realtime-client-factory descriptor lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=def887ee504d7f4527d165b8f3f57d2a3030903b
+          certified=08c524bd421abf1a68af36158fa79712fdbf3d0c
+          git merge-base --is-ancestor "$parent" HEAD
+          git merge-base --is-ancestor "$certified" HEAD
+          test "$(git rev-parse "$parent^{tree}")" = "03d244e1730b542e34bf0c82d4f99337cfc4b0fa"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary.json)" = "914054a66b32991f30757a330874b35c953efd9a"
+          test "$(git rev-parse "$parent:.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary.yml")" = "b3e7bb5c808ad8d72c91d61d92486e72bc0f9937"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-synthetic-identity-lifecycle.js)" = "ebc2e17cc27721c14c06d068de7889d119953e5c"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-credential-provider.js)" = "6419696544fb9e1906df92e3591e93efcf04b826"
+
+      - name: Exact repository-only materialization scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=def887ee504d7f4527d165b8f3f57d2a3030903b
+          certified=08c524bd421abf1a68af36158fa79712fdbf3d0c
+          module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-realtime-client-factory.js
+          boundary=config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-boundary.json
+          certifier=.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-boundary.yml
+          initial="$(printf '%s\n' "$boundary" "$certifier" "$module" | sort)"
+          final="$(printf '%s\n' "$boundary" "$certifier" "$module" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only "$parent" "$certified" | sort)"
+          if [ "$actual" != "$initial" ] && [ "$actual" != "$final" ]; then
+            printf 'Unexpected scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
+          test "$(git rev-parse HEAD:$module)" = "6048f2850b2c87871204a6d669300329c2adf204"
+          test "$(git rev-parse HEAD:$boundary)" = "b63b3ed76049332d7c65e3c5f9b3351cb309ae8a"
+
+      - name: Syntax and inert no-runtime factory boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-realtime-client-factory.js
+          boundary=config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-boundary.json
+          node --check "$module"
+          if grep -En 'process\.env|@supabase|createClient|\.channel\(|\.subscribe\(|fetch\(|https?://|SUPABASE_|service_role|\.auth\.|require\(' "$module"; then
+            echo 'Remote runtime, dependency loading or client-instantiation syntax is forbidden in repository factory module' >&2
+            exit 1
+          fi
+          if grep -En 'https?://|process\.env|secrets\.|@supabase|createClient|\.channel\(|\.subscribe\(|fetch\(|projectUrl|apiKey|service_role|anonKey|SUPABASE_' "$boundary"; then
+            echo 'Runtime, endpoint or secret-source syntax is forbidden in realtime-client-factory binding boundary' >&2
+            exit 1
+          fi
+
+      - name: Semantic realtime-client-factory binding assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const boundary = require('./config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-boundary.json');
+          const descriptor = require('./config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary.json');
+          const lifecycleBoundary = require('./config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.json');
+          const factory = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-realtime-client-factory.js');
+
+          const expectedBoundaryContract='com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-boundary-v1';
+          const expectedFactoryContract='com-b03c-r5h-extension-classification-probe-realtime-client-factory-repository-implementation-v1';
+          const expectedFactoryPath='backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-realtime-client-factory.js';
+          const expectedFactoryBlob='6048f2850b2c87871204a6d669300329c2adf204';
+          const expectedFields=['factoryContractId','factoryModulePath','factoryModuleBlob','bindingBoundaryHead'];
+          const allTrue=(o,keys,label)=>keys.forEach(k=>{if(o[k]!==true)throw new Error(`${label}:${k}`)});
+          const allFalse=(o,keys,label)=>keys.forEach(k=>{if(o[k]!==false)throw new Error(`${label}:${k}`)});
+
+          if(boundary.contractId!==expectedBoundaryContract) throw new Error('BOUNDARY_CONTRACT_DRIFT');
+          const rc=boundary.repositoryContext;
+          if(rc.parentCertifiedRealtimeClientFactoryDescriptorHead!=='def887ee504d7f4527d165b8f3f57d2a3030903b' || rc.parentCertifiedRealtimeClientFactoryDescriptorTree!=='03d244e1730b542e34bf0c82d4f99337cfc4b0fa' || rc.parentRealtimeClientFactoryDescriptorCertificationRun!==31960876897 || rc.parentRealtimeClientFactoryDescriptorCertificationJob!==95198564137) throw new Error('PARENT_CERTIFICATION_DRIFT');
+          if(rc.parentRealtimeClientFactoryDescriptorBlob!=='914054a66b32991f30757a330874b35c953efd9a' || rc.parentRealtimeClientFactoryDescriptorCertifierBlob!=='b3e7bb5c808ad8d72c91d61d92486e72bc0f9937' || rc.factoryModuleBlob!==expectedFactoryBlob) throw new Error('PARENT_OR_MODULE_BLOB_DRIFT');
+          if(boundary.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H' || boundary.functionalCheckpoint.r5iCreated!==false || boundary.functionalCheckpoint.r5iInferred!==false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+
+          const parent=descriptor.realtimeClientFactoryBindingDescriptor;
+          if(descriptor.contractId!=='com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary-v1' || parent.requiredFields.join('|')!==expectedFields.join('|')) throw new Error('PARENT_DESCRIPTOR_DRIFT');
+          if(parent.realtimeClientFactoryBindingDescriptorDefined!==true || parent.realtimeClientFactoryBindingDefined!==false || parent.realtimeClientFactoryBound!==false || parent.schemaOnly!==true) throw new Error('PARENT_DESCRIPTOR_STATE_DRIFT');
+          ['factoryContractId','factoryModulePath','factoryModuleBlob','bindingBoundaryHead','realtimeClientFactory','runtimeClient','networkEndpoint'].forEach(k=>{if(parent[k]!==null)throw new Error(`PARENT_FACTORY_VALUE:${k}`)});
+
+          const md=factory.repositoryDescriptor();
+          if(factory.CONTRACT_ID!==expectedFactoryContract || md.contractId!==expectedFactoryContract || md.realtimeClientFactoryImplementationPresent!==true || md.factoryRequestDescriptorValidationImplemented!==true || md.remoteClientInstantiationHardBlockImplemented!==true) throw new Error('FACTORY_IMPLEMENTATION_DRIFT');
+          allTrue(md,['freshClientPerObservationContractPreserved','clientDisposalAfterEachObservationContractPreserved'],'FACTORY_CONTRACT_MUST_REMAIN_TRUE');
+          allFalse(md,['realtimeClientFactoryBindingDefined','realtimeClientFactoryBound','clientInstantiationImplemented','clientDisposalImplemented','remoteDependencyLoadImplemented','transportBound','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','remoteCredentialReadAuthority','remoteExecutionAuthority','executionAttempted','exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed','r5iCreated','r5iInferred'],'FACTORY_MODULE_MUST_REMAIN_FALSE');
+
+          const request=factory.createFactoryRequestDescriptor({purpose:'realtime_extension_classification_probe',clientLifecycle:'fresh_client_per_observation',disposalLifecycle:'dispose_after_each_observation'});
+          if(request.decision!=='repository_only_realtime_client_factory_request_descriptor_validated' || request.freshClientPerObservationRequired!==true || request.clientDisposalAfterEachObservationRequired!==true || request.clientInstantiationAllowed!==false || request.endpointAllowed!==false || request.credentialReadAllowed!==false || request.identityLifecycleMutationAllowed!==false || request.remoteDependencyLoadAllowed!==false || request.transportBound!==false || request.networkAuthority!==false || request.realtimeSubscriptionAuthority!==false || request.remoteExecutionAuthority!==false) throw new Error('FACTORY_REQUEST_DESCRIPTOR_DRIFT');
+          const rejected=factory.createFactoryRequestDescriptor({purpose:'realtime_extension_classification_probe',clientLifecycle:'fresh_client_per_observation',disposalLifecycle:'dispose_after_each_observation',networkEndpoint:'forbidden-test-value'});
+          if(rejected.decision!=='blocked_repository_only' || rejected.reason!=='REALTIME_CLIENT_FACTORY_CONCRETE_RUNTIME_INPUT_FORBIDDEN') throw new Error('FACTORY_FORBIDDEN_INPUT_GATE_DRIFT');
+          const readiness=factory.evaluateRepositoryFactoryReadiness({requestDescriptor:request});
+          if(readiness.decision!=='blocked_repository_only' || readiness.reason!=='REALTIME_CLIENT_FACTORY_REMOTE_CLIENT_REQUIRES_LATER_CERTIFIED_BOUNDARIES_AND_FUTURE_EXPLICIT_AUTHORIZATION' || readiness.networkAuthority!==false || readiness.realtimeSubscriptionAuthority!==false || readiness.remoteExecutionAuthority!==false) throw new Error('FACTORY_READINESS_DRIFT');
+          let hardBlocked=false;
+          try{factory.assertRemoteClientInstantiationDisabled();}catch(error){hardBlocked=error&&error.code===factory.REMOTE_CLIENT_INSTANTIATION_DISABLED_CODE;}
+          if(!hardBlocked) throw new Error('FACTORY_REMOTE_CLIENT_HARD_BLOCK_MISSING');
+          ['execute','run','createClient','subscribe','openChannel','bindTransport'].forEach(k=>{if(Object.prototype.hasOwnProperty.call(factory,k))throw new Error(`FORBIDDEN_FACTORY_EXPORT:${k}`)});
+
+          const impl=boundary.factoryImplementation;
+          if(impl.contractId!==expectedFactoryContract || impl.path!==expectedFactoryPath || impl.blob!==expectedFactoryBlob || impl.repositoryOwned!==true || impl.repositoryRelativeModulePath!==true || impl.immutableModuleBlob!==true || impl.inertUntilLaterAuthorizedComposition!==true) throw new Error('FACTORY_IMPLEMENTATION_BINDING_DRIFT');
+          allTrue(impl,['freshClientPerObservationContractPreserved','clientDisposalAfterEachObservationContractPreserved'],'FACTORY_IMPLEMENTATION_CONTRACT');
+          allFalse(impl,['clientInstantiationImplemented','clientDisposalImplemented','credentialReadImplemented','identityLifecycleMutationImplemented','remoteDependencyLoadImplemented','transportImplemented','networkAuthority','realtimeSubscriptionAuthority','remoteExecutionAuthority'],'FACTORY_IMPLEMENTATION_REMOTE_CAPABILITY');
+
+          const binding=boundary.realtimeClientFactoryBinding;
+          if(binding.slotId!=='realtime_client_factory' || binding.realtimeClientFactoryBindingDescriptorDefined!==true || binding.realtimeClientFactoryImplementationPresent!==true || binding.realtimeClientFactoryBindingDefined!==true || binding.realtimeClientFactoryBound!==true || binding.bindingKind!=='repository_owned_immutable_inert_module' || binding.localRepositoryBindingOnly!==true) throw new Error('FACTORY_BINDING_STATE_DRIFT');
+          if(binding.factoryContractId!==expectedFactoryContract || binding.factoryModulePath!==expectedFactoryPath || binding.factoryModuleBlob!==expectedFactoryBlob || binding.bindingBoundaryHead!==null || binding.bindingBoundaryHeadResolvedByCertifierSubjectHead!==true) throw new Error('FACTORY_BINDING_IDENTITY_DRIFT');
+          allTrue(binding,['freshClientPerObservationContractPreserved','clientDisposalAfterEachObservationContractPreserved'],'FACTORY_BINDING_CONTRACT');
+          ['realtimeClientFactory','runtimeClient','networkEndpoint'].forEach(k=>{if(binding[k]!==null)throw new Error(`FACTORY_RUNTIME_VALUE_MUST_REMAIN_NULL:${k}`)});
+          allFalse(binding,['clientInstantiationImplemented','clientDisposalImplemented','credentialReadImplemented','identityLifecycleMutationImplemented','remoteDependencyLoadImplemented','transportBound','stagingReadAuthority','stagingMutationAuthority','networkAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','remoteCredentialReadAuthority','remoteExecutionAuthority'],'FACTORY_BINDING_AUTHORITY');
+
+          const u=boundary.preservedUpstreamBindings;
+          if(u.runtimeAdapter.bound!==true || u.runtimeAdapter.bindingBoundaryHead!=='e2809ba029930eac76729c9ae5f1496919a500de' || u.runtimeAdapter.adapterModuleBlob!=='6fc34e1b365ec801665fdab0c7d0c6761a8013e6') throw new Error('UPSTREAM_RUNTIME_ADAPTER_DRIFT');
+          if(u.targetEnvironment.bound!==true || u.targetEnvironment.bindingBoundaryHead!=='10ddea2bb7a4ded9bf1b7654585092a396f885cb' || u.targetEnvironment.stableEnvironmentIdentifier!=='doke-web-staging' || u.targetEnvironment.production!==false) throw new Error('UPSTREAM_ENV_DRIFT');
+          if(u.targetResource.bound!==true || u.targetResource.bindingBoundaryHead!=='e297b7f921c72864471e123a3d628a7f3e2dd3fd' || u.targetResource.stableResourceIdentifier!=='doke-web-staging-realtime-messages-extension-classification-probe' || u.targetResource.resourceScopeFingerprint!=='sha256:2ab84b52b269ef4c9556c9818f4355d466bce9f735878213b49d9840cdd00fbf') throw new Error('UPSTREAM_RESOURCE_DRIFT');
+          if(u.credentialProvider.bound!==true || u.credentialProvider.bindingBoundaryHead!=='8ebf9cce39ded220df4a361b82145884041048bb' || u.credentialProvider.providerModuleBlob!=='6419696544fb9e1906df92e3591e93efcf04b826' || u.credentialProvider.credentialReadImplemented!==false) throw new Error('UPSTREAM_PROVIDER_DRIFT');
+          if(u.syntheticIdentityLifecycle.bound!==true || u.syntheticIdentityLifecycle.bindingBoundaryHead!=='feb50f13e3dc312deffeadb3d8814f3fca98be17' || u.syntheticIdentityLifecycle.lifecycleModuleBlob!=='ebc2e17cc27721c14c06d068de7889d119953e5c' || u.syntheticIdentityLifecycle.identityProvisioningImplemented!==false || u.syntheticIdentityLifecycle.identityDeletionImplemented!==false || u.syntheticIdentityLifecycle.identityMaterializationImplemented!==false) throw new Error('UPSTREAM_IDENTITY_LIFECYCLE_DRIFT');
+          if(lifecycleBoundary.syntheticIdentityLifecycleBinding.identityLifecycleBound!==true || lifecycleBoundary.syntheticIdentityLifecycleBinding.identityProvisioningImplemented!==false || lifecycleBoundary.syntheticIdentityLifecycleBinding.identityDeletionImplemented!==false || lifecycleBoundary.syntheticIdentityLifecycleBinding.identityMaterializationImplemented!==false) throw new Error('FROZEN_IDENTITY_PARENT_DRIFT');
+
+          const remaining=['sanitized_evidence_recorder','cleanup_verifier'];
+          if(boundary.remainingDependentPortState.map(x=>x.slotId).join('|')!==remaining.join('|')) throw new Error('REMAINING_PORT_SET_DRIFT');
+          boundary.remainingDependentPortState.forEach(x=>{if(x.descriptorDefined!==false || x.bound!==false || x.concreteValuePresent!==false || x.separateCertifiedBindingBoundaryRequired!==true)throw new Error(`REMAINING_PORT_STATE:${x.slotId}`)});
+
+          const concrete=boundary.concreteBindingState;
+          if(!concrete.realtimeClientFactory || concrete.realtimeClientFactory.factoryContractId!==expectedFactoryContract || concrete.realtimeClientFactory.factoryModulePath!==expectedFactoryPath || concrete.realtimeClientFactory.factoryModuleBlob!==expectedFactoryBlob || concrete.realtimeClientFactory.bindingBoundaryHead!==null) throw new Error('CONCRETE_FACTORY_BINDING_DRIFT');
+          ['credentialSecretName','credentialReference','credentialMaterial','syntheticIdentityReference','syntheticIdentityMaterial','syntheticIdentity','runtimeClient','sanitizedEvidenceRecorder','cleanupVerifier','networkEndpoint','executionCommand','executionWorkflow','executionEntrypoint'].forEach(k=>{if(concrete[k]!==null)throw new Error(`FORBIDDEN_CONCRETE_STATE:${k}`)});
+
+          const completeness=boundary.bindingCompleteness;
+          allTrue(completeness,['runtimeAdapterSlotBound','targetEnvironmentSlotBound','targetResourceSlotBound','credentialProviderSlotBound','syntheticIdentityLifecycleSlotBound','realtimeClientFactorySlotBound'],'BOUND_PORT_MISSING');
+          allFalse(completeness,['allDependentPortsBound','transportBound','executionReady'],'COMPLETENESS_AUTHORITY_DRIFT');
+
+          const future=boundary.futureBoundaryRequirements;
+          if(future.nextDependentPortDescriptorMustBeSeparateCertifiedBoundary!==true || future.nextDependentPortDescriptorSlot!=='sanitized_evidence_recorder' || future.realtimeClientFactoryBindingMustRemainExact!==true || future.freshClientPerObservationContractMustRemainTrue!==true || future.clientDisposalAfterEachObservationContractMustRemainTrue!==true) throw new Error('NEXT_BOUNDARY_DRIFT');
+          allTrue(future,['remoteClientInstantiationMustRemainFalse','credentialReadAuthorityMustRemainFalse','identityLifecycleMutationAuthorityMustRemainFalse','sanitizedEvidenceRecorderMustRemainUnbound','cleanupVerifierMustRemainUnbound','endpointMustRemainAbsent','transportMustRemainUnbound','stagingReadAuthorityMustRemainFalse','stagingMutationAuthorityMustRemainFalse','networkAuthorityMustRemainFalse','realtimeSubscriptionAuthorityMustRemainFalse','authIdentityLifecycleAuthorityMustRemainFalse','executionEntrypointMustRemainAbsent','executionWorkflowMustRemainAbsent','remoteExecutionAuthorityMustRemainFalse'],'FUTURE_FAIL_CLOSED_DRIFT');
+
+          const auth=boundary.authorizationState;
+          allTrue(auth,['freshAuthorizationRequiredForFutureRemoteBoundary','explicitAuthorizationRequiredForFutureRemoteBoundary','singleUseAuthorizationRequiredForFutureRemoteBoundary','futureAuthorizationMustBindExactCertifiedHeadEnvironmentResourceFingerprint','futureReceiptMustBeSeparateSingleFileCommit','receiptParentMustEqualAuthorizedHead','futureTriggerMustBeSeparateCanonicalBoundary','runAttemptOneRequired'],'AUTH_REQUIREMENT_DRIFT');
+          allFalse(auth,['priorR5dAuthorizationReusable','priorR5dReceiptReusable','priorR5dTriggerReusable','genericContinuationGrantsRemoteAuthority'],'AUTH_REUSE_DRIFT');
+
+          const g=boundary.governance;
+          allTrue(g,['repositoryOnlyDefinition','runtimeAdapterBound','targetEnvironmentBound','targetResourceBound','credentialProviderBound','syntheticIdentityLifecycleBindingDefined','identityLifecycleBound','realtimeClientFactoryBindingDescriptorDefined','realtimeClientFactoryImplementationPresent','realtimeClientFactoryBindingDefined','realtimeClientFactoryBound','freshClientPerObservationContractPreserved','clientDisposalAfterEachObservationContractPreserved'],'GOVERNANCE_REQUIRED_TRUE');
+          allFalse(g,['remoteClientInstantiationImplemented','clientDisposalImplemented','sanitizedEvidenceRecorderBound','cleanupVerifierBound','transportBound','executionEntryPointExported','executionWorkflowDefined','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed','r5iCreated','r5iInferred'],'GOVERNANCE_MUST_REMAIN_FALSE');
+
+          const c=boundary.causalState;
+          allFalse(c,['exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed','r5iCreated','r5iInferred'],'CAUSAL_STATE_DRIFT');
+          NODE
+          printf 'REALTIME_CLIENT_FACTORY_BINDING_BOUNDARY_HEAD=%s\n' "$GITHUB_SHA"
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check def887ee504d7f4527d165b8f3f57d2a3030903b HEAD

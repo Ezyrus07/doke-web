@@ -1,0 +1,111 @@
+name: COM-B02L Command Runtime Binding Adapter Contract
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-command-runtime-binding-adapter-contract.js'
+      - 'config/com-b02l-command-runtime-binding-adapter-contract.json'
+      - 'scripts/test-com-b02l-command-runtime-binding-adapter-contract.js'
+      - '.github/workflows/com-b02l-command-runtime-binding-adapter-contract.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02l-command-runtime-binding-adapter-contract-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02K predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=75b2d31c925399fa1f9bee3e13a4b75067a7c3f0
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git merge-base --is-ancestor "$BASE" HEAD
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-readiness.js)" = "154871f0997177ce2c74c0850cba33a45bf0f22e"
+          test "$(git rev-parse HEAD:config/com-b02k-command-runtime-binding-readiness.json)" = "7a2dbdf2bb7d43309ecd0b7314244b335fca49f8"
+          test "$(git rev-parse HEAD:scripts/test-com-b02k-command-runtime-binding-readiness.js)" = "64db7b7d0e597e4f46db8b1a56e2408a3175897f"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02k-command-runtime-binding-readiness.yml)" = "6a1a343957cbdffbce7a4d75c0c27d2a8c16a02d"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-composition.js)" = "27b1e212c3656dd4ad5a1f2f604903ce44c8dbfb"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "990ee5c8895446f44cdcd5819101f0b3d5370e63"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = "38cd77fd6d3cf0c9f13d4c35ed000b9831481840"
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = "1ff7621973be5ef38aa5e033b91f5b75216b9ec1"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-adapter-contract.js)" = "c48eabab7bb5b37b6a1663a051b3a8a6223cd0c9"
+          test "$(git rev-parse HEAD:config/com-b02l-command-runtime-binding-adapter-contract.json)" = "31f234b9724d44047031f0dca4f9d3f32518f4b9"
+          test "$(git rev-parse HEAD:scripts/test-com-b02l-command-runtime-binding-adapter-contract.js)" = "dacb6079809784fec95aeb1672c2411332767313"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02l-command-runtime-binding-adapter-contract.yml \
+            backend/modules/communities/community-command-runtime-binding-adapter-contract.js \
+            config/com-b02l-command-runtime-binding-adapter-contract.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02l-command-runtime-binding-adapter-contract.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected"
+
+      - name: Syntax and semantic adapter-contract conformance
+        run: |
+          node --check backend/modules/communities/community-command-runtime-binding-adapter-contract.js
+          node --check scripts/test-com-b02l-command-runtime-binding-adapter-contract.js
+          node scripts/test-com-b02l-command-runtime-binding-adapter-contract.js
+
+      - name: Runtime and remote effects remain absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-command-runtime-binding-adapter-contract.js
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          node - <<'NODE'
+          const handlers=require('./backend/modules/communities/route-handlers');
+          const loader=require('./backend/shared/http/module-route-loader');
+          for(const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand']){
+            if(handlers.handlers[name]!==handlers[name])throw new Error(`B02L_EXECUTE_HANDLER_DRIFT:${name}`);
+            if(loader.getHandler('communities',name)!==handlers[name])throw new Error(`B02L_LOADER_HANDLER_DRIFT:${name}`);
+          }
+          for(const name of ['composeMembershipCommandRepositoryOnly','composeGovernanceCommandRepositoryOnly','composeContentCommandRepositoryOnly']){
+            if(Object.prototype.hasOwnProperty.call(handlers.handlers,name))throw new Error(`B02L_COMPOSER_RUNTIME_BOUND:${name}`);
+            if(loader.getHandler('communities',name)!==null)throw new Error(`B02L_LOADER_EXPOSES_COMPOSER:${name}`);
+          }
+          const b=require('./config/com-b02l-command-runtime-binding-adapter-contract.json');
+          if(b.authorization.received!==true||b.authorization.type!=='standing_repository_only'||b.authorization.genericNextAuthorized!==true||b.authorization.sensitiveBoundariesExcluded!==true)throw new Error('B02L_AUTHORIZATION_DRIFT');
+          if(b.contractResponsibilities.executeRepositoryOperation!==false||b.effects.adapterImplementationMaterialized!==false||b.effects.runtimeRequestMapperBound!==false||b.effects.repositoryExecutorBound!==false||b.effects.runtimeHandlerBound!==false||b.effects.runtimeActivated!==false||b.effects.migrationApplied!==false)throw new Error('B02L_RUNTIME_STATE_DRIFT');
+          for(const k of ['adapterImplementationAuthority','runtimeHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','repositoryExecutorBindingAuthority','runtimeActivationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','rpcExecutionAuthority','networkAuthority','realtimeActivationAuthority','credentialReadAuthority','identityLifecycleRemoteAuthority','realCommunityMutationAuthority','migrationApplicationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02L_FORBIDDEN_AUTHORITY:${k}`);
+          for(const k of ['existingB02jCompositionChanged','existingRouteHandlersChanged','routeRegistryChanged','moduleRouteLoaderChanged','runtimeRequestMapperBound','repositoryExecutorBound','runtimeHandlerBound','runtimeActivated','stagingDeploymentExecuted','stagingTrafficEnabled','rpcExecuted','networkRequestExecuted','realtimeSubscriptionExecuted','credentialReadExecuted','remoteIdentityMutationExecuted','realCommunityMutationExecuted','migrationApplied','triggerCreated','receiptCreated','productionChanged','pullRequestMerged','readyForReviewChanged'])if(b.effects[k]!==false)throw new Error(`B02L_FORBIDDEN_EFFECT:${k}`);
+          if(b.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H'||b.functionalCheckpoint.exactRootCauseProven!==false||b.functionalCheckpoint.causalPromotionAllowed!==false||b.functionalCheckpoint.privatePresencePromotionAllowed!==false||b.functionalCheckpoint.r5iCreated!==false||b.functionalCheckpoint.r5iInferred!==false)throw new Error('B02L_FUNCTIONAL_CHECKPOINT_DRIFT');
+          NODE
+          ! git diff --name-only 75b2d31c925399fa1f9bee3e13a4b75067a7c3f0 HEAD | grep '^supabase/migrations/'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check 75b2d31c925399fa1f9bee3e13a4b75067a7c3f0 HEAD

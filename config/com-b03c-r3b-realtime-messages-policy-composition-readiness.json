@@ -1,0 +1,75 @@
+{
+  "validationId": "COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS",
+  "contractId": "com-b03c-r3b-realtime-messages-policy-composition-readiness-v1",
+  "status": "repository_policy_composition_rca_ready_no_staging_authority",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "base": "rep/rep-001-baseline-audit",
+    "preparedFromHead": "2e07b5d2fa2c8b9b06ac7952cc071ac837681dcd",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-ATTEMPT",
+    "status": "staging_presence_extension_pairwise_interaction_rejection_observed_zero_residue_proven",
+    "authorizationConsumed": true,
+    "authorizationReusable": false,
+    "zeroResidueProven": true,
+    "uidTopicDirectPasses": true,
+    "uidExtensionPairRejected": true,
+    "topicExtensionPairRejected": true,
+    "allFullConjunctionVariantsRejected": true,
+    "exactRootCauseProven": false
+  },
+  "rootCauseGap": {
+    "statement": "R3A introspected only its temporary policies and did not freeze the complete active pg_policies inventory for realtime.messages.",
+    "whyItMatters": "A pre-existing SELECT policy, including a restrictive policy, could alter authorization composition and must be excluded before assigning causality to realtime.messages.extension or Realtime internals.",
+    "candidateBoundaries": [
+      "interfering_restrictive_policy",
+      "other_active_policy_composition",
+      "presence_extension_row_evaluation_semantics",
+      "hosted_realtime_authorization_behavior"
+    ],
+    "exactRootCauseProven": false
+  },
+  "policyInventory": {
+    "source": "pg_policies",
+    "schema": "realtime",
+    "table": "messages",
+    "columns": ["policyname", "permissive", "roles", "cmd", "qual", "with_check"],
+    "completePolicyInventoryRequired": true,
+    "restrictivePolicyDetectionRequired": true,
+    "authenticatedSelectScopeRequired": true,
+    "policyInventoryQueryFrozen": true,
+    "causalPromotionBlockedUntilInventoryObserved": true,
+    "remoteInventoryObserved": false
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "triggerCreationAuthority": false,
+    "realtimePolicyMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "realUserMutationAuthority": false
+  },
+  "prohibitions": {
+    "r3aRerun": true,
+    "newStagingTrigger": true,
+    "communityPostsReexecution": true,
+    "channelMessagesExecution": true,
+    "publicationMutation": true,
+    "runtimeDeploy": true,
+    "production": true,
+    "merge": true,
+    "realUserMutation": true
+  },
+  "nextBoundary": "repository certification only; if historical evidence cannot resolve the full realtime.messages policy inventory, define a separate future read-only staging authorization boundary before any remote inspection"
+}

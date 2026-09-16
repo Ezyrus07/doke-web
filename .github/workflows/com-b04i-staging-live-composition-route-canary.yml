@@ -1,0 +1,20 @@
+name: COM-B04I Attempt 2 Archived Route Canary
+
+# Authorization was consumed. GitHub Actions did not materialize a run.
+# The staging persistence leg was executed through a direct authenticated
+# rollback-only fallback and this workflow is intentionally inert.
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b04i-attempt-2-archived-never-trigger.json'
+
+permissions:
+  contents: read
+
+jobs:
+  archived:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'COM-B04I attempt 2 is archived; authorization cannot be reused.'

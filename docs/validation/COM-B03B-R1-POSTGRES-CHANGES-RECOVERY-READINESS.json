@@ -1,0 +1,113 @@
+{
+  "validationId": "COM-B03B-R1-POSTGRES-CHANGES-RECOVERY-READINESS",
+  "contractId": "com-b03b-r1-postgres-changes-recovery-readiness-v1",
+  "domain": "COM-001",
+  "status": "repository_recovery_certified_new_authorization_required",
+  "rootCause": {
+    "attempt1RunId": 31212558707,
+    "attempt1Result": "failure",
+    "failedGate": "foundation_gate",
+    "errorCode": "DOKE_COM_B03B_REALTIME_FOUNDATION_GATE_FAILED",
+    "diagnosis": "Attempt 1 conflated Broadcast/Presence foundation with Postgres Changes publication membership: it required realtime.messages in supabase_realtime and simulated community_posts through realtime.send instead of proving an authenticated postgres_changes delivery.",
+    "attempt1AuthorizationConsumed": true,
+    "attempt1AuthorizationReusableAfterFailure": false,
+    "attempt1TriggerMustRemainImmutable": true
+  },
+  "implementation": {
+    "commit": "f4d546affa53eadd313105b156afa0d1484e42be",
+    "certificationMetadataCommit": "8c7765466bd1f866064d7758f32755f7e97ac4ac",
+    "migration": "supabase/migrations/20260808135800_com_b03b_r1_community_posts_postgres_changes.sql",
+    "executor": "scripts/execute-com-b03b-r1-postgres-changes-authenticated-subscription-staging-canary.js",
+    "workflow": ".github/workflows/com-b03b-r1-postgres-changes-staging-canary.yml"
+  },
+  "transportPlan": {
+    "community_posts": "authenticated_postgres_changes",
+    "community_postsPublication": "supabase_realtime",
+    "channel_presence": "private_presence",
+    "channel_typing": "private_broadcast",
+    "channel_messages": "blocked"
+  },
+  "blockedTopic": {
+    "topic": "channel_messages",
+    "blocker": "REMOTE_CANONICAL_CHANNEL_MESSAGE_AUTHORITY_REQUIRED"
+  },
+  "certification": {
+    "runId": 31268853675,
+    "runAttempt": 1,
+    "event": "pull_request",
+    "headSha": "8c7765466bd1f866064d7758f32755f7e97ac4ac",
+    "result": "success",
+    "certifyJobId": 93131320888,
+    "authorizeJobId": 93131366941,
+    "authorizeJobResult": "skipped",
+    "canaryJobId": 93131367060,
+    "canaryJobResult": "skipped",
+    "checks": {
+      "syntax": "success",
+      "recoveryReadiness": "success",
+      "comB03BRegression": "success",
+      "comB03Regression": "success",
+      "failClosedAndMigrationSafety": "success",
+      "diffHygiene": "success"
+    }
+  },
+  "authority": {
+    "repositoryRecoveryAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimePublicationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "syntheticFixtureAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "effectsDuringCertification": {
+    "networkRequestToStaging": false,
+    "databaseConnectionToStaging": false,
+    "migrationAppliedToStaging": false,
+    "realtimeSubscriptionCreated": false,
+    "syntheticDomainFixtureCreated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "futureAuthorizedCanaryBoundary": {
+    "scope": [
+      "community_posts",
+      "channel_presence",
+      "channel_typing"
+    ],
+    "excludedTopics": [
+      "channel_messages"
+    ],
+    "communityPostsMigration": "idempotently add public.community_posts to supabase_realtime",
+    "communityPostsProof": "authenticated postgres_changes INSERT delivery under RLS",
+    "anonymousNegativeProof": "private-community synthetic post must not be delivered to anon",
+    "ephemeralProofs": [
+      "authenticated private Presence",
+      "authenticated private Broadcast typing",
+      "anonymous private Broadcast subscription denied"
+    ],
+    "syntheticFixtureLifecycle": "temporary private community plus post with mandatory cleanup",
+    "persistentDomainResidueAllowed": false,
+    "temporaryRealtimePoliciesMustBeRemoved": true,
+    "publicTrafficAllowed": false,
+    "runtimeDeploymentAllowed": false,
+    "productionAllowed": false,
+    "mergeAllowed": false
+  },
+  "nextAuthorization": {
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_R1_COMMUNITY_POSTS_POSTGRES_CHANGES_MIGRATION_AND_AUTHENTICATED_SUBSCRIPTION_CANARY_ON_DOKE_STAGING"
+  },
+  "domainCompletionMatrix": {
+    "version": "1.3.112",
+    "maturity": 3,
+    "maturityScale": 6,
+    "maturityPromoted": false,
+    "productionGate": "blocked"
+  }
+}

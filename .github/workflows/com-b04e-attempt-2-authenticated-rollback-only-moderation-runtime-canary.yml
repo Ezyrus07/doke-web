@@ -1,0 +1,122 @@
+name: COM-B04E Attempt 2 Archived Rollback-only Canary
+
+# Attempt 2 authorization was consumed by run 31067102891.
+# The historical executor remains versioned as evidence, but this workflow no
+# longer watches the consumed trigger. Any later live canary requires a new
+# explicit authorization, workflow identity and newly added one-shot file.
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b04e-attempt-2-archived-never-trigger.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: com-b04e-attempt-2-authenticated-rollback-only-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout one-shot trigger
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Bind distinct attempt-2 authorization to first trigger addition
+        shell: bash
+        env:
+          COM_B04E_ATTEMPT_2_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B04E_ATTEMPT_2_AUTHENTICATED_ROLLBACK_ONLY_MODERATION_RUNTIME_COMPOSITION_CANARY_ON_DOKE_STAGING
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          trigger='config/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.json'
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$trigger")"
+          test "$status" = $'A\t'"$trigger"
+          node <<'NODE'
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('config/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.json', 'utf8'));
+          const attempt1 = JSON.parse(fs.readFileSync('config/com-b04e-authenticated-rollback-only-moderation-runtime-canary.json', 'utf8'));
+          const phrase = 'I_EXPLICITLY_AUTHORIZE_COM_B04E_ATTEMPT_2_AUTHENTICATED_ROLLBACK_ONLY_MODERATION_RUNTIME_COMPOSITION_CANARY_ON_DOKE_STAGING';
+          if (process.env.COM_B04E_ATTEMPT_2_AUTHORIZATION !== phrase) throw new Error('COM_B04E_ATTEMPT_2_ENV_AUTHORIZATION_MISMATCH');
+          if (attempt1.status !== 'authorization_consumed_pre_execution_audit_failed') throw new Error('COM_B04E_ATTEMPT_1_STATUS_MISMATCH');
+          if (attempt1.authorization?.consumed !== true || attempt1.authorization?.consumedByRun !== 31065331290) throw new Error('COM_B04E_ATTEMPT_1_AUTHORIZATION_STATE_INVALID');
+          if (attempt1.execution?.executorStarted !== false || attempt1.postflight?.persistentResidue !== false) throw new Error('COM_B04E_ATTEMPT_1_CLOSURE_INVALID');
+          if (config.contractId !== 'com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-composition-canary-v1') throw new Error('COM_B04E_ATTEMPT_2_CONTRACT_MISMATCH');
+          if (config.status !== 'explicit_authorization_received_execution_pending') throw new Error('COM_B04E_ATTEMPT_2_NOT_PENDING');
+          if (!config.authorization || config.authorization.phrase !== phrase || config.authorization.received !== true) throw new Error('COM_B04E_ATTEMPT_2_AUTHORIZATION_MISMATCH');
+          if (config.authorization.consumed !== false || config.authorization.singleUse !== true || config.authorization.reusableAfterFailure !== false) throw new Error('COM_B04E_ATTEMPT_2_AUTHORIZATION_STATE_INVALID');
+          if (!config.execution || config.execution.attempted !== false || config.execution.workflowRerunAllowed !== false) throw new Error('COM_B04E_ATTEMPT_2_EXECUTION_STATE_INVALID');
+          if (!config.previousAttempt || config.previousAttempt.run !== 31065331290 || config.previousAttempt.authorizationConsumed !== true || config.previousAttempt.executorStarted !== false) throw new Error('COM_B04E_ATTEMPT_2_PREVIOUS_ATTEMPT_BINDING_INVALID');
+          if (!config.canary || config.canary.rollbackOnly !== true || config.canary.syntheticOnly !== true || config.canary.outerIsolation !== 'serializable') throw new Error('COM_B04E_ATTEMPT_2_CANARY_SCOPE_INVALID');
+          NODE
+
+  canary:
+    needs: authorize
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      COM_B04E_ATTEMPT_2_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B04E_ATTEMPT_2_AUTHENTICATED_ROLLBACK_ONLY_MODERATION_RUNTIME_COMPOSITION_CANARY_ON_DOKE_STAGING
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      COM_B04E_ATTEMPT_2_REPORT_PATH: reports/generated/COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.json
+    steps:
+      - name: Checkout exact authorized head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/runtime/staging/community-moderation-rollback-canary-attempt-2.js
+          node --check scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          node --check scripts/audit-com-b04e-attempt-2-readiness.js
+          node --check scripts/audit-com-b04e-attempt-2-execution-envelope.js
+          node --check scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+      - name: COM-B04E attempt-2 local conformance
+        run: node scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+      - name: COM-B04E attempt-2 repository readiness audit
+        run: node scripts/audit-com-b04e-attempt-2-readiness.js
+      - name: COM-B04E attempt-2 execution envelope audit
+        run: node scripts/audit-com-b04e-attempt-2-execution-envelope.js
+      - name: COM-B04D regression
+        run: |
+          node scripts/test-com-b04d-moderation-runtime-composition-readiness.js
+          node scripts/audit-com-b04d-moderation-runtime-composition-readiness.js
+          node scripts/audit-com-b04d-domain-matrix-reconciliation.js
+      - name: COM-B04C regression
+        run: |
+          node scripts/audit-com-b04c-moderation-persistence-staging-verification.js
+          node scripts/audit-com-b04c-domain-matrix-reconciliation.js
+      - name: COM-B04B regression
+        run: |
+          node scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js
+          node scripts/test-com-b04b-immutable-moderation-persistence-readiness.js
+          node scripts/audit-com-b04b-domain-matrix-reconciliation.js
+      - name: COM-B04 regression
+        run: |
+          node scripts/audit-com-b04-moderation-case-authority.js
+          node scripts/test-com-b04-moderation-case-authority.js
+          node scripts/audit-com-b04-domain-matrix-reconciliation.js
+      - name: Diff hygiene
+        run: git diff --check
+      - name: Execute one-shot authenticated rollback-only canary attempt 2
+        run: node scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+      - name: Upload sanitized attempt-2 canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b04e-attempt-2-authenticated-rollback-only-canary-${{ github.run_id }}
+          path: reports/generated/COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.json
+          if-no-files-found: error
+          retention-days: 14

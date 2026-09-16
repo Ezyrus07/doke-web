@@ -1,0 +1,253 @@
+name: COM-B02CS Repository-Only Route Registry Surface Resolution Parity Proof
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/com-b02cs-repository-only-route-registry-surface-resolution-parity-proof.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02cs-route-registry-surface-resolution-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 3ca28699a30a14302fccb83498537b3ce708df98
+      PREDECESSOR_TREE: aefbcd74d92014baa8fe279486fac203601957e0
+      WORKFLOW: .github/workflows/com-b02cs-repository-only-route-registry-surface-resolution-parity-proof.yml
+      ROUTE_REGISTRY: backend/shared/http/route-registry.js
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      SURFACE_DESCRIPTOR: backend/shared/http/repository-only-route-surface-descriptor.js
+      SURFACE_DESCRIPTOR_BLOB: c899df5404d9d7f90795f8933dfc44bdd57a1971
+      SURFACE_RESOLVER: backend/shared/http/repository-only-route-surface-resolver.js
+      SURFACE_RESOLVER_BLOB: 00df5c48a9ac4a72fefde4aa31486fe8ed46ea8c
+      MODULE_ROUTE_LOADER: backend/shared/http/module-route-loader.js
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      ROUTE_HANDLERS: backend/modules/communities/route-handlers.js
+      ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      B02CR_CONFIG: config/com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.json
+      B02CR_CONFIG_BLOB: 9703d7b5d396633d0f6e76c64e451b9955ff95e5
+      B02CR_TEST: scripts/test-com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.js
+      B02CR_TEST_BLOB: eed4fb0bb858e224deeaf36d58bfbfb3f13ecbe2
+      B02CR_WORKFLOW: .github/workflows/com-b02cr-repository-only-module-route-loader-composer-to-b02t-parity-proof.yml
+      B02CR_WORKFLOW_BLOB: e7f753e3029d5fc27bd5df3e7ffc7968b5e5a8df
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze B02CR predecessor, transition dependencies and exact B02CS scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+
+          test "$(git rev-parse HEAD:$ROUTE_REGISTRY)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:$SURFACE_DESCRIPTOR)" = "$SURFACE_DESCRIPTOR_BLOB"
+          test "$(git rev-parse HEAD:$SURFACE_RESOLVER)" = "$SURFACE_RESOLVER_BLOB"
+          test "$(git rev-parse HEAD:$MODULE_ROUTE_LOADER)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_HANDLERS)" = "$ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$B02CR_CONFIG)" = "$B02CR_CONFIG_BLOB"
+          test "$(git rev-parse HEAD:$B02CR_TEST)" = "$B02CR_TEST_BLOB"
+          test "$(git rev-parse HEAD:$B02CR_WORKFLOW)" = "$B02CR_WORKFLOW_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+
+          expected="$WORKFLOW"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD)"
+          test "$actual" = "$expected"
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Materialize isolated B02CS reference-resolution test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TEST="$RUNNER_TEMP/test-com-b02cs-route-registry-surface-resolution-parity-proof.js"
+          PROOF="$RUNNER_TEMP/com-b02cs-repository-only-route-registry-surface-resolution-parity-proof.json"
+
+          cat > "$TEST" <<'NODE'
+          'use strict';
+
+          const assert = require('assert');
+          const fs = require('fs');
+          const path = require('path');
+          const { execFileSync } = require('child_process');
+
+          const root = process.cwd();
+          const routeRegistry = require(path.join(root, 'backend/shared/http/route-registry'));
+          const surfaceDescriptor = require(path.join(root, 'backend/shared/http/repository-only-route-surface-descriptor'));
+          const surfaceResolver = require(path.join(root, 'backend/shared/http/repository-only-route-surface-resolver'));
+          const moduleRouteLoader = require(path.join(root, 'backend/shared/http/module-route-loader'));
+          const routeHandlers = require(path.join(root, 'backend/modules/communities/route-handlers'));
+
+          const cases = Object.freeze([
+            Object.freeze({
+              routeName: 'communities.membership.command',
+              activeHandlerName: 'executeMembershipCommand',
+              beginSurfaceName: 'composeMembershipCommandRepositoryOnly'
+            }),
+            Object.freeze({
+              routeName: 'communities.governance.command',
+              activeHandlerName: 'executeGovernanceCommand',
+              beginSurfaceName: 'composeGovernanceCommandRepositoryOnly'
+            }),
+            Object.freeze({
+              routeName: 'communities.content.command',
+              activeHandlerName: 'executeContentCommand',
+              beginSurfaceName: 'composeContentCommandRepositoryOnly'
+            })
+          ]);
+
+          assert.strictEqual(surfaceDescriptor.BOUNDARY_ID, 'COM-B02W');
+          assert.strictEqual(surfaceResolver.BOUNDARY_ID, 'COM-B02X');
+
+          const moduleRoutes = moduleRouteLoader.listModuleRoutes();
+          const results = [];
+
+          for (const entry of cases) {
+            const registryRoute = routeRegistry.findRouteByName(entry.routeName);
+            assert.ok(registryRoute, `missing registry route: ${entry.routeName}`);
+            assert.strictEqual(registryRoute.module, 'communities');
+            assert.strictEqual(registryRoute.handler, entry.activeHandlerName);
+
+            const loadedRoute = moduleRoutes.find((route) => route && route.name === entry.routeName);
+            assert.strictEqual(loadedRoute, registryRoute, `loader route identity drift: ${entry.routeName}`);
+
+            const descriptor = surfaceDescriptor.describeRepositoryOnlyRouteSurface(entry.routeName);
+            assert.ok(descriptor, `missing repository-only descriptor: ${entry.routeName}`);
+            assert.strictEqual(descriptor.routeName, entry.routeName);
+            assert.strictEqual(descriptor.moduleName, 'communities');
+            assert.strictEqual(descriptor.activeHandlerName, entry.activeHandlerName);
+            assert.strictEqual(descriptor.beginSurfaceName, entry.beginSurfaceName);
+            assert.strictEqual(descriptor.resumeSurfaceName, 'resumeCommandRepositoryOnlySurface');
+            assert.strictEqual(descriptor.activeHandlerPreserved, true);
+            assert.strictEqual(descriptor.routeRegistryPreserved, true);
+            assert.strictEqual(descriptor.moduleRouteLoaderPreserved, true);
+            assert.strictEqual(descriptor.executableReferenceExposed, false);
+
+            const resolution = surfaceResolver.resolveRepositoryOnlyRouteSurface(entry.routeName);
+            assert.ok(resolution, `missing repository-only resolution: ${entry.routeName}`);
+            assert.strictEqual(resolution.routeName, entry.routeName);
+            assert.strictEqual(resolution.activeHandlerName, entry.activeHandlerName);
+            assert.strictEqual(resolution.beginSurfaceName, entry.beginSurfaceName);
+            assert.strictEqual(resolution.resumeSurfaceName, 'resumeCommandRepositoryOnlySurface');
+            assert.strictEqual(resolution.executableReferencesResolved, true);
+            assert.strictEqual(resolution.executableReferencesInvoked, false);
+
+            const activeHandler = moduleRouteLoader.getHandler('communities', entry.activeHandlerName);
+            const beginSurface = moduleRouteLoader.getRepositoryOnlySurface('communities', entry.beginSurfaceName);
+            const resumeSurface = moduleRouteLoader.getRepositoryOnlySurface('communities', 'resumeCommandRepositoryOnlySurface');
+
+            assert.strictEqual(activeHandler, routeHandlers.handlers[entry.activeHandlerName]);
+            assert.strictEqual(activeHandler, routeHandlers[entry.activeHandlerName]);
+            assert.strictEqual(beginSurface, routeHandlers[entry.beginSurfaceName]);
+            assert.strictEqual(resumeSurface, routeHandlers.resumeCommandRepositoryOnlySurface);
+            assert.strictEqual(resolution.beginSurface, beginSurface);
+            assert.strictEqual(resolution.resumeSurface, resumeSurface);
+            assert.notStrictEqual(activeHandler, beginSurface, `active/repository-only surface collapse: ${entry.routeName}`);
+            assert.notStrictEqual(activeHandler, resumeSurface, `active/resume surface collapse: ${entry.routeName}`);
+
+            results.push(Object.freeze({
+              routeName: entry.routeName,
+              moduleName: registryRoute.module,
+              activeHandlerName: entry.activeHandlerName,
+              beginSurfaceName: entry.beginSurfaceName,
+              resumeSurfaceName: 'resumeCommandRepositoryOnlySurface',
+              registryToLoaderRouteIdentity: true,
+              descriptorParity: true,
+              resolverReferenceParity: true,
+              activeHandlerSeparatedFromRepositoryOnlySurface: true,
+              executableReferenceInvoked: false
+            }));
+          }
+
+          assert.strictEqual(surfaceDescriptor.describeRepositoryOnlyRouteSurface('communities.moderation.command'), null);
+          assert.strictEqual(surfaceResolver.resolveRepositoryOnlyRouteSurface('communities.moderation.command'), null);
+          assert.strictEqual(surfaceDescriptor.describeRepositoryOnlyRouteSurface('missing.route'), null);
+          assert.strictEqual(surfaceResolver.resolveRepositoryOnlyRouteSurface('missing.route'), null);
+          assert.strictEqual(results.length, 3);
+
+          const headTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim();
+          const proof = {
+            contractId: 'com-b02cs-repository-only-route-registry-surface-resolution-parity-proof-v1',
+            boundaryId: 'COM-B02CS',
+            domain: 'COM-001',
+            mode: 'repository-only',
+            state: 'REPOSITORY_PROOF_PASS',
+            head: process.env.GITHUB_SHA,
+            tree: headTree,
+            predecessor: {
+              boundaryId: 'COM-B02CR',
+              head: process.env.PREDECESSOR_HEAD,
+              tree: process.env.PREDECESSOR_TREE
+            },
+            proofTarget: 'route-registry -> COM-B02W descriptor -> COM-B02X resolver -> module-route-loader repository-only references',
+            cases: results,
+            invariants: {
+              activeExecuteHandlerInvoked: false,
+              repositoryOnlyBeginSurfaceInvoked: false,
+              repositoryOnlyResumeSurfaceInvoked: false,
+              repositoryOperationInvoked: false,
+              credentialReadExecuted: false,
+              rpcExecuted: false,
+              networkExecuted: false,
+              supabaseOperationExecuted: false,
+              stagingReadExecuted: false,
+              stagingMutationExecuted: false,
+              runtimeActivated: false,
+              realtimeActivated: false,
+              migrationApplied: false,
+              productionChanged: false,
+              mergeExecuted: false,
+              readyForReviewExecuted: false
+            }
+          };
+
+          fs.writeFileSync(process.env.PROOF_PATH, `${JSON.stringify(proof, null, 2)}\n`);
+          console.log(JSON.stringify(proof));
+          NODE
+
+          if grep -Eq '\bexecute(Membership|Governance|Content)Command[[:space:]]*\(' "$TEST"; then
+            echo 'B02CS must not invoke active execute handlers' >&2
+            exit 1
+          fi
+
+          if grep -Eq '\b(composeMembershipCommandRepositoryOnly|composeGovernanceCommandRepositoryOnly|composeContentCommandRepositoryOnly|resumeCommandRepositoryOnlySurface)[[:space:]]*\(' "$TEST"; then
+            echo 'B02CS must not invoke repository-only begin/resume surfaces' >&2
+            exit 1
+          fi
+
+          export PROOF_PATH="$PROOF"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check "$TEST"
+          node "$TEST"
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+
+      - name: Upload B02CS repository-only proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b02cs-repository-only-route-registry-surface-resolution-parity-proof-${{ github.sha }}
+          path: ${{ runner.temp }}/com-b02cs-repository-only-route-registry-surface-resolution-parity-proof.json
+          if-no-files-found: error
+          retention-days: 30

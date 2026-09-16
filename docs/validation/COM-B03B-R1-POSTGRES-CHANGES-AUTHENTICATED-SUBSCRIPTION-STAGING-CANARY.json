@@ -1,0 +1,76 @@
+{
+  "validationId": "COM-B03B-R1-POSTGRES-CHANGES-AUTHENTICATED-SUBSCRIPTION-STAGING-CANARY",
+  "domain": "COM-001",
+  "contractId": "com-b03b-r1-postgres-changes-recovery-readiness-v1",
+  "status": "failed_closed_synthetic_auth_login",
+  "trigger": {
+    "head": "5b8363c5945178c82092157bcbf8bc7a01a6a75e",
+    "workflowInstallHead": "a43160710233af5babafb0389b97e71acb6d33c7",
+    "singleFileBoundaryVerified": true
+  },
+  "workflow": {
+    "runId": 31270466400,
+    "runAttempt": 1,
+    "certifyJobId": 93135391233,
+    "certifyResult": "success",
+    "authorizeJobId": 93135431700,
+    "authorizeResult": "success",
+    "canaryJobId": 93135463750,
+    "canaryResult": "failure"
+  },
+  "artifact": {
+    "id": 9025452077,
+    "name": "com-b03b-r1-postgres-changes-staging-canary-31270466400",
+    "sha256": "df2852e9a153b48e8b8d42f300179dedd4db1dba53de2236571af30672efd215"
+  },
+  "authorization": {
+    "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_R1_COMMUNITY_POSTS_POSTGRES_CHANGES_MIGRATION_AND_AUTHENTICATED_SUBSCRIPTION_CANARY_ON_DOKE_STAGING",
+    "consumed": true,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "mustNotBeRerun": true
+  },
+  "scope": [
+    "community_posts",
+    "channel_presence",
+    "channel_typing"
+  ],
+  "excludedTopics": [
+    "channel_messages"
+  ],
+  "failure": {
+    "code": "DOKE_COM_B03B_R1_SYNTHETIC_LOGIN_FAILED",
+    "stage": "synthetic_authenticated_session",
+    "interpretation": "the configured shared staging client credential did not produce a valid Supabase Auth session; the Realtime transport itself was not reached for subscription proof"
+  },
+  "effects": {
+    "stagingRealtimePublicationMigrationMayHaveApplied": true,
+    "temporarySyntheticDomainMutationMayHaveExecuted": false,
+    "publicTrafficEnabled": false,
+    "runtimeDeployed": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "cleanup": {
+    "temporaryPoliciesRemoved": true,
+    "syntheticFixtureRemoved": true,
+    "persistentDomainResidue": 0
+  },
+  "rootCause": {
+    "class": "shared_staging_auth_fixture_drift",
+    "evidence": [
+      "DOKE_STAGING_CLIENT_PASSWORD was present because the environment preflight passed",
+      "signInWithPassword for cliente@doke.local failed before fixture creation",
+      "the canonical seed requires Auth canaries to be provisioned separately through scripts/provision-staging-auth-canaries.js"
+    ],
+    "recoveryDirection": "use a COM-owned ephemeral Supabase Auth canary identity lifecycle rather than depend on the shared long-lived cliente@doke.local credential"
+  },
+  "governance": {
+    "matrixVersion": "1.3.112",
+    "maturity": 3,
+    "maturityPromoted": false,
+    "productionGate": "blocked",
+    "mergeAuthorized": false
+  },
+  "nextBoundary": "COM-B03B-R2 ephemeral Auth identity lifecycle recovery requires separate repository certification and separate single-use staging authorization"
+}

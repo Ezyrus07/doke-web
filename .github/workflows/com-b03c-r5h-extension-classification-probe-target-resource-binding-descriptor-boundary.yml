@@ -1,0 +1,145 @@
+name: COM-B03C R5H Target Resource Binding Descriptor Boundary
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-target-resource-binding-descriptor-boundary.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-target-resource-binding-descriptor-boundary.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Frozen certified target-environment binding lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=10ddea2bb7a4ded9bf1b7654585092a396f885cb
+          certified=3a304c4557e746b06e2161b535b293d69347fbb5
+          git merge-base --is-ancestor "$parent" HEAD
+          git merge-base --is-ancestor "$certified" HEAD
+          test "$(git rev-parse "$parent^{tree}")" = "c9ef1306d02ca62dd4e0a447f2c18e1ce56f9152"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.json)" = "34d3d179090ccca8c51aaaf12a2ba1bb673ef495"
+          test "$(git rev-parse "$parent:.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.yml")" = "575d7bab78f04caaa405e88c71454a3ef28399e4"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-runtime-target-binding-specification.json)" = "9ad9c4ac7a8863ff54cde18bd898483685346906"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-runtime-target-binding.js)" = "759935689fccc695cf7bcfa5d495fefb0965d8be"
+
+      - name: Exact repository-only materialization scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=10ddea2bb7a4ded9bf1b7654585092a396f885cb
+          certified=3a304c4557e746b06e2161b535b293d69347fbb5
+          descriptor=config/com-b03c-r5h-extension-classification-probe-target-resource-binding-descriptor-boundary.json
+          certifier=.github/workflows/com-b03c-r5h-extension-classification-probe-target-resource-binding-descriptor-boundary.yml
+          initial="$(printf '%s\n' "$certifier" "$descriptor" | sort)"
+          final="$(printf '%s\n' "$certifier" "$descriptor" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only "$parent" "$certified" | sort)"
+          if [ "$actual" != "$initial" ] && [ "$actual" != "$final" ]; then
+            printf 'Unexpected scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
+
+      - name: Static descriptor-only no-runtime boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          descriptor=config/com-b03c-r5h-extension-classification-probe-target-resource-binding-descriptor-boundary.json
+          if grep -En 'https?://|process\.env|secrets\.|@supabase|createClient|\.channel\(|\.subscribe\(|fetch\(|projectRef|projectUrl|apiKey|service_role|anonKey' "$descriptor"; then
+            echo 'Remote target/runtime material is forbidden in target-resource descriptor boundary' >&2
+            exit 1
+          fi
+
+      - name: Semantic target-resource binding descriptor assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const descriptor = require('./config/com-b03c-r5h-extension-classification-probe-target-resource-binding-descriptor-boundary.json');
+          const parent = require('./config/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.json');
+          const schemaModule = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-runtime-target-binding.js');
+
+          const expectedContract = 'com-b03c-r5h-extension-classification-probe-target-resource-binding-descriptor-boundary-v1';
+          const expectedEnvironment = 'doke-web-staging';
+          const expectedFields = ['stableResourceIdentifier','targetEnvironmentStableIdentifier','resourceScopeFingerprint'];
+
+          if (descriptor.contractId !== expectedContract) throw new Error('DESCRIPTOR_CONTRACT_DRIFT');
+          if (descriptor.repositoryContext.parentCertifiedTargetEnvironmentBindingHead !== '10ddea2bb7a4ded9bf1b7654585092a396f885cb') throw new Error('PARENT_HEAD_DRIFT');
+          if (descriptor.repositoryContext.parentCertifiedTargetEnvironmentBindingTree !== 'c9ef1306d02ca62dd4e0a447f2c18e1ce56f9152') throw new Error('PARENT_TREE_DRIFT');
+          if (descriptor.repositoryContext.parentTargetEnvironmentBindingCertificationRun !== 31955575231 || descriptor.repositoryContext.parentTargetEnvironmentBindingCertificationJob !== 95185593791) throw new Error('PARENT_CERTIFICATION_DRIFT');
+          if (descriptor.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || descriptor.functionalCheckpoint.r5iCreated !== false || descriptor.functionalCheckpoint.r5iInferred !== false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+
+          const parentBinding = parent.targetEnvironmentBinding;
+          if (parentBinding.targetEnvironmentBindingDefined !== true || parentBinding.targetEnvironmentBound !== true || parentBinding.environmentClass !== 'non_production_staging' || parentBinding.stableEnvironmentIdentifier !== expectedEnvironment || parentBinding.production !== false) throw new Error('PARENT_TARGET_ENVIRONMENT_BINDING_DRIFT');
+          if (parentBinding.targetResourceBound !== false || parentBinding.transportBound !== false || parentBinding.stagingReadAuthority !== false || parentBinding.stagingMutationAuthority !== false || parentBinding.remoteExecutionAuthority !== false) throw new Error('PARENT_REMOTE_AUTHORITY_DRIFT');
+
+          const canonicalSchema = schemaModule.schemaDescriptor('target_resource');
+          if (canonicalSchema.decision !== 'repository_only_binding_schema_descriptor') throw new Error('CANONICAL_TARGET_RESOURCE_SCHEMA_MISSING');
+          if (canonicalSchema.requiredFields.join('|') !== expectedFields.join('|')) throw new Error('CANONICAL_TARGET_RESOURCE_FIELDS_DRIFT');
+          if (canonicalSchema.constraints.mustMatchCertifiedTargetEnvironment !== true || canonicalSchema.constraints.resourceScopeFingerprintRequired !== true) throw new Error('CANONICAL_TARGET_RESOURCE_CONSTRAINT_DRIFT');
+
+          const binding = descriptor.targetResourceBindingDescriptor;
+          if (binding.slotId !== 'target_resource' || binding.targetResourceBindingDescriptorDefined !== true || binding.schemaOnly !== true) throw new Error('TARGET_RESOURCE_DESCRIPTOR_NOT_DEFINED');
+          if (binding.targetResourceBindingDefined !== false || binding.targetResourceBound !== false || binding.transportBound !== false) throw new Error('TARGET_RESOURCE_MUST_REMAIN_UNBOUND');
+          if (binding.requiredFields.join('|') !== expectedFields.join('|') || binding.mustMatchCertifiedTargetEnvironment !== true || binding.requiredTargetEnvironmentStableIdentifier !== expectedEnvironment || binding.resourceScopeFingerprintRequired !== true) throw new Error('TARGET_RESOURCE_DESCRIPTOR_SCHEMA_DRIFT');
+          if (binding.stableResourceIdentifier !== null || binding.targetEnvironmentStableIdentifier !== null || binding.resourceScopeFingerprint !== null || binding.bindingBoundaryHead !== null) throw new Error('CONCRETE_TARGET_RESOURCE_MUST_REMAIN_NULL');
+          if (binding.futureBindingBoundaryMustBeSeparateCertifiedBoundary !== true || binding.futureBindingBoundaryMustSetTargetEnvironmentStableIdentifierExactly !== expectedEnvironment || binding.futureBindingBoundaryMustProvideStableResourceIdentifier !== true || binding.futureBindingBoundaryMustProvideResourceScopeFingerprint !== true || binding.futureBindingBoundaryMayBindOnlyTargetResourceSlot !== true || binding.futureBindingBoundaryMustPreserveRuntimeAdapterBinding !== true || binding.futureBindingBoundaryMustPreserveTargetEnvironmentBinding !== true || binding.futureBindingBoundaryMayNotBindDependentPorts !== true || binding.futureBindingBoundaryMayNotIntroduceEndpoint !== true || binding.futureBindingBoundaryMayNotGrantStagingReadAuthority !== true || binding.futureBindingBoundaryMayNotGrantStagingMutationAuthority !== true || binding.futureBindingBoundaryMayNotGrantNetworkAuthority !== true || binding.futureBindingBoundaryMayNotGrantRemoteExecutionAuthority !== true) throw new Error('FUTURE_TARGET_RESOURCE_BINDING_GOVERNANCE_DRIFT');
+
+          const upstream = descriptor.upstreamBindingState;
+          if (!upstream.runtimeAdapter || upstream.runtimeAdapter.bound !== true || upstream.runtimeAdapter.bindingBoundaryHead !== 'e2809ba029930eac76729c9ae5f1496919a500de') throw new Error('UPSTREAM_RUNTIME_ADAPTER_DRIFT');
+          if (!upstream.targetEnvironment || upstream.targetEnvironment.bound !== true || upstream.targetEnvironment.bindingBoundaryHead !== '10ddea2bb7a4ded9bf1b7654585092a396f885cb' || upstream.targetEnvironment.stableEnvironmentIdentifier !== expectedEnvironment || upstream.targetEnvironment.production !== false) throw new Error('UPSTREAM_TARGET_ENVIRONMENT_DRIFT');
+
+          const expectedSlots = ['credential_provider','synthetic_identity_lifecycle','realtime_client_factory','sanitized_evidence_recorder','cleanup_verifier'];
+          if (descriptor.delegatedPortState.map(x => x.slotId).join('|') !== expectedSlots.join('|')) throw new Error('DELEGATED_PORT_SET_DRIFT');
+          for (const slot of descriptor.delegatedPortState) {
+            if (slot.bound !== false || slot.concreteValuePresent !== false || slot.separateCertifiedBindingBoundaryRequired !== true) throw new Error(`DELEGATED_PORT_MUST_REMAIN_UNBOUND:${slot.slotId}`);
+          }
+
+          const concrete = descriptor.concreteBindingState;
+          if (!concrete.runtimeAdapter || !concrete.targetEnvironment) throw new Error('UPSTREAM_CONCRETE_BINDINGS_MUST_BE_PRESERVED');
+          const forbiddenConcrete = ['targetResource','targetResourceStableIdentifier','targetResourceEnvironmentIdentifier','targetResourceScopeFingerprint','credentialProvider','credentialMaterial','syntheticIdentity','realtimeClientFactory','sanitizedEvidenceRecorder','cleanupVerifier','networkEndpoint','executionCommand','executionWorkflow','executionEntrypoint'];
+          for (const key of forbiddenConcrete) if (concrete[key] !== null) throw new Error(`FORBIDDEN_CONCRETE_BINDING:${key}`);
+
+          const future = descriptor.futureTargetResourceBindingBoundaryRequirements;
+          if (future.repositoryOnlyBoundaryRequired !== true || future.exactDescriptorCertifiedHeadRequired !== true || future.exactCertifiedTargetEnvironmentBindingHeadRequired !== true || future.exactTargetEnvironmentStableIdentifier !== expectedEnvironment || future.exactStableResourceIdentifierRequired !== true || future.resourceScopeFingerprintRequired !== true || future.resourceMustBelongToCertifiedTargetEnvironment !== true || future.targetResourceSlotOnly !== true || future.runtimeAdapterBindingMustRemainExact !== true || future.targetEnvironmentBindingMustRemainExact !== true || future.endpointMustRemainAbsent !== true || future.transportMustRemainUnbound !== true || future.stagingReadAuthorityMustRemainFalse !== true || future.stagingMutationAuthorityMustRemainFalse !== true || future.networkAuthorityMustRemainFalse !== true || future.remoteExecutionAuthorityMustRemainFalse !== true) throw new Error('FUTURE_TARGET_RESOURCE_SCOPE_DRIFT');
+
+          const auth = descriptor.authorizationState;
+          if (auth.genericContinuationGrantsRemoteAuthority !== false || auth.priorR5dAuthorizationReusable !== false || auth.priorR5dReceiptReusable !== false || auth.priorR5dTriggerReusable !== false) throw new Error('AUTHORIZATION_REUSE_DRIFT');
+          const causal = descriptor.causalState;
+          if (causal.exactRootCauseProven !== false || causal.causalPromotionAllowed !== false || causal.privatePresencePromotionAllowed !== false) throw new Error('CAUSAL_STATE_DRIFT');
+
+          const g = descriptor.governance;
+          const trueKeys = ['repositoryOnlyDefinition','runtimeAdapterBindingDefined','runtimeAdapterBound','targetEnvironmentBindingDescriptorDefined','targetEnvironmentBindingDefined','targetEnvironmentBound','targetResourceBindingDescriptorDefined'];
+          for (const key of trueKeys) if (g[key] !== true) throw new Error(`GOVERNANCE_MUST_BE_TRUE:${key}`);
+          const falseKeys = ['targetResourceBindingDefined','targetResourceBound','transportBound','credentialProviderBound','identityLifecycleBound','realtimeClientFactoryBound','sanitizedEvidenceRecorderBound','cleanupVerifierBound','executionEntryPointExported','executionWorkflowDefined','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority'];
+          for (const key of falseKeys) if (g[key] !== false) throw new Error(`GOVERNANCE_MUST_REMAIN_FALSE:${key}`);
+          NODE
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check 10ddea2bb7a4ded9bf1b7654585092a396f885cb HEAD

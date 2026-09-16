@@ -1,0 +1,175 @@
+name: COM-B02CU Repository-Only Active Runtime Route Resolution To Controlled External Command Binding Implementation
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/shared/http/repository-only-route-begin-dispatcher.js'
+      - '.github/workflows/com-b02cu-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-implementation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02cu-repository-only-binding-implementation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PREDECESSOR_HEAD: b9e860137e03159d191c0821e28b30865dfe1d81
+      PREDECESSOR_TREE: 3cc4c5b726769bc09415453f263b7f446f7177a0
+      SOURCE: backend/shared/http/repository-only-route-begin-dispatcher.js
+      SOURCE_PREDECESSOR_BLOB: 00d8d8e62dfb7c30b70753f83fa172f3953aad83
+      SOURCE_CANDIDATE_BLOB: de9cfabfba07979c981af1409c95be162315c362
+      WORKFLOW: .github/workflows/com-b02cu-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-implementation.yml
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_DERIVATIVE: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_DERIVATIVE_BLOB: 17cfe628187244c79305d3fe3415509e9111265d
+      ROUTE_REGISTRY: backend/shared/http/route-registry.js
+      ROUTE_REGISTRY_BLOB: 04a039c1967ffb59502e05584d05831f7c9a1a41
+      MODULE_ROUTE_LOADER: backend/shared/http/module-route-loader.js
+      MODULE_ROUTE_LOADER_BLOB: 85e061fe36339596ba9558a503b2fa7ce02574ae
+      ROUTE_HANDLERS: backend/modules/communities/route-handlers.js
+      ROUTE_HANDLERS_BLOB: b7f9f330f6d92c676eb76456b669bdf8dc749c20
+      SURFACE_DESCRIPTOR: backend/shared/http/repository-only-route-surface-descriptor.js
+      SURFACE_DESCRIPTOR_BLOB: c899df5404d9d7f90795f8933dfc44bdd57a1971
+      SURFACE_RESOLVER: backend/shared/http/repository-only-route-surface-resolver.js
+      SURFACE_RESOLVER_BLOB: 00df5c48a9ac4a72fefde4aa31486fe8ed46ea8c
+      COMMAND_ORCHESTRATION: backend/modules/communities/community-command-handler-repository-orchestration.js
+      COMMAND_ORCHESTRATION_BLOB: f094ddc01a3f05975794bafb925d64f146a51ea2
+      STAGING_API_RUNTIME: backend/runtime/staging/staging-api-runtime.js
+      STAGING_API_RUNTIME_BLOB: 69de100fe3a269507a0da7847ae8e9887f831ceb
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Freeze predecessor and exact persistent scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          test "$(git rev-parse "$PREDECESSOR_HEAD:$SOURCE")" = "$SOURCE_PREDECESSOR_BLOB"
+          test "$(git rev-parse "HEAD:$SOURCE")" = "$SOURCE_CANDIDATE_BLOB"
+
+          actual="$(git diff --name-status "$PREDECESSOR_HEAD" HEAD | sort)"
+          expected="$(printf 'A\t%s\nM\t%s\n' "$WORKFLOW" "$SOURCE" | sort)"
+          test "$actual" = "$expected"
+
+          test "$(git rev-parse HEAD:$MATRIX_SOURCE)" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:$MATRIX_DERIVATIVE)" = "$MATRIX_DERIVATIVE_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_REGISTRY)" = "$ROUTE_REGISTRY_BLOB"
+          test "$(git rev-parse HEAD:$MODULE_ROUTE_LOADER)" = "$MODULE_ROUTE_LOADER_BLOB"
+          test "$(git rev-parse HEAD:$ROUTE_HANDLERS)" = "$ROUTE_HANDLERS_BLOB"
+          test "$(git rev-parse HEAD:$SURFACE_DESCRIPTOR)" = "$SURFACE_DESCRIPTOR_BLOB"
+          test "$(git rev-parse HEAD:$SURFACE_RESOLVER)" = "$SURFACE_RESOLVER_BLOB"
+          test "$(git rev-parse HEAD:$COMMAND_ORCHESTRATION)" = "$COMMAND_ORCHESTRATION_BLOB"
+          test "$(git rev-parse HEAD:$STAGING_API_RUNTIME)" = "$STAGING_API_RUNTIME_BLOB"
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Validate repository governance without Matrix writes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node --check "$SOURCE"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Prove B02CU implementation is static fail-closed binding only
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PROOF="$RUNNER_TEMP/com-b02cu-static-proof.json"
+          SOURCE_PATH="$SOURCE" PROOF_PATH="$PROOF" node <<'NODE'
+          'use strict';
+
+          const assert = require('assert');
+          const fs = require('fs');
+
+          const source = fs.readFileSync(process.env.SOURCE_PATH, 'utf8');
+          const functionName = 'resolveActiveRuntimeRouteToControlledExternalCommandBinding';
+
+          assert.match(
+            source,
+            /const CONTROLLED_BINDING_BOUNDARY_ID = 'COM-B02CU';/
+          );
+          assert.match(
+            source,
+            /const CONTROLLED_BINDING_PREDECESSOR_HEAD = 'b9e860137e03159d191c0821e28b30865dfe1d81';/
+          );
+          assert.match(
+            source,
+            new RegExp(`function ${functionName}\\(activeRoute\\)`)
+          );
+          assert.match(
+            source,
+            /decision: 'repository_only_active_runtime_route_command_binding_materialized'/
+          );
+          assert.match(
+            source,
+            /beginDispatcherName: 'dispatchRepositoryOnlyRouteBegin'/
+          );
+          assert.match(source, /controlledExternalCommandBindingInvoked: false/);
+          assert.match(source, /executableReferenceReturned: false/);
+          assert.match(source, /runtimeWiringAuthority: false/);
+          assert.match(source, /runtimeActivationAuthority: false/);
+
+          const start = source.indexOf(`function ${functionName}(activeRoute)`);
+          const end = source.indexOf(
+            '\nfunction inspectRepositoryOnlyRouteBeginDispatcher()',
+            start
+          );
+          assert.ok(start >= 0 && end > start);
+          const implementation = source.slice(start, end);
+
+          assert.ok(!implementation.includes('dispatchRepositoryOnlyRouteBegin('));
+          assert.ok(!implementation.includes('resolution.beginSurface('));
+          assert.ok(!implementation.includes('resolution.resumeSurface('));
+          assert.ok(!implementation.includes('.rpc('));
+          assert.ok(!implementation.includes('.from('));
+          assert.ok(!implementation.includes('fetch('));
+          assert.ok(!implementation.includes('createClient('));
+
+          const proof = {
+            contractId:
+              'com-b02cu-repository-only-active-runtime-route-resolution-to-controlled-external-command-binding-implementation-v1',
+            boundaryId: 'COM-B02CU',
+            predecessorHead: process.env.PREDECESSOR_HEAD,
+            persistentScope: [
+              process.env.SOURCE,
+              process.env.WORKFLOW
+            ],
+            sourceCandidateBlob: process.env.SOURCE_CANDIDATE_BLOB,
+            activeExecuteHandlerInvoked: false,
+            repositoryOnlyBeginSurfaceInvoked: false,
+            resumeSurfaceInvoked: false,
+            repositoryOperationInvoked: false,
+            rpcExecuted: false,
+            networkExecuted: false,
+            supabaseOperationExecuted: false,
+            stagingReadExecuted: false,
+            stagingMutationExecuted: false,
+            runtimeActivated: false,
+            realtimeActivated: false,
+            migrationApplied: false,
+            productionChanged: false,
+            matrixChanged: false
+          };
+
+          fs.writeFileSync(process.env.PROOF_PATH, `${JSON.stringify(proof, null, 2)}\n`);
+          NODE
+
+          test -s "$PROOF"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"

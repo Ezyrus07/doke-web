@@ -1,0 +1,110 @@
+{
+  "contractId": "com-b03c-r5h-extension-classification-probe-execution-boundary-v1",
+  "validationId": "COM-B03C-R5H-EXTENSION-CLASSIFICATION-PROBE-EXECUTION-BOUNDARY",
+  "status": "repository_extension_classification_probe_execution_boundary_defined_no_remote_authority",
+  "repositoryContext": {
+    "repository": "Ezyrus07/doke-web",
+    "pullRequest": 61,
+    "branch": "com/com-001-baseline-audit",
+    "base": "rep/rep-001-baseline-audit",
+    "parentCertifiedHead": "004f38dd3f7f94fcd14cec88c227715a7b7f35bc",
+    "parentCertifiedTree": "5a7dbf628703e071df096720e9a90150e3b8deba",
+    "parentCertificationRun": 31919922475,
+    "parentCertificationJob": 95098033253,
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "functionalCheckpoint": {
+    "lastFunctionalCheckpoint": "COM-B03C-R5H",
+    "r5hCertifiedHead": "a06de307f580c6b787a4c233a342a28a751f3621",
+    "r5hCertifiedTree": "6ef6a16772785200b1ddf0564b01b7da5d55abe5",
+    "r5iCreated": false,
+    "r5iInferred": false
+  },
+  "causalProofInput": {
+    "path": "config/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.json",
+    "blob": "0f59265ecb6ff8c36c2e42780c171896f21c7d6a",
+    "contractId": "com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation-v1",
+    "certifiedHead": "004f38dd3f7f94fcd14cec88c227715a7b7f35bc",
+    "certificationRun": 31919922475,
+    "certificationJob": 95098033253,
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false
+  },
+  "probeBoundary": {
+    "evaluationSurface": "realtime.messages.extension",
+    "targetEnvironment": "staging",
+    "casesAreMutuallyExclusive": true,
+    "casesAreCollectivelyExhaustiveForExtensionValueClassification": true,
+    "cases": [
+      {
+        "id": "extension_is_null",
+        "predicate": "extension IS NULL",
+        "classification": "extension_unavailable_or_null"
+      },
+      {
+        "id": "extension_equals_presence",
+        "predicate": "extension = 'presence'",
+        "classification": "extension_expected_presence_value"
+      },
+      {
+        "id": "extension_non_null_not_presence",
+        "predicate": "extension IS NOT NULL AND extension <> 'presence'",
+        "classification": "extension_unexpected_non_null_value"
+      }
+    ],
+    "oneCasePerObservationRequired": true,
+    "sameSyntheticIdentityEnvelopeRequired": true,
+    "sameUniqueTopicEnvelopeRequired": true,
+    "freshRealtimeClientPerObservationRequired": true,
+    "privatePresenceOnlyChannelRequired": true,
+    "singleSyntheticIdentityRequired": true,
+    "identityCleanupRequired": true,
+    "zeroResidueRequired": true,
+    "sanitizedEvidenceRequired": true,
+    "rawRemoteErrorForbidden": true,
+    "terminalStatusAloneCannotProveCause": true,
+    "crossCaseComparisonRequiredForCausalConclusion": true,
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false,
+    "privatePresencePromotionAllowed": false
+  },
+  "authorizationModel": {
+    "boundaryMustBeRepositoryCertifiedBeforeAuthorization": true,
+    "futureAuthorizationMustBeFresh": true,
+    "futureAuthorizationMustBeExplicit": true,
+    "futureAuthorizationMustBeSingleUse": true,
+    "futureAuthorizationMustBindExactCertifiedBoundaryHead": true,
+    "futureAuthorizationMustBindExactStagingResource": true,
+    "futureReceiptMustBeSeparateSingleFileCommit": true,
+    "receiptParentMustEqualAuthorizedBoundaryHead": true,
+    "runAttemptOneRequired": true,
+    "priorR5dAuthorizationReuseForbidden": true,
+    "priorR5dReceiptReuseForbidden": true,
+    "priorR5dTriggerReuseForbidden": true,
+    "genericContinuationGrantsRemoteAuthority": false
+  },
+  "governance": {
+    "repositoryOnlyDefinition": true,
+    "executionBoundaryDefined": true,
+    "executionHarnessDefined": false,
+    "triggerCreated": false,
+    "receiptCreated": false,
+    "explicitExecutionAuthorizationReceived": false,
+    "executionAttempted": false,
+    "remoteExecutionAuthority": false,
+    "remoteCredentialReadAuthority": false,
+    "remoteDependencyLoadAuthority": false,
+    "networkAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "runtimeChangeAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "nextBoundaryRequirement": "Repository-certify this exact boundary. After certification, the next repository-only step may define a non-executing harness specification. No staging execution, trigger, receipt, credential access, network access or remote authority is granted by this boundary or by generic continuation."
+}

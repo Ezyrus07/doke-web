@@ -1,0 +1,67 @@
+name: COM-B03C-R4C PG int8 Counter Codec Compatibility Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4c.js'
+      - 'scripts/test-com-b03c-r4c-pg-int8-counter-codec-compatibility-readiness.js'
+      - 'config/com-b03c-r4c-pg-int8-counter-codec-compatibility-readiness.json'
+      - 'docs/validation/COM-B03C-R4B-SINGLE-USE-PHASE-ATTRIBUTED-RETRY-STAGING-SUMMARY.json'
+      - 'docs/validation/COM-B03C-R4C-PG-INT8-COUNTER-CODEC-COMPATIBILITY-READINESS.json'
+      - '.github/workflows/com-b03c-r4c-pg-int8-counter-codec-compatibility-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4c.js
+          node --check scripts/test-com-b03c-r4c-pg-int8-counter-codec-compatibility-readiness.js
+      - name: R4C pg int8 counter codec compatibility
+        run: node scripts/test-com-b03c-r4c-pg-int8-counter-codec-compatibility-readiness.js
+      - name: R4B staging evidence continuity
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r4b-single-use-phase-attributed-retry-execution-trigger.json
+          node - <<'NODE'
+          const summary = require('./docs/validation/COM-B03C-R4B-SINGLE-USE-PHASE-ATTRIBUTED-RETRY-STAGING-SUMMARY.json');
+          if (summary.workflow.run !== 31487894136) process.exit(1);
+          if (summary.workflow.certifyConclusion !== 'success') process.exit(1);
+          if (summary.workflow.authorizeConclusion !== 'success') process.exit(1);
+          if (summary.workflow.canaryConclusion !== 'failure') process.exit(1);
+          if (summary.observation.executionFailure.failurePhase !== 'baseline_counter_read') process.exit(1);
+          if (summary.observation.identityCleanupSucceeded !== true) process.exit(1);
+          if (summary.observation.instrumentationInstalled !== false) process.exit(1);
+          if (summary.cleanup.secondStagingExecutionOccurred !== false) process.exit(1);
+          NODE
+      - name: Remote hard block
+        shell: bash
+        run: |
+          set +e
+          output="$(node - <<'NODE' 2>&1
+          const r4c = require('./backend/modules/communities/community-realtime-private-auth-r4c');
+          r4c.assertRemoteExecutionBoundaryAbsent();
+          NODE
+          )"
+          code=$?
+          set -e
+          test "$code" -ne 0
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R4C_REMOTE_EXECUTION_BOUNDARY_REQUIRED'
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

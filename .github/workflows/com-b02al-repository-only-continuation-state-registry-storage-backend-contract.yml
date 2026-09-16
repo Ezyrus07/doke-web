@@ -1,0 +1,98 @@
+name: COM-B02AL Repository-Only Continuation State Registry Storage Backend Contract
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-contract.js'
+      - 'config/com-b02al-repository-only-continuation-state-registry-storage-backend-contract.json'
+      - 'scripts/test-com-b02al-repository-only-continuation-state-registry-storage-backend-contract.js'
+      - '.github/workflows/com-b02al-repository-only-continuation-state-registry-storage-backend-contract.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02AK predecessor and exact repository-only contract scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=def3c1a52e15793e51e7a885edef06429396dbf5
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git merge-base --is-ancestor "$BASE" HEAD
+
+          expected_candidate="$(printf '%s\n' \
+            .github/workflows/com-b02al-repository-only-continuation-state-registry-storage-backend-contract.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-contract.js \
+            config/com-b02al-repository-only-continuation-state-registry-storage-backend-contract.json \
+            scripts/test-com-b02al-repository-only-continuation-state-registry-storage-backend-contract.js | sort)"
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02al-repository-only-continuation-state-registry-storage-backend-contract.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-contract.js \
+            config/com-b02al-repository-only-continuation-state-registry-storage-backend-contract.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02al-repository-only-continuation-state-registry-storage-backend-contract.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected_candidate" || test "$actual" = "$expected_final"
+          ! printf '%s\n' "$actual" | grep '^supabase/migrations/'
+          ! printf '%s\n' "$actual" | grep '^\.github/workflows/temp-'
+
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-readiness.js)" = "6d0c930387008f2b0c9dd95736b434af1e0fedf6"
+          test "$(git rev-parse HEAD:config/com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.json)" = "4c5e239fcd88f82530a60d9a157efaefa58217a7"
+          test "$(git rev-parse HEAD:scripts/test-com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.js)" = "67c6d16d6fb9bbb2cac1a3233c0bb157b122ed5f"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.yml)" = "39a1e9aab5c87acbef6b49299ca3750a391362ea"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+      - name: Syntax and semantic B02AL storage backend contract conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-contract.js
+          node --check scripts/test-com-b02al-repository-only-continuation-state-registry-storage-backend-contract.js
+          node scripts/test-com-b02al-repository-only-continuation-state-registry-storage-backend-contract.js
+
+      - name: Contract remains implementation-free storage-free operation-free and side-effect-free
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-contract.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'storageBackendImplementationMaterialized[[:space:]]*:[[:space:]]*true|storageBackendMaterialized[[:space:]]*:[[:space:]]*true|entryContainerMaterialized[[:space:]]*:[[:space:]]*true|operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'continuationStateStored[[:space:]]*:[[:space:]]*true|registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check def3c1a52e15793e51e7a885edef06429396dbf5 HEAD

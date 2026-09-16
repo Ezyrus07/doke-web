@@ -1,0 +1,114 @@
+name: COM-B02E Server Authority Main Runtime Integration Readiness
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-server-authority-runtime-integration-readiness.js'
+      - 'config/com-b02e-server-authority-main-runtime-integration-readiness.json'
+      - 'scripts/test-com-b02e-server-authority-main-runtime-integration-readiness.js'
+      - '.github/workflows/com-b02e-server-authority-main-runtime-integration-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-server-authority-runtime-integration-readiness.js'
+      - 'config/com-b02e-server-authority-main-runtime-integration-readiness.json'
+      - 'scripts/test-com-b02e-server-authority-main-runtime-integration-readiness.js'
+      - '.github/workflows/com-b02e-server-authority-main-runtime-integration-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Frozen parent lineage and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='5e3fbf6d0bfd8a6f254ef1d0f2fb0879be7ae894'
+          test "$(git merge-base "$BASE" HEAD)" = "$BASE"
+          test "$(git rev-parse "$BASE:backend/shared/http/route-registry.js")" = 'cda8292ce3669a2b76b70ed2d2aae9a017973254'
+          test "$(git rev-parse "HEAD:backend/shared/http/route-registry.js")" = 'cda8292ce3669a2b76b70ed2d2aae9a017973254'
+          test "$(git rev-parse "$BASE:backend/shared/http/module-route-loader.js")" = '7b3c897c0bf20069b733632c0b424b8664eb8cf5'
+          test "$(git rev-parse "HEAD:backend/shared/http/module-route-loader.js")" = '7b3c897c0bf20069b733632c0b424b8664eb8cf5'
+          test "$(git rev-parse "$BASE:backend/modules/communities/route-handlers.js")" = 'e2eec65d156f023ef745eb96849277ec914a07f6'
+          test "$(git rev-parse "HEAD:backend/modules/communities/route-handlers.js")" = 'e2eec65d156f023ef745eb96849277ec914a07f6'
+          test "$(git rev-parse "$BASE:config/com-b02d-community-composition-root-canary-readiness.json")" = '86bc40fc8d5700996e1c47e025a8af23aef75143'
+          test "$(git rev-parse "$BASE:config/domain-completion-matrix.json")" = 'b9b2abbee1aed1033c122bf7f2802c7e80844623'
+          test "$(git rev-parse "HEAD:config/domain-completion-matrix.json")" = 'b9b2abbee1aed1033c122bf7f2802c7e80844623'
+
+          required=(
+            '.github/workflows/com-b02e-server-authority-main-runtime-integration-readiness.yml'
+            'backend/modules/communities/community-server-authority-runtime-integration-readiness.js'
+            'config/com-b02e-server-authority-main-runtime-integration-readiness.json'
+            'scripts/test-com-b02e-server-authority-main-runtime-integration-readiness.js'
+          )
+          allowed=(
+            "${required[@]}"
+            'docs/DOMAIN-COMPLETION-MATRIX.md'
+            'reports/generated/domain-completion-matrix-report.json'
+          )
+          mapfile -t changed < <(git diff --name-only "$BASE" HEAD | sort)
+          for required_path in "${required[@]}"; do
+            printf '%s\n' "${changed[@]}" | grep -Fx "$required_path" >/dev/null
+          done
+          for changed_path in "${changed[@]}"; do
+            printf '%s\n' "${allowed[@]}" | grep -Fx "$changed_path" >/dev/null || {
+              echo "Unexpected COM-B02E path: $changed_path" >&2
+              exit 1
+            }
+          done
+          markdown_changed=false
+          report_changed=false
+          printf '%s\n' "${changed[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md' >/dev/null && markdown_changed=true || true
+          printf '%s\n' "${changed[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json' >/dev/null && report_changed=true || true
+          test "$markdown_changed" = "$report_changed"
+
+      - name: Syntax and semantic B02E readiness assertions
+        run: |
+          node --check backend/modules/communities/community-server-authority-runtime-integration-readiness.js
+          node --check scripts/test-com-b02e-server-authority-main-runtime-integration-readiness.js
+          node scripts/test-com-b02e-server-authority-main-runtime-integration-readiness.js
+
+      - name: Runtime wiring and remote effects remain absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -F "communities.membership.command" backend/shared/http/route-registry.js
+          ! grep -F "communities.governance.command" backend/shared/http/route-registry.js
+          ! grep -F "communities.content.command" backend/shared/http/route-registry.js
+          ! grep -F "executeMembershipCommand" backend/modules/communities/route-handlers.js
+          ! grep -F "executeGovernanceCommand" backend/modules/communities/route-handlers.js
+          ! grep -F "executeContentCommand" backend/modules/communities/route-handlers.js
+          grep -F "communities.moderation.command" backend/shared/http/route-registry.js
+          grep -F "COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED" backend/modules/communities/route-handlers.js
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check 5e3fbf6d0bfd8a6f254ef1d0f2fb0879be7ae894 HEAD

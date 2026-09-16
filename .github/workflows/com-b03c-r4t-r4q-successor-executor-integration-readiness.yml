@@ -1,0 +1,73 @@
+name: COM-B03C-R4T R4Q Successor Executor Integration Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4t.js'
+      - 'scripts/build-com-b03c-r4t-r4q-successor-executor.js'
+      - 'scripts/test-com-b03c-r4t-r4q-successor-executor-integration-readiness.js'
+      - 'config/com-b03c-r4t-r4q-successor-executor-integration-readiness.json'
+      - 'docs/validation/COM-B03C-R4T-R4Q-SUCCESSOR-EXECUTOR-INTEGRATION-READINESS.json'
+      - '.github/workflows/com-b03c-r4t-r4q-successor-executor-integration-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r4t-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4t.js
+          node --check scripts/build-com-b03c-r4t-r4q-successor-executor.js
+          node --check scripts/test-com-b03c-r4t-r4q-successor-executor-integration-readiness.js
+      - name: R4T successor executor integration self-test
+        run: node scripts/test-com-b03c-r4t-r4q-successor-executor-integration-readiness.js
+      - name: Historical R4Q R4C R4S R3V boundaries unchanged
+        shell: bash
+        run: |
+          PREDECESSOR=d5c7329e67f400ac4c5176b2e4ed4ff582885bb2
+          test -z "$(git diff --name-only "$PREDECESSOR" "${{ github.event.pull_request.head.sha }}" -- \
+            scripts/execute-com-b03c-r4q-single-use-phase-attributed-hosted-terminal-observation.js \
+            backend/modules/communities/community-realtime-private-auth-r4q.js \
+            backend/modules/communities/community-realtime-private-auth-r4c.js \
+            backend/modules/communities/community-realtime-private-auth-r4s.js \
+            scripts/execute-com-b03c-r3v-single-use-remote-execution-envelope.js \
+            backend/modules/communities/community-realtime-private-auth-r3v.js)"
+      - name: Repository-only hard block
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r4o-single-use-phase-attributed-hosted-terminal-observation-trigger.json
+          set +e
+          output="$(node scripts/build-com-b03c-r4t-r4q-successor-executor.js)"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R4T_REMOTE_EXECUTION_NOT_AUTHORIZED'
+      - name: Repository-only workflow surface
+        shell: bash
+        run: |
+          workflow=.github/workflows/com-b03c-r4t-r4q-successor-executor-integration-readiness.yml
+          ! grep -Eq '^  push:' "$workflow"
+          ! grep -Eq '^    environment:' "$workflow"
+          ! grep -Eq 'secrets\.' "$workflow"
+          grep -Fq 'permissions: { contents: read }' "$workflow"
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

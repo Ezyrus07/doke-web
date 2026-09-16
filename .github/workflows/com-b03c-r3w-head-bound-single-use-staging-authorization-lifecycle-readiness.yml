@@ -1,0 +1,62 @@
+name: COM-B03C-R3W Head-Bound Single-Use Staging Authorization Lifecycle Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3w.js
+      - config/com-b03c-r3w-head-bound-single-use-staging-authorization-lifecycle-readiness.json
+      - scripts/test-com-b03c-r3w-head-bound-single-use-staging-authorization-lifecycle-readiness.js
+      - docs/validation/COM-B03C-R3W-HEAD-BOUND-SINGLE-USE-STAGING-AUTHORIZATION-LIFECYCLE-READINESS.json
+      - .github/workflows/com-b03c-r3w-head-bound-single-use-staging-authorization-lifecycle-readiness.yml
+      - docs/validation/COM-B03C-R3V-SINGLE-USE-REMOTE-EXECUTION-ENVELOPE-READINESS.json
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - reports/generated/domain-completion-matrix-report.json
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3w.js
+          node --check scripts/test-com-b03c-r3w-head-bound-single-use-staging-authorization-lifecycle-readiness.js
+      - name: R3W head-bound single-use authorization lifecycle
+        run: node scripts/test-com-b03c-r3w-head-bound-single-use-staging-authorization-lifecycle-readiness.js
+      - name: Pre-authorization remote hard block
+        run: |
+          node - <<'NODE'
+          const r3w = require('./backend/modules/communities/community-realtime-private-auth-r3w');
+          let blocked = false;
+          try { r3w.assertRemoteExecutionBoundaryAbsent(); }
+          catch (error) { blocked = error?.code === r3w.REMOTE_EXECUTION_BLOCK_CODE; }
+          if (!blocked) process.exit(1);
+          NODE
+      - name: Trigger absence and workflow repository-only guard
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r3w-single-use-staging-authorization-trigger.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const workflow = fs.readFileSync('.github/workflows/com-b03c-r3w-head-bound-single-use-staging-authorization-lifecycle-readiness.yml', 'utf8');
+          if (/^\s*push\s*:/m.test(workflow)) process.exit(1);
+          if (/^\s*environment\s*:/m.test(workflow)) process.exit(1);
+          if (/\bsecrets\./.test(workflow)) process.exit(1);
+          if (!/permissions:\s*\{\s*contents:\s*read\s*\}/.test(workflow)) process.exit(1);
+          NODE
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

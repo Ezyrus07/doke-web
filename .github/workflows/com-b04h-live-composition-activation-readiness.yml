@@ -1,0 +1,87 @@
+name: COM-B04H Live Composition Activation Readiness
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-moderation-live-composition-activation-readiness.js'
+      - 'config/com-b04h-live-composition-activation-readiness.json'
+      - 'scripts/test-com-b04h-live-composition-activation-readiness.js'
+      - 'scripts/audit-com-b04h-live-composition-activation-readiness.js'
+      - 'docs/COM-B04H-LIVE-COMPOSITION-ACTIVATION-READINESS.md'
+      - 'docs/validation/COM-B04H-LIVE-COMPOSITION-ACTIVATION-READINESS.json'
+      - '.github/workflows/com-b04h-live-composition-activation-readiness.yml'
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/shared/http/module-route-loader.js'
+      - 'config/domain-completion-matrix.json'
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-moderation-live-composition-activation-readiness.js'
+      - 'config/com-b04h-live-composition-activation-readiness.json'
+      - 'scripts/test-com-b04h-live-composition-activation-readiness.js'
+      - 'scripts/audit-com-b04h-live-composition-activation-readiness.js'
+      - 'docs/COM-B04H-LIVE-COMPOSITION-ACTIVATION-READINESS.md'
+      - 'docs/validation/COM-B04H-LIVE-COMPOSITION-ACTIVATION-READINESS.json'
+      - '.github/workflows/com-b04h-live-composition-activation-readiness.yml'
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/shared/http/module-route-loader.js'
+      - 'config/domain-completion-matrix.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-moderation-live-composition-activation-readiness.js
+          node --check scripts/test-com-b04h-live-composition-activation-readiness.js
+          node --check scripts/audit-com-b04h-live-composition-activation-readiness.js
+      - name: COM-B04H conformance
+        run: node scripts/test-com-b04h-live-composition-activation-readiness.js
+      - name: COM-B04H repository audit
+        run: node scripts/audit-com-b04h-live-composition-activation-readiness.js
+      - name: Immutable predecessor blobs
+        run: |
+          test "$(git rev-parse HEAD:backend/modules/communities/community-moderation-runtime-composition.js)" = "83c56aab710cc1bc5e0b18d6e9e659d5f671f478"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "cda8292ce3669a2b76b70ed2d2aae9a017973254"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "4c35c1df8f622505c5a206bb3824f9973088538c"
+      - name: Fail-closed runtime boundary
+        run: |
+          grep -F "Object.freeze(['disabled', 'local_test_double'])" backend/modules/communities/community-moderation-runtime-composition.js
+          grep -F 'COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED' backend/modules/communities/community-moderation-runtime-composition.js
+          grep -F 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          ! grep -F 'staging_authenticated_server_runtime' backend/modules/communities/community-moderation-runtime-composition.js
+          ! grep -F 'community-moderation-runtime-composition' backend/modules/communities/route-handlers.js
+      - name: COM-B04G regression
+        run: |
+          node scripts/test-com-b04g-route-runtime-wiring-execution.js
+          node scripts/audit-com-b04g-route-runtime-wiring-execution.js
+      - name: COM-B04D regression
+        run: |
+          node scripts/test-com-b04d-moderation-runtime-composition-readiness.js
+          node scripts/audit-com-b04d-moderation-runtime-composition-readiness.js
+          node scripts/audit-com-b04d-domain-matrix-reconciliation.js
+      - name: Repository-only security checks
+        run: |
+          ! grep -R -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env' backend/modules/communities/community-moderation-live-composition-activation-readiness.js
+          ! grep -R -F 'SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-moderation-live-composition-activation-readiness.js
+          ! grep -R -F 'SUPABASE_ACCESS_TOKEN' backend/modules/communities/community-moderation-live-composition-activation-readiness.js
+          ! grep -R -F 'SUPABASE_DB_PASSWORD' backend/modules/communities/community-moderation-live-composition-activation-readiness.js
+      - name: Diff hygiene
+        run: git diff --check

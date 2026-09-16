@@ -1,0 +1,63 @@
+name: COM-A05 Moderation Appeal Media Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-moderation-media-contract.js'
+      - 'config/com-a05-moderation-appeal-media-readiness.json'
+      - 'tests/fixtures/com-a05-moderation-media-cases.json'
+      - 'docs/COM-A05-MODERATION-APPEAL-MEDIA-READINESS.md'
+      - 'scripts/audit-com-a05-moderation-appeal-media-readiness.js'
+      - 'scripts/test-com-a05-moderation-appeal-media-readiness.js'
+      - '.github/workflows/com-a05-moderation-appeal-media-readiness.yml'
+      - 'backend/modules/communities/community-content-realtime-contract.js'
+      - 'backend/modules/communities/community-governance-discipline-contract.js'
+      - 'backend/modules/communities/community-membership-command.js'
+      - 'config/com-a01-authority-baseline.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  com-a05-moderation-appeal-media-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-moderation-media-contract.js
+          node --check scripts/audit-com-a05-moderation-appeal-media-readiness.js
+          node --check scripts/test-com-a05-moderation-appeal-media-readiness.js
+      - name: Audit COM-A05
+        run: node scripts/audit-com-a05-moderation-appeal-media-readiness.js
+      - name: Conformance COM-A05
+        run: node scripts/test-com-a05-moderation-appeal-media-readiness.js
+      - name: COM-A04 regression
+        run: |
+          node scripts/audit-com-a04-content-realtime-rate-limit.js
+          node scripts/test-com-a04-content-realtime-rate-limit.js
+      - name: COM-A03 regression
+        run: |
+          node scripts/audit-com-a03-governance-discipline-ledger.js
+          node scripts/test-com-a03-governance-discipline-ledger.js
+      - name: COM-A02 regression
+        run: |
+          node scripts/audit-com-a02-canonical-discovery-membership.js
+          node scripts/test-com-a02-canonical-discovery-membership.js
+      - name: COM-A01 regression
+        run: |
+          node scripts/audit-com-a01-authority-baseline.js
+          node scripts/test-com-a01-authority-baseline.js
+      - name: REP-A05 predecessor regression
+        run: |
+          node scripts/audit-rep-a05-rehire-transaction-readiness.js
+          node scripts/test-rep-a05-rehire-transaction-readiness.js
+      - name: Diff hygiene
+        run: git diff --check

@@ -1,0 +1,152 @@
+{
+  "adapterContractId": "com-b01-policy-approval-evidence-packet-adapter-v1",
+  "validInput": {
+    "policyAuthorId": "11111111-1111-4111-8111-111111111111",
+    "policyDomains": [
+      "community_discovery_membership",
+      "roles_permissions_discipline",
+      "content_realtime_rate_limits",
+      "reports_moderation_appeals",
+      "media_quarantine_scanning"
+    ],
+    "evidenceTemplate": {
+      "schemaId": "com-b01-server-owned-policy-approval-evidence-template-v1",
+      "sourceBoundaryId": "COM-B01",
+      "sourceGateContractId": "com-b01-policy-operational-integration-gate-v1",
+      "status": "approval_evidence_complete",
+      "approvalComplete": true,
+      "approvedPolicyPresent": true,
+      "policyApprovalAuthority": true,
+      "minimumApprovals": 5,
+      "independentApprovalRequired": true,
+      "singleActorApprovalAllowed": false,
+      "policyHashRequired": true,
+      "semanticVersionRequired": true,
+      "explicitEffectiveAtUtcRequired": true,
+      "rawPolicyBodyAllowed": false,
+      "reviewerEvidence": [
+        {
+          "role": "trust_safety",
+          "reviewerIdentity": "22222222-2222-4222-8222-222222222222",
+          "decision": "approved",
+          "timestamp": "2026-09-04T18:01:00Z",
+          "evidenceReference": {
+            "referenceType": "sha256",
+            "referenceHash": "1111111111111111111111111111111111111111111111111111111111111111",
+            "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "policyVersion": "1.0.0"
+          }
+        },
+        {
+          "role": "legal",
+          "reviewerIdentity": "33333333-3333-4333-8333-333333333333",
+          "decision": "approved",
+          "timestamp": "2026-09-04T18:02:00Z",
+          "evidenceReference": {
+            "referenceType": "sha256",
+            "referenceHash": "2222222222222222222222222222222222222222222222222222222222222222",
+            "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "policyVersion": "1.0.0"
+          }
+        },
+        {
+          "role": "privacy",
+          "reviewerIdentity": "44444444-4444-4444-8444-444444444444",
+          "decision": "approved",
+          "timestamp": "2026-09-04T18:03:00Z",
+          "evidenceReference": {
+            "referenceType": "sha256",
+            "referenceHash": "3333333333333333333333333333333333333333333333333333333333333333",
+            "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "policyVersion": "1.0.0"
+          }
+        },
+        {
+          "role": "security",
+          "reviewerIdentity": "55555555-5555-4555-8555-555555555555",
+          "decision": "approved",
+          "timestamp": "2026-09-04T18:04:00Z",
+          "evidenceReference": {
+            "referenceType": "sha256",
+            "referenceHash": "4444444444444444444444444444444444444444444444444444444444444444",
+            "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "policyVersion": "1.0.0"
+          }
+        },
+        {
+          "role": "community_operations",
+          "reviewerIdentity": "66666666-6666-4666-8666-666666666666",
+          "decision": "approved",
+          "timestamp": "2026-09-04T18:05:00Z",
+          "evidenceReference": {
+            "referenceType": "sha256",
+            "referenceHash": "5555555555555555555555555555555555555555555555555555555555555555",
+            "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "policyVersion": "1.0.0"
+          }
+        }
+      ],
+      "policyMetadata": {
+        "semanticVersion": "1.0.0",
+        "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "effectiveAtUtc": "2026-09-04T18:00:00Z",
+        "supersedesHash": null,
+        "policyValuesMaterialized": false,
+        "rawPolicyBodyPresent": false
+      },
+      "prohibitedEffects": {
+        "reviewersInvented": false,
+        "approvalGranted": false,
+        "policyValuesSelected": false,
+        "policyValuesMaterialized": false,
+        "credentialsRead": false,
+        "rpcExecuted": false,
+        "networkExecuted": false,
+        "supabaseOperationExecuted": false,
+        "snapshotReadInvoked": false,
+        "rateLimitConsumeExecuted": false,
+        "stagingExecuted": false,
+        "migrationApplied": false,
+        "productionChanged": false,
+        "pullRequestMerged": false,
+        "readyForReviewChanged": false
+      }
+    }
+  },
+  "cases": [
+    {"name":"valid synthetic complete evidence maps to canonical packet","mutation":"none","expectedDecision":"canonical_policy_packet_ready_repository_evidence_only"},
+    {"name":"policy author missing","mutation":"missing_author","expectedDecision":"blocked_repository_only"},
+    {"name":"policy domains missing","mutation":"missing_domains","expectedDecision":"blocked_repository_only"},
+    {"name":"policy domain extra","mutation":"extra_domain","expectedDecision":"blocked_repository_only"},
+    {"name":"reviewer missing","mutation":"missing_reviewer","expectedDecision":"blocked_repository_only"},
+    {"name":"reviewer identity missing","mutation":"missing_identity","expectedDecision":"blocked_repository_only"},
+    {"name":"reviewer uuid invalid","mutation":"invalid_identity","expectedDecision":"blocked_repository_only"},
+    {"name":"reviewer identity duplicate","mutation":"duplicate_identity","expectedDecision":"blocked_repository_only"},
+    {"name":"reviewer role duplicate","mutation":"duplicate_role","expectedDecision":"blocked_repository_only"},
+    {"name":"reviewer role unknown","mutation":"unknown_role","expectedDecision":"blocked_repository_only"},
+    {"name":"reviewer decision not approved","mutation":"decision_rejected","expectedDecision":"blocked_repository_only"},
+    {"name":"reviewer timestamp invalid","mutation":"bad_timestamp","expectedDecision":"blocked_repository_only"},
+    {"name":"policy hash invalid","mutation":"bad_hash","expectedDecision":"blocked_repository_only"},
+    {"name":"evidence policy hash drift","mutation":"hash_drift","expectedDecision":"blocked_repository_only"},
+    {"name":"semantic version invalid","mutation":"bad_version","expectedDecision":"blocked_repository_only"},
+    {"name":"evidence policy version drift","mutation":"version_drift","expectedDecision":"blocked_repository_only"},
+    {"name":"effective at not explicit utc","mutation":"bad_effective_at","expectedDecision":"blocked_repository_only"},
+    {"name":"raw policy material prohibited","mutation":"raw_policy","expectedDecision":"blocked_repository_only"},
+    {"name":"evidence reference missing","mutation":"missing_reference","expectedDecision":"blocked_repository_only"},
+    {"name":"evidence reference hash invalid","mutation":"bad_reference_hash","expectedDecision":"blocked_repository_only"},
+    {"name":"author cannot review own policy","mutation":"author_is_reviewer","expectedDecision":"blocked_repository_only"},
+    {"name":"approval complete flag required","mutation":"approval_incomplete","expectedDecision":"blocked_repository_only"},
+    {"name":"approved policy evidence flag required","mutation":"approved_policy_false","expectedDecision":"blocked_repository_only"},
+    {"name":"approval authority evidence flag required","mutation":"approval_authority_false","expectedDecision":"blocked_repository_only"},
+    {"name":"policy values remain unmaterialized","mutation":"values_materialized","expectedDecision":"blocked_repository_only"},
+    {"name":"raw policy body presence blocked","mutation":"raw_body_present","expectedDecision":"blocked_repository_only"},
+    {"name":"prohibited effect cannot turn true","mutation":"prohibited_effect_true","expectedDecision":"blocked_repository_only"},
+    {"name":"supersedes hash invalid","mutation":"bad_supersedes","expectedDecision":"blocked_repository_only"},
+    {"name":"unsupported evidence reference field blocked","mutation":"reference_extra_field","expectedDecision":"blocked_repository_only"}
+  ],
+  "expected": {
+    "total": 29,
+    "ready": 1,
+    "blocked": 28
+  }
+}

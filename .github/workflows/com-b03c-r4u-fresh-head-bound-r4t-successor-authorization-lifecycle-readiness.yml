@@ -1,0 +1,82 @@
+name: COM-B03C-R4U Fresh Head-Bound R4T Successor Authorization Lifecycle Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4u.js'
+      - 'scripts/test-com-b03c-r4u-fresh-head-bound-r4t-successor-authorization-lifecycle-readiness.js'
+      - 'config/com-b03c-r4u-fresh-head-bound-r4t-successor-authorization-lifecycle-readiness.json'
+      - 'docs/validation/COM-B03C-R4U-FRESH-HEAD-BOUND-R4T-SUCCESSOR-AUTHORIZATION-LIFECYCLE-READINESS.json'
+      - '.github/workflows/com-b03c-r4u-fresh-head-bound-r4t-successor-authorization-lifecycle-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r4u-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4u.js
+          node --check scripts/test-com-b03c-r4u-fresh-head-bound-r4t-successor-authorization-lifecycle-readiness.js
+      - name: R4U fresh head-bound authorization lifecycle self-test
+        run: node scripts/test-com-b03c-r4u-fresh-head-bound-r4t-successor-authorization-lifecycle-readiness.js
+      - name: Historical R4T R4S R4Q R4C boundaries unchanged
+        shell: bash
+        run: |
+          PREDECESSOR=c83109ae0b193f2252423053ab0ff22a6876eb14
+          test -z "$(git diff --name-only "$PREDECESSOR" "${{ github.event.pull_request.head.sha }}" -- \
+            backend/modules/communities/community-realtime-private-auth-r4t.js \
+            scripts/build-com-b03c-r4t-r4q-successor-executor.js \
+            backend/modules/communities/community-realtime-private-auth-r4s.js \
+            backend/modules/communities/community-realtime-private-auth-r4q.js \
+            backend/modules/communities/community-realtime-private-auth-r4c.js \
+            docs/validation/COM-B03C-R4T-R4Q-SUCCESSOR-EXECUTOR-INTEGRATION-READINESS.json)"
+      - name: Repository-only hard block
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r4v-r4u-fresh-authorization-consumption.json
+          test ! -e config/com-b03c-r4t-single-use-successor-executor-trigger.json
+          set +e
+          output="$(node - <<'NODE'
+          const r4u = require('./backend/modules/communities/community-realtime-private-auth-r4u');
+          try { r4u.assertRemoteExecutionBoundaryAbsent(); } catch (error) {
+            console.log(error.code);
+            process.exit(error.code === r4u.REMOTE_EXECUTION_BLOCK_CODE ? 2 : 1);
+          }
+          process.exit(1);
+          NODE
+          )"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R4U_REMOTE_EXECUTION_NOT_AUTHORIZED'
+      - name: Authorization remains absent in R4U
+        shell: bash
+        run: |
+          workflow=.github/workflows/com-b03c-r4u-fresh-head-bound-r4t-successor-authorization-lifecycle-readiness.yml
+          module=backend/modules/communities/community-realtime-private-auth-r4u.js
+          ! grep -Eq '^  push:' "$workflow"
+          ! grep -Eq '^    environment:' "$workflow"
+          ! grep -Eq 'secrets\.' "$workflow"
+          grep -Fq 'permissions: { contents: read }' "$workflow"
+          ! grep -Eq 'I_EXPLICITLY_AUTHORIZE_COM_B03C_R4U' "$module"
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

@@ -1,0 +1,84 @@
+{
+  "validationId": "COM-B03C-R3E-CASE-TIME-POLICY-SNAPSHOT-READINESS",
+  "contractId": "com-b03c-r3e-case-time-policy-snapshot-contract-v1",
+  "status": "repository_case_time_policy_snapshot_contract_certified_no_staging_authority",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "preparedFromHead": "df7ebb4d9c0936607e0a063f9ff98d5d30660d8f",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R3D-R3A-POLICY-MATERIALIZATION-EVIDENCE-READINESS",
+    "status": "repository_r3a_policy_materialization_evidence_gap_isolated_and_certified_no_staging_authority",
+    "certificationRun": 31337044380,
+    "certificationJob": 93304508134,
+    "certified": true,
+    "exactRootCauseProven": false
+  },
+  "designConclusion": {
+    "statement": "A future diagnostic is not evidentially valid if it only proves that its own named policies exist. It must freeze the complete realtime.messages policy catalog before the case, after policy installation immediately before Realtime client creation/subscription, and after cleanup.",
+    "whyItMatters": "The three-phase catalog makes concurrent policy pollution, mutation of a pre-existing policy, unexpected policy deltas, and incomplete cleanup observable instead of silently folding those conditions into a Realtime join result.",
+    "textualPredicateComparisonIsSemanticProof": false,
+    "joinOutcomeIsCausalProof": false,
+    "presenceExactRootCauseProven": false
+  },
+  "snapshotContract": {
+    "columns": ["policyname", "permissive", "roles", "cmd", "qual", "with_check"],
+    "phases": ["before_case", "after_install_before_subscribe", "after_cleanup"],
+    "cases": ["negative_control", "control_true", "uid_topic_direct", "uid_extension_eq", "topic_extension_direct", "full_current_direct", "full_topic_select_wrapper", "full_topic_select_extension_in", "full_docs_canonical_exists"],
+    "rules": [
+      "preserve complete catalog in all three phases",
+      "after-install delta must contain exactly the generated SELECT and INSERT policies",
+      "pre-existing policies must be byte-equivalent after normalization",
+      "generated policies must preserve permissive, roles, cmd, qual and with_check",
+      "expected SELECT predicate and stored SELECT qual must both be preserved",
+      "cleanup catalog must equal the before-case baseline",
+      "any unexpected policy delta invalidates the case evidence",
+      "text equality or normalized text equality alone cannot prove SQL predicate semantics",
+      "Realtime join outcome alone cannot promote a root-cause conclusion"
+    ]
+  },
+  "repositoryTests": {
+    "positiveSyntheticSnapshot": true,
+    "unexpectedPolicyAdditionFailsClosed": true,
+    "preexistingPolicyChangeFailsClosed": true,
+    "cleanupResidueFailsClosed": true,
+    "missingRequiredColumnFailsClosed": true,
+    "stagingIntentFailsClosed": true
+  },
+  "certification": {
+    "workflowInstallHead": "0ce3c135efc2b4c2f30c319e1096a8ce0f1d087d",
+    "run": 31340459654,
+    "job": 93313262018,
+    "status": "success",
+    "syntax": "success",
+    "repositorySnapshotContract": "success",
+    "domainCompletionMatrix": "success",
+    "agentGovernance": "success",
+    "governanceInvariants": "success",
+    "diffHygiene": "success",
+    "writerRemovedBeforeCertification": true,
+    "workflowContentsPermission": "read",
+    "checkoutFetchDepth": 0
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "triggerCreationAuthority": false,
+    "authorizationPhraseDefined": false,
+    "remoteExecutorCreated": false,
+    "realtimePolicyLifecycleAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "nextBoundary": "R3E is certified repository-only. A later separately certified boundary may prepare a remote diagnostic implementation that consumes this snapshot contract, but staging authority remains false until a fresh explicit authorization is received."
+}

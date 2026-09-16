@@ -1,0 +1,108 @@
+{
+  "contractId": "com-b04d-moderation-runtime-composition-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b04-moderation-case-authority-v1",
+    "com-b04b-immutable-moderation-persistence-readiness-v1",
+    "com-b04c-moderation-persistence-staging-verification-v1"
+  ],
+  "scope": "repository_only_runtime_composition_readiness",
+  "status": "repository_composition_ready_live_invocation_blocked",
+  "preparedAt": "2026-08-05T22:17:00-03:00",
+  "composition": {
+    "module": "backend/modules/communities/community-moderation-runtime-composition.js",
+    "domainAuthority": "backend/modules/communities/community-moderation-case-authority.js",
+    "repositoryAdapter": "backend/modules/communities/community-moderation-supabase-repository-adapter.js",
+    "defaultActivationMode": "disabled",
+    "allowedActivationModes": [
+      "disabled",
+      "local_test_double"
+    ],
+    "liveActivationModePresent": false,
+    "routeRegistered": false
+  },
+  "securityBoundary": {
+    "serverVerifiedSessionRequired": true,
+    "canonicalServerContextRequired": true,
+    "canonicalAuthorizationActorBindingRequired": true,
+    "persistedCaseBindingRequired": true,
+    "persistenceProvenanceRequired": true,
+    "clientActorOverrideBlocked": true,
+    "clientAuthorizationOverrideBlocked": true,
+    "clientServiceRoleSelectionBlocked": true,
+    "rawSensitivePayloadBlocked": true,
+    "bearerTokenRetainedInPreparedCommand": false,
+    "serviceRoleExecutorInternalOnly": true
+  },
+  "translationBoundary": {
+    "domainRulesDuplicated": false,
+    "domainDecisionRequiredBeforeCommitMapping": true,
+    "projectionAssemblerPresent": true,
+    "initialEvidenceMaterialized": true,
+    "decisionLedgerMappingPresent": true,
+    "sanctionLedgerMappingPresent": true,
+    "appealLedgerMappingPresent": true,
+    "mediaLedgerMappingPresent": true,
+    "singleSecurityDefinerRpcCommit": true,
+    "serializableTransactionPlanPreserved": true,
+    "hashChainPreserved": true,
+    "idempotencyIdentityPreserved": true
+  },
+  "localConformance": {
+    "test": "scripts/test-com-b04d-moderation-runtime-composition-readiness.js",
+    "newCasePreparationUsesNoReadRpc": true,
+    "existingCaseLoadsCanonicalPersistenceFirst": true,
+    "disabledInvocationRejected": true,
+    "localTestDoubleSingleCommitRpc": true,
+    "replayRemainsReadOnly": true,
+    "forgedAuthorityRejected": true,
+    "persistenceDriftRejected": true
+  },
+  "canonicalMatrix": {
+    "version": "1.3.110",
+    "commit": "5cb1b90364be487aaa477a6443a97fbbbb625d34",
+    "syncRun": 31063511588,
+    "syncJob": 92496281894,
+    "result": "success",
+    "comB04Continuity": "58/58",
+    "comB04BAudit": "172/172",
+    "comB04BConformance": "21/21",
+    "comB04BContinuity": "64/64",
+    "comB04CAudit": "80/80",
+    "comB04CContinuity": "58/58",
+    "comB04DConformance": "39/39",
+    "comB04DAudit": "136/136",
+    "comB04DContinuity": "71/71",
+    "globalMatrix": "passed",
+    "diffRestriction": "passed"
+  },
+  "effects": {
+    "databaseAccessed": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "migrationApplied": false,
+    "deploymentExecuted": false,
+    "runtimeActivated": false,
+    "routeRegistered": false,
+    "realReportCreated": false,
+    "realContentChanged": false,
+    "realSanctionApplied": false,
+    "realAppealChanged": false,
+    "realMediaChanged": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "remainingAuthority": {
+    "liveInvocationAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "runtimeMutationAuthority": false,
+    "realModerationWriteAuthority": false,
+    "realSanctionWriteAuthority": false,
+    "realAppealWriteAuthority": false,
+    "realMediaWriteAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "nextSublot": "COM-B04E authenticated staging runtime composition canary under separate explicit authorization"
+}

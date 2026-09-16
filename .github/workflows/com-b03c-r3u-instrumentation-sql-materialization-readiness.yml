@@ -1,0 +1,51 @@
+name: COM-B03C-R3U Instrumentation SQL Materialization Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r3u.js'
+      - 'config/com-b03c-r3u-instrumentation-sql-materialization-readiness.json'
+      - 'scripts/test-com-b03c-r3u-instrumentation-sql-materialization-readiness.js'
+      - 'docs/validation/COM-B03C-R3U-INSTRUMENTATION-SQL-MATERIALIZATION-READINESS.json'
+      - '.github/workflows/com-b03c-r3u-instrumentation-sql-materialization-readiness.yml'
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3u.js
+          node --check scripts/test-com-b03c-r3u-instrumentation-sql-materialization-readiness.js
+      - name: R3U instrumentation SQL materialization
+        run: node scripts/test-com-b03c-r3u-instrumentation-sql-materialization-readiness.js
+      - name: Pre-remote hard block
+        run: |
+          node - <<'NODE'
+          const r3u = require('./backend/modules/communities/community-realtime-private-auth-r3u');
+          let sideEffects = 0;
+          try {
+            r3u.assertRemoteExecutionBoundaryAbsent();
+            sideEffects += 1;
+          } catch (error) {
+            if (error?.code !== r3u.REMOTE_EXECUTION_BLOCK_CODE) throw error;
+          }
+          if (sideEffects !== 0) throw new Error('R3U_PRE_REMOTE_SIDE_EFFECT_DETECTED');
+          NODE
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

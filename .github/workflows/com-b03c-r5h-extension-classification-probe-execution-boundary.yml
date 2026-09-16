@@ -1,0 +1,125 @@
+name: COM-B03C R5H Extension Classification Probe Execution Boundary
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-execution-boundary.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-execution-boundary.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-execution-boundary.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-execution-boundary.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b03c-r5h-extension-classification-boundary-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Frozen predecessor and causal proof lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-execution-boundary.json)" = "91bd2165cd2023ee6d873f3c6ccd0c696d3c7723"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.json)" = "0f59265ecb6ff8c36c2e42780c171896f21c7d6a"
+
+      - name: Exact repository-only push scope
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/com-b03c-r5h-extension-classification-probe-execution-boundary.yml
+          derivative_temp=.github/workflows/com-b03c-r5h-extension-classification-matrix-derivative-sync-temp.yml
+          materialization_temp=.github/workflows/com-b03c-r5h-extension-classification-matrix-materialization-temp.yml
+          maintenance_scope="$workflow"
+          derivative_sync_scope="$(printf '%s\n' "$derivative_temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          materialization_scope="$(printf '%s\n' "$materialization_temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only HEAD^ HEAD | sort)"
+          if [ "$actual" != "$maintenance_scope" ] && [ "$actual" != "$derivative_sync_scope" ] && [ "$actual" != "$materialization_scope" ]; then
+            printf 'Unexpected repository-only push scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
+
+      - name: Certify extension classification boundary repository-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const cfg = require('./config/com-b03c-r5h-extension-classification-probe-execution-boundary.json');
+          const proof = require('./config/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.json');
+
+          if (cfg.contractId !== 'com-b03c-r5h-extension-classification-probe-execution-boundary-v1') throw new Error('BOUNDARY_CONTRACT_DRIFT');
+          if (cfg.repositoryContext.parentCertifiedHead !== '004f38dd3f7f94fcd14cec88c227715a7b7f35bc') throw new Error('PARENT_HEAD_DRIFT');
+          if (cfg.repositoryContext.parentCertifiedTree !== '5a7dbf628703e071df096720e9a90150e3b8deba') throw new Error('PARENT_TREE_DRIFT');
+          if (cfg.repositoryContext.parentCertificationRun !== 31919922475 || cfg.repositoryContext.parentCertificationJob !== 95098033253) throw new Error('PARENT_CERTIFICATION_DRIFT');
+          if (cfg.repositoryContext.matrixVersion !== '1.3.113' || cfg.repositoryContext.maturity !== 3 || cfg.repositoryContext.productionGate !== 'blocked') throw new Error('MATRIX_STATE_DRIFT');
+          if (cfg.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || cfg.functionalCheckpoint.r5iCreated !== false || cfg.functionalCheckpoint.r5iInferred !== false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+          if (cfg.causalProofInput.blob !== '0f59265ecb6ff8c36c2e42780c171896f21c7d6a' || cfg.causalProofInput.certifiedHead !== '004f38dd3f7f94fcd14cec88c227715a7b7f35bc') throw new Error('CAUSAL_PROOF_LINEAGE_DRIFT');
+          if (proof.proofObligation.exactRootCauseProven !== false || proof.proofObligation.causalPromotionAllowed !== false) throw new Error('PREDECESSOR_CAUSAL_STATE_DRIFT');
+
+          const expectedCases = [
+            ['extension_is_null', 'extension IS NULL', 'extension_unavailable_or_null'],
+            ['extension_equals_presence', "extension = 'presence'", 'extension_expected_presence_value'],
+            ['extension_non_null_not_presence', "extension IS NOT NULL AND extension <> 'presence'", 'extension_unexpected_non_null_value']
+          ];
+          const actualCases = cfg.probeBoundary.cases.map(({id,predicate,classification}) => [id,predicate,classification]);
+          if (JSON.stringify(actualCases) !== JSON.stringify(expectedCases)) throw new Error('EXTENSION_CASES_DRIFT');
+          if (cfg.probeBoundary.casesAreMutuallyExclusive !== true || cfg.probeBoundary.casesAreCollectivelyExhaustiveForExtensionValueClassification !== true) throw new Error('CASE_PARTITION_REQUIRED');
+
+          for (const key of ['oneCasePerObservationRequired','sameSyntheticIdentityEnvelopeRequired','sameUniqueTopicEnvelopeRequired','freshRealtimeClientPerObservationRequired','privatePresenceOnlyChannelRequired','singleSyntheticIdentityRequired','identityCleanupRequired','zeroResidueRequired','sanitizedEvidenceRequired','rawRemoteErrorForbidden','terminalStatusAloneCannotProveCause','crossCaseComparisonRequiredForCausalConclusion']) {
+            if (cfg.probeBoundary[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          for (const key of ['exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed']) {
+            if (cfg.probeBoundary[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+
+          for (const key of ['boundaryMustBeRepositoryCertifiedBeforeAuthorization','futureAuthorizationMustBeFresh','futureAuthorizationMustBeExplicit','futureAuthorizationMustBeSingleUse','futureAuthorizationMustBindExactCertifiedBoundaryHead','futureAuthorizationMustBindExactStagingResource','futureReceiptMustBeSeparateSingleFileCommit','receiptParentMustEqualAuthorizedBoundaryHead','runAttemptOneRequired','priorR5dAuthorizationReuseForbidden','priorR5dReceiptReuseForbidden','priorR5dTriggerReuseForbidden']) {
+            if (cfg.authorizationModel[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          if (cfg.authorizationModel.genericContinuationGrantsRemoteAuthority !== false) throw new Error('GENERIC_CONTINUATION_MUST_NOT_AUTHORIZE_REMOTE');
+
+          if (cfg.governance.repositoryOnlyDefinition !== true || cfg.governance.executionBoundaryDefined !== true || cfg.governance.executionHarnessDefined !== false) throw new Error('BOUNDARY_DEFINITION_STATE_INVALID');
+          for (const key of ['triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority']) {
+            if (cfg.governance[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+          NODE
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^ HEAD
+          fi

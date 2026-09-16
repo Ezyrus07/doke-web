@@ -1,0 +1,131 @@
+name: COM-B03C-R3A Presence Full-Conjunction Isolation Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3a.js
+      - config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json
+      - scripts/test-com-b03c-r3a-presence-full-conjunction-isolation-readiness.js
+      - scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js
+      - scripts/verify-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary-evidence.js
+      - docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-READINESS.json
+      - docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-ATTEMPT.json
+      - .github/workflows/com-b03c-r3a-presence-full-conjunction-isolation-readiness.yml
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths: [config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json]
+permissions: { contents: read }
+concurrency:
+  group: com-b03c-r3a-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3a.js
+          node --check scripts/test-com-b03c-r3a-presence-full-conjunction-isolation-readiness.js
+          node --check scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js
+          node --check scripts/verify-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary-evidence.js
+      - name: COM-B03C-R3A staging readiness
+        run: node scripts/test-com-b03c-r3a-presence-full-conjunction-isolation-readiness.js
+      - name: Authorization lifecycle on repository certification
+        if: github.event_name == 'pull_request'
+        run: |
+          TRIGGER=config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json
+          if [ -f "${TRIGGER}" ]; then
+            node - <<'NODE'
+          const t = require('./config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json');
+          const e = require('./docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-READINESS.json');
+          if (e.status !== 'staging_execution_completed_authorization_consumed_followup_repository_only_required') process.exit(1);
+          for (const k of ['received','consumed','executionAttempted','singleUse','triggerExists']) if (e.authorization?.[k] !== true) process.exit(1);
+          if (e.authorization?.reusableAfterFailure !== false || e.authorization?.predecessorAuthorizationReusable !== false) process.exit(1);
+          if (t.status !== 'authorization_consumed_execution_pending') process.exit(1);
+          for (const k of ['received','consumed','executionAttempted','singleUse']) if (t.authorization?.[k] !== true) process.exit(1);
+          if (t.authorization?.reusableAfterFailure !== false || t.authorization?.predecessorAuthorizationReusable !== false) process.exit(1);
+          if (e.stagingExecution?.runAttempt !== 1 || e.stagingExecution?.zeroResidueProven !== true) process.exit(1);
+          NODE
+          else
+            set +e
+            node scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js 2> /tmp/r3a.err
+            status="$?"
+            set -e
+            test "${status}" = "2"
+            grep -q 'DOKE_COM_B03C_R3A_STAGING_AUTHORIZATION_REQUIRED' /tmp/r3a.err
+          fi
+      - name: Governance invariants
+        run: |
+          node - <<'NODE'
+          const e = require('./docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-READINESS.json');
+          if (e.checkpoint?.maturity !== 3 || e.checkpoint?.productionGate !== 'blocked') process.exit(1);
+          for (const k of ['stagingReadAuthority','stagingMutationAuthority','authIdentityLifecycleAuthority','realtimePolicyLifecycleAuthority','realtimeSubscriptionAuthority','ephemeralRealtimeActionAuthority','domainMutationAuthority','publicationMutationAuthority','persistentResidueAuthority','runtimeDeployAuthority','productionAuthority','pullRequestMergeAuthority']) {
+            if (e.authority?.[k] !== false) process.exit(1);
+          }
+          NODE
+      - name: Diff hygiene
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then TARGET_SHA="${{ github.event.pull_request.head.sha }}"; git fetch --no-tags --depth=2 origin "${TARGET_SHA}"; else TARGET_SHA="${GITHUB_SHA}"; fi
+          git diff --check "${TARGET_SHA}^" "${TARGET_SHA}"
+  authorize:
+    if: github.event_name == 'push'
+    needs: certify
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - name: Validate single-use COM-B03C-R3A trigger boundary
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test -f config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json"
+          node - <<'NODE'
+          const t=require('./config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json'); const r=require('./backend/modules/communities/community-realtime-private-auth-r3a');
+          if(t.contractId!==r.TRIGGER_CONTRACT_ID||t.status!=='authorization_consumed_execution_pending'||t.authorization?.phrase!==r.REQUIRED_AUTHORIZATION_PHRASE)process.exit(1);
+          for(const k of ['received','consumed','executionAttempted','singleUse'])if(t.authorization?.[k]!==true)process.exit(1); for(const k of ['reusableAfterFailure','predecessorAuthorizationReusable'])if(t.authorization?.[k]!==false)process.exit(1);
+          const a=r.evaluateStagingAuthorization({authorizationPhrase:t.authorization.phrase,targetEnvironment:t.target.environment,projectId:t.target.projectId,branch:t.target.branch,pullRequest:t.target.pullRequest,authorizationConsumed:false,executionAttempted:false,predecessorAuthorizationReusable:false,...t.canary}); if(a.decision!=='authorized_for_single_bounded_presence_full_conjunction_isolation_canary')process.exit(1);
+          NODE
+  canary:
+    if: github.event_name == 'push'
+    needs: authorize
+    runs-on: ubuntu-24.04
+    environment: doke-staging
+    env:
+      COM_B03C_R3A_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03C_R3A_PRESENCE_FULL_CONJUNCTION_ISOLATION_CANARY_ON_DOKE_STAGING
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COM_B03C_R3A_REPORT_PATH: reports/generated/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-CANARY.json
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Install canary-only runtime dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+      - name: Execute Presence full-conjunction isolation matrix
+        id: execute
+        continue-on-error: true
+        run: node scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js
+      - name: Verify sanitized COM-B03C-R3A evidence
+        if: always()
+        run: node scripts/verify-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary-evidence.js reports/generated/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-CANARY.json
+      - name: Upload sanitized COM-B03C-R3A evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-r3a-presence-isolation-${{ github.run_id }}
+          path: reports/generated/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-CANARY.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Propagate diagnostic result
+        if: steps.execute.outcome != 'success'
+        run: exit 1

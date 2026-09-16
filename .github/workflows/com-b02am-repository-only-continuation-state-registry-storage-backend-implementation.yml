@@ -1,0 +1,99 @@
+name: COM-B02AM Repository-Only Continuation State Registry Storage Backend Implementation
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-implementation.js'
+      - 'config/com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.json'
+      - 'scripts/test-com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.js'
+      - '.github/workflows/com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02AL predecessor and exact repository-only implementation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=cca461c0c97a6197d33e44bb37745b216d8d0424
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse "$BASE^{tree}")" = "9a3d153081db7af8e1b484b264d725cf6eac3d7f"
+          git merge-base --is-ancestor "$BASE" HEAD
+
+          expected_candidate="$(printf '%s\n' \
+            .github/workflows/com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-implementation.js \
+            config/com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.json \
+            scripts/test-com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.js | sort)"
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-implementation.js \
+            config/com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected_candidate" || test "$actual" = "$expected_final"
+          ! printf '%s\n' "$actual" | grep '^supabase/migrations/'
+          ! printf '%s\n' "$actual" | grep '^\.github/workflows/temp-'
+
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-contract.js)" = "2f326a63a00c2452db880cddb6d31ead58f72609"
+          test "$(git rev-parse HEAD:config/com-b02al-repository-only-continuation-state-registry-storage-backend-contract.json)" = "49c1a08baea5d5e81ce23252dff16eee8c2c6c40"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+      - name: Syntax and semantic B02AM storage backend implementation conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-implementation.js
+          node --check scripts/test-com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.js
+          node scripts/test-com-b02am-repository-only-continuation-state-registry-storage-backend-implementation.js
+
+      - name: Implementation remains containerless storage-free operation-free and side-effect-free
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-implementation.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'storageBackendMaterialized[[:space:]]*:[[:space:]]*true|entryContainerMaterialized[[:space:]]*:[[:space:]]*true|operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'carrierInstanceMaterialized[[:space:]]*:[[:space:]]*true|opaqueStateHandleGenerated[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'rawStateSerialized[[:space:]]*:[[:space:]]*true|rawStateExported[[:space:]]*:[[:space:]]*true|executableReferencesExported[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check cca461c0c97a6197d33e44bb37745b216d8d0424 HEAD

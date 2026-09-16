@@ -1,0 +1,112 @@
+{
+  "contractId": "com-b01-policy-operational-integration-gate-v1",
+  "validPolicy": {
+    "contractId": "com-b01-policy-operational-integration-gate-v1",
+    "policyVersion": "1.0.0",
+    "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "effectiveAt": "2026-08-05T12:00:00Z",
+    "policyAuthorId": "11111111-1111-4111-8111-111111111111",
+    "policyDomains": [
+      "community_discovery_membership",
+      "roles_permissions_discipline",
+      "content_realtime_rate_limits",
+      "reports_moderation_appeals",
+      "media_quarantine_scanning"
+    ],
+    "approvals": [
+      {
+        "actorId": "22222222-2222-4222-8222-222222222222",
+        "reviewerRole": "trust_safety",
+        "decision": "approved",
+        "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policyVersion": "1.0.0",
+        "occurredAt": "2026-08-05T12:02:00Z"
+      },
+      {
+        "actorId": "33333333-3333-4333-8333-333333333333",
+        "reviewerRole": "legal",
+        "decision": "approved",
+        "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policyVersion": "1.0.0",
+        "occurredAt": "2026-08-05T12:03:00Z"
+      },
+      {
+        "actorId": "44444444-4444-4444-8444-444444444444",
+        "reviewerRole": "privacy",
+        "decision": "approved",
+        "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policyVersion": "1.0.0",
+        "occurredAt": "2026-08-05T12:04:00Z"
+      },
+      {
+        "actorId": "55555555-5555-4555-8555-555555555555",
+        "reviewerRole": "security",
+        "decision": "approved",
+        "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policyVersion": "1.0.0",
+        "occurredAt": "2026-08-05T12:05:00Z"
+      },
+      {
+        "actorId": "66666666-6666-4666-8666-666666666666",
+        "reviewerRole": "community_operations",
+        "decision": "approved",
+        "policyHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policyVersion": "1.0.0",
+        "occurredAt": "2026-08-05T12:06:00Z"
+      }
+    ]
+  },
+  "validOperations": {
+    "evaluatedAt": "2026-08-05T13:00:00Z",
+    "serverOwnedHandlersReady": true,
+    "canonicalMembershipProjectionReady": true,
+    "canonicalGovernanceProjectionReady": true,
+    "appendOnlyLedgerReady": true,
+    "appealQueueReady": true,
+    "quarantineStorageReady": true,
+    "authenticatedScannerReady": true,
+    "serverOwnedRateLimitsReady": true,
+    "operatorRoleDirectoryReady": true,
+    "incidentRunbookReady": true,
+    "preservedBlockers": ["COM-B02", "COM-B03", "COM-B04"]
+  },
+  "expected": {
+    "total": 31,
+    "approvedPolicy": 1,
+    "activationReady": 1,
+    "blocked": 29
+  },
+  "cases": [
+    {"name":"missing policy packet","kind":"policy","mutation":"missing","expectedDecision":"blocked_repository_only"},
+    {"name":"valid approved policy evidence","kind":"policy","mutation":"none","expectedDecision":"approved_repository_evidence_only"},
+    {"name":"contract id mismatch","kind":"policy","mutation":"wrong_contract","expectedDecision":"blocked_repository_only"},
+    {"name":"semantic version required","kind":"policy","mutation":"bad_version","expectedDecision":"blocked_repository_only"},
+    {"name":"sha256 required","kind":"policy","mutation":"bad_hash","expectedDecision":"blocked_repository_only"},
+    {"name":"explicit effective utc","kind":"policy","mutation":"bad_effective_at","expectedDecision":"blocked_repository_only"},
+    {"name":"author uuid required","kind":"policy","mutation":"bad_author","expectedDecision":"blocked_repository_only"},
+    {"name":"all policy domains required","kind":"policy","mutation":"missing_domain","expectedDecision":"blocked_repository_only"},
+    {"name":"all reviewer roles required","kind":"policy","mutation":"missing_approval","expectedDecision":"blocked_repository_only"},
+    {"name":"author cannot approve","kind":"policy","mutation":"self_approval","expectedDecision":"blocked_repository_only"},
+    {"name":"duplicate approver blocked","kind":"policy","mutation":"duplicate_actor","expectedDecision":"blocked_repository_only"},
+    {"name":"duplicate reviewer role blocked","kind":"policy","mutation":"duplicate_role","expectedDecision":"blocked_repository_only"},
+    {"name":"approved decision required","kind":"policy","mutation":"rejected_approval","expectedDecision":"blocked_repository_only"},
+    {"name":"approval hash must match","kind":"policy","mutation":"approval_hash_drift","expectedDecision":"blocked_repository_only"},
+    {"name":"approval version must match","kind":"policy","mutation":"approval_version_drift","expectedDecision":"blocked_repository_only"},
+    {"name":"approval utc required","kind":"policy","mutation":"approval_bad_utc","expectedDecision":"blocked_repository_only"},
+    {"name":"raw policy prohibited","kind":"policy","mutation":"raw_policy","expectedDecision":"blocked_repository_only"},
+    {"name":"all operational gates structurally ready","kind":"operations","mutation":"none","expectedDecision":"ready_for_separate_activation_authorization"},
+    {"name":"operations require approved policy","kind":"operations","mutation":"missing_policy","expectedDecision":"blocked_repository_only"},
+    {"name":"operations require explicit utc","kind":"operations","mutation":"bad_evaluated_at","expectedDecision":"blocked_repository_only"},
+    {"name":"server handlers blocked","kind":"operations","mutation":"serverOwnedHandlersReady","expectedDecision":"blocked_repository_only"},
+    {"name":"membership projection blocked","kind":"operations","mutation":"canonicalMembershipProjectionReady","expectedDecision":"blocked_repository_only"},
+    {"name":"governance projection blocked","kind":"operations","mutation":"canonicalGovernanceProjectionReady","expectedDecision":"blocked_repository_only"},
+    {"name":"ledger blocked","kind":"operations","mutation":"appendOnlyLedgerReady","expectedDecision":"blocked_repository_only"},
+    {"name":"appeal queue blocked","kind":"operations","mutation":"appealQueueReady","expectedDecision":"blocked_repository_only"},
+    {"name":"quarantine storage blocked","kind":"operations","mutation":"quarantineStorageReady","expectedDecision":"blocked_repository_only"},
+    {"name":"scanner blocked","kind":"operations","mutation":"authenticatedScannerReady","expectedDecision":"blocked_repository_only"},
+    {"name":"rate limits blocked","kind":"operations","mutation":"serverOwnedRateLimitsReady","expectedDecision":"blocked_repository_only"},
+    {"name":"role directory blocked","kind":"operations","mutation":"operatorRoleDirectoryReady","expectedDecision":"blocked_repository_only"},
+    {"name":"incident runbook blocked","kind":"operations","mutation":"incidentRunbookReady","expectedDecision":"blocked_repository_only"},
+    {"name":"all blockers preserved","kind":"operations","mutation":"missing_blocker","expectedDecision":"blocked_repository_only"}
+  ]
+}
