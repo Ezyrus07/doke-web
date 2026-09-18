@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('fs');const path=require('path');const sql=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260918234000_ana_a05_reconciliation_runtime.sql'),'utf8');
+const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('no source order update',!sql.match(/update\s+private\.order_domain_events/i));
+check('no source order delete',!sql.match(/delete\s+from\s+private\.order_domain_events/i));
+check('no metric projection update',!sql.match(/update\s+private\.order_metric_events/i));
+check('no metric projection delete',!sql.match(/delete\s+from\s+private\.order_metric_events/i));
+check('browser reconciliation blocked',sql.includes('revoke all on function public.run_analytics_order_reconciliation_v1(timestamptz,timestamptz) from public, anon, authenticated'));
+check('service role reconciliation',sql.includes('grant execute on function public.run_analytics_order_reconciliation_v1(timestamptz,timestamptz) to service_role'));
+check('low cardinality rollups',sql.includes("('analytics_projection_missing_rate'")&&sql.includes("('analytics_reconciliation_mismatch_rate'"));
+check('no business KPI alert synthesis',!sql.includes('fill_rate_warning')&&!sql.includes('retention_warning'));
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:'ana-a05-runtime-readiness-v1',total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));if(failed.length)process.exitCode=1;

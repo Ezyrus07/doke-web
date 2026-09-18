@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
+const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260918232000_ana_a03_behavioral_event_ledger.sql'),'utf8');
+const edge=fs.readFileSync(path.join(root,'supabase','functions','analytics-behavior-v1','index.ts'),'utf8');
+const search=fs.readFileSync(path.join(root,'supabase','functions','search-public-services-v2','index.ts'),'utf8');
+const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('no anon recorder grant',!migration.includes('grant execute on function public.record_analytics_behavior_event_v1(jsonb) to anon'));
+check('no authenticated recorder grant',!migration.includes('grant execute on function public.record_analytics_behavior_event_v1(jsonb) to authenticated'));
+check('no direct ledger insert grant',!migration.match(/grant\s+insert\s+on\s+table\s+private\.analytics_behavior_events_v1/i));
+check('server receipt time',migration.includes('v_now timestamptz := pg_catalog.clock_timestamp()')&&migration.includes('v_now,v_now'));
+check('dimensions allowlist',migration.includes('DOKE_ANALYTICS_DIMENSION_UNKNOWN_FIELD'));
+check('edge never accepts actorId body',!edge.includes('body.actorId'));
+check('authenticated actor from getUser',edge.includes('requestClient.auth.getUser()'));
+check('owner traffic rejected server-side',edge.includes('data.professional_id === context.actorId'));
+check('quote submit validates order',edge.includes('order.client_id !== context.actorId || order.service_id !== serviceId'));
+check('search recorder failure is nonfatal',search.includes('DOKE_ANALYTICS_SEARCH_EVENT_UNAVAILABLE')&&search.includes('return false'));
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:'ana-a03-runtime-readiness-v1',total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));if(failed.length)process.exitCode=1;
