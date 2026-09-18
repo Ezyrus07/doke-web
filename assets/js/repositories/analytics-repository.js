@@ -124,10 +124,11 @@
     });
   }
 
-  function trackQuote(eventName, serviceId, detail) {
+  function trackQuote(eventName, serviceId, detail, retry, clientEventId) {
     serviceId = String(serviceId || '').trim();
+    retry = retry !== false;
     if (!enabled() || !serviceId) return Promise.resolve({ skipped: true, reason: 'analytics-disabled' });
-    var clientEventId = uuid();
+    clientEventId = clientEventId || uuid();
     if (!clientEventId) return Promise.resolve({ skipped: true, reason: 'uuid-unavailable' });
     return quoteSession(serviceId).then(function (quote) {
       if (!quote) return { skipped: true, reason: 'analytics-disabled' };
@@ -138,6 +139,13 @@
         sourceSurface: 'quote',
         quoteSessionToken: quote.quoteSessionToken
       }, detail || {}));
+    }).catch(function (error) {
+      var code = String(error && (error.code || error.message) || '');
+      if (retry && /QUOTE_SESSION_(EXPIRED|MISMATCH|ACTOR_MISMATCH|INVALID)/.test(code)) {
+        safeSessionRemove(QUOTE_KEY_PREFIX + serviceId);
+        return trackQuote(eventName, serviceId, detail, false, clientEventId);
+      }
+      throw error;
     });
   }
 
