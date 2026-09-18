@@ -18,3 +18,13 @@ The repository now contains the server implementation boundary without activatin
 - `20260918232000_ana_a03_behavioral_event_ledger.sql` prepares a private, service-role-only canonical behavior ledger with transport idempotency and semantic deduplication.
 
 The runtime remains inactive until the migration, environment policy and Edge deployment are explicitly authorized in staging. Missing analytics proof configuration does not make public search unavailable.
+
+## Web client shadow wiring
+
+The web integration is materialized but disabled by default through `analyticsEnabled: false`.
+
+- `assets/js/repositories/analytics-repository.js` stores only signed ephemeral session envelopes in `sessionStorage`, never `localStorage`.
+- Search impressions require the server-signed exposure proof and are emitted after a card reaches at least 50% intersection; result clicks reuse the same proof.
+- Service detail, budget CTA and message CTA emit canonical behavior only when the feature gate is enabled.
+- Quote canonical events send structural progress counts only; legacy question labels remain confined to the legacy metric path.
+- Legacy metrics coexist temporarily as a migration shadow. The canonical transport remains a no-op until staging activation is explicitly authorized.

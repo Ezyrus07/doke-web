@@ -3290,7 +3290,9 @@
         "supabase/functions/analytics-behavior-v1/index.ts",
         "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
         "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
-        "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql"
+        "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql",
+        "assets/js/repositories/analytics-repository.js",
+        "assets/js/pages/search/server-results-surface.js"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3308,7 +3310,11 @@
         "supabase/functions/_shared/analytics-proof.ts",
         "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
         "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
-        "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql"
+        "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql",
+        "assets/js/repositories/analytics-repository.js",
+        "assets/js/pages/search/server-results-surface.js",
+        "assets/js/pages/detalhe-anuncio.js",
+        "assets/js/pages/orcamento.js"
       ],
       "tables": [
         "service_metric_events",
@@ -3342,7 +3348,9 @@
         "audit:ana-a04-runtime-readiness",
         "test:ana-a04-runtime-readiness",
         "audit:ana-a05-runtime-readiness",
-        "test:ana-a05-runtime-readiness"
+        "test:ana-a05-runtime-readiness",
+        "audit:ana-a03-client-wiring",
+        "test:ana-a03-client-wiring"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3354,7 +3362,8 @@
         "ANA-A05 defines source/projection fingerprints, reconciliation, freshness, append-only revisions, backfill contracts and objective maturity gates.",
         "ANA-A03 server runtime is implemented in-repository with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; it is not deployed.",
         "ANA-A04 server projection runtime and append-only metric snapshot schema are prepared as an unapplied migration.",
-        "ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are prepared as an unapplied migration."
+        "ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are prepared as an unapplied migration.",
+        "ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default."
       ],
       "blockers": [
         {

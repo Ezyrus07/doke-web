@@ -14,6 +14,16 @@ on:
       - 'supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql'
       - 'scripts/audit-ana-a03-runtime-readiness.js'
       - 'scripts/test-ana-a03-runtime-readiness.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'assets/js/repositories/analytics-repository.js'
+      - 'assets/js/pages/search/server-results-surface.js'
+      - 'assets/js/pages/detalhe-anuncio.js'
+      - 'assets/js/pages/orcamento.js'
+      - 'detalhe-anuncio.html'
+      - 'orcamento.html'
+      - 'resultados.html'
+      - 'scripts/audit-ana-a03-client-wiring.js'
+      - 'scripts/test-ana-a03-client-wiring.js'
       - '.github/workflows/ana-a03-behavioral-ingestion-identity-boundary.yml'
   workflow_dispatch:
 
@@ -44,6 +54,10 @@ jobs:
         run: |
           node scripts/audit-ana-a03-runtime-readiness.js
           node scripts/test-ana-a03-runtime-readiness.js
+      - name: Client wiring
+        run: |
+          node scripts/audit-ana-a03-client-wiring.js
+          node scripts/test-ana-a03-client-wiring.js
       - name: ANA-A02 regression
         run: |
           node scripts/audit-ana-a02-canonical-event-taxonomy.js
