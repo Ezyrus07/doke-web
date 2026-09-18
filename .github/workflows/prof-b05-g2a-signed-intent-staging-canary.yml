@@ -1,0 +1,81 @@
+name: Doke PROF-B05 G2A Signed Intent Staging Canary
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/validate-professional-kyc-signed-intent-runtime.mjs'
+      - 'scripts/test-professional-kyc-authority-contract.js'
+      - 'docs/PROFESSIONAL-VERIFICATION-STORAGE-SETUP.md'
+      - 'supabase/tests/030_professional_kyc_storage_containment_validation.sql'
+      - '.github/workflows/prof-b05-g2a-signed-intent-staging-canary.yml'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-prof-b05-g2a-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: node --check scripts/validate-professional-kyc-signed-intent-runtime.mjs
+      - name: KYC static authority
+        run: node scripts/test-professional-kyc-authority-contract.js
+      - name: G2A dry-run contract
+        run: npm run test:professional-kyc-signed-intent:dry-run
+      - name: Diff hygiene
+        run: git diff --check
+
+  canary:
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'prof/prof-b05-implementation'
+    needs: certify
+    environment: staging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      DOKE_KYC_CANARY_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      DOKE_KYC_CANARY_ALLOW_STAGING: '1'
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Check environment
+        run: npm run test:professional-kyc-signed-intent:check-env
+      - name: Execute zero-residue signed-intent canary
+        shell: bash
+        run: |
+          mkdir -p reports/generated
+          npm run test:professional-kyc-signed-intent:staging 2>&1 | tee reports/generated/PROF-B05-G2A-SIGNED-INTENT-STAGING-CANARY.jsonl
+      - name: Upload sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prof-b05-g2a-${{ github.run_id }}
+          path: reports/generated/PROF-B05-G2A-SIGNED-INTENT-STAGING-CANARY.jsonl
+          if-no-files-found: warn
+          retention-days: 30
