@@ -14,5 +14,5 @@ check('edge never accepts actorId body',!edge.includes('body.actorId'));
 check('authenticated actor from getUser',edge.includes('requestClient.auth.getUser()'));
 check('owner traffic rejected server-side',edge.includes('data.professional_id === context.actorId'));
 check('quote submit validates order',edge.includes('order.client_id !== context.actorId || order.service_id !== serviceId'));
-check('search recorder failure is nonfatal',search.includes('DOKE_ANALYTICS_SEARCH_EVENT_UNAVAILABLE')&&search.includes('return false'));
+check('search recorder failure is nonfatal',search.includes('DOKE_ANALYTICS_SEARCH_EVENT_UNAVAILABLE')&&search.includes('return false'));check('search-attributed detail requires matching exposure service',edge.includes('exposureServiceId !== serviceId')&&edge.includes('DOKE_ANALYTICS_EXPOSURE_MISMATCH'));
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:'ana-a03-runtime-readiness-v1',total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));if(failed.length)process.exitCode=1;
