@@ -182,18 +182,47 @@ begin
     return v_existing.id;
   end if;
 
-  insert into private.analytics_behavior_events_v1 (
-    event_name,event_schema_version,taxonomy_version,client_event_id,payload_hash,semantic_key,
-    actor_class,actor_id,analytics_session_id,service_id,search_request_id,quote_session_id,
-    order_id,source_surface,dimensions,occurred_at,received_at
-  ) values (
-    v_event_name,1,'ana-event-taxonomy-v1',v_client_event_id,v_payload_hash,v_semantic_key,
-    v_actor_class,v_actor_id,v_analytics_session_id,v_service_id,v_search_request_id,v_quote_session_id,
-    v_order_id,v_source_surface,v_dimensions,v_now,v_now
-  )
-  returning id into v_id;
+  begin
+    insert into private.analytics_behavior_events_v1 (
+      event_name,event_schema_version,taxonomy_version,client_event_id,payload_hash,semantic_key,
+      actor_class,actor_id,analytics_session_id,service_id,search_request_id,quote_session_id,
+      order_id,source_surface,dimensions,occurred_at,received_at
+    ) values (
+      v_event_name,1,'ana-event-taxonomy-v1',v_client_event_id,v_payload_hash,v_semantic_key,
+      v_actor_class,v_actor_id,v_analytics_session_id,v_service_id,v_search_request_id,v_quote_session_id,
+      v_order_id,v_source_surface,v_dimensions,v_now,v_now
+    )
+    returning id into v_id;
 
-  return v_id;
+    return v_id;
+  exception when unique_violation then
+    -- A concurrent retry or semantically duplicate event may have committed
+    -- after the pre-insert checks. Re-resolve deterministically instead of
+    -- leaking a transient uniqueness error to the caller.
+    if v_analytics_session_id is not null and v_client_event_id is not null then
+      select * into v_existing
+      from private.analytics_behavior_events_v1
+      where analytics_session_id = v_analytics_session_id
+        and client_event_id = v_client_event_id;
+
+      if found then
+        if v_existing.payload_hash <> v_payload_hash then
+          raise exception using errcode = '23505', message = 'DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT';
+        end if;
+        return v_existing.id;
+      end if;
+    end if;
+
+    select * into v_existing
+    from private.analytics_behavior_events_v1
+    where semantic_key = v_semantic_key;
+
+    if found then
+      return v_existing.id;
+    end if;
+
+    raise;
+  end;
 end;
 $$;
 
