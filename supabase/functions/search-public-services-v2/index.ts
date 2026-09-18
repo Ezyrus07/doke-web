@@ -7,6 +7,7 @@ import {
   readJsonObject,
   rejectDisallowedOrigin,
 } from "../_shared/http-security.ts";
+import { attachAnalyticsExposureProofs, sha256Hex } from "../_shared/analytics-proof.ts";
 import {
   buildObservation,
   classifySearchError,
@@ -22,6 +23,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 
 type SupabaseClient = ReturnType<typeof createClient>;
 type Context = {
+  actorId: string | null;
   actorClass: "anon" | "authenticated";
   rateLimitActorId: string;
   requestClient: SupabaseClient;
@@ -102,6 +104,7 @@ const createContext = async (req: Request): Promise<Context | Response> => {
     );
 
   return {
+    actorId,
     actorClass: actorId ? "authenticated" : "anon",
     rateLimitActorId,
     requestClient,
@@ -126,6 +129,41 @@ const recordObservation = async (
   }
   return true;
 };
+
+const recordSearchExecuted = async (
+  context: Context,
+  requestId: string,
+  request: Record<string, unknown>,
+  response: Record<string, unknown>,
+) => {
+  const ranking = response.ranking && typeof response.ranking === "object"
+    ? response.ranking as Record<string, unknown> : {};
+  const items = Array.isArray(response.items) ? response.items : [];
+  const dimensions = {
+    rankingVersion: String(ranking.version || ""),
+    queryPresent: String(request.query || "").trim().length > 0,
+    categoryCount: Array.isArray(request.categories) ? request.categories.length : 0,
+    locationScope: request.neighborhood ? "neighborhood" : request.city ? "city" : request.state ? "state" : "none",
+    serviceMode: String(request.serviceMode || "any"),
+    resultCount: items.length,
+  };
+  const canonical = {
+    eventName: "search.executed", eventSchemaVersion:1, taxonomyVersion:"ana-event-taxonomy-v1",
+    clientEventId:requestId, actorClass:context.actorClass, actorId:context.actorId,
+    analyticsSessionId:null, serviceId:null, searchRequestId:requestId, quoteSessionId:null,
+    orderId:null, sourceSurface:"search", dimensions,
+  };
+  const payloadHash = await sha256Hex(canonical);
+  const { error } = await context.serviceClient.rpc("record_analytics_behavior_event_v1", {
+    p_event:{ ...canonical, payloadHash, semanticKey:`search.executed:${requestId}` },
+  });
+  if (error) {
+    console.warn(JSON.stringify({ function:FUNCTION_NAME, requestId, code:"DOKE_ANALYTICS_SEARCH_EVENT_UNAVAILABLE" }));
+    return false;
+  }
+  return true;
+};
+
 
 Deno.serve(async (incomingRequest: Request) => {
   const requestId = resolveRequestId(incomingRequest);
@@ -212,8 +250,15 @@ Deno.serve(async (incomingRequest: Request) => {
     request: searchRequest,
     response: data,
   }));
+  await recordSearchExecuted(context, requestId, searchRequest, data as Record<string, unknown>);
 
-  return jsonResponse(req, 200, data);
+  const responseWithProofs = await attachAnalyticsExposureProofs(
+    data as Record<string, unknown>,
+    requestId,
+    Deno.env.get("DOKE_ANALYTICS_EXPOSURE_SECRET"),
+    Deno.env.get("DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS"),
+  );
+  return jsonResponse(req, 200, responseWithProofs);
 });
 
 console.info(`${FUNCTION_NAME} loaded`);
