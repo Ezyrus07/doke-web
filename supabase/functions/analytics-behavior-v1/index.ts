@@ -221,8 +221,32 @@ Deno.serve(async (req: Request) => {
     } else {
       serviceId = String(body.serviceId || "");
       await resolveService(context, serviceId);
-      const bucket = Math.floor(Date.now() / (policy.dedupWindow * 1000));
-      semanticKey = [eventName, analyticsSessionId, serviceId, bucket].join(":");
+
+      if (eventName === "service.detail_viewed"
+          && sourceSurface === "search"
+          && String(body.exposureProof || "")) {
+        const exposure = await verifyAnalyticsEnvelope(
+          String(body.exposureProof || ""),
+          "ana_exposure_v1",
+          policy.exposureSecret,
+        );
+        if (Date.parse(String(exposure.expiresAt || "")) <= Date.now()) {
+          throw new Error("DOKE_ANALYTICS_EXPOSURE_EXPIRED");
+        }
+        const exposureServiceId = String(exposure.serviceId || "");
+        searchRequestId = String(exposure.searchRequestId || "");
+        if (exposureServiceId !== serviceId || !UUID_PATTERN.test(searchRequestId)) {
+          throw new Error("DOKE_ANALYTICS_EXPOSURE_MISMATCH");
+        }
+        dimensions = {
+          resultPosition:Number(exposure.resultPosition),
+          rankingVersion:String(exposure.rankingVersion || ""),
+        };
+        semanticKey = [eventName, analyticsSessionId, searchRequestId, serviceId].join(":");
+      } else {
+        const bucket = Math.floor(Date.now() / (policy.dedupWindow * 1000));
+        semanticKey = [eventName, analyticsSessionId, serviceId, bucket].join(":");
+      }
     }
 
     const canonical = {
