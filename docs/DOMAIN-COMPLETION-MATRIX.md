@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1531 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 376 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1558 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 377 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 226 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 229 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 229 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 232 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1429 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 374 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1453 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 375 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1056,23 +1056,37 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 4 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 7 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 24 arquivos no escopo; 4 referências a localStorage; 9 a sessionStorage; 0 referências mock; 23 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
-**Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`.
+**Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`.
+
+**Edge Functions:** `analytics-behavior-v1`.
 
 **Evidências:**
 - Service and quote-template metric events exist.
 - No complete canonical funnel from acquisition through repeat transaction exists.
+- ANA-A01 freezes the repository-only authority baseline without granting runtime, staging or production analytics authority.
+- ANA-A02 materializes a versioned event taxonomy separating browser behavior, canonical domain facts, operational observability and derived projections.
+- ANA-A03 materializes server-owned session, exposure-proof, semantic-dedup and privacy boundaries while anonymous identity stitching remains disabled behind LEGAL-B03.
+- ANA-A04 defines deterministic funnel, liquidity, outcome and retention projections; financial metrics remain explicitly unavailable while PAY is non-canonical.
+- ANA-A05 defines source/projection fingerprints, reconciliation, freshness, append-only revisions, backfill contracts and objective maturity gates.
+- ANA-A03 server runtime is implemented in-repository with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; it is not deployed.
+- ANA-A04 server projection runtime and append-only metric snapshot schema are prepared as an unapplied migration.
+- ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are prepared as an unapplied migration.
+- ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default.
+- ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization.
 
 **Bloqueadores:**
-- **ANA-B01 · HIGH · event_model:** Product event taxonomy, identity stitching and consent rules are incomplete. _(Fase 15)_
-- **ANA-B02 · HIGH · business_metrics:** GMV, take rate, liquidity, retention, CAC and LTV are not consolidated. _(Fase 15)_
-- **ANA-B03 · MEDIUM · data_quality:** No metric reconciliation or late-event policy is defined. _(Fase 15)_
+- **ANA-B01 · HIGH · event_model:** Canonical taxonomy and server-side ingestion runtime are materialized in-repository, but consent/retention policy and staging activation remain incomplete. _(Fase 15)_
+- **ANA-B02 · HIGH · business_metrics:** Core ORD-derived marketplace metrics are defined and runtime projection SQL is prepared, but staging consolidation and PAY-backed GMV/take rate/CAC/LTV remain unavailable. _(Fase 15)_
+- **ANA-B03 · MEDIUM · data_quality:** Reconciliation, freshness/revision policy and ORD reconciliation runtime are materialized in-repository but not applied or validated in staging. _(Fase 15)_
 
 **Próximas ações:**
-- Define canonical marketplace event taxonomy.
-- Build server-side funnel and marketplace health projections.
-- Add data quality checks and privacy controls.
+- Apply the prepared ANA migrations only in controlled staging after explicit authorization.
+- Configure analytics runtime policy secrets/TTLs/rate limits and deploy analytics-behavior-v1 in staging.
+- Run authenticated synthetic staging canaries for ingestion, projection, reconciliation, replay and tamper rejection before considering maturity 3/6.
+- Keep anonymous identity stitching disabled until LEGAL-B03 is approved.
+- Keep GMV, take rate, CAC, payback and LTV unavailable until their source authorities become canonical.
 
 **Gate de saída:**
 - Core funnel metrics reconcile with transactional tables.
@@ -1086,7 +1100,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 312 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 318 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1115,7 +1129,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 855 arquivos no escopo; 230 referências a localStorage; 71 a sessionStorage; 241 referências mock; 257 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 856 arquivos no escopo; 230 referências a localStorage; 74 a sessionStorage; 241 referências mock; 258 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -1146,7 +1160,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3416 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 812 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3459 arquivos no escopo; 570 referências a localStorage; 161 a sessionStorage; 926 referências mock; 825 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
