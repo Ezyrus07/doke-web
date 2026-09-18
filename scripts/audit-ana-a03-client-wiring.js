@@ -51,7 +51,7 @@ check('search click method', search.includes('trackSearchClick'));
 check('detail canonical view method', detail.includes('trackServiceDetail'));
 check('detail canonical budget method', detail.includes('trackBudgetCta'));
 check('detail canonical message method', detail.includes('trackMessageCta'));
-check('detail canonical metric bounded by existing navigation timeout', detail.includes('Promise.race([metricPromise, timeout])'));
+check('detail canonical metric bounded by existing navigation timeout', detail.includes('Promise.race([metricPromise, timeout])'));check('search exposure one-shot support', repository.includes('rememberExposure')&&repository.includes('takeExposure')&&repository.includes("sourceSurface: exposureProof ? 'search'"));
 
 check('quote canonical started method', budget.includes('trackQuoteStarted'));
 check('quote canonical progress method', budget.includes('trackQuoteProgressed'));
