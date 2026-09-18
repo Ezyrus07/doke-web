@@ -70,6 +70,7 @@ declare
   v_event_type_mismatch bigint;
   v_subject_mismatch bigint;
   v_timestamp_mismatch bigint;
+  v_dimension_mismatch bigint;
   v_source_payload jsonb;
   v_projection_payload jsonb;
   v_source_hash text;
@@ -87,7 +88,8 @@ begin
   end if;
 
   select coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_array(
-      e.id,e.event_key,e.order_id,e.event_type,e.created_at
+      e.id,e.event_key,e.order_id,e.event_type,e.created_at,
+      e.payload ->> 'serviceId',e.payload ->> 'clientId',e.payload ->> 'professionalId'
     ) order by e.id), '[]'::jsonb),
     count(*)
   into v_source_payload, v_source_count
@@ -95,7 +97,8 @@ begin
   where e.created_at >= p_window_start and e.created_at < p_window_end;
 
   select coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_array(
-      e.order_event_id,e.event_key,e.order_id,e.event_type,e.occurred_at
+      e.order_event_id,e.event_key,e.order_id,e.event_type,e.occurred_at,
+      e.service_id,e.client_id,e.professional_id,e.dimensions
     ) order by e.order_event_id), '[]'::jsonb),
     count(*)
   into v_projection_payload, v_projection_count
@@ -117,8 +120,13 @@ begin
   select
     count(*) filter (where s.event_type is distinct from p.event_type),
     count(*) filter (where s.order_id is distinct from p.order_id),
-    count(*) filter (where s.created_at is distinct from p.occurred_at)
-  into v_event_type_mismatch, v_subject_mismatch, v_timestamp_mismatch
+    count(*) filter (where s.created_at is distinct from p.occurred_at),
+    count(*) filter (
+      where coalesce(s.payload ->> 'serviceId','') is distinct from coalesce(p.service_id::text,'')
+         or coalesce(s.payload ->> 'clientId','') is distinct from coalesce(p.client_id::text,'')
+         or coalesce(s.payload ->> 'professionalId','') is distinct from coalesce(p.professional_id::text,'')
+    )
+  into v_event_type_mismatch, v_subject_mismatch, v_timestamp_mismatch, v_dimension_mismatch
   from private.order_domain_events s
   join private.order_metric_events p on p.order_event_id = s.id
   where s.created_at >= p_window_start and s.created_at < p_window_end;
@@ -136,10 +144,10 @@ begin
     'eventTypeMismatch',v_event_type_mismatch,
     'subjectMismatch',v_subject_mismatch,
     'timestampMismatch',v_timestamp_mismatch,
-    'dimensionMismatch',0
+    'dimensionMismatch',v_dimension_mismatch
   );
   v_state := case
-    when v_projection_missing + v_source_missing + v_event_type_mismatch + v_subject_mismatch + v_timestamp_mismatch = 0
+    when v_projection_missing + v_source_missing + v_event_type_mismatch + v_subject_mismatch + v_timestamp_mismatch + v_dimension_mismatch = 0
       then 'matched'
     else 'diverged'
   end;
@@ -161,7 +169,7 @@ begin
 
   v_missing_rate := case when v_source_count = 0 then null else v_projection_missing::numeric / v_source_count end;
   v_mismatch_rate := case when v_source_count = 0 then null else
-    (v_projection_missing + v_source_missing + v_event_type_mismatch + v_subject_mismatch + v_timestamp_mismatch)::numeric
+    (v_projection_missing + v_source_missing + v_event_type_mismatch + v_subject_mismatch + v_timestamp_mismatch + v_dimension_mismatch)::numeric
       / v_source_count end;
   v_health := case
     when v_source_count = 0 then 'no_data'
