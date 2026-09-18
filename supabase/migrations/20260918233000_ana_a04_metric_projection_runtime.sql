@@ -202,22 +202,47 @@ begin
 
   v_revision := coalesce(v_current.revision, 0) + 1;
 
-  insert into private.analytics_metric_snapshots_v1 (
-    metric_key,metric_version,window_start,window_end,data_through,dimensions,dimension_hash,
-    revision,numerator,denominator,value,sample_count,projection_state,coverage_state,
-    reconciliation_state,source_fingerprint,projection_fingerprint,correction_reason,
-    supersedes_snapshot_id,computed_at
-  ) values (
-    v_metric_key,v_metric_version,v_window_start,v_window_end,v_data_through,v_dimensions,v_dimension_hash,
-    v_revision,nullif(v_snapshot ->> 'numerator','')::numeric,nullif(v_snapshot ->> 'denominator','')::numeric,
-    nullif(v_snapshot ->> 'value','')::numeric,coalesce(nullif(v_snapshot ->> 'sampleCount','')::bigint,0),
-    v_projection_state,v_coverage_state,v_reconciliation_state,v_source_hash,v_projection_hash,
-    nullif(pg_catalog.btrim(coalesce(v_snapshot ->> 'correctionReason','')),''),
-    v_current.id,v_computed_at
-  )
-  returning id into v_id;
+  begin
+    insert into private.analytics_metric_snapshots_v1 (
+      metric_key,metric_version,window_start,window_end,data_through,dimensions,dimension_hash,
+      revision,numerator,denominator,value,sample_count,projection_state,coverage_state,
+      reconciliation_state,source_fingerprint,projection_fingerprint,correction_reason,
+      supersedes_snapshot_id,computed_at
+    ) values (
+      v_metric_key,v_metric_version,v_window_start,v_window_end,v_data_through,v_dimensions,v_dimension_hash,
+      v_revision,nullif(v_snapshot ->> 'numerator','')::numeric,nullif(v_snapshot ->> 'denominator','')::numeric,
+      nullif(v_snapshot ->> 'value','')::numeric,coalesce(nullif(v_snapshot ->> 'sampleCount','')::bigint,0),
+      v_projection_state,v_coverage_state,v_reconciliation_state,v_source_hash,v_projection_hash,
+      nullif(pg_catalog.btrim(coalesce(v_snapshot ->> 'correctionReason','')),''),
+      v_current.id,v_computed_at
+    )
+    returning id into v_id;
 
-  return pg_catalog.jsonb_build_object('state','APPENDED','snapshotId',v_id,'revision',v_revision);
+    return pg_catalog.jsonb_build_object('state','APPENDED','snapshotId',v_id,'revision',v_revision);
+  exception when unique_violation then
+    -- Another projector may have committed the same next revision after our
+    -- read. Re-resolve the latest revision deterministically. Exact replay is
+    -- a NO_CHANGE; divergent concurrent writes fail closed and must retry.
+    select s.* into v_current
+    from private.analytics_metric_snapshots_v1 s
+    where s.metric_key = v_metric_key
+      and s.metric_version = v_metric_version
+      and s.window_start = v_window_start
+      and s.window_end = v_window_end
+      and s.dimension_hash = v_dimension_hash
+    order by s.revision desc
+    limit 1;
+
+    if found
+       and v_current.source_fingerprint = v_source_hash
+       and v_current.projection_fingerprint = v_projection_hash then
+      return pg_catalog.jsonb_build_object(
+        'state','NO_CHANGE','snapshotId',v_current.id,'revision',v_current.revision
+      );
+    end if;
+
+    raise exception using errcode = '40001', message = 'DOKE_ANALYTICS_METRIC_REVISION_CONFLICT';
+  end;
 end;
 $$;
 
