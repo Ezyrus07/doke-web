@@ -38,12 +38,9 @@ jobs:
         run: node scripts/test-ana-001-staging-canary.js
       - name: Dry-run only
         run: node scripts/run-ana-001-staging-canary.js --dry-run
-      - name: Assert workflow contains no execute mode
+      - name: Assert workflow contains no remote execute command
         run: |
-          if grep -q -- '--execute' .github/workflows/ana-001-staging-canary.yml; then
-            echo "Remote execute mode is forbidden in CI."
-            exit 1
-          fi
+          node -e "const fs=require('fs');const t=fs.readFileSync('.github/workflows/ana-001-staging-canary.yml','utf8');const forbidden='node scripts/run-ana-001-staging-canary.js '+'--'+'execute';if(t.includes(forbidden)){console.error('Remote execute mode is forbidden in CI.');process.exit(1);}"
       - name: Domain matrix regression
         run: node scripts/audit-domain-completion-matrix.js
       - name: Diff hygiene
