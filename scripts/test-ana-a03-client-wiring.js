@@ -10,6 +10,7 @@ const check = (name, condition) => checks.push({ name, passed: Boolean(condition
 
 function executeRepository(config, invokeHandler) {
   let invokeCount = 0;
+  const invocations = [];
   const storage = new Map();
   const sandbox = {
     DOKE_SUPABASE_CONFIG: config,
@@ -19,6 +20,7 @@ function executeRepository(config, invokeHandler) {
         functions: {
           invoke: (functionName, options) => {
             invokeCount += 1;
+            invocations.push({ functionName, options: options || {} });
             if (typeof invokeHandler === 'function') return Promise.resolve(invokeHandler(functionName, options, invokeCount));
             return Promise.resolve({ data: {} });
           }
@@ -37,7 +39,8 @@ function executeRepository(config, invokeHandler) {
   new Function('window', repositorySource)(sandbox);
   return {
     repository: sandbox.Doke.repositories.analytics,
-    getInvokeCount: () => invokeCount
+    getInvokeCount: () => invokeCount,
+    getInvocations: () => invocations.slice()
   };
 }
 
@@ -69,6 +72,36 @@ function executeRepository(config, invokeHandler) {
   const missingProofResult = await missingProof.repository.trackSearchImpression({});
   check('missing exposure proof skips', missingProofResult && missingProofResult.skipped === true);
   check('missing exposure proof performs zero network invocations', missingProof.getInvokeCount() === 0);
+
+  const attributed = executeRepository({
+    analyticsEnabled: true,
+    analyticsTransport: 'edge-v1',
+    analyticsEdgeFunction: 'analytics-behavior-v1'
+  }, (_functionName, options) => {
+    const body = options && options.body || {};
+    if (body.action === 'session') return { data: {
+      analyticsSessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      sessionToken: 'session-token',
+      expiresAt: '2099-01-01T00:00:00Z'
+    } };
+    return { data: { eventId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' } };
+  });
+  const searchItem = {
+    serviceId: '22222222-2222-4222-8222-222222222222',
+    analyticsExposureProof: 'signed-search-proof'
+  };
+  await attributed.repository.trackSearchClick(searchItem);
+  await attributed.repository.trackServiceDetail(searchItem.serviceId, 'direct');
+  await attributed.repository.trackServiceDetail(searchItem.serviceId, 'direct');
+  const attributedTrackBodies = attributed.getInvocations()
+    .map((entry) => entry.options && entry.options.body || {})
+    .filter((body) => body.action === 'track' && body.eventName === 'service.detail_viewed');
+  check('search exposure is carried to first detail', attributedTrackBodies[0]
+    && attributedTrackBodies[0].sourceSurface === 'search'
+    && attributedTrackBodies[0].exposureProof === 'signed-search-proof');
+  check('search exposure is one-shot', attributedTrackBodies[1]
+    && attributedTrackBodies[1].sourceSurface === 'direct'
+    && !attributedTrackBodies[1].exposureProof);
 
   const quoteBodies = [];
   let quoteSessionCount = 0;
