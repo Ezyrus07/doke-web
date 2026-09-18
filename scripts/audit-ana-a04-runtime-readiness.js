@@ -8,6 +8,6 @@ check('runtime implemented',c.runtimeImplemented===true);check('migration prepar
 check('service snapshot category',migration.includes("service_snapshot ->> 'category'"));check('service snapshot state',migration.includes("service_snapshot ->> 'state'"));
 check('requested demand freeze',migration.includes("when new.event_type = 'order.requested' then nullif(v_order.city, '')"));
 check('no historical demand backfill',migration.includes('Demand region is intentionally not backfilled'));
-check('append no-change',migration.includes("'state','NO_CHANGE'"));check('append revision',migration.includes("v_revision := coalesce(v_current.revision, 0) + 1"));
+check('append no-change',migration.includes("'state','NO_CHANGE'"));check('append revision',migration.includes("v_revision := coalesce(v_current.revision, 0) + 1"));check('append concurrency guard',migration.includes('DOKE_ANALYTICS_METRIC_REVISION_CONFLICT')&&migration.includes('exception when unique_violation'));
 check('financial metrics absent',!migration.includes('gmv')&&!migration.includes('take_rate'));
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));if(failed.length)process.exitCode=1;
