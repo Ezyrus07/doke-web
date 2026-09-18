@@ -10,6 +10,7 @@ const env = {
   url: String(process.env.SUPABASE_URL || '').trim(),
   publishableKey: String(process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim(),
   serviceRoleKey: String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
+  accessToken: String(process.env.SUPABASE_ACCESS_TOKEN || '').trim(),
   projectRef: String(process.env.DOKE_KYC_CANARY_PROJECT_REF || '').trim(),
   allowStaging: String(process.env.DOKE_KYC_CANARY_ALLOW_STAGING || '').trim() === '1',
 };
@@ -22,24 +23,101 @@ const fail = (message) => {
 };
 
 const requireEnv = () => {
-  for (const [key, value] of Object.entries({
-    SUPABASE_URL: env.url,
-    SUPABASE_PUBLISHABLE_KEY: env.publishableKey,
-    SUPABASE_SERVICE_ROLE_KEY: env.serviceRoleKey,
-    DOKE_KYC_CANARY_PROJECT_REF: env.projectRef,
-  })) {
-    if (!value) fail(`Missing required environment variable: ${key}`);
-  }
+  if (!env.projectRef) fail('Missing required environment variable: DOKE_KYC_CANARY_PROJECT_REF');
   if (env.projectRef === EXPECTED_STAGING_REF && !env.allowStaging) {
     fail('Staging execution requires DOKE_KYC_CANARY_ALLOW_STAGING=1.');
   }
-  if (!env.url.includes(env.projectRef)) {
+  if (env.url && !env.url.includes(env.projectRef)) {
     fail('SUPABASE_URL does not match DOKE_KYC_CANARY_PROJECT_REF.');
+  }
+  const hasDirectKeys = Boolean(env.publishableKey && env.serviceRoleKey);
+  if (!hasDirectKeys && !env.accessToken) {
+    fail('Provide direct Supabase runtime keys or SUPABASE_ACCESS_TOKEN.');
   }
 };
 
 const jsonLog = (event, data = {}) => {
   process.stdout.write(JSON.stringify({ event, ...data }) + '\n');
+};
+
+const fetchJson = async (url, options, code) => {
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch {
+    fail(code);
+  }
+  if (!response.ok) fail(code);
+  try {
+    return await response.json();
+  } catch {
+    fail(code);
+  }
+};
+
+const loadRuntimeKeys = async () => {
+  if (env.publishableKey && env.serviceRoleKey) {
+    return {
+      url: env.url || `https://${env.projectRef}.supabase.co`,
+      publishableKey: env.publishableKey,
+      serviceRoleKey: env.serviceRoleKey,
+      source: 'direct_env',
+    };
+  }
+
+  const project = await fetchJson(
+    `https://api.supabase.com/v1/projects/${env.projectRef}`,
+    {
+      headers: {
+        Authorization: `Bearer ${env.accessToken}`,
+        Accept: 'application/json',
+        'User-Agent': 'doke-prof-b05-g2a-canary',
+      },
+    },
+    'DOKE_KYC_CANARY_PROJECT_PREFLIGHT_FAILED'
+  );
+  if (project?.id !== env.projectRef || project?.name !== 'doke-web-staging' || project?.status !== 'ACTIVE_HEALTHY') {
+    fail('DOKE_KYC_CANARY_PROJECT_MISMATCH');
+  }
+
+  const keys = await fetchJson(
+    `https://api.supabase.com/v1/projects/${env.projectRef}/api-keys?reveal=true`,
+    {
+      headers: {
+        Authorization: `Bearer ${env.accessToken}`,
+        Accept: 'application/json',
+        'User-Agent': 'doke-prof-b05-g2a-canary',
+      },
+    },
+    'DOKE_KYC_CANARY_API_KEYS_FAILED'
+  );
+
+  const list = Array.isArray(keys) ? keys : Array.isArray(keys?.data) ? keys.data : [];
+  const valueOf = (item) => String(item?.api_key || item?.key || item?.value || '').trim();
+  const labelOf = (item) => `${item?.name || ''} ${item?.type || ''} ${item?.id || ''}`.toLowerCase();
+
+  const publishable = list.find((item) => {
+    const label = labelOf(item);
+    return label.includes('publishable') || label.includes('anon');
+  });
+  const admin = list.find((item) => {
+    const label = labelOf(item);
+    const value = valueOf(item);
+    return label.includes('secret') || label.includes('service_role') || label.includes('service role') || value.startsWith('sb_secret_');
+  });
+
+  const publishableKey = valueOf(publishable);
+  const serviceRoleKey = valueOf(admin);
+  if (!publishableKey) fail('DOKE_KYC_CANARY_PUBLISHABLE_KEY_NOT_FOUND');
+  if (!serviceRoleKey) fail('DOKE_KYC_CANARY_ADMIN_KEY_NOT_FOUND');
+  if (publishableKey === serviceRoleKey) fail('DOKE_KYC_CANARY_KEY_ROLE_SEPARATION_REQUIRED');
+
+  return {
+    url: `https://${env.projectRef}.supabase.co`,
+    publishableKey,
+    serviceRoleKey,
+    source: 'management_api',
+  };
 };
 
 if (mode === 'dry-run') {
@@ -65,11 +143,18 @@ jsonLog('prof-b05-g2a-env-ok', { projectRef: env.projectRef, mode });
 
 if (mode === 'check-env') process.exit(0);
 
-const service = createClient(env.url, env.serviceRoleKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
+const runtime = await loadRuntimeKeys();
+jsonLog('prof-b05-g2a-runtime-keys-ready', {
+  projectRef: env.projectRef,
+  source: runtime.source,
+  credentialsExposed: false,
 });
-const publicClient = () => createClient(env.url, env.publishableKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
+
+const service = createClient(runtime.url, runtime.serviceRoleKey, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+});
+const publicClient = () => createClient(runtime.url, runtime.publishableKey, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
 
 const runId = crypto.randomUUID();
