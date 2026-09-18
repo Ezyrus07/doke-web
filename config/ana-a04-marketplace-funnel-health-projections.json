@@ -4,9 +4,9 @@
   "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
   "createdAt": "2026-09-18T19:15:00-03:00",
   "scope": "repository_only",
-  "status": "contract_ready_runtime_integration_required",
+  "status": "runtime_implemented_activation_blocked",
   "runtimeIntegrated": false,
-  "migrationPrepared": false,
+  "migrationPrepared": true,
   "migrationApplied": false,
   "stagingValidated": false,
   "projectionStates": [
@@ -174,5 +174,19 @@
     "realPaymentChanged": false,
     "realReputationChanged": false,
     "productionChanges": false
+  },
+  "runtimeImplemented": true,
+  "runtimeImplementation": {
+    "migration": "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
+    "orderDimensionTrigger": "private.enrich_order_metric_dimensions_for_analytics_v1",
+    "metricSnapshotTable": "private.analytics_metric_snapshots_v1",
+    "appendRpc": "public.append_analytics_metric_snapshot_v1",
+    "orderHealthRpc": "public.compute_analytics_order_health_v1",
+    "historicalDemandRegionBackfill": false,
+    "historicalServiceSnapshotBackfill": true,
+    "activationRequires": [
+      "migration_applied",
+      "controlled_staging_projection_canary"
+    ]
   }
 }

@@ -4,9 +4,9 @@
   "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
   "createdAt": "2026-09-18T19:20:00-03:00",
   "scope": "repository_only",
-  "status": "contract_ready_runtime_integration_required",
+  "status": "runtime_implemented_activation_blocked",
   "runtimeIntegrated": false,
-  "migrationPrepared": false,
+  "migrationPrepared": true,
   "migrationApplied": false,
   "stagingValidated": false,
   "projectionStates": [
@@ -142,5 +142,19 @@
     "realPaymentChanged": false,
     "realReputationChanged": false,
     "productionChanges": false
+  },
+  "runtimeImplemented": true,
+  "runtimeImplementation": {
+    "migration": "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql",
+    "reconciliationTable": "private.analytics_reconciliation_runs_v1",
+    "dataQualityTable": "private.analytics_data_quality_rollups_v1",
+    "orderReconciliationRpc": "public.run_analytics_order_reconciliation_v1",
+    "sourceEventTime": "private.order_domain_events.created_at",
+    "projectionEventTime": "private.order_metric_events.occurred_at",
+    "sourceMutationAllowed": false,
+    "activationRequires": [
+      "migration_applied",
+      "controlled_staging_reconciliation_canary"
+    ]
   }
 }

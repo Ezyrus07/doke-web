@@ -3285,7 +3285,12 @@
         "docs/ANA-A02-CANONICAL-EVENT-TAXONOMY.md",
         "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
         "docs/ANA-A04-MARKETPLACE-FUNNEL-HEALTH-PROJECTIONS.md",
-        "docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md"
+        "docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md",
+        "supabase/functions/_shared/analytics-proof.ts",
+        "supabase/functions/analytics-behavior-v1/index.ts",
+        "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
+        "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
+        "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3298,15 +3303,26 @@
         "config/ana-a02-canonical-event-taxonomy.json",
         "config/ana-a03-behavioral-ingestion-identity-boundary.json",
         "config/ana-a04-marketplace-funnel-health-projections.json",
-        "config/ana-a05-reconciliation-data-quality.json"
+        "config/ana-a05-reconciliation-data-quality.json",
+        "supabase/functions/analytics-behavior-v1",
+        "supabase/functions/_shared/analytics-proof.ts",
+        "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
+        "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
+        "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql"
       ],
       "tables": [
         "service_metric_events",
         "quote_template_application_events",
         "quote_template_funnel_events",
-        "private.order_metric_events"
+        "private.order_metric_events",
+        "private.analytics_behavior_events_v1",
+        "private.analytics_metric_snapshots_v1",
+        "private.analytics_reconciliation_runs_v1",
+        "private.analytics_data_quality_rollups_v1"
       ],
-      "edgeFunctions": [],
+      "edgeFunctions": [
+        "analytics-behavior-v1"
+      ],
       "crons": [],
       "tests": [
         "test:quote-template-conversion-metrics-contract",
@@ -3320,7 +3336,13 @@
         "audit:ana-a04-marketplace-funnel-health-projections",
         "test:ana-a04-marketplace-funnel-health-projections",
         "audit:ana-a05-reconciliation-data-quality",
-        "test:ana-a05-reconciliation-data-quality"
+        "test:ana-a05-reconciliation-data-quality",
+        "audit:ana-a03-runtime-readiness",
+        "test:ana-a03-runtime-readiness",
+        "audit:ana-a04-runtime-readiness",
+        "test:ana-a04-runtime-readiness",
+        "audit:ana-a05-runtime-readiness",
+        "test:ana-a05-runtime-readiness"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3329,35 +3351,39 @@
         "ANA-A02 materializes a versioned event taxonomy separating browser behavior, canonical domain facts, operational observability and derived projections.",
         "ANA-A03 materializes server-owned session, exposure-proof, semantic-dedup and privacy boundaries while anonymous identity stitching remains disabled behind LEGAL-B03.",
         "ANA-A04 defines deterministic funnel, liquidity, outcome and retention projections; financial metrics remain explicitly unavailable while PAY is non-canonical.",
-        "ANA-A05 defines source/projection fingerprints, reconciliation, freshness, append-only revisions, backfill contracts and objective maturity gates."
+        "ANA-A05 defines source/projection fingerprints, reconciliation, freshness, append-only revisions, backfill contracts and objective maturity gates.",
+        "ANA-A03 server runtime is implemented in-repository with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; it is not deployed.",
+        "ANA-A04 server projection runtime and append-only metric snapshot schema are prepared as an unapplied migration.",
+        "ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are prepared as an unapplied migration."
       ],
       "blockers": [
         {
           "id": "ANA-B01",
           "severity": "high",
           "category": "event_model",
-          "description": "Product event taxonomy, identity stitching and consent rules are incomplete.",
+          "description": "Canonical taxonomy and server-side ingestion runtime are materialized in-repository, but consent/retention policy and staging activation remain incomplete.",
           "targetPhase": "Fase 15"
         },
         {
           "id": "ANA-B02",
           "severity": "high",
           "category": "business_metrics",
-          "description": "GMV, take rate, liquidity, retention, CAC and LTV are not consolidated.",
+          "description": "Core ORD-derived marketplace metrics are defined and runtime projection SQL is prepared, but staging consolidation and PAY-backed GMV/take rate/CAC/LTV remain unavailable.",
           "targetPhase": "Fase 15"
         },
         {
           "id": "ANA-B03",
           "severity": "medium",
           "category": "data_quality",
-          "description": "No metric reconciliation or late-event policy is defined.",
+          "description": "Reconciliation, freshness/revision policy and ORD reconciliation runtime are materialized in-repository but not applied or validated in staging.",
           "targetPhase": "Fase 15"
         }
       ],
       "nextActions": [
-        "Implement the A03 server-side behavioral ingestion runtime and private ledger without persistent anonymous stitching.",
-        "Implement A04/A05 server-side projections and reconciliation over canonical ORD/CAT facts.",
-        "Run a synthetic authenticated staging canary before considering maturity 3/6.",
+        "Apply the prepared ANA migrations only in controlled staging after explicit authorization.",
+        "Configure analytics runtime policy secrets/TTLs/rate limits and deploy analytics-behavior-v1 in staging.",
+        "Run authenticated synthetic staging canaries for ingestion, projection, reconciliation, replay and tamper rejection before considering maturity 3/6.",
+        "Keep anonymous identity stitching disabled until LEGAL-B03 is approved.",
         "Keep GMV, take rate, CAC, payback and LTV unavailable until their source authorities become canonical."
       ],
       "exitCriteria": [

@@ -4,9 +4,9 @@
   "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
   "createdAt": "2026-09-18T19:10:00-03:00",
   "scope": "repository_only",
-  "status": "contract_ready_runtime_and_legal_activation_blocked",
+  "status": "runtime_implemented_activation_blocked",
   "runtimeIntegrated": false,
-  "migrationPrepared": false,
+  "migrationPrepared": true,
   "migrationApplied": false,
   "stagingValidated": false,
   "sessionPolicy": {
@@ -88,5 +88,31 @@
     "realPaymentChanged": false,
     "realReputationChanged": false,
     "productionChanges": false
+  },
+  "runtimeImplemented": true,
+  "runtimeImplementation": {
+    "edgeFunction": "analytics-behavior-v1",
+    "ledger": "private.analytics_behavior_events_v1",
+    "recorderRpc": "public.record_analytics_behavior_event_v1",
+    "searchProofHelper": "supabase/functions/_shared/analytics-proof.ts",
+    "searchRuntimeIntegration": "search-public-services-v2 optional proof emission and search.executed projection",
+    "migration": "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
+    "requiredEnvironment": [
+      "DOKE_ANALYTICS_SESSION_SECRET",
+      "DOKE_ANALYTICS_EXPOSURE_SECRET",
+      "DOKE_ANALYTICS_SESSION_TTL_SECONDS",
+      "DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS",
+      "DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS",
+      "DOKE_ANALYTICS_RATE_LIMIT",
+      "DOKE_ANALYTICS_RATE_WINDOW_SECONDS",
+      "DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS"
+    ],
+    "activationRequires": [
+      "migration_applied",
+      "edge_deployed",
+      "runtime_policy_environment_configured",
+      "controlled_staging_canary"
+    ],
+    "searchRemainsAvailableWithoutAnalyticsProofSecret": true
   }
 }
