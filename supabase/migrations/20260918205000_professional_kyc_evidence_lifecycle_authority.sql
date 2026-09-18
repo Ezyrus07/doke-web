@@ -317,7 +317,7 @@ begin
     v_doc_count:=v_doc_count+1;
   end loop;
 
-  if v_doc_count<>jsonb_object_length(p_documents) then
+  if v_doc_count<>(select count(*) from jsonb_each(p_documents)) then
     raise exception using errcode='55000', message='DOKE_KYC_EVIDENCE_MANIFEST_COUNT_MISMATCH';
   end if;
 
