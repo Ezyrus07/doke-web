@@ -7,5 +7,5 @@ check('append service role only',sql.includes('grant execute on function public.
 check('compute service role only',sql.includes('grant execute on function public.compute_analytics_order_health_v1(timestamptz,timestamptz,text,text) to service_role'));
 check('no canonical order mutation',!sql.match(/update\s+public\.orders/i)&&!sql.match(/delete\s+from\s+public\.orders/i));
 check('no order domain mutation',!sql.match(/update\s+private\.order_domain_events/i)&&!sql.match(/delete\s+from\s+private\.order_domain_events/i));
-check('metric snapshots append only',!sql.match(/update\s+private\.analytics_metric_snapshots_v1/i)&&!sql.match(/delete\s+from\s+private\.analytics_metric_snapshots_v1/i));
+check('metric snapshots append only',!sql.match(/update\s+private\.analytics_metric_snapshots_v1/i)&&!sql.match(/delete\s+from\s+private\.analytics_metric_snapshots_v1/i));check('concurrent append fail-closed',sql.includes('exception when unique_violation')&&sql.includes('DOKE_ANALYTICS_METRIC_REVISION_CONFLICT'));
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:'ana-a04-runtime-readiness-v1',total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));if(failed.length)process.exitCode=1;
