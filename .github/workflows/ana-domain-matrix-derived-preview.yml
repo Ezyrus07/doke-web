@@ -1,0 +1,37 @@
+name: ANA Domain Matrix Derived Preview
+
+on:
+  pull_request:
+    paths:
+      - 'config/domain-completion-matrix.json'
+      - 'scripts/audit-domain-completion-matrix.js'
+      - '.github/workflows/ana-domain-matrix-derived-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-derived-matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Generate deterministic derived files
+        run: node scripts/audit-domain-completion-matrix.js --write
+      - name: Verify generated matrix
+        run: node scripts/audit-domain-completion-matrix.js
+      - name: Upload derived matrix
+        uses: actions/upload-artifact@v4
+        with:
+          name: ana-domain-completion-derived
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
