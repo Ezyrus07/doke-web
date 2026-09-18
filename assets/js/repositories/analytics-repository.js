@@ -10,6 +10,7 @@
   var EDGE_FUNCTION = 'analytics-behavior-v1';
   var SESSION_KEY = 'doke.analytics.session.v1';
   var QUOTE_KEY_PREFIX = 'doke.analytics.quote.v1:';
+  var EXPOSURE_KEY_PREFIX = 'doke.analytics.exposure.v1:';
 
   function getConfig() {
     return root.DOKE_SUPABASE_CONFIG || {};
@@ -67,6 +68,25 @@
 
   function safeSessionRemove(key) {
     try { root.sessionStorage.removeItem(key); } catch (_error) {}
+  }
+
+  function serviceIdFromItem(item) {
+    return String(item && (item.serviceId || item.remoteId || item.id) || '').trim();
+  }
+
+  function rememberExposure(item) {
+    var serviceId = serviceIdFromItem(item);
+    var proof = String(item && item.analyticsExposureProof || '').trim();
+    if (!serviceId || !proof) return;
+    safeSessionWrite(EXPOSURE_KEY_PREFIX + serviceId, { exposureProof: proof });
+  }
+
+  function takeExposure(serviceId) {
+    var key = EXPOSURE_KEY_PREFIX + String(serviceId || '').trim();
+    var value = null;
+    try { value = JSON.parse(root.sessionStorage.getItem(key) || 'null'); } catch (_error) {}
+    safeSessionRemove(key);
+    return value && String(value.exposureProof || '').trim() || '';
   }
 
   function session() {
@@ -159,11 +179,19 @@
     },
     trackSearchClick: function (item) {
       var proof = item && item.analyticsExposureProof;
+      if (proof) rememberExposure(item);
       return proof ? track('search.result_clicked', { sourceSurface: 'search', exposureProof: proof })
         : Promise.resolve({ skipped: true, reason: 'exposure-proof-unavailable' });
     },
     trackServiceDetail: function (serviceId, sourceSurface) {
-      return track('service.detail_viewed', { serviceId: String(serviceId || ''), sourceSurface: sourceSurface || 'direct' });
+      serviceId = String(serviceId || '').trim();
+      var exposureProof = takeExposure(serviceId);
+      var detail = {
+        serviceId: serviceId,
+        sourceSurface: exposureProof ? 'search' : (sourceSurface || 'direct')
+      };
+      if (exposureProof) detail.exposureProof = exposureProof;
+      return track('service.detail_viewed', detail);
     },
     trackBudgetCta: function (serviceId) {
       return track('service.budget_cta_clicked', { serviceId: String(serviceId || ''), sourceSurface: 'service_detail' });
