@@ -87,25 +87,25 @@ begin
   end if;
 
   select coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_array(
-      e.id,e.event_key,e.order_id,e.event_type,e.occurred_at
+      e.id,e.event_key,e.order_id,e.event_type,e.created_at
     ) order by e.id), '[]'::jsonb),
     count(*)
   into v_source_payload, v_source_count
   from private.order_domain_events e
-  where e.occurred_at >= p_window_start and e.occurred_at < p_window_end;
+  where e.created_at >= p_window_start and e.created_at < p_window_end;
 
   select coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_array(
-      e.order_event_id,e.event_key,e.order_id,e.event_type,e.occurred_at
+      e.order_event_id,e.event_key,e.order_id,e.event_type,e.created_at
     ) order by e.order_event_id), '[]'::jsonb),
     count(*)
   into v_projection_payload, v_projection_count
   from private.order_metric_events e
-  where e.occurred_at >= p_window_start and e.occurred_at < p_window_end;
+  where e.created_at >= p_window_start and e.created_at < p_window_end;
 
   select count(*) into v_projection_missing
   from private.order_domain_events s
   left join private.order_metric_events p on p.order_event_id = s.id
-  where s.occurred_at >= p_window_start and s.occurred_at < p_window_end
+  where s.created_at >= p_window_start and s.created_at < p_window_end
     and p.order_event_id is null;
 
   select count(*) into v_source_missing
@@ -117,11 +117,11 @@ begin
   select
     count(*) filter (where s.event_type is distinct from p.event_type),
     count(*) filter (where s.order_id is distinct from p.order_id),
-    count(*) filter (where s.occurred_at is distinct from p.occurred_at)
+    count(*) filter (where s.created_at is distinct from p.occurred_at)
   into v_event_type_mismatch, v_subject_mismatch, v_timestamp_mismatch
   from private.order_domain_events s
   join private.order_metric_events p on p.order_event_id = s.id
-  where s.occurred_at >= p_window_start and s.occurred_at < p_window_end;
+  where s.created_at >= p_window_start and s.created_at < p_window_end;
 
   v_source_hash := pg_catalog.encode(
     extensions.digest(pg_catalog.convert_to(v_source_payload::text, 'UTF8'), 'sha256'),'hex'
