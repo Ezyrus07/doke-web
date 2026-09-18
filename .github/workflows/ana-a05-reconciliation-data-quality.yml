@@ -8,6 +8,9 @@ on:
       - 'docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md'
       - 'scripts/audit-ana-a05-reconciliation-data-quality.js'
       - 'scripts/test-ana-a05-reconciliation-data-quality.js'
+      - 'supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql'
+      - 'scripts/audit-ana-a05-runtime-readiness.js'
+      - 'scripts/test-ana-a05-runtime-readiness.js'
       - '.github/workflows/ana-a05-reconciliation-data-quality.yml'
   workflow_dispatch:
 
@@ -34,6 +37,10 @@ jobs:
         run: node scripts/audit-ana-a05-reconciliation-data-quality.js
       - name: Conformance
         run: node scripts/test-ana-a05-reconciliation-data-quality.js
+      - name: Runtime readiness
+        run: |
+          node scripts/audit-ana-a05-runtime-readiness.js
+          node scripts/test-ana-a05-runtime-readiness.js
       - name: ANA-A04 regression
         run: |
           node scripts/audit-ana-a04-marketplace-funnel-health-projections.js

@@ -8,6 +8,9 @@ on:
       - 'docs/ANA-A04-MARKETPLACE-FUNNEL-HEALTH-PROJECTIONS.md'
       - 'scripts/audit-ana-a04-marketplace-funnel-health-projections.js'
       - 'scripts/test-ana-a04-marketplace-funnel-health-projections.js'
+      - 'supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql'
+      - 'scripts/audit-ana-a04-runtime-readiness.js'
+      - 'scripts/test-ana-a04-runtime-readiness.js'
       - '.github/workflows/ana-a04-marketplace-funnel-health-projections.yml'
   workflow_dispatch:
 
@@ -34,6 +37,10 @@ jobs:
         run: node scripts/audit-ana-a04-marketplace-funnel-health-projections.js
       - name: Conformance
         run: node scripts/test-ana-a04-marketplace-funnel-health-projections.js
+      - name: Runtime readiness
+        run: |
+          node scripts/audit-ana-a04-runtime-readiness.js
+          node scripts/test-ana-a04-runtime-readiness.js
       - name: ANA-A03 regression
         run: |
           node scripts/audit-ana-a03-behavioral-ingestion-identity-boundary.js

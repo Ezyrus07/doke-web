@@ -8,6 +8,12 @@ on:
       - 'docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md'
       - 'scripts/audit-ana-a03-behavioral-ingestion-identity-boundary.js'
       - 'scripts/test-ana-a03-behavioral-ingestion-identity-boundary.js'
+      - 'supabase/functions/analytics-behavior-v1/index.ts'
+      - 'supabase/functions/_shared/analytics-proof.ts'
+      - 'supabase/functions/search-public-services-v2/index.ts'
+      - 'supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql'
+      - 'scripts/audit-ana-a03-runtime-readiness.js'
+      - 'scripts/test-ana-a03-runtime-readiness.js'
       - '.github/workflows/ana-a03-behavioral-ingestion-identity-boundary.yml'
   workflow_dispatch:
 
@@ -34,6 +40,10 @@ jobs:
         run: node scripts/audit-ana-a03-behavioral-ingestion-identity-boundary.js
       - name: Conformance
         run: node scripts/test-ana-a03-behavioral-ingestion-identity-boundary.js
+      - name: Runtime readiness
+        run: |
+          node scripts/audit-ana-a03-runtime-readiness.js
+          node scripts/test-ana-a03-runtime-readiness.js
       - name: ANA-A02 regression
         run: |
           node scripts/audit-ana-a02-canonical-event-taxonomy.js
