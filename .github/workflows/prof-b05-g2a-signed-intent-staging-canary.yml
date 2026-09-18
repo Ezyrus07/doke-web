@@ -8,7 +8,6 @@ on:
       - 'docs/PROFESSIONAL-VERIFICATION-STORAGE-SETUP.md'
       - 'supabase/tests/030_professional_kyc_storage_containment_validation.sql'
       - '.github/workflows/prof-b05-g2a-signed-intent-staging-canary.yml'
-      - 'package.json'
   workflow_dispatch:
 
 permissions:
@@ -37,7 +36,7 @@ jobs:
       - name: KYC static authority
         run: node scripts/test-professional-kyc-authority-contract.js
       - name: G2A dry-run contract
-        run: npm run test:professional-kyc-signed-intent:dry-run
+        run: node scripts/validate-professional-kyc-signed-intent-runtime.mjs --dry-run
       - name: Diff hygiene
         run: git diff --check
 
@@ -65,12 +64,12 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
       - name: Check environment
-        run: npm run test:professional-kyc-signed-intent:check-env
+        run: node scripts/validate-professional-kyc-signed-intent-runtime.mjs --check-env
       - name: Execute zero-residue signed-intent canary
         shell: bash
         run: |
           mkdir -p reports/generated
-          npm run test:professional-kyc-signed-intent:staging 2>&1 | tee reports/generated/PROF-B05-G2A-SIGNED-INTENT-STAGING-CANARY.jsonl
+          node scripts/validate-professional-kyc-signed-intent-runtime.mjs --execute 2>&1 | tee reports/generated/PROF-B05-G2A-SIGNED-INTENT-STAGING-CANARY.jsonl
       - name: Upload sanitized evidence
         if: always()
         uses: actions/upload-artifact@v4
