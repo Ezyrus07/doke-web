@@ -17,7 +17,7 @@ check('browser client disabled requirement',config.browserClientMustRemainDisabl
 check('browser config disabled',browserConfig.includes('analyticsEnabled: false'));
 check('15 cases',config.cases.length===15);
 ['same_client_event_payload_drift_rejected','tampered_exposure_proof_rejected','owner_detail_traffic_excluded','metric_snapshot_append_then_no_change'].forEach(x=>check('case '+x,config.cases.includes(x)));
-check('runner requires exact confirmation',source.includes("DOKE_ANA_STAGING_CANARY_CONFIRM"));
+check('runner requires exact confirmation',source.includes('config.requiredAuthorization.environmentVariable')&&source.includes('config.requiredAuthorization.exactPhrase'));
 check('runner blocks production-like host',source.includes('production_target_forbidden'));
 check('runner requires synthetic identity',source.includes('synthetic_client_identity_required')&&source.includes('synthetic_professional_identity_required'));
 check('runner never prints passwords',!source.includes('console.log(env.clientPassword)')&&!source.includes('console.log(env.professionalPassword)'));
