@@ -12,6 +12,6 @@ check('browser roles revoked',migration.includes('revoke all on function public.
 check('service role writer',migration.includes('grant execute on function public.record_analytics_behavior_event_v1(jsonb) to service_role'));
 ['getUser','enforceActorRateLimit','DOKE_ANALYTICS_POLICY_CONFIGURATION_MISSING','DOKE_ANALYTICS_OWNER_TRAFFIC_EXCLUDED','DOKE_ANALYTICS_ORDER_MISMATCH'].forEach(x=>check('edge '+x,edge.includes(x)));
 ['signAnalyticsEnvelope','verifyAnalyticsEnvelope','attachAnalyticsExposureProofs','sha256Hex'].forEach(x=>check('proof '+x,proof.includes(x)));
-check('search proof integration',search.includes('attachAnalyticsExposureProofs'));check('search executed projection',search.includes('recordSearchExecuted'));
+check('search proof integration',search.includes('attachAnalyticsExposureProofs'));check('search executed projection',search.includes('recordSearchExecuted'));check('detail search proof verification',edge.includes('DOKE_ANALYTICS_EXPOSURE_MISMATCH')&&edge.includes('searchRequestId, serviceId'));
 check('no anonymous stitching',c.sessionPolicy.anonymousToAuthenticatedStitching===false&&c.sessionPolicy.crossDeviceStitching===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));if(failed.length)process.exitCode=1;
