@@ -182,9 +182,21 @@ begin
     p_occurred_at,
     coalesce(p_metadata,'{}'::jsonb)
   )
-  on conflict(source_event_key) do update
-    set source_event_key=excluded.source_event_key
+  on conflict(source_event_key) do nothing
   returning id into v_id;
+
+  if v_id is null then
+    select e.id into v_id
+    from private.professional_kyc_evidence_events e
+    where e.source_event_key=p_source_event_key
+      and e.evidence_set_id=p_evidence_set_id
+      and e.event_kind=p_event_kind
+      and e.source_kind=coalesce(nullif(trim(p_source_kind),''),'authoritative_transition');
+
+    if v_id is null then
+      raise exception using errcode='55000', message='DOKE_KYC_EVIDENCE_EVENT_CONFLICT';
+    end if;
+  end if;
 
   return v_id;
 end;
@@ -488,7 +500,7 @@ begin
  update public.professional_profiles set document_status='pending',verification_status='submitted',updated_at=v_now where user_id=p_actor_id;
  insert into public.verification_events(user_id,type,status,created_at) values(p_actor_id,'professional_document','pending',v_now);
 
- return jsonb_build_object('id',v_id,'userId',p_actor_id,'professionalProfileId','professional_profile_'||p_actor_id::text,'status','submitted','currentStep',3,'payload',v_payload||v_documents||jsonb_build_object('taxIdLast4',right(v_tax,4)),'submittedAt',v_now,'updatedAt',v_now,'evidenceSetId',v_set_id);
+ return jsonb_build_object('id',v_id,'userId',p_actor_id,'professionalProfileId','professional_profile_'||p_actor_id::text,'status','submitted','currentStep',3,'payload',v_payload||v_documents||jsonb_build_object('taxIdLast4',right(v_tax,4)),'submittedAt',v_now,'updatedAt',v_now);
 end;
 $function$;
 
