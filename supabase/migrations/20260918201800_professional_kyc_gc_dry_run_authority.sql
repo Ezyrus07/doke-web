@@ -185,13 +185,25 @@ begin
      where d.value->>'bucket'=v_object.bucket_id
        and d.value->>'path'=v_object.name;
 
-    select count(*),min(eo.evidence_set_id)
-      into v_evidence_count,v_evidence_set_id
+    select count(*)
+      into v_evidence_count
       from private.professional_kyc_evidence_objects eo
      where eo.bucket_id=v_object.bucket_id
        and eo.object_path=v_object.name
        and eo.storage_object_id=v_object.id
        and eo.storage_object_version is not distinct from v_object.version;
+
+    v_evidence_set_id:=null;
+    if v_evidence_count=1 then
+      select eo.evidence_set_id
+        into v_evidence_set_id
+        from private.professional_kyc_evidence_objects eo
+       where eo.bucket_id=v_object.bucket_id
+         and eo.object_path=v_object.name
+         and eo.storage_object_id=v_object.id
+         and eo.storage_object_version is not distinct from v_object.version
+       limit 1;
+    end if;
 
     select count(*) into v_intent_count
       from private.professional_kyc_upload_intents i
