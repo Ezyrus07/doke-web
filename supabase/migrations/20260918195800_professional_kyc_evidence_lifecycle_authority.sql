@@ -205,7 +205,7 @@ begin
      or p_submitted_at is null
      or p_provenance_kind not in ('signed_intent','signed_intent_reconciled','legacy_current_snapshot')
      or jsonb_typeof(coalesce(p_documents,'null'::jsonb))<>'object'
-     or jsonb_object_length(p_documents)<1 then
+     or not exists (select 1 from jsonb_each(p_documents)) then
     raise exception using errcode='22023', message='DOKE_KYC_EVIDENCE_SET_INVALID';
   end if;
 
