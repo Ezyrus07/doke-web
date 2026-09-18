@@ -3292,7 +3292,9 @@
         "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
         "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql",
         "assets/js/repositories/analytics-repository.js",
-        "assets/js/pages/search/server-results-surface.js"
+        "assets/js/pages/search/server-results-surface.js",
+        "config/ana-001-staging-activation-readiness.json",
+        "docs/ANA-001-STAGING-ACTIVATION-READINESS.md"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3314,7 +3316,9 @@
         "assets/js/repositories/analytics-repository.js",
         "assets/js/pages/search/server-results-surface.js",
         "assets/js/pages/detalhe-anuncio.js",
-        "assets/js/pages/orcamento.js"
+        "assets/js/pages/orcamento.js",
+        "config/ana-001-staging-activation-readiness.json",
+        "scripts/plan-ana-001-staging-activation.js"
       ],
       "tables": [
         "service_metric_events",
@@ -3350,7 +3354,10 @@
         "audit:ana-a05-runtime-readiness",
         "test:ana-a05-runtime-readiness",
         "audit:ana-a03-client-wiring",
-        "test:ana-a03-client-wiring"
+        "test:ana-a03-client-wiring",
+        "audit:ana-001-staging-activation-readiness",
+        "test:ana-001-staging-activation-readiness",
+        "plan:ana-001-staging-activation:dry-run"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3363,7 +3370,8 @@
         "ANA-A03 server runtime is implemented in-repository with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; it is not deployed.",
         "ANA-A04 server projection runtime and append-only metric snapshot schema are prepared as an unapplied migration.",
         "ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are prepared as an unapplied migration.",
-        "ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default."
+        "ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default.",
+        "ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization."
       ],
       "blockers": [
         {

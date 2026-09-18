@@ -1,0 +1,120 @@
+{
+  "contractId": "ana-001-staging-activation-readiness-v1",
+  "domain": "ANA-001",
+  "sourceHead": "1345cdf60eda162eb31be1af940c69f6824b41c2",
+  "scope": "repository_only",
+  "status": "ready_for_explicit_staging_authorization",
+  "executionModeAvailable": false,
+  "productionAllowed": false,
+  "requiredAuthorization": {
+    "environmentVariable": "DOKE_ANA_STAGING_AUTHORIZATION",
+    "exactPhrase": "authorize-ana-staging-canary",
+    "genericContinuationAccepted": false
+  },
+  "targetPolicy": {
+    "requiredEnvironment": "staging",
+    "targetMarkerEnvironmentVariable": "DOKE_ANA_TARGET_MARKER",
+    "allowedMarkers": [
+      "staging",
+      "stg",
+      "preview",
+      "sandbox",
+      "local"
+    ],
+    "productionMarkersForbidden": [
+      "prod",
+      "production"
+    ]
+  },
+  "artifacts": [
+    {
+      "kind": "migration",
+      "order": 1,
+      "path": "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
+      "repositoryBlobSha": "7fb3ecb6c6a8389a031a263c89cadcfbf59e0091"
+    },
+    {
+      "kind": "migration",
+      "order": 2,
+      "path": "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
+      "repositoryBlobSha": "60d78d19bb766c710df38e55a06af6777f094320"
+    },
+    {
+      "kind": "migration",
+      "order": 3,
+      "path": "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql",
+      "repositoryBlobSha": "62ea1ebe37ca435340666cbb19980d71795d6f31"
+    },
+    {
+      "kind": "edge_function",
+      "order": 4,
+      "path": "supabase/functions/search-public-services-v2/index.ts",
+      "repositoryBlobSha": "e039b1b019e73eace6dc46dd5ed2715c353c683d",
+      "functionName": "search-public-services-v2"
+    },
+    {
+      "kind": "edge_function",
+      "order": 5,
+      "path": "supabase/functions/analytics-behavior-v1/index.ts",
+      "repositoryBlobSha": "0b5b5fadb50c3b1f8eb98051c9fc868555037b06",
+      "functionName": "analytics-behavior-v1"
+    }
+  ],
+  "requiredRuntimeEnvironmentNames": [
+    "DOKE_ANALYTICS_SESSION_SECRET",
+    "DOKE_ANALYTICS_EXPOSURE_SECRET",
+    "DOKE_ANALYTICS_SESSION_TTL_SECONDS",
+    "DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS",
+    "DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS",
+    "DOKE_ANALYTICS_RATE_LIMIT",
+    "DOKE_ANALYTICS_RATE_WINDOW_SECONDS",
+    "DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS"
+  ],
+  "activationSequence": [
+    "verify_repository_artifact_fingerprints",
+    "verify_explicit_staging_target_and_authorization",
+    "apply_A03_A04_A05_migrations_in_order",
+    "configure_runtime_policy_environment_in_staging",
+    "deploy_search_public_services_v2",
+    "deploy_analytics_behavior_v1",
+    "run_direct_edge_synthetic_canary_with_analytics_client_still_disabled",
+    "run_order_projection_and_reconciliation_canaries",
+    "enable_analytics_client_only_in_controlled_staging",
+    "run_browser_synthetic_canary",
+    "collect_evidence_then_reassess_maturity_3_gate"
+  ],
+  "syntheticCanaryRequirements": [
+    "authenticated synthetic user only",
+    "published synthetic service owned by another synthetic user",
+    "no persistent anonymous identity",
+    "no anonymous to authenticated stitching",
+    "valid search exposure impression and click accepted",
+    "tampered exposure proof rejected",
+    "same client event replay returns same event identity",
+    "same client event with changed payload is rejected",
+    "owner traffic is excluded",
+    "quote session emits structural progress only",
+    "quote submitted requires matching synthetic order",
+    "ORD projection reconciles one to one",
+    "metric append is no-op for unchanged fingerprints",
+    "stale unavailable and no-data states remain distinguishable",
+    "no production or real-user data is touched"
+  ],
+  "rollback": {
+    "primary": "disable analytics client and remove staging analytics runtime policy exposure",
+    "destructiveSchemaRollbackAllowed": false,
+    "searchMustRemainAvailableWhenAnalyticsUnavailable": true,
+    "canonicalSourceMutationAllowed": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "migrationsApplied": false,
+    "edgeFunctionsDeployed": false,
+    "stagingMutations": false,
+    "productionMutations": false,
+    "secretsRead": false,
+    "secretsWritten": false,
+    "clientActivated": false
+  }
+}
