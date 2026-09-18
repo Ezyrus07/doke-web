@@ -67,6 +67,7 @@ begin
     ('missing_identity',0,false,true,0,1,true,'expired',interval '-1 hour',false,'HOLD_INVESTIGATE','OBJECT_IDENTITY_MISSING',null),
     ('legacy_orphan',0,true,false,0,0,false,null::text,null::interval,false,'HOLD_INVESTIGATE','LEGACY_OR_UNKNOWN_PROVENANCE',null),
     ('historical_evidence',0,true,true,1,1,true,'consumed',interval '-1 day',true,'HOLD_INVESTIGATE','HISTORICAL_EVIDENCE_RETENTION_UNRESOLVED',null),
+    ('historical_legacy_evidence',0,true,false,1,0,false,null::text,null::interval,false,'HOLD_INVESTIGATE','HISTORICAL_EVIDENCE_RETENTION_UNRESOLVED',null),
     ('no_intent',0,true,true,0,0,false,null::text,null::interval,false,'HOLD_INVESTIGATE','INTENT_PROVENANCE_AMBIGUOUS',null),
     ('duplicate_intent',0,true,true,0,2,false,'expired',interval '-1 hour',false,'HOLD_INVESTIGATE','INTENT_PROVENANCE_AMBIGUOUS',null),
     ('path_mismatch',0,true,true,0,1,false,'expired',interval '-1 hour',false,'HOLD_INVESTIGATE','INTENT_OR_MANIFEST_MISMATCH',null),
@@ -107,7 +108,7 @@ begin
     into v_total,v_passed
     from evaluated;
 
-  if v_total<>16 or v_passed<>16 then
+  if v_total<>17 or v_passed<>17 then
     raise exception 'PROF_B05_GC_CLASSIFIER_MATRIX_FAILED:%/%',v_passed,v_total;
   end if;
 end;
