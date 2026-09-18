@@ -97,8 +97,8 @@
     return `mensagens.html${params.toString() ? `?${params.toString()}` : ''}`;
   };
 
-  const getMetricsRepository = () => wi
-  const getAnalyticsRepository = () => window.Doke?.repositories?.analytics || null;ndow.Doke?.repositories?.serviceMetrics || null;
+  const getMetricsRepository = () => window.Doke?.repositories?.serviceMetrics || null;
+  const getAnalyticsRepository = () => window.Doke?.repositories?.analytics || null;
 
 
   const normalizeIdentity = (value) => String(value || '').trim().toLowerCase();
