@@ -3271,14 +3271,34 @@
       "requiredPaths": [
         "assets/js/repositories/quote-template-metrics-repository.js",
         "supabase/migrations/039_quote_template_conversion_metrics.sql",
-        "supabase/migrations/030_service_catalog_sync_metrics.sql"
+        "supabase/migrations/030_service_catalog_sync_metrics.sql",
+        "config/ana-a01-analytics-authority-baseline.json",
+        "backend/modules/analytics/canonical-event-taxonomy.js",
+        "config/ana-a02-canonical-event-taxonomy.json",
+        "backend/modules/analytics/behavioral-ingestion-boundary.js",
+        "config/ana-a03-behavioral-ingestion-identity-boundary.json",
+        "backend/modules/analytics/marketplace-health-projection.js",
+        "config/ana-a04-marketplace-funnel-health-projections.json",
+        "backend/modules/analytics/analytics-reconciliation.js",
+        "config/ana-a05-reconciliation-data-quality.json",
+        "docs/ANA-A01-ANALYTICS-AUTHORITY-BASELINE.md",
+        "docs/ANA-A02-CANONICAL-EVENT-TAXONOMY.md",
+        "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
+        "docs/ANA-A04-MARKETPLACE-FUNNEL-HEALTH-PROJECTIONS.md",
+        "docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
         "assets/js/pages/profile/profile-quote-template-metrics.js",
         "supabase/migrations/039_quote_template_conversion_metrics.sql",
         "supabase/migrations/030_service_catalog_sync_metrics.sql",
-        "backend/shared/observability"
+        "backend/shared/observability",
+        "backend/modules/analytics",
+        "config/ana-a01-analytics-authority-baseline.json",
+        "config/ana-a02-canonical-event-taxonomy.json",
+        "config/ana-a03-behavioral-ingestion-identity-boundary.json",
+        "config/ana-a04-marketplace-funnel-health-projections.json",
+        "config/ana-a05-reconciliation-data-quality.json"
       ],
       "tables": [
         "service_metric_events",
@@ -3290,11 +3310,26 @@
       "crons": [],
       "tests": [
         "test:quote-template-conversion-metrics-contract",
-        "test:service-metrics-sync-contract"
+        "test:service-metrics-sync-contract",
+        "audit:ana-a01-analytics-authority-baseline",
+        "test:ana-a01-analytics-authority-baseline",
+        "audit:ana-a02-canonical-event-taxonomy",
+        "test:ana-a02-canonical-event-taxonomy",
+        "audit:ana-a03-behavioral-ingestion-identity-boundary",
+        "test:ana-a03-behavioral-ingestion-identity-boundary",
+        "audit:ana-a04-marketplace-funnel-health-projections",
+        "test:ana-a04-marketplace-funnel-health-projections",
+        "audit:ana-a05-reconciliation-data-quality",
+        "test:ana-a05-reconciliation-data-quality"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
-        "No complete canonical funnel from acquisition through repeat transaction exists."
+        "No complete canonical funnel from acquisition through repeat transaction exists.",
+        "ANA-A01 freezes the repository-only authority baseline without granting runtime, staging or production analytics authority.",
+        "ANA-A02 materializes a versioned event taxonomy separating browser behavior, canonical domain facts, operational observability and derived projections.",
+        "ANA-A03 materializes server-owned session, exposure-proof, semantic-dedup and privacy boundaries while anonymous identity stitching remains disabled behind LEGAL-B03.",
+        "ANA-A04 defines deterministic funnel, liquidity, outcome and retention projections; financial metrics remain explicitly unavailable while PAY is non-canonical.",
+        "ANA-A05 defines source/projection fingerprints, reconciliation, freshness, append-only revisions, backfill contracts and objective maturity gates."
       ],
       "blockers": [
         {
@@ -3320,9 +3355,10 @@
         }
       ],
       "nextActions": [
-        "Define canonical marketplace event taxonomy.",
-        "Build server-side funnel and marketplace health projections.",
-        "Add data quality checks and privacy controls."
+        "Implement the A03 server-side behavioral ingestion runtime and private ledger without persistent anonymous stitching.",
+        "Implement A04/A05 server-side projections and reconciliation over canonical ORD/CAT facts.",
+        "Run a synthetic authenticated staging canary before considering maturity 3/6.",
+        "Keep GMV, take rate, CAC, payback and LTV unavailable until their source authorities become canonical."
       ],
       "exitCriteria": [
         "Core funnel metrics reconcile with transactional tables.",
