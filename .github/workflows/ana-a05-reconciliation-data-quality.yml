@@ -1,0 +1,44 @@
+name: ANA-A05 Reconciliation Data Quality
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/analytics/analytics-reconciliation.js'
+      - 'config/ana-a05-reconciliation-data-quality.json'
+      - 'docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md'
+      - 'scripts/audit-ana-a05-reconciliation-data-quality.js'
+      - 'scripts/test-ana-a05-reconciliation-data-quality.js'
+      - '.github/workflows/ana-a05-reconciliation-data-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ana-a05-reconciliation-data-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/analytics/analytics-reconciliation.js
+          node --check scripts/audit-ana-a05-reconciliation-data-quality.js
+          node --check scripts/test-ana-a05-reconciliation-data-quality.js
+      - name: Audit
+        run: node scripts/audit-ana-a05-reconciliation-data-quality.js
+      - name: Conformance
+        run: node scripts/test-ana-a05-reconciliation-data-quality.js
+      - name: ANA-A04 regression
+        run: |
+          node scripts/audit-ana-a04-marketplace-funnel-health-projections.js
+          node scripts/test-ana-a04-marketplace-funnel-health-projections.js
+      - name: Domain matrix regression
+        run: node scripts/audit-domain-completion-matrix.js
+      - name: Diff hygiene
+        run: git diff --check
