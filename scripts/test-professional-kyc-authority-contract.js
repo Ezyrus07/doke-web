@@ -10,6 +10,7 @@ const storageAuthority = read('supabase/migrations/098_professional_kyc_storage_
 const selfService = read('supabase/migrations/099_professional_kyc_self_service_authority.sql');
 const reviewerAuthority = read('supabase/migrations/100_professional_kyc_reviewer_authority.sql');
 const finalPermissions = read('supabase/migrations/101_professional_kyc_final_permissions.sql');
+const jsonbCompatibility = read('supabase/migrations/20260918193000_professional_kyc_jsonb_compatibility.sql');
 const reopenAuthority = read('supabase/migrations/20260918193700_professional_kyc_reopen_authority.sql');
 const storageContainmentValidation = read('supabase/tests/030_professional_kyc_storage_containment_validation.sql');
 const evidenceLifecycle = read('supabase/migrations/20260918195800_professional_kyc_evidence_lifecycle_authority.sql');
@@ -71,6 +72,14 @@ for (const token of [
 
 assert(!reviewerAuthority.includes("grant execute on function public.decide_professional_identity_verification_internal(uuid, text, text, text)\n  to authenticated"), 'Reviewer decision RPC must never be granted to generic authenticated users.');
 assert(finalPermissions.includes('Reviewer functions are never direct authenticated APIs.'), 'Final permission boundary must reassert reviewer isolation.');
+
+for (const token of [
+  'DOKE_KYC_CONSUME_INTENT_HELPER_DRIFT',
+  'select count(*) from jsonb_each(v_intent.files)',
+  'private.consume_professional_kyc_upload_intent',
+  'from public,anon,authenticated,service_role',
+]) assert(jsonbCompatibility.includes(token), `KYC JSONB compatibility missing: ${token}`);
+assert(!jsonbCompatibility.includes('jsonb_object_length'), 'KYC compatibility migration must not depend on unavailable jsonb_object_length.');
 
 for (const token of [
   'set search_path = pg_catalog',
