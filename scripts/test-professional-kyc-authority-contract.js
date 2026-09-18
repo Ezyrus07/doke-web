@@ -217,5 +217,8 @@ assert(!frontendService.includes("client.rpc('decide_professional_identity_verif
 
 assert.strictEqual(packageJson.scripts['test:professional-kyc-authority-contract'], 'node scripts/test-professional-kyc-authority-contract.js');
 assert.strictEqual(packageJson.scripts['test:professional-kyc-edge-runtime'], 'node scripts/test-professional-kyc-edge-runtime.mjs');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:dry-run'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --dry-run');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:check-env'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --check-env');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:execute'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --execute');
 
 console.log('Professional KYC authority contract passed.');
