@@ -9,6 +9,7 @@ check('no authenticated recorder grant',!migration.includes('grant execute on fu
 check('no direct ledger insert grant',!migration.match(/grant\s+insert\s+on\s+table\s+private\.analytics_behavior_events_v1/i));
 check('server receipt time',migration.includes('v_now timestamptz := pg_catalog.clock_timestamp()')&&migration.includes('v_now,v_now'));
 check('dimensions allowlist',migration.includes('DOKE_ANALYTICS_DIMENSION_UNKNOWN_FIELD'));
+check('concurrent replay resolves uniqueness race',migration.includes('exception when unique_violation')&&migration.includes('where semantic_key = v_semantic_key'));
 check('edge never accepts actorId body',!edge.includes('body.actorId'));
 check('authenticated actor from getUser',edge.includes('requestClient.auth.getUser()'));
 check('owner traffic rejected server-side',edge.includes('data.professional_id === context.actorId'));
