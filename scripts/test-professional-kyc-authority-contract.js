@@ -10,6 +10,9 @@ const storageAuthority = read('supabase/migrations/098_professional_kyc_storage_
 const selfService = read('supabase/migrations/099_professional_kyc_self_service_authority.sql');
 const reviewerAuthority = read('supabase/migrations/100_professional_kyc_reviewer_authority.sql');
 const finalPermissions = read('supabase/migrations/101_professional_kyc_final_permissions.sql');
+const reopenAuthority = read('supabase/migrations/20260918193700_professional_kyc_reopen_authority.sql');
+const storageContainmentValidation = read('supabase/tests/030_professional_kyc_storage_containment_validation.sql');
+const storageSetup = read('docs/PROFESSIONAL-VERIFICATION-STORAGE-SETUP.md');
 const edgeIndex = read('supabase/functions/professional-verification-operations/index.ts');
 const edgeOperations = read('supabase/functions/professional-verification-operations/operations.mjs');
 const frontendService = read('assets/js/services/professional-identity-verification-service.js');
@@ -63,6 +66,29 @@ for (const token of [
 
 assert(!reviewerAuthority.includes("grant execute on function public.decide_professional_identity_verification_internal(uuid, text, text, text)\n  to authenticated"), 'Reviewer decision RPC must never be granted to generic authenticated users.');
 assert(finalPermissions.includes('Reviewer functions are never direct authenticated APIs.'), 'Final permission boundary must reassert reviewer isolation.');
+
+for (const token of [
+  'set search_path = pg_catalog',
+  "document_status = 'unverified'",
+  "verification_status = 'not_started'",
+  "'professional_document'",
+  "'pending'",
+  'Verificação reaberta pelo usuário para correção e novo envio.',
+  'from public, anon, authenticated, service_role',
+  'to service_role',
+]) assert(reopenAuthority.includes(token), `KYC reopen authority missing: ${token}`);
+
+for (const token of [
+  'professional_verification_reference_read',
+  'PROF_B05_BROWSER_STORAGE_MUTATION_POLICY_REMAINS',
+  'storage.object.sign',
+  'storage.object.get_authenticated',
+  'PROF_B05_OWNER_LIST_ALLOWED',
+  'PROF_B05_REVIEWER_LIST_ALLOWED',
+]) assert(storageContainmentValidation.includes(token), `KYC Storage containment validation missing: ${token}`);
+
+assert(storageSetup.includes('professional_verification_reference_read'), 'KYC Storage setup must document the canonical referenced-read policy.');
+assert(!storageSetup.includes('Proprietário — INSERT, SELECT, UPDATE e DELETE'), 'KYC Storage setup must not instruct recreating legacy owner mutation policies.');
 
 for (const token of [
   'professional-verification-operations',
