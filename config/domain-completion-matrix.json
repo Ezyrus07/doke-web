@@ -3294,7 +3294,9 @@
         "assets/js/repositories/analytics-repository.js",
         "assets/js/pages/search/server-results-surface.js",
         "config/ana-001-staging-activation-readiness.json",
-        "docs/ANA-001-STAGING-ACTIVATION-READINESS.md"
+        "docs/ANA-001-STAGING-ACTIVATION-READINESS.md",
+        "config/ana-001-staging-canary-readiness.json",
+        "docs/ANA-001-STAGING-CANARY.md"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3318,7 +3320,9 @@
         "assets/js/pages/detalhe-anuncio.js",
         "assets/js/pages/orcamento.js",
         "config/ana-001-staging-activation-readiness.json",
-        "scripts/plan-ana-001-staging-activation.js"
+        "scripts/plan-ana-001-staging-activation.js",
+        "config/ana-001-staging-canary-readiness.json",
+        "scripts/run-ana-001-staging-canary.js"
       ],
       "tables": [
         "service_metric_events",
@@ -3357,7 +3361,10 @@
         "test:ana-a03-client-wiring",
         "audit:ana-001-staging-activation-readiness",
         "test:ana-001-staging-activation-readiness",
-        "plan:ana-001-staging-activation:dry-run"
+        "plan:ana-001-staging-activation:dry-run",
+        "audit:ana-001-staging-canary",
+        "test:ana-001-staging-canary",
+        "run:ana-001-staging-canary:dry-run"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3371,7 +3378,8 @@
         "ANA-A04 server projection runtime and append-only metric snapshot schema are prepared as an unapplied migration.",
         "ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are prepared as an unapplied migration.",
         "ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default.",
-        "ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization."
+        "ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization.",
+        "ANA now has a staging-only synthetic canary runner covering signed exposure, replay conflict, tamper rejection, owner exclusion, quote linkage, A04 projection and A05 reconciliation; CI is restricted to dry-run and never executes remote mutations."
       ],
       "blockers": [
         {
