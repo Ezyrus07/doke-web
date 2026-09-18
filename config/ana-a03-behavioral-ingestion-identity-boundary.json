@@ -1,0 +1,92 @@
+{
+  "contractId": "ana-a03-behavioral-ingestion-identity-boundary-v1",
+  "domain": "ANA-001",
+  "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
+  "createdAt": "2026-09-18T19:10:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_runtime_and_legal_activation_blocked",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "sessionPolicy": {
+    "anonymousSession": "server_issued_ephemeral_session_storage",
+    "authenticatedActor": "server_auth_uid",
+    "persistentAnonymousIdentity": false,
+    "crossSessionAnonymousStitching": false,
+    "crossDeviceStitching": false,
+    "anonymousToAuthenticatedStitching": false,
+    "securityPseudonymMayBecomeAnalyticsIdentity": false
+  },
+  "ingestion": {
+    "edgeProxyRequired": true,
+    "serverActorResolution": true,
+    "serviceRoleWriter": true,
+    "payloadAllowlist": true,
+    "transportIdempotency": true,
+    "semanticDeduplication": true,
+    "rateLimitRequired": true,
+    "piiRejection": true,
+    "browserDirectCanonicalInsert": false
+  },
+  "searchExposure": {
+    "signedProofRequired": true,
+    "separateSigningAuthorityFromSearchCursor": true,
+    "canonicalPositionServerOwned": true,
+    "canonicalServiceServerOwned": true
+  },
+  "temporalAuthority": {
+    "behaviorCanonicalOccurredAt": "server_received_at",
+    "clientOccurredAt": "advisory_only"
+  },
+  "prohibitedPayloadFields": [
+    "actor_id",
+    "professional_id",
+    "owner_id",
+    "email",
+    "phone",
+    "cpf",
+    "cnpj",
+    "raw_query",
+    "answer_text",
+    "message",
+    "address",
+    "card_number",
+    "bank_account"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "ingestionContractAuthority": true,
+    "identityBoundaryContractAuthority": true,
+    "semanticDedupContractAuthority": true,
+    "searchExposureContractAuthority": true,
+    "runtimeIngestionAuthority": false,
+    "anonymousStitchingAuthority": false,
+    "consentPolicyAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "ANA-B01",
+    "ANA-B03",
+    "LEGAL-B03"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realAnalyticsEventWritten": false,
+    "realMetricProjectionWritten": false,
+    "realMetricSnapshotWritten": false,
+    "realIdentityStitchCreated": false,
+    "realUserDataChanged": false,
+    "realOrderChanged": false,
+    "realPaymentChanged": false,
+    "realReputationChanged": false,
+    "productionChanges": false
+  }
+}

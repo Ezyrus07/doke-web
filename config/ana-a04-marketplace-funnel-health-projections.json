@@ -1,0 +1,178 @@
+{
+  "contractId": "ana-a04-marketplace-funnel-health-projections-v1",
+  "domain": "ANA-001",
+  "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
+  "createdAt": "2026-09-18T19:15:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_runtime_integration_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "projectionStates": [
+    "authoritative",
+    "stale",
+    "unavailable"
+  ],
+  "coverageStates": [
+    "complete",
+    "partial",
+    "not_applicable"
+  ],
+  "metrics": [
+    {
+      "key": "funnel.search_ctr",
+      "source": [
+        "ANA-001"
+      ],
+      "definition": "unique_result_clicks / unique_result_impressions"
+    },
+    {
+      "key": "marketplace.time_to_first_quote_seconds",
+      "source": [
+        "ORD-001"
+      ],
+      "definition": "first_order_quoted_at - order_requested_at"
+    },
+    {
+      "key": "marketplace.resolved_quote_fill_rate",
+      "source": [
+        "ORD-001"
+      ],
+      "definition": "quoted_orders / (quoted_orders + cancelled_before_quote_orders)"
+    },
+    {
+      "key": "marketplace.mature_quote_fill_rate",
+      "source": [
+        "ORD-001"
+      ],
+      "definition": "quoted_mature_requests / mature_requests",
+      "availability": "policy_required"
+    },
+    {
+      "key": "marketplace.resolved_fulfillment_rate",
+      "source": [
+        "ORD-001"
+      ],
+      "definition": "final_completed / (final_completed + final_cancelled)"
+    },
+    {
+      "key": "marketplace.pre_quote_cancellation_rate",
+      "source": [
+        "ORD-001"
+      ],
+      "definition": "cancelled_without_prior_quote / resolved_request_cohort"
+    },
+    {
+      "key": "marketplace.dispute_incidence",
+      "source": [
+        "ORD-001"
+      ],
+      "definition": "orders_with_any_dispute_event / eligible_order_cohort"
+    },
+    {
+      "key": "liquidity.active_service_seconds",
+      "source": [
+        "CAT-001"
+      ],
+      "definition": "sum_active_listing_intervals"
+    },
+    {
+      "key": "retention.repeat_request_30d",
+      "source": [
+        "ORD-001"
+      ],
+      "definition": "mature_clients_with_later_request_30d / mature_first_completion_clients"
+    },
+    {
+      "key": "retention.repeat_completion_90d",
+      "source": [
+        "ORD-001"
+      ],
+      "definition": "mature_clients_with_later_completion_90d / mature_first_completion_clients"
+    },
+    {
+      "key": "economics.gmv",
+      "source": [
+        "PAY-001"
+      ],
+      "definition": "canonical_reconciled_gross_payment_volume",
+      "availability": "unavailable_until_PAY_canonical"
+    },
+    {
+      "key": "economics.take_rate",
+      "source": [
+        "PAY-001"
+      ],
+      "definition": "canonical_platform_revenue / canonical_gmv",
+      "availability": "unavailable_until_PAY_and_commercial_policy_canonical"
+    },
+    {
+      "key": "economics.cac",
+      "source": [
+        "ANA-001"
+      ],
+      "definition": "paid_acquisition_spend / attributed_new_customers",
+      "availability": "unavailable_until_spend_attribution_authority"
+    },
+    {
+      "key": "economics.ltv",
+      "source": [
+        "ANA-001",
+        "PAY-001"
+      ],
+      "definition": "versioned_margin_and_retention_model",
+      "availability": "unavailable_until_revenue_margin_retention_authority"
+    }
+  ],
+  "invariants": [
+    "behavioral and transaction funnels remain separate without approved identity stitching",
+    "zero denominator produces null rather than zero percent",
+    "order outcomes use the final canonical state at dataThrough",
+    "recotation does not inflate quote fill rate",
+    "historical demand dimensions use immutable order service snapshots",
+    "historical supply uses listing visibility intervals and approved service versions",
+    "pre-visibility-ledger supply history is partial coverage rather than fabricated complete history",
+    "rehire is not inferred from repeat orders",
+    "financial metrics remain unavailable until PAY is canonical",
+    "marketplace health is a vector of auditable metrics and not a synthetic score"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "marketplaceMetricContractAuthority": true,
+    "liquidityContractAuthority": true,
+    "retentionContractAuthority": true,
+    "financialMetricContractAuthority": true,
+    "runtimeProjectionAuthority": false,
+    "financialRuntimeAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "ANA-B02",
+    "ANA-B03",
+    "LEGAL-B03",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04",
+    "REP-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realAnalyticsEventWritten": false,
+    "realMetricProjectionWritten": false,
+    "realMetricSnapshotWritten": false,
+    "realIdentityStitchCreated": false,
+    "realUserDataChanged": false,
+    "realOrderChanged": false,
+    "realPaymentChanged": false,
+    "realReputationChanged": false,
+    "productionChanges": false
+  }
+}
