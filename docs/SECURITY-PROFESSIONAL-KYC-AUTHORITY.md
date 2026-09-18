@@ -101,3 +101,32 @@ Approval atomically:
 - `supabase/tests/007_professional_kyc_authority_validation.sql`
 - `scripts/test-professional-kyc-authority-contract.js`
 - `scripts/test-professional-kyc-edge-runtime.mjs`
+
+
+## Immutable evidence lifecycle
+
+PROF-B05/G4 adds a private immutable evidence ledger:
+
+- `private.professional_kyc_evidence_sets`: one immutable identity per submission;
+- `private.professional_kyc_evidence_objects`: exact Storage object id/version snapshots;
+- `private.professional_kyc_evidence_events`: append-only lifecycle events;
+- `private.professional_kyc_current_evidence`: mutable pointer to the current evidence set.
+
+Historical sets, objects and events reject UPDATE, DELETE and TRUNCATE. Reopening a rejected submission appends `reopened`, removes only the current pointer, clears the mutable public KYC document reference and preserves the old evidence set.
+
+The staging backfill imported the current legacy verified verification as one `legacy_current_snapshot` with four exact object identities. No prior rejected submission was fabricated.
+
+## PRE-B04 GC boundary
+
+PROF-B05/G5 provides classification and dry-run observability only. It cannot physically delete KYC evidence.
+
+The current classifier outputs only:
+
+- `KEEP_REFERENCE`;
+- `KEEP_ACTIVE_INTENT`;
+- `GC_TECHNICALLY_ELIGIBLE` with `PROF_B04_RETENTION` gate;
+- `HOLD_INVESTIGATE`.
+
+Known historical evidence takes precedence over legacy/orphan classification. Cancelled intents without a canonical cancellation anchor remain `HOLD_INVESTIGATE / CANCELLATION_ANCHOR_MISSING`.
+
+Claims, leases, retries, dead-letter execution and Storage deletion remain sealed until PROF-B04/LEGAL-B03 approve the retention and privacy policy.
