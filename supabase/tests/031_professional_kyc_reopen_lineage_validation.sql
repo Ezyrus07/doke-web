@@ -36,7 +36,7 @@ begin
   end if;
 
   insert into auth.users (
-    id, aud, role, email, encrypted_password, email_confirmed_at,
+    id, aud, role, email, email_confirmed_at,
     raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
     is_sso_user, is_anonymous
   ) values (
@@ -44,7 +44,6 @@ begin
     'authenticated',
     'authenticated',
     v_email,
-    crypt('ProfB05!123', gen_salt('bf')),
     pg_catalog.now(),
     '{"provider":"email","providers":["email"],"role":"client","account_status":"active"}'::jsonb,
     pg_catalog.jsonb_build_object('name', 'PROF B05 Reopen', 'handle', v_handle),
