@@ -146,7 +146,11 @@ declare
   v_evidence_count integer;
   v_evidence_set_id uuid;
   v_intent_count integer;
-  v_intent private.professional_kyc_upload_intents%rowtype;
+  v_intent_id uuid;
+  v_intent_user_id uuid;
+  v_intent_status text;
+  v_intent_expires_at timestamptz;
+  v_intent_consumed_at timestamptz;
   v_manifest_entry jsonb;
   v_path_manifest_match boolean;
   v_action text;
@@ -195,13 +199,18 @@ begin
      where d.value->>'bucket'=v_object.bucket_id
        and d.value->>'path'=v_object.name;
 
-    v_intent:=null;
+    v_intent_id:=null;
+    v_intent_user_id:=null;
+    v_intent_status:=null;
+    v_intent_expires_at:=null;
+    v_intent_consumed_at:=null;
     v_manifest_entry:=null;
     v_path_manifest_match:=false;
 
     if v_intent_count=1 then
-      select i.*,d.value
-        into v_intent,v_manifest_entry
+      select i.id,i.user_id,i.status,i.expires_at,i.consumed_at,d.value
+        into v_intent_id,v_intent_user_id,v_intent_status,
+             v_intent_expires_at,v_intent_consumed_at,v_manifest_entry
         from private.professional_kyc_upload_intents i
         cross join lateral jsonb_each(i.files) d
        where d.value->>'bucket'=v_object.bucket_id
@@ -210,8 +219,8 @@ begin
 
       v_path_manifest_match:=
         split_part(v_object.name,'/',1)='locked'
-        and split_part(v_object.name,'/',2)=v_intent.user_id::text
-        and split_part(v_object.name,'/',3)=v_intent.id::text
+        and split_part(v_object.name,'/',2)=v_intent_user_id::text
+        and split_part(v_object.name,'/',3)=v_intent_id::text
         and lower(coalesce(v_manifest_entry->>'type',''))=lower(coalesce(v_object.metadata->>'mimetype',''))
         and coalesce(v_manifest_entry->>'size','')=greatest(0,coalesce((v_object.metadata->>'size')::bigint,0))::text;
     end if;
@@ -225,9 +234,9 @@ begin
         v_evidence_count,
         v_intent_count,
         v_path_manifest_match,
-        v_intent.status,
-        v_intent.expires_at,
-        v_intent.consumed_at,
+        v_intent_status,
+        v_intent_expires_at,
+        v_intent_consumed_at,
         p_evaluation_time
       ) c;
 
@@ -237,7 +246,7 @@ begin
       intent_match_count,technical_action,reason_code,execution_gate,evaluation_time
     ) values (
       v_run_id,v_object.bucket_id,v_object.name,v_object.id,v_object.version,
-      case when v_intent_count=1 then v_intent.id else null end,
+      case when v_intent_count=1 then v_intent_id else null end,
       case when v_evidence_count=1 then v_evidence_set_id else null end,
       v_reference_count,v_evidence_count,v_intent_count,
       v_action,v_reason,v_gate,p_evaluation_time
