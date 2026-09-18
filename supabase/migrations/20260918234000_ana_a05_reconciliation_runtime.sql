@@ -95,12 +95,12 @@ begin
   where e.created_at >= p_window_start and e.created_at < p_window_end;
 
   select coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_array(
-      e.order_event_id,e.event_key,e.order_id,e.event_type,e.created_at
+      e.order_event_id,e.event_key,e.order_id,e.event_type,e.occurred_at
     ) order by e.order_event_id), '[]'::jsonb),
     count(*)
   into v_projection_payload, v_projection_count
   from private.order_metric_events e
-  where e.created_at >= p_window_start and e.created_at < p_window_end;
+  where e.occurred_at >= p_window_start and e.occurred_at < p_window_end;
 
   select count(*) into v_projection_missing
   from private.order_domain_events s
