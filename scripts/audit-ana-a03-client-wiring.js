@@ -28,7 +28,7 @@ check('repository uses sessionStorage', repository.includes('root.sessionStorage
 check('repository does not use localStorage', !repository.includes('localStorage'));
 check('repository feature gate strict true', repository.includes("config.analyticsEnabled === true"));
 check('repository transport gate', repository.includes("analyticsTransport || '') === 'edge-v1'"));
-check('repository invokes configured edge', repository.includes('client.functions.invoke'));
+check('repository invokes configured edge', repository.includes('DokeSupabase.invokeEdgeFunction') && repository.includes('client.functions.invoke'));
 check('repository uses crypto randomUUID', repository.includes('crypto.randomUUID'));
 check('repository has no fabricated UUID fallback', !repository.includes('Math.random'));
 check('repository does not send actor identity', !repository.includes('actorId:'));
