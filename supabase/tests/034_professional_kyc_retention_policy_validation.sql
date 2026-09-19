@@ -250,6 +250,7 @@ $policy_matrix$;
 do $bridge$
 declare
   v_now timestamptz:=now();
+  v_retention_id uuid;
   v_action text;
   v_reason text;
   v_gate text;
@@ -259,6 +260,8 @@ begin
   from private.evaluate_professional_kyc_gc_retention_gate(
     'HOLD_INVESTIGATE',
     null,
+    'missing-governance',
+    1,
     'missing-policy',
     1,
     'decision_at',
@@ -278,6 +281,8 @@ begin
   from private.evaluate_professional_kyc_gc_retention_gate(
     'GC_TECHNICALLY_ELIGIBLE',
     'PROF_B04_RETENTION',
+    'missing-governance',
+    1,
     'missing-policy',
     1,
     'decision_at',
@@ -287,9 +292,71 @@ begin
   );
 
   if v_action<>'HOLD'
-     or v_reason<>'POLICY_MISSING'
+     or v_reason<>'GOVERNANCE_MISSING'
      or v_gate is not null then
-    raise exception 'PROF_B04_MISSING_POLICY_BRIDGE_NOT_HELD';
+    raise exception 'PROF_B04_MISSING_GOVERNANCE_BRIDGE_NOT_HELD';
+  end if;
+
+  insert into private.professional_kyc_retention_policies(
+    policy_key,policy_version,policy_state,retention_mode,anchor_kind,
+    retention_interval,effective_from,approved_at,approval_reference,legal_basis_reference
+  ) values(
+    'bridge-retention',1,'approved','elapsed_interval','decision_at',
+    interval '30 days',v_now-interval '1 day',v_now,'LEGAL-BRIDGE','LGPD-BRIDGE'
+  ) returning id into v_retention_id;
+
+  insert into private.professional_kyc_governance_versions(
+    governance_key,governance_version,governance_state,retention_policy_id,
+    verification_provider_mode,provider_reference,biometric_processing_mode,
+    rejection_policy_reference,appeal_policy_reference,privacy_notice_reference,
+    processing_record_reference,effective_from,approved_at,approval_reference
+  ) values(
+    'bridge-governance',1,'approved',v_retention_id,
+    'internal_manual_review','internal-manual-bridge','human_visual_review',
+    'reject-bridge','appeal-bridge','privacy-bridge','ropa-bridge',
+    v_now-interval '1 day',v_now,'GOV-BRIDGE'
+  );
+
+  select final_action,reason_code,execution_gate
+    into v_action,v_reason,v_gate
+  from private.evaluate_professional_kyc_gc_retention_gate(
+    'GC_TECHNICALLY_ELIGIBLE',
+    'PROF_B04_RETENTION',
+    'bridge-governance',
+    1,
+    'elapsed-policy',
+    1,
+    'decision_at',
+    v_now-interval '60 days',
+    v_now,
+    false
+  );
+
+  if v_action<>'HOLD'
+     or v_reason<>'GOVERNANCE_RETENTION_POLICY_MISMATCH'
+     or v_gate is not null then
+    raise exception 'PROF_B04_GOVERNANCE_POLICY_MISMATCH_ALLOWED';
+  end if;
+
+  select final_action,reason_code,execution_gate
+    into v_action,v_reason,v_gate
+  from private.evaluate_professional_kyc_gc_retention_gate(
+    'GC_TECHNICALLY_ELIGIBLE',
+    'PROF_B04_RETENTION',
+    'bridge-governance',
+    1,
+    'bridge-retention',
+    1,
+    'decision_at',
+    v_now-interval '60 days',
+    v_now,
+    false
+  );
+
+  if v_action<>'POLICY_ELAPSED_TECHNICAL_ALLOW'
+     or v_reason<>'RETENTION_ELAPSED'
+     or v_gate<>'PROF_B05_G7_PHYSICAL_GC' then
+    raise exception 'PROF_B04_COMBINED_GOVERNANCE_RETENTION_GATE_INVALID';
   end if;
 end;
 $bridge$;
