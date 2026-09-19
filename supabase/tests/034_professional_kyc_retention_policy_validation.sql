@@ -175,6 +175,51 @@ begin
     raise exception 'PROF_B04_HOLD_ONLY_POLICY_NOT_HELD';
   end if;
 
+  begin
+    insert into private.professional_kyc_retention_policies(
+      policy_key,policy_version,policy_state,retention_mode,anchor_kind,
+      retention_interval,effective_from,approved_at,approval_reference,legal_basis_reference
+    ) values(
+      'invalid-delete-at-termination',1,'approved','delete_at_termination','decision_at',
+      interval '1 second',v_now-interval '1 day',v_now,'LEGAL-TEST',null
+    );
+    raise exception 'PROF_B04_DELETE_AT_TERMINATION_INTERVAL_ALLOWED';
+  exception
+    when check_violation then null;
+  end;
+
+  insert into private.professional_kyc_retention_policies(
+    policy_key,policy_version,policy_state,retention_mode,anchor_kind,
+    retention_interval,effective_from,approved_at,approval_reference,legal_basis_reference
+  ) values(
+    'termination-policy',1,'approved','delete_at_termination','decision_at',
+    null,v_now-interval '1 day',v_now,'LEGAL-TERMINATION',null
+  );
+
+  select retention_action,reason_code,eligible_at,execution_gate
+    into v_action,v_reason,v_eligible,v_gate
+  from private.evaluate_professional_kyc_retention_policy(
+    'termination-policy',1,'decision_at',v_now+interval '1 day',v_now,false
+  );
+  if v_action<>'HOLD'
+     or v_reason<>'TREATMENT_NOT_TERMINATED'
+     or v_eligible is null
+     or v_gate is not null then
+    raise exception 'PROF_B04_TERMINATION_FUTURE_ANCHOR_INVALID';
+  end if;
+
+  select retention_action,reason_code,eligible_at,execution_gate
+    into v_action,v_reason,v_eligible,v_gate
+  from private.evaluate_professional_kyc_retention_policy(
+    'termination-policy',1,'decision_at',v_now-interval '1 second',v_now,false
+  );
+  if v_action<>'POLICY_TERMINATION_TECHNICAL_ALLOW'
+     or v_reason<>'TREATMENT_TERMINATED'
+     or v_eligible is null
+     or v_gate<>'PROF_B05_G7_PHYSICAL_GC' then
+    raise exception 'PROF_B04_DELETE_AT_TERMINATION_GATE_INVALID';
+  end if;
+
   insert into private.professional_kyc_retention_policies(
     policy_key,policy_version,policy_state,retention_mode,anchor_kind,
     retention_interval,effective_from,approved_at,approval_reference,legal_basis_reference
