@@ -9,6 +9,9 @@ declare
   v_email text := 'prof-b05-reopen-' || replace(gen_random_uuid()::text, '-', '') || '@example.test';
   v_handle text := 'profb05_' || left(replace(gen_random_uuid()::text, '-', ''), 12);
   v_verification_id uuid;
+  v_evidence_set_id uuid := gen_random_uuid();
+  v_rejected_sequence bigint;
+  v_reopened_sequence bigint;
   v_result jsonb;
   v_event_count integer;
   v_document_status text;
@@ -114,6 +117,56 @@ begin
   )
   returning id into v_verification_id;
 
+  if to_regclass('private.professional_kyc_evidence_sets') is null
+     or to_regclass('private.professional_kyc_evidence_objects') is null
+     or to_regclass('private.professional_kyc_evidence_events') is null
+     or to_regclass('private.professional_kyc_current_evidence') is null then
+    raise exception 'PROF_B05_REOPEN_EVIDENCE_LIFECYCLE_MISSING';
+  end if;
+
+  insert into private.professional_kyc_evidence_sets(
+    id,verification_id,user_id,verification_type,provenance_kind,
+    manifest_sha256,submitted_at
+  ) values(
+    v_evidence_set_id,v_verification_id,v_user_id,'individual',
+    'legacy_current_snapshot',repeat('a',64),pg_catalog.now()-interval '1 hour'
+  );
+
+  insert into private.professional_kyc_evidence_objects(
+    evidence_set_id,document_field,bucket_id,object_path,storage_object_id,
+    storage_object_version,mime_type,byte_size
+  ) values(
+    v_evidence_set_id,'documentFront','professional-verification-media',
+    v_user_id::text||'/synthetic-front.jpg',
+    gen_random_uuid(),'synthetic-reopen-v1','image/jpeg',128
+  );
+
+  insert into private.professional_kyc_evidence_events(
+    evidence_set_id,event_kind,source_kind,actor_id,source_event_key,occurred_at
+  ) values
+  (
+    v_evidence_set_id,'submitted','authoritative_transition',v_user_id,
+    'submitted:'||v_evidence_set_id::text,pg_catalog.now()-interval '1 hour'
+  ),
+  (
+    v_evidence_set_id,'review_started','authoritative_transition',null,
+    'review_started:'||v_evidence_set_id::text,pg_catalog.now()-interval '30 minutes'
+  ),
+  (
+    v_evidence_set_id,'rejected','authoritative_transition',null,
+    'rejected:'||v_evidence_set_id::text,pg_catalog.now()
+  );
+
+  insert into private.professional_kyc_current_evidence(
+    verification_id,evidence_set_id
+  ) values(v_verification_id,v_evidence_set_id);
+
+  select max(event_sequence)
+    into v_rejected_sequence
+    from private.professional_kyc_evidence_events
+   where evidence_set_id=v_evidence_set_id
+     and event_kind='rejected';
+
   select public.execute_self_service_operation_internal(
     v_user_id,
     'reopen_own_professional_identity_verification',
@@ -152,6 +205,27 @@ begin
     raise exception 'PROF_B05_REOPEN_PROFILE_STATE_MISMATCH';
   end if;
 
+  if exists(
+    select 1
+    from private.professional_kyc_current_evidence
+    where verification_id=v_verification_id
+  ) then
+    raise exception 'PROF_B05_REOPEN_CURRENT_MAPPING_REMAINS';
+  end if;
+
+  select max(event_sequence)
+    into v_reopened_sequence
+    from private.professional_kyc_evidence_events
+   where evidence_set_id=v_evidence_set_id
+     and event_kind='reopened';
+
+  if v_reopened_sequence is null
+     or v_rejected_sequence is null
+     or v_reopened_sequence<=v_rejected_sequence then
+    raise exception 'PROF_B05_REOPEN_LEDGER_ORDER_INVALID:%:%',
+      v_rejected_sequence,v_reopened_sequence;
+  end if;
+
   select pg_catalog.count(*)
     into v_event_count
     from public.verification_events
@@ -180,6 +254,16 @@ begin
 
   if v_event_count <> 1 then
     raise exception 'PROF_B05_REOPEN_REPLAY_NOT_IDEMPOTENT';
+  end if;
+
+  select pg_catalog.count(*)
+    into v_event_count
+    from private.professional_kyc_evidence_events
+   where evidence_set_id=v_evidence_set_id
+     and event_kind='reopened';
+
+  if v_event_count<>1 then
+    raise exception 'PROF_B05_REOPEN_LEDGER_REPLAY_NOT_IDEMPOTENT:%',v_event_count;
   end if;
 end;
 $test$;
