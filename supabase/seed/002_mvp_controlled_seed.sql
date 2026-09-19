@@ -85,7 +85,7 @@ on conflict (professional_id, slug) do update set
 -- immutable service version. Keep this controlled staging seed aligned with
 -- the same moderation boundary used by the application instead of publishing
 -- a raw services row directly.
-do $
+do $seed$
 declare
   v_service_id uuid := '55555555-5555-4555-8555-555555555555';
   v_professional_id uuid := (select user_id from doke_seed_auth_users where seed_role = 'professional');
@@ -172,7 +172,7 @@ begin
       updated_at = now()
   where id = v_service_id;
 end
-$;
+$seed$;
 
 insert into public.orders (id, client_id, professional_id, service_id, title, description, status, city, state) values
   ('66666666-6666-4666-8666-666666666666', (select user_id from doke_seed_auth_users where seed_role = 'client'), (select user_id from doke_seed_auth_users where seed_role = 'professional'), '55555555-5555-4555-8555-555555555555', 'Pintura da sala', 'Pedido demo para validar orçamento, chat, pagamento, contestação, repasse e saque.', 'in_progress', 'Salvador', 'BA')
