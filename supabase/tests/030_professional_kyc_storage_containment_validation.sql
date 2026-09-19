@@ -146,24 +146,42 @@ $owner_list$;
 reset role;
 
 -- An unrelated active non-reviewer cannot read the referenced object.
-select set_config(
-  'doke.prof_b05.unrelated',
-  (
-    select u.id::text
-      from public.users u
-     where u.status = 'active'
-       and u.role not in ('admin', 'moderator')
-       and u.id::text <> current_setting('doke.prof_b05.owner')
-     limit 1
-  ),
-  true
-);
-
+-- Provision a transaction-scoped actor only when the environment has no suitable canary.
 do $unrelated_target$
+declare
+  v_id uuid;
+  v_email text;
 begin
-  if nullif(current_setting('doke.prof_b05.unrelated', true), '') is null then
-    raise exception 'PROF_B05_UNRELATED_CANARY_ACTOR_MISSING';
+  select u.id
+    into v_id
+    from public.users u
+   where u.status='active'
+     and u.role not in ('admin','moderator')
+     and u.id::text<>current_setting('doke.prof_b05.owner')
+   limit 1;
+
+  if v_id is null then
+    v_id:=gen_random_uuid();
+    v_email:='prof-b05-storage-unrelated-'||replace(v_id::text,'-','')||'@example.test';
+
+    insert into auth.users(
+      id,aud,role,email,email_confirmed_at,
+      raw_app_meta_data,raw_user_meta_data,created_at,updated_at,
+      is_sso_user,is_anonymous
+    ) values(
+      v_id,'authenticated','authenticated',v_email,now(),
+      '{"provider":"email","providers":["email"],"role":"client","account_status":"active"}'::jsonb,
+      jsonb_build_object('name','PROF B05 Storage Unrelated'),
+      now(),now(),false,false
+    );
+
+    insert into public.users(id,email,role,status,created_at,updated_at)
+    values(v_id,v_email,'client','active',now(),now())
+    on conflict(id) do update
+      set role='client',status='active',updated_at=excluded.updated_at;
   end if;
+
+  perform set_config('doke.prof_b05.unrelated',v_id::text,true);
 end;
 $unrelated_target$;
 
@@ -192,23 +210,41 @@ $unrelated$;
 reset role;
 
 -- Active reviewer can read referenced evidence, but still cannot list.
-select set_config(
-  'doke.prof_b05.reviewer',
-  (
-    select u.id::text
-      from public.users u
-     where u.status = 'active'
-       and u.role in ('admin', 'moderator')
-     limit 1
-  ),
-  true
-);
-
+-- Provision a transaction-scoped reviewer only when the environment has none.
 do $reviewer_target$
+declare
+  v_id uuid;
+  v_email text;
 begin
-  if nullif(current_setting('doke.prof_b05.reviewer', true), '') is null then
-    raise exception 'PROF_B05_REVIEWER_CANARY_ACTOR_MISSING';
+  select u.id
+    into v_id
+    from public.users u
+   where u.status='active'
+     and u.role in ('admin','moderator')
+   limit 1;
+
+  if v_id is null then
+    v_id:=gen_random_uuid();
+    v_email:='prof-b05-storage-reviewer-'||replace(v_id::text,'-','')||'@example.test';
+
+    insert into auth.users(
+      id,aud,role,email,email_confirmed_at,
+      raw_app_meta_data,raw_user_meta_data,created_at,updated_at,
+      is_sso_user,is_anonymous
+    ) values(
+      v_id,'authenticated','authenticated',v_email,now(),
+      '{"provider":"email","providers":["email"],"role":"admin","account_status":"active"}'::jsonb,
+      jsonb_build_object('name','PROF B05 Storage Reviewer'),
+      now(),now(),false,false
+    );
+
+    insert into public.users(id,email,role,status,created_at,updated_at)
+    values(v_id,v_email,'admin','active',now(),now())
+    on conflict(id) do update
+      set role='admin',status='active',updated_at=excluded.updated_at;
   end if;
+
+  perform set_config('doke.prof_b05.reviewer',v_id::text,true);
 end;
 $reviewer_target$;
 
