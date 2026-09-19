@@ -10,6 +10,19 @@ const storageAuthority = read('supabase/migrations/098_professional_kyc_storage_
 const selfService = read('supabase/migrations/099_professional_kyc_self_service_authority.sql');
 const reviewerAuthority = read('supabase/migrations/100_professional_kyc_reviewer_authority.sql');
 const finalPermissions = read('supabase/migrations/101_professional_kyc_final_permissions.sql');
+const jsonbCompatibility = read('supabase/migrations/20260918193000_professional_kyc_jsonb_compatibility.sql');
+const reopenAuthority = read('supabase/migrations/20260918193700_professional_kyc_reopen_authority.sql');
+const storageContainmentValidation = read('supabase/tests/030_professional_kyc_storage_containment_validation.sql');
+const evidenceLifecycle = read('supabase/migrations/20260918205000_professional_kyc_evidence_lifecycle_authority.sql');
+const evidenceLifecycleValidation = read('supabase/tests/032_professional_kyc_evidence_lifecycle_validation.sql');
+const gcDryRun = read('supabase/migrations/20260918205500_professional_kyc_gc_dry_run_authority.sql');
+const gcEvidencePrecedenceFix = read('supabase/migrations/20260918210200_professional_kyc_gc_evidence_precedence_fix.sql');
+const evidenceEventOrdering = read('supabase/migrations/20260918213000_professional_kyc_evidence_event_ordering_authority.sql');
+const retentionPolicyAuthority = read('supabase/migrations/20260919005500_professional_kyc_retention_policy_authority.sql');
+const retentionPolicyValidation = read('supabase/tests/034_professional_kyc_retention_policy_validation.sql');
+const gcDryRunValidation = read('supabase/tests/033_professional_kyc_gc_dry_run_validation.sql');
+const signedIntentRuntime = read('scripts/validate-professional-kyc-signed-intent-runtime.mjs');
+const storageSetup = read('docs/PROFESSIONAL-VERIFICATION-STORAGE-SETUP.md');
 const edgeIndex = read('supabase/functions/professional-verification-operations/index.ts');
 const edgeOperations = read('supabase/functions/professional-verification-operations/operations.mjs');
 const frontendService = read('assets/js/services/professional-identity-verification-service.js');
@@ -65,6 +78,179 @@ assert(!reviewerAuthority.includes("grant execute on function public.decide_prof
 assert(finalPermissions.includes('Reviewer functions are never direct authenticated APIs.'), 'Final permission boundary must reassert reviewer isolation.');
 
 for (const token of [
+  'DOKE_KYC_CONSUME_INTENT_HELPER_DRIFT',
+  'select count(*) from jsonb_each(v_intent.files)',
+  'private.consume_professional_kyc_upload_intent',
+  'from public,anon,authenticated,service_role',
+]) assert(jsonbCompatibility.includes(token), `KYC JSONB compatibility missing: ${token}`);
+assert(!jsonbCompatibility.includes('jsonb_object_length(v_intent.files)'), 'KYC compatibility migration must not execute unavailable jsonb_object_length(v_intent.files).');
+
+for (const token of [
+  'set search_path = pg_catalog',
+  "document_status = 'unverified'",
+  "verification_status = 'not_started'",
+  "'professional_document'",
+  "'pending'",
+  'Verificação reaberta pelo usuário para correção e novo envio.',
+  'from public, anon, authenticated, service_role',
+  'to service_role',
+]) assert(reopenAuthority.includes(token), `KYC reopen authority missing: ${token}`);
+
+for (const token of [
+  'professional_verification_reference_read',
+  'PROF_B05_BROWSER_STORAGE_MUTATION_POLICY_REMAINS',
+  'storage.object.sign',
+  'storage.object.get_authenticated',
+  'PROF_B05_OWNER_LIST_ALLOWED',
+  'PROF_B05_REVIEWER_LIST_ALLOWED',
+]) assert(storageContainmentValidation.includes(token), `KYC Storage containment validation missing: ${token}`);
+
+
+for (const token of [
+  'private.professional_kyc_evidence_sets',
+  'private.professional_kyc_evidence_objects',
+  'private.professional_kyc_evidence_events',
+  'private.professional_kyc_current_evidence',
+  'DOKE_KYC_EVIDENCE_IMMUTABLE',
+  'snapshot_imported',
+  'signed_intent_reconciled',
+  'DOKE_KYC_EVIDENCE_SET_REQUIRED',
+]) assert(evidenceLifecycle.includes(token), `KYC evidence lifecycle missing: ${token}`);
+
+for (const token of [
+  'PROF_B05_EVIDENCE_SCHEMA_MISSING',
+  'PROF_B05_REOPEN_CURRENT_MAPPING_REMAINS',
+  'PROF_B05_EVIDENCE_UPDATE_ALLOWED',
+  'PROF_B05_EVIDENCE_DELETE_ALLOWED',
+  'PROF_B05_EVIDENCE_TRUNCATE_ALLOWED',
+]) assert(evidenceLifecycleValidation.includes(token), `KYC evidence validation missing: ${token}`);
+
+for (const token of [
+  "check (mode='dry_run')",
+  'GC_TECHNICALLY_ELIGIBLE',
+  'PROF_B04_RETENTION',
+  'CANCELLATION_ANCHOR_MISSING',
+  'run_professional_kyc_gc_dry_run_internal',
+]) assert(gcDryRun.includes(token), `KYC GC dry-run authority missing: ${token}`);
+
+assert(!gcDryRun.includes('claim_token'), 'PRE-B04 KYC GC must not have claim authority.');
+assert(!gcDryRun.includes('lease_expires_at'), 'PRE-B04 KYC GC must not have lease authority.');
+assert(!gcDryRun.toLowerCase().includes('delete from storage.objects'), 'PRE-B04 KYC GC must not delete Storage objects.');
+assert(gcEvidencePrecedenceFix.includes('HISTORICAL_EVIDENCE_RETENTION_UNRESOLVED'), 'Historical evidence must outrank legacy orphan classification.');
+assert(gcDryRunValidation.includes('historical_legacy_evidence'), 'GC validation must cover historical legacy evidence precedence.');
+assert(evidenceEventOrdering.includes('event_sequence bigint generated always as identity'), 'KYC evidence events must have deterministic append order.');
+assert(evidenceEventOrdering.includes('professional_kyc_evidence_events_set_sequence_idx'), 'KYC evidence event ordering index missing.');
+
+for (const token of [
+  'private.professional_kyc_retention_policies',
+  "policy_state in ('draft','approved')",
+  "retention_mode in ('delete_at_termination','elapsed_interval','hold_only')",
+  'approval_reference',
+  'legal_basis_reference',
+  'DOKE_KYC_RETENTION_POLICY_APPROVED_IMMUTABLE',
+  'evaluate_professional_kyc_retention_policy',
+  'POLICY_ELAPSED_TECHNICAL_ALLOW',
+  'PROF_B05_G7_PHYSICAL_GC',
+  'evaluate_professional_kyc_gc_retention_gate',
+  'TECHNICAL_ELIGIBILITY_REQUIRED',
+  'GOVERNANCE_RETENTION_POLICY_MISMATCH',
+  'server-derived legal holds',
+  'DOKE_KYC_LEGAL_HOLD_AUDIT_IMMUTABLE',
+  'has_professional_kyc_legal_hold',
+  'private.professional_kyc_legal_holds',
+  'private.professional_kyc_governance_versions',
+  "verification_provider_mode in ('internal_manual_review','external_verification_provider')",
+  "biometric_processing_mode in ('none','human_visual_review','automated_biometric_verification')",
+  'risk_assessment_reference',
+  'evaluate_professional_kyc_governance',
+  'DOKE_KYC_GOVERNANCE_APPROVED_IMMUTABLE',
+  'GOVERNANCE_APPROVED',
+]) assert(retentionPolicyAuthority.includes(token), `KYC retention policy authority missing: ${token}`);
+
+assert(retentionPolicyAuthority.includes('retention_interval interval,'), 'KYC retention interval must remain explicit and nullable.');
+assert(!retentionPolicyAuthority.includes('retention_interval interval default'), 'KYC retention interval must never have a default.');
+assert(!retentionPolicyAuthority.toLowerCase().includes('insert into private.professional_kyc_retention_policies'), 'KYC retention authority must not seed policy rows.');
+assert(!retentionPolicyAuthority.toLowerCase().includes('delete from storage.objects'), 'KYC retention authority must not delete Storage objects.');
+
+for (const token of [
+  'PROF_B04_APPROVED_POLICY_SEEDED_UNEXPECTEDLY',
+  'PROF_B04_MISSING_POLICY_NOT_HELD',
+  'PROF_B04_DRAFT_POLICY_NOT_HELD',
+  'PROF_B04_FUTURE_POLICY_NOT_HELD',
+  'PROF_B04_LEGAL_HOLD_NOT_HELD',
+  'PROF_B04_ELAPSED_POLICY_GATE_INVALID',
+  'PROF_B04_APPROVED_POLICY_UPDATE_ALLOWED',
+  'PROF_B04_RETENTION_POLICY_TRUNCATE_ALLOWED',
+  'PROF_B04_TECHNICAL_GATE_BYPASS_ALLOWED',
+  'PROF_B04_MISSING_GOVERNANCE_BRIDGE_NOT_HELD',
+  'PROF_B04_GOVERNANCE_POLICY_MISMATCH_ALLOWED',
+  'PROF_B04_COMBINED_GOVERNANCE_RETENTION_GATE_INVALID',
+  'PROF_B04_LEGAL_HOLD_DELETE_ALLOWED',
+  'PROF_B04_LEGAL_HOLD_SCOPE_MUTATION_ALLOWED',
+  'PROF_B04_SERVER_LEGAL_HOLD_BYPASSED',
+  'PROF_B04_LEGAL_HOLD_DIRECT_GRANT_PRESENT',
+  'PROF_B04_GOVERNANCE_MISSING_NOT_HELD',
+  'PROF_B04_DRAFT_GOVERNANCE_NOT_HELD',
+  'PROF_B04_BIOMETRIC_APPROVAL_WITHOUT_RISK_ASSESSMENT_ALLOWED',
+  'PROF_B04_APPROVED_GOVERNANCE_GATE_INVALID',
+  'PROF_B04_APPROVED_GOVERNANCE_UPDATE_ALLOWED',
+]) assert(retentionPolicyValidation.includes(token), `KYC retention policy validation missing: ${token}`);
+
+
+assert(storageSetup.includes('professional_verification_reference_read'), 'KYC Storage setup must document the canonical referenced-read policy.');
+assert(!storageSetup.includes('Proprietário — INSERT, SELECT, UPDATE e DELETE'), 'KYC Storage setup must not instruct recreating legacy owner mutation policies.');
+
+for (const token of [
+  'private.professional_kyc_evidence_sets',
+  'private.professional_kyc_evidence_objects',
+  'private.professional_kyc_evidence_events',
+  'private.professional_kyc_current_evidence',
+  'DOKE_KYC_EVIDENCE_IMMUTABLE',
+  'legacy_current_snapshot',
+  'signed_intent_reconciled',
+  'DOKE_KYC_BACKFILL_MIXED_PATH_PROVENANCE',
+  "'submitted'",
+  "'review_started'",
+  "'reopened'",
+]) assert(evidenceLifecycle.includes(token), `KYC evidence lifecycle missing: ${token}`);
+
+for (const token of [
+  'PROF_B05_EVIDENCE_BROWSER_PRIVILEGE_LEAK',
+  'PROF_B05_S1_REVIEW_REJECT_EVENTS_MISSING',
+  'PROF_B05_S2_DIRECT_DECISION_EVENTS_MISSING',
+  'PROF_B05_EVIDENCE_TRUNCATE_ALLOWED',
+]) assert(evidenceLifecycleValidation.includes(token), `KYC evidence validation missing: ${token}`);
+
+for (const token of [
+  "mode text not null default 'dry_run' check (mode='dry_run')",
+  'GC_TECHNICALLY_ELIGIBLE',
+  'PROF_B04_RETENTION',
+  'CANCELLATION_ANCHOR_MISSING',
+  'HISTORICAL_EVIDENCE_RETENTION_UNRESOLVED',
+  'run_professional_kyc_gc_dry_run_internal',
+]) assert(gcDryRun.includes(token), `KYC GC dry-run authority missing: ${token}`);
+
+for (const forbidden of [
+  'claim_token',
+  'claimed_at',
+  'lease_expires_at',
+  'deleted_at',
+]) assert(!gcDryRun.includes(forbidden), `KYC GC dry-run must not contain pre-B04 execution field: ${forbidden}`);
+
+for (const token of [
+  'PROF_B05_GC_CLASSIFIER_MATRIX_FAILED',
+  'PROF_B05_GC_REFERENCE_PRECEDENCE_BROKEN',
+  'PROF_B05_GC_RETENTION_GATE_MISSING',
+]) assert(gcDryRunValidation.includes(token), `KYC GC validation missing: ${token}`);
+
+for (const token of [
+  'uploadToSignedUrl',
+  'prof-b05-g2a-pass',
+  'cleanup-storage-error',
+  'DOKE_KYC_CANARY_ALLOW_STAGING',
+]) assert(signedIntentRuntime.includes(token), `KYC signed-intent runtime canary missing: ${token}`);
+
+for (const token of [
   'professional-verification-operations',
   'authClient.auth.getUser()',
   'prepare_uploads',
@@ -88,5 +274,10 @@ assert(!frontendService.includes("client.rpc('decide_professional_identity_verif
 
 assert.strictEqual(packageJson.scripts['test:professional-kyc-authority-contract'], 'node scripts/test-professional-kyc-authority-contract.js');
 assert.strictEqual(packageJson.scripts['test:professional-kyc-edge-runtime'], 'node scripts/test-professional-kyc-edge-runtime.mjs');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:dry-run'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --dry-run');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:check-env'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --check-env');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:execute'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --execute');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-evidence-lifecycle:dry-run'], 'node scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs --dry-run');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-evidence-lifecycle:execute'], 'node scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs --execute');
 
 console.log('Professional KYC authority contract passed.');
