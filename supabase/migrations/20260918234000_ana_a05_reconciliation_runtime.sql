@@ -67,6 +67,7 @@ declare
   v_projection_count bigint;
   v_projection_missing bigint;
   v_source_missing bigint;
+  v_event_key_mismatch bigint;
   v_event_type_mismatch bigint;
   v_subject_mismatch bigint;
   v_timestamp_mismatch bigint;
@@ -120,6 +121,7 @@ begin
     and s.id is null;
 
   select
+    count(*) filter (where s.event_key is distinct from p.event_key),
     count(*) filter (where s.event_type is distinct from p.event_type),
     count(*) filter (where s.order_id is distinct from p.order_id),
     count(*) filter (where s.created_at is distinct from p.occurred_at),
@@ -127,10 +129,15 @@ begin
       where coalesce(s.payload ->> 'serviceId','') is distinct from coalesce(p.service_id::text,'')
          or coalesce(s.payload ->> 'clientId','') is distinct from coalesce(p.client_id::text,'')
          or coalesce(s.payload ->> 'professionalId','') is distinct from coalesce(p.professional_id::text,'')
+         or coalesce(o.service_snapshot ->> 'category','') is distinct from coalesce(p.dimensions ->> 'serviceCategory','')
+         or coalesce(o.service_snapshot ->> 'city','') is distinct from coalesce(p.dimensions ->> 'serviceCity','')
+         or coalesce(o.service_snapshot ->> 'state','') is distinct from coalesce(p.dimensions ->> 'serviceState','')
+         or coalesce(o.service_version_id::text,'') is distinct from coalesce(p.dimensions ->> 'serviceVersionId','')
     )
-  into v_event_type_mismatch, v_subject_mismatch, v_timestamp_mismatch, v_dimension_mismatch
+  into v_event_key_mismatch, v_event_type_mismatch, v_subject_mismatch, v_timestamp_mismatch, v_dimension_mismatch
   from private.order_domain_events s
   join private.order_metric_events p on p.order_event_id = s.id
+  join public.orders o on o.id = s.order_id
   where s.created_at >= p_window_start and s.created_at < p_window_end;
 
   v_source_hash := pg_catalog.encode(
@@ -143,13 +150,14 @@ begin
     'projectionMissing',v_projection_missing,
     'sourceMissing',v_source_missing,
     'duplicateProjection',0,
+    'eventKeyMismatch',v_event_key_mismatch,
     'eventTypeMismatch',v_event_type_mismatch,
     'subjectMismatch',v_subject_mismatch,
     'timestampMismatch',v_timestamp_mismatch,
     'dimensionMismatch',v_dimension_mismatch
   );
   with source_window as (
-    select s.id,s.order_id,s.event_type,s.created_at,s.payload
+    select s.id,s.event_key,s.order_id,s.event_type,s.created_at,s.payload
     from private.order_domain_events s
     where s.created_at >= p_window_start and s.created_at < p_window_end
   ),
@@ -167,13 +175,19 @@ begin
     select s.id as event_id
     from source_window s
     left join private.order_metric_events p on p.order_event_id = s.id
+    left join public.orders o on o.id = s.order_id
     where p.order_event_id is null
+       or s.event_key is distinct from p.event_key
        or s.event_type is distinct from p.event_type
        or s.order_id is distinct from p.order_id
        or s.created_at is distinct from p.occurred_at
        or coalesce(s.payload ->> 'serviceId','') is distinct from coalesce(p.service_id::text,'')
        or coalesce(s.payload ->> 'clientId','') is distinct from coalesce(p.client_id::text,'')
        or coalesce(s.payload ->> 'professionalId','') is distinct from coalesce(p.professional_id::text,'')
+       or coalesce(o.service_snapshot ->> 'category','') is distinct from coalesce(p.dimensions ->> 'serviceCategory','')
+       or coalesce(o.service_snapshot ->> 'city','') is distinct from coalesce(p.dimensions ->> 'serviceCity','')
+       or coalesce(o.service_snapshot ->> 'state','') is distinct from coalesce(p.dimensions ->> 'serviceState','')
+       or coalesce(o.service_version_id::text,'') is distinct from coalesce(p.dimensions ->> 'serviceVersionId','')
     union
     select p.order_event_id as event_id
     from projection_window p
@@ -186,7 +200,7 @@ begin
   into v_reconciliation_universe_count, v_mismatch_subject_count;
 
   v_state := case
-    when v_projection_missing + v_source_missing + v_event_type_mismatch + v_subject_mismatch + v_timestamp_mismatch + v_dimension_mismatch = 0
+    when v_projection_missing + v_source_missing + v_event_key_mismatch + v_event_type_mismatch + v_subject_mismatch + v_timestamp_mismatch + v_dimension_mismatch = 0
       then 'matched'
     else 'diverged'
   end;
