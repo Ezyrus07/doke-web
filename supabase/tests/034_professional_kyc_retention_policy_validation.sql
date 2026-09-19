@@ -220,7 +220,7 @@ begin
   end;
 
   begin
-    truncate table private.professional_kyc_retention_policies;
+    execute 'truncate table private.professional_kyc_retention_policies cascade';
     raise exception 'PROF_B04_RETENTION_POLICY_TRUNCATE_ALLOWED';
   exception
     when sqlstate '55000' then
