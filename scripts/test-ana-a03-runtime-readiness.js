@@ -15,7 +15,7 @@ check('concurrent replay resolves uniqueness race',migration.includes('exception
 check('server-originated client event id is unique without analytics session',runtimeSql.includes('analytics_behavior_server_client_event_unique')&&runtimeSql.includes('where analytics_session_id is null and client_event_id is not null'));
 check('server event payload drift is rejected',runtimeSql.includes('if v_analytics_session_id is null then')&&runtimeSql.includes("message = 'DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT'"));
 check('edge never accepts actorId body',!edge.includes('body.actorId'));
-check('authenticated actor from getUser',edge.includes('requestClient.auth.getUser()'));
+check('authenticated actor from bearer JWT getUser',edge.includes('bearerJwt(req.headers.get("authorization") || "")')&&edge.includes('requestClient.auth.getUser(userJwt)'));
 check('current platform key env supported',edge.includes('SUPABASE_PUBLISHABLE_KEYS')&&edge.includes('SUPABASE_SECRET_KEYS'));
 check('owner traffic rejected server-side',edge.includes('data.professional_id === context.actorId'));
 check('quote submit validates order',edge.includes('order.client_id !== context.actorId || order.service_id !== serviceId'));
