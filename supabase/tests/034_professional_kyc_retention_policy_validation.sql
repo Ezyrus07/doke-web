@@ -115,6 +115,23 @@ begin
     interval '30 days',v_now+interval '1 day',v_now,'LEGAL-TEST','LGPD-TEST'
   );
 
+  begin
+    insert into private.professional_kyc_retention_policies(
+      policy_key,policy_version,policy_state,retention_mode,anchor_kind,
+      retention_interval,effective_from,approved_at,approval_reference,legal_basis_reference,
+      supersedes_policy_id
+    )
+    select
+      'wrong-key',2,'approved','elapsed_interval','decision_at',
+      interval '30 days',v_now-interval '1 day',v_now,'LEGAL-TEST','LGPD-TEST',p.id
+    from private.professional_kyc_retention_policies p
+    where p.policy_key='future-policy' and p.policy_version=1;
+    raise exception 'PROF_B04_INVALID_RETENTION_LINEAGE_ALLOWED';
+  exception
+    when sqlstate '55000' then
+      if sqlerrm<>'DOKE_KYC_RETENTION_POLICY_LINEAGE_INVALID' then raise; end if;
+  end;
+
   select retention_action,reason_code
     into v_action,v_reason
   from private.evaluate_professional_kyc_retention_policy(
@@ -315,6 +332,36 @@ begin
     'internal_manual_review','internal-manual-test','human_visual_review',
     null,null,null,null,null
   );
+
+  begin
+    insert into private.professional_kyc_retention_policies(
+      policy_key,policy_version,policy_state,retention_mode,anchor_kind,
+      retention_interval,effective_from
+    ) values(
+      'draft-retention-for-governance',1,'draft','elapsed_interval','decision_at',
+      interval '30 days',v_now-interval '1 day'
+    ) returning id into v_retention_id;
+
+    insert into private.professional_kyc_governance_versions(
+      governance_key,governance_version,governance_state,retention_policy_id,
+      verification_provider_mode,provider_reference,biometric_processing_mode,
+      rejection_policy_reference,appeal_policy_reference,privacy_notice_reference,
+      processing_record_reference,effective_from,approved_at,approval_reference
+    ) values(
+      'invalid-governance-draft-retention',1,'approved',v_retention_id,
+      'internal_manual_review','internal-manual-test','human_visual_review',
+      'reject-test','appeal-test','privacy-test','ropa-test',
+      v_now-interval '1 day',v_now,'GOV-TEST'
+    );
+    raise exception 'PROF_B04_GOVERNANCE_WITH_DRAFT_RETENTION_ALLOWED';
+  exception
+    when sqlstate '55000' then
+      if sqlerrm<>'DOKE_KYC_GOVERNANCE_RETENTION_POLICY_NOT_APPROVED' then raise; end if;
+  end;
+
+  select id into v_retention_id
+  from private.professional_kyc_retention_policies
+  where policy_key='governance-retention' and policy_version=1;
 
   select governance_ready,reason_code
     into v_ready,v_reason
