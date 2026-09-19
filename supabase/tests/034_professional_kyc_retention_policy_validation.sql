@@ -586,6 +586,50 @@ begin
   begin
     insert into private.professional_kyc_governance_versions(
       governance_key,governance_version,governance_state,retention_policy_id,
+      verification_provider_mode,provider_reference,biometric_processing_mode,
+      rejection_policy_reference,appeal_policy_reference,legal_hold_policy_reference,
+      privacy_notice_reference,processing_record_reference,
+      legal_approval_reference,privacy_approval_reference,
+      effective_from,approved_at,approval_reference
+    ) values(
+      'invalid-governance-missing-approvals',1,'approved',v_retention_id,
+      'internal_manual_review','internal-manual-test','human_visual_review',
+      'reject-test','appeal-test','legal-hold-test',
+      'privacy-test','ropa-test',
+      null,null,
+      v_now-interval '1 day',v_now,'GOV-TEST'
+    );
+    raise exception 'PROF_B04_GOVERNANCE_WITHOUT_LEGAL_PRIVACY_APPROVAL_ALLOWED';
+  exception
+    when check_violation then null;
+  end;
+
+  begin
+    insert into private.professional_kyc_governance_versions(
+      governance_key,governance_version,governance_state,retention_policy_id,
+      verification_provider_mode,provider_reference,provider_terms_reference,
+      international_transfer_decision_reference,biometric_processing_mode,
+      rejection_policy_reference,appeal_policy_reference,legal_hold_policy_reference,
+      privacy_notice_reference,processing_record_reference,
+      legal_approval_reference,privacy_approval_reference,
+      effective_from,approved_at,approval_reference
+    ) values(
+      'invalid-external-provider-governance',1,'approved',v_retention_id,
+      'external_verification_provider','provider-test',null,
+      null,'human_visual_review',
+      'reject-test','appeal-test','legal-hold-test',
+      'privacy-test','ropa-test',
+      'legal-approval-test','privacy-approval-test',
+      v_now-interval '1 day',v_now,'GOV-TEST'
+    );
+    raise exception 'PROF_B04_EXTERNAL_PROVIDER_WITHOUT_TERMS_TRANSFER_ALLOWED';
+  exception
+    when check_violation then null;
+  end;
+
+  begin
+    insert into private.professional_kyc_governance_versions(
+      governance_key,governance_version,governance_state,retention_policy_id,
       verification_provider_mode,provider_reference,provider_terms_reference,
       international_transfer_decision_reference,biometric_processing_mode,
       rejection_policy_reference,appeal_policy_reference,legal_hold_policy_reference,
