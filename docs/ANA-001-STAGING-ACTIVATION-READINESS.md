@@ -15,6 +15,20 @@ A staging environment must provide:
 
 The planner reports only whether each runtime variable is present. It never prints or reads secret values into evidence.
 
+## Canonical technical runtime policy
+
+ANA-B01 now fixes the technical security/integrity values used by the staging runtime:
+
+- analytics session TTL: **1800 seconds (30 minutes)**;
+- quote-session TTL: **3600 seconds (60 minutes)**;
+- signed search exposure TTL: **300 seconds (5 minutes)**;
+- ingestion rate limit: **120 requests per 60 seconds per server-resolved rate-limit actor**;
+- semantic deduplication window: **60 seconds**.
+
+These values govern envelope validity, abuse resistance and duplicate suppression. They are **not** a personal-data retention policy and do not authorize longer-term identity correlation. Persistent anonymous identity, cross-session/cross-device stitching and anonymous-to-authenticated stitching remain disabled. Consent, retention, anonymization, export and deletion remain under `LEGAL-B03`.
+
+`DOKE_ANALYTICS_SESSION_SECRET` and `DOKE_ANALYTICS_EXPOSURE_SECRET` must be independent high-entropy secrets (minimum policy: 256 bits), must never be committed or exposed to the browser, and must not be reused between staging and production. Secret rotation requires a controlled canary before the new key becomes authoritative.
+
 ## Pinned repository artifacts
 
 The readiness contract pins the exact Git blob SHA for the three ANA migrations and the two Edge Function source files. Drift blocks staging readiness until the contract is intentionally refreshed and reviewed.
