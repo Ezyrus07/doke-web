@@ -17,23 +17,35 @@ import {
 
 const FUNCTION_NAME = "search-public-services-v2";
 const MAX_BODY_BYTES = 16_384;
-const readPlatformKey = (pluralName: string, singularName: string, legacyName: string) => {
+const readPlatformKeys = (pluralName: string, singularName: string, legacyName: string) => {
+  const keys: string[] = [];
+  const append = (value: unknown) => {
+    const normalized = typeof value === "string" ? value.trim() : "";
+    if (normalized && !keys.includes(normalized)) keys.push(normalized);
+  };
   const raw = Deno.env.get(pluralName) || "";
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as Record<string, unknown>;
-      for (const name of ["default", "doke"]) {
-        const value = typeof parsed[name] === "string" ? String(parsed[name]) : "";
-        if (value) return value;
-      }
-      for (const value of Object.values(parsed)) {
-        if (typeof value === "string" && value) return value;
-      }
+      append(parsed.default);
+      append(parsed.doke);
+      Object.values(parsed).forEach(append);
     } catch {
       // Fall through to compatibility variables.
     }
   }
-  return Deno.env.get(singularName) || Deno.env.get(legacyName) || "";
+  append(Deno.env.get(singularName));
+  append(Deno.env.get(legacyName));
+  return keys;
+};
+
+const readPlatformKey = (pluralName: string, singularName: string, legacyName: string) =>
+  readPlatformKeys(pluralName, singularName, legacyName)[0] || "";
+
+const bearerJwt = (authorization: string) => {
+  const match = /^Bearer\s+(.+)$/i.exec(authorization.trim());
+  const token = match?.[1]?.trim() || "";
+  return token.split(".").length === 3 ? token : "";
 };
 
 const RATE_LIMIT = 120;
@@ -93,28 +105,32 @@ const pseudonymousRateLimitActor = async (req: Request, secret: string) => {
 
 const createContext = async (req: Request): Promise<Context | Response> => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const publicKey = readPlatformKey("SUPABASE_PUBLISHABLE_KEYS", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY");
+  const publicKeys = readPlatformKeys("SUPABASE_PUBLISHABLE_KEYS", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY");
+  const publicKey = publicKeys[0] || "";
   const secretKey = readPlatformKey("SUPABASE_SECRET_KEYS", "SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY");
-  const authorization = req.headers.get("authorization") || "";
+  const presentedApiKey = (req.headers.get("apikey") || "").trim();
+  const userJwt = bearerJwt(req.headers.get("authorization") || "");
 
   if (!supabaseUrl || !publicKey || !secretKey) {
     return jsonResponse(req, 503, { error: "SERVER_CONFIGURATION_MISSING" });
   }
-  if (!authorization) {
-    return jsonResponse(req, 401, { error: "DOKE_SEARCH_AUTHORIZATION_REQUIRED" });
+  if (!presentedApiKey || !publicKeys.includes(presentedApiKey)) {
+    return jsonResponse(req, 401, { error: "DOKE_SEARCH_API_KEY_INVALID" });
   }
 
   const requestClient = createClient(supabaseUrl, publicKey, {
-    global: { headers: { Authorization: authorization } },
+    global: { headers: userJwt ? { Authorization: `Bearer ${userJwt}` } : {} },
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const serviceClient = createClient(supabaseUrl, secretKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: authData, error: authError } = await requestClient.auth.getUser();
-  const actorId = !authError && authData?.user?.id && UUID_PATTERN.test(authData.user.id)
-    ? authData.user.id
+  const userResult = userJwt
+    ? await requestClient.auth.getUser(userJwt)
+    : { data: { user: null }, error: null };
+  const actorId = !userResult.error && userResult.data?.user?.id && UUID_PATTERN.test(userResult.data.user.id)
+    ? userResult.data.user.id
     : null;
   const rateLimitActorId = actorId
     || await pseudonymousRateLimitActor(
