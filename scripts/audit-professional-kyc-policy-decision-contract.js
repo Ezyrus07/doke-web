@@ -31,7 +31,7 @@ const expectedClasses = [
 assert(contract.schemaVersion === 1, 'schemaVersion must remain 1 until an explicit contract migration exists');
 assert(contract.policyKey === 'professional_kyc_policy', 'policyKey changed unexpectedly');
 assert(['awaiting_legal_approval', 'approved'].includes(contract.status), 'invalid policy status');
-assert(Array.isArray(contract.blockers) && contract.blockers.includes('PROF-B04') && contract.blockers.includes('LEGAL-B03'), 'PROF-B04/LEGAL-B03 blockers must remain explicit until approval');
+assert(Array.isArray(contract.blockers), 'blockers must be an array');
 assert(contract.implementationBoundary?.noDefaultRetentionInterval === true, 'default retention intervals are prohibited');
 assert(contract.implementationBoundary?.noPhysicalDeleteBeforeApproval === true, 'physical delete must remain approval-gated');
 assert(migration.includes("retention_mode in ('delete_at_termination','elapsed_interval','hold_only')"), 'G6 retention modes diverge from policy-decision contract');
@@ -78,12 +78,13 @@ for (const item of classes) {
     assert(typeof item.retentionInterval === 'string' && /^P(?!$)/.test(item.retentionInterval), item.key + ': ISO-8601 retentionInterval required');
     assert(typeof item.conservationBasisRef === 'string' && item.conservationBasisRef.length > 0, item.key + ': conservation basis required for interval retention');
   } else {
-    assert(item.retentionInterval === null, item.key + ': retentionInterval must be null unless retain_for_interval is approved');
+    assert(item.retentionInterval === null, item.key + ': retentionInterval must be null unless elapsed_interval is approved');
   }
 }
 
 const approved = contract.status === 'approved';
 if (!approved) {
+  assert(contract.blockers.includes('PROF-B04') && contract.blockers.includes('LEGAL-B03'), 'PROF-B04/LEGAL-B03 blockers must remain explicit before approval');
   assert(contract.activation?.retentionAuthority === 'blocked', 'retention authority must remain blocked before approval');
   assert(contract.activation?.physicalGc === 'blocked', 'physical GC must remain blocked before approval');
   assert(contract.activation?.externalProvider === 'blocked', 'external provider must remain blocked before approval');
@@ -133,8 +134,29 @@ if (!approved) {
     }
   }
 
-  assert(contract.implementationBoundary?.g6RetentionPolicyMigrationAllowed === true, 'G6 must be explicitly authorized after approval');
-  assert(contract.implementationBoundary?.g7PhysicalGcAllowed === true, 'G7 must be explicitly authorized after approval');
+  assert(!contract.blockers.includes('PROF-B04') && !contract.blockers.includes('LEGAL-B03'), 'resolved PROF-B04/LEGAL-B03 blockers must be cleared after approval');
+  assert(contract.activation?.retentionAuthority === 'approved', 'retention authority must be approved after policy approval');
+  assert(contract.implementationBoundary?.g6RetentionPolicyMigrationAllowed === true, 'G6 must be explicitly authorized after policy approval');
+
+  const g7 = contract.g7ExecutionAuthorization;
+  assert(g7 && ['blocked', 'approved'].includes(g7.state), 'G7 execution authorization state is invalid');
+  if (g7.state === 'approved') {
+    assert(contract.implementationBoundary?.g7PhysicalGcAllowed === true, 'G7 allowed flag requires approved execution authorization');
+    assert(contract.activation?.physicalGc === 'authorized', 'physicalGc activation must be authorized when G7 is approved');
+    assert(typeof g7.approvedAt === 'string' && !Number.isNaN(Date.parse(g7.approvedAt)), 'G7 approvedAt invalid');
+    assert(typeof g7.approvalRef === 'string' && g7.approvalRef.length > 0, 'G7 approvalRef missing');
+    assert(typeof g7.dryRunEvidenceRef === 'string' && g7.dryRunEvidenceRef.length > 0, 'G7 dryRunEvidenceRef missing');
+    assert(typeof g7.operatorReviewRef === 'string' && g7.operatorReviewRef.length > 0, 'G7 operatorReviewRef missing');
+  } else {
+    assert(contract.implementationBoundary?.g7PhysicalGcAllowed === false, 'G7 must remain blocked until separate execution authorization');
+    assert(contract.activation?.physicalGc === 'blocked', 'physicalGc must remain blocked without separate G7 authorization');
+  }
+
+  if (contract.provider?.decision === 'approved_provider') {
+    assert(contract.activation?.externalProvider === 'approved', 'external provider activation must match approved provider decision');
+  } else {
+    assert(contract.activation?.externalProvider === 'not_applicable', 'external provider activation must be not_applicable when no provider is used');
+  }
 }
 
 if (!process.exitCode) {
