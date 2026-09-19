@@ -150,8 +150,8 @@ for (const token of [
   'DOKE_KYC_EVIDENCE_IMMUTABLE',
   'legacy_current_snapshot',
   'signed_intent_reconciled',
-  'DOKE_KYC_EVIDENCE_BACKFILL_MIXED_PROVENANCE',
-  "p_event_kind := 'submitted'",
+  'DOKE_KYC_BACKFILL_MIXED_PATH_PROVENANCE',
+  "'submitted'",
   "'review_started'",
   "'reopened'",
 ]) assert(evidenceLifecycle.includes(token), `KYC evidence lifecycle missing: ${token}`);
