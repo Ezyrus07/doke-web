@@ -5,6 +5,11 @@ on:
   pull_request:
     paths:
       - 'scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs'
+      - 'scripts/test-professional-kyc-authority-contract.js'
+      - 'package.json'
+      - 'supabase/migrations/20260918205000_professional_kyc_evidence_lifecycle_authority.sql'
+      - 'supabase/migrations/20260918213000_professional_kyc_evidence_event_ordering_authority.sql'
+      - 'supabase/tests/032_professional_kyc_evidence_lifecycle_validation.sql'
       - '.github/workflows/prof-b05-g4-evidence-lifecycle-e2e.yml'
   workflow_dispatch:
 
@@ -36,6 +41,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Syntax
         run: node --check scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs
+      - name: KYC static authority
+        run: node scripts/test-professional-kyc-authority-contract.js
       - name: Dry-run contract
         run: node scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs --dry-run
       - name: Execute evidence lifecycle E2E
