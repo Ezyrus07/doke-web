@@ -277,4 +277,116 @@ begin
 end;
 $bridge$;
 
+
+do $governance$
+declare
+  v_now timestamptz:=now();
+  v_retention_id uuid;
+  v_governance_id uuid;
+  v_ready boolean;
+  v_reason text;
+  v_gate text;
+begin
+  select governance_ready,reason_code,execution_gate
+    into v_ready,v_reason,v_gate
+  from private.evaluate_professional_kyc_governance(
+    'missing-governance',1,v_now
+  );
+
+  if v_ready or v_reason<>'GOVERNANCE_MISSING' or v_gate is not null then
+    raise exception 'PROF_B04_GOVERNANCE_MISSING_NOT_HELD';
+  end if;
+
+  insert into private.professional_kyc_retention_policies(
+    policy_key,policy_version,policy_state,retention_mode,anchor_kind,
+    retention_interval,effective_from,approved_at,approval_reference,legal_basis_reference
+  ) values(
+    'governance-retention',1,'approved','elapsed_interval','decision_at',
+    interval '30 days',v_now-interval '1 day',v_now,'LEGAL-TEST','LGPD-TEST'
+  ) returning id into v_retention_id;
+
+  insert into private.professional_kyc_governance_versions(
+    governance_key,governance_version,governance_state,retention_policy_id,
+    verification_provider_mode,provider_reference,biometric_processing_mode,
+    rejection_policy_reference,appeal_policy_reference,privacy_notice_reference,
+    processing_record_reference,risk_assessment_reference
+  ) values(
+    'draft-governance',1,'draft',v_retention_id,
+    'internal_manual_review','internal-manual-test','human_visual_review',
+    null,null,null,null,null
+  );
+
+  select governance_ready,reason_code
+    into v_ready,v_reason
+  from private.evaluate_professional_kyc_governance(
+    'draft-governance',1,v_now
+  );
+  if v_ready or v_reason<>'GOVERNANCE_NOT_APPROVED' then
+    raise exception 'PROF_B04_DRAFT_GOVERNANCE_NOT_HELD';
+  end if;
+
+  begin
+    insert into private.professional_kyc_governance_versions(
+      governance_key,governance_version,governance_state,retention_policy_id,
+      verification_provider_mode,provider_reference,biometric_processing_mode,
+      rejection_policy_reference,appeal_policy_reference,privacy_notice_reference,
+      processing_record_reference,risk_assessment_reference,
+      effective_from,approved_at,approval_reference
+    ) values(
+      'invalid-biometric-governance',1,'approved',v_retention_id,
+      'external_verification_provider','provider-test','automated_biometric_verification',
+      'reject-test','appeal-test','privacy-test','ropa-test',null,
+      v_now-interval '1 day',v_now,'GOV-TEST'
+    );
+    raise exception 'PROF_B04_BIOMETRIC_APPROVAL_WITHOUT_RISK_ASSESSMENT_ALLOWED';
+  exception
+    when check_violation then null;
+  end;
+
+  insert into private.professional_kyc_governance_versions(
+    governance_key,governance_version,governance_state,retention_policy_id,
+    verification_provider_mode,provider_reference,biometric_processing_mode,
+    rejection_policy_reference,appeal_policy_reference,privacy_notice_reference,
+    processing_record_reference,risk_assessment_reference,
+    effective_from,approved_at,approval_reference
+  ) values(
+    'approved-governance',1,'approved',v_retention_id,
+    'internal_manual_review','internal-manual-test','human_visual_review',
+    'reject-test','appeal-test','privacy-test','ropa-test',null,
+    v_now-interval '1 day',v_now,'GOV-TEST'
+  ) returning id into v_governance_id;
+
+  select governance_ready,reason_code,execution_gate
+    into v_ready,v_reason,v_gate
+  from private.evaluate_professional_kyc_governance(
+    'approved-governance',1,v_now
+  );
+
+  if not v_ready
+     or v_reason<>'GOVERNANCE_APPROVED'
+     or v_gate<>'PROF_B05_G7_PHYSICAL_GC' then
+    raise exception 'PROF_B04_APPROVED_GOVERNANCE_GATE_INVALID';
+  end if;
+
+  begin
+    update private.professional_kyc_governance_versions
+       set provider_reference='changed'
+     where id=v_governance_id;
+    raise exception 'PROF_B04_APPROVED_GOVERNANCE_UPDATE_ALLOWED';
+  exception
+    when sqlstate '55000' then
+      if sqlerrm<>'DOKE_KYC_GOVERNANCE_APPROVED_IMMUTABLE' then raise; end if;
+  end;
+
+  begin
+    delete from private.professional_kyc_governance_versions
+     where id=v_governance_id;
+    raise exception 'PROF_B04_APPROVED_GOVERNANCE_DELETE_ALLOWED';
+  exception
+    when sqlstate '55000' then
+      if sqlerrm<>'DOKE_KYC_GOVERNANCE_APPROVED_IMMUTABLE' then raise; end if;
+  end;
+end;
+$governance$;
+
 rollback;
