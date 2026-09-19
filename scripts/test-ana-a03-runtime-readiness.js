@@ -9,9 +9,12 @@ check('no authenticated recorder grant',!migration.includes('grant execute on fu
 check('no direct ledger insert grant',!migration.match(/grant\s+insert\s+on\s+table\s+private\.analytics_behavior_events_v1/i));
 check('server receipt time',migration.includes('v_now timestamptz := pg_catalog.clock_timestamp()')&&migration.includes('v_now,v_now'));
 check('dimensions allowlist',migration.includes('DOKE_ANALYTICS_DIMENSION_UNKNOWN_FIELD'));
-check('concurrent replay resolves uniqueness race',migration.includes('exception when unique_violation')&&migration.includes('where semantic_key = v_semantic_key'));\ncheck('server-originated client event id is unique without analytics session',migration.includes('analytics_behavior_server_client_event_unique')&&migration.includes('where analytics_session_id is null and client_event_id is not null'));\ncheck('server event payload drift is rejected',migration.includes('if v_analytics_session_id is null then')&&migration.includes("message = 'DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT'"));
+check('concurrent replay resolves uniqueness race',migration.includes('exception when unique_violation')&&migration.includes('where semantic_key = v_semantic_key'));
+check('server-originated client event id is unique without analytics session',migration.includes('analytics_behavior_server_client_event_unique')&&migration.includes('where analytics_session_id is null and client_event_id is not null'));
+check('server event payload drift is rejected',migration.includes('if v_analytics_session_id is null then')&&migration.includes("message = 'DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT'"));
 check('edge never accepts actorId body',!edge.includes('body.actorId'));
-check('authenticated actor from getUser',edge.includes('requestClient.auth.getUser()'));\ncheck('current platform key env supported',edge.includes('SUPABASE_PUBLISHABLE_KEYS')&&edge.includes('SUPABASE_SECRET_KEYS'));
+check('authenticated actor from getUser',edge.includes('requestClient.auth.getUser()'));
+check('current platform key env supported',edge.includes('SUPABASE_PUBLISHABLE_KEYS')&&edge.includes('SUPABASE_SECRET_KEYS'));
 check('owner traffic rejected server-side',edge.includes('data.professional_id === context.actorId'));
 check('quote submit validates order',edge.includes('order.client_id !== context.actorId || order.service_id !== serviceId'));
 check('search recorder failure is nonfatal',search.includes('DOKE_ANALYTICS_SEARCH_EVENT_UNAVAILABLE')&&search.includes('return false'));check('search-attributed detail requires matching exposure service',edge.includes('exposureServiceId !== serviceId')&&edge.includes('DOKE_ANALYTICS_EXPOSURE_MISMATCH'));
