@@ -308,6 +308,187 @@ comment on function private.evaluate_professional_kyc_gc_retention_gate(
 ) is
   'Bridges G5 technical eligibility to versioned B04 retention evaluation. Never performs physical deletion.';
 
+
+create table private.professional_kyc_governance_versions (
+  id uuid primary key default gen_random_uuid(),
+  governance_key text not null check (char_length(trim(governance_key)) between 1 and 120),
+  governance_version integer not null check (governance_version>0),
+  governance_state text not null check (governance_state in ('draft','approved')),
+  retention_policy_id uuid not null
+    references private.professional_kyc_retention_policies(id) on delete restrict,
+  verification_provider_mode text not null check (
+    verification_provider_mode in ('internal_manual_review','external_verification_provider')
+  ),
+  provider_reference text,
+  biometric_processing_mode text not null check (
+    biometric_processing_mode in ('none','human_visual_review','automated_biometric_verification')
+  ),
+  rejection_policy_reference text,
+  appeal_policy_reference text,
+  privacy_notice_reference text,
+  processing_record_reference text,
+  risk_assessment_reference text,
+  effective_from timestamptz,
+  approved_at timestamptz,
+  approval_reference text,
+  created_at timestamptz not null default now(),
+  unique(governance_key,governance_version),
+  check (
+    governance_state<>'approved'
+    or (
+      effective_from is not null
+      and approved_at is not null
+      and nullif(trim(coalesce(provider_reference,'')),'') is not null
+      and nullif(trim(coalesce(rejection_policy_reference,'')),'') is not null
+      and nullif(trim(coalesce(appeal_policy_reference,'')),'') is not null
+      and nullif(trim(coalesce(privacy_notice_reference,'')),'') is not null
+      and nullif(trim(coalesce(processing_record_reference,'')),'') is not null
+      and nullif(trim(coalesce(approval_reference,'')),'') is not null
+      and (
+        biometric_processing_mode<>'automated_biometric_verification'
+        or nullif(trim(coalesce(risk_assessment_reference,'')),'') is not null
+      )
+    )
+  )
+);
+
+create index professional_kyc_governance_versions_lookup_idx
+  on private.professional_kyc_governance_versions(
+    governance_key,governance_version,governance_state,effective_from
+  );
+
+revoke all privileges on table private.professional_kyc_governance_versions
+  from public,anon,authenticated,service_role;
+
+create or replace function private.guard_professional_kyc_governance_mutation()
+returns trigger
+language plpgsql
+set search_path=pg_catalog
+as $function$
+begin
+  if tg_op='TRUNCATE' then
+    raise exception using errcode='55000',message='DOKE_KYC_GOVERNANCE_AUDIT_IMMUTABLE';
+  end if;
+
+  if tg_op in ('UPDATE','DELETE') and old.governance_state='approved' then
+    raise exception using errcode='55000',message='DOKE_KYC_GOVERNANCE_APPROVED_IMMUTABLE';
+  end if;
+
+  if tg_op='UPDATE'
+     and old.governance_state='draft'
+     and new.governance_version<>old.governance_version then
+    raise exception using errcode='55000',message='DOKE_KYC_GOVERNANCE_VERSION_IMMUTABLE';
+  end if;
+
+  if tg_op='DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$function$;
+
+revoke all on function private.guard_professional_kyc_governance_mutation()
+  from public,anon,authenticated,service_role;
+
+create trigger professional_kyc_governance_update_guard
+before update on private.professional_kyc_governance_versions
+for each row execute function private.guard_professional_kyc_governance_mutation();
+
+create trigger professional_kyc_governance_delete_guard
+before delete on private.professional_kyc_governance_versions
+for each row execute function private.guard_professional_kyc_governance_mutation();
+
+create trigger professional_kyc_governance_truncate_guard
+before truncate on private.professional_kyc_governance_versions
+for each statement execute function private.guard_professional_kyc_governance_mutation();
+
+create or replace function private.evaluate_professional_kyc_governance(
+  p_governance_key text,
+  p_governance_version integer,
+  p_evaluation_time timestamptz default now()
+)
+returns table(
+  governance_ready boolean,
+  reason_code text,
+  governance_id uuid,
+  retention_policy_id uuid,
+  verification_provider_mode text,
+  biometric_processing_mode text,
+  execution_gate text
+)
+language plpgsql
+stable
+set search_path=pg_catalog
+as $function$
+declare
+  v_governance private.professional_kyc_governance_versions%rowtype;
+  v_retention private.professional_kyc_retention_policies%rowtype;
+  v_eval timestamptz:=coalesce(p_evaluation_time,now());
+begin
+  select *
+    into v_governance
+    from private.professional_kyc_governance_versions g
+   where g.governance_key=nullif(trim(coalesce(p_governance_key,'')),'')
+     and g.governance_version=p_governance_version;
+
+  if not found then
+    return query select
+      false,'GOVERNANCE_MISSING'::text,null::uuid,null::uuid,
+      null::text,null::text,null::text;
+    return;
+  end if;
+
+  if v_governance.governance_state<>'approved' then
+    return query select
+      false,'GOVERNANCE_NOT_APPROVED'::text,v_governance.id,v_governance.retention_policy_id,
+      v_governance.verification_provider_mode,v_governance.biometric_processing_mode,null::text;
+    return;
+  end if;
+
+  if v_governance.effective_from is null or v_governance.effective_from>v_eval then
+    return query select
+      false,'GOVERNANCE_NOT_EFFECTIVE'::text,v_governance.id,v_governance.retention_policy_id,
+      v_governance.verification_provider_mode,v_governance.biometric_processing_mode,null::text;
+    return;
+  end if;
+
+  select *
+    into v_retention
+    from private.professional_kyc_retention_policies p
+   where p.id=v_governance.retention_policy_id;
+
+  if not found
+     or v_retention.policy_state<>'approved'
+     or v_retention.effective_from is null
+     or v_retention.effective_from>v_eval then
+    return query select
+      false,'RETENTION_POLICY_NOT_APPROVED'::text,v_governance.id,v_governance.retention_policy_id,
+      v_governance.verification_provider_mode,v_governance.biometric_processing_mode,null::text;
+    return;
+  end if;
+
+  return query select
+    true,
+    'GOVERNANCE_APPROVED'::text,
+    v_governance.id,
+    v_governance.retention_policy_id,
+    v_governance.verification_provider_mode,
+    v_governance.biometric_processing_mode,
+    'PROF_B05_G7_PHYSICAL_GC'::text;
+end;
+$function$;
+
+revoke all on function private.evaluate_professional_kyc_governance(
+  text,integer,timestamptz
+) from public,anon,authenticated,service_role;
+
+comment on table private.professional_kyc_governance_versions is
+  'Versioned KYC governance approval: provider mode, biometric mode, rejection/appeal/privacy/risk references and approved retention policy. No approved version is seeded.';
+comment on function private.evaluate_professional_kyc_governance(
+  text,integer,timestamptz
+) is
+  'Returns governance readiness only. Does not perform KYC review, retention action or physical GC.';
+
 comment on table private.professional_kyc_retention_policies is
   'Versioned KYC evidence retention authority. No approved policy is seeded by migration.';
 comment on function private.evaluate_professional_kyc_retention_policy(
