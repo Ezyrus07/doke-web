@@ -98,6 +98,77 @@ const publicClient = () => createClient(url, publishableKey, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
 
+const kycBucket = 'professional-verification-media';
+const currentRunStoragePaths = new Set();
+
+const removeStoragePaths = async (paths, code) => {
+  const unique = [...new Set(paths)].filter(Boolean);
+  if (unique.length === 0) return 0;
+  const { error } = await service.storage.from(kycBucket).remove(unique);
+  if (error) fail(code);
+  return unique.length;
+};
+
+const cleanupStaleSyntheticStorage = async () => {
+  let page = 1;
+  let removed = 0;
+
+  while (true) {
+    const { data, error } = await service.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) fail('DOKE_KYC_E2E_CLEANUP_LIST_USERS_FAILED');
+
+    const users = Array.isArray(data?.users) ? data.users : [];
+    for (const user of users) {
+      const email = String(user?.email || '').toLowerCase();
+      const canary = String(user?.user_metadata?.canary || '');
+      if (canary !== 'PROF-B05-G4-E2E' || !email.endsWith('@example.test')) continue;
+
+      const userPrefix = `locked/${user.id}`;
+      const { data: intentEntries, error: intentError } = await service.storage
+        .from(kycBucket)
+        .list(userPrefix, { limit: 1000 });
+      if (intentError) fail('DOKE_KYC_E2E_CLEANUP_LIST_INTENTS_FAILED');
+
+      for (const intentEntry of intentEntries || []) {
+        if (!intentEntry?.name) continue;
+        const intentPrefix = `${userPrefix}/${intentEntry.name}`;
+        const { data: fileEntries, error: fileError } = await service.storage
+          .from(kycBucket)
+          .list(intentPrefix, { limit: 1000 });
+        if (fileError) fail('DOKE_KYC_E2E_CLEANUP_LIST_FILES_FAILED');
+
+        const paths = (fileEntries || [])
+          .filter((entry) => entry?.name)
+          .map((entry) => `${intentPrefix}/${entry.name}`);
+        removed += await removeStoragePaths(paths, 'DOKE_KYC_E2E_STALE_STORAGE_CLEANUP_FAILED');
+      }
+    }
+
+    if (users.length < 200) break;
+    page += 1;
+  }
+
+  return removed;
+};
+
+const cleanupCurrentRunStorage = async () => {
+  const paths = [...currentRunStoragePaths];
+  const removed = await removeStoragePaths(paths, 'DOKE_KYC_E2E_CURRENT_STORAGE_CLEANUP_FAILED');
+
+  const prefixes = [...new Set(paths.map((path) => path.split('/').slice(0, 3).join('/')))];
+  for (const prefix of prefixes) {
+    const { data, error } = await service.storage.from(kycBucket).list(prefix, { limit: 1000 });
+    if (error) fail('DOKE_KYC_E2E_CURRENT_STORAGE_CLEANUP_VERIFY_FAILED');
+    if ((data || []).some((entry) => entry?.name)) {
+      fail('DOKE_KYC_E2E_CURRENT_STORAGE_RESIDUE');
+    }
+  }
+
+  return removed;
+};
+
+const staleSyntheticStorageRemoved = await cleanupStaleSyntheticStorage();
+
 const runId = crypto.randomUUID();
 const password = `Doke-Prof-B05-E2E-${crypto.randomBytes(12).toString('hex')}!Aa1`;
 
@@ -164,6 +235,10 @@ const assertEvents = (set, expected, label) => {
   }
 };
 
+let passReceipt = null;
+let lifecycleError = null;
+
+try {
 const applicant = await createActor('applicant', 'client');
 const reviewer = await createActor('reviewer', 'admin');
 
@@ -206,6 +281,7 @@ const uploadSubmission = async (sequence) => {
       .from(upload.bucket)
       .uploadToSignedUrl(upload.path, upload.token, blob, { contentType: 'image/jpeg' });
     if (error) fail(`DOKE_KYC_E2E_S${sequence}_UPLOAD_FAILED`);
+    currentRunStoragePaths.add(upload.path);
   }
 
   const result = await invokeKyc(applicant.client, 'submit', {
@@ -297,7 +373,7 @@ if (currentS1.manifestSha256 !== s1Manifest || currentS1.objectCount !== 4) fail
 assertEvents(currentS1, ['submitted', 'review_started', 'rejected', 'reopened'], 'DOKE_KYC_E2E_S1_FINAL');
 assertEvents(currentS2, ['submitted', 'review_started', 'verified'], 'DOKE_KYC_E2E_S2_FINAL');
 
-log('prof-b05-g4-e2e-pass', {
+passReceipt = {
   projectRef,
   runId,
   verificationId: snapshot.verificationId,
@@ -308,4 +384,25 @@ log('prof-b05-g4-e2e-pass', {
   finalStatus: snapshot.verificationStatus,
   finalRole: snapshot.role,
   credentialsExposed: false,
+};
+} catch (error) {
+  lifecycleError = error;
+}
+
+let currentRunStorageRemoved = 0;
+let cleanupError = null;
+try {
+  currentRunStorageRemoved = await cleanupCurrentRunStorage();
+} catch (error) {
+  cleanupError = error;
+}
+
+if (lifecycleError) throw lifecycleError;
+if (cleanupError) throw cleanupError;
+
+log('prof-b05-g4-e2e-pass', {
+  ...passReceipt,
+  staleSyntheticStorageRemoved,
+  currentRunStorageRemoved,
+  immutableLedgerRetained: true,
 });
