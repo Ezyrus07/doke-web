@@ -16,9 +16,14 @@ check('execute unavailable', config.executionModeAvailable === false);
 check('production forbidden', config.productionAllowed === false);
 check('generic continuation rejected', config.requiredAuthorization.genericContinuationAccepted === false);
 check('exact authorization phrase', config.requiredAuthorization.exactPhrase === 'authorize-ana-staging-canary');
-check('five artifacts', config.artifacts.length === 5);
-check('three migrations first', config.artifacts.slice(0,3).every((item) => item.kind === 'migration'));
-check('two edge functions after migrations', config.artifacts.slice(3).every((item) => item.kind === 'edge_function'));
+check('seven artifacts', config.artifacts.length === 7);
+check('five migrations first', config.artifacts.slice(0,5).every((item) => item.kind === 'migration'));
+check('two edge functions after migrations', config.artifacts.slice(5).every((item) => item.kind === 'edge_function'));
+check('migration chain includes A03 hardening follow-up', config.artifacts[3] && config.artifacts[3].path === 'supabase/migrations/20260919002000_ana_a03_server_event_idempotency_hardening.sql');
+check('migration chain includes A05 hardening follow-up', config.artifacts[4] && config.artifacts[4].path === 'supabase/migrations/20260919002100_ana_a05_reconciliation_dimension_hardening.sql');
+check('hardening sequence follows base migrations',
+  config.activationSequence.indexOf('apply_A03_server_event_idempotency_hardening') > config.activationSequence.indexOf('apply_A05_reconciliation_runtime')
+  && config.activationSequence.indexOf('apply_A05_reconciliation_dimension_hardening') > config.activationSequence.indexOf('apply_A03_server_event_idempotency_hardening'));
 check('client activation occurs after direct canaries', config.activationSequence.indexOf('enable_analytics_client_only_in_controlled_staging') > config.activationSequence.indexOf('run_order_projection_and_reconciliation_canaries'));
 check('destructive rollback forbidden', config.rollback.destructiveSchemaRollbackAllowed === false);
 Object.entries(config.prohibitedEffects).forEach(([key,value]) => check('prohibited ' + key, value === false));

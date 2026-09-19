@@ -1,7 +1,7 @@
 {
   "contractId": "ana-001-staging-activation-readiness-v1",
   "domain": "ANA-001",
-  "sourceHead": "1345cdf60eda162eb31be1af940c69f6824b41c2",
+  "sourceHead": "afa396eb294b4063cb462e4edb7e01464f76eb80",
   "scope": "repository_only",
   "status": "staging_activation_in_progress_runtime_policy_blocked",
   "executionModeAvailable": false,
@@ -31,7 +31,7 @@
       "kind": "migration",
       "order": 1,
       "path": "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
-      "repositoryBlobSha": "7103c3b41f218a855290da8ca6f21a2555962d31"
+      "repositoryBlobSha": "89f92c627799d66b997346ca713264c8a5af39ab"
     },
     {
       "kind": "migration",
@@ -43,20 +43,32 @@
       "kind": "migration",
       "order": 3,
       "path": "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql",
-      "repositoryBlobSha": "cd201a58e22e1a9670322c700aa9398a6e095db5"
+      "repositoryBlobSha": "3bc753fe72a9a031ca43664ac28c8a659920c7ac"
+    },
+    {
+      "kind": "migration",
+      "order": 4,
+      "path": "supabase/migrations/20260919002000_ana_a03_server_event_idempotency_hardening.sql",
+      "repositoryBlobSha": "59ff2a049a4a09fd0a340e2b131f92de6623cfd4"
+    },
+    {
+      "kind": "migration",
+      "order": 5,
+      "path": "supabase/migrations/20260919002100_ana_a05_reconciliation_dimension_hardening.sql",
+      "repositoryBlobSha": "854aede3d41b3ae56855b2dca25db20fa62f9346"
     },
     {
       "kind": "edge_function",
-      "order": 4,
+      "order": 6,
       "path": "supabase/functions/search-public-services-v2/index.ts",
-      "repositoryBlobSha": "89ab3a3424ba5f699f48eb6472009f4cfac7e05e",
+      "repositoryBlobSha": "181b769a47063df0be4cbd1d87b5d9c49a35d456",
       "functionName": "search-public-services-v2"
     },
     {
       "kind": "edge_function",
-      "order": 5,
+      "order": 7,
       "path": "supabase/functions/analytics-behavior-v1/index.ts",
-      "repositoryBlobSha": "44612ff8538262cf05ff85fa2f35f549ee772306",
+      "repositoryBlobSha": "a73cb2fd29d53432abbac8252d4022a3de13805d",
       "functionName": "analytics-behavior-v1"
     }
   ],
@@ -73,7 +85,11 @@
   "activationSequence": [
     "verify_repository_artifact_fingerprints",
     "verify_explicit_staging_target_and_authorization",
-    "apply_A03_A04_A05_migrations_in_order",
+    "apply_A03_behavioral_event_ledger",
+    "apply_A04_metric_projection_runtime",
+    "apply_A05_reconciliation_runtime",
+    "apply_A03_server_event_idempotency_hardening",
+    "apply_A05_reconciliation_dimension_hardening",
     "configure_runtime_policy_environment_in_staging",
     "deploy_search_public_services_v2",
     "deploy_analytics_behavior_v1",

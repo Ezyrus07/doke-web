@@ -17,6 +17,14 @@ function readyEnvironment() {
 
 check('default mode dry-run', planner.resolveMode([]) === 'dry-run');
 check('explicit check env', planner.resolveMode(['--check-env']) === 'check-env');
+check('seven artifacts configured', config.artifacts.length === 7);
+check('five migrations configured before edge functions',
+  config.artifacts.slice(0,5).every((item) => item.kind === 'migration')
+  && config.artifacts.slice(5).every((item) => item.kind === 'edge_function'));
+check('A03 hardening follows base A05',
+  config.activationSequence.indexOf('apply_A03_server_event_idempotency_hardening') > config.activationSequence.indexOf('apply_A05_reconciliation_runtime'));
+check('A05 hardening follows A03 hardening',
+  config.activationSequence.indexOf('apply_A05_reconciliation_dimension_hardening') > config.activationSequence.indexOf('apply_A03_server_event_idempotency_hardening'));
 
 try {
   planner.resolveMode(['--execute']);

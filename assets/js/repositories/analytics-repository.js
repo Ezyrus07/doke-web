@@ -114,7 +114,7 @@
       return invoke(Object.assign({}, body, { sessionToken: current.sessionToken }));
     }).catch(function (error) {
       var code = String(error && (error.code || error.message) || '');
-      if (retry && /SESSION_(EXPIRED|ACTOR_MISMATCH|CLASS_MISMATCH|INVALID)/.test(code)) {
+      if (retry && /^DOKE_ANALYTICS_SESSION_(EXPIRED|ACTOR_MISMATCH|CLASS_MISMATCH|INVALID)$/.test(code)) {
         safeSessionRemove(SESSION_KEY);
         return withSession(body, false);
       }
@@ -164,7 +164,7 @@
       }, detail || {}));
     }).catch(function (error) {
       var code = String(error && (error.code || error.message) || '');
-      if (retry && /QUOTE_SESSION_(EXPIRED|MISMATCH|ACTOR_MISMATCH|INVALID)/.test(code)) {
+      if (retry && /^DOKE_ANALYTICS_QUOTE_SESSION_(EXPIRED|MISMATCH|ACTOR_MISMATCH|INVALID)$/.test(code)) {
         safeSessionRemove(QUOTE_KEY_PREFIX + serviceId);
         return trackQuote(eventName, serviceId, detail, false, clientEventId);
       }
