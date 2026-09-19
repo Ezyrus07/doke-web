@@ -11,6 +11,23 @@ begin
     raise exception 'PROF_B04_RETENTION_POLICY_TABLE_MISSING';
   end if;
 
+  if to_regclass('private.professional_kyc_legal_holds') is null then
+    raise exception 'PROF_B04_LEGAL_HOLD_TABLE_MISSING';
+  end if;
+
+  if has_table_privilege(
+       'authenticated',
+       'private.professional_kyc_legal_holds',
+       'SELECT,INSERT,UPDATE,DELETE'
+     )
+     or has_table_privilege(
+       'service_role',
+       'private.professional_kyc_legal_holds',
+       'SELECT,INSERT,UPDATE,DELETE'
+     ) then
+    raise exception 'PROF_B04_LEGAL_HOLD_DIRECT_GRANT_PRESENT';
+  end if;
+
   if has_table_privilege(
        'authenticated',
        'private.professional_kyc_retention_policies',
@@ -251,6 +268,9 @@ do $bridge$
 declare
   v_now timestamptz:=now();
   v_retention_id uuid;
+  v_user_id uuid:=gen_random_uuid();
+  v_verification_id uuid:=gen_random_uuid();
+  v_evidence_set_id uuid:=gen_random_uuid();
   v_action text;
   v_reason text;
   v_gate text;
@@ -266,8 +286,12 @@ begin
     1,
     'decision_at',
     v_now-interval '1 day',
-    v_now,
-    false
+    v_user_id,
+    v_verification_id,
+    v_evidence_set_id,
+    'professional-verification-media',
+    'locked/synthetic/object.jpg',
+    v_now
   );
 
   if v_action<>'HOLD'
@@ -287,8 +311,12 @@ begin
     1,
     'decision_at',
     v_now-interval '1 day',
-    v_now,
-    false
+    v_user_id,
+    v_verification_id,
+    v_evidence_set_id,
+    'professional-verification-media',
+    'locked/synthetic/object.jpg',
+    v_now
   );
 
   if v_action<>'HOLD'
@@ -328,8 +356,12 @@ begin
     1,
     'decision_at',
     v_now-interval '60 days',
-    v_now,
-    false
+    v_user_id,
+    v_verification_id,
+    v_evidence_set_id,
+    'professional-verification-media',
+    'locked/synthetic/object.jpg',
+    v_now
   );
 
   if v_action<>'HOLD'
@@ -337,6 +369,13 @@ begin
      or v_gate is not null then
     raise exception 'PROF_B04_GOVERNANCE_POLICY_MISMATCH_ALLOWED';
   end if;
+
+  insert into private.professional_kyc_legal_holds(
+    hold_key,scope_kind,user_id,reason_reference,approval_reference,active_from
+  ) values(
+    'bridge-user-hold','user',v_user_id,'LEGAL-HOLD-TEST','HOLD-APPROVAL-TEST',
+    v_now-interval '1 day'
+  );
 
   select final_action,reason_code,execution_gate
     into v_action,v_reason,v_gate
@@ -349,8 +388,42 @@ begin
     1,
     'decision_at',
     v_now-interval '60 days',
-    v_now,
-    false
+    v_user_id,
+    v_verification_id,
+    v_evidence_set_id,
+    'professional-verification-media',
+    'locked/synthetic/object.jpg',
+    v_now
+  );
+
+  if v_action<>'HOLD'
+     or v_reason<>'LEGAL_HOLD'
+     or v_gate is not null then
+    raise exception 'PROF_B04_SERVER_LEGAL_HOLD_BYPASSED';
+  end if;
+
+  update private.professional_kyc_legal_holds
+     set released_at=v_now,
+         release_reference='HOLD-RELEASE-TEST'
+   where hold_key='bridge-user-hold';
+
+  select final_action,reason_code,execution_gate
+    into v_action,v_reason,v_gate
+  from private.evaluate_professional_kyc_gc_retention_gate(
+    'GC_TECHNICALLY_ELIGIBLE',
+    'PROF_B04_RETENTION',
+    'bridge-governance',
+    1,
+    'bridge-retention',
+    1,
+    'decision_at',
+    v_now-interval '60 days',
+    v_user_id,
+    v_verification_id,
+    v_evidence_set_id,
+    'professional-verification-media',
+    'locked/synthetic/object.jpg',
+    v_now+interval '1 second'
   );
 
   if v_action<>'POLICY_ELAPSED_TECHNICAL_ALLOW'
@@ -358,6 +431,25 @@ begin
      or v_gate<>'PROF_B05_G7_PHYSICAL_GC' then
     raise exception 'PROF_B04_COMBINED_GOVERNANCE_RETENTION_GATE_INVALID';
   end if;
+
+  begin
+    update private.professional_kyc_legal_holds
+       set reason_reference='changed'
+     where hold_key='bridge-user-hold';
+    raise exception 'PROF_B04_LEGAL_HOLD_SCOPE_MUTATION_ALLOWED';
+  exception
+    when sqlstate '55000' then
+      if sqlerrm<>'DOKE_KYC_LEGAL_HOLD_RELEASE_IMMUTABLE' then raise; end if;
+  end;
+
+  begin
+    delete from private.professional_kyc_legal_holds
+     where hold_key='bridge-user-hold';
+    raise exception 'PROF_B04_LEGAL_HOLD_DELETE_ALLOWED';
+  exception
+    when sqlstate '55000' then
+      if sqlerrm<>'DOKE_KYC_LEGAL_HOLD_AUDIT_IMMUTABLE' then raise; end if;
+  end;
 end;
 $bridge$;
 
