@@ -3298,7 +3298,8 @@
         "config/ana-001-staging-canary-readiness.json",
         "docs/ANA-001-STAGING-CANARY.md",
         "config/ana-001-staging-activation-evidence.json",
-        "docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md"
+        "docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md",
+        "reports/generated/ana-001-staging-canary.json"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3383,7 +3384,8 @@
         "ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default.",
         "ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization.",
         "ANA now has a staging-only synthetic canary runner covering signed exposure, replay conflict, tamper rejection, owner exclusion, quote linkage, A04 projection and A05 reconciliation; CI is restricted to dry-run and never executes remote mutations.",
-        "Staging activation applied on doke-web-staging: five ANA migrations/follow-ups present and Edge functions search-public-services-v2 v5 plus analytics-behavior-v1 v3 match repository files; authenticated canary remains blocked by absent Admin-API-provisioned Auth canaries."
+        "Staging activation applied on doke-web-staging: five ANA migrations/follow-ups present and Edge functions search-public-services-v2 v5 plus analytics-behavior-v1 v3 match repository files; authenticated canary remains blocked by absent Admin-API-provisioned Auth canaries.",
+        "ANA functional staging canary passed 15/15 using synthetic Auth sessions and a transient staging-only policy shim; canonical Edge code was restored with full repository parity afterward. This evidence does not promote maturity because canonical runtime policy secrets remain absent and the exact password-login path was not proven."
       ],
       "blockers": [
         {
@@ -3409,10 +3411,10 @@
         }
       ],
       "nextActions": [
-        "Provision cliente@doke.local and profissional@doke.local through the existing Supabase Admin API canary runbook; do not insert Auth users by SQL.",
-        "Obtain the exact authenticated-canary execution authorization and run ANA-001 staging canary with server-only credentials.",
-        "If the authenticated canary passes, collect evidence before considering maturity 3/6.",
-        "Review defense-in-depth RLS policy design and ANA foreign-key covering indexes separately from the canary."
+        "Configure versioned DOKE_ANALYTICS_SESSION_SECRET, DOKE_ANALYTICS_EXPOSURE_SECRET and ANA TTL/rate/dedup policy values in the staging Edge environment through an approved secret-management path.",
+        "Rerun ANA-001 staging canary against the canonical Edge deployment without any policy shim and prove the exact password-login path.",
+        "If that canonical canary passes, update stagingEvidence to staging_canary_or_hybrid and reassess maturity 3/6.",
+        "Review defense-in-depth RLS policies and covering indexes separately from the maturity promotion."
       ],
       "exitCriteria": [
         "Core funnel metrics reconcile with transactional tables.",
