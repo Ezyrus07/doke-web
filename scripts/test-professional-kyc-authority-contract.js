@@ -220,5 +220,7 @@ assert.strictEqual(packageJson.scripts['test:professional-kyc-edge-runtime'], 'n
 assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:dry-run'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --dry-run');
 assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:check-env'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --check-env');
 assert.strictEqual(packageJson.scripts['validate:professional-kyc-signed-intent:execute'], 'node scripts/validate-professional-kyc-signed-intent-runtime.mjs --execute');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-evidence-lifecycle:dry-run'], 'node scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs --dry-run');
+assert.strictEqual(packageJson.scripts['validate:professional-kyc-evidence-lifecycle:execute'], 'node scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs --execute');
 
 console.log('Professional KYC authority contract passed.');
