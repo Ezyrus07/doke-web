@@ -18,6 +18,8 @@ const evidenceLifecycleValidation = read('supabase/tests/032_professional_kyc_ev
 const gcDryRun = read('supabase/migrations/20260918205500_professional_kyc_gc_dry_run_authority.sql');
 const gcEvidencePrecedenceFix = read('supabase/migrations/20260918210200_professional_kyc_gc_evidence_precedence_fix.sql');
 const evidenceEventOrdering = read('supabase/migrations/20260918213000_professional_kyc_evidence_event_ordering_authority.sql');
+const retentionPolicyAuthority = read('supabase/migrations/20260919005500_professional_kyc_retention_policy_authority.sql');
+const retentionPolicyValidation = read('supabase/tests/034_professional_kyc_retention_policy_validation.sql');
 const gcDryRunValidation = read('supabase/tests/033_professional_kyc_gc_dry_run_validation.sql');
 const signedIntentRuntime = read('scripts/validate-professional-kyc-signed-intent-runtime.mjs');
 const storageSetup = read('docs/PROFESSIONAL-VERIFICATION-STORAGE-SETUP.md');
@@ -138,6 +140,35 @@ assert(gcEvidencePrecedenceFix.includes('HISTORICAL_EVIDENCE_RETENTION_UNRESOLVE
 assert(gcDryRunValidation.includes('historical_legacy_evidence'), 'GC validation must cover historical legacy evidence precedence.');
 assert(evidenceEventOrdering.includes('event_sequence bigint generated always as identity'), 'KYC evidence events must have deterministic append order.');
 assert(evidenceEventOrdering.includes('professional_kyc_evidence_events_set_sequence_idx'), 'KYC evidence event ordering index missing.');
+
+for (const token of [
+  'private.professional_kyc_retention_policies',
+  "policy_state in ('draft','approved')",
+  "retention_mode in ('elapsed_interval','hold_only')",
+  'approval_reference',
+  'legal_basis_reference',
+  'DOKE_KYC_RETENTION_POLICY_APPROVED_IMMUTABLE',
+  'evaluate_professional_kyc_retention_policy',
+  'POLICY_ELAPSED_TECHNICAL_ALLOW',
+  'PROF_B05_G7_PHYSICAL_GC',
+]) assert(retentionPolicyAuthority.includes(token), `KYC retention policy authority missing: ${token}`);
+
+assert(retentionPolicyAuthority.includes('retention_interval interval,'), 'KYC retention interval must remain explicit and nullable.');
+assert(!retentionPolicyAuthority.includes('retention_interval interval default'), 'KYC retention interval must never have a default.');
+assert(!retentionPolicyAuthority.toLowerCase().includes('insert into private.professional_kyc_retention_policies'), 'KYC retention authority must not seed policy rows.');
+assert(!retentionPolicyAuthority.toLowerCase().includes('delete from storage.objects'), 'KYC retention authority must not delete Storage objects.');
+
+for (const token of [
+  'PROF_B04_APPROVED_POLICY_SEEDED_UNEXPECTEDLY',
+  'PROF_B04_MISSING_POLICY_NOT_HELD',
+  'PROF_B04_DRAFT_POLICY_NOT_HELD',
+  'PROF_B04_FUTURE_POLICY_NOT_HELD',
+  'PROF_B04_LEGAL_HOLD_NOT_HELD',
+  'PROF_B04_ELAPSED_POLICY_GATE_INVALID',
+  'PROF_B04_APPROVED_POLICY_UPDATE_ALLOWED',
+  'PROF_B04_RETENTION_POLICY_TRUNCATE_ALLOWED',
+]) assert(retentionPolicyValidation.includes(token), `KYC retention policy validation missing: ${token}`);
+
 
 assert(storageSetup.includes('professional_verification_reference_read'), 'KYC Storage setup must document the canonical referenced-read policy.');
 assert(!storageSetup.includes('Proprietário — INSERT, SELECT, UPDATE e DELETE'), 'KYC Storage setup must not instruct recreating legacy owner mutation policies.');
