@@ -35,14 +35,14 @@ assert(
   'KYC evidence class inventory changed without contract review'
 );
 
-const allowedModes = new Set(['delete_at_termination', 'retain_for_interval', 'retain_until_legal_hold_release']);
+const allowedModes = new Set(['delete_at_termination', 'elapsed_interval', 'hold_only']);
 
 for (const item of classes) {
   assert(typeof item.key === 'string' && item.key.length > 0, 'evidence class key missing');
   if (item.retentionMode !== null) {
     assert(allowedModes.has(item.retentionMode), item.key + ': invalid retentionMode');
   }
-  if (item.retentionMode === 'retain_for_interval') {
+  if (item.retentionMode === 'elapsed_interval') {
     assert(typeof item.retentionInterval === 'string' && /^P(?!$)/.test(item.retentionInterval), item.key + ': ISO-8601 retentionInterval required');
     assert(typeof item.conservationBasisRef === 'string' && item.conservationBasisRef.length > 0, item.key + ': conservation basis required for interval retention');
   } else {
