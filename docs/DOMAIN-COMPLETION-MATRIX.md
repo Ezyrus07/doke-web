@@ -155,7 +155,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
-**Edge Functions:** `financial-operations`, `service-moderation-operations`, `self-service-operations`.
+**Edge Functions:** `self-service-operations`, `financial-operations`, `professional-verification-operations`, `service-moderation-operations`, `staging-finance-sandbox`, `order-event-operations`, `quote-template-ai`.
 
 **Evidências:**
 - Private operational tables are not readable by anon or authenticated.
@@ -196,16 +196,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SEC-B08 was closed after the checksum-proven migrations 110-134 and service-moderation sources were committed at d0ae2657, the GitHub quality gates passed on that SHA, and the matching migration names plus service-moderation-operations v2 were observed read-only in staging.
 - The platform-default ACL validation passed remotely: 45 public tables, zero without RLS, zero without policies, zero supabase_admin-owned public relations or sequences, and zero browser sequence grants. SEC-B07 is now an operational post-creation control rather than an existing-object exposure.
 - The deployed quote-template-ai v6 contained shared.ts and recommendations.ts that were absent from Git; both sources were recovered from the active deployment and audit:edge-function-source-closure now fails on missing or boundary-escaping relative imports.
+- SEC-B09 is closed: one shared HTTP security boundary is deployed across all seven authenticated browser-facing Edge Functions with explicit origin allowlisting, controlled loopback support, payload/content-type validation, no-store/security headers, correlation IDs and durable actor/action rate limiting.
+- Migration 145 and SQL validation 014 proved the private rate-limit authority, restricted grants, safe search_path and threshold enforcement; the real staging HTTP canary passed 49 of 49 boundary cases across the seven hardened functions.
+- SEC-B05 remains the only SEC-001 blocker: leaked-password protection is unavailable on the current Supabase plan and remains tracked as a paid-plan launch dependency rather than a falsely completed control.
 
 **Bloqueadores:**
 - **SEC-B05 · HIGH · auth:** Leaked password protection is disabled in Supabase Auth. _(Fase 1)_
-- **SEC-B09 · HIGH · edge_http_boundary:** Seven Edge Functions still use wildcard CORS; only quote-template-ai has explicit application rate limiting and body-size enforcement, and authenticated HTTP/browser persona evidence is incomplete. _(Fase 1)_
 
 **Próximas ações:**
-- Publish the recovered quote-template-ai sources and Edge Function source-closure audit in the reviewed PR, then rerun the deterministic CI gates on the resulting SHA.
-- Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.
-- Define a canonical Edge Function HTTP boundary with an origin allowlist, preflight contract, payload limits and rate limits per action/persona; do not deploy until local and CI contracts pass.
-- Run browser-authenticated HTTP evidence for self-service-operations, service moderation and the signed Storage lifecycle.
+- Keep SEC-B05 tracked under the paid-plan launch dependency and enable leaked-password protection only after an authorized Supabase plan upgrade.
+- Keep the shared HTTP security boundary, migration 145, validation 014, source-closure audit and seven-function staging HTTP canary cumulative in security regression gates.
 - Run supabase/tests/013_platform_default_acl_validation.sql after any migration or platform feature creates a public object.
 
 **Gate de saída:**
@@ -939,4 +939,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-23T10:29:46-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-18T21:55:00-03:00._
