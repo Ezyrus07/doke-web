@@ -144,7 +144,7 @@ assert(evidenceEventOrdering.includes('professional_kyc_evidence_events_set_sequ
 for (const token of [
   'private.professional_kyc_retention_policies',
   "policy_state in ('draft','approved')",
-  "retention_mode in ('elapsed_interval','hold_only')",
+  "retention_mode in ('delete_at_termination','elapsed_interval','hold_only')",
   'approval_reference',
   'legal_basis_reference',
   'DOKE_KYC_RETENTION_POLICY_APPROVED_IMMUTABLE',
