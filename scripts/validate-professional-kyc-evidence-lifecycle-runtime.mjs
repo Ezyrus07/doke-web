@@ -51,6 +51,12 @@ const project = await fetchJson(
   'DOKE_KYC_E2E_PROJECT_PREFLIGHT_FAILED',
 );
 if (project?.id !== projectRef || project?.name !== 'doke-prof-b05-g4-e2e' || project?.status !== 'ACTIVE_HEALTHY') {
+  log('prof-b05-g4-e2e-project-mismatch', {
+    expectedId: projectRef,
+    observedId: project?.id ?? null,
+    observedName: project?.name ?? null,
+    observedStatus: project?.status ?? null,
+  });
   fail('DOKE_KYC_E2E_PROJECT_MISMATCH');
 }
 
