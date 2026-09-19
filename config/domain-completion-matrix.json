@@ -3296,7 +3296,9 @@
         "config/ana-001-staging-activation-readiness.json",
         "docs/ANA-001-STAGING-ACTIVATION-READINESS.md",
         "config/ana-001-staging-canary-readiness.json",
-        "docs/ANA-001-STAGING-CANARY.md"
+        "docs/ANA-001-STAGING-CANARY.md",
+        "config/ana-001-staging-activation-evidence.json",
+        "docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3322,7 +3324,8 @@
         "config/ana-001-staging-activation-readiness.json",
         "scripts/plan-ana-001-staging-activation.js",
         "config/ana-001-staging-canary-readiness.json",
-        "scripts/run-ana-001-staging-canary.js"
+        "scripts/run-ana-001-staging-canary.js",
+        "config/ana-001-staging-activation-evidence.json"
       ],
       "tables": [
         "service_metric_events",
@@ -3379,7 +3382,8 @@
         "ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are prepared as an unapplied migration.",
         "ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default.",
         "ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization.",
-        "ANA now has a staging-only synthetic canary runner covering signed exposure, replay conflict, tamper rejection, owner exclusion, quote linkage, A04 projection and A05 reconciliation; CI is restricted to dry-run and never executes remote mutations."
+        "ANA now has a staging-only synthetic canary runner covering signed exposure, replay conflict, tamper rejection, owner exclusion, quote linkage, A04 projection and A05 reconciliation; CI is restricted to dry-run and never executes remote mutations.",
+        "Staging activation applied on doke-web-staging: five ANA migrations/follow-ups present and Edge functions search-public-services-v2 v5 plus analytics-behavior-v1 v3 match repository files; authenticated canary remains blocked by absent Admin-API-provisioned Auth canaries."
       ],
       "blockers": [
         {
@@ -3405,11 +3409,10 @@
         }
       ],
       "nextActions": [
-        "Apply the prepared ANA migrations only in controlled staging after explicit authorization.",
-        "Configure analytics runtime policy secrets/TTLs/rate limits and deploy analytics-behavior-v1 in staging.",
-        "Run authenticated synthetic staging canaries for ingestion, projection, reconciliation, replay and tamper rejection before considering maturity 3/6.",
-        "Keep anonymous identity stitching disabled until LEGAL-B03 is approved.",
-        "Keep GMV, take rate, CAC, payback and LTV unavailable until their source authorities become canonical."
+        "Provision cliente@doke.local and profissional@doke.local through the existing Supabase Admin API canary runbook; do not insert Auth users by SQL.",
+        "Obtain the exact authenticated-canary execution authorization and run ANA-001 staging canary with server-only credentials.",
+        "If the authenticated canary passes, collect evidence before considering maturity 3/6.",
+        "Review defense-in-depth RLS policy design and ANA foreign-key covering indexes separately from the canary."
       ],
       "exitCriteria": [
         "Core funnel metrics reconcile with transactional tables.",
