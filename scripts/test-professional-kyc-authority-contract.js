@@ -17,10 +17,7 @@ const evidenceLifecycle = read('supabase/migrations/20260918205000_professional_
 const evidenceLifecycleValidation = read('supabase/tests/032_professional_kyc_evidence_lifecycle_validation.sql');
 const gcDryRun = read('supabase/migrations/20260918205500_professional_kyc_gc_dry_run_authority.sql');
 const gcEvidencePrecedenceFix = read('supabase/migrations/20260918210200_professional_kyc_gc_evidence_precedence_fix.sql');
-const gcDryRunValidation = read('supabase/tests/033_professional_kyc_gc_dry_run_validation.sql');
-const evidenceLifecycle = read('supabase/migrations/20260918195800_professional_kyc_evidence_lifecycle_authority.sql');
-const evidenceLifecycleValidation = read('supabase/tests/032_professional_kyc_evidence_lifecycle_validation.sql');
-const gcDryRun = read('supabase/migrations/20260918201800_professional_kyc_gc_dry_run_authority.sql');
+const evidenceEventOrdering = read('supabase/migrations/20260918213000_professional_kyc_evidence_event_ordering_authority.sql');
 const gcDryRunValidation = read('supabase/tests/033_professional_kyc_gc_dry_run_validation.sql');
 const signedIntentRuntime = read('scripts/validate-professional-kyc-signed-intent-runtime.mjs');
 const storageSetup = read('docs/PROFESSIONAL-VERIFICATION-STORAGE-SETUP.md');
@@ -139,6 +136,8 @@ assert(!gcDryRun.includes('lease_expires_at'), 'PRE-B04 KYC GC must not have lea
 assert(!gcDryRun.toLowerCase().includes('delete from storage.objects'), 'PRE-B04 KYC GC must not delete Storage objects.');
 assert(gcEvidencePrecedenceFix.includes('HISTORICAL_EVIDENCE_RETENTION_UNRESOLVED'), 'Historical evidence must outrank legacy orphan classification.');
 assert(gcDryRunValidation.includes('historical_legacy_evidence'), 'GC validation must cover historical legacy evidence precedence.');
+assert(evidenceEventOrdering.includes('event_sequence bigint generated always as identity'), 'KYC evidence events must have deterministic append order.');
+assert(evidenceEventOrdering.includes('professional_kyc_evidence_events_set_sequence_idx'), 'KYC evidence event ordering index missing.');
 
 assert(storageSetup.includes('professional_verification_reference_read'), 'KYC Storage setup must document the canonical referenced-read policy.');
 assert(!storageSetup.includes('Proprietário — INSERT, SELECT, UPDATE e DELETE'), 'KYC Storage setup must not instruct recreating legacy owner mutation policies.');
