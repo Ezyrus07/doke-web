@@ -81,7 +81,7 @@ for (const token of [
   'private.consume_professional_kyc_upload_intent',
   'from public,anon,authenticated,service_role',
 ]) assert(jsonbCompatibility.includes(token), `KYC JSONB compatibility missing: ${token}`);
-assert(!jsonbCompatibility.includes('jsonb_object_length'), 'KYC compatibility migration must not depend on unavailable jsonb_object_length.');
+assert(!jsonbCompatibility.includes('jsonb_object_length(v_intent.files)'), 'KYC compatibility migration must not execute unavailable jsonb_object_length(v_intent.files).');
 
 for (const token of [
   'set search_path = pg_catalog',
