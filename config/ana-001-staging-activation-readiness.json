@@ -3,7 +3,7 @@
   "domain": "ANA-001",
   "sourceHead": "1345cdf60eda162eb31be1af940c69f6824b41c2",
   "scope": "repository_only",
-  "status": "ready_for_explicit_staging_authorization",
+  "status": "staging_activation_in_progress_runtime_policy_blocked",
   "executionModeAvailable": false,
   "productionAllowed": false,
   "requiredAuthorization": {
@@ -49,14 +49,14 @@
       "kind": "edge_function",
       "order": 4,
       "path": "supabase/functions/search-public-services-v2/index.ts",
-      "repositoryBlobSha": "e039b1b019e73eace6dc46dd5ed2715c353c683d",
+      "repositoryBlobSha": "89ab3a3424ba5f699f48eb6472009f4cfac7e05e",
       "functionName": "search-public-services-v2"
     },
     {
       "kind": "edge_function",
       "order": 5,
       "path": "supabase/functions/analytics-behavior-v1/index.ts",
-      "repositoryBlobSha": "379aa657a49bd6bb91b651461b1cfd773e7ff88a",
+      "repositoryBlobSha": "44612ff8538262cf05ff85fa2f35f549ee772306",
       "functionName": "analytics-behavior-v1"
     }
   ],
@@ -116,5 +116,12 @@
     "secretsRead": false,
     "secretsWritten": false,
     "clientActivated": false
+  },
+  "edgeGatewayPolicy": {
+    "verifyJwt": false,
+    "callerApiKey": "publishable",
+    "authenticatedIdentity": "user access token resolved inside Edge via auth.getUser",
+    "anonymousIdentity": "publishable-key bearer treated as anonymous after failed getUser",
+    "rationale": "Supabase publishable keys are not JWTs; built-in verify_jwt only validates legacy JWT-based keys."
   }
 }
