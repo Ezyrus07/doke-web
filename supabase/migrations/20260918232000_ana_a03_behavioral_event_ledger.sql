@@ -52,10 +52,6 @@ create unique index if not exists analytics_behavior_client_event_unique
   on private.analytics_behavior_events_v1 (analytics_session_id, client_event_id)
   where analytics_session_id is not null and client_event_id is not null;
 
-create unique index if not exists analytics_behavior_server_client_event_unique
-  on private.analytics_behavior_events_v1 (client_event_id)
-  where analytics_session_id is null and client_event_id is not null;
-
 create index if not exists analytics_behavior_event_time_idx
   on private.analytics_behavior_events_v1 (event_name, occurred_at desc);
 
@@ -166,19 +162,11 @@ begin
     raise exception using errcode = '22023', message = 'DOKE_ANALYTICS_EVENT_ACTOR_INVALID';
   end if;
 
-  if v_client_event_id is not null then
-    if v_analytics_session_id is null then
-      select * into v_existing
-      from private.analytics_behavior_events_v1
-      where analytics_session_id is null
-        and client_event_id = v_client_event_id;
-    else
-      select * into v_existing
-      from private.analytics_behavior_events_v1
-      where analytics_session_id = v_analytics_session_id
-        and client_event_id = v_client_event_id;
-    end if;
-
+  if v_analytics_session_id is not null and v_client_event_id is not null then
+    select * into v_existing
+    from private.analytics_behavior_events_v1
+    where analytics_session_id = v_analytics_session_id
+      and client_event_id = v_client_event_id;
     if found then
       if v_existing.payload_hash <> v_payload_hash then
         raise exception using errcode = '23505', message = 'DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT';
@@ -211,18 +199,11 @@ begin
     -- A concurrent retry or semantically duplicate event may have committed
     -- after the pre-insert checks. Re-resolve deterministically instead of
     -- leaking a transient uniqueness error to the caller.
-    if v_client_event_id is not null then
-      if v_analytics_session_id is null then
-        select * into v_existing
-        from private.analytics_behavior_events_v1
-        where analytics_session_id is null
-          and client_event_id = v_client_event_id;
-      else
-        select * into v_existing
-        from private.analytics_behavior_events_v1
-        where analytics_session_id = v_analytics_session_id
-          and client_event_id = v_client_event_id;
-      end if;
+    if v_analytics_session_id is not null and v_client_event_id is not null then
+      select * into v_existing
+      from private.analytics_behavior_events_v1
+      where analytics_session_id = v_analytics_session_id
+        and client_event_id = v_client_event_id;
 
       if found then
         if v_existing.payload_hash <> v_payload_hash then
