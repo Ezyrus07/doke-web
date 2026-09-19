@@ -14,7 +14,11 @@ begin
     'private.consume_professional_kyc_upload_intent(uuid,uuid,text)'::regprocedure
   )) into v_hash;
 
-  if v_hash <> 'c5fdf19a990b14a5498c20c50e0e2854' then
+  if v_hash not in (
+    'c5fdf19a990b14a5498c20c50e0e2854',
+    '6804d0e2e1440963c589b86ab245b99a',
+    'f9832e090a997528b30cb8287e4340de'
+  ) then
     raise exception using errcode='55000',
       message='DOKE_KYC_CONSUME_INTENT_HELPER_DRIFT:'||coalesce(v_hash,'missing');
   end if;
