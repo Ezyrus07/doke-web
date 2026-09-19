@@ -17,7 +17,7 @@ create table private.professional_kyc_retention_policies (
   policy_key text not null check (char_length(trim(policy_key)) between 1 and 120),
   policy_version integer not null check (policy_version>0),
   policy_state text not null check (policy_state in ('draft','approved')),
-  retention_mode text not null check (retention_mode in ('elapsed_interval','hold_only')),
+  retention_mode text not null check (retention_mode in ('delete_at_termination','elapsed_interval','hold_only')),
   anchor_kind text not null check (char_length(trim(anchor_kind)) between 1 and 120),
   retention_interval interval,
   effective_from timestamptz,
@@ -34,7 +34,7 @@ create table private.professional_kyc_retention_policies (
     or retention_interval>interval '0 seconds'
   ),
   check (
-    (retention_mode='hold_only' and retention_interval is null)
+    (retention_mode in ('delete_at_termination','hold_only') and retention_interval is null)
     or
     (retention_mode='elapsed_interval')
   ),
@@ -44,11 +44,14 @@ create table private.professional_kyc_retention_policies (
       approved_at is not null
       and effective_from is not null
       and nullif(trim(coalesce(approval_reference,'')),'') is not null
-      and nullif(trim(coalesce(legal_basis_reference,'')),'') is not null
+      and (
+        retention_mode='delete_at_termination'
+        or nullif(trim(coalesce(legal_basis_reference,'')),'') is not null
+      )
       and (
         (retention_mode='elapsed_interval' and retention_interval is not null)
         or
-        (retention_mode='hold_only' and retention_interval is null)
+        (retention_mode in ('delete_at_termination','hold_only') and retention_interval is null)
       )
     )
   )
@@ -232,6 +235,30 @@ begin
       'HOLD'::text,'ANCHOR_MISSING'::text,null::timestamptz,null::text,
       v_policy.id,v_policy.policy_key,v_policy.policy_version,
       v_policy.anchor_kind,null::timestamptz;
+    return;
+  end if;
+
+  if v_policy.retention_mode='delete_at_termination' then
+    v_eligible:=p_anchor_at;
+
+    if v_eval<v_eligible then
+      return query select
+        'HOLD'::text,'TREATMENT_NOT_TERMINATED'::text,v_eligible,null::text,
+        v_policy.id,v_policy.policy_key,v_policy.policy_version,
+        v_policy.anchor_kind,p_anchor_at;
+      return;
+    end if;
+
+    return query select
+      'POLICY_TERMINATION_TECHNICAL_ALLOW'::text,
+      'TREATMENT_TERMINATED'::text,
+      v_eligible,
+      'PROF_B05_G7_PHYSICAL_GC'::text,
+      v_policy.id,
+      v_policy.policy_key,
+      v_policy.policy_version,
+      v_policy.anchor_kind,
+      p_anchor_at;
     return;
   end if;
 
