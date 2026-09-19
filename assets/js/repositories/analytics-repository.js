@@ -46,7 +46,10 @@
       return Promise.reject(new Error('DOKE_ANALYTICS_UNAVAILABLE'));
     }
     var functionName = String(getConfig().analyticsEdgeFunction || EDGE_FUNCTION);
-    return Promise.resolve(client.functions.invoke(functionName, { body: body })).then(function (result) {
+    var invokeEdge = root.DokeSupabase && typeof root.DokeSupabase.invokeEdgeFunction === 'function'
+      ? root.DokeSupabase.invokeEdgeFunction
+      : function (name, options) { return client.functions.invoke(name, options); };
+    return Promise.resolve(invokeEdge(functionName, { body: body })).then(function (result) {
       if (result && result.error) return readError(result.error).then(function (error) { throw error; });
       return result && result.data || {};
     });
