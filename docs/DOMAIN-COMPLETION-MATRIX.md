@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1533 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 407 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1534 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 408 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -282,6 +282,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - PROF-B05 G1-G5 validations 030 through 033 pass in staging; the signed-upload runtime E2E proves immutable S1 submit/review/reject/reopen history, a distinct S2 submission, direct approval, deterministic event ordering and final professional role promotion.
 - The KYC GC authority is dry-run only: current real evidence remains KEEP_REFERENCE, technical GC eligibility is zero and no physical Storage deletion path is enabled before approved retention governance.
 - A versioned PROF-B04 retention/governance/legal-hold authority and validation 034 exist on the candidate branch in a sealed state, with no approved policy seed, no default retention interval and no physical GC implementation; they are not applied to staging.
+- PROF-B04 is machine-gated by a fail-closed KYC policy decision contract: no default retention interval, G6/G7 blocked, and legal/privacy/provider/biometric/rejection-appeal/legal-hold decisions remain explicit.
 
 **Bloqueadores:**
 - **PROF-B04 · HIGH · external_policy:** Final KYC rules, document retention and legal verification provider are not approved. _(Fase 2)_
@@ -543,7 +544,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1439 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 405 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1440 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 406 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1150,7 +1151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3431 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 844 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3433 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 845 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
