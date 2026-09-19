@@ -275,6 +275,8 @@ revoke all on function private.evaluate_professional_kyc_retention_policy(
 create or replace function private.evaluate_professional_kyc_gc_retention_gate(
   p_technical_action text,
   p_technical_execution_gate text,
+  p_governance_key text,
+  p_governance_version integer,
   p_policy_key text,
   p_policy_version integer,
   p_anchor_kind text,
@@ -287,6 +289,7 @@ returns table(
   reason_code text,
   eligible_at timestamptz,
   execution_gate text,
+  frozen_governance_id uuid,
   frozen_policy_id uuid,
   frozen_policy_key text,
   frozen_policy_version integer,
@@ -298,6 +301,7 @@ stable
 set search_path=pg_catalog
 as $function$
 declare
+  v_governance record;
   v_eval record;
 begin
   if coalesce(p_technical_action,'')<>'GC_TECHNICALLY_ELIGIBLE'
@@ -308,6 +312,30 @@ begin
       null::timestamptz,
       null::text,
       null::uuid,
+      null::uuid,
+      nullif(trim(coalesce(p_policy_key,'')),''),
+      p_policy_version,
+      nullif(trim(coalesce(p_anchor_kind,'')),''),
+      p_anchor_at;
+    return;
+  end if;
+
+  select *
+    into v_governance
+    from private.evaluate_professional_kyc_governance(
+      p_governance_key,
+      p_governance_version,
+      p_evaluation_time
+    );
+
+  if not coalesce(v_governance.governance_ready,false) then
+    return query select
+      'HOLD'::text,
+      coalesce(v_governance.reason_code,'GOVERNANCE_MISSING')::text,
+      null::timestamptz,
+      null::text,
+      v_governance.governance_id,
+      v_governance.retention_policy_id,
       nullif(trim(coalesce(p_policy_key,'')),''),
       p_policy_version,
       nullif(trim(coalesce(p_anchor_kind,'')),''),
@@ -326,11 +354,27 @@ begin
       p_legal_hold
     );
 
+  if v_eval.policy_id is distinct from v_governance.retention_policy_id then
+    return query select
+      'HOLD'::text,
+      'GOVERNANCE_RETENTION_POLICY_MISMATCH'::text,
+      null::timestamptz,
+      null::text,
+      v_governance.governance_id,
+      v_eval.policy_id,
+      v_eval.frozen_policy_key,
+      v_eval.frozen_policy_version,
+      v_eval.frozen_anchor_kind,
+      v_eval.frozen_anchor_at;
+    return;
+  end if;
+
   return query select
     v_eval.retention_action,
     v_eval.reason_code,
     v_eval.eligible_at,
     v_eval.execution_gate,
+    v_governance.governance_id,
     v_eval.policy_id,
     v_eval.frozen_policy_key,
     v_eval.frozen_policy_version,
@@ -340,13 +384,13 @@ end;
 $function$;
 
 revoke all on function private.evaluate_professional_kyc_gc_retention_gate(
-  text,text,text,integer,text,timestamptz,timestamptz,boolean
+  text,text,text,integer,text,integer,text,timestamptz,timestamptz,boolean
 ) from public,anon,authenticated,service_role;
 
 comment on function private.evaluate_professional_kyc_gc_retention_gate(
-  text,text,text,integer,text,timestamptz,timestamptz,boolean
+  text,text,text,integer,text,integer,text,timestamptz,timestamptz,boolean
 ) is
-  'Bridges G5 technical eligibility to versioned B04 retention evaluation. Never performs physical deletion.';
+  'Bridges G5 technical eligibility through approved KYC governance and exact versioned B04 retention evaluation. Never performs physical deletion.';
 
 
 create table private.professional_kyc_governance_versions (
