@@ -231,6 +231,83 @@ revoke all on function private.evaluate_professional_kyc_retention_policy(
   text,integer,text,timestamptz,timestamptz,boolean
 ) from public,anon,authenticated,service_role;
 
+
+create or replace function private.evaluate_professional_kyc_gc_retention_gate(
+  p_technical_action text,
+  p_technical_execution_gate text,
+  p_policy_key text,
+  p_policy_version integer,
+  p_anchor_kind text,
+  p_anchor_at timestamptz,
+  p_evaluation_time timestamptz default now(),
+  p_legal_hold boolean default false
+)
+returns table(
+  final_action text,
+  reason_code text,
+  eligible_at timestamptz,
+  execution_gate text,
+  frozen_policy_id uuid,
+  frozen_policy_key text,
+  frozen_policy_version integer,
+  frozen_anchor_kind text,
+  frozen_anchor_at timestamptz
+)
+language plpgsql
+stable
+set search_path=pg_catalog
+as $function$
+declare
+  v_eval record;
+begin
+  if coalesce(p_technical_action,'')<>'GC_TECHNICALLY_ELIGIBLE'
+     or coalesce(p_technical_execution_gate,'')<>'PROF_B04_RETENTION' then
+    return query select
+      'HOLD'::text,
+      'TECHNICAL_ELIGIBILITY_REQUIRED'::text,
+      null::timestamptz,
+      null::text,
+      null::uuid,
+      nullif(trim(coalesce(p_policy_key,'')),''),
+      p_policy_version,
+      nullif(trim(coalesce(p_anchor_kind,'')),''),
+      p_anchor_at;
+    return;
+  end if;
+
+  select *
+    into v_eval
+    from private.evaluate_professional_kyc_retention_policy(
+      p_policy_key,
+      p_policy_version,
+      p_anchor_kind,
+      p_anchor_at,
+      p_evaluation_time,
+      p_legal_hold
+    );
+
+  return query select
+    v_eval.retention_action,
+    v_eval.reason_code,
+    v_eval.eligible_at,
+    v_eval.execution_gate,
+    v_eval.policy_id,
+    v_eval.frozen_policy_key,
+    v_eval.frozen_policy_version,
+    v_eval.frozen_anchor_kind,
+    v_eval.frozen_anchor_at;
+end;
+$function$;
+
+revoke all on function private.evaluate_professional_kyc_gc_retention_gate(
+  text,text,text,integer,text,timestamptz,timestamptz,boolean
+) from public,anon,authenticated,service_role;
+
+comment on function private.evaluate_professional_kyc_gc_retention_gate(
+  text,text,text,integer,text,timestamptz,timestamptz,boolean
+) is
+  'Bridges G5 technical eligibility to versioned B04 retention evaluation. Never performs physical deletion.';
+
 comment on table private.professional_kyc_retention_policies is
   'Versioned KYC evidence retention authority. No approved policy is seeded by migration.';
 comment on function private.evaluate_professional_kyc_retention_policy(
