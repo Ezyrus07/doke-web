@@ -281,8 +281,12 @@ create or replace function private.evaluate_professional_kyc_gc_retention_gate(
   p_policy_version integer,
   p_anchor_kind text,
   p_anchor_at timestamptz,
-  p_evaluation_time timestamptz default now(),
-  p_legal_hold boolean default false
+  p_user_id uuid,
+  p_verification_id uuid,
+  p_evidence_set_id uuid,
+  p_bucket_id text,
+  p_object_path text,
+  p_evaluation_time timestamptz default now()
 )
 returns table(
   final_action text,
@@ -303,6 +307,7 @@ as $function$
 declare
   v_governance record;
   v_eval record;
+  v_legal_hold boolean;
 begin
   if coalesce(p_technical_action,'')<>'GC_TECHNICALLY_ELIGIBLE'
      or coalesce(p_technical_execution_gate,'')<>'PROF_B04_RETENTION' then
@@ -343,6 +348,15 @@ begin
     return;
   end if;
 
+  v_legal_hold:=private.has_professional_kyc_legal_hold(
+    p_user_id,
+    p_verification_id,
+    p_evidence_set_id,
+    p_bucket_id,
+    p_object_path,
+    p_evaluation_time
+  );
+
   select *
     into v_eval
     from private.evaluate_professional_kyc_retention_policy(
@@ -351,7 +365,7 @@ begin
       p_anchor_kind,
       p_anchor_at,
       p_evaluation_time,
-      p_legal_hold
+      v_legal_hold
     );
 
   if v_eval.policy_id is distinct from v_governance.retention_policy_id then
@@ -384,14 +398,160 @@ end;
 $function$;
 
 revoke all on function private.evaluate_professional_kyc_gc_retention_gate(
-  text,text,text,integer,text,integer,text,timestamptz,timestamptz,boolean
+  text,text,text,integer,text,integer,text,timestamptz,uuid,uuid,uuid,text,text,timestamptz
 ) from public,anon,authenticated,service_role;
 
 comment on function private.evaluate_professional_kyc_gc_retention_gate(
-  text,text,text,integer,text,integer,text,timestamptz,timestamptz,boolean
+  text,text,text,integer,text,integer,text,timestamptz,uuid,uuid,uuid,text,text,timestamptz
 ) is
-  'Bridges G5 technical eligibility through approved KYC governance and exact versioned B04 retention evaluation. Never performs physical deletion.';
+  'Bridges G5 technical eligibility through approved KYC governance, exact versioned B04 retention and server-derived legal holds. Never performs physical deletion.';
 
+
+create table private.professional_kyc_legal_holds (
+  id uuid primary key default gen_random_uuid(),
+  hold_key text not null unique check (char_length(trim(hold_key)) between 1 and 160),
+  scope_kind text not null check (
+    scope_kind in ('global','user','verification','evidence_set','storage_object')
+  ),
+  user_id uuid,
+  verification_id uuid,
+  evidence_set_id uuid,
+  bucket_id text,
+  object_path text,
+  reason_reference text not null check (nullif(trim(reason_reference),'') is not null),
+  approval_reference text not null check (nullif(trim(approval_reference),'') is not null),
+  active_from timestamptz not null,
+  released_at timestamptz,
+  release_reference text,
+  created_at timestamptz not null default now(),
+  check (
+    released_at is null
+    or (
+      released_at>=active_from
+      and nullif(trim(coalesce(release_reference,'')),'') is not null
+    )
+  ),
+  check (
+    (scope_kind='global'
+      and user_id is null and verification_id is null and evidence_set_id is null
+      and bucket_id is null and object_path is null)
+    or
+    (scope_kind='user'
+      and user_id is not null and verification_id is null and evidence_set_id is null
+      and bucket_id is null and object_path is null)
+    or
+    (scope_kind='verification'
+      and user_id is null and verification_id is not null and evidence_set_id is null
+      and bucket_id is null and object_path is null)
+    or
+    (scope_kind='evidence_set'
+      and user_id is null and verification_id is null and evidence_set_id is not null
+      and bucket_id is null and object_path is null)
+    or
+    (scope_kind='storage_object'
+      and user_id is null and verification_id is null and evidence_set_id is null
+      and bucket_id='professional-verification-media'
+      and nullif(trim(coalesce(object_path,'')),'') is not null)
+  )
+);
+
+create index professional_kyc_legal_holds_active_idx
+  on private.professional_kyc_legal_holds(scope_kind,active_from,released_at);
+
+revoke all privileges on table private.professional_kyc_legal_holds
+  from public,anon,authenticated,service_role;
+
+create or replace function private.guard_professional_kyc_legal_hold_mutation()
+returns trigger
+language plpgsql
+set search_path=pg_catalog
+as $function$
+begin
+  if tg_op in ('DELETE','TRUNCATE') then
+    raise exception using errcode='55000',message='DOKE_KYC_LEGAL_HOLD_AUDIT_IMMUTABLE';
+  end if;
+
+  if old.released_at is not null then
+    raise exception using errcode='55000',message='DOKE_KYC_LEGAL_HOLD_RELEASE_IMMUTABLE';
+  end if;
+
+  if new.id is distinct from old.id
+     or new.hold_key is distinct from old.hold_key
+     or new.scope_kind is distinct from old.scope_kind
+     or new.user_id is distinct from old.user_id
+     or new.verification_id is distinct from old.verification_id
+     or new.evidence_set_id is distinct from old.evidence_set_id
+     or new.bucket_id is distinct from old.bucket_id
+     or new.object_path is distinct from old.object_path
+     or new.reason_reference is distinct from old.reason_reference
+     or new.approval_reference is distinct from old.approval_reference
+     or new.active_from is distinct from old.active_from
+     or new.created_at is distinct from old.created_at then
+    raise exception using errcode='55000',message='DOKE_KYC_LEGAL_HOLD_SCOPE_IMMUTABLE';
+  end if;
+
+  if new.released_at is null
+     or nullif(trim(coalesce(new.release_reference,'')),'') is null then
+    raise exception using errcode='55000',message='DOKE_KYC_LEGAL_HOLD_RELEASE_INVALID';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function private.guard_professional_kyc_legal_hold_mutation()
+  from public,anon,authenticated,service_role;
+
+create trigger professional_kyc_legal_hold_update_guard
+before update on private.professional_kyc_legal_holds
+for each row execute function private.guard_professional_kyc_legal_hold_mutation();
+
+create trigger professional_kyc_legal_hold_delete_guard
+before delete on private.professional_kyc_legal_holds
+for each row execute function private.guard_professional_kyc_legal_hold_mutation();
+
+create trigger professional_kyc_legal_hold_truncate_guard
+before truncate on private.professional_kyc_legal_holds
+for each statement execute function private.guard_professional_kyc_legal_hold_mutation();
+
+create or replace function private.has_professional_kyc_legal_hold(
+  p_user_id uuid,
+  p_verification_id uuid,
+  p_evidence_set_id uuid,
+  p_bucket_id text,
+  p_object_path text,
+  p_evaluation_time timestamptz default now()
+)
+returns boolean
+language sql
+stable
+set search_path=pg_catalog
+as $function$
+  select exists(
+    select 1
+    from private.professional_kyc_legal_holds h
+    where h.active_from<=coalesce(p_evaluation_time,now())
+      and (
+        h.released_at is null
+        or h.released_at>coalesce(p_evaluation_time,now())
+      )
+      and (
+        h.scope_kind='global'
+        or (h.scope_kind='user' and h.user_id=p_user_id)
+        or (h.scope_kind='verification' and h.verification_id=p_verification_id)
+        or (h.scope_kind='evidence_set' and h.evidence_set_id=p_evidence_set_id)
+        or (
+          h.scope_kind='storage_object'
+          and h.bucket_id=p_bucket_id
+          and h.object_path=p_object_path
+        )
+      )
+  )
+$function$;
+
+revoke all on function private.has_professional_kyc_legal_hold(
+  uuid,uuid,uuid,text,text,timestamptz
+) from public,anon,authenticated,service_role;
 
 create table private.professional_kyc_governance_versions (
   id uuid primary key default gen_random_uuid(),
