@@ -37,6 +37,15 @@ assert(contract.implementationBoundary?.noPhysicalDeleteBeforeApproval === true,
 assert(migration.includes("retention_mode in ('delete_at_termination','elapsed_interval','hold_only')"), 'G6 retention modes diverge from policy-decision contract');
 assert(migration.includes("'POLICY_TERMINATION_TECHNICAL_ALLOW'::text"), 'G6 delete-at-termination technical gate is missing');
 assert(migration.includes("'PROF_B05_G7_PHYSICAL_GC'::text"), 'G6 must delegate execution to the separate G7 gate');
+for (const marker of [
+  'legal_approval_reference text',
+  'privacy_approval_reference text',
+  'legal_hold_policy_reference text',
+  'provider_terms_reference text',
+  'international_transfer_decision_reference text',
+  'sensitive_data_legal_basis_reference text',
+  'risk_assessment_reference text',
+]) assert(migration.includes(marker), 'G6 governance field missing: ' + marker);
 assert(!migration.toLowerCase().includes('delete from storage.objects'), 'G6 must never delete directly from storage.objects');
 assert(!migration.toLowerCase().includes('storage.from('), 'G6 must never contain a Storage API delete path');
 assert(!migration.includes('claim_token'), 'G6 must not introduce physical-GC claim authority');
@@ -45,6 +54,10 @@ for (const marker of [
   'PROF_B04_DELETE_AT_TERMINATION_INTERVAL_ALLOWED',
   'PROF_B04_TERMINATION_FUTURE_ANCHOR_INVALID',
   'PROF_B04_DELETE_AT_TERMINATION_GATE_INVALID',
+  'PROF_B04_GOVERNANCE_WITHOUT_LEGAL_PRIVACY_APPROVAL_ALLOWED',
+  'PROF_B04_EXTERNAL_PROVIDER_WITHOUT_TERMS_TRANSFER_ALLOWED',
+  'PROF_B04_BIOMETRIC_APPROVAL_WITHOUT_SENSITIVE_BASIS_ALLOWED',
+  'PROF_B04_BIOMETRIC_APPROVAL_WITHOUT_RISK_ASSESSMENT_ALLOWED',
   'PROF_B04_PHYSICAL_GC_AUTHORITY_DETECTED',
 ]) assert(validation.includes(marker), '034 validation missing: ' + marker);
 
