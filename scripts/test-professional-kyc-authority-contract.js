@@ -153,6 +153,13 @@ for (const token of [
   'PROF_B05_G7_PHYSICAL_GC',
   'evaluate_professional_kyc_gc_retention_gate',
   'TECHNICAL_ELIGIBILITY_REQUIRED',
+  'private.professional_kyc_governance_versions',
+  "verification_provider_mode in ('internal_manual_review','external_verification_provider')",
+  "biometric_processing_mode in ('none','human_visual_review','automated_biometric_verification')",
+  'risk_assessment_reference',
+  'evaluate_professional_kyc_governance',
+  'DOKE_KYC_GOVERNANCE_APPROVED_IMMUTABLE',
+  'GOVERNANCE_APPROVED',
 ]) assert(retentionPolicyAuthority.includes(token), `KYC retention policy authority missing: ${token}`);
 
 assert(retentionPolicyAuthority.includes('retention_interval interval,'), 'KYC retention interval must remain explicit and nullable.');
@@ -171,6 +178,11 @@ for (const token of [
   'PROF_B04_RETENTION_POLICY_TRUNCATE_ALLOWED',
   'PROF_B04_TECHNICAL_GATE_BYPASS_ALLOWED',
   'PROF_B04_MISSING_POLICY_BRIDGE_NOT_HELD',
+  'PROF_B04_GOVERNANCE_MISSING_NOT_HELD',
+  'PROF_B04_DRAFT_GOVERNANCE_NOT_HELD',
+  'PROF_B04_BIOMETRIC_APPROVAL_WITHOUT_RISK_ASSESSMENT_ALLOWED',
+  'PROF_B04_APPROVED_GOVERNANCE_GATE_INVALID',
+  'PROF_B04_APPROVED_GOVERNANCE_UPDATE_ALLOWED',
 ]) assert(retentionPolicyValidation.includes(token), `KYC retention policy validation missing: ${token}`);
 
 
