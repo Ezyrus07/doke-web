@@ -546,7 +546,9 @@
         "supabase/migrations/20260918210200_professional_kyc_gc_evidence_precedence_fix.sql",
         "supabase/tests/033_professional_kyc_gc_dry_run_validation.sql",
         "supabase/migrations/20260919005500_professional_kyc_retention_policy_authority.sql",
-        "supabase/tests/034_professional_kyc_retention_policy_validation.sql"
+        "supabase/tests/034_professional_kyc_retention_policy_validation.sql",
+        "config/professional-kyc-policy-decision-contract.json",
+        "scripts/audit-professional-kyc-policy-decision-contract.js"
       ],
       "scanRoots": [
         "assets/js/pages/profile",
@@ -574,7 +576,8 @@
         "test:professional-kyc-authority-contract",
         "test:professional-kyc-edge-runtime",
         "test:client-profile-authority-contract",
-        "test:client-profile-authority-runtime"
+        "test:client-profile-authority-runtime",
+        "audit:professional-kyc-policy-decision-contract"
       ],
       "evidence": [
         "Professional profile setup, active edits, KYC records, drafts and binary evidence are server-authoritative for Supabase sessions.",
@@ -588,7 +591,8 @@
         "PROF-B05 is technically closed in staging: the managed Storage policy authority removed legacy owner-prefix KYC mutation policies, leaving one canonical referenced-read policy and zero browser INSERT/UPDATE/DELETE policies for the KYC bucket.",
         "PROF-B05 G1-G5 validations 030 through 033 pass in staging; the signed-upload runtime E2E proves immutable S1 submit/review/reject/reopen history, a distinct S2 submission, direct approval, deterministic event ordering and final professional role promotion.",
         "The KYC GC authority is dry-run only: current real evidence remains KEEP_REFERENCE, technical GC eligibility is zero and no physical Storage deletion path is enabled before approved retention governance.",
-        "A versioned PROF-B04 retention/governance/legal-hold authority and validation 034 exist on the candidate branch in a sealed state, with no approved policy seed, no default retention interval and no physical GC implementation; they are not applied to staging."
+        "A versioned PROF-B04 retention/governance/legal-hold authority and validation 034 exist on the candidate branch in a sealed state, with no approved policy seed, no default retention interval and no physical GC implementation; they are not applied to staging.",
+        "PROF-B04 is machine-gated by a fail-closed KYC policy decision contract: no default retention interval, G6/G7 blocked, and legal/privacy/provider/biometric/rejection-appeal/legal-hold decisions remain explicit."
       ],
       "blockers": [
         {
