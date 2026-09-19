@@ -2,12 +2,14 @@
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a03-behavioral-ingestion-identity-boundary.json'),'utf8'));
 const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260918232000_ana_a03_behavioral_event_ledger.sql'),'utf8');
+const hardening=fs.readFileSync(path.join(root,'supabase','migrations','20260919002000_ana_a03_server_event_idempotency_hardening.sql'),'utf8');
+const runtimeSql=migration+'\n'+hardening;
 const edge=fs.readFileSync(path.join(root,'supabase','functions','analytics-behavior-v1','index.ts'),'utf8');
 const proof=fs.readFileSync(path.join(root,'supabase','functions','_shared','analytics-proof.ts'),'utf8');
 const search=fs.readFileSync(path.join(root,'supabase','functions','search-public-services-v2','index.ts'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration not applied',c.migrationApplied===false);check('staging not validated',c.stagingValidated===false);
-['private.analytics_behavior_events_v1','record_analytics_behavior_event_v1','semantic_key text not null unique','analytics_behavior_server_client_event_unique','DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT','exception when unique_violation'].forEach(x=>check('migration '+x,migration.includes(x)));
+['private.analytics_behavior_events_v1','record_analytics_behavior_event_v1','semantic_key text not null unique','analytics_behavior_server_client_event_unique','DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT','exception when unique_violation'].forEach(x=>check('runtime sql '+x,runtimeSql.includes(x)));
 check('browser roles revoked',migration.includes('revoke all on function public.record_analytics_behavior_event_v1(jsonb) from public, anon, authenticated'));
 check('service role writer',migration.includes('grant execute on function public.record_analytics_behavior_event_v1(jsonb) to service_role'));
 ['getUser','enforceActorRateLimit','DOKE_ANALYTICS_POLICY_CONFIGURATION_MISSING','DOKE_ANALYTICS_OWNER_TRAFFIC_EXCLUDED','DOKE_ANALYTICS_ORDER_MISMATCH','SUPABASE_PUBLISHABLE_KEYS','SUPABASE_SECRET_KEYS'].forEach(x=>check('edge '+x,edge.includes(x)));
