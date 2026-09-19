@@ -31,12 +31,12 @@ jobs:
           npm run write:domain-completion-matrix
           npm run audit:domain-completion-matrix
 
-      - name: Commit generated outputs and remove one-shot workflow
+      - name: Commit generated outputs
         run: |
           git config user.name "doke-automation"
           git config user.email "actions@users.noreply.github.com"
-          git rm .github/workflows/ana-domain-matrix-refresh-one-shot.yml
-          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
           git diff --cached --check
           git commit -m "chore(ana): regenerate domain completion matrix"
           git push origin HEAD:ana/ana-001-foundation
