@@ -591,14 +591,20 @@ create table private.professional_kyc_governance_versions (
     verification_provider_mode in ('internal_manual_review','external_verification_provider')
   ),
   provider_reference text,
+  provider_terms_reference text,
+  international_transfer_decision_reference text,
   biometric_processing_mode text not null check (
     biometric_processing_mode in ('none','human_visual_review','automated_biometric_verification')
   ),
+  sensitive_data_legal_basis_reference text,
   rejection_policy_reference text,
   appeal_policy_reference text,
+  legal_hold_policy_reference text,
   privacy_notice_reference text,
   processing_record_reference text,
   risk_assessment_reference text,
+  legal_approval_reference text,
+  privacy_approval_reference text,
   effective_from timestamptz,
   approved_at timestamptz,
   approval_reference text,
@@ -612,12 +618,25 @@ create table private.professional_kyc_governance_versions (
       and nullif(trim(coalesce(provider_reference,'')),'') is not null
       and nullif(trim(coalesce(rejection_policy_reference,'')),'') is not null
       and nullif(trim(coalesce(appeal_policy_reference,'')),'') is not null
+      and nullif(trim(coalesce(legal_hold_policy_reference,'')),'') is not null
       and nullif(trim(coalesce(privacy_notice_reference,'')),'') is not null
       and nullif(trim(coalesce(processing_record_reference,'')),'') is not null
+      and nullif(trim(coalesce(legal_approval_reference,'')),'') is not null
+      and nullif(trim(coalesce(privacy_approval_reference,'')),'') is not null
       and nullif(trim(coalesce(approval_reference,'')),'') is not null
       and (
+        verification_provider_mode<>'external_verification_provider'
+        or (
+          nullif(trim(coalesce(provider_terms_reference,'')),'') is not null
+          and nullif(trim(coalesce(international_transfer_decision_reference,'')),'') is not null
+        )
+      )
+      and (
         biometric_processing_mode<>'automated_biometric_verification'
-        or nullif(trim(coalesce(risk_assessment_reference,'')),'') is not null
+        or (
+          nullif(trim(coalesce(sensitive_data_legal_basis_reference,'')),'') is not null
+          and nullif(trim(coalesce(risk_assessment_reference,'')),'') is not null
+        )
       )
     )
   )
