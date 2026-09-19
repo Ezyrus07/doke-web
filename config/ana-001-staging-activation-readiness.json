@@ -139,5 +139,41 @@
     "authenticatedIdentity": "user access token resolved inside Edge via auth.getUser",
     "anonymousIdentity": "publishable-key bearer treated as anonymous after failed getUser",
     "rationale": "Supabase publishable keys are not JWTs; built-in verify_jwt only validates legacy JWT-based keys."
+  },
+  "canonicalRuntimePolicy": {
+    "version": "ana-runtime-policy-v1",
+    "classification": "technical_security_and_integrity_not_data_retention",
+    "values": {
+      "DOKE_ANALYTICS_SESSION_TTL_SECONDS": 1800,
+      "DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS": 3600,
+      "DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS": 300,
+      "DOKE_ANALYTICS_RATE_LIMIT": 120,
+      "DOKE_ANALYTICS_RATE_WINDOW_SECONDS": 60,
+      "DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS": 60
+    },
+    "rationale": {
+      "session": "30 minutes limits the lifetime of an ephemeral analytics correlation envelope while preserving normal browsing continuity.",
+      "quoteSession": "60 minutes allows a realistic quote flow without creating cross-session identity.",
+      "exposure": "5 minutes limits replay of signed search exposure while allowing normal result-to-detail navigation.",
+      "rateLimit": "120 requests per 60 seconds tolerates normal multi-event interaction bursts while bounding automated abuse.",
+      "dedup": "60 seconds suppresses accidental repeated service-level behavior without collapsing distinct later intent."
+    },
+    "privacyBoundary": {
+      "persistentAnonymousIdentity": false,
+      "crossSessionAnonymousStitching": false,
+      "crossDeviceStitching": false,
+      "anonymousToAuthenticatedStitching": false,
+      "dataRetentionPolicyDefined": false,
+      "consentPolicyDefined": false,
+      "legalAuthority": "LEGAL-B03"
+    },
+    "secretPolicy": {
+      "minimumEntropyBits": 256,
+      "distinctSessionAndExposureSecrets": true,
+      "repositoryStorageForbidden": true,
+      "clientExposureForbidden": true,
+      "stagingAndProductionReuseForbidden": true,
+      "rotationRequiresControlledCanary": true
+    }
   }
 }
