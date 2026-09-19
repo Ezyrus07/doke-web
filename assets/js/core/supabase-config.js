@@ -88,14 +88,14 @@ window.DOKE_SUPABASE_CONFIG = {
     return String(config.publishableKey || config.anonKey || "");
   }
 
-  function edgeAuthToken(client, fallbackKey) {
+  function edgeAuthToken(client) {
     if (!client || !client.auth || typeof client.auth.getSession !== "function") {
-      return Promise.resolve(fallbackKey);
+      return Promise.resolve("");
     }
     return Promise.resolve(client.auth.getSession()).then(function (result) {
-      return String(result && result.data && result.data.session && result.data.session.access_token || fallbackKey);
+      return String(result && result.data && result.data.session && result.data.session.access_token || "");
     }).catch(function () {
-      return fallbackKey;
+      return "";
     });
   }
 
@@ -107,10 +107,10 @@ window.DOKE_SUPABASE_CONFIG = {
       return Promise.reject(new Error("Autoridade Edge do Supabase indisponível."));
     }
     var client = getClient();
-    return edgeAuthToken(client, apiKey).then(function (authorizationToken) {
+    return edgeAuthToken(client).then(function (authorizationToken) {
       var headers = Object.assign({}, options && options.headers || {});
       headers.apikey = apiKey;
-      headers.Authorization = "Bearer " + authorizationToken;
+      if (authorizationToken) headers.Authorization = "Bearer " + authorizationToken;
       headers["Content-Type"] = "application/json";
       return root.fetch(
         String(config.url).replace(/\/$/, "") + "/functions/v1/" + encodeURIComponent(name),
