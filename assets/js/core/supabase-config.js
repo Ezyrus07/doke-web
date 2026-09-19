@@ -23,6 +23,7 @@ window.DOKE_SUPABASE_CONFIG = {
   financeSandboxEnabled: true,
   financeSandboxFunction: "staging-finance-sandbox",
   url: "https://zwkczgewzbsorbrjuzpb.supabase.co",
+  publishableKey: "sb_publishable_3euoX0-7iq89zeBdaE8G_g_XWnqX2lV",
   anonKey:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a2N6Z2V3emJzb3Jicmp1enBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNzgyNzgsImV4cCI6MjA5ODc1NDI3OH0.oeT4BrezoxBJbGLet_6_JI49UyTuFUVSkYaI34DrbaA",
 };
@@ -83,6 +84,66 @@ window.DOKE_SUPABASE_CONFIG = {
     root.DOKE_SUPABASE_CLIENT = null;
   }
 
+  function edgeApiKey(config) {
+    return String(config.publishableKey || config.anonKey || "");
+  }
+
+  function edgeAuthToken(client, fallbackKey) {
+    if (!client || !client.auth || typeof client.auth.getSession !== "function") {
+      return Promise.resolve(fallbackKey);
+    }
+    return Promise.resolve(client.auth.getSession()).then(function (result) {
+      return String(result && result.data && result.data.session && result.data.session.access_token || fallbackKey);
+    }).catch(function () {
+      return fallbackKey;
+    });
+  }
+
+  function invokeEdgeFunction(functionName, options) {
+    var config = getConfig();
+    var apiKey = edgeApiKey(config);
+    var name = String(functionName || "").trim();
+    if (!config.url || !apiKey || !name || typeof root.fetch !== "function") {
+      return Promise.reject(new Error("Autoridade Edge do Supabase indisponível."));
+    }
+    var client = getClient();
+    return edgeAuthToken(client, apiKey).then(function (authorizationToken) {
+      var headers = Object.assign({}, options && options.headers || {});
+      headers.apikey = apiKey;
+      headers.Authorization = "Bearer " + authorizationToken;
+      headers["Content-Type"] = "application/json";
+      return root.fetch(
+        String(config.url).replace(/\/$/, "") + "/functions/v1/" + encodeURIComponent(name),
+        {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(options && options.body || {}),
+          credentials: "omit",
+        },
+      );
+    }).then(function (response) {
+      return Promise.resolve(response.text()).then(function (text) {
+        var payload = {};
+        if (text) {
+          try { payload = JSON.parse(text); } catch (_error) { payload = { raw: text }; }
+        }
+        if (response.ok) return { data: payload, error: null };
+        var context = {
+          clone: function () { return this; },
+          json: function () { return Promise.resolve(payload); },
+        };
+        return {
+          data: null,
+          error: {
+            message: String(payload && payload.error || "DOKE_EDGE_FUNCTION_FAILED"),
+            status: response.status,
+            context: context,
+          },
+        };
+      });
+    });
+  }
+
   function invokeSelfService(action, params) {
     var client = getClient();
     if (!client || !client.functions || typeof client.functions.invoke !== "function") {
@@ -107,6 +168,7 @@ window.DOKE_SUPABASE_CONFIG = {
     resetClient: resetClient,
     getConfig: getConfig,
     invokeSelfService: invokeSelfService,
+    invokeEdgeFunction: invokeEdgeFunction,
   });
 
   document.addEventListener("doke:supabase-sdk-ready", getClient);
