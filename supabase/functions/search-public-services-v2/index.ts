@@ -7,6 +7,7 @@ import {
   readJsonObject,
   rejectDisallowedOrigin,
 } from "../_shared/http-security.ts";
+import { attachAnalyticsExposureProofs, sha256Hex } from "../_shared/analytics-proof.ts";
 import {
   buildObservation,
   classifySearchError,
@@ -16,12 +17,44 @@ import {
 
 const FUNCTION_NAME = "search-public-services-v2";
 const MAX_BODY_BYTES = 16_384;
+const readPlatformKeys = (pluralName: string, singularName: string, legacyName: string) => {
+  const keys: string[] = [];
+  const append = (value: unknown) => {
+    const normalized = typeof value === "string" ? value.trim() : "";
+    if (normalized && !keys.includes(normalized)) keys.push(normalized);
+  };
+  const raw = Deno.env.get(pluralName) || "";
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      append(parsed.default);
+      append(parsed.doke);
+      Object.values(parsed).forEach(append);
+    } catch {
+      // Fall through to compatibility variables.
+    }
+  }
+  append(Deno.env.get(singularName));
+  append(Deno.env.get(legacyName));
+  return keys;
+};
+
+const readPlatformKey = (pluralName: string, singularName: string, legacyName: string) =>
+  readPlatformKeys(pluralName, singularName, legacyName)[0] || "";
+
+const bearerJwt = (authorization: string) => {
+  const match = /^Bearer\s+(.+)$/i.exec(authorization.trim());
+  const token = match?.[1]?.trim() || "";
+  return token.split(".").length === 3 ? token : "";
+};
+
 const RATE_LIMIT = 120;
 const RATE_WINDOW_SECONDS = 60;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type SupabaseClient = ReturnType<typeof createClient>;
 type Context = {
+  actorId: string | null;
   actorClass: "anon" | "authenticated";
   rateLimitActorId: string;
   requestClient: SupabaseClient;
@@ -72,28 +105,32 @@ const pseudonymousRateLimitActor = async (req: Request, secret: string) => {
 
 const createContext = async (req: Request): Promise<Context | Response> => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const publicKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY") || "";
-  const secretKey = Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const authorization = req.headers.get("authorization") || "";
+  const publicKeys = readPlatformKeys("SUPABASE_PUBLISHABLE_KEYS", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY");
+  const publicKey = publicKeys[0] || "";
+  const secretKey = readPlatformKey("SUPABASE_SECRET_KEYS", "SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY");
+  const presentedApiKey = (req.headers.get("apikey") || "").trim();
+  const userJwt = bearerJwt(req.headers.get("authorization") || "");
 
   if (!supabaseUrl || !publicKey || !secretKey) {
     return jsonResponse(req, 503, { error: "SERVER_CONFIGURATION_MISSING" });
   }
-  if (!authorization) {
-    return jsonResponse(req, 401, { error: "DOKE_SEARCH_AUTHORIZATION_REQUIRED" });
+  if (!presentedApiKey || !publicKeys.includes(presentedApiKey)) {
+    return jsonResponse(req, 401, { error: "DOKE_SEARCH_API_KEY_INVALID" });
   }
 
   const requestClient = createClient(supabaseUrl, publicKey, {
-    global: { headers: { Authorization: authorization } },
+    global: { headers: userJwt ? { Authorization: `Bearer ${userJwt}` } : {} },
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const serviceClient = createClient(supabaseUrl, secretKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: authData, error: authError } = await requestClient.auth.getUser();
-  const actorId = !authError && authData?.user?.id && UUID_PATTERN.test(authData.user.id)
-    ? authData.user.id
+  const userResult = userJwt
+    ? await requestClient.auth.getUser(userJwt)
+    : { data: { user: null }, error: null };
+  const actorId = !userResult.error && userResult.data?.user?.id && UUID_PATTERN.test(userResult.data.user.id)
+    ? userResult.data.user.id
     : null;
   const rateLimitActorId = actorId
     || await pseudonymousRateLimitActor(
@@ -102,6 +139,7 @@ const createContext = async (req: Request): Promise<Context | Response> => {
     );
 
   return {
+    actorId,
     actorClass: actorId ? "authenticated" : "anon",
     rateLimitActorId,
     requestClient,
@@ -126,6 +164,41 @@ const recordObservation = async (
   }
   return true;
 };
+
+const recordSearchExecuted = async (
+  context: Context,
+  requestId: string,
+  request: Record<string, unknown>,
+  response: Record<string, unknown>,
+) => {
+  const ranking = response.ranking && typeof response.ranking === "object"
+    ? response.ranking as Record<string, unknown> : {};
+  const items = Array.isArray(response.items) ? response.items : [];
+  const dimensions = {
+    rankingVersion: String(ranking.version || ""),
+    queryPresent: String(request.query || "").trim().length > 0,
+    categoryCount: Array.isArray(request.categories) ? request.categories.length : 0,
+    locationScope: request.neighborhood ? "neighborhood" : request.city ? "city" : request.state ? "state" : "none",
+    serviceMode: String(request.serviceMode || "any"),
+    resultCount: items.length,
+  };
+  const canonical = {
+    eventName: "search.executed", eventSchemaVersion:1, taxonomyVersion:"ana-event-taxonomy-v1",
+    clientEventId:requestId, actorClass:context.actorClass, actorId:context.actorId,
+    analyticsSessionId:null, serviceId:null, searchRequestId:requestId, quoteSessionId:null,
+    orderId:null, sourceSurface:"search", dimensions,
+  };
+  const payloadHash = await sha256Hex(canonical);
+  const { error } = await context.serviceClient.rpc("record_analytics_behavior_event_v1", {
+    p_event:{ ...canonical, payloadHash, semanticKey:`search.executed:${requestId}` },
+  });
+  if (error) {
+    console.warn(JSON.stringify({ function:FUNCTION_NAME, requestId, code:"DOKE_ANALYTICS_SEARCH_EVENT_UNAVAILABLE" }));
+    return false;
+  }
+  return true;
+};
+
 
 Deno.serve(async (incomingRequest: Request) => {
   const requestId = resolveRequestId(incomingRequest);
@@ -212,8 +285,15 @@ Deno.serve(async (incomingRequest: Request) => {
     request: searchRequest,
     response: data,
   }));
+  await recordSearchExecuted(context, requestId, searchRequest, data as Record<string, unknown>);
 
-  return jsonResponse(req, 200, data);
+  const responseWithProofs = await attachAnalyticsExposureProofs(
+    data as Record<string, unknown>,
+    requestId,
+    Deno.env.get("DOKE_ANALYTICS_EXPOSURE_SECRET"),
+    Deno.env.get("DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS"),
+  );
+  return jsonResponse(req, 200, responseWithProofs);
 });
 
 console.info(`${FUNCTION_NAME} loaded`);

@@ -1,0 +1,164 @@
+{
+  "contractId": "ana-a05-reconciliation-data-quality-v1",
+  "domain": "ANA-001",
+  "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
+  "createdAt": "2026-09-18T19:20:00-03:00",
+  "scope": "repository_only",
+  "status": "runtime_implemented_activation_blocked",
+  "runtimeIntegrated": false,
+  "migrationPrepared": true,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "projectionStates": [
+    "authoritative",
+    "stale",
+    "unavailable"
+  ],
+  "coverageStates": [
+    "complete",
+    "partial",
+    "not_applicable"
+  ],
+  "reconciliationStates": [
+    "matched",
+    "diverged",
+    "blocked",
+    "not_applicable"
+  ],
+  "windowStates": [
+    "open",
+    "finalized"
+  ],
+  "divergenceCodes": [
+    "SOURCE_MISSING",
+    "PROJECTION_MISSING",
+    "DUPLICATE_PROJECTION",
+    "EVENT_KEY_MISMATCH",
+    "EVENT_TYPE_MISMATCH",
+    "SUBJECT_MISMATCH",
+    "TIMESTAMP_MISMATCH",
+    "DIMENSION_MISMATCH"
+  ],
+  "correctionReasons": [
+    "late_source_fact",
+    "source_correction",
+    "projection_repair",
+    "dimension_backfill",
+    "policy_version_change",
+    "privacy_lifecycle"
+  ],
+  "dataQualityMetrics": [
+    "analytics_projection_missing_rate",
+    "analytics_reconciliation_mismatch_rate",
+    "analytics_transport_duplicate_rate",
+    "analytics_semantic_duplicate_rate",
+    "analytics_rejected_event_rate",
+    "analytics_exposure_proof_rejection_rate",
+    "analytics_processing_lag_seconds",
+    "analytics_late_event_rate",
+    "analytics_stale_projection_count",
+    "analytics_unavailable_metric_count"
+  ],
+  "invariants": [
+    "same source metric definition window and dimensions produce the same projection fingerprint",
+    "finalized snapshots are corrected by append-only revision",
+    "metric definition changes require a new metric version",
+    "recomputing unchanged source and result is a no-op",
+    "source changes on finalized windows create a new revision even when the numeric value is unchanged",
+    "source-domain defects are fixed by the source domain and not by analytics",
+    "behavior pipeline integrity is measured without pretending an external transactional truth exists",
+    "freshness is based on dataThrough rather than computedAt alone",
+    "stale dependencies propagate stale or unavailable state",
+    "technical data-quality alerts are separate from business KPI anomalies",
+    "thresholds require versioned policies and minimum sample floors",
+    "unavailable and no_data are not represented as numeric zero",
+    "ORD reconciliation validates canonical event keys and immutable service dimensions"
+  ],
+  "maturityGate": {
+    "current": 2,
+    "to3": [
+      "A01-A05 materialized",
+      "A03 runtime ingestion implemented",
+      "server actor resolution active",
+      "canonical behavior ledger active in staging",
+      "ORD and CAT projections functional",
+      "semantic dedup functional",
+      "tampered exposure proof rejected",
+      "replay idempotency proven",
+      "A04 core metrics projected",
+      "A05 reconciliation functional",
+      "late-event revision scenario proven",
+      "no PII leakage",
+      "controlled staging canary passed"
+    ],
+    "to4": [
+      "canonical Edge ingestion active in staging",
+      "browser direct canonical writes retired",
+      "funnel projections operational",
+      "ORD reconciliation operational",
+      "CAT supply timeline operational",
+      "liquidity and retention segmented",
+      "freshness policy operational",
+      "stale unavailable states operational",
+      "backfill revision path proven",
+      "data-quality metrics and ownership operational"
+    ]
+  },
+  "authority": {
+    "contractAuthority": true,
+    "reconciliationContractAuthority": true,
+    "dataQualityContractAuthority": true,
+    "revisionContractAuthority": true,
+    "freshnessContractAuthority": true,
+    "backfillContractAuthority": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeReconciliationAuthority": false,
+    "alertDeliveryAuthority": false,
+    "privacyDecisionAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "ANA-B01",
+    "ANA-B02",
+    "ANA-B03",
+    "LEGAL-B03",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realAnalyticsEventWritten": false,
+    "realMetricProjectionWritten": false,
+    "realMetricSnapshotWritten": false,
+    "realIdentityStitchCreated": false,
+    "realUserDataChanged": false,
+    "realOrderChanged": false,
+    "realPaymentChanged": false,
+    "realReputationChanged": false,
+    "productionChanges": false
+  },
+  "runtimeImplemented": true,
+  "runtimeImplementation": {
+    "migration": "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql",
+    "reconciliationTable": "private.analytics_reconciliation_runs_v1",
+    "dataQualityTable": "private.analytics_data_quality_rollups_v1",
+    "orderReconciliationRpc": "public.run_analytics_order_reconciliation_v1",
+    "sourceEventTime": "private.order_domain_events.created_at",
+    "projectionEventTime": "private.order_metric_events.occurred_at",
+    "sourceMutationAllowed": false,
+    "activationRequires": [
+      "migration_applied",
+      "controlled_staging_reconciliation_canary"
+    ],
+    "eventKeyReconciliation": true,
+    "immutableServiceDimensionReconciliation": true
+  }
+}

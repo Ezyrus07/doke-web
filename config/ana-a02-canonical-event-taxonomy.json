@@ -1,0 +1,85 @@
+{
+  "contractId": "ana-a02-canonical-event-taxonomy-v1",
+  "domain": "ANA-001",
+  "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
+  "createdAt": "2026-09-18T19:05:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_runtime_integration_required",
+  "taxonomyVersion": "ana-event-taxonomy-v1",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "eventClasses": [
+    "behavior",
+    "domain_fact",
+    "operational_observability",
+    "derived_projection"
+  ],
+  "funnel": [
+    "account.registered",
+    "search.executed",
+    "search.result_impression",
+    "search.result_clicked",
+    "service.detail_viewed",
+    "order.requested",
+    "order.quoted",
+    "payment.held",
+    "order.completed",
+    "repeat.order_completed"
+  ],
+  "legacyAliases": {
+    "service_metric_events.view": "service.detail_viewed",
+    "service_metric_events.budget": "service.budget_cta_clicked",
+    "service_metric_events.message": "service.message_cta_clicked",
+    "quote_template_funnel_events.started": "quote.started",
+    "quote_template_funnel_events.progress": "quote.progressed",
+    "quote_template_funnel_events.completed": "quote.completed",
+    "quote_template_funnel_events.submitted": "quote.submitted"
+  },
+  "invariants": [
+    "quote.submitted never substitutes for order.requested",
+    "service.budget_cta_clicked is not an order fact",
+    "service.message_cta_clicked is not a message fact",
+    "SEARCH operational observability is excluded from product behavior analytics",
+    "order facts are owned by ORD and cannot be browser-authored",
+    "payment facts are owned by PAY and remain unavailable until canonical authority exists",
+    "repeat transaction metrics are derived and never directly emitted by a browser",
+    "raw search query and quote free text are prohibited from the canonical analytics event ledger",
+    "legacy aliases preserve legacy trust levels"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "taxonomyContractAuthority": true,
+    "runtimeTaxonomyAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "ANA-B01",
+    "ANA-B02",
+    "ANA-B03",
+    "LEGAL-B03",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realAnalyticsEventWritten": false,
+    "realMetricProjectionWritten": false,
+    "realMetricSnapshotWritten": false,
+    "realIdentityStitchCreated": false,
+    "realUserDataChanged": false,
+    "realOrderChanged": false,
+    "realPaymentChanged": false,
+    "realReputationChanged": false,
+    "productionChanges": false
+  }
+}

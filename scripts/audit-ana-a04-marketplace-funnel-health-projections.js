@@ -1,0 +1,9 @@
+'use strict';
+const fs=require('fs');const path=require('path');const a=require('../backend/modules/analytics/marketplace-health-projection');
+const root=path.resolve(__dirname,'..');const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a04-marketplace-funnel-health-projections.json'),'utf8'));const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('contract id',a.CONTRACT_ID===c.contractId);check('projection states',c.projectionStates.includes('authoritative')&&c.projectionStates.includes('unavailable'));check('GMV unavailable rule',c.metrics.find((m)=>m.key==='economics.gmv').availability==='unavailable_until_PAY_canonical');
+const ord=fs.readFileSync(path.join(root,'supabase/migrations/053_order_transaction_events.sql'),'utf8');check('ORD metric projection',ord.includes('private.order_metric_events'));check('ORD final events',ord.includes('order.completed')&&ord.includes('order.disputed'));
+const cat=fs.readFileSync(path.join(root,'supabase/migrations/044_expand_service_moderation_audit_history.sql'),'utf8');['listing_published','listing_paused','listing_restored','listing_unpublished','version_approved'].forEach((e)=>check('CAT '+e,cat.includes(e)));
+const snap=fs.readFileSync(path.join(root,'supabase/migrations/156_order_service_snapshot_authority.sql'),'utf8');check('immutable order snapshot',snap.includes('DOKE_ORDER_SERVICE_SNAPSHOT_IMMUTABLE')&&snap.includes('approved_service_version'));
+Object.entries(c.prohibitedEffects).forEach(([k,v])=>check('effect '+k,v===false));
+const failed=checks.filter((x)=>!x.passed).map((x)=>x.name);console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));if(failed.length)process.exitCode=1;

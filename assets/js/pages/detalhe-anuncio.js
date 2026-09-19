@@ -98,6 +98,7 @@
   };
 
   const getMetricsRepository = () => window.Doke?.repositories?.serviceMetrics || null;
+  const getAnalyticsRepository = () => window.Doke?.repositories?.analytics || null;
 
 
   const normalizeIdentity = (value) => String(value || '').trim().toLowerCase();
@@ -563,11 +564,13 @@
 
   const recordVisitorView = (root, service) => {
     const repository = getMetricsRepository();
+    const analytics = getAnalyticsRepository();
     const serviceKey = String(service?.remoteId || service?.id || '');
     if (!root || root.dataset.viewerRelation !== 'visitor' || String(service?.status || 'active').toLowerCase() !== 'active') return;
-    if (!serviceKey || lastTrackedViewServiceId === serviceKey || typeof repository?.recordView !== 'function') return;
+    if (!serviceKey || lastTrackedViewServiceId === serviceKey) return;
     lastTrackedViewServiceId = serviceKey;
-    Promise.resolve(repository.recordView(service)).catch(() => {});
+    if (typeof repository?.recordView === 'function') Promise.resolve(repository.recordView(service)).catch(() => {});
+    if (typeof analytics?.trackServiceDetail === 'function') Promise.resolve(analytics.trackServiceDetail(serviceKey, 'direct')).catch(() => {});
   };
 
   const hydrateDetail = (payload) => {
@@ -749,9 +752,16 @@
       event.preventDefault();
       event.stopPropagation();
       const repository = getMetricsRepository();
-      const metricPromise = typeof repository?.[metricMethod] === 'function' && lastHydratedService
+      const analytics = getAnalyticsRepository();
+      const serviceKey = String(lastHydratedService?.remoteId || lastHydratedService?.id || '');
+      const legacyPromise = typeof repository?.[metricMethod] === 'function' && lastHydratedService
         ? Promise.resolve(repository[metricMethod](lastHydratedService)).catch(() => null)
         : Promise.resolve(null);
+      const analyticsMethod = metricMethod === 'recordBudgetContact' ? 'trackBudgetCta' : 'trackMessageCta';
+      const analyticsPromise = serviceKey && typeof analytics?.[analyticsMethod] === 'function'
+        ? Promise.resolve(analytics[analyticsMethod](serviceKey)).catch(() => null)
+        : Promise.resolve(null);
+      const metricPromise = Promise.all([legacyPromise, analyticsPromise]);
       const timeout = new Promise((resolve) => window.setTimeout(resolve, 550));
       Promise.race([metricPromise, timeout]).finally(() => {
         if (typeof window.DokeNavigate === 'function') {

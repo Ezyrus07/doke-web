@@ -1,0 +1,72 @@
+name: ANA-A03 Behavioral Ingestion Identity Boundary
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/analytics/behavioral-ingestion-boundary.js'
+      - 'config/ana-a03-behavioral-ingestion-identity-boundary.json'
+      - 'docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md'
+      - 'scripts/audit-ana-a03-behavioral-ingestion-identity-boundary.js'
+      - 'scripts/test-ana-a03-behavioral-ingestion-identity-boundary.js'
+      - 'supabase/functions/analytics-behavior-v1/index.ts'
+      - 'supabase/functions/_shared/analytics-proof.ts'
+      - 'supabase/functions/search-public-services-v2/index.ts'
+      - 'supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql'
+      - 'scripts/audit-ana-a03-runtime-readiness.js'
+      - 'scripts/test-ana-a03-runtime-readiness.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'assets/js/repositories/analytics-repository.js'
+      - 'assets/js/pages/search/server-results-surface.js'
+      - 'assets/js/pages/detalhe-anuncio.js'
+      - 'assets/js/pages/orcamento.js'
+      - 'detalhe-anuncio.html'
+      - 'orcamento.html'
+      - 'resultados.html'
+      - 'scripts/audit-ana-a03-client-wiring.js'
+      - 'scripts/test-ana-a03-client-wiring.js'
+      - '.github/workflows/ana-a03-behavioral-ingestion-identity-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ana-a03-behavioral-ingestion-identity-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/analytics/behavioral-ingestion-boundary.js
+          node --check scripts/audit-ana-a03-behavioral-ingestion-identity-boundary.js
+          node --check scripts/test-ana-a03-behavioral-ingestion-identity-boundary.js
+          node --check assets/js/repositories/analytics-repository.js
+          node --check assets/js/pages/search/server-results-surface.js
+          node --check assets/js/pages/detalhe-anuncio.js
+          node --check assets/js/pages/orcamento.js
+      - name: Audit
+        run: node scripts/audit-ana-a03-behavioral-ingestion-identity-boundary.js
+      - name: Conformance
+        run: node scripts/test-ana-a03-behavioral-ingestion-identity-boundary.js
+      - name: Runtime readiness
+        run: |
+          node scripts/audit-ana-a03-runtime-readiness.js
+          node scripts/test-ana-a03-runtime-readiness.js
+      - name: Client wiring
+        run: |
+          node scripts/audit-ana-a03-client-wiring.js
+          node scripts/test-ana-a03-client-wiring.js
+      - name: ANA-A02 regression
+        run: |
+          node scripts/audit-ana-a02-canonical-event-taxonomy.js
+          node scripts/test-ana-a02-canonical-event-taxonomy.js
+      - name: Domain matrix regression
+        run: node scripts/audit-domain-completion-matrix.js
+      - name: Diff hygiene
+        run: git diff --check
