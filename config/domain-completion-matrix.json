@@ -1,6 +1,6 @@
 {
-  "version": "1.3.113",
-  "updatedAt": "2026-08-15T21:20:00-03:00",
+  "version": "1.3.114",
+  "updatedAt": "2026-09-18T21:55:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -528,7 +528,25 @@
         "scripts/audit-professional-verification-evidence-authority-retirement.js",
         "scripts/test-professional-verification-evidence-authority-retirement-runtime.js",
         "docs/validation/PROF-001-A04-KYC-DRAFT-AUTHORITY-RETIREMENT.json",
-        "docs/validation/PROF-001-B03-KYC-EVIDENCE-AUTHORITY-RETIREMENT.json"
+        "docs/validation/PROF-001-B03-KYC-EVIDENCE-AUTHORITY-RETIREMENT.json",
+        "docs/PROFESSIONAL-VERIFICATION-STORAGE-SETUP.md",
+        "scripts/test-professional-kyc-authority-contract.js",
+        "scripts/validate-professional-kyc-signed-intent-runtime.mjs",
+        "scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs",
+        ".github/workflows/prof-b05-g2a-signed-intent-staging-canary.yml",
+        ".github/workflows/prof-b05-g4-evidence-lifecycle-e2e.yml",
+        "supabase/tests/030_professional_kyc_storage_containment_validation.sql",
+        "supabase/migrations/20260918193700_professional_kyc_reopen_authority.sql",
+        "supabase/tests/031_professional_kyc_reopen_lineage_validation.sql",
+        "supabase/migrations/20260918204100_professional_kyc_reopen_coalesce_fix.sql",
+        "supabase/migrations/20260918205000_professional_kyc_evidence_lifecycle_authority.sql",
+        "supabase/migrations/20260918213000_professional_kyc_evidence_event_ordering_authority.sql",
+        "supabase/tests/032_professional_kyc_evidence_lifecycle_validation.sql",
+        "supabase/migrations/20260918205500_professional_kyc_gc_dry_run_authority.sql",
+        "supabase/migrations/20260918210200_professional_kyc_gc_evidence_precedence_fix.sql",
+        "supabase/tests/033_professional_kyc_gc_dry_run_validation.sql",
+        "supabase/migrations/20260919005500_professional_kyc_retention_policy_authority.sql",
+        "supabase/tests/034_professional_kyc_retention_policy_validation.sql"
       ],
       "scanRoots": [
         "assets/js/pages/profile",
@@ -566,7 +584,11 @@
         "Binary evidence uses database-generated locked upload intents, signed upload tokens and one-time server-side consumption.",
         "Reviewer operations require an independently authenticated admin/moderator Edge Function context.",
         "Role promotion is atomic, idempotent and synchronized through public.users to app_metadata.",
-        "Client operational metrics and public reputation remain separated into private and aggregate-only authorities."
+        "Client operational metrics and public reputation remain separated into private and aggregate-only authorities.",
+        "PROF-B05 is technically closed in staging: the managed Storage policy authority removed legacy owner-prefix KYC mutation policies, leaving one canonical referenced-read policy and zero browser INSERT/UPDATE/DELETE policies for the KYC bucket.",
+        "PROF-B05 G1-G5 validations 030 through 033 pass in staging; the signed-upload runtime E2E proves immutable S1 submit/review/reject/reopen history, a distinct S2 submission, direct approval, deterministic event ordering and final professional role promotion.",
+        "The KYC GC authority is dry-run only: current real evidence remains KEEP_REFERENCE, technical GC eligibility is zero and no physical Storage deletion path is enabled before approved retention governance.",
+        "A versioned PROF-B04 retention/governance/legal-hold authority and validation 034 exist on the candidate branch in a sealed state, with no approved policy seed, no default retention interval and no physical GC implementation; they are not applied to staging."
       ],
       "blockers": [
         {
@@ -575,19 +597,13 @@
           "category": "external_policy",
           "description": "Final KYC rules, document retention and legal verification provider are not approved.",
           "targetPhase": "Fase 2"
-        },
-        {
-          "id": "PROF-B05",
-          "severity": "high",
-          "category": "storage_policy",
-          "description": "Legacy owner-prefix Storage write policies remain because storage.objects is owned by the managed supabase_storage_admin role; the new signed-intent submission flow no longer trusts them.",
-          "targetPhase": "Fase 1"
         }
       ],
       "nextActions": [
-        "Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.",
-        "Define final KYC policy, document retention, rejection, appeal and legal verification provider rules.",
-        "Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving external blockers."
+        "Complete PROF-B04 / LEGAL-B03 approval for retention classes, anchors, intervals, rejection/appeal rules, verification provider, biometric-processing mode, privacy records and legal-hold semantics before activating any retention or physical GC authority.",
+        "Keep Storage containment, signed-intent E2E, immutable evidence lifecycle, deterministic event ordering and dry-run GC validations cumulative.",
+        "Keep physical KYC evidence deletion disabled; the sealed B04 authority must remain inactive until explicit policy approval and a separately reviewed G7 execution gate.",
+        "Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving the external policy blocker."
       ],
       "exitCriteria": [
         "A professional can complete, submit, be reviewed and receive a decision across devices.",
@@ -3693,8 +3709,7 @@
       "status": "staging_operational",
       "owner": "PROF-001",
       "blockers": [
-        "PROF-B04",
-        "PROF-B05"
+        "PROF-B04"
       ]
     },
     {

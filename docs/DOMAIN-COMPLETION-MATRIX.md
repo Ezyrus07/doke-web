@@ -103,7 +103,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | --- | --- | --- | --- | --- | --- |
 | FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail |  |
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
-| FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
+| FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04 |
 | FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B02 |
 | FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation |  |
@@ -278,15 +278,19 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Reviewer operations require an independently authenticated admin/moderator Edge Function context.
 - Role promotion is atomic, idempotent and synchronized through public.users to app_metadata.
 - Client operational metrics and public reputation remain separated into private and aggregate-only authorities.
+- PROF-B05 is technically closed in staging: the managed Storage policy authority removed legacy owner-prefix KYC mutation policies, leaving one canonical referenced-read policy and zero browser INSERT/UPDATE/DELETE policies for the KYC bucket.
+- PROF-B05 G1-G5 validations 030 through 033 pass in staging; the signed-upload runtime E2E proves immutable S1 submit/review/reject/reopen history, a distinct S2 submission, direct approval, deterministic event ordering and final professional role promotion.
+- The KYC GC authority is dry-run only: current real evidence remains KEEP_REFERENCE, technical GC eligibility is zero and no physical Storage deletion path is enabled before approved retention governance.
+- A versioned PROF-B04 retention/governance/legal-hold authority and validation 034 exist on the candidate branch in a sealed state, with no approved policy seed, no default retention interval and no physical GC implementation; they are not applied to staging.
 
 **Bloqueadores:**
 - **PROF-B04 · HIGH · external_policy:** Final KYC rules, document retention and legal verification provider are not approved. _(Fase 2)_
-- **PROF-B05 · HIGH · storage_policy:** Legacy owner-prefix Storage write policies remain because storage.objects is owned by the managed supabase_storage_admin role; the new signed-intent submission flow no longer trusts them. _(Fase 1)_
 
 **Próximas ações:**
-- Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.
-- Define final KYC policy, document retention, rejection, appeal and legal verification provider rules.
-- Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving external blockers.
+- Complete PROF-B04 / LEGAL-B03 approval for retention classes, anchors, intervals, rejection/appeal rules, verification provider, biometric-processing mode, privacy records and legal-hold semantics before activating any retention or physical GC authority.
+- Keep Storage containment, signed-intent E2E, immutable evidence lifecycle, deterministic event ordering and dry-run GC validations cumulative.
+- Keep physical KYC evidence deletion disabled; the sealed B04 authority must remain inactive until explicit policy approval and a separately reviewed G7 execution gate.
+- Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving the external policy blocker.
 
 **Gate de saída:**
 - A professional can complete, submit, be reviewed and receive a decision across devices.
@@ -1207,4 +1211,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-15T21:20:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-18T21:55:00-03:00._
