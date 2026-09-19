@@ -20,12 +20,34 @@ declare
   v_s2_manifest text:=repeat('b',64);
   v_count integer;
   v_state text;
+  v_review_sequence bigint;
+  v_terminal_sequence bigint;
+  v_reopen_sequence bigint;
 begin
   if to_regclass('private.professional_kyc_evidence_sets') is null
      or to_regclass('private.professional_kyc_evidence_objects') is null
      or to_regclass('private.professional_kyc_evidence_events') is null
      or to_regclass('private.professional_kyc_current_evidence') is null then
     raise exception 'PROF_B05_EVIDENCE_SCHEMA_MISSING';
+  end if;
+
+  if not exists(
+    select 1
+    from information_schema.columns
+    where table_schema='private'
+      and table_name='professional_kyc_evidence_events'
+      and column_name='event_sequence'
+      and is_identity='YES'
+  ) then
+    raise exception 'PROF_B05_EVIDENCE_EVENT_SEQUENCE_MISSING';
+  end if;
+
+  if exists(
+    select 1
+    from private.professional_kyc_evidence_events
+    where event_sequence is null
+  ) then
+    raise exception 'PROF_B05_EVIDENCE_EVENT_SEQUENCE_NULL';
   end if;
 
   if has_table_privilege('authenticated','private.professional_kyc_evidence_sets','SELECT,INSERT,UPDATE,DELETE')
@@ -122,6 +144,19 @@ begin
     raise exception 'PROF_B05_S1_REVIEW_REJECT_EVENTS_MISSING:%',v_count;
   end if;
 
+  select
+    max(event_sequence) filter(where event_kind='review_started'),
+    max(event_sequence) filter(where event_kind='rejected')
+    into v_review_sequence,v_terminal_sequence
+  from private.professional_kyc_evidence_events
+  where evidence_set_id=v_s1;
+
+  if v_review_sequence is null
+     or v_terminal_sequence is null
+     or v_review_sequence>=v_terminal_sequence then
+    raise exception 'PROF_B05_S1_EVENT_ORDER_INVALID:%:%',v_review_sequence,v_terminal_sequence;
+  end if;
+
   perform public.execute_self_service_operation_internal(
     v_user_id,'reopen_own_professional_identity_verification','{}'::jsonb
   );
@@ -138,6 +173,16 @@ begin
      where evidence_set_id=v_s1 and event_kind='reopened'
   ) then
     raise exception 'PROF_B05_S1_REOPEN_EVENT_MISSING';
+  end if;
+
+  select max(event_sequence)
+    into v_reopen_sequence
+  from private.professional_kyc_evidence_events
+  where evidence_set_id=v_s1
+    and event_kind='reopened';
+
+  if v_reopen_sequence is null or v_reopen_sequence<=v_terminal_sequence then
+    raise exception 'PROF_B05_S1_REOPEN_ORDER_INVALID:%:%',v_terminal_sequence,v_reopen_sequence;
   end if;
 
   select status into v_state
@@ -229,6 +274,19 @@ begin
      and event_kind in ('review_started','verified');
   if v_count<>2 then
     raise exception 'PROF_B05_S2_DIRECT_DECISION_EVENTS_MISSING:%',v_count;
+  end if;
+
+  select
+    max(event_sequence) filter(where event_kind='review_started'),
+    max(event_sequence) filter(where event_kind='verified')
+    into v_review_sequence,v_terminal_sequence
+  from private.professional_kyc_evidence_events
+  where evidence_set_id=v_s2;
+
+  if v_review_sequence is null
+     or v_terminal_sequence is null
+     or v_review_sequence>=v_terminal_sequence then
+    raise exception 'PROF_B05_S2_EVENT_ORDER_INVALID:%:%',v_review_sequence,v_terminal_sequence;
   end if;
 
   if not exists (
