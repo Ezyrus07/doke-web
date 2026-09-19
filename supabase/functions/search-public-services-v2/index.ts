@@ -17,6 +17,25 @@ import {
 
 const FUNCTION_NAME = "search-public-services-v2";
 const MAX_BODY_BYTES = 16_384;
+const readPlatformKey = (pluralName: string, singularName: string, legacyName: string) => {
+  const raw = Deno.env.get(pluralName) || "";
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      for (const name of ["default", "doke"]) {
+        const value = typeof parsed[name] === "string" ? String(parsed[name]) : "";
+        if (value) return value;
+      }
+      for (const value of Object.values(parsed)) {
+        if (typeof value === "string" && value) return value;
+      }
+    } catch {
+      // Fall through to compatibility variables.
+    }
+  }
+  return Deno.env.get(singularName) || Deno.env.get(legacyName) || "";
+};
+
 const RATE_LIMIT = 120;
 const RATE_WINDOW_SECONDS = 60;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -74,8 +93,8 @@ const pseudonymousRateLimitActor = async (req: Request, secret: string) => {
 
 const createContext = async (req: Request): Promise<Context | Response> => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const publicKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY") || "";
-  const secretKey = Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const publicKey = readPlatformKey("SUPABASE_PUBLISHABLE_KEYS", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY");
+  const secretKey = readPlatformKey("SUPABASE_SECRET_KEYS", "SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY");
   const authorization = req.headers.get("authorization") || "";
 
   if (!supabaseUrl || !publicKey || !secretKey) {
