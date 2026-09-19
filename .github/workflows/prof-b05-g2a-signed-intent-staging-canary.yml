@@ -40,41 +40,13 @@ jobs:
       - name: Diff hygiene
         run: git diff --check
 
+  # Disabled after G4 became active in staging: a signed-intent submit now creates
+  # immutable evidence provenance, so zero-residue teardown must run only in an
+  # isolated disposable project. Keep this workflow as static/dry-run certification.
   canary:
-    if: >
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.head.ref == 'prof/prof-b05-implementation'
+    if: ${{ false }}
     needs: certify
-    environment: staging
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      DOKE_KYC_CANARY_PROJECT_REF: zwkczgewzbsorbrjuzpb
-      DOKE_KYC_CANARY_ALLOW_STAGING: '1'
     steps:
-      - name: Checkout exact candidate
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-      - name: Check environment
-        run: node scripts/validate-professional-kyc-signed-intent-runtime.mjs --check-env
-      - name: Execute zero-residue signed-intent canary
-        shell: bash
-        run: |
-          mkdir -p reports/generated
-          node scripts/validate-professional-kyc-signed-intent-runtime.mjs --execute 2>&1 | tee reports/generated/PROF-B05-G2A-SIGNED-INTENT-STAGING-CANARY.jsonl
-      - name: Upload sanitized evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: prof-b05-g2a-${{ github.run_id }}
-          path: reports/generated/PROF-B05-G2A-SIGNED-INTENT-STAGING-CANARY.jsonl
-          if-no-files-found: warn
-          retention-days: 30
+      - run: echo "G2A staging mutation disabled post-G4; use the disposable G4 E2E workflow."
+
