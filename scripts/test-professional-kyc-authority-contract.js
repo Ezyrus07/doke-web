@@ -151,6 +151,8 @@ for (const token of [
   'evaluate_professional_kyc_retention_policy',
   'POLICY_ELAPSED_TECHNICAL_ALLOW',
   'PROF_B05_G7_PHYSICAL_GC',
+  'evaluate_professional_kyc_gc_retention_gate',
+  'TECHNICAL_ELIGIBILITY_REQUIRED',
 ]) assert(retentionPolicyAuthority.includes(token), `KYC retention policy authority missing: ${token}`);
 
 assert(retentionPolicyAuthority.includes('retention_interval interval,'), 'KYC retention interval must remain explicit and nullable.');
@@ -167,6 +169,8 @@ for (const token of [
   'PROF_B04_ELAPSED_POLICY_GATE_INVALID',
   'PROF_B04_APPROVED_POLICY_UPDATE_ALLOWED',
   'PROF_B04_RETENTION_POLICY_TRUNCATE_ALLOWED',
+  'PROF_B04_TECHNICAL_GATE_BYPASS_ALLOWED',
+  'PROF_B04_MISSING_POLICY_BRIDGE_NOT_HELD',
 ]) assert(retentionPolicyValidation.includes(token), `KYC retention policy validation missing: ${token}`);
 
 
