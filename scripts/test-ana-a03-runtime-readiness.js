@@ -1,6 +1,8 @@
 'use strict';
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260918232000_ana_a03_behavioral_event_ledger.sql'),'utf8');
+const hardening=fs.readFileSync(path.join(root,'supabase','migrations','20260919002000_ana_a03_server_event_idempotency_hardening.sql'),'utf8');
+const runtimeSql=migration+'\n'+hardening;
 const edge=fs.readFileSync(path.join(root,'supabase','functions','analytics-behavior-v1','index.ts'),'utf8');
 const search=fs.readFileSync(path.join(root,'supabase','functions','search-public-services-v2','index.ts'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
@@ -10,8 +12,8 @@ check('no direct ledger insert grant',!migration.match(/grant\s+insert\s+on\s+ta
 check('server receipt time',migration.includes('v_now timestamptz := pg_catalog.clock_timestamp()')&&migration.includes('v_now,v_now'));
 check('dimensions allowlist',migration.includes('DOKE_ANALYTICS_DIMENSION_UNKNOWN_FIELD'));
 check('concurrent replay resolves uniqueness race',migration.includes('exception when unique_violation')&&migration.includes('where semantic_key = v_semantic_key'));
-check('server-originated client event id is unique without analytics session',migration.includes('analytics_behavior_server_client_event_unique')&&migration.includes('where analytics_session_id is null and client_event_id is not null'));
-check('server event payload drift is rejected',migration.includes('if v_analytics_session_id is null then')&&migration.includes("message = 'DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT'"));
+check('server-originated client event id is unique without analytics session',runtimeSql.includes('analytics_behavior_server_client_event_unique')&&runtimeSql.includes('where analytics_session_id is null and client_event_id is not null'));
+check('server event payload drift is rejected',runtimeSql.includes('if v_analytics_session_id is null then')&&runtimeSql.includes("message = 'DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT'"));
 check('edge never accepts actorId body',!edge.includes('body.actorId'));
 check('authenticated actor from getUser',edge.includes('requestClient.auth.getUser()'));
 check('current platform key env supported',edge.includes('SUPABASE_PUBLISHABLE_KEYS')&&edge.includes('SUPABASE_SECRET_KEYS'));
