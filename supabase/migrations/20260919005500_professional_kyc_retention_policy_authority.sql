@@ -62,6 +62,46 @@ create index professional_kyc_retention_policies_lookup_idx
 revoke all privileges on table private.professional_kyc_retention_policies
   from public,anon,authenticated,service_role;
 
+create or replace function private.validate_professional_kyc_retention_policy_lineage()
+returns trigger
+language plpgsql
+set search_path=pg_catalog
+as $function$
+declare
+  v_parent private.professional_kyc_retention_policies%rowtype;
+begin
+  if new.supersedes_policy_id is null then
+    return new;
+  end if;
+
+  if new.supersedes_policy_id=new.id then
+    raise exception using errcode='55000',message='DOKE_KYC_RETENTION_POLICY_SELF_SUPERSEDE';
+  end if;
+
+  select *
+    into v_parent
+    from private.professional_kyc_retention_policies p
+   where p.id=new.supersedes_policy_id;
+
+  if not found
+     or v_parent.policy_state<>'approved'
+     or v_parent.policy_key<>new.policy_key
+     or v_parent.policy_version>=new.policy_version then
+    raise exception using errcode='55000',message='DOKE_KYC_RETENTION_POLICY_LINEAGE_INVALID';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function private.validate_professional_kyc_retention_policy_lineage()
+  from public,anon,authenticated,service_role;
+
+create trigger professional_kyc_retention_policy_lineage_guard
+before insert or update on private.professional_kyc_retention_policies
+for each row execute function private.validate_professional_kyc_retention_policy_lineage();
+
+
 create or replace function private.guard_professional_kyc_retention_policy_mutation()
 returns trigger
 language plpgsql
@@ -359,6 +399,34 @@ create index professional_kyc_governance_versions_lookup_idx
 
 revoke all privileges on table private.professional_kyc_governance_versions
   from public,anon,authenticated,service_role;
+
+create or replace function private.validate_professional_kyc_governance_approval()
+returns trigger
+language plpgsql
+set search_path=pg_catalog
+as $function$
+begin
+  if new.governance_state='approved'
+     and not exists(
+       select 1
+       from private.professional_kyc_retention_policies p
+       where p.id=new.retention_policy_id
+         and p.policy_state='approved'
+     ) then
+    raise exception using errcode='55000',message='DOKE_KYC_GOVERNANCE_RETENTION_POLICY_NOT_APPROVED';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function private.validate_professional_kyc_governance_approval()
+  from public,anon,authenticated,service_role;
+
+create trigger professional_kyc_governance_approval_guard
+before insert or update on private.professional_kyc_governance_versions
+for each row execute function private.validate_professional_kyc_governance_approval();
+
 
 create or replace function private.guard_professional_kyc_governance_mutation()
 returns trigger
