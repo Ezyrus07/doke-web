@@ -39,6 +39,17 @@ jobs:
         run: node scripts/test-professional-kyc-authority-contract.js
       - name: Professional authority baseline
         run: node scripts/audit-professional-authority-baseline.js
+      - name: Generate canonical domain matrix
+        run: npm run write:domain-completion-matrix
+      - name: Upload generated domain matrix
+        uses: actions/upload-artifact@v4
+        with:
+          name: prof-domain-completion-generated
+          path: docs/DOMAIN-COMPLETION-MATRIX.md
+          if-no-files-found: error
+          retention-days: 1
+      - name: Domain matrix must already be canonical
+        run: git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md
       - name: Domain completion matrix
         run: npm run audit:domain-completion-matrix
       - name: G2A dry-run contract
