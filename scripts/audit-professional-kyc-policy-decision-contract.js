@@ -92,6 +92,11 @@ if (!approved) {
   }
 
   assert(['approved_provider', 'no_external_provider'].includes(contract.provider?.decision), 'provider decision must be explicit');
+  if (contract.provider?.decision === 'approved_provider') {
+    assert(typeof contract.provider?.providerRef === 'string' && contract.provider.providerRef.length > 0, 'providerRef missing');
+    assert(typeof contract.provider?.processorTermsRef === 'string' && contract.provider.processorTermsRef.length > 0, 'processorTermsRef missing');
+    assert(typeof contract.provider?.internationalTransferDecisionReference === 'string' && contract.provider.internationalTransferDecisionReference.length > 0, 'international transfer decision reference missing');
+  }
   assert(['image_only', 'biometric_processing'].includes(contract.selfieAndBiometrics?.treatmentMode), 'selfie/biometric treatment mode must be explicit');
   if (contract.selfieAndBiometrics?.treatmentMode === 'biometric_processing') {
     assert(contract.selfieAndBiometrics?.biometricExtractionAllowed === true, 'biometric extraction approval missing');
@@ -102,6 +107,7 @@ if (!approved) {
   assert(contract.rejectionAndAppeal?.decision === 'approved', 'rejection/appeal policy must be approved');
   assert(typeof contract.rejectionAndAppeal?.appealAllowed === 'boolean', 'appealAllowed must be decided');
   assert(contract.legalHold?.decision === 'approved', 'legal-hold policy must be approved');
+  assert(typeof contract.legalHold?.policyReference === 'string' && contract.legalHold.policyReference.length > 0, 'legal-hold policy reference missing');
   assert(typeof contract.legalHold?.enabled === 'boolean', 'legal-hold enabled flag must be decided');
 
   for (const item of classes) {
