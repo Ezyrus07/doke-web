@@ -19,6 +19,12 @@ Security post-check:
 - `service_role` retains read-only table access; writes stay behind controlled RPCs.
 - Supabase still reports RLS-disabled private tables as a defense-in-depth advisory. No blanket RLS migration was applied because that requires explicit policy design.
 
-The authenticated synthetic canary has **not** passed yet. The official Auth canary users are absent and must be provisioned through the existing Supabase Admin API runbook; direct SQL insertion into Auth is prohibited. The canary runner also requires the exact execution confirmation `execute-ana-staging-canary`.
+## Functional canary evidence
 
-ANA-001 therefore remains maturity 2/6.
+The authenticated synthetic canary **passed 15/15** using synthetic Auth sessions and a transient staging-only policy shim. The authentication path used `admin_generateLink + verifyOtp`; therefore the exact password-login runner path is still unproven.
+
+The transient shim was not accepted as canonical runtime policy. Canonical Edge code was restored with repository parity after the canary. The machine-readable evidence remains authoritative for the observed staging state.
+
+ANA-B01 now has canonical technical TTL/rate/dedup values in the staging-readiness contract, but those values are not yet configured through the approved staging secret-management path. Consent, data retention, anonymization, export/deletion and persistent identity stitching remain blocked by `LEGAL-B03`.
+
+ANA-001 therefore remains maturity **2/6** until the canonical runtime variables are configured and the no-shim password-login canary passes.
