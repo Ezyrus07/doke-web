@@ -15,6 +15,12 @@ const assert = (condition, message) => {
 };
 
 const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
+const migrationPath = path.join(ROOT, 'supabase/migrations/20260919005500_professional_kyc_retention_policy_authority.sql');
+const validationPath = path.join(ROOT, 'supabase/tests/034_professional_kyc_retention_policy_validation.sql');
+assert(fs.existsSync(migrationPath), 'sealed G6 retention migration is missing');
+assert(fs.existsSync(validationPath), 'PROF-B04 validation 034 is missing');
+const migration = fs.readFileSync(migrationPath, 'utf8');
+const validation = fs.readFileSync(validationPath, 'utf8');
 const expectedClasses = [
   'abandoned_signed_intent',
   'rejected_submission_evidence',
@@ -28,6 +34,19 @@ assert(['awaiting_legal_approval', 'approved'].includes(contract.status), 'inval
 assert(Array.isArray(contract.blockers) && contract.blockers.includes('PROF-B04') && contract.blockers.includes('LEGAL-B03'), 'PROF-B04/LEGAL-B03 blockers must remain explicit until approval');
 assert(contract.implementationBoundary?.noDefaultRetentionInterval === true, 'default retention intervals are prohibited');
 assert(contract.implementationBoundary?.noPhysicalDeleteBeforeApproval === true, 'physical delete must remain approval-gated');
+assert(migration.includes("retention_mode in ('delete_at_termination','elapsed_interval','hold_only')"), 'G6 retention modes diverge from policy-decision contract');
+assert(migration.includes("'POLICY_TERMINATION_TECHNICAL_ALLOW'::text"), 'G6 delete-at-termination technical gate is missing');
+assert(migration.includes("'PROF_B05_G7_PHYSICAL_GC'::text"), 'G6 must delegate execution to the separate G7 gate');
+assert(!migration.toLowerCase().includes('delete from storage.objects'), 'G6 must never delete directly from storage.objects');
+assert(!migration.toLowerCase().includes('storage.from('), 'G6 must never contain a Storage API delete path');
+assert(!migration.includes('claim_token'), 'G6 must not introduce physical-GC claim authority');
+assert(!migration.includes('lease_expires_at'), 'G6 must not introduce physical-GC lease authority');
+for (const marker of [
+  'PROF_B04_DELETE_AT_TERMINATION_INTERVAL_ALLOWED',
+  'PROF_B04_TERMINATION_FUTURE_ANCHOR_INVALID',
+  'PROF_B04_DELETE_AT_TERMINATION_GATE_INVALID',
+  'PROF_B04_PHYSICAL_GC_AUTHORITY_DETECTED',
+]) assert(validation.includes(marker), '034 validation missing: ' + marker);
 
 const classes = Array.isArray(contract.evidenceClasses) ? contract.evidenceClasses : [];
 assert(
