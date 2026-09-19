@@ -229,4 +229,52 @@ begin
 end;
 $policy_matrix$;
 
+
+do $bridge$
+declare
+  v_now timestamptz:=now();
+  v_action text;
+  v_reason text;
+  v_gate text;
+begin
+  select final_action,reason_code,execution_gate
+    into v_action,v_reason,v_gate
+  from private.evaluate_professional_kyc_gc_retention_gate(
+    'HOLD_INVESTIGATE',
+    null,
+    'missing-policy',
+    1,
+    'decision_at',
+    v_now-interval '1 day',
+    v_now,
+    false
+  );
+
+  if v_action<>'HOLD'
+     or v_reason<>'TECHNICAL_ELIGIBILITY_REQUIRED'
+     or v_gate is not null then
+    raise exception 'PROF_B04_TECHNICAL_GATE_BYPASS_ALLOWED';
+  end if;
+
+  select final_action,reason_code,execution_gate
+    into v_action,v_reason,v_gate
+  from private.evaluate_professional_kyc_gc_retention_gate(
+    'GC_TECHNICALLY_ELIGIBLE',
+    'PROF_B04_RETENTION',
+    'missing-policy',
+    1,
+    'decision_at',
+    v_now-interval '1 day',
+    v_now,
+    false
+  );
+
+  if v_action<>'HOLD'
+     or v_reason<>'POLICY_MISSING'
+     or v_gate is not null then
+    raise exception 'PROF_B04_MISSING_POLICY_BRIDGE_NOT_HELD';
+  end if;
+end;
+$bridge$;
+
 rollback;
