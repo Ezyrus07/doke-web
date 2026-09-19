@@ -5,7 +5,7 @@
   "projectRef": "zwkczgewzbsorbrjuzpb",
   "productionTouched": false,
   "observedAt": "2026-09-19T00:34:01Z",
-  "status": "activation_applied_authenticated_canary_blocked",
+  "status": "activation_applied_authenticated_canary_blocked_missing_synthetic_fixtures",
   "migrations": [
     {
       "name": "ana_a03_behavioral_event_ledger",
@@ -89,12 +89,36 @@
   },
   "authenticatedCanary": {
     "executed": false,
-    "requiredConfirmation": "execute-ana-staging-canary",
-    "confirmationObserved": false,
+    "authorizationObserved": true,
+    "authorizationPhrase": "execute-ana-staging-canary",
+    "status": "blocked_before_execution",
     "blockers": [
-      "exact execute confirmation not provided",
-      "staging auth canary users are absent",
-      "server-only auth canary passwords are unavailable to the current tool surface"
+      "cliente@doke.local auth canary absent",
+      "profissional@doke.local auth canary absent",
+      "support/admin auth canaries required by controlled seed are absent",
+      "controlled synthetic service/order fixtures are absent",
+      "ANA canary contract prohibits source-domain mutation; fixture seed cannot be applied implicitly"
+    ],
+    "verifiedPreconditions": {
+      "exactAuthorization": true,
+      "productionTarget": false,
+      "stagingProject": "zwkczgewzbsorbrjuzpb",
+      "edgeRepositoryParity": true,
+      "anaMigrationsApplied": true,
+      "syntheticAuthUsersPresent": false,
+      "syntheticServicePresent": false,
+      "syntheticOrderPresent": false
+    },
+    "requiredPreparation": [
+      "provision the four staging Auth canaries through Supabase Admin API",
+      "apply supabase/seed/002_mvp_controlled_seed.sql as an explicitly authorized staging fixture-preparation step",
+      "then rerun execute-ana-staging-canary"
+    ],
+    "prohibitedWorkarounds": [
+      "direct SQL writes to auth.users or auth.identities",
+      "using real operational users",
+      "creating CAT/ORD/finance fixtures under canary authorization",
+      "touching production"
     ]
   },
   "advisorNotes": {
