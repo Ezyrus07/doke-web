@@ -24,79 +24,144 @@
         "forceRls": false,
         "anonDirectTableGrant": false,
         "authenticatedDirectTableGrant": false,
-        "serviceRoleDirectPrivileges": ["SELECT"]
+        "serviceRoleDirectPrivileges": [
+          "SELECT"
+        ]
       },
       "private.analytics_metric_snapshots_v1": {
         "rlsEnabled": false,
         "forceRls": false,
         "anonDirectTableGrant": false,
         "authenticatedDirectTableGrant": false,
-        "serviceRoleDirectPrivileges": ["SELECT"]
+        "serviceRoleDirectPrivileges": [
+          "SELECT"
+        ]
       },
       "private.analytics_reconciliation_runs_v1": {
         "rlsEnabled": false,
         "forceRls": false,
         "anonDirectTableGrant": false,
         "authenticatedDirectTableGrant": false,
-        "serviceRoleDirectPrivileges": ["SELECT"]
+        "serviceRoleDirectPrivileges": [
+          "SELECT"
+        ]
       },
       "private.analytics_data_quality_rollups_v1": {
         "rlsEnabled": false,
         "forceRls": false,
         "anonDirectTableGrant": false,
         "authenticatedDirectTableGrant": false,
-        "serviceRoleDirectPrivileges": ["SELECT"]
+        "serviceRoleDirectPrivileges": [
+          "SELECT"
+        ]
       }
     },
     "roles": {
-      "postgres": {"bypassRls": true},
-      "service_role": {"bypassRls": true},
-      "anon": {"bypassRls": false},
-      "authenticated": {"bypassRls": false}
+      "postgres": {
+        "bypassRls": true
+      },
+      "service_role": {
+        "bypassRls": true
+      },
+      "anon": {
+        "bypassRls": false
+      },
+      "authenticated": {
+        "bypassRls": false
+      }
     },
     "writerFunctions": [
       {
         "name": "public.record_analytics_behavior_event_v1(jsonb)",
         "owner": "postgres",
         "securityDefiner": true,
-        "directExecuteRoles": ["postgres", "service_role"]
+        "directExecuteRoles": [
+          "postgres",
+          "service_role"
+        ]
       },
       {
         "name": "public.append_analytics_metric_snapshot_v1(jsonb)",
         "owner": "postgres",
         "securityDefiner": true,
-        "directExecuteRoles": ["postgres", "service_role"]
+        "directExecuteRoles": [
+          "postgres",
+          "service_role"
+        ]
       },
       {
         "name": "public.run_analytics_order_reconciliation_v1(timestamptz,timestamptz)",
         "owner": "postgres",
         "securityDefiner": true,
-        "directExecuteRoles": ["postgres", "service_role"]
+        "directExecuteRoles": [
+          "postgres",
+          "service_role"
+        ]
       },
       {
         "name": "public.compute_analytics_order_health_v1(timestamptz,timestamptz,text,text)",
         "owner": "postgres",
         "securityDefiner": true,
-        "directExecuteRoles": ["postgres", "service_role"]
+        "directExecuteRoles": [
+          "postgres",
+          "service_role"
+        ]
       }
     ],
     "missingCoveringIndexes": [
       {
         "table": "private.analytics_behavior_events_v1",
         "foreignKey": "analytics_behavior_events_v1_order_id_fkey",
-        "columns": ["order_id"]
+        "columns": [
+          "order_id"
+        ]
       },
       {
         "table": "private.analytics_data_quality_rollups_v1",
         "foreignKey": "analytics_data_quality_rollups_v1_source_run_id_fkey",
-        "columns": ["source_run_id"]
+        "columns": [
+          "source_run_id"
+        ]
       },
       {
         "table": "private.analytics_metric_snapshots_v1",
         "foreignKey": "analytics_metric_snapshots_v1_supersedes_snapshot_id_fkey",
-        "columns": ["supersedes_snapshot_id"]
+        "columns": [
+          "supersedes_snapshot_id"
+        ]
       }
-    ]
+    ],
+    "footprint": {
+      "private.analytics_behavior_events_v1": {
+        "exactRows": 17,
+        "tableSize": "8192 bytes",
+        "indexesSize": "112 kB",
+        "totalSize": "128 kB"
+      },
+      "private.analytics_data_quality_rollups_v1": {
+        "exactRows": 12,
+        "tableSize": "8192 bytes",
+        "indexesSize": "32 kB",
+        "totalSize": "48 kB"
+      },
+      "private.analytics_metric_snapshots_v1": {
+        "exactRows": 6,
+        "tableSize": "8192 bytes",
+        "indexesSize": "48 kB",
+        "totalSize": "64 kB"
+      },
+      "private.analytics_reconciliation_runs_v1": {
+        "exactRows": 6,
+        "tableSize": "8192 bytes",
+        "indexesSize": "32 kB",
+        "totalSize": "48 kB"
+      }
+    },
+    "migrationRisk": {
+      "currentDataVolume": "low",
+      "createIndexConcurrencyRequiredAtObservedScale": false,
+      "recheckImmediatelyBeforeAnyFutureMigration": true
+    }
   },
   "plannedChanges": {
     "enableRls": [
@@ -112,17 +177,23 @@
       {
         "name": "analytics_behavior_events_order_id_idx",
         "table": "private.analytics_behavior_events_v1",
-        "columns": ["order_id"]
+        "columns": [
+          "order_id"
+        ]
       },
       {
         "name": "analytics_dq_rollups_source_run_id_idx",
         "table": "private.analytics_data_quality_rollups_v1",
-        "columns": ["source_run_id"]
+        "columns": [
+          "source_run_id"
+        ]
       },
       {
         "name": "analytics_metric_snapshots_supersedes_id_idx",
         "table": "private.analytics_metric_snapshots_v1",
-        "columns": ["supersedes_snapshot_id"]
+        "columns": [
+          "supersedes_snapshot_id"
+        ]
       }
     ],
     "plannedSql": [
