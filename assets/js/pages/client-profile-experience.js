@@ -72,9 +72,6 @@
     document.querySelectorAll('[data-client-owner-public-action]').forEach(function (node) {
       node.hidden = !owner;
     });
-    document.querySelectorAll('[data-client-public-action]').forEach(function (node) {
-      node.hidden = owner;
-    });
   }
   function render(profile) {
     profile = profile || {};

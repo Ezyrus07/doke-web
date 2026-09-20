@@ -50,6 +50,10 @@ requireTerm('perfil-cliente.html', publicClient, '<p class="profile-heading__eye
 requireTerm('perfil-cliente.html', publicClient, 'data-profile-verified hidden', 'selo de identidade deve permanecer condicionado ao runtime');
 forbidTerm('perfil-cliente.html', publicClient, 'Cliente verificado', 'perfil público não pode alegar verificação sem autoridade de runtime');
 forbidTerm('perfil-cliente.html', publicClient, 'Responde rápido', 'perfil público não pode alegar responsividade sem métrica canônica');
+forbidTerm('perfil-cliente.html', publicClient, 'data-client-public-action', 'perfil público não pode expor ação sem contrato funcional');
+forbidTerm('perfil-cliente.html', publicClient, '>Seguir</button>', 'perfil público não pode expor seguir sem domínio canônico');
+forbidTerm('perfil-cliente.html', publicClient, '>Mensagem</button>', 'perfil público não pode expor mensagem direta sem criação canônica de conversa');
+forbidTerm('perfil-cliente.html', publicClient, 'Mais ações do perfil', 'perfil público não pode expor menu inexistente');
 
 const ownerClient = read('meu-perfil.html');
 requireTerm('meu-perfil.html', ownerClient, 'data-state-scope="meu-perfil"', 'scope da região de estado deve coincidir com a boundary');
