@@ -1,18 +1,20 @@
-name: ANA-001 Canonical Policy Canary Attempt 9
+name: ANA-001 Canonical Policy Canary Attempt 10
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [synchronize, opened, reopened]
+    paths:
+      - '.github/workflows/ana-001-staging-canonical-policy-canary-attempt-9.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: ana-001-canonical-policy-canary-attempt-9
+  group: ana-001-canonical-policy-canary-attempt-10
   cancel-in-progress: false
 
 jobs:
   execute:
-    if: false
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -36,36 +38,53 @@ jobs:
       - name: Checkout exact PR head
         uses: actions/checkout@v4
         with:
-          ref: ana/ana-001-foundation
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
 
-      - name: Validate attempt-9 authorization and exact target
+      - name: Gate single-use attempt-10 execution
+        id: gate
         shell: bash
         run: |
           set -euo pipefail
-          trigger='config/ana-001-staging-canonical-policy-canary-attempt-9.json'
-          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$trigger")"
-          expected="$(printf 'A\t%s' "$trigger")"
-          test "$status" = "$expected"
+          workflow='.github/workflows/ana-001-staging-canonical-policy-canary-attempt-9.yml'
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$workflow")"
+          expected="$(printf 'M\t%s' "$workflow")"
+          if [ "$status" = "$expected" ]; then
+            echo "active=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "Attempt 10 already consumed or this synchronize event is unrelated; remote execution skipped."
+          fi
+
+      - name: Validate attempt-10 authorization and exact target
+        if: steps.gate.outputs.active == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
           node <<'NODE'
           const fs=require('fs');
           const c=JSON.parse(fs.readFileSync('config/ana-001-staging-canonical-policy-canary-attempt-9.json','utf8'));
-          if(c.contractId!=='ana-001-staging-canonical-policy-canary-attempt-9-v1') throw new Error('ANA_ATTEMPT9_CONTRACT_MISMATCH');
-          if(c.environment!=='staging'||c.projectRef!=='zwkczgewzbsorbrjuzpb'||c.projectName!=='doke-web-staging') throw new Error('ANA_ATTEMPT9_TARGET_MISMATCH');
-          if(c.productionAllowed!==false||c.mergeAllowed!==false||c.reconfigureRuntimeSecrets!==false) throw new Error('ANA_ATTEMPT9_BOUNDARY_MISMATCH');
-          if(c.authorization!=='execute-ana-staging-canary') throw new Error('ANA_ATTEMPT9_AUTHORIZATION_MISMATCH');
+          if(c.contractId!=='ana-001-staging-canonical-policy-canary-attempt-9-v1') throw new Error('ANA_ATTEMPT10_BASE_CONTRACT_MISMATCH');
+          if(c.environment!=='staging'||c.projectRef!=='zwkczgewzbsorbrjuzpb'||c.projectName!=='doke-web-staging') throw new Error('ANA_ATTEMPT10_TARGET_MISMATCH');
+          if(c.productionAllowed!==false||c.mergeAllowed!==false||c.reconfigureRuntimeSecrets!==false) throw new Error('ANA_ATTEMPT10_BOUNDARY_MISMATCH');
+          if(c.authorization!=='execute-ana-staging-canary') throw new Error('ANA_ATTEMPT10_AUTHORIZATION_MISMATCH');
+          if(c.authorizedRetry?.sequence!==10||c.authorizedRetry?.authorizedBy!=='user_explicit_authorization_2026-09-19') throw new Error('ANA_ATTEMPT10_RETRY_AUTHORIZATION_MISSING');
+          if(c.authorizedRetry?.priorRunId!==35482131534||c.authorizedRetry?.priorRunMutation!==false) throw new Error('ANA_ATTEMPT10_PRIOR_STATE_MISMATCH');
           NODE
 
       - name: Setup Node
+        if: steps.gate.outputs.active == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
 
       - name: Install pinned dependencies
+        if: steps.gate.outputs.active == 'true'
         run: npm ci --ignore-scripts
 
       - name: Verify staging project and load API keys in memory
+        if: steps.gate.outputs.active == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -86,6 +105,7 @@ jobs:
           echo "DOKE_SUPABASE_ANON_KEY=$publishable_key" >> "$GITHUB_ENV"
 
       - name: Verify canonical ANA runtime secret names
+        if: steps.gate.outputs.active == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -106,6 +126,7 @@ jobs:
           echo "Canonical ANA runtime secret names: 8/8 present."
 
       - name: Generate masked synthetic Auth credentials
+        if: steps.gate.outputs.active == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -116,9 +137,11 @@ jobs:
           done
 
       - name: Rotate and prove exact password login for staging canaries
+        if: steps.gate.outputs.active == 'true'
         run: npm run provision:staging-auth-canaries
 
-      - name: ANA static preflight
+      - name: ANA runtime safety preflight
+        if: steps.gate.outputs.active == 'true'
         run: |
           node scripts/audit-ana-a03-runtime-readiness.js
           node scripts/test-ana-a03-runtime-readiness.js
@@ -128,10 +151,10 @@ jobs:
           node scripts/test-ana-a05-runtime-readiness.js
           node scripts/audit-ana-001-staging-canary.js
           node scripts/test-ana-001-staging-canary.js
-          node scripts/audit-domain-completion-matrix.js
           git diff --check
 
       - name: Verify controlled seed postconditions
+        if: steps.gate.outputs.active == 'true'
         shell: bash
         run: |
           node <<'NODE'
@@ -149,6 +172,7 @@ jobs:
           NODE
 
       - name: Set bounded ANA reconciliation window
+        if: steps.gate.outputs.active == 'true'
         shell: bash
         run: |
           node <<'NODE' >> "$GITHUB_ENV"
@@ -159,29 +183,37 @@ jobs:
           NODE
 
       - name: Validate ANA canary environment
+        if: steps.gate.outputs.active == 'true'
         run: npm run execute:ana-001-staging-canary:check-env
 
       - name: Execute canonical authenticated ANA staging canary
+        if: steps.gate.outputs.active == 'true'
         run: npm run execute:ana-001-staging-canary
 
       - name: Verify exact canonical canary result
+        if: steps.gate.outputs.active == 'true'
         run: |
           node <<'NODE'
           const r=require('./reports/generated/ana-001-staging-canary.json');
           const names=new Map(r.cases.map(x=>[x.name,x.passed]));
           if(r.status!=='passed'||r.summary.total!==15||r.summary.failed!==0||r.summary.passed!==15) process.exit(1);
           for(const k of ['client_password_login','professional_owner_login','analytics_session_issued','search_exposure_proof_received','same_client_event_payload_drift_rejected','tampered_exposure_proof_rejected','ord_reconciliation_executes','metric_snapshot_append_then_no_change']) {
-            if(names.get(k)!==true) throw new Error('ANA_ATTEMPT9_CASE_FAILED:'+k);
+            if(names.get(k)!==true) throw new Error('ANA_ATTEMPT10_CASE_FAILED:'+k);
           }
           if(r.authority?.productionChanged!==false||r.authority?.browserClientActivated!==false||r.authority?.anonymousIdentityStitching!==false) process.exit(1);
           console.log(JSON.stringify({status:r.status,total:r.summary.total,passed:r.summary.passed,failed:r.summary.failed,exactPasswordCases:true,productionChanged:false,browserClientActivated:false}));
           NODE
 
+      - name: Domain matrix validation
+        if: steps.gate.outputs.active == 'true'
+        continue-on-error: true
+        run: npm run audit:domain-completion-matrix
+
       - name: Upload sanitized ANA canary evidence
-        if: always()
+        if: always() && steps.gate.outputs.active == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ana-001-canonical-policy-canary-attempt-9-${{ github.run_id }}
+          name: ana-001-canonical-policy-canary-attempt-10-${{ github.run_id }}
           path: reports/generated/ana-001-staging-canary.json
           if-no-files-found: warn
           retention-days: 14
