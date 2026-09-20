@@ -46,6 +46,10 @@ forbidTerm('perfil-cliente.html', publicClient, 'data-client-profile-editor', 'p
 forbidTerm('perfil-cliente.html', publicClient, 'client-profile-editor.js', 'perfil público não pode carregar controller de edição');
 forbidTerm('perfil-cliente.html', publicClient, 'data-client-edit-action', 'perfil público não pode conter affordances de edição');
 forbidTerm('perfil-cliente.html', publicClient, 'profile-avatar--editable', 'avatar público não pode usar variante editável');
+requireTerm('perfil-cliente.html', publicClient, '<p class="profile-heading__eyebrow">Perfil de cliente</p>', 'eyebrow público deve ser descritivo, não uma alegação de confiança');
+requireTerm('perfil-cliente.html', publicClient, 'data-profile-verified hidden', 'selo de identidade deve permanecer condicionado ao runtime');
+forbidTerm('perfil-cliente.html', publicClient, 'Cliente verificado', 'perfil público não pode alegar verificação sem autoridade de runtime');
+forbidTerm('perfil-cliente.html', publicClient, 'Responde rápido', 'perfil público não pode alegar responsividade sem métrica canônica');
 
 const ownerClient = read('meu-perfil.html');
 requireTerm('meu-perfil.html', ownerClient, 'data-state-scope="meu-perfil"', 'scope da região de estado deve coincidir com a boundary');
