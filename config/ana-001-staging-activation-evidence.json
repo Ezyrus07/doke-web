@@ -4,8 +4,8 @@
   "environment": "staging",
   "projectRef": "zwkczgewzbsorbrjuzpb",
   "productionTouched": false,
-  "observedAt": "2026-09-19T00:34:01Z",
-  "status": "activation_applied_functional_canary_passed_canonical_policy_still_blocked",
+  "observedAt": "2026-09-20T01:30:35.715Z",
+  "status": "canonical_policy_canary_passed",
   "migrations": [
     {
       "name": "ana_a03_behavioral_event_ledger",
@@ -31,14 +31,14 @@
   "edgeFunctions": [
     {
       "name": "search-public-services-v2",
-      "version": 5,
+      "version": 8,
       "status": "ACTIVE",
       "verifyJwt": false,
       "repositoryParity": true
     },
     {
       "name": "analytics-behavior-v1",
-      "version": 3,
+      "version": 6,
       "status": "ACTIVE",
       "verifyJwt": false,
       "repositoryParity": true
@@ -83,26 +83,32 @@
       "cliente@doke.local",
       "profissional@doke.local"
     ],
-    "present": false,
+    "present": true,
     "sqlProvisioningAllowed": false,
-    "requiredProvisioningPath": "Supabase Admin API via provision-staging-auth-canaries"
+    "requiredProvisioningPath": "Supabase Admin API via provision-staging-auth-canaries",
+    "exactPasswordLoginVerified": true
   },
   "authenticatedCanary": {
     "executed": true,
     "authorizationObserved": true,
     "authorizationPhrase": "execute-ana-staging-canary",
-    "status": "passed_with_transient_staging_policy_shim",
+    "status": "passed",
     "summary": {
       "total": 15,
       "passed": 15,
       "failed": 0
     },
     "reportPath": "reports/generated/ana-001-staging-canary.json",
-    "authenticationMethod": "admin_generateLink_plus_verifyOtp",
-    "exactPasswordLoginProven": false,
-    "transientPolicyShimUsed": true,
-    "canonicalPolicyConfigurationPresent": false,
-    "productionTouched": false
+    "authenticationMethod": "password_login",
+    "exactPasswordLoginProven": true,
+    "transientPolicyShimUsed": false,
+    "canonicalPolicyConfigurationPresent": true,
+    "runtimeSecretNamesVerified": 8,
+    "workflowRunId": 35481347306,
+    "workflowJobId": 105999617853,
+    "productionTouched": false,
+    "browserClientActivated": false,
+    "anonymousIdentityStitching": false
   },
   "advisorNotes": {
     "rlsDefenseInDepth": "Supabase advisor reports RLS-disabled private tables; ANA browser roles have no table grants, so no auto-remediation was applied.",
@@ -114,7 +120,7 @@
   },
   "maturity": {
     "before": 2,
-    "after": 2,
-    "reason": "functional canary passed, but canonical staging policy configuration is still absent and exact password-login path is unproven"
+    "after": 3,
+    "reason": "canonical staging runtime policy is configured and the no-shim 15/15 canary passed with exact password login; production and browser client activation remain blocked"
   }
 }
