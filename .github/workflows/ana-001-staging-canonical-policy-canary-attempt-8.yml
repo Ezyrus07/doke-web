@@ -48,7 +48,7 @@ jobs:
           set -euo pipefail
           trigger='config/ana-001-staging-canonical-policy-canary-attempt-8.json'
           status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$trigger")"
-          test "$status" = 
+          expected="$(printf 'M\\t%s' "$trigger")"\n          test "$status" = "$expected"
           node <<'NODE'
           const fs=require('fs');
           const c=JSON.parse(fs.readFileSync('config/ana-001-staging-canonical-policy-canary-attempt-8.json','utf8'));
