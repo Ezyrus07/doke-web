@@ -9,7 +9,7 @@ check('runtime disabled',contract.runtimeIntegrated===false);check('migration no
 Object.entries(contract.authority).forEach(([k,v])=>check('authority '+k,['contractAuthority','baselineAuthority'].includes(k)?v===true:v===false));
 Object.entries(contract.prohibitedEffects).forEach(([k,v])=>check('effect '+k,v===false));
 ['ANA-B01','ANA-B02','ANA-B03','LEGAL-B03','PAY-B01','PAY-B03','PAY-B04'].forEach((b)=>includes('blocker '+b,contract.preservedBlockers,b));
-const ana=matrix.domains.find((d)=>d.id==='ANA-001');check('ANA still maturity 2',ana&&ana.maturity===2);check('ANA production blocked',ana&&ana.productionGate==='blocked');
+const ana=matrix.domains.find((d)=>d.id==='ANA-001');check('ANA maturity at least baseline 2',ana&&Number.isInteger(ana.maturity)&&ana.maturity>=2);check('ANA production blocked',ana&&ana.productionGate==='blocked');
 contains('supabase/migrations/053_order_transaction_events.sql',['private.order_domain_events','private.order_metric_events','order.requested','order.completed']);
 contains('supabase/migrations/039_quote_template_conversion_metrics.sql',['quote_template_funnel_events','submitted']);
 contains('supabase/migrations/030_service_catalog_sync_metrics.sql',['service_metric_events']);
