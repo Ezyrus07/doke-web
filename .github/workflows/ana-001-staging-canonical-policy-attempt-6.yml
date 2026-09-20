@@ -1,0 +1,241 @@
+name: ANA-001 Canonical Staging Policy and Canary Attempt 6
+
+on:
+  push:
+    branches:
+      - ana/ana-001-foundation
+    paths:
+      - 'config/ana-001-staging-canonical-policy-attempt-6.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ana-001-staging-canonical-policy-attempt-6
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DOKE_ENVIRONMENT: staging
+      DOKE_SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      DOKE_STAGING_CLIENT_EMAIL: cliente@doke.local
+      DOKE_STAGING_PROFESSIONAL_EMAIL: profissional@doke.local
+      DOKE_STAGING_SUPPORT_EMAIL: suporte@doke.local
+      DOKE_STAGING_ADMIN_EMAIL: admin@doke.local
+      DOKE_STAGING_AUTH_PROVISION_CONFIRM: provision-staging-auth-canaries
+      DOKE_ANA_STAGING_CANARY_CONFIRM: execute-ana-staging-canary
+      DOKE_ANA_STAGING_SEARCH_QUERY: Pintura
+      DOKE_ANA_STAGING_SEARCH_SERVICE_ID: 55555555-5555-4555-8555-555555555555
+      DOKE_ANA_STAGING_SERVICE_ID: 55555555-5555-4555-8555-555555555555
+      DOKE_ANA_STAGING_OWNER_SERVICE_ID: 55555555-5555-4555-8555-555555555555
+      DOKE_ANA_STAGING_ORDER_ID: 66666666-6666-4666-8666-666666666666
+    steps:
+      - name: Checkout exact authorization commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Validate single-use staging authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          trigger='config/ana-001-staging-canonical-policy-attempt-6.json'
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$trigger")"
+          test "$status" = $'A\t'"$trigger"
+          node <<'NODE'
+          const fs=require('fs');
+          const c=JSON.parse(fs.readFileSync('config/ana-001-staging-canonical-policy-attempt-6.json','utf8'));
+          if(c.contractId!=='ana-001-staging-canonical-policy-attempt-6-v1') throw new Error('ANA_ATTEMPT6_CONTRACT_MISMATCH');
+          if(c.environment!=='staging'||c.projectRef!=='zwkczgewzbsorbrjuzpb'||c.productionAllowed!==false) throw new Error('ANA_ATTEMPT6_TARGET_MISMATCH');
+          if(c.authorizedBy!=='user_explicit_authorization_2026-09-19') throw new Error('ANA_ATTEMPT6_AUTHORIZATION_MISSING');
+          if(c.scope?.configureCanonicalRuntimePolicy!==true||c.scope?.executeAuthenticatedCanary!==true) throw new Error('ANA_ATTEMPT6_SCOPE_MISMATCH');
+          if(c.scope?.migration!==false||c.scope?.productionMutation!==false||c.scope?.merge!==false) throw new Error('ANA_ATTEMPT6_BOUNDARY_MISMATCH');
+          NODE
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify exact staging project and load API keys in memory
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}"
+          project_json="$(curl -fsS "https://api.supabase.com/v1/projects/${DOKE_SUPABASE_PROJECT_REF}" -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")"
+          test "$(jq -r '.id' <<<"$project_json")" = "${DOKE_SUPABASE_PROJECT_REF}"
+          test "$(jq -r '.name' <<<"$project_json")" = "doke-web-staging"
+          keys_json="$(curl -fsS "https://api.supabase.com/v1/projects/${DOKE_SUPABASE_PROJECT_REF}/api-keys?reveal=true" -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")"
+          secret_key="$(jq -r '[.[] | select(.type=="secret" and .disabled!=true)][0].api_key // [.[] | select(.name=="service_role" and .disabled!=true)][0].api_key // empty' <<<"$keys_json")"
+          publishable_key="$(jq -r '[.[] | select(.type=="publishable" and .disabled!=true)][0].api_key // [.[] | select(.name=="anon" and .disabled!=true)][0].api_key // empty' <<<"$keys_json")"
+          test -n "$secret_key"
+          test -n "$publishable_key"
+          echo "::add-mask::$secret_key"
+          echo "::add-mask::$publishable_key"
+          echo "DOKE_SUPABASE_URL=https://${DOKE_SUPABASE_PROJECT_REF}.supabase.co" >> "$GITHUB_ENV"
+          echo "DOKE_SUPABASE_SECRET_KEY=$secret_key" >> "$GITHUB_ENV"
+          echo "DOKE_SUPABASE_ANON_KEY=$publishable_key" >> "$GITHUB_ENV"
+
+      - name: Configure canonical ANA staging runtime policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          session_secret="$(node -e "const c=require('crypto');process.stdout.write(c.randomBytes(32).toString('base64url'))")"
+          exposure_secret="$(node -e "const c=require('crypto');process.stdout.write(c.randomBytes(32).toString('base64url'))")"
+          echo "::add-mask::$session_secret"
+          echo "::add-mask::$exposure_secret"
+
+          body="$(jq -cn \
+            --arg s "$session_secret" \
+            --arg e "$exposure_secret" \
+            '[
+              {name:"DOKE_ANALYTICS_SESSION_SECRET",value:$s},
+              {name:"DOKE_ANALYTICS_EXPOSURE_SECRET",value:$e},
+              {name:"DOKE_ANALYTICS_SESSION_TTL_SECONDS",value:"1800"},
+              {name:"DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS",value:"3600"},
+              {name:"DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS",value:"300"},
+              {name:"DOKE_ANALYTICS_RATE_LIMIT",value:"120"},
+              {name:"DOKE_ANALYTICS_RATE_WINDOW_SECONDS",value:"60"},
+              {name:"DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS",value:"60"}
+            ]')"
+
+          http_code="$(curl -sS -o /tmp/ana-secret-response.json -w '%{http_code}' \
+            "https://api.supabase.com/v1/projects/${DOKE_SUPABASE_PROJECT_REF}/secrets" \
+            --request POST \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "$body")"
+          test "$http_code" = "201"
+
+          secret_list="$(curl -fsS "https://api.supabase.com/v1/projects/${DOKE_SUPABASE_PROJECT_REF}/secrets" -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")"
+          for name in \
+            DOKE_ANALYTICS_SESSION_SECRET \
+            DOKE_ANALYTICS_EXPOSURE_SECRET \
+            DOKE_ANALYTICS_SESSION_TTL_SECONDS \
+            DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS \
+            DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS \
+            DOKE_ANALYTICS_RATE_LIMIT \
+            DOKE_ANALYTICS_RATE_WINDOW_SECONDS \
+            DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS
+          do
+            jq -e --arg name "$name" 'any(.[]; .name == $name)' <<<"$secret_list" >/dev/null
+          done
+
+          mkdir -p reports/generated
+          node <<'NODE'
+          const fs=require('fs');
+          fs.writeFileSync('reports/generated/ana-001-staging-policy-activation.json',JSON.stringify({
+            contractId:'ana-001-staging-canonical-policy-attempt-6-v1',
+            environment:'staging',
+            projectRef:'zwkczgewzbsorbrjuzpb',
+            policyVersion:'ana-runtime-policy-v1',
+            configuredNames:[
+              'DOKE_ANALYTICS_SESSION_SECRET',
+              'DOKE_ANALYTICS_EXPOSURE_SECRET',
+              'DOKE_ANALYTICS_SESSION_TTL_SECONDS',
+              'DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS',
+              'DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS',
+              'DOKE_ANALYTICS_RATE_LIMIT',
+              'DOKE_ANALYTICS_RATE_WINDOW_SECONDS',
+              'DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS'
+            ],
+            policyValues:{
+              DOKE_ANALYTICS_SESSION_TTL_SECONDS:1800,
+              DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS:3600,
+              DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS:300,
+              DOKE_ANALYTICS_RATE_LIMIT:120,
+              DOKE_ANALYTICS_RATE_WINDOW_SECONDS:60,
+              DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS:60
+            },
+            secretValuesExposed:false,
+            productionTouched:false
+          },null,2)+'\n');
+          NODE
+
+      - name: Generate masked synthetic Auth credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for role in CLIENT PROFESSIONAL SUPPORT ADMIN; do
+            password="$(node -e "const c=require('crypto');process.stdout.write('Dk!'+c.randomBytes(24).toString('base64url')+'9a')")"
+            echo "::add-mask::$password"
+            echo "DOKE_STAGING_${role}_PASSWORD=$password" >> "$GITHUB_ENV"
+          done
+
+      - name: Rotate and verify staging Auth canaries
+        run: npm run provision:staging-auth-canaries
+
+      - name: ANA repository preflight
+        run: |
+          node scripts/audit-ana-a03-runtime-readiness.js
+          node scripts/test-ana-a03-runtime-readiness.js
+          node scripts/audit-ana-a04-runtime-readiness.js
+          node scripts/test-ana-a04-runtime-readiness.js
+          node scripts/audit-ana-a05-runtime-readiness.js
+          node scripts/test-ana-a05-runtime-readiness.js
+          node scripts/audit-ana-001-staging-canary.js
+          node scripts/test-ana-001-staging-canary.js
+
+      - name: Verify controlled seed postconditions
+        shell: bash
+        run: |
+          node <<'NODE'
+          const {createClient}=require('@supabase/supabase-js');
+          (async()=>{
+            const s=createClient(process.env.DOKE_SUPABASE_URL,process.env.DOKE_SUPABASE_SECRET_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+            const svc=await s.from('services').select('id,status,moderation_status,approved_version_id').eq('id',process.env.DOKE_ANA_STAGING_SERVICE_ID).single();
+            if(svc.error||!svc.data||svc.data.status!=='published'||svc.data.moderation_status!=='published'||!svc.data.approved_version_id) throw new Error('ANA_SEED_SERVICE_POSTCONDITION_FAILED');
+            const ord=await s.from('orders').select('id,service_id,service_version_id,metadata').eq('id',process.env.DOKE_ANA_STAGING_ORDER_ID).single();
+            if(ord.error||!ord.data||ord.data.service_id!==process.env.DOKE_ANA_STAGING_SERVICE_ID||!ord.data.service_version_id||ord.data.metadata?.serviceSnapshotAuthority!=='approved_service_version') throw new Error('ANA_SEED_ORDER_POSTCONDITION_FAILED');
+            console.log(JSON.stringify({service:'ready',order:'ready'}));
+          })().catch((e)=>{console.error(e.message);process.exit(1)});
+          NODE
+
+      - name: Set bounded ANA reconciliation window
+        shell: bash
+        run: |
+          node <<'NODE' >> "$GITHUB_ENV"
+          const end=new Date(Date.now()+5*60_000);
+          const start=new Date(Date.now()-2*60*60_000);
+          console.log('DOKE_ANA_STAGING_WINDOW_START='+start.toISOString());
+          console.log('DOKE_ANA_STAGING_WINDOW_END='+end.toISOString());
+          NODE
+
+      - name: Validate ANA canary environment
+        run: npm run execute:ana-001-staging-canary:check-env
+
+      - name: Execute canonical authenticated ANA staging canary
+        run: npm run execute:ana-001-staging-canary
+
+      - name: Verify canonical pass without transient shim
+        shell: bash
+        run: |
+          node <<'NODE'
+          const r=require('./reports/generated/ana-001-staging-canary.json');
+          if(r.status!=='passed'||r.summary.failed!==0||r.summary.passed!==r.summary.total) process.exit(1);
+          const method=typeof r.authenticationMethod==='string'?r.authenticationMethod:r.authenticationMethod?.executed;
+          if(method!=='password_login') process.exit(2);
+          if(r.transientPolicyShim?.used===true) process.exit(3);
+          if(r.finalRuntimeState?.canonicalPolicyConfigurationPresent!==true) process.exit(4);
+          NODE
+
+      - name: Upload sanitized ANA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ana-001-canonical-policy-attempt-6-${{ github.run_id }}
+          path: |
+            reports/generated/ana-001-staging-policy-activation.json
+            reports/generated/ana-001-staging-canary.json
+          if-no-files-found: warn
+          retention-days: 14
