@@ -1,10 +1,7 @@
 name: ANA-001 Canonical Policy Canary Attempt 9
 
 on:
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - 'config/ana-001-staging-canonical-policy-canary-attempt-9.json'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +12,7 @@ concurrency:
 
 jobs:
   execute:
-    if: github.event.pull_request.number == 488 && github.event.pull_request.head.ref == 'ana/ana-001-foundation' && github.event.pull_request.head.repo.full_name == github.repository
+    if: false
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -39,7 +36,7 @@ jobs:
       - name: Checkout exact PR head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ana/ana-001-foundation
           fetch-depth: 2
 
       - name: Validate attempt-9 authorization and exact target
