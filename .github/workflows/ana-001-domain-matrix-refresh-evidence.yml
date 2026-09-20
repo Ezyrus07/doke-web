@@ -1,0 +1,44 @@
+name: ANA-001 Domain Matrix Refresh Evidence
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+    paths:
+      - '.github/workflows/ana-001-domain-matrix-refresh-evidence.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    if: github.event.pull_request.number == 488 && github.event.pull_request.head.ref == 'ana/ana-001-foundation' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Generate canonical domain matrix
+        run: npm run write:domain-completion-matrix
+      - name: Validate generated matrix
+        run: |
+          npm run audit:domain-completion-matrix
+          git diff --check
+          git status --short
+      - name: Upload generated matrix evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ana-001-domain-matrix-refresh-${{ github.run_id }}
+          path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
+          if-no-files-found: error
+          retention-days: 7
