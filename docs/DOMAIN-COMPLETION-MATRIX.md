@@ -6,7 +6,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
-- Maturidade média atual: **2.91/6**.
+- Maturidade média atual: **2.96/6**.
 - Bloqueadores críticos explícitos: **12**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
@@ -41,8 +41,8 @@ RLS habilitado, mas sem policy: .
 | ---: | --- | ---: |
 | 0 | not started | 1 |
 | 1 | foundation only | 2 |
-| 2 | local functional | 4 |
-| 3 | staging canary or hybrid | 7 |
+| 2 | local functional | 3 |
+| 3 | staging canary or hybrid | 8 |
 | 4 | staging operational | 9 |
 | 5 | private beta ready | 0 |
 | 6 | production ready | 0 |
@@ -69,7 +69,7 @@ RLS habilitado, mas sem policy: .
 | 16 | CONTENT-001 | Workers, publicações, mídia e feed social | 2/6 | local | contract only | local e2e | blocked | blocked |
 | 17 | ADM-001 | Administração, suporte e moderação | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 18 | REL-001 | Observabilidade, incidentes, SLOs e proteção de mudanças | 4/6 | remote | canonical | staging operational | passed | candidate |
-| 19 | ANA-001 | Analytics, funil e economia do marketplace | 2/6 | hybrid | partial | local e2e | partial | blocked |
+| 19 | ANA-001 | Analytics, funil e economia do marketplace | 3/6 | hybrid | partial | staging canary | partial | blocked |
 | 20 | LEGAL-001 | Jurídico, privacidade, confiança e políticas comerciais | 1/6 | local | none | absent | blocked | blocked |
 | 21 | WEB-001 | Fechamento do web, acessibilidade e performance | 3/6 | hybrid | partial | local e2e | partial | blocked |
 | 22 | APP-001 | Aplicativos Android e iOS | 0/6 | local | none | absent | blocked | blocked |
@@ -1054,7 +1054,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Measure liquidity, conversion, retention, GMV and unit economics using trustworthy events.
 
-**Estado:** maturidade 2/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
+**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
 **Evidência estática observada:** 28 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
@@ -1070,25 +1070,26 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A03 materializes server-owned session, exposure-proof, semantic-dedup and privacy boundaries while anonymous identity stitching remains disabled behind LEGAL-B03.
 - ANA-A04 defines deterministic funnel, liquidity, outcome and retention projections; financial metrics remain explicitly unavailable while PAY is non-canonical.
 - ANA-A05 defines source/projection fingerprints, reconciliation, freshness, append-only revisions, backfill contracts and objective maturity gates.
-- ANA-A03 server runtime is deployed in staging with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; canonical policy variables are not yet configured.
+- ANA-A03 server runtime is deployed in staging with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; canonical runtime policy secrets and values are configured.
 - ANA-A04 server projection runtime and append-only metric snapshot schema are applied in staging and were exercised by the functional synthetic canary.
 - ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are applied in staging; reconciliation and unchanged-fingerprint no-op behavior passed the functional synthetic canary.
 - ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default.
 - ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization.
 - ANA now has a staging-only synthetic canary runner covering signed exposure, replay conflict, tamper rejection, owner exclusion, quote linkage, A04 projection and A05 reconciliation; CI is restricted to dry-run and never executes remote mutations.
-- Staging activation applied on doke-web-staging: five ANA migrations/follow-ups are present and Edge functions search-public-services-v2 v5 plus analytics-behavior-v1 v3 match repository files.
-- ANA functional staging canary passed 15/15 using synthetic Auth sessions and a transient staging-only policy shim; canonical Edge code was restored with full repository parity afterward. This evidence does not promote maturity because canonical runtime policy secrets remain absent and the exact password-login path was not proven.
+- Staging activation is present on doke-web-staging: five ANA migrations/follow-ups are applied and the current Search and analytics Edge runtimes are active.
+- ANA canonical staging canary run 35481347306 passed 15/15 without a policy shim, proving exact password login, signed exposure, replay/idempotency, tamper rejection, owner exclusion, quote linkage, ORD reconciliation and metric no-change behavior.
 - ANA-B01 canonical technical runtime policy is versioned in the staging-readiness contract: session TTL 1800s, quote TTL 3600s, exposure TTL 300s, rate limit 120/60s and semantic dedup 60s. These are security/integrity controls, not LEGAL-B03 data-retention authority.
+- The canonical canary kept production unchanged, browser analytics disabled and anonymous identity stitching disabled; a read-only event-window check found no prohibited PII dimension keys.
 
 **Bloqueadores:**
-- **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are materialized; canonical staging secret configuration and exact password-login canary remain incomplete, while consent/retention/anonymization remain blocked by LEGAL-B03. _(Fase 15)_
+- **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
 - **ANA-B02 · HIGH · business_metrics:** Core ORD-derived marketplace projections are applied and functionally exercised in staging, but PAY-backed GMV/take rate and downstream CAC/LTV remain unavailable until PAY becomes canonical. _(Fase 15)_
 
 **Próximas ações:**
-- Configure versioned DOKE_ANALYTICS_SESSION_SECRET and DOKE_ANALYTICS_EXPOSURE_SECRET plus the approved ANA runtime policy values in the staging Edge environment through an approved secret-management path.
-- Rerun ANA-001 staging canary against the canonical Edge deployment without any policy shim and prove the exact password-login path.
-- If that canonical canary passes, update stagingEvidence to staging_canary_or_hybrid and reassess maturity 3/6.
-- Review defense-in-depth RLS policies and covering indexes separately from the maturity promotion.
+- Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
+- Review defense-in-depth RLS policies and the identified covering indexes without weakening the service-role/RPC write boundary.
+- Operationalize the maturity-4 funnel, CAT supply/liquidity, retention, freshness and data-quality ownership gates as separately governed sublots.
+- Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
 **Gate de saída:**
 - Core funnel metrics reconcile with transactional tables.
