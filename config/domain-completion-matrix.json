@@ -3260,10 +3260,10 @@
       "name": "Analytics, funil e economia do marketplace",
       "wave": "C",
       "priority": 19,
-      "maturity": 2,
+      "maturity": 3,
       "userFacingAuthority": "hybrid",
       "serverAuthority": "partial",
-      "stagingEvidence": "local_e2e",
+      "stagingEvidence": "staging_canary_or_hybrid",
       "securityGate": "partial",
       "productionGate": "blocked",
       "objective": "Measure liquidity, conversion, retention, GMV and unit economics using trustworthy events.",
@@ -3378,22 +3378,23 @@
         "ANA-A03 materializes server-owned session, exposure-proof, semantic-dedup and privacy boundaries while anonymous identity stitching remains disabled behind LEGAL-B03.",
         "ANA-A04 defines deterministic funnel, liquidity, outcome and retention projections; financial metrics remain explicitly unavailable while PAY is non-canonical.",
         "ANA-A05 defines source/projection fingerprints, reconciliation, freshness, append-only revisions, backfill contracts and objective maturity gates.",
-        "ANA-A03 server runtime is deployed in staging with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; canonical policy variables are not yet configured.",
+        "ANA-A03 server runtime is deployed in staging with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; canonical runtime policy secrets and values are configured.",
         "ANA-A04 server projection runtime and append-only metric snapshot schema are applied in staging and were exercised by the functional synthetic canary.",
         "ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are applied in staging; reconciliation and unchanged-fingerprint no-op behavior passed the functional synthetic canary.",
         "ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default.",
         "ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization.",
         "ANA now has a staging-only synthetic canary runner covering signed exposure, replay conflict, tamper rejection, owner exclusion, quote linkage, A04 projection and A05 reconciliation; CI is restricted to dry-run and never executes remote mutations.",
-        "Staging activation applied on doke-web-staging: five ANA migrations/follow-ups are present and Edge functions search-public-services-v2 v5 plus analytics-behavior-v1 v3 match repository files.",
-        "ANA functional staging canary passed 15/15 using synthetic Auth sessions and a transient staging-only policy shim; canonical Edge code was restored with full repository parity afterward. This evidence does not promote maturity because canonical runtime policy secrets remain absent and the exact password-login path was not proven.",
-        "ANA-B01 canonical technical runtime policy is versioned in the staging-readiness contract: session TTL 1800s, quote TTL 3600s, exposure TTL 300s, rate limit 120/60s and semantic dedup 60s. These are security/integrity controls, not LEGAL-B03 data-retention authority."
+        "Staging activation is present on doke-web-staging: five ANA migrations/follow-ups are applied and the current Search and analytics Edge runtimes are active.",
+        "ANA canonical staging canary run 35481347306 passed 15/15 without a policy shim, proving exact password login, signed exposure, replay/idempotency, tamper rejection, owner exclusion, quote linkage, ORD reconciliation and metric no-change behavior.",
+        "ANA-B01 canonical technical runtime policy is versioned in the staging-readiness contract: session TTL 1800s, quote TTL 3600s, exposure TTL 300s, rate limit 120/60s and semantic dedup 60s. These are security/integrity controls, not LEGAL-B03 data-retention authority.",
+        "The canonical canary kept production unchanged, browser analytics disabled and anonymous identity stitching disabled; a read-only event-window check found no prohibited PII dimension keys."
       ],
       "blockers": [
         {
           "id": "ANA-B01",
           "severity": "high",
           "category": "event_model",
-          "description": "Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are materialized; canonical staging secret configuration and exact password-login canary remain incomplete, while consent/retention/anonymization remain blocked by LEGAL-B03.",
+          "description": "Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03.",
           "targetPhase": "Fase 15"
         },
         {
@@ -3405,10 +3406,10 @@
         }
       ],
       "nextActions": [
-        "Configure versioned DOKE_ANALYTICS_SESSION_SECRET and DOKE_ANALYTICS_EXPOSURE_SECRET plus the approved ANA runtime policy values in the staging Edge environment through an approved secret-management path.",
-        "Rerun ANA-001 staging canary against the canonical Edge deployment without any policy shim and prove the exact password-login path.",
-        "If that canonical canary passes, update stagingEvidence to staging_canary_or_hybrid and reassess maturity 3/6.",
-        "Review defense-in-depth RLS policies and covering indexes separately from the maturity promotion."
+        "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
+        "Review defense-in-depth RLS policies and the identified covering indexes without weakening the service-role/RPC write boundary.",
+        "Operationalize the maturity-4 funnel, CAT supply/liquidity, retention, freshness and data-quality ownership gates as separately governed sublots.",
+        "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
       ],
       "exitCriteria": [
         "Core funnel metrics reconcile with transactional tables.",
