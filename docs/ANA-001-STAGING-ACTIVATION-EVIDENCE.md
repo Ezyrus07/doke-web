@@ -60,3 +60,25 @@ The browser analytics client remains disabled by default. Production remains unt
 ## Maturity decision
 
 ANA-001 now has canonical staging canary evidence and qualifies for **3/6 — staging canary or hybrid**. This promotion does not imply production readiness. PAY-backed GMV/take rate and downstream CAC/LTV remain unavailable until PAY is canonical, and privacy lifecycle decisions remain blocked by `LEGAL-B03`.
+
+## Defense-in-depth hardening preflight
+
+A fresh read-only staging inspection after the 3/6 promotion found that the four private ANA runtime tables remain protected by schema/grant boundaries and server-only RPC authority, but do not yet have RLS enabled:
+
+- `private.analytics_behavior_events_v1`;
+- `private.analytics_metric_snapshots_v1`;
+- `private.analytics_reconciliation_runs_v1`;
+- `private.analytics_data_quality_rollups_v1`.
+
+This is not a current browser exposure: `anon` and `authenticated` have no direct table grants. `service_role` has direct `SELECT` only on the ANA private tables, while canonical writes are performed through postgres-owned `SECURITY DEFINER` RPCs. Both `postgres` and `service_role` have `BYPASSRLS` in staging.
+
+The Supabase performance advisor also reports three ANA foreign keys without covering indexes:
+
+- `private.analytics_behavior_events_v1(order_id)`;
+- `private.analytics_data_quality_rollups_v1(source_run_id)`;
+- `private.analytics_metric_snapshots_v1(supersedes_snapshot_id)`.
+
+The repository-only hardening contract is `config/ana-001-defense-in-depth-hardening-readiness.json`. It plans exactly four `ENABLE ROW LEVEL SECURITY` statements and three idempotent single-column covering indexes. It explicitly forbids `FORCE ROW LEVEL SECURITY`, new RLS policies, grant expansion, frontend activation, Edge deployment, identity stitching and production mutation.
+
+No hardening migration file exists in this lot and no staging mutation was authorized or executed. The future migration may be created and applied only after the explicit authorization phrase recorded by the contract; generic continuation is not accepted.
+
