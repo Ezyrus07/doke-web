@@ -7,11 +7,14 @@ on:
       - '.github/workflows/ana-001-domain-matrix-refresh-evidence.yml'
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: ana-001-domain-matrix-refresh-apply
+  cancel-in-progress: false
 
 jobs:
   generate:
-    if: github.event.pull_request.number == 488 && github.event.pull_request.head.ref == 'ana/ana-001-foundation' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -19,21 +22,63 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+
+      - name: Gate single-use generated matrix apply
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow='.github/workflows/ana-001-domain-matrix-refresh-evidence.yml'
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$workflow")"
+          expected="$(printf 'M\t%s' "$workflow")"
+          if [ "$status" = "$expected" ]; then
+            echo "active=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "Generated-matrix apply already consumed or unrelated synchronize event; write skipped."
+          fi
+
       - name: Setup Node
+        if: steps.gate.outputs.active == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
+
       - name: Install pinned dependencies
+        if: steps.gate.outputs.active == 'true'
         run: npm ci --ignore-scripts
+
       - name: Generate canonical domain matrix
+        if: steps.gate.outputs.active == 'true'
         run: npm run write:domain-completion-matrix
+
       - name: Validate generated matrix
+        if: steps.gate.outputs.active == 'true'
         run: |
           npm run audit:domain-completion-matrix
           git diff --check
-          git status --short
+
+      - name: Commit generated matrix only
+        if: steps.gate.outputs.active == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "Generated matrix already canonical."
+            exit 0
+          fi
+          changed="$(git diff --cached --name-only)"
+          test "$changed" = $'docs/DOMAIN-COMPLETION-MATRIX.md\nreports/generated/domain-completion-matrix-report.json'
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git commit -m "ANA-001: sync generated matrix after staging promotion"
+          git push origin HEAD:ana/ana-001-foundation
+
       - name: Upload generated matrix evidence
+        if: always() && steps.gate.outputs.active == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ana-001-domain-matrix-refresh-${{ github.run_id }}
