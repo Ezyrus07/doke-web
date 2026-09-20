@@ -1,0 +1,171 @@
+{
+  "contractId": "ana-001-defense-in-depth-hardening-readiness-v1",
+  "domain": "ANA-001",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "sourceHead": "e569122a8b059a6b1fa473a021a9f86162424ec0",
+  "scope": "repository_only_preflight",
+  "status": "repository_preflight_ready_staging_migration_not_authorized",
+  "productionAllowed": false,
+  "stagingMutationAllowed": false,
+  "migrationAuthorized": false,
+  "genericContinuationAccepted": false,
+  "requiredExplicitAuthorization": "authorize-ana-hardening-staging-migration",
+  "objective": "Add defense-in-depth RLS to the four private ANA runtime tables and add three FK covering indexes without changing browser authority, RPC authority, data semantics, or production state.",
+  "rootCause": {
+    "security": "ANA runtime tables are private and browser roles have no direct table grants, but RLS is disabled on all four tables; current safety therefore relies on schema/grant boundaries and server-only RPC authority rather than an additional row-security layer.",
+    "performance": "Three ANA foreign keys have no leading covering index and are reported by the Supabase performance advisor."
+  },
+  "observedReadOnlyStaging": {
+    "observedAt": "2026-09-20",
+    "tables": {
+      "private.analytics_behavior_events_v1": {
+        "rlsEnabled": false,
+        "forceRls": false,
+        "anonDirectTableGrant": false,
+        "authenticatedDirectTableGrant": false,
+        "serviceRoleDirectPrivileges": ["SELECT"]
+      },
+      "private.analytics_metric_snapshots_v1": {
+        "rlsEnabled": false,
+        "forceRls": false,
+        "anonDirectTableGrant": false,
+        "authenticatedDirectTableGrant": false,
+        "serviceRoleDirectPrivileges": ["SELECT"]
+      },
+      "private.analytics_reconciliation_runs_v1": {
+        "rlsEnabled": false,
+        "forceRls": false,
+        "anonDirectTableGrant": false,
+        "authenticatedDirectTableGrant": false,
+        "serviceRoleDirectPrivileges": ["SELECT"]
+      },
+      "private.analytics_data_quality_rollups_v1": {
+        "rlsEnabled": false,
+        "forceRls": false,
+        "anonDirectTableGrant": false,
+        "authenticatedDirectTableGrant": false,
+        "serviceRoleDirectPrivileges": ["SELECT"]
+      }
+    },
+    "roles": {
+      "postgres": {"bypassRls": true},
+      "service_role": {"bypassRls": true},
+      "anon": {"bypassRls": false},
+      "authenticated": {"bypassRls": false}
+    },
+    "writerFunctions": [
+      {
+        "name": "public.record_analytics_behavior_event_v1(jsonb)",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "directExecuteRoles": ["postgres", "service_role"]
+      },
+      {
+        "name": "public.append_analytics_metric_snapshot_v1(jsonb)",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "directExecuteRoles": ["postgres", "service_role"]
+      },
+      {
+        "name": "public.run_analytics_order_reconciliation_v1(timestamptz,timestamptz)",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "directExecuteRoles": ["postgres", "service_role"]
+      },
+      {
+        "name": "public.compute_analytics_order_health_v1(timestamptz,timestamptz,text,text)",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "directExecuteRoles": ["postgres", "service_role"]
+      }
+    ],
+    "missingCoveringIndexes": [
+      {
+        "table": "private.analytics_behavior_events_v1",
+        "foreignKey": "analytics_behavior_events_v1_order_id_fkey",
+        "columns": ["order_id"]
+      },
+      {
+        "table": "private.analytics_data_quality_rollups_v1",
+        "foreignKey": "analytics_data_quality_rollups_v1_source_run_id_fkey",
+        "columns": ["source_run_id"]
+      },
+      {
+        "table": "private.analytics_metric_snapshots_v1",
+        "foreignKey": "analytics_metric_snapshots_v1_supersedes_snapshot_id_fkey",
+        "columns": ["supersedes_snapshot_id"]
+      }
+    ]
+  },
+  "plannedChanges": {
+    "enableRls": [
+      "private.analytics_behavior_events_v1",
+      "private.analytics_metric_snapshots_v1",
+      "private.analytics_reconciliation_runs_v1",
+      "private.analytics_data_quality_rollups_v1"
+    ],
+    "forceRls": false,
+    "createPolicies": false,
+    "preserveExistingGrants": true,
+    "indexes": [
+      {
+        "name": "analytics_behavior_events_order_id_idx",
+        "table": "private.analytics_behavior_events_v1",
+        "columns": ["order_id"]
+      },
+      {
+        "name": "analytics_dq_rollups_source_run_id_idx",
+        "table": "private.analytics_data_quality_rollups_v1",
+        "columns": ["source_run_id"]
+      },
+      {
+        "name": "analytics_metric_snapshots_supersedes_id_idx",
+        "table": "private.analytics_metric_snapshots_v1",
+        "columns": ["supersedes_snapshot_id"]
+      }
+    ],
+    "plannedSql": [
+      "alter table private.analytics_behavior_events_v1 enable row level security;",
+      "alter table private.analytics_metric_snapshots_v1 enable row level security;",
+      "alter table private.analytics_reconciliation_runs_v1 enable row level security;",
+      "alter table private.analytics_data_quality_rollups_v1 enable row level security;",
+      "create index if not exists analytics_behavior_events_order_id_idx on private.analytics_behavior_events_v1 (order_id);",
+      "create index if not exists analytics_dq_rollups_source_run_id_idx on private.analytics_data_quality_rollups_v1 (source_run_id);",
+      "create index if not exists analytics_metric_snapshots_supersedes_id_idx on private.analytics_metric_snapshots_v1 (supersedes_snapshot_id);"
+    ]
+  },
+  "preservedAuthorities": {
+    "browserDirectCanonicalTableAccess": false,
+    "browserDirectCanonicalInsert": false,
+    "serviceRoleSelectOnlyOnTables": true,
+    "serverSideRpcWriteBoundary": true,
+    "securityDefinerOwner": "postgres",
+    "forceRlsAllowed": false,
+    "newRlsPoliciesAllowed": false,
+    "grantExpansionAllowed": false,
+    "edgeDeploymentAllowed": false,
+    "frontendActivationAllowed": false,
+    "anonymousIdentityStitchingAllowed": false,
+    "productionMutationAllowed": false
+  },
+  "plannedMigration": {
+    "filePresent": false,
+    "path": "supabase/migrations/20260920090000_ana_001_private_table_defense_in_depth.sql",
+    "creationRequiresExplicitAuthorization": true,
+    "applicationRequiresExplicitAuthorization": true
+  },
+  "validationPlan": [
+    "repository audit and negative conformance tests",
+    "domain completion matrix audit",
+    "agent governance audit",
+    "git diff hygiene",
+    "before any staging write: re-read current grants, RLS flags, function owner/security-definer posture and missing-index state",
+    "after any future staging migration: prove four RLS flags true, FORCE RLS false, anon/auth grants unchanged, service-role/RPC canary still passes, and three advisor index findings are cleared"
+  ],
+  "rollbackContainment": {
+    "currentLotRuntimeRollbackRequired": false,
+    "reason": "This lot is repository-only and does not mutate staging or production.",
+    "futureMigrationRollbackRequiresNewAuthorization": true
+  }
+}
