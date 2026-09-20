@@ -1,30 +1,62 @@
 # ANA-001 — Staging Activation Evidence
 
-The staging runtime has been activated without touching production.
+The canonical ANA staging runtime is activated and validated without touching production.
 
 Applied database migrations:
-- ANA-A03 behavioral event ledger
-- ANA-A04 metric projection runtime
-- ANA-A05 reconciliation runtime
-- A03 server-event idempotency hardening follow-up
-- A05 event-key and immutable-dimension reconciliation hardening follow-up
+- ANA-A03 behavioral event ledger;
+- ANA-A04 metric projection runtime;
+- ANA-A05 reconciliation runtime;
+- A03 server-event idempotency hardening follow-up;
+- A05 event-key and immutable-dimension reconciliation hardening follow-up.
 
-Edge runtime:
-- `search-public-services-v2` is active at version 5.
-- `analytics-behavior-v1` is active at version 3.
-- All deployed function files matched the repository branch after deployment.
+Current Edge runtime observed after canonical policy configuration:
+- `search-public-services-v2` is ACTIVE at version 8 with `verify_jwt=false`;
+- `analytics-behavior-v1` is ACTIVE at version 6 with `verify_jwt=false`.
 
-Security post-check:
-- `anon` and `authenticated` have no SELECT or INSERT grants on the four ANA private tables.
-- `service_role` retains read-only table access; writes stay behind controlled RPCs.
-- Supabase still reports RLS-disabled private tables as a defense-in-depth advisory. No blanket RLS migration was applied because that requires explicit policy design.
+The eight canonical ANA runtime secret names are present in staging. Secret values remain outside the repository and browser.
 
-## Functional canary evidence
+## Canonical functional canary
 
-The authenticated synthetic canary **passed 15/15** using synthetic Auth sessions and a transient staging-only policy shim. The authentication path used `admin_generateLink + verifyOtp`; therefore the exact password-login runner path is still unproven.
+Workflow run `35481347306`, job `105999617853`, executed the canonical no-shim staging canary against project `zwkczgewzbsorbrjuzpb`.
 
-The transient shim was not accepted as canonical runtime policy. Canonical Edge code was restored with repository parity after the canary. The machine-readable evidence remains authoritative for the observed staging state.
+Result: **15/15 passed**.
 
-ANA-B01 now has canonical technical TTL/rate/dedup values in the staging-readiness contract, but those values are not yet configured through the approved staging secret-management path. Consent, data retention, anonymization, export/deletion and persistent identity stitching remain blocked by `LEGAL-B03`.
+The run proved:
+- exact password login for the synthetic client and professional;
+- analytics session issuance;
+- signed search exposure proof issuance;
+- valid impression ingestion;
+- idempotent replay of the same client event;
+- rejection of payload drift for the same client event identity;
+- rejection of a tampered exposure proof;
+- quote-session issuance and structural quote progress;
+- submitted quote linkage to the controlled synthetic order;
+- exclusion of owner traffic;
+- authoritative order-health projection;
+- ORD reconciliation;
+- metric snapshot append followed by deterministic `NO_CHANGE`.
 
-ANA-001 therefore remains maturity **2/6** until the canonical runtime variables are configured and the no-shim password-login canary passes.
+The canary reported:
+- `productionChanged=false`;
+- `browserClientActivated=false`;
+- `paymentMutation=false`;
+- `anonymousIdentityStitching=false`.
+
+A read-only post-check of the canary window found only allowlisted authenticated behavioral event classes and no prohibited PII dimension keys.
+
+## Security and privacy boundary
+
+The technical ANA runtime policy remains:
+- analytics session TTL: 1800 seconds;
+- quote-session TTL: 3600 seconds;
+- signed search exposure TTL: 300 seconds;
+- rate limit: 120 requests per 60 seconds;
+- semantic deduplication window: 60 seconds.
+
+These values are security/integrity controls, not personal-data retention authority. Persistent anonymous identity, cross-session/cross-device stitching and anonymous-to-authenticated stitching remain disabled. Consent, data retention, anonymization, export and deletion remain governed by `LEGAL-B03`.
+
+The browser analytics client remains disabled by default. Production remains untouched and blocked.
+
+## Maturity decision
+
+ANA-001 now has canonical staging canary evidence and qualifies for **3/6 — staging canary or hybrid**. This promotion does not imply production readiness. PAY-backed GMV/take rate and downstream CAC/LTV remain unavailable until PAY is canonical, and privacy lifecycle decisions remain blocked by `LEGAL-B03`.
