@@ -1080,6 +1080,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA canonical staging canary run 35481347306 passed 15/15 without a policy shim, proving exact password login, signed exposure, replay/idempotency, tamper rejection, owner exclusion, quote linkage, ORD reconciliation and metric no-change behavior.
 - ANA-B01 canonical technical runtime policy is versioned in the staging-readiness contract: session TTL 1800s, quote TTL 3600s, exposure TTL 300s, rate limit 120/60s and semantic dedup 60s. These are security/integrity controls, not LEGAL-B03 data-retention authority.
 - The canonical canary kept production unchanged, browser analytics disabled and anonymous identity stitching disabled; a read-only event-window check found no prohibited PII dimension keys.
+- ANA defense-in-depth hardening has a repository-only fail-closed preflight: four private ANA tables are targeted for ENABLE ROW LEVEL SECURITY without FORCE RLS or new policies, and three advisor-reported FK columns are targeted for idempotent covering indexes; no migration file or staging mutation is authorized yet.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1087,7 +1088,8 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
-- Review defense-in-depth RLS policies and the identified covering indexes without weakening the service-role/RPC write boundary.
+- Require the explicit ANA hardening migration authorization before creating or applying the planned four-table RLS / three-index migration in staging.
+- After any authorized hardening migration, prove RLS/grants/RPC authority are preserved, rerun the canonical no-shim staging canary, and verify the three ANA unindexed-FK advisor findings are cleared.
 - Operationalize the maturity-4 funnel, CAT supply/liquidity, retention, freshness and data-quality ownership gates as separately governed sublots.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
