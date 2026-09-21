@@ -2,109 +2,59 @@
 
 const fs = require('fs');
 const path = require('path');
-
 const root = path.resolve(__dirname, '..');
 const contract = JSON.parse(
   fs.readFileSync(path.join(root, 'config', 'ana-001-defense-in-depth-hardening-readiness.json'), 'utf8')
 );
+const migration = fs.readFileSync(path.join(root, contract.plannedMigration.path), 'utf8');
 
 const checks = [];
 const check = (name, value) => checks.push({ name, passed: Boolean(value) });
+const normalized = migration
+  .replace(/--.*$/gm, '')
+  .split(';')
+  .map((x) => x.trim().replace(/\s+/g, ' ').toLowerCase())
+  .filter(Boolean)
+  .map((x) => x + ';');
 
-const sql = contract.plannedChanges?.plannedSql || [];
-const normalized = sql.map((statement) => statement.trim().replace(/\s+/g, ' ').toLowerCase());
-
-check('all planned statements are SQL strings', sql.every((statement) => typeof statement === 'string' && statement.trim()));
-check(
-  'only RLS enable or CREATE INDEX statements are planned',
-  normalized.every(
-    (statement) =>
-      /^alter table private\.[a-z0-9_]+ enable row level security;$/.test(statement)
-      || /^create index if not exists [a-z0-9_]+ on private\.[a-z0-9_]+ \([a-z0-9_]+\);$/.test(statement)
-  )
+check('explicit authorization captured', contract.authorization?.phrase === contract.requiredExplicitAuthorization);
+check('staging only', contract.environment === 'staging' && contract.authorization?.targetEnvironment === 'staging');
+check('production forbidden', contract.productionAllowed === false && contract.authorization?.productionAllowed === false);
+check('merge forbidden', contract.authorization?.mergeAllowed === false);
+check('generic continuation rejected', contract.genericContinuationAccepted === false);
+check('migration authorized', contract.migrationAuthorized === true && contract.stagingMutationAllowed === true);
+check('exactly seven statements', normalized.length === 7);
+check('exactly four RLS enables', normalized.filter((s) => /enable row level security/.test(s)).length === 4);
+check('exactly three indexes', normalized.filter((s) => /^create index if not exists /.test(s)).length === 3);
+check('no FORCE RLS', !migration.toLowerCase().includes('force row level security'));
+check('no policy DDL', !/\b(create|alter|drop)\s+policy\b/i.test(migration));
+check('no grant expansion', !/\bgrant\b/i.test(migration));
+check('no revoke mutation', !/\brevoke\b/i.test(migration));
+check('no DML', !/\b(insert|update|delete|truncate)\b/i.test(migration));
+check('no public table target', !/alter\s+table\s+public\./i.test(migration));
+check('RLS behavior table', /alter table private\.analytics_behavior_events_v1\s+enable row level security;/i.test(migration));
+check('RLS snapshot table', /alter table private\.analytics_metric_snapshots_v1\s+enable row level security;/i.test(migration));
+check('RLS reconciliation table', /alter table private\.analytics_reconciliation_runs_v1\s+enable row level security;/i.test(migration));
+check('RLS DQ table', /alter table private\.analytics_data_quality_rollups_v1\s+enable row level security;/i.test(migration));
+check('order FK index', /analytics_behavior_events_order_id_idx\s+on private\.analytics_behavior_events_v1 \(order_id\)/i.test(migration));
+check('source run FK index', /analytics_dq_rollups_source_run_id_idx\s+on private\.analytics_data_quality_rollups_v1 \(source_run_id\)/i.test(migration));
+check('supersedes FK index', /analytics_metric_snapshots_supersedes_id_idx\s+on private\.analytics_metric_snapshots_v1 \(supersedes_snapshot_id\)/i.test(migration));
+check('preflight found no existing planned indexes',
+  Array.isArray(contract.observedReadOnlyStaging?.plannedIndexesAlreadyPresent)
+    && contract.observedReadOnlyStaging.plannedIndexesAlreadyPresent.length === 0
 );
-
-const forbiddenTokens = [
-  ' force row level security',
-  ' create policy ',
-  ' alter policy ',
-  ' drop policy ',
-  ' grant ',
-  ' revoke ',
-  ' insert ',
-  ' update ',
-  ' delete ',
-  ' truncate ',
-  ' drop table ',
-  ' alter table public.',
-  ' create index if not exists public.'
-];
-for (const token of forbiddenTokens) {
-  check('forbidden SQL token absent: ' + token.trim(), !(' ' + normalized.join(' ') + ' ').includes(token));
-}
-
-const rlsStatements = normalized.filter((statement) => statement.includes('enable row level security'));
-const indexStatements = normalized.filter((statement) => statement.startsWith('create index if not exists '));
-check('exactly four RLS statements', rlsStatements.length === 4);
-check('exactly three index statements', indexStatements.length === 3);
-check('no duplicate RLS statements', new Set(rlsStatements).size === rlsStatements.length);
-check('no duplicate index statements', new Set(indexStatements).size === indexStatements.length);
-
-const expectedIndexPairs = new Map([
-  ['private.analytics_behavior_events_v1', 'order_id'],
-  ['private.analytics_data_quality_rollups_v1', 'source_run_id'],
-  ['private.analytics_metric_snapshots_v1', 'supersedes_snapshot_id']
-]);
-for (const [table, column] of expectedIndexPairs) {
-  check(
-    table + ' FK index planned',
-    indexStatements.some((statement) => statement.includes(' on ' + table + ' (' + column + ');'))
-  );
-}
-
-const expectedRlsTables = new Set([
-  'private.analytics_behavior_events_v1',
-  'private.analytics_metric_snapshots_v1',
-  'private.analytics_reconciliation_runs_v1',
-  'private.analytics_data_quality_rollups_v1'
-]);
-for (const table of expectedRlsTables) {
-  check(
-    table + ' RLS planned exactly once',
-    rlsStatements.filter((statement) => statement === 'alter table ' + table + ' enable row level security;').length === 1
-  );
-}
-
-check('no policy creation authority', contract.plannedChanges?.createPolicies === false);
-check('FORCE RLS remains forbidden', contract.plannedChanges?.forceRls === false);
-check('grant expansion remains forbidden', contract.preservedAuthorities?.grantExpansionAllowed === false);
-check('browser activation remains forbidden', contract.preservedAuthorities?.frontendActivationAllowed === false);
-check('production remains forbidden', contract.productionAllowed === false);
-check('staging mutation remains forbidden', contract.stagingMutationAllowed === false);
-check('generic continuation cannot authorize migration', contract.genericContinuationAccepted === false);
-check(
-  'exact authorization phrase is non-generic',
-  typeof contract.requiredExplicitAuthorization === 'string'
-    && contract.requiredExplicitAuthorization.includes('ana-hardening-staging-migration')
-    && !['prossiga', 'continue', 'go'].includes(contract.requiredExplicitAuthorization.toLowerCase())
+check('preflight found no policies',
+  Array.isArray(contract.observedReadOnlyStaging?.policies)
+    && contract.observedReadOnlyStaging.policies.length === 0
 );
-
-const migrationPath = path.join(root, contract.plannedMigration.path);
-check('no migration file exists yet', !fs.existsSync(migrationPath));
 
 const failedCases = checks.filter((entry) => !entry.passed).map((entry) => entry.name);
-console.log(
-  JSON.stringify(
-    {
-      contractId: 'ana-001-defense-in-depth-hardening-readiness-negative-v1',
-      total: checks.length,
-      passed: checks.length - failedCases.length,
-      failed: failedCases.length,
-      status: failedCases.length ? 'failed' : 'passed',
-      failedCases
-    },
-    null,
-    2
-  )
-);
+console.log(JSON.stringify({
+  contractId: 'ana-001-defense-in-depth-hardening-readiness-negative-v2',
+  total: checks.length,
+  passed: checks.length - failedCases.length,
+  failed: failedCases.length,
+  status: failedCases.length ? 'failed' : 'passed',
+  failedCases
+}, null, 2));
 if (failedCases.length) process.exitCode = 1;
