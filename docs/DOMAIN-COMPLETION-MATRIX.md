@@ -1081,15 +1081,13 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-B01 canonical technical runtime policy is versioned in the staging-readiness contract: session TTL 1800s, quote TTL 3600s, exposure TTL 300s, rate limit 120/60s and semantic dedup 60s. These are security/integrity controls, not LEGAL-B03 data-retention authority.
 - The canonical canary kept production unchanged, browser analytics disabled and anonymous identity stitching disabled; a read-only event-window check found no prohibited PII dimension keys.
 - ANA defense-in-depth hardening has a repository-only fail-closed preflight: four private ANA tables are targeted for ENABLE ROW LEVEL SECURITY without FORCE RLS or new policies, and three advisor-reported FK columns are targeted for idempotent covering indexes; no migration file or staging mutation is authorized yet.
-- ANA defense-in-depth hardening migration is explicitly authorized for staging and materialized in immutable migration history; application remains pending exact-head validation.
+- ANA defense-in-depth hardening is closed in staging: RLS is enabled on the four private ANA runtime tables without FORCE RLS or policies, grants/RPC authority are preserved, the three target FK advisor findings are cleared, and post-hardening canonical canary run 35628667088 passed 15/15.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
 - **ANA-B02 · HIGH · business_metrics:** Core ORD-derived marketplace projections are applied and functionally exercised in staging, but PAY-backed GMV/take rate and downstream CAC/LTV remain unavailable until PAY becomes canonical. _(Fase 15)_
 
 **Próximas ações:**
-- Validate the authorized ANA defense-in-depth migration on the exact PR head, then apply it only to staging.
-- After application, prove four ANA RLS flags true with FORCE RLS false, preserve grants/RPC authority, rerun the canonical no-shim canary, and verify the three ANA unindexed-FK advisor findings are cleared.
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - Operationalize the maturity-4 funnel, CAT supply/liquidity, retention, freshness and data-quality ownership gates as separately governed sublots.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
