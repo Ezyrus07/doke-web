@@ -16,7 +16,7 @@ const check = (name, value) => checks.push({ name, passed: Boolean(value) });
 check('contract id', contract.contractId === 'ana-001-defense-in-depth-hardening-readiness-v1');
 check('domain', contract.domain === 'ANA-001');
 check('staging target', contract.environment === 'staging' && contract.projectRef === 'zwkczgewzbsorbrjuzpb');
-check('authorized scope', contract.scope === 'staging_hardening_authorized');
+check('authorized lifecycle scope', ['staging_hardening_authorized','staging_hardening_applied'].includes(contract.scope));
 check('authorized lifecycle status', ['staging_migration_authorized_not_applied','staging_migration_applied_postcheck_passed_canary_pending','staging_migration_applied_verified'].includes(contract.status));
 check('production forbidden', contract.productionAllowed === false);
 check('staging mutation explicitly authorized', contract.stagingMutationAllowed === true);
