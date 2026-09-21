@@ -1,4 +1,4 @@
-name: ANA-001 Post-Hardening Staging Canary
+name: ANA-001 Post-Hardening Staging Canary Retry 2
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ana-001-post-hardening-staging-canary
+  group: ana-001-post-hardening-staging-canary-retry-2
   cancel-in-progress: false
 
 jobs:
@@ -41,7 +41,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
 
-      - name: Gate single-use post-hardening canary
+      - name: Gate single-use post-hardening canary retry 2
         id: gate
         shell: bash
         run: |
