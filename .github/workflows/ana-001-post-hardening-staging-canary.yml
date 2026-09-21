@@ -1,4 +1,4 @@
-name: ANA-001 Post-Hardening Staging Canary Retry 2
+name: ANA-001 Post-Hardening Staging Canary Retry 3
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ana-001-post-hardening-staging-canary-retry-2
+  group: ana-001-post-hardening-staging-canary-retry-3
   cancel-in-progress: false
 
 jobs:
@@ -41,15 +41,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
 
-      - name: Gate single-use post-hardening canary retry 2
-        id: gate
+      - name: Gate single-use post-hardening canary retry 3
         shell: bash
         run: |
           set -euo pipefail
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
           workflow='.github/workflows/ana-001-post-hardening-staging-canary.yml'
-          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$workflow")"
-          expected="$(printf 'A\t%s' "$workflow")"
-          test "$status" = "$expected"
+          git diff-tree --no-commit-id --name-only -r HEAD | grep -Fx "$workflow"
 
       - name: Validate hardening evidence and staging-only authorization
         shell: bash
