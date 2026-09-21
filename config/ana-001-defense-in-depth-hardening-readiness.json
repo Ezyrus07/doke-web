@@ -4,8 +4,8 @@
   "environment": "staging",
   "projectRef": "zwkczgewzbsorbrjuzpb",
   "sourceHead": "f27f2d299bc13dc423af6c92d1f083f943da16dd",
-  "scope": "staging_hardening_authorized",
-  "status": "staging_migration_authorized_not_applied",
+  "scope": "staging_hardening_applied",
+  "status": "staging_migration_applied_postcheck_passed_canary_pending",
   "productionAllowed": false,
   "stagingMutationAllowed": true,
   "migrationAuthorized": true,
@@ -231,7 +231,7 @@
   ],
   "rollbackContainment": {
     "currentLotRuntimeRollbackRequired": false,
-    "reason": "Migration is authorized but not yet applied at this contract state.",
+    "reason": "Post-apply structural verification passed; canonical functional canary is pending.",
     "futureMigrationRollbackRequiresNewAuthorization": true
   },
   "authorization": {
@@ -241,5 +241,73 @@
     "targetEnvironment": "staging",
     "productionAllowed": false,
     "mergeAllowed": false
+  },
+  "appliedMigration": {
+    "name": "ana_001_private_table_defense_in_depth",
+    "supabaseVersion": "20260921164751",
+    "repositoryPath": "supabase/migrations/20260921134000_ana_001_private_table_defense_in_depth.sql",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "environment": "staging",
+    "applied": true,
+    "productionTouched": false
+  },
+  "postApplyVerification": {
+    "verifiedAt": "2026-09-21T13:48:16-03:00",
+    "tables": {
+      "private.analytics_behavior_events_v1": {
+        "rlsEnabled": true,
+        "forceRls": false,
+        "serviceRoleDirectPrivileges": [
+          "SELECT"
+        ]
+      },
+      "private.analytics_metric_snapshots_v1": {
+        "rlsEnabled": true,
+        "forceRls": false,
+        "serviceRoleDirectPrivileges": [
+          "SELECT"
+        ]
+      },
+      "private.analytics_reconciliation_runs_v1": {
+        "rlsEnabled": true,
+        "forceRls": false,
+        "serviceRoleDirectPrivileges": [
+          "SELECT"
+        ]
+      },
+      "private.analytics_data_quality_rollups_v1": {
+        "rlsEnabled": true,
+        "forceRls": false,
+        "serviceRoleDirectPrivileges": [
+          "SELECT"
+        ]
+      }
+    },
+    "anonDirectTableGrant": false,
+    "authenticatedDirectTableGrant": false,
+    "policiesCreated": 0,
+    "rpcAuthorityPreserved": true,
+    "indexesPresent": [
+      "analytics_behavior_events_order_id_idx",
+      "analytics_dq_rollups_source_run_id_idx",
+      "analytics_metric_snapshots_supersedes_id_idx"
+    ],
+    "rowCountsUnchanged": {
+      "behavior": 17,
+      "dataQuality": 12,
+      "snapshots": 6,
+      "reconciliation": 6
+    },
+    "performanceAdvisor": {
+      "unindexedForeignKeysBefore": 12,
+      "unindexedForeignKeysAfter": 9,
+      "anaTargetFindingsRemaining": 0
+    },
+    "securityAdvisor": {
+      "rlsEnabledNoPolicyInfoExpectedForPrivateDenyByDefaultTables": true,
+      "newAnaInfoFindings": 4,
+      "newCriticalFindingIntroduced": false
+    },
+    "canaryPending": true
   }
 }
