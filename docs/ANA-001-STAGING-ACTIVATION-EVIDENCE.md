@@ -82,3 +82,33 @@ The repository-only hardening contract is `config/ana-001-defense-in-depth-harde
 
 No hardening migration file exists in this lot and no staging mutation was authorized or executed. The future migration may be created and applied only after the explicit authorization phrase recorded by the contract; generic continuation is not accepted.
 
+## Defense-in-depth hardening closure
+
+The explicitly authorized staging-only migration `ana_001_private_table_defense_in_depth` was applied to project `zwkczgewzbsorbrjuzpb` as Supabase migration version `20260921164751`.
+
+Structural post-apply verification proved:
+- RLS enabled on all four private ANA runtime tables;
+- `FORCE ROW LEVEL SECURITY` remains disabled;
+- no RLS policies were created;
+- `anon` and `authenticated` still have no direct table grants;
+- `service_role` retains direct `SELECT` only on the four ANA tables;
+- canonical ANA RPCs remain postgres-owned `SECURITY DEFINER` functions executable only by `postgres` and `service_role`;
+- row counts were unchanged by the DDL;
+- all three planned covering indexes are present.
+
+The Supabase performance advisor's unindexed-foreign-key count fell from 12 to 9, with zero remaining findings for the three ANA target foreign keys. The security advisor now reports four additional informational `RLS enabled, no policy` findings for these private tables; this is intentional deny-by-default defense in depth, not a browser exposure, because browser roles have no direct grants and no policies were added.
+
+Canonical post-hardening recertification:
+- workflow: `ANA-001 Post-Hardening Staging Canary Retry 3`;
+- run: `35628667088`;
+- job: `106429196514`;
+- certified head: `563a0cc11580f7cf3845c8ad2add3594da99ea8b`;
+- result: **15/15 passed**;
+- exact password login: passed;
+- canonical runtime secret names: **8/8 present**;
+- production changed: false;
+- browser analytics activated: false;
+- anonymous identity stitching: false.
+
+This closes the ANA defense-in-depth staging hardening lot. ANA-001 remains **3/6** because privacy lifecycle/client activation is still blocked by `LEGAL-B03`, and PAY-backed GMV/take-rate/CAC/LTV remain blocked by `PAY-001`.
+
