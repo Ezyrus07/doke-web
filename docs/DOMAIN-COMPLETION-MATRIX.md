@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 231 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 232 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 234 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 235 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1461 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1462 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1081,15 +1081,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-B01 canonical technical runtime policy is versioned in the staging-readiness contract: session TTL 1800s, quote TTL 3600s, exposure TTL 300s, rate limit 120/60s and semantic dedup 60s. These are security/integrity controls, not LEGAL-B03 data-retention authority.
 - The canonical canary kept production unchanged, browser analytics disabled and anonymous identity stitching disabled; a read-only event-window check found no prohibited PII dimension keys.
 - ANA defense-in-depth hardening has a repository-only fail-closed preflight: four private ANA tables are targeted for ENABLE ROW LEVEL SECURITY without FORCE RLS or new policies, and three advisor-reported FK columns are targeted for idempotent covering indexes; no migration file or staging mutation is authorized yet.
+- ANA defense-in-depth hardening migration is explicitly authorized for staging and materialized in immutable migration history; application remains pending exact-head validation.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
 - **ANA-B02 · HIGH · business_metrics:** Core ORD-derived marketplace projections are applied and functionally exercised in staging, but PAY-backed GMV/take rate and downstream CAC/LTV remain unavailable until PAY becomes canonical. _(Fase 15)_
 
 **Próximas ações:**
+- Validate the authorized ANA defense-in-depth migration on the exact PR head, then apply it only to staging.
+- After application, prove four ANA RLS flags true with FORCE RLS false, preserve grants/RPC authority, rerun the canonical no-shim canary, and verify the three ANA unindexed-FK advisor findings are cleared.
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
-- Require the explicit ANA hardening migration authorization before creating or applying the planned four-table RLS / three-index migration in staging.
-- After any authorized hardening migration, prove RLS/grants/RPC authority are preserved, rerun the canonical no-shim staging canary, and verify the three ANA unindexed-FK advisor findings are cleared.
 - Operationalize the maturity-4 funnel, CAT supply/liquidity, retention, freshness and data-quality ownership gates as separately governed sublots.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
@@ -1165,7 +1166,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3482 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3483 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
