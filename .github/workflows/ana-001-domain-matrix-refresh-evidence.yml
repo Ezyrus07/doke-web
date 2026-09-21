@@ -72,7 +72,12 @@ jobs:
             exit 0
           fi
           changed="$(git diff --cached --name-only)"
-          test "$changed" = $'docs/DOMAIN-COMPLETION-MATRIX.md\nreports/generated/domain-completion-matrix-report.json'
+          while IFS= read -r file; do
+            case "$file" in
+              docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json) ;;
+              *) echo "Unexpected generated file: $file" >&2; exit 1 ;;
+            esac
+          done <<< "$changed"
           git config user.name "doke-ci"
           git config user.email "doke-ci@users.noreply.github.com"
           git commit -m "ANA-001: sync generated matrix after hardening closure"
