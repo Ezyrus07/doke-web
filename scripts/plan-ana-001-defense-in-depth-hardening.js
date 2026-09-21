@@ -14,25 +14,21 @@ const checkEnv = args.has('--check-env');
 const execute = args.has('--execute');
 
 if (execute) {
-  console.error(
-    JSON.stringify(
-      {
-        contractId: contract.contractId,
-        status: 'blocked',
-        error: 'ANA_HARDENING_EXECUTION_NOT_AUTHORIZED',
-        requiredExplicitAuthorization: contract.requiredExplicitAuthorization,
-        stagingMutationAllowed: contract.stagingMutationAllowed,
-        migrationAuthorized: contract.migrationAuthorized,
-        productionAllowed: contract.productionAllowed
-      },
-      null,
-      2
-    )
-  );
+  console.error(JSON.stringify({
+    contractId: contract.contractId,
+    status: 'blocked',
+    error: contract.migrationAuthorized
+      ? 'ANA_HARDENING_EXECUTION_REQUIRES_APPROVED_MIGRATION_EXECUTOR'
+      : 'ANA_HARDENING_EXECUTION_NOT_AUTHORIZED',
+    requiredExplicitAuthorization: contract.requiredExplicitAuthorization,
+    stagingMutationAllowed: contract.stagingMutationAllowed,
+    migrationAuthorized: contract.migrationAuthorized,
+    productionAllowed: contract.productionAllowed
+  }, null, 2));
   process.exit(2);
 }
 
-const result = {
+console.log(JSON.stringify({
   contractId: contract.contractId,
   mode: checkEnv ? 'check_env' : dryRun ? 'dry_run' : 'plan',
   environment: contract.environment,
@@ -43,10 +39,8 @@ const result = {
   migrationAuthorized: contract.migrationAuthorized,
   genericContinuationAccepted: contract.genericContinuationAccepted,
   requiredExplicitAuthorization: contract.requiredExplicitAuthorization,
-  plannedMigration: {
-    filePresent: contract.plannedMigration.filePresent,
-    path: contract.plannedMigration.path
-  },
+  authorization: contract.authorization,
+  plannedMigration: contract.plannedMigration,
   plannedChanges: {
     enableRls: contract.plannedChanges.enableRls,
     forceRls: contract.plannedChanges.forceRls,
@@ -54,27 +48,13 @@ const result = {
     preserveExistingGrants: contract.plannedChanges.preserveExistingGrants,
     indexes: contract.plannedChanges.indexes
   },
-  preApplyRequiredChecks: [
-    'target project ref equals zwkczgewzbsorbrjuzpb',
-    'four ANA tables still exist in private schema',
-    'four ANA tables still have RLS disabled and FORCE RLS disabled',
-    'anon/authenticated direct table grants remain absent',
-    'service_role direct table grant remains SELECT only',
-    'postgres and service_role retain BYPASSRLS',
-    'four canonical ANA functions remain postgres-owned SECURITY DEFINER and executable only by postgres/service_role',
-    'three FK covering indexes remain absent',
-    'canonical ANA no-shim staging canary evidence remains valid'
-  ],
-  postApplyRequiredChecks: contract.validationPlan.slice(-1),
+  executionBoundary: 'DDL is applied only through the approved staging migration executor; this planner never connects to a database.',
   effects: {
     networkRequests: false,
     databaseConnections: false,
     stagingReads: false,
     stagingMutations: false,
-    migrationCreated: false,
     migrationApplied: false,
     productionChanges: false
   }
-};
-
-console.log(JSON.stringify(result, null, 2));
+}, null, 2));
