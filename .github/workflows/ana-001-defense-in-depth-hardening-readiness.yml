@@ -8,6 +8,7 @@ on:
       - 'scripts/audit-ana-001-defense-in-depth-hardening-readiness.js'
       - 'scripts/test-ana-001-defense-in-depth-hardening-readiness.js'
       - 'scripts/plan-ana-001-defense-in-depth-hardening.js'
+      - 'supabase/migrations/20260921134000_ana_001_private_table_defense_in_depth.sql'
       - 'docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md'
       - 'package.json'
       - 'config/domain-completion-matrix.json'
@@ -51,7 +52,7 @@ jobs:
       - name: Dry-run plan
         run: npm run plan:ana-001-defense-in-depth-hardening:dry-run
 
-      - name: Execution remains blocked
+      - name: Direct execution remains blocked
         shell: bash
         run: |
           set +e
@@ -59,7 +60,7 @@ jobs:
           code=$?
           set -e
           test "$code" = "2"
-          grep -q 'ANA_HARDENING_EXECUTION_NOT_AUTHORIZED' /tmp/ana-hardening-execute.out
+          grep -q 'ANA_HARDENING_EXECUTION_REQUIRES_APPROVED_MIGRATION_EXECUTOR' /tmp/ana-hardening-execute.out
 
       - name: Domain matrix
         run: npm run audit:domain-completion-matrix
