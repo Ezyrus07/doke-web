@@ -3,12 +3,12 @@
   "domain": "ANA-001",
   "environment": "staging",
   "projectRef": "zwkczgewzbsorbrjuzpb",
-  "sourceHead": "e569122a8b059a6b1fa473a021a9f86162424ec0",
-  "scope": "repository_only_preflight",
-  "status": "repository_preflight_ready_staging_migration_not_authorized",
+  "sourceHead": "f27f2d299bc13dc423af6c92d1f083f943da16dd",
+  "scope": "staging_hardening_authorized",
+  "status": "staging_migration_authorized_not_applied",
   "productionAllowed": false,
-  "stagingMutationAllowed": false,
-  "migrationAuthorized": false,
+  "stagingMutationAllowed": true,
+  "migrationAuthorized": true,
   "genericContinuationAccepted": false,
   "requiredExplicitAuthorization": "authorize-ana-hardening-staging-migration",
   "objective": "Add defense-in-depth RLS to the four private ANA runtime tables and add three FK covering indexes without changing browser authority, RPC authority, data semantics, or production state.",
@@ -17,7 +17,7 @@
     "performance": "Three ANA foreign keys have no leading covering index and are reported by the Supabase performance advisor."
   },
   "observedReadOnlyStaging": {
-    "observedAt": "2026-09-20",
+    "observedAt": "2026-09-21",
     "tables": {
       "private.analytics_behavior_events_v1": {
         "rlsEnabled": false,
@@ -133,35 +133,26 @@
     ],
     "footprint": {
       "private.analytics_behavior_events_v1": {
-        "exactRows": 17,
-        "tableSize": "8192 bytes",
-        "indexesSize": "112 kB",
-        "totalSize": "128 kB"
+        "exactRows": 17
       },
       "private.analytics_data_quality_rollups_v1": {
-        "exactRows": 12,
-        "tableSize": "8192 bytes",
-        "indexesSize": "32 kB",
-        "totalSize": "48 kB"
+        "exactRows": 12
       },
       "private.analytics_metric_snapshots_v1": {
-        "exactRows": 6,
-        "tableSize": "8192 bytes",
-        "indexesSize": "48 kB",
-        "totalSize": "64 kB"
+        "exactRows": 6
       },
       "private.analytics_reconciliation_runs_v1": {
-        "exactRows": 6,
-        "tableSize": "8192 bytes",
-        "indexesSize": "32 kB",
-        "totalSize": "48 kB"
+        "exactRows": 6
       }
     },
     "migrationRisk": {
       "currentDataVolume": "low",
       "createIndexConcurrencyRequiredAtObservedScale": false,
       "recheckImmediatelyBeforeAnyFutureMigration": true
-    }
+    },
+    "preApplyRevalidated": true,
+    "plannedIndexesAlreadyPresent": [],
+    "policies": []
   },
   "plannedChanges": {
     "enableRls": [
@@ -221,10 +212,14 @@
     "productionMutationAllowed": false
   },
   "plannedMigration": {
-    "filePresent": false,
-    "path": "supabase/migrations/20260920090000_ana_001_private_table_defense_in_depth.sql",
+    "filePresent": true,
+    "path": "supabase/migrations/20260921134000_ana_001_private_table_defense_in_depth.sql",
     "creationRequiresExplicitAuthorization": true,
-    "applicationRequiresExplicitAuthorization": true
+    "applicationRequiresExplicitAuthorization": true,
+    "creationAuthorizationSatisfied": true,
+    "applicationAuthorizationSatisfied": true,
+    "timestampAdjustedForMonotonicHistory": true,
+    "priorPlannedPath": "supabase/migrations/20260920090000_ana_001_private_table_defense_in_depth.sql"
   },
   "validationPlan": [
     "repository audit and negative conformance tests",
@@ -236,7 +231,15 @@
   ],
   "rollbackContainment": {
     "currentLotRuntimeRollbackRequired": false,
-    "reason": "This lot is repository-only and does not mutate staging or production.",
+    "reason": "Migration is authorized but not yet applied at this contract state.",
     "futureMigrationRollbackRequiresNewAuthorization": true
+  },
+  "authorization": {
+    "phrase": "authorize-ana-hardening-staging-migration",
+    "authorizedBy": "user_explicit_authorization",
+    "authorizedAt": "2026-09-21T13:34:00-03:00",
+    "targetEnvironment": "staging",
+    "productionAllowed": false,
+    "mergeAllowed": false
   }
 }
