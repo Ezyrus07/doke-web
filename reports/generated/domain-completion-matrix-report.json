@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
   "version": "1.3.121",
-  "generatedAt": "2026-09-22T11:42:00-03:00",
+  "generatedAt": "2026-09-22T12:08:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -25,13 +25,13 @@
     },
     "blockerCounts": {
       "medium": 7,
-      "high": 35,
+      "high": 36,
       "critical": 12
     },
     "activeHtmlPages": 30,
     "repositories": 28,
     "backendModules": 18,
-    "migrations": 199,
+    "migrations": 200,
     "packageScripts": 1097,
     "staging": {
       "publicTotal": 45,
@@ -3236,7 +3236,7 @@
       "id": "SEC-001",
       "name": "Segurança, RLS, grants e autoridade dos dados",
       "maturity": 4,
-      "filesMatched": 242,
+      "filesMatched": 243,
       "sampleFiles": [
         "backend/shared/auth/supabase-actor-resolver.js",
         "backend/shared/security/audit-event-contract.js",
@@ -3763,7 +3763,7 @@
       "id": "CAT-001",
       "name": "Catálogo, publicação e moderação de serviços",
       "maturity": 4,
-      "filesMatched": 20,
+      "filesMatched": 21,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/detalhe-anuncio-data-controller.js",
@@ -3784,7 +3784,8 @@
         "config/cat-a07-supply-coverage-baseline-readiness.json",
         "config/cat-a07-supply-coverage-baseline.json",
         "supabase/migrations/030_service_catalog_sync_metrics.sql",
-        "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql"
+        "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql",
+        "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql"
       ],
       "missingRequiredPaths": [],
       "signals": {
@@ -3867,7 +3868,15 @@
         ],
         "todo": []
       },
-      "blockers": [],
+      "blockers": [
+        {
+          "id": "CAT-A07-B01",
+          "severity": "high",
+          "category": "canonical_dimension_completeness",
+          "description": "At least one currently eligible published service lacks canonical state. CAT public eligibility does not currently require state, but ANA liquidity requires category/state segmentation; CAT-A07 must not infer region or certify a complete epoch while this gap exists.",
+          "targetPhase": "Fase 5"
+        }
+      ],
       "tests": [
         "test:public-service-catalog-contract",
         "test:services-supabase-repository-contract",
@@ -3885,7 +3894,7 @@
       "id": "SEARCH-001",
       "name": "Busca, descoberta, favoritos e ranking",
       "maturity": 4,
-      "filesMatched": 245,
+      "filesMatched": 246,
       "sampleFiles": [
         "assets/js/components/service-favorites-controller.js",
         "assets/js/pages/resultados-data-controller.js",
@@ -4268,7 +4277,7 @@
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1489,
+      "filesMatched": 1490,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -10068,7 +10077,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 3539,
+      "filesMatched": 3540,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
