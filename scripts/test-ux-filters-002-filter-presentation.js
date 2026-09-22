@@ -9,9 +9,11 @@ const rootDir = path.resolve(__dirname, '..');
 const modulePath = path.join(rootDir, 'assets/js/pages/search-filter-presentation.js');
 const cssPath = path.join(rootDir, 'assets/css/pages/search-filter-presentation.css');
 const htmlPath = path.join(rootDir, 'resultados.html');
+const manifestPath = path.join(rootDir, 'assets/css/pages/search-results.css');
 const moduleSource = fs.readFileSync(modulePath, 'utf8');
 const cssSource = fs.readFileSync(cssPath, 'utf8');
 const htmlSource = fs.readFileSync(htmlPath, 'utf8');
+const manifestSource = fs.readFileSync(manifestPath, 'utf8');
 
 function normalize(value = {}) {
   const searchType = ['services', 'users', 'workers', 'before-after'].includes(value.searchType)
@@ -118,7 +120,8 @@ const cssLink = 'assets/css/pages/search-filter-presentation.css';
 const scriptSrc = 'assets/js/pages/search-filter-presentation.js';
 const searchDataSrc = 'assets/js/pages/search-data.js';
 const searchResultsSrc = 'assets/js/pages/search-results.js';
-assert(htmlSource.includes(cssLink), 'Resultados must load the static chip stylesheet.');
+assert(!htmlSource.includes(cssLink), 'Resultados must not bypass the canonical page CSS manifest.');
+assert(manifestSource.includes('@import url("./search-filter-presentation.css?v=20260805-ux-filters-002-v1")'), 'Canonical results manifest must load the static chip stylesheet.');
 assert(htmlSource.includes(scriptSrc), 'Resultados must load the static chip authority.');
 assert(htmlSource.indexOf(searchDataSrc) < htmlSource.indexOf(scriptSrc));
 assert(htmlSource.indexOf(scriptSrc) < htmlSource.indexOf(searchResultsSrc));
