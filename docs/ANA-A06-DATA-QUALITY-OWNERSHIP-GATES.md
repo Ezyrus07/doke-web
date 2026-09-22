@@ -38,3 +38,10 @@ This repository-only sublot performs no database access, migration, deploy, stag
 A read-only staging evaluation against `private.analytics_data_quality_rollups_v1` is a separate evidence step and is not authorized by this commit. The exact future authorization phrase is:
 
 `authorize-ana-a06-staging-readonly-gate`
+
+## Base-drift reconciliation evidence
+
+The PR base advanced by one SCHED-A03B commit while ANA-A06 certification was in progress. The drift was reconciled by merge commit `dd2b5d0cbe7ce2f576ee0dd3594e182af4c33c8d`, preserving both lineages without rebase or force-push. The reconciled branch is zero commits behind `com/com-001-baseline-audit`.
+
+Canonical matrix refresh run `35672638184` completed successfully after the reconciliation and produced commit `9df754656e9df33d592272890b6f3f945fb710e0`. This evidence is repository-only: no migration was applied, no staging mutation was executed, browser analytics remained disabled, and production was untouched.
+
