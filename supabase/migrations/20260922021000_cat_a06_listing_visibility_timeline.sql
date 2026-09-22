@@ -242,7 +242,10 @@ begin
   end if;
 
   if not v_should_record then
-    return case when tg_op = 'DELETE' then old else new end;
+    if tg_op = 'DELETE' then
+      return old;
+    end if;
+    return new;
   end if;
 
   select coalesce(max(event_row.sequence_no), 0) + 1
@@ -288,7 +291,10 @@ begin
     'observed_transition'
   );
 
-  return case when tg_op = 'DELETE' then old else new end;
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
 end;
 $function$;
 

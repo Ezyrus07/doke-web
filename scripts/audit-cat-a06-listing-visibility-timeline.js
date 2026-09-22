@@ -42,7 +42,7 @@ check(contract.implementation && contract.implementation.existingListingBaseline
   'revoke all on table private.cat_listing_visibility_events_v1',
   'grant select on table private.cat_listing_visibility_events_v1 to service_role'
 ].forEach((marker) => check(migration.includes(marker), 'migration marker missing: ' + marker));
-check(!migration.includes('insert into private.cat_listing_visibility_events_v1 (\n  service_id'), 'migration must not baseline existing listings directly');
+check(!/insert into private\.cat_listing_visibility_events_v1[\s\S]{0,1800}\bselect\b[\s\S]{0,1800}\bfrom public\.services\b/i.test(migration), 'migration must not baseline existing listings directly');
 [
   'CAT_A06_LEDGER_RLS_DISABLED',
   'CAT_A06_BROWSER_LEDGER_PRIVILEGE',
