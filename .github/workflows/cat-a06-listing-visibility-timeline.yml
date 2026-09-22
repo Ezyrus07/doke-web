@@ -37,14 +37,16 @@ jobs:
         run: |
           node --check scripts/audit-cat-a06-listing-visibility-timeline.js
           node --check scripts/test-cat-a06-listing-visibility-timeline.js
+          node --check scripts/audit-service-lifecycle-authority.js
+          node --check scripts/test-service-lifecycle-authority-runtime.js
       - name: CAT-A06 audit
         run: npm run audit:cat-a06-listing-visibility-timeline
       - name: CAT-A06 replay conformance
         run: npm run test:cat-a06-listing-visibility-timeline
       - name: CAT-A03 lifecycle regression
         run: |
-          npm run audit:service-lifecycle-authority
-          npm run test:service-lifecycle-authority
+          node scripts/audit-service-lifecycle-authority.js
+          node scripts/test-service-lifecycle-authority-runtime.js
       - name: ANA-A04 ownership regression
         run: |
           npm run audit:ana-a04-marketplace-funnel-health-projections
