@@ -16,6 +16,7 @@ const a04 = json('config/ana-a04-marketplace-funnel-health-projections.json');
 const migration = read('supabase/migrations/20260922021000_cat_a06_listing_visibility_timeline.sql');
 const sqlTest = read('supabase/tests/031_cat_a06_listing_visibility_timeline_validation.sql');
 const matrix = json('config/domain-completion-matrix.json');
+const stagingEvidence = fs.existsSync(path.join(ROOT, 'reports/generated/cat-a06-staging-visibility-ledger-evidence.json')) ? json('reports/generated/cat-a06-staging-visibility-ledger-evidence.json') : null;
 const ana = matrix.domains.find((item) => item.id === 'ANA-001');
 
 check(contract.contractId === 'cat-a06-listing-visibility-timeline-v1', 'contract id drift');
@@ -30,6 +31,15 @@ check(contract.anaConsumption.preLedgerCoverage === 'partial', 'pre-ledger cover
 check(contract.anaConsumption.runtimeProjectionAuthorized === false, 'repository contract cannot authorize ANA runtime projection');
 check(contract.implementation && contract.implementation.migration === 'supabase/migrations/20260922021000_cat_a06_listing_visibility_timeline.sql', 'migration path drift');
 check(contract.implementation && contract.implementation.historicalBackfill === false, 'historical backfill must remain disabled');
+if (contract.status === 'staging_visibility_ledger_canary_pass') {
+  check(contract.implementation.stagingApplied === true, 'staging pass requires applied migration');
+  check(contract.implementation.stagingCanary === true, 'staging pass requires canary');
+  check(stagingEvidence && stagingEvidence.result === 'staging_visibility_ledger_canary_pass', 'staging evidence missing or invalid');
+  check(stagingEvidence && stagingEvidence.syntheticCanary && stagingEvidence.syntheticCanary.result === 'PASS', 'synthetic canary evidence missing');
+  check(stagingEvidence && stagingEvidence.syntheticCanary.ledgerRows === 7, 'synthetic canary ledger row count drift');
+  check(stagingEvidence && stagingEvidence.activation.existingListingBaselineRowsWritten === 0, 'non-synthetic baseline must remain zero');
+  check(stagingEvidence && stagingEvidence.boundaries.productionChanged === false, 'production must remain unchanged');
+}
 check(contract.implementation && contract.implementation.existingListingBaselinePolicy === 'not_performed_synthetic_only', 'existing listing baseline policy drift');
 [
   'create table if not exists private.cat_listing_visibility_events_v1',

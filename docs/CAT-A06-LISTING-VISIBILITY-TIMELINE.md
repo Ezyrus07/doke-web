@@ -2,7 +2,7 @@
 
 ## Status
 
-`staging migration prepared; application pending`
+`staging visibility ledger canary pass`
 
 This sublot exists because ANA-A04 defines `liquidity.active_service_seconds` as CAT-owned supply time, but mutable `services.status` cannot reconstruct history.
 
@@ -128,3 +128,42 @@ The activation state therefore records:
 - `existing_listing_baseline_policy=not_performed_synthetic_only`.
 
 The functional staging canary must use only controlled synthetic data. Historical/current non-synthetic listings remain untouched.
+
+
+## Staging closure
+
+Applied only to `doke-web-staging`:
+
+- Supabase migration: `20260922021220_cat_a06_listing_visibility_timeline`;
+- repository migration: `supabase/migrations/20260922021000_cat_a06_listing_visibility_timeline.sql`;
+- structural SQL validation: PASS;
+- RLS: enabled;
+- `anon` / `authenticated`: no ledger privileges;
+- `service_role`: SELECT only;
+- capture triggers: 3/3;
+- destructive ledger FKs: 0;
+- existing-listing activation baseline rows: 0.
+
+The synthetic functional canary produced **7 ordered ledger rows**:
+
+1. open supply;
+2. pause;
+3. restore;
+4. repeated pause;
+5. repeated restore;
+6. visible-version + dimension split `BA -> SP`;
+7. archive/close.
+
+The legacy moderation audit produced only one `listing_paused` and one `listing_restored` for the repeated same-version cycles, reproducing the original collision. CAT-A06 preserved both occurrences with distinct per-service sequences.
+
+The synthetic source service was then deleted. Its CAT-A06 ledger remained intact, proving that supply history does not disappear with the mutable source row.
+
+Evidence: `reports/generated/cat-a06-staging-visibility-ledger-evidence.json`.
+
+### Boundary after closure
+
+CAT now has a valid append-only staging authority for **future observed visibility/version transitions**.
+
+Coverage before activation, and for pre-existing listings until an observed canonical transition, remains `partial`. No retroactive history was fabricated.
+
+ANA remains **3/6**. `liquidity.active_service_seconds` is still not operational until ANA consumes this CAT ledger, applies category/state segmentation, uses ANA-A07 `dataThrough`/watermarks, and receives its own staging projection evidence.
