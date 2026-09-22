@@ -126,7 +126,7 @@ function projectCatLiquidity(events,activationState,input){
   if(watermark.freshnessState==='unavailable')return Object.freeze({contractId:CAT_LIQUIDITY_CONTRACT_ID,metricKey:CAT_LIQUIDITY_METRIC_KEY,status:'unavailable',coverageState:'partial',reason:watermark.reason,windowStart,windowEnd,dataThrough:null,valueSeconds:null,observedLowerBoundSeconds:null,segments:Object.freeze([]),runtimeAuthority:false});
   const dataThrough=watermark.dataThrough,throughMs=catTime(dataThrough,'ANA_LIQUIDITY_DATATHROUGH_INVALID');
   if(throughMs<=startMs)return Object.freeze({contractId:CAT_LIQUIDITY_CONTRACT_ID,metricKey:CAT_LIQUIDITY_METRIC_KEY,status:'unavailable',coverageState:'partial',reason:'WINDOW_COVERAGE_UNAVAILABLE',windowStart,windowEnd,dataThrough,valueSeconds:null,observedLowerBoundSeconds:null,segments:Object.freeze([]),runtimeAuthority:false});
-  const built=buildCatSupplyIntervals(events,activation,dataThrough),effectiveEnd=new Date(Math.min(endMs,throughMs)).toISOString(),aggregate=aggregateCatSupplyIntervals(built.intervals,windowStart,effectiveEnd),reasons=new Set(built.coverageIssues);
+  const built=buildCatSupplyIntervals(events,activationState,dataThrough),effectiveEnd=new Date(Math.min(endMs,throughMs)).toISOString(),aggregate=aggregateCatSupplyIntervals(built.intervals,windowStart,effectiveEnd),reasons=new Set(built.coverageIssues);
   if(startMs<catTime(activation.activatedAt,'x'))reasons.add('PRE_ACTIVATION_HISTORY_PARTIAL');
   if(activation.baselinePolicy!=='explicitly_authorized')reasons.add('ACTIVATION_BASELINE_NOT_COMPLETE');
   if(throughMs<endMs)reasons.add('DEPENDENCY_WATERMARK_BEFORE_WINDOW_END');
