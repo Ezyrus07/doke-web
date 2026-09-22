@@ -1,6 +1,6 @@
 # ANA-A10 — CAT liquidity projection
 
-ANA-A10 defines repository authority for `liquidity.active_service_seconds` from the CAT-A06 append-only visibility ledger. It does not activate runtime/staging or promote ANA-001 above **3/6**.
+ANA-A10 defines and now validates in staging the server-side authority for `liquidity.active_service_seconds` from the CAT-A06 append-only visibility ledger. It still does not promote ANA-001 above **3/6**.
 
 ## Source and ordering
 
@@ -27,6 +27,10 @@ Coverage is partial before CAT-A06 activation, without a complete activation bas
 
 Category/state comes only from CAT-A06 frozen dimension snapshots; historical joins to mutable catalog rows are forbidden.
 
-`dataThrough` is delegated to ANA-A07 `dependencyWatermark`. Runtime remains blocked until CAT has a versioned source watermark, ANA-A07 has a versioned liquidity `maxLagSeconds` policy, A04/A05 snapshot/reconciliation wiring exists, and a controlled synthetic staging canary passes.
+`dataThrough` is now backed in staging by the versioned CAT transaction-snapshot watermark. A04/A05 snapshot and reconciliation wiring plus the controlled synthetic canary are closed. Authoritative freshness remains blocked only because no versioned liquidity `maxLagSeconds` policy is approved; the runtime therefore returns `POLICY_THRESHOLD_MISSING` fail-closed.
 
-This lot creates no migration, staging read/write, deploy, browser activation, identity stitching, backfill or production change.
+Staging now has the A10 runtime and synthetic evidence. No deploy, browser activation, identity stitching, CAT source mutation, historical backfill or production change occurred.
+
+## Staging evidence
+
+Migration `20260922140215` plus compatibility follow-up `20260922140344` are applied. The global/BA/SP canary appended three snapshots and three matched CAT→ANA reconciliation runs, plus six healthy technical DQ rollups. CAT remained 7 rows with sequence 1–7 and the global source fingerprint stayed unchanged. No freshness policy row was inserted, so all snapshots correctly remain `projectionState=unavailable`, `coverageState=partial`, `value=null`.

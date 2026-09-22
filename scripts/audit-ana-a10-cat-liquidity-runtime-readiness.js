@@ -5,6 +5,8 @@ const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260922140000
 const compatibility=fs.readFileSync(path.join(root,'supabase','migrations','20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('authorized staging scope',c.scope==='repository_and_authorized_staging'&&c.authorization?.received===true);
+check('staging canary closed',c.status==='staging_runtime_canary_pass_policy_unset'&&c.stagingApplication?.compatibilityFollowupApplied===true&&c.stagingApplication?.canary==='pass');
+check('evidence linked',c.stagingEvidence==='reports/generated/ana-a10-cat-liquidity-runtime-staging-evidence.json');
 check('migration path',c.migration==='supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql');
 ['analytics_metric_freshness_policies_v1','cat_listing_visibility_watermark_v1','compute_analytics_cat_liquidity_v1','run_analytics_cat_liquidity_reconciliation_v1','run_analytics_cat_liquidity_projection_v1'].forEach(x=>check('runtime '+x,sql.includes(x)));
 check('compatibility followup redefines compute',compatibility.includes('create or replace function public.compute_analytics_cat_liquidity_v1')&&!compatibility.includes('pg_catalog.least(')&&!compatibility.includes('pg_catalog.greatest('));

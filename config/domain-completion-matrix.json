@@ -1,6 +1,6 @@
 {
-  "version": "1.3.118",
-  "updatedAt": "2026-09-22T10:08:00-03:00",
+  "version": "1.3.119",
+  "updatedAt": "2026-09-22T11:06:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -3348,7 +3348,15 @@
         "docs/ANA-A10-CAT-LIQUIDITY-PROJECTION.md",
         "scripts/audit-ana-a10-cat-liquidity-projection.js",
         "scripts/test-ana-a10-cat-liquidity-projection.js",
-        ".github/workflows/ana-a10-cat-liquidity-projection.yml"
+        ".github/workflows/ana-a10-cat-liquidity-projection.yml",
+        "config/ana-a10-cat-liquidity-runtime-readiness.json",
+        "docs/ANA-A10-CAT-LIQUIDITY-RUNTIME-READINESS.md",
+        "supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql",
+        "supabase/migrations/20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql",
+        "supabase/tests/032_ana_a10_cat_liquidity_runtime_validation.sql",
+        "scripts/audit-ana-a10-cat-liquidity-runtime-readiness.js",
+        "scripts/test-ana-a10-cat-liquidity-runtime-readiness.js",
+        "reports/generated/ana-a10-cat-liquidity-runtime-staging-evidence.json"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3386,7 +3394,10 @@
         "config/ana-a08-retention-cohort-projection.json",
         "backend/modules/analytics/canonical-funnel-projection.js",
         "config/ana-a09-canonical-funnel-projection.json",
-        "config/ana-a10-cat-liquidity-projection.json"
+        "config/ana-a10-cat-liquidity-projection.json",
+        "config/ana-a10-cat-liquidity-runtime-readiness.json",
+        "supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql",
+        "supabase/migrations/20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql"
       ],
       "tables": [
         "service_metric_events",
@@ -3396,7 +3407,8 @@
         "private.analytics_behavior_events_v1",
         "private.analytics_metric_snapshots_v1",
         "private.analytics_reconciliation_runs_v1",
-        "private.analytics_data_quality_rollups_v1"
+        "private.analytics_data_quality_rollups_v1",
+        "private.analytics_metric_freshness_policies_v1"
       ],
       "edgeFunctions": [
         "analytics-behavior-v1"
@@ -3440,7 +3452,9 @@
         "audit:ana-a09-canonical-funnel-projection",
         "test:ana-a09-canonical-funnel-projection",
         "audit:ana-a10-cat-liquidity-projection",
-        "test:ana-a10-cat-liquidity-projection"
+        "test:ana-a10-cat-liquidity-projection",
+        "audit:ana-a10-cat-liquidity-runtime-readiness",
+        "test:ana-a10-cat-liquidity-runtime-readiness"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3469,7 +3483,8 @@
         "ANA-A08 defines deterministic 30-day repeat-request and 90-day repeat-completion cohorts from canonical ORD client_id, anchored on first completion, matured by dataThrough and segmented by immutable first-completion category/state without inferring rehire or identity stitching.",
         "ANA-A09 defines an explicit-key-only canonical funnel from ANA behavior to ORD order.requested: search_request_id+service_id, analytics_session_id+service_id, quote_session_id and submitted order_id are the only allowed joins; actor/time-proximity and anonymous stitching are forbidden.",
         "CAT-A06 now provides a server-owned append-only listing visibility/version ledger in staging with deterministic per-service sequencing and synthetic canary evidence. Existing pre-activation listing history remains partial; ANA liquidity runtime has not yet consumed the ledger.",
-        "ANA-A10 defines deterministic repository liquidity projection from CAT-A06 service_id+sequence_no facts, keeps partial/unbaselined supply as a diagnostic lower bound rather than an authoritative metric, segments only by frozen CAT category/state dimensions, and delegates dataThrough to ANA-A07."
+        "ANA-A10 defines deterministic repository liquidity projection from CAT-A06 service_id+sequence_no facts, keeps partial/unbaselined supply as a diagnostic lower bound rather than an authoritative metric, segments only by frozen CAT category/state dimensions, and delegates dataThrough to ANA-A07.",
+        "ANA-A10 server runtime is applied in staging with a CAT transaction-snapshot watermark, A04 append-only liquidity snapshots, A05 CAT→ANA reconciliation and technical DQ. Global/BA/SP synthetic canary appended 3 snapshots, 3 matched reconciliation runs and 6 healthy rollups while the 7-row CAT source/fingerprint stayed unchanged; no maxLag policy was invented, so freshness remains fail-closed and supply coverage remains partial."
       ],
       "blockers": [
         {
@@ -3490,7 +3505,7 @@
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
         "ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.",
-        "ANA-A10 repository liquidity semantics are materialized over CAT-A06. Next create the server-side CAT ledger projection/snapshot path only after staging authorization, with a versioned CAT watermark, ANA-A07 liquidity freshness policy, A04/A05 reconciliation and a controlled synthetic canary; keep unbaselined coverage partial.",
+        "ANA-A10 staging runtime/canary is closed. Next approve a versioned maxLagSeconds policy for liquidity.active_service_seconds and separately decide whether/how to establish a complete CAT activation baseline; until then the runtime must stay unavailable/partial rather than fabricate authoritative liquidity.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
       ],
       "exitCriteria": [

@@ -4,8 +4,8 @@
   "sourceDomain": "CAT-001",
   "sourceHead": "73cab74809c4e8f415561f4b5e7a0eea99655245",
   "createdAt": "2026-09-22T09:57:00-03:00",
-  "scope": "repository_only",
-  "status": "repository_contract_ready_runtime_activation_blocked",
+  "scope": "repository_and_staging_runtime",
+  "status": "staging_runtime_canary_pass_policy_unset",
   "objective": "Derive liquidity.active_service_seconds deterministically from the CAT-A06 append-only listing visibility ledger, preserving partial coverage and ANA-A07 freshness boundaries without inferring history from mutable catalog state.",
   "rootCause": {
     "sourceGapClosed": "CAT-A06 now persists replay-safe listing visibility/version occurrences with per-service sequence numbers.",
@@ -73,7 +73,7 @@
     "metricKey": "liquidity.active_service_seconds",
     "dataThroughAuthority": "ANA-A07 dependencyWatermark",
     "metricThresholdStatus": "pending_versioned_metric_policy",
-    "catSourceWatermarkStatus": "runtime_contract_pending",
+    "catSourceWatermarkStatus": "staging_runtime_active",
     "maxEventTimestampDefinesFreshness": false,
     "computedAtDefinesFreshness": false,
     "runtimeActivationBlocked": true
@@ -97,17 +97,17 @@
   "authority": {
     "contractAuthority": true,
     "repositoryProjectionSemantics": true,
-    "runtimeProjectionAuthority": false,
-    "runtimeSnapshotAuthority": false,
-    "stagingAuthority": false,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": true,
+    "stagingAuthority": true,
     "productionAuthority": false
   },
   "prohibitedEffects": {
     "networkRequests": false,
-    "databaseConnections": false,
-    "stagingReads": false,
-    "stagingMutations": false,
-    "migrations": false,
+    "databaseConnections": true,
+    "stagingReads": true,
+    "stagingMutations": true,
+    "migrations": true,
     "deployments": false,
     "browserClientActivation": false,
     "anonymousIdentityStitching": false,
@@ -119,6 +119,19 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A10 closes repository liquidity-consumer semantics only. Runtime CAT watermark, A07 metric freshness policy, snapshot/reconciliation wiring and controlled staging evidence remain required."
+    "reason": "A10 server runtime, snapshot/reconciliation integration and synthetic staging evidence are closed, but ANA remains 3/6 because liquidity freshness has no approved maxLagSeconds policy, CAT activation baseline coverage remains partial, and broader ANA blockers still apply."
+  },
+  "runtimeImplementation": {
+    "baseMigration": "supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql",
+    "compatibilityMigration": "supabase/migrations/20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql",
+    "watermarkFunction": "private.cat_listing_visibility_watermark_v1",
+    "computeFunction": "public.compute_analytics_cat_liquidity_v1",
+    "reconciliationFunction": "public.run_analytics_cat_liquidity_reconciliation_v1",
+    "projectionRunner": "public.run_analytics_cat_liquidity_projection_v1",
+    "freshnessPolicyRegistry": "private.analytics_metric_freshness_policies_v1",
+    "stagingApplied": true,
+    "stagingCanary": true,
+    "stagingEvidence": "reports/generated/ana-a10-cat-liquidity-runtime-staging-evidence.json",
+    "liquidityPolicyInserted": false
   }
 }
