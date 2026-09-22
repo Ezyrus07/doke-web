@@ -2,7 +2,7 @@
 
 ## Status
 
-`repository-only contract ready; migration required`
+`staging migration prepared; application pending`
 
 This sublot exists because ANA-A04 defines `liquidity.active_service_seconds` as CAT-owned supply time, but mutable `services.status` cannot reconstruct history.
 
@@ -102,3 +102,29 @@ ANA remains **3/6**.
 The next write requires explicit authorization:
 
 `authorize-cat-a06-listing-visibility-timeline-staging-migration`
+
+
+## Authorized staging implementation
+
+Authorization `authorize-cat-a06-listing-visibility-timeline-staging-migration` was received.
+
+Prepared migration:
+
+- `supabase/migrations/20260922021000_cat_a06_listing_visibility_timeline.sql`
+- ledger: `private.cat_listing_visibility_events_v1`
+- immutable activation state: `private.cat_listing_visibility_ledger_state_v1`
+- recorder: `private.capture_cat_listing_visibility_transition_v1`
+- structural validation: `supabase/tests/031_cat_a06_listing_visibility_timeline_validation.sql`
+
+The recorder is attached to `public.services`; it records facts but does not mutate listing lifecycle state. Existing CAT lifecycle/moderation functions remain the writers.
+
+### Synthetic-only staging rule
+
+No activation baseline is written for existing listings. This is intentional because staging contains an eligible listing outside the controlled seed account and this lot is restricted to synthetic data.
+
+The activation state therefore records:
+
+- `coverage_before_activation=partial`;
+- `existing_listing_baseline_policy=not_performed_synthetic_only`.
+
+The functional staging canary must use only controlled synthetic data. Historical/current non-synthetic listings remain untouched.

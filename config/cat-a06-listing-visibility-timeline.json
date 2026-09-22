@@ -4,7 +4,7 @@
   "consumerDomain": "ANA-001",
   "createdAt": "2026-09-21T22:49:00-03:00",
   "scope": "repository_only",
-  "status": "contract_ready_migration_required",
+  "status": "staging_migration_prepared",
   "maturityImpact": {
     "cat": "none",
     "ana": "none",
@@ -91,8 +91,9 @@
       "allowed": true,
       "occurredAt": "migration/server observation time only",
       "historicalInferenceAllowed": false,
-      "currentlyEligibleListingsMayOpenAtActivationTime": true,
-      "coverageBeforeActivation": "partial"
+      "currentlyEligibleListingsMayOpenAtActivationTime": false,
+      "coverageBeforeActivation": "partial",
+      "executionPolicy": "existing listing baseline intentionally not performed because staging writes are restricted to synthetic data"
     },
     "idempotency": {
       "retryMustNotDuplicateSameAuthoritativeMutation": true,
@@ -116,9 +117,9 @@
     "stagingEvidenceAuthorized": false
   },
   "prohibitedEffects": {
-    "migrationCreated": false,
+    "migrationCreated": true,
     "schemaChanged": false,
-    "stagingRead": false,
+    "stagingRead": true,
     "stagingMutation": false,
     "deployment": false,
     "backfill": false,
@@ -127,5 +128,20 @@
     "anonymousIdentityStitching": false,
     "productionChanged": false
   },
-  "nextAuthorization": "authorize-cat-a06-listing-visibility-timeline-staging-migration"
+  "nextAuthorization": null,
+  "authorization": {
+    "token": "authorize-cat-a06-listing-visibility-timeline-staging-migration",
+    "received": true
+  },
+  "implementation": {
+    "migration": "supabase/migrations/20260922021000_cat_a06_listing_visibility_timeline.sql",
+    "validationSql": "supabase/tests/031_cat_a06_listing_visibility_timeline_validation.sql",
+    "ledgerTable": "private.cat_listing_visibility_events_v1",
+    "activationStateTable": "private.cat_listing_visibility_ledger_state_v1",
+    "captureFunction": "private.capture_cat_listing_visibility_transition_v1",
+    "existingListingBaselinePolicy": "not_performed_synthetic_only",
+    "historicalBackfill": false,
+    "stagingApplied": false,
+    "stagingCanary": false
+  }
 }

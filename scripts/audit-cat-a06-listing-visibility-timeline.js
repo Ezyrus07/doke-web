@@ -13,20 +13,43 @@ const moderation = read('supabase/migrations/044_expand_service_moderation_audit
 const lifecycle = read('supabase/migrations/149_service_lifecycle_authority.sql');
 const searchAuthority = read('supabase/migrations/159_service_search_approved_snapshot_authority.sql');
 const a04 = json('config/ana-a04-marketplace-funnel-health-projections.json');
+const migration = read('supabase/migrations/20260922021000_cat_a06_listing_visibility_timeline.sql');
+const sqlTest = read('supabase/tests/031_cat_a06_listing_visibility_timeline_validation.sql');
 const matrix = json('config/domain-completion-matrix.json');
 const ana = matrix.domains.find((item) => item.id === 'ANA-001');
 
 check(contract.contractId === 'cat-a06-listing-visibility-timeline-v1', 'contract id drift');
 check(contract.domain === 'CAT-001' && contract.consumerDomain === 'ANA-001', 'ownership drift');
 check(contract.scope === 'repository_only', 'CAT-A06 must remain repository-only');
-check(contract.status === 'contract_ready_migration_required', 'CAT-A06 status drift');
+check(['staging_migration_prepared','staging_visibility_ledger_canary_pass'].includes(contract.status), 'CAT-A06 status drift');
 check(contract.currentHistoryAssessment.reusableAsCanonicalSupplyLedger === false, 'legacy moderation audit must not be promoted to supply authority');
 check(contract.plannedLedger.appendOnly === true && contract.plannedLedger.serverOwned === true, 'future ledger must be append-only/server-owned');
 check(contract.plannedLedger.idempotency.stateTupleAloneCannotBeIdempotencyKey === true, 'state tuple cannot identify an occurrence');
 check(contract.plannedLedger.activationBaseline.historicalInferenceAllowed === false, 'retroactive visibility inference is forbidden');
 check(contract.anaConsumption.preLedgerCoverage === 'partial', 'pre-ledger coverage must remain partial');
 check(contract.anaConsumption.runtimeProjectionAuthorized === false, 'repository contract cannot authorize ANA runtime projection');
-check(Object.values(contract.prohibitedEffects).every((value) => value === false), 'repository-only prohibited effects drift');
+check(contract.implementation && contract.implementation.migration === 'supabase/migrations/20260922021000_cat_a06_listing_visibility_timeline.sql', 'migration path drift');
+check(contract.implementation && contract.implementation.historicalBackfill === false, 'historical backfill must remain disabled');
+check(contract.implementation && contract.implementation.existingListingBaselinePolicy === 'not_performed_synthetic_only', 'existing listing baseline policy drift');
+[
+  'create table if not exists private.cat_listing_visibility_events_v1',
+  'create table if not exists private.cat_listing_visibility_ledger_state_v1',
+  'private.capture_cat_listing_visibility_transition_v1',
+  'trg_cat_listing_visibility_insert_v1',
+  'trg_cat_listing_visibility_update_v1',
+  'trg_cat_listing_visibility_delete_v1',
+  "'not_performed_synthetic_only'",
+  'revoke all on table private.cat_listing_visibility_events_v1',
+  'grant select on table private.cat_listing_visibility_events_v1 to service_role'
+].forEach((marker) => check(migration.includes(marker), 'migration marker missing: ' + marker));
+check(!migration.includes('insert into private.cat_listing_visibility_events_v1 (\n  service_id'), 'migration must not baseline existing listings directly');
+[
+  'CAT_A06_LEDGER_RLS_DISABLED',
+  'CAT_A06_BROWSER_LEDGER_PRIVILEGE',
+  'CAT_A06_SERVICE_ROLE_PRIVILEGE_DRIFT',
+  'CAT_A06_LEDGER_MUST_SURVIVE_SOURCE_DELETION',
+  'rollback;'
+].forEach((marker) => check(sqlTest.includes(marker), 'SQL validation marker missing: ' + marker));
 
 check(moderation.includes("v_event_key := 'service:' || new.id::text || ':visibility:' || old.status || ':' || new.status || ':' || coalesce(v_version_id::text, 'none')"), 'legacy visibility event key shape changed; re-evaluate root cause');
 check(moderation.includes('on conflict (event_key) do nothing'), 'legacy visibility dedup behavior changed; re-evaluate root cause');
@@ -58,5 +81,5 @@ if (failures.length) {
 } else {
   console.log('[CAT-A06] existing CAT lifecycle authority confirmed.');
   console.log('[CAT-A06] service_moderation_events is correctly rejected as complete supply history.');
-  console.log('[CAT-A06] future CAT ledger contract is repository-only and ANA remains 3/6.');
+  console.log('[CAT-A06] staging migration is prepared without historical/current listing baseline and ANA remains 3/6.');
 }
