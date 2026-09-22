@@ -1,0 +1,38 @@
+name: CAT-A07 Supply Coverage Baseline
+on:
+  pull_request:
+    paths:
+      - 'config/cat-a07-supply-coverage-baseline.json'
+      - 'docs/CAT-A07-SUPPLY-COVERAGE-BASELINE.md'
+      - 'scripts/audit-cat-a07-supply-coverage-baseline.js'
+      - 'scripts/test-cat-a07-supply-coverage-baseline.js'
+      - 'config/cat-a06-listing-visibility-timeline.json'
+      - 'config/ana-a10-cat-liquidity-projection.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'package.json'
+      - '.github/workflows/cat-a07-supply-coverage-baseline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repository-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: |
+          node --check scripts/audit-cat-a07-supply-coverage-baseline.js
+          node --check scripts/test-cat-a07-supply-coverage-baseline.js
+      - run: |
+          npm run audit:cat-a07-supply-coverage-baseline
+          npm run test:cat-a07-supply-coverage-baseline
+          npm run audit:cat-a06-listing-visibility-timeline
+          npm run test:cat-a06-listing-visibility-timeline
+      - run: npm run audit:domain-completion-matrix
+      - run: git diff --check

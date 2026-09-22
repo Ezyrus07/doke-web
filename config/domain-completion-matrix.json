@@ -1,6 +1,6 @@
 {
-  "version": "1.3.119",
-  "updatedAt": "2026-09-22T11:06:00-03:00",
+  "version": "1.3.120",
+  "updatedAt": "2026-09-22T11:27:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -671,7 +671,12 @@
         "scripts/audit-cat-a06-listing-visibility-timeline.js",
         "scripts/test-cat-a06-listing-visibility-timeline.js",
         ".github/workflows/cat-a06-listing-visibility-timeline.yml",
-        "reports/generated/cat-a06-staging-visibility-ledger-evidence.json"
+        "reports/generated/cat-a06-staging-visibility-ledger-evidence.json",
+        "config/cat-a07-supply-coverage-baseline.json",
+        "docs/CAT-A07-SUPPLY-COVERAGE-BASELINE.md",
+        "scripts/audit-cat-a07-supply-coverage-baseline.js",
+        "scripts/test-cat-a07-supply-coverage-baseline.js",
+        ".github/workflows/cat-a07-supply-coverage-baseline.yml"
       ],
       "scanRoots": [
         "assets/js/repositories/services-repository.js",
@@ -679,7 +684,8 @@
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/home",
         "assets/js/pages/detalhe-anuncio",
-        "supabase/migrations/030_service_catalog_sync_metrics.sql"
+        "supabase/migrations/030_service_catalog_sync_metrics.sql",
+        "config/cat-a07-supply-coverage-baseline.json"
       ],
       "tables": [
         "services",
@@ -704,7 +710,9 @@
         "test:service-moderation-flow-contract",
         "test:admin-service-review-page-contract",
         "audit:cat-a06-listing-visibility-timeline",
-        "test:cat-a06-listing-visibility-timeline"
+        "test:cat-a06-listing-visibility-timeline",
+        "audit:cat-a07-supply-coverage-baseline",
+        "test:cat-a07-supply-coverage-baseline"
       ],
       "evidence": [
         "Supabase service repository, version moderation and admin review exist.",
@@ -721,13 +729,14 @@
         "CAT-A04 complete: immutable signed uploads and reference-safe cleanup validated on 09e77e5236d2bc0c820d73768f0161f326adeefe.",
         "CAT-B04 complete: approved service versions and historical order snapshots are immutable on 09e77e5236d2bc0c820d73768f0161f326adeefe.",
         "CAT-A05 complete: Quality #1237, blocking E2E, 105 guards, Canary #806 and Diagnostic #901 converged on one stable head.",
-        "CAT-A06 is active in staging as a CAT-owned append-only listing visibility/version ledger. Synthetic canary preserved two repeated pause/restore cycles, a BA->SP visible-version dimension split, and history after source deletion; no existing non-synthetic listing baseline or historical backfill was written."
+        "CAT-A06 is active in staging as a CAT-owned append-only listing visibility/version ledger. Synthetic canary preserved two repeated pause/restore cycles, a BA->SP visible-version dimension split, and history after source deletion; no existing non-synthetic listing baseline or historical backfill was written.",
+        "CAT-A07 defines a forward-only CAT-owned coverage epoch: a future authorized baseline must atomically snapshot every current service, append activation_baseline facts without rewriting CAT-A06 activation/history, and abort on any current-state/ledger drift. No baseline is executed by this contract."
       ],
       "blockers": [],
       "nextActions": [
         "Keep all CAT-001 authority, lifecycle and CAT-A06 visibility-ledger audits cumulative in Quality.",
         "Expose CAT-A06 only as a server-side source dependency for ANA liquidity; do not create a second lifecycle writer.",
-        "Keep pre-activation/pre-observation supply coverage partial and production blocked until global release gates are satisfied."
+        "Keep supply coverage partial until CAT-A07 is separately authorized and a forward coverage epoch is certified; never rewrite CAT-A06 activation evidence or infer historical visibility."
       ],
       "exitCriteria": [
         "Create, submit, moderate, publish, edit, pause and archive work remotely.",
@@ -3356,7 +3365,12 @@
         "supabase/tests/032_ana_a10_cat_liquidity_runtime_validation.sql",
         "scripts/audit-ana-a10-cat-liquidity-runtime-readiness.js",
         "scripts/test-ana-a10-cat-liquidity-runtime-readiness.js",
-        "reports/generated/ana-a10-cat-liquidity-runtime-staging-evidence.json"
+        "reports/generated/ana-a10-cat-liquidity-runtime-staging-evidence.json",
+        "config/ana-a11-liquidity-freshness-policy-derivation.json",
+        "docs/ANA-A11-LIQUIDITY-FRESHNESS-POLICY-DERIVATION.md",
+        "scripts/audit-ana-a11-liquidity-freshness-policy-derivation.js",
+        "scripts/test-ana-a11-liquidity-freshness-policy-derivation.js",
+        ".github/workflows/ana-a11-liquidity-freshness-policy-derivation.yml"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3397,7 +3411,8 @@
         "config/ana-a10-cat-liquidity-projection.json",
         "config/ana-a10-cat-liquidity-runtime-readiness.json",
         "supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql",
-        "supabase/migrations/20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql"
+        "supabase/migrations/20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql",
+        "config/ana-a11-liquidity-freshness-policy-derivation.json"
       ],
       "tables": [
         "service_metric_events",
@@ -3454,7 +3469,9 @@
         "audit:ana-a10-cat-liquidity-projection",
         "test:ana-a10-cat-liquidity-projection",
         "audit:ana-a10-cat-liquidity-runtime-readiness",
-        "test:ana-a10-cat-liquidity-runtime-readiness"
+        "test:ana-a10-cat-liquidity-runtime-readiness",
+        "audit:ana-a11-liquidity-freshness-policy-derivation",
+        "test:ana-a11-liquidity-freshness-policy-derivation"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3484,7 +3501,8 @@
         "ANA-A09 defines an explicit-key-only canonical funnel from ANA behavior to ORD order.requested: search_request_id+service_id, analytics_session_id+service_id, quote_session_id and submitted order_id are the only allowed joins; actor/time-proximity and anonymous stitching are forbidden.",
         "CAT-A06 now provides a server-owned append-only listing visibility/version ledger in staging with deterministic per-service sequencing and synthetic canary evidence. Existing pre-activation listing history remains partial; ANA liquidity runtime has not yet consumed the ledger.",
         "ANA-A10 defines deterministic repository liquidity projection from CAT-A06 service_id+sequence_no facts, keeps partial/unbaselined supply as a diagnostic lower bound rather than an authoritative metric, segments only by frozen CAT category/state dimensions, and delegates dataThrough to ANA-A07.",
-        "ANA-A10 server runtime is applied in staging with a CAT transaction-snapshot watermark, A04 append-only liquidity snapshots, A05 CAT→ANA reconciliation and technical DQ. Global/BA/SP synthetic canary appended 3 snapshots, 3 matched reconciliation runs and 6 healthy rollups while the 7-row CAT source/fingerprint stayed unchanged; no maxLag policy was invented, so freshness remains fail-closed and supply coverage remains partial."
+        "ANA-A10 server runtime is applied in staging with a CAT transaction-snapshot watermark, A04 append-only liquidity snapshots, A05 CAT→ANA reconciliation and technical DQ. Global/BA/SP synthetic canary appended 3 snapshots, 3 matched reconciliation runs and 6 healthy rollups while the 7-row CAT source/fingerprint stayed unchanged; no maxLag policy was invented, so freshness remains fail-closed and supply coverage remains partial.",
+        "ANA-A11 proves the missing liquidity freshness number is downstream of a missing analytics publication cadence/SLO. It freezes maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds, forbids implicit grace, and keeps all three values unset until a versioned scheduler/cadence is approved."
       ],
       "blockers": [
         {
@@ -3505,7 +3523,7 @@
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
         "ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.",
-        "ANA-A10 staging runtime/canary is closed. Next approve a versioned maxLagSeconds policy for liquidity.active_service_seconds and separately decide whether/how to establish a complete CAT activation baseline; until then the runtime must stay unavailable/partial rather than fabricate authoritative liquidity.",
+        "ANA-A10 staging runtime/canary is closed. ANA-A11 now defines threshold derivation but leaves windowStepSeconds, projectionDelaySloSeconds and maxLagSeconds unset; CAT-A07 defines the forward-only coverage epoch but performs no baseline. Next choose/version the liquidity publication cadence + delay SLO and separately authorize CAT-A07 baseline execution.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
       ],
       "exitCriteria": [

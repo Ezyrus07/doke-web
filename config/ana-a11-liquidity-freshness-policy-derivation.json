@@ -1,0 +1,101 @@
+{
+  "contractId": "ana-a11-liquidity-freshness-policy-derivation-v1",
+  "domain": "ANA-001",
+  "metricKey": "liquidity.active_service_seconds",
+  "metricVersion": "v1",
+  "sourceHead": "2b6b9425a40027802aaec4204e1c98e73477be5f",
+  "createdAt": "2026-09-22T11:27:00-03:00",
+  "scope": "repository_only",
+  "status": "derivation_contract_ready_threshold_value_unset",
+  "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
+  "rootCause": {
+    "missingNumberIsNotRootCause": true,
+    "cadenceAuthorityMissing": "ANA-001 has no canonical cron/publication cadence in the domain matrix and repository search found no analytics freshness cadence or metric-specific maxLagSeconds authority.",
+    "sourceWatermarkAvailable": "CAT-A06 transaction-snapshot watermark is active in staging through ANA-A10.",
+    "consequence": "A numeric maxLagSeconds cannot be authoritative until the latest canonical closed-window publication cadence and allowed projection delay are versioned."
+  },
+  "thresholdDerivation": {
+    "formula": "maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds",
+    "windowStepSeconds": {
+      "status": "pending_versioned_projection_schedule",
+      "definition": "Seconds between successive canonical closed-window boundaries for this metric series."
+    },
+    "projectionDelaySloSeconds": {
+      "status": "pending_versioned_projection_slo",
+      "definition": "Maximum approved delay from a canonical window boundary until its snapshot is expected to be materialized and selectable."
+    },
+    "extraGrace": {
+      "implicitGraceAllowed": false,
+      "recoveryBudgetMayBeAdded": false,
+      "reason": "An unversioned recovery cushion would hide missed publications and recreate an implicit threshold."
+    },
+    "sourceWatermarkLagAddedToThreshold": false,
+    "reason": "CAT freshness is proven independently by its dependency watermark; source delay must not be hidden inside the metric age threshold."
+  },
+  "activationPreconditions": [
+    "A versioned canonical windowStepSeconds is approved for liquidity.active_service_seconds.",
+    "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
+    "A server-side publication trigger or scheduler implements that cadence.",
+    "Controlled staging evidence proves the trigger closes the intended windows and remains within the approved delay budget.",
+    "The derived integer maxLagSeconds is inserted into private.analytics_metric_freshness_policies_v1 only under a separately authorized staging mutation.",
+    "ANA-A07 boundary tests prove fresh at <= maxLagSeconds and stale at > maxLagSeconds without older-window fallback."
+  ],
+  "nonAuthorities": [
+    "ORD worker one-minute cron",
+    "REL daily SLO report",
+    "request freshness windows",
+    "retry backoff",
+    "browser refresh behavior"
+  ],
+  "policyShape": {
+    "required": [
+      "policyId",
+      "metricKey",
+      "metricVersion",
+      "maxLagSeconds",
+      "effectiveFrom"
+    ],
+    "additionallyRequiredByThisContract": [
+      "windowStepSeconds",
+      "projectionDelaySloSeconds",
+      "derivationContractId",
+      "approvalEvidence"
+    ],
+    "effectiveUntilOptional": true
+  },
+  "currentDecision": {
+    "windowStepSeconds": null,
+    "projectionDelaySloSeconds": null,
+    "maxLagSeconds": null,
+    "policyInsertAuthorized": false,
+    "runtimeBehavior": "POLICY_THRESHOLD_MISSING"
+  },
+  "authority": {
+    "derivationContractAuthority": true,
+    "thresholdValueAuthority": false,
+    "schedulerAuthority": false,
+    "stagingMutationAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "cronChanges": false,
+    "policyInsert": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "historicalBackfill": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "A11 closes the derivation rule and identifies the missing scheduler/SLO authority. It deliberately leaves the numeric threshold unset."
+  }
+}

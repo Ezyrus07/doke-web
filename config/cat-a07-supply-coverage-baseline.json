@@ -1,0 +1,100 @@
+{
+  "contractId": "cat-a07-supply-coverage-baseline-v1",
+  "domain": "CAT-001",
+  "consumerDomain": "ANA-001",
+  "sourceContract": "cat-a06-listing-visibility-timeline-v1",
+  "sourceHead": "2b6b9425a40027802aaec4204e1c98e73477be5f",
+  "createdAt": "2026-09-22T11:27:00-03:00",
+  "scope": "repository_only",
+  "status": "forward_baseline_contract_ready_staging_authorization_required",
+  "objective": "Define a CAT-owned forward-only coverage epoch that can make future supply windows complete without reconstructing or rewriting pre-ledger visibility history.",
+  "rootCause": {
+    "activationStateImmutable": "CAT-A06 correctly records that no non-synthetic baseline was performed at activation.",
+    "persistentCoverageGap": "Listings already visible before CAT-A06 can remain active without a ledger opening event, so partial coverage can persist indefinitely.",
+    "forbiddenShortcut": "Changing the original activation timestamp/policy or inferring publish time from mutable current rows would fabricate history."
+  },
+  "strategy": {
+    "type": "forward_observation_coverage_epoch",
+    "historicalInferenceAllowed": false,
+    "originalActivationStateMutationAllowed": false,
+    "lifecycleMutationAllowed": false,
+    "analyticsOwnedWriterAllowed": false,
+    "owner": "CAT-001",
+    "observationTimestampAuthority": "server transaction timestamp inside one consistent database transaction"
+  },
+  "preflight": {
+    "requireCatA06StructuralPass": true,
+    "compareCurrentCatalogToLatestLedgerState": true,
+    "rules": [
+      "For a service with prior ledger facts, current eligibility must equal the latest eligible_after; mismatch aborts rather than repairs.",
+      "For a currently eligible service with prior facts, current visible version and frozen dimensions must be compatible with the latest ledger state; unexplained drift aborts.",
+      "A deleted/missing service whose latest ledger fact is eligible_after=true aborts because an unrecorded close would exist.",
+      "No source row or ledger row may be mutated to make preflight pass."
+    ]
+  },
+  "baselineWriteContract": {
+    "futureSchemaAuthority": "CAT-001 migration required",
+    "baselineRunIdRequired": true,
+    "sourceTransitionKey": "baseline:<baselineRunId>:<serviceId>",
+    "oneEventPerCurrentService": true,
+    "sequenceRule": "next monotonic sequence_no for each service",
+    "coverageKind": "activation_baseline",
+    "eligibleBeforeRule": "latest eligible_after when a prior fact exists; false when no prior fact exists",
+    "eligibleAfterRule": "current CAT public-visibility eligibility at baseline timestamp",
+    "visibleVersionAfterRule": "current approved visible version when eligible_after=true; null otherwise",
+    "dimensionAfterRule": "freeze current CAT category/state snapshot when eligible_after=true; null otherwise",
+    "retryRule": "same baselineRunId+serviceId is idempotent; a distinct authorized baseline run is a distinct occurrence",
+    "allWritesAtomic": true
+  },
+  "coverageEpoch": {
+    "futureAuthority": "private CAT-owned append-only coverage epoch record",
+    "mutateCatA06ActivationRow": false,
+    "certifiedOnlyAfter": [
+      "full current-service scan completed in the same baseline transaction",
+      "one baseline occurrence exists for every current service",
+      "all preflight state comparisons passed",
+      "event counts and service counts reconcile",
+      "source and ledger fingerprints are recorded",
+      "no CAT lifecycle row was mutated"
+    ],
+    "completenessRule": "windows with windowStart before coverageCompleteFrom remain partial; windows with windowStart at or after a certified coverageCompleteFrom may be complete if all later ledger events are structurally valid and ANA freshness is satisfied"
+  },
+  "deletedServiceRule": {
+    "priorClosedServiceAllowed": true,
+    "priorOpenMissingSource": "abort",
+    "historicalDeletionTimeInferenceAllowed": false
+  },
+  "anaHandoff": {
+    "A10RuntimeChangeRequired": true,
+    "currentA10ActivationPolicyCheckRemainsPartialUntilThen": true,
+    "noHistoricalValuePromotion": true
+  },
+  "authority": {
+    "coverageStrategyAuthority": true,
+    "coverageEpochValueAuthority": false,
+    "stagingMutationAuthority": false,
+    "runtimeWriterAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "sourceLifecycleMutation": false,
+    "ledgerMutation": false,
+    "activationStateMutation": false,
+    "historicalBackfill": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "catBefore": 4,
+    "catAfter": 4,
+    "anaBefore": 3,
+    "anaAfter": 3,
+    "reason": "A07 defines the only acceptable forward baseline strategy but performs no baseline and creates no completeness epoch."
+  }
+}

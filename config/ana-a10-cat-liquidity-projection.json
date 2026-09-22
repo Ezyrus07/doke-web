@@ -65,18 +65,21 @@
       "CAT dependency watermark covers windowEnd",
       "CAT dependency is not stale"
     ],
-    "partialValuePolicy": "canonical valueSeconds remains null; observedLowerBoundSeconds may be emitted as diagnostic evidence"
+    "partialValuePolicy": "canonical valueSeconds remains null; observedLowerBoundSeconds may be emitted as diagnostic evidence",
+    "forwardCoverageContract": "cat-a07-supply-coverage-baseline-v1",
+    "forwardCoverageStatus": "repository_contract_ready_baseline_not_executed"
   },
   "freshnessDependency": {
     "contract": "ANA-A07",
     "sourceDomain": "CAT-001",
     "metricKey": "liquidity.active_service_seconds",
     "dataThroughAuthority": "ANA-A07 dependencyWatermark",
-    "metricThresholdStatus": "pending_versioned_metric_policy",
+    "metricThresholdStatus": "pending_publication_cadence_and_projection_delay_slo",
     "catSourceWatermarkStatus": "staging_runtime_active",
     "maxEventTimestampDefinesFreshness": false,
     "computedAtDefinesFreshness": false,
-    "runtimeActivationBlocked": true
+    "runtimeActivationBlocked": true,
+    "policyDerivationContract": "ana-a11-liquidity-freshness-policy-derivation-v1"
   },
   "runtimeRequirements": [
     "server-side read path for CAT-A06 ledger and activation state without browser access",
@@ -133,5 +136,9 @@
     "stagingCanary": true,
     "stagingEvidence": "reports/generated/ana-a10-cat-liquidity-runtime-staging-evidence.json",
     "liquidityPolicyInserted": false
-  }
+  },
+  "remainingAuthorities": [
+    "ANA-A11 versioned windowStepSeconds and projectionDelaySloSeconds, followed by derived maxLagSeconds policy activation",
+    "CAT-A07 certified forward coverage epoch plus A10 runtime handoff for windows at/after coverageCompleteFrom"
+  ]
 }

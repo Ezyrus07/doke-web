@@ -34,3 +34,9 @@ Staging now has the A10 runtime and synthetic evidence. No deploy, browser activ
 ## Staging evidence
 
 Migration `20260922140215` plus compatibility follow-up `20260922140344` are applied. The global/BA/SP canary appended three snapshots and three matched CAT→ANA reconciliation runs, plus six healthy technical DQ rollups. CAT remained 7 rows with sequence 1–7 and the global source fingerprint stayed unchanged. No freshness policy row was inserted, so all snapshots correctly remain `projectionState=unavailable`, `coverageState=partial`, `value=null`.
+
+## Policy and coverage handoffs
+
+ANA-A11 now owns the derivation rule for the missing freshness threshold: `maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds`. All three values remain unset because no analytics publication cadence/SLO is currently authoritative.
+
+CAT-A07 now owns the only acceptable path to complete supply coverage: a forward-only CAT baseline and separately certified coverage epoch. It does not rewrite the CAT-A06 activation row or infer prior publish times. The current A10 runtime remains partial until that future epoch is implemented and consumed.
