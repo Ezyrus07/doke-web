@@ -12,7 +12,7 @@ check('visible snapshot drift abort',sql.includes('DOKE_CAT_A07_CURRENT_VISIBLE_
 check('count mismatch abort',sql.includes('DOKE_CAT_A07_BASELINE_COUNT_MISMATCH'));
 check('post structural abort',sql.includes('DOKE_CAT_A07_POST_BASELINE_STRUCTURAL_FAILED'));
 check('baseline key scoped by run and service',sql.includes("pg_catalog.format('cat-a07:baseline:%s:%s',p_baseline_run_id,c.service_id)"));
-check('coverage epoch certified after checks',sql.indexOf("'certified'")>sql.indexOf('DOKE_CAT_A07_POST_BASELINE_STRUCTURAL_FAILED'));
+check('coverage epoch certified after checks',sql.indexOf('insert into private.cat_listing_supply_coverage_epochs_v1')>sql.indexOf('DOKE_CAT_A07_POST_BASELINE_STRUCTURAL_FAILED'));
 check('handoff selects epoch before window start',handoff.includes('e.coverage_complete_from <= p_window_start'));
 check('handoff exposes epoch',handoff.includes("'coverageCompleteFrom',v_coverage_complete_from"));
 check('handoff does not activate threshold',handoff.includes("v_reason_code := 'POLICY_THRESHOLD_MISSING'"));
