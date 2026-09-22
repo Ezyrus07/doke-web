@@ -1083,6 +1083,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA defense-in-depth hardening has a repository-only fail-closed preflight: four private ANA tables are targeted for ENABLE ROW LEVEL SECURITY without FORCE RLS or new policies, and three advisor-reported FK columns are targeted for idempotent covering indexes; no migration file or staging mutation is authorized yet.
 - ANA defense-in-depth hardening is closed in staging: RLS is enabled on the four private ANA runtime tables without FORCE RLS or policies, grants/RPC authority are preserved, the three target FK advisor findings are cleared, and post-hardening canonical canary run 35628667088 passed 15/15.
 - ANA-A06 defines repository-only ownership, zero-tolerance structural-integrity thresholds and a fail-closed maturity-promotion gate for the two A05 data-quality rollups currently emitted in staging; it adds no alert delivery, runtime mutation, browser analytics, staging authority or production authority.
+- ANA-A06 authorized read-only staging evidence inspected all seven A05 reconciliation runs and fourteen rollups. The latest coherent run is hold because both required metrics are no_data with sample_count=0; two earlier non-empty synthetic runs passed with both ratios at zero, but historical pass evidence is not cherry-picked to override the latest no-data observation.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1090,7 +1091,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
-- Validate ANA-A06 data-quality ownership and maturity-promotion gates against existing A05 staging rollups through a separately governed read-only evidence sublot; ANA-A06 itself authorizes no remote execution.
+- ANA-A06 read-only staging inspection is complete and currently holds on a zero-sample latest window. Do not promote from historical pass evidence; use a separately authorized controlled non-empty reconciliation canary or resolve the freshness-selection contract before promotion.
 - Operationalize the remaining maturity-4 funnel, CAT supply/liquidity, retention and freshness sublots separately.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
@@ -1227,4 +1228,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-15T21:20:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-21T21:42:07-03:00._
