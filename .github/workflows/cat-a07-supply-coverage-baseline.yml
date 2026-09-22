@@ -3,6 +3,13 @@ on:
   pull_request:
     paths:
       - 'config/cat-a07-supply-coverage-baseline.json'
+      - 'config/cat-a07-supply-coverage-baseline-readiness.json'
+      - 'docs/CAT-A07-SUPPLY-COVERAGE-BASELINE-READINESS.md'
+      - 'supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql'
+      - 'supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql'
+      - 'supabase/tests/033_cat_a07_supply_coverage_baseline_validation.sql'
+      - 'scripts/audit-cat-a07-supply-coverage-baseline-readiness.js'
+      - 'scripts/test-cat-a07-supply-coverage-baseline-readiness.js'
       - 'docs/CAT-A07-SUPPLY-COVERAGE-BASELINE.md'
       - 'scripts/audit-cat-a07-supply-coverage-baseline.js'
       - 'scripts/test-cat-a07-supply-coverage-baseline.js'
@@ -32,6 +39,8 @@ jobs:
       - run: |
           npm run audit:cat-a07-supply-coverage-baseline
           npm run test:cat-a07-supply-coverage-baseline
+          npm run audit:cat-a07-supply-coverage-baseline-readiness
+          npm run test:cat-a07-supply-coverage-baseline-readiness
           npm run audit:cat-a06-listing-visibility-timeline
           npm run test:cat-a06-listing-visibility-timeline
       - run: npm run audit:domain-completion-matrix

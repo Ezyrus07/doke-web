@@ -1,0 +1,63 @@
+{
+  "contractId": "cat-a07-supply-coverage-baseline-readiness-v1",
+  "domain": "CAT-001",
+  "consumerDomain": "ANA-001",
+  "sourceHead": "0841f99eb822527e274e5987a1de8934cfa3575d",
+  "createdAt": "2026-09-22T11:42:00-03:00",
+  "scope": "repository_only",
+  "status": "migration_candidates_ready_staging_authorization_required",
+  "authorization": {
+    "requiredToken": "authorize-cat-a07-supply-coverage-baseline-staging",
+    "received": false,
+    "genericContinuationAuthorizesStaging": false
+  },
+  "migrations": {
+    "catBaseline": "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql",
+    "anaCoverageHandoff": "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
+    "stagingApplied": false
+  },
+  "validationSql": "supabase/tests/033_cat_a07_supply_coverage_baseline_validation.sql",
+  "executionOrder": [
+    "Apply CAT-A07 baseline schema/function migration.",
+    "Run structural SQL validation before baseline.",
+    "Execute one baseline run with a fresh operator-provided UUID.",
+    "Verify source-service count equals baseline-event count, structural chain remains valid, and certified epoch exists.",
+    "Apply ANA-A10 coverage-epoch handoff.",
+    "Verify a pre-epoch window remains partial and a post-epoch window changes coverage only; freshness must remain unavailable while ANA-A11 policy is unset."
+  ],
+  "serialization": {
+    "sourceTablesLocked": [
+      "public.services",
+      "public.service_versions",
+      "public.service_categories"
+    ],
+    "ledgerLocked": "private.cat_listing_visibility_events_v1",
+    "lockMode": "share row exclusive",
+    "purpose": "prevent source/ledger drift during the one-transaction coverage observation"
+  },
+  "failClosed": [
+    "CAT-A06 activation evidence drift",
+    "sequence gap/state mismatch/time regression/missing visible dimensions",
+    "latest eligible ledger state with missing source service",
+    "current eligibility disagreement with latest ledger state",
+    "current visible version/dimension disagreement with latest eligible ledger state",
+    "baseline event count != current service count",
+    "post-baseline structural defect"
+  ],
+  "boundaries": {
+    "originalCatA06ActivationRowMutated": false,
+    "historicalVisibilityInferred": false,
+    "publicServicesMutated": false,
+    "analyticsOwnsBaselineWriter": false,
+    "browserExecutable": false,
+    "production": false
+  },
+  "effectsThisLot": {
+    "repositoryMigrationFilesCreated": true,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrationsApplied": false,
+    "deployments": false,
+    "productionChanges": false
+  }
+}

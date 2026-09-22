@@ -6,7 +6,7 @@
   "sourceHead": "2b6b9425a40027802aaec4204e1c98e73477be5f",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "repository_only",
-  "status": "forward_baseline_contract_ready_staging_authorization_required",
+  "status": "staging_migration_candidates_prepared_authorization_required",
   "objective": "Define a CAT-owned forward-only coverage epoch that can make future supply windows complete without reconstructing or rewriting pre-ledger visibility history.",
   "rootCause": {
     "activationStateImmutable": "CAT-A06 correctly records that no non-synthetic baseline was performed at activation.",
@@ -96,5 +96,20 @@
     "anaBefore": 3,
     "anaAfter": 3,
     "reason": "A07 defines the only acceptable forward baseline strategy but performs no baseline and creates no completeness epoch."
+  },
+  "implementation": {
+    "baselineMigration": "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql",
+    "validationSql": "supabase/tests/033_cat_a07_supply_coverage_baseline_validation.sql",
+    "anaCoverageHandoffMigration": "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
+    "readiness": "config/cat-a07-supply-coverage-baseline-readiness.json",
+    "repositoryMigrationPrepared": true,
+    "stagingApplied": false,
+    "baselineExecuted": false,
+    "coverageEpochCertified": false
+  },
+  "nextAuthorization": "authorize-cat-a07-supply-coverage-baseline-staging",
+  "authorization": {
+    "requiredToken": "authorize-cat-a07-supply-coverage-baseline-staging",
+    "received": false
   }
 }
