@@ -1,0 +1,39 @@
+name: Validation PAY Entry Fixture-Memory
+
+on:
+  pull_request:
+    paths:
+      - 'tests/e2e/payment-entry-state-contract.spec.js'
+      - '.github/workflows/validation-pay-entry-fixture-memory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  payment-entry-fixture-memory:
+    name: PAY payment-entry fixture-memory E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run payment entry state contract
+        run: npx playwright test tests/e2e/payment-entry-state-contract.spec.js --reporter=list
+
+# Validation-only workflow for the isolated PAY E2E fixture-authority repair.
+# No deploy, staging mutation, production action or merge step.
