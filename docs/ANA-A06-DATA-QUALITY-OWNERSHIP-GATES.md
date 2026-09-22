@@ -45,3 +45,19 @@ The PR base advanced by one SCHED-A03B commit while ANA-A06 certification was in
 
 Canonical matrix refresh run `35672638184` completed successfully after the reconciliation and produced commit `9df754656e9df33d592272890b6f3f945fb710e0`. This evidence is repository-only: no migration was applied, no staging mutation was executed, browser analytics remained disabled, and production was untouched.
 
+## Authorized staging read-only evidence
+
+Authorization `authorize-ana-a06-staging-readonly-gate` was consumed against the staging project `doke-web-staging` using SELECT-only inspection. No reconciliation RPC was invoked and no staging row, migration, Edge Function, browser flag or production resource was changed.
+
+Seven reconciliation runs and fourteen A05 data-quality rollups exist. The most recent coherent run is `ebe817a0-a7a8-445e-9e59-623d417aa663`. Its window contains zero ORD source facts and zero ANA projections, so both required metrics are `no_data`, have `sample_count=0`, and evaluate to **hold** under the A06 minimum sample floor of one.
+
+Two earlier runs covering the existing synthetic ORD/ANA fact have `sample_count=1`, zero projection-missing rate and zero reconciliation-mismatch rate. They demonstrate that the A05 reconciliation path can pass when the window contains evidence, but they are not selected ad hoc to override the latest no-data observation.
+
+The read-only result therefore closes the evidence inspection itself but does **not** authorize ANA maturity promotion. ANA-001 remains **3/6**.
+
+Machine-readable evidence: `reports/generated/ana-a06-staging-readonly-evidence.json`.
+
+A controlled next step would append one new A05 reconciliation run and its two rollups over the already-existing synthetic fact window, without mutating ORD source data. That is a staging write and requires the separate exact authorization:
+
+`authorize-ana-a06-staging-reconciliation-canary`
+
