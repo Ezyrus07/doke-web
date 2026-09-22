@@ -2,6 +2,7 @@
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260922153000_cat_a07_supply_coverage_baseline.sql'),'utf8');
 const handoff=fs.readFileSync(path.join(root,'supabase','migrations','20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql'),'utf8');
+const dimensionPreflight=fs.readFileSync(path.join(root,'supabase','migrations','20260922153500_cat_a07_supply_coverage_dimension_preflight.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('baseline run id required',sql.includes('DOKE_CAT_A07_BASELINE_RUN_ID_REQUIRED'));
 check('idempotent replay exists',sql.includes("'idempotentReplay',true"));
@@ -13,6 +14,7 @@ check('count mismatch abort',sql.includes('DOKE_CAT_A07_BASELINE_COUNT_MISMATCH'
 check('post structural abort',sql.includes('DOKE_CAT_A07_POST_BASELINE_STRUCTURAL_FAILED'));
 check('baseline key scoped by run and service',sql.includes("pg_catalog.format('cat-a07:baseline:%s:%s',p_baseline_run_id,c.service_id)"));
 check('coverage epoch certified after checks',sql.indexOf('insert into private.cat_listing_supply_coverage_epochs_v1')>sql.indexOf('DOKE_CAT_A07_POST_BASELINE_STRUCTURAL_FAILED'));
+check('dimension preflight followup',dimensionPreflight.includes('DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE')&&dimensionPreflight.indexOf('DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE')<dimensionPreflight.indexOf('insert into private.cat_listing_visibility_events_v1'));
 check('handoff selects epoch before window start',handoff.includes('e.coverage_complete_from <= p_window_start'));
 check('handoff exposes epoch',handoff.includes("'coverageCompleteFrom',v_coverage_complete_from"));
 check('handoff does not activate threshold',handoff.includes("v_reason_code := 'POLICY_THRESHOLD_MISSING'"));

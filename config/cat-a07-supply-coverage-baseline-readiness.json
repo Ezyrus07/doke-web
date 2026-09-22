@@ -5,7 +5,7 @@
   "sourceHead": "0841f99eb822527e274e5987a1de8934cfa3575d",
   "createdAt": "2026-09-22T11:42:00-03:00",
   "scope": "repository_only",
-  "status": "migration_candidates_ready_staging_authorization_required",
+  "status": "staging_schema_applied_baseline_blocked_by_canonical_dimension_gap",
   "authorization": {
     "requiredToken": "authorize-cat-a07-supply-coverage-baseline-staging",
     "received": false,
@@ -14,16 +14,17 @@
   "migrations": {
     "catBaseline": "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql",
     "anaCoverageHandoff": "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
-    "stagingApplied": false
+    "stagingApplied": false,
+    "dimensionPreflightFollowup": "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql"
   },
   "validationSql": "supabase/tests/033_cat_a07_supply_coverage_baseline_validation.sql",
   "executionOrder": [
-    "Apply CAT-A07 baseline schema/function migration.",
-    "Run structural SQL validation before baseline.",
-    "Execute one baseline run with a fresh operator-provided UUID.",
-    "Verify source-service count equals baseline-event count, structural chain remains valid, and certified epoch exists.",
-    "Apply ANA-A10 coverage-epoch handoff.",
-    "Verify a pre-epoch window remains partial and a post-epoch window changes coverage only; freshness must remain unavailable while ANA-A11 policy is unset."
+    "Base CAT-A07 schema is applied in staging.",
+    "Apply the append-only CAT-A07 dimension-preflight follow-up.",
+    "Re-run structural validation.",
+    "Run baseline only after CAT-A07-B01 is resolved by canonical CAT authority; do not infer or patch source state under the baseline authorization.",
+    "After a successful baseline, verify source-service count equals baseline-event count, structural chain remains valid, and certified epoch exists.",
+    "Only then apply ANA-A10 coverage-epoch handoff and verify pre/post epoch coverage behavior."
   ],
   "serialization": {
     "sourceTablesLocked": [
@@ -59,5 +60,26 @@
     "migrationsApplied": false,
     "deployments": false,
     "productionChanges": false
+  },
+  "stagingExecution": {
+    "baseMigrationApplied": true,
+    "structuralValidation": "pass",
+    "firstBaselineAttempt": "rolled_back_atomically",
+    "firstBaselineError": "DOKE_CAT_A07_POST_BASELINE_STRUCTURAL_FAILED",
+    "rollbackVerified": true,
+    "sourceServiceCount": 2,
+    "eligibleServiceCount": 2,
+    "sourceLedgerRowsBefore": 7,
+    "sourceLedgerRowsAfterFailedAttempt": 7,
+    "baselineEventsAfterFailedAttempt": 0,
+    "coverageEpochRowsAfterFailedAttempt": 0,
+    "blocker": {
+      "id": "CAT-A07-B01",
+      "type": "canonical_dimension_completeness",
+      "eligibleServicesWithIncompleteDimensions": 1,
+      "requiredDimension": "state",
+      "mutationAuthorized": false,
+      "inferenceAllowed": false
+    }
   }
 }
