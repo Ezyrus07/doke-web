@@ -3304,7 +3304,13 @@
         "scripts/audit-ana-001-defense-in-depth-hardening-readiness.js",
         "scripts/test-ana-001-defense-in-depth-hardening-readiness.js",
         "scripts/plan-ana-001-defense-in-depth-hardening.js",
-        "supabase/migrations/20260921134000_ana_001_private_table_defense_in_depth.sql"
+        "supabase/migrations/20260921134000_ana_001_private_table_defense_in_depth.sql",
+        "backend/modules/analytics/data-quality-gate.js",
+        "config/ana-a06-data-quality-ownership-gates.json",
+        "docs/ANA-A06-DATA-QUALITY-OWNERSHIP-GATES.md",
+        "scripts/audit-ana-a06-data-quality-ownership-gates.js",
+        "scripts/test-ana-a06-data-quality-ownership-gates.js",
+        ".github/workflows/ana-a06-data-quality-ownership-gates.yml"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3331,7 +3337,9 @@
         "scripts/plan-ana-001-staging-activation.js",
         "config/ana-001-staging-canary-readiness.json",
         "scripts/run-ana-001-staging-canary.js",
-        "config/ana-001-staging-activation-evidence.json"
+        "config/ana-001-staging-activation-evidence.json",
+        "backend/modules/analytics/data-quality-gate.js",
+        "config/ana-a06-data-quality-ownership-gates.json"
       ],
       "tables": [
         "service_metric_events",
@@ -3375,7 +3383,9 @@
         "test:ana-001-staging-canary",
         "run:ana-001-staging-canary:dry-run",
         "audit:ana-001-defense-in-depth-hardening-readiness",
-        "test:ana-001-defense-in-depth-hardening-readiness"
+        "test:ana-001-defense-in-depth-hardening-readiness",
+        "audit:ana-a06-data-quality-ownership-gates",
+        "test:ana-a06-data-quality-ownership-gates"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3396,7 +3406,8 @@
         "ANA-B01 canonical technical runtime policy is versioned in the staging-readiness contract: session TTL 1800s, quote TTL 3600s, exposure TTL 300s, rate limit 120/60s and semantic dedup 60s. These are security/integrity controls, not LEGAL-B03 data-retention authority.",
         "The canonical canary kept production unchanged, browser analytics disabled and anonymous identity stitching disabled; a read-only event-window check found no prohibited PII dimension keys.",
         "ANA defense-in-depth hardening has a repository-only fail-closed preflight: four private ANA tables are targeted for ENABLE ROW LEVEL SECURITY without FORCE RLS or new policies, and three advisor-reported FK columns are targeted for idempotent covering indexes; no migration file or staging mutation is authorized yet.",
-        "ANA defense-in-depth hardening is closed in staging: RLS is enabled on the four private ANA runtime tables without FORCE RLS or policies, grants/RPC authority are preserved, the three target FK advisor findings are cleared, and post-hardening canonical canary run 35628667088 passed 15/15."
+        "ANA defense-in-depth hardening is closed in staging: RLS is enabled on the four private ANA runtime tables without FORCE RLS or policies, grants/RPC authority are preserved, the three target FK advisor findings are cleared, and post-hardening canonical canary run 35628667088 passed 15/15.",
+        "ANA-A06 defines repository-only ownership, zero-tolerance structural-integrity thresholds and a fail-closed maturity-promotion gate for the two A05 data-quality rollups currently emitted in staging; it adds no alert delivery, runtime mutation, browser analytics, staging authority or production authority."
       ],
       "blockers": [
         {
@@ -3416,7 +3427,8 @@
       ],
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
-        "Operationalize the maturity-4 funnel, CAT supply/liquidity, retention, freshness and data-quality ownership gates as separately governed sublots.",
+        "Validate ANA-A06 data-quality ownership and maturity-promotion gates against existing A05 staging rollups through a separately governed read-only evidence sublot; ANA-A06 itself authorizes no remote execution.",
+        "Operationalize the remaining maturity-4 funnel, CAT supply/liquidity, retention and freshness sublots separately.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
       ],
       "exitCriteria": [

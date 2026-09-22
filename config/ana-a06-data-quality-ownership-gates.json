@@ -1,0 +1,128 @@
+{
+  "contractId": "ana-a06-data-quality-ownership-gates-v1",
+  "domain": "ANA-001",
+  "sourceHead": "0c261b14a6f335e638321a35e4ccc7b14e8b2077",
+  "createdAt": "2026-09-21T21:12:00-03:00",
+  "scope": "repository_only",
+  "status": "repository_gate_ready_staging_evidence_pending",
+  "objective": "Turn the A05 structural data-quality rollups already emitted in staging into explicit ownership and fail-closed maturity-promotion evidence without creating a second data authority.",
+  "rootCause": {
+    "currentRuntime": "ANA-A05 emits projection-missing and reconciliation-mismatch rollups, but their health_state values do not define canonical owner, minimum evidence floor or maturity-promotion semantics.",
+    "governanceGap": "ANA-001 cannot claim maturity 4 while a nonzero structural reconciliation defect, missing required rollup or no-data window can be interpreted ad hoc.",
+    "boundary": "This sublot governs promotion evidence only. It is not a business KPI anomaly system, production SLO, alert-delivery authority or source-domain mutation mechanism."
+  },
+  "gatePurpose": "ana_001_maturity_3_to_4_promotion_evidence",
+  "overallStates": [
+    "pass",
+    "hold",
+    "block"
+  ],
+  "requiredRuntimeMetrics": [
+    "analytics_projection_missing_rate",
+    "analytics_reconciliation_mismatch_rate"
+  ],
+  "policies": [
+    {
+      "metricKey": "analytics_projection_missing_rate",
+      "ownerDomain": "ANA-001",
+      "sourceDomain": "ORD-001",
+      "unit": "ratio",
+      "minimumSampleCount": 1,
+      "passMax": 0,
+      "blockAbove": 0,
+      "missingState": "hold",
+      "noDataState": "hold",
+      "rationale": "A known missing canonical ORD projection is a structural integrity defect, so any observed nonzero rate blocks ANA maturity promotion."
+    },
+    {
+      "metricKey": "analytics_reconciliation_mismatch_rate",
+      "ownerDomain": "ANA-001",
+      "sourceDomain": "ORD-001",
+      "unit": "ratio",
+      "minimumSampleCount": 1,
+      "passMax": 0,
+      "blockAbove": 0,
+      "missingState": "hold",
+      "noDataState": "hold",
+      "rationale": "A known ORD-to-ANA event or immutable-dimension mismatch is a structural integrity defect, so any observed nonzero rate blocks ANA maturity promotion."
+    }
+  ],
+  "ownership": {
+    "metricProjectionOwner": "ANA-001",
+    "canonicalSourceOwner": "ORD-001",
+    "sourceDefectRouting": "ORD-001",
+    "projectionDefectRouting": "ANA-001",
+    "sourceMutationAllowed": false,
+    "reconciliationMayRepairSource": false
+  },
+  "pendingRuntimeMetrics": [
+    "analytics_transport_duplicate_rate",
+    "analytics_semantic_duplicate_rate",
+    "analytics_rejected_event_rate",
+    "analytics_exposure_proof_rejection_rate",
+    "analytics_processing_lag_seconds",
+    "analytics_late_event_rate",
+    "analytics_stale_projection_count",
+    "analytics_unavailable_metric_count"
+  ],
+  "pendingMetricsPolicy": "Not part of the A06 pass decision until a canonical runtime emitter, unit, sample floor and threshold policy exist. Absence must not be represented as zero.",
+  "evaluation": {
+    "missingRequiredMetric": "hold",
+    "nullValue": "hold",
+    "noData": "hold",
+    "belowMinimumSample": "hold",
+    "nonzeroStructuralDefect": "block",
+    "allRequiredZeroWithMinimumSample": "pass",
+    "duplicateMetric": "fail_closed",
+    "unknownMetric": "fail_closed",
+    "outOfRangeRatio": "fail_closed"
+  },
+  "stagingEvidence": {
+    "availableRuntimeSource": "private.analytics_data_quality_rollups_v1",
+    "currentEmitter": "public.run_analytics_order_reconciliation_v1(timestamptz,timestamptz)",
+    "requiredReadOnlyAuthorization": "authorize-ana-a06-staging-readonly-gate",
+    "genericContinuationAccepted": false,
+    "executionAuthorized": false,
+    "remoteReadExecutedByThisSublot": false
+  },
+  "authority": {
+    "contractAuthority": true,
+    "metricOwnershipAuthority": true,
+    "maturityPromotionGateAuthority": true,
+    "runtimeReadAuthority": false,
+    "runtimeMutationAuthority": false,
+    "alertDeliveryAuthority": false,
+    "privacyDecisionAuthority": false,
+    "financialMetricAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBoundaries": [
+    "Product Analytics remains distinct from operational observability.",
+    "ORD remains canonical for order facts; ANA owns only analytics projection integrity.",
+    "Browser analytics remains disabled by default.",
+    "Anonymous identity stitching remains disabled.",
+    "LEGAL-B03 remains the authority for consent, retention, anonymization and holder rights.",
+    "PAY-001 remains the authority for payment facts and financial metrics."
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "alertDelivery": false,
+    "sourceDomainMutation": false,
+    "paymentMutation": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "A06 closes repository governance for current structural DQ rollups only. Maturity 4 still requires operational staging evidence plus funnel, CAT supply/liquidity, retention and freshness sublots."
+  }
+}
