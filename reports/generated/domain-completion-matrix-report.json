@@ -32,7 +32,7 @@
     "repositories": 28,
     "backendModules": 18,
     "migrations": 193,
-    "packageScripts": 1077,
+    "packageScripts": 1079,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1566,
+      "filesMatched": 1569,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md",
@@ -232,6 +232,7 @@
         "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
         "docs/ANA-A04-MARKETPLACE-FUNNEL-HEALTH-PROJECTIONS.md",
         "docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md",
+        "docs/ANA-A06-DATA-QUALITY-OWNERSHIP-GATES.md",
         "docs/API-ADAPTER-CONTRACT.md",
         "docs/API-ENDPOINT-READINESS.md",
         "docs/ARCHITECTURE-DECISIONS.md",
@@ -246,8 +247,7 @@
         "docs/BACKEND-REAL-STAGING-PREFLIGHT-RUNBOOK.md",
         "docs/BASELINE-VISUAL-APPROVED.md",
         "docs/BETA-BROWSER-QUALITY-EVIDENCE-RUNBOOK.md",
-        "docs/BETA-CLOSED-BACKEND-REAL-READINESS-RUNBOOK.md",
-        "docs/BETA-CLOSED-LAUNCH-READINESS-RUNBOOK.md"
+        "docs/BETA-CLOSED-BACKEND-REAL-READINESS-RUNBOOK.md"
       ],
       "missingRequiredPaths": [],
       "signals": {
@@ -4259,7 +4259,7 @@
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1462,
+      "filesMatched": 1464,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -8033,7 +8033,7 @@
       "id": "ANA-001",
       "name": "Analytics, funil e economia do marketplace",
       "maturity": 3,
-      "filesMatched": 28,
+      "filesMatched": 30,
       "sampleFiles": [
         "assets/js/pages/detalhe-anuncio.js",
         "assets/js/pages/orcamento.js",
@@ -8044,6 +8044,7 @@
         "backend/modules/analytics/analytics-reconciliation.js",
         "backend/modules/analytics/behavioral-ingestion-boundary.js",
         "backend/modules/analytics/canonical-event-taxonomy.js",
+        "backend/modules/analytics/data-quality-gate.js",
         "backend/modules/analytics/marketplace-health-projection.js",
         "config/ana-001-staging-activation-evidence.json",
         "config/ana-001-staging-activation-readiness.json",
@@ -8053,13 +8054,12 @@
         "config/ana-a03-behavioral-ingestion-identity-boundary.json",
         "config/ana-a04-marketplace-funnel-health-projections.json",
         "config/ana-a05-reconciliation-data-quality.json",
+        "config/ana-a06-data-quality-ownership-gates.json",
         "scripts/plan-ana-001-staging-activation.js",
         "scripts/run-ana-001-staging-canary.js",
         "supabase/functions/_shared/analytics-proof.ts",
         "supabase/functions/analytics-behavior-v1/deno.json",
-        "supabase/functions/analytics-behavior-v1/index.ts",
-        "supabase/migrations/030_service_catalog_sync_metrics.sql",
-        "supabase/migrations/039_quote_template_conversion_metrics.sql"
+        "supabase/functions/analytics-behavior-v1/index.ts"
       ],
       "missingRequiredPaths": [],
       "signals": {
@@ -8206,14 +8206,16 @@
         "test:ana-001-staging-canary",
         "run:ana-001-staging-canary:dry-run",
         "audit:ana-001-defense-in-depth-hardening-readiness",
-        "test:ana-001-defense-in-depth-hardening-readiness"
+        "test:ana-001-defense-in-depth-hardening-readiness",
+        "audit:ana-a06-data-quality-ownership-gates",
+        "test:ana-a06-data-quality-ownership-gates"
       ]
     },
     {
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 320,
+      "filesMatched": 321,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md",
@@ -8224,6 +8226,7 @@
         "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
         "docs/ANA-A04-MARKETPLACE-FUNNEL-HEALTH-PROJECTIONS.md",
         "docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md",
+        "docs/ANA-A06-DATA-QUALITY-OWNERSHIP-GATES.md",
         "docs/API-ADAPTER-CONTRACT.md",
         "docs/API-ENDPOINT-READINESS.md",
         "docs/ARCHITECTURE-DECISIONS.md",
@@ -8238,8 +8241,7 @@
         "docs/BACKEND-REAL-STAGING-PREFLIGHT-RUNBOOK.md",
         "docs/BASELINE-VISUAL-APPROVED.md",
         "docs/BETA-BROWSER-QUALITY-EVIDENCE-RUNBOOK.md",
-        "docs/BETA-CLOSED-BACKEND-REAL-READINESS-RUNBOOK.md",
-        "docs/BETA-CLOSED-LAUNCH-READINESS-RUNBOOK.md"
+        "docs/BETA-CLOSED-BACKEND-REAL-READINESS-RUNBOOK.md"
       ],
       "missingRequiredPaths": [],
       "signals": {
@@ -10045,7 +10047,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 3483,
+      "filesMatched": 3488,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
