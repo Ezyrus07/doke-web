@@ -23,3 +23,11 @@ This handoff does not solve freshness. With ANA-A11 still lacking an approved po
 ## Execution boundary
 
 No staging read, staging mutation, applied migration, deploy or production action occurs in this lot. Staging execution still requires the exact CAT-A07 authorization.
+
+## Staging blocker CAT-A07-B01
+
+The CAT-A07 schema is applied in staging, but no coverage epoch was certified. The first baseline attempt rolled back atomically during post-write structural validation. Investigation found one currently eligible published service with no canonical `state` in the service row or approved snapshot.
+
+An append-only follow-up now checks dimension completeness before any ledger insert. The second baseline attempt therefore fails earlier with `DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE` and persists **zero** baseline events and **zero** epochs.
+
+This is a CAT authority/data-completeness issue: current public eligibility does not require `state`, while ANA liquidity requires category/state segmentation. CAT-A07 will not infer state from free-text city/location and will not mutate the listing under baseline authorization. The ANA-A10 coverage handoff remains unapplied until a certified CAT-A07 epoch exists.

@@ -6,7 +6,7 @@
   "sourceHead": "2b6b9425a40027802aaec4204e1c98e73477be5f",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "repository_only",
-  "status": "staging_schema_applied_baseline_blocked_by_canonical_dimension_gap",
+  "status": "staging_baseline_blocked_fail_closed_no_epoch",
   "objective": "Define a CAT-owned forward-only coverage epoch that can make future supply windows complete without reconstructing or rewriting pre-ledger visibility history.",
   "rootCause": {
     "activationStateImmutable": "CAT-A06 correctly records that no non-synthetic baseline was performed at activation.",
@@ -72,7 +72,7 @@
   "authority": {
     "coverageStrategyAuthority": true,
     "coverageEpochValueAuthority": false,
-    "stagingMutationAuthority": false,
+    "stagingMutationAuthority": true,
     "runtimeWriterAuthority": false,
     "productionAuthority": false
   },
@@ -106,12 +106,14 @@
     "stagingApplied": true,
     "baselineExecuted": false,
     "coverageEpochCertified": false,
-    "dimensionPreflightFollowup": "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql"
+    "dimensionPreflightFollowup": "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql",
+    "dimensionPreflightApplied": true,
+    "stagingEvidence": "reports/generated/cat-a07-staging-baseline-attempt-evidence.json"
   },
-  "nextAuthorization": "authorize-cat-a07-supply-coverage-baseline-staging",
+  "nextAuthorization": "authorize-cat-a07-b01-canonical-dimension-remediation-staging",
   "authorization": {
     "requiredToken": "authorize-cat-a07-supply-coverage-baseline-staging",
-    "received": false
+    "received": true
   },
   "blockers": [
     {

@@ -5,7 +5,7 @@
   "sourceHead": "0841f99eb822527e274e5987a1de8934cfa3575d",
   "createdAt": "2026-09-22T11:42:00-03:00",
   "scope": "repository_only",
-  "status": "staging_schema_applied_baseline_blocked_by_canonical_dimension_gap",
+  "status": "staging_baseline_blocked_fail_closed_no_epoch",
   "authorization": {
     "requiredToken": "authorize-cat-a07-supply-coverage-baseline-staging",
     "received": false,
@@ -14,8 +14,10 @@
   "migrations": {
     "catBaseline": "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql",
     "anaCoverageHandoff": "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
-    "stagingApplied": false,
-    "dimensionPreflightFollowup": "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql"
+    "stagingApplied": true,
+    "dimensionPreflightFollowup": "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql",
+    "baseAppliedVersion": "20260922145541",
+    "dimensionPreflightFollowupAppliedVersion": "20260922145917"
   },
   "validationSql": "supabase/tests/033_cat_a07_supply_coverage_baseline_validation.sql",
   "executionOrder": [
@@ -80,6 +82,15 @@
       "requiredDimension": "state",
       "mutationAuthorized": false,
       "inferenceAllowed": false
-    }
-  }
+    },
+    "dimensionPreflightApplied": true,
+    "secondBaselineAttempt": "blocked_pre_write",
+    "secondBaselineError": "DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE",
+    "secondBaselineDetail": "eligible_services_with_incomplete_dimensions=1",
+    "finalLedgerRows": 7,
+    "finalBaselineEvents": 0,
+    "finalCoverageEpochRows": 0,
+    "anaCoverageHandoffApplied": false
+  },
+  "stagingEvidence": "reports/generated/cat-a07-staging-baseline-attempt-evidence.json"
 }
