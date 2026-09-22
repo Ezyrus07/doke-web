@@ -6,12 +6,14 @@ const base={id:'s2',metricKey:'marketplace.resolved_quote_fill_rate',metricVersi
 const older={...base,id:'s1',windowStart:'2026-01-01T00:00:00Z',windowEnd:'2026-01-02T00:00:00Z',dataThrough:'2026-01-02T00:00:00Z',computedAt:'2026-01-02T00:01:00Z',revision:1};
 const deps=[{sourceDomain:'ORD-001',dataThrough:'2026-01-03T00:00:00Z',freshnessState:'fresh'}];
 eq('latest closed selected',f.selectCanonicalWindow([older,base],now).selected.id,'s2');
+const reordered={...older,id:'s1b',dimensions:{serviceState:'BA'}};eq('stable dimensions canonicalized',f.selectCanonicalWindow([older,reordered,base],now).selected.id,'s2');
 eq('no threshold unavailable',f.evaluateLatestWindow([older,base],null,deps,now).freshnessState,'unavailable');
 const fresh=f.evaluateLatestWindow([older,base],{maxLagSeconds:600},deps,now);eq('fresh state',fresh.freshnessState,'fresh');eq('fresh projection mapping',fresh.projectionState,'authoritative');
 eq('zero sample does not stale',fresh.freshnessState,'fresh');
 eq('lag stale',f.evaluateLatestWindow([older,base],{maxLagSeconds:60},deps,now).freshnessState,'stale');
 const partial={...base,dataThrough:'2026-01-02T23:59:00Z'};eq('partial coverage stale',f.evaluateFreshness(partial,{maxLagSeconds:600},deps,now).reason,'WINDOW_PARTIALLY_COVERED');
 const unavailableDep=[{sourceDomain:'ORD-001',freshnessState:'unavailable',dataThrough:null}];eq('dependency unavailable',f.evaluateLatestWindow([base],{maxLagSeconds:600},unavailableDep,now).freshnessState,'unavailable');
+const missingState=[{sourceDomain:'ORD-001',dataThrough:'2026-01-03T00:00:00Z'}];eq('missing dependency state unavailable',f.evaluateLatestWindow([base],{maxLagSeconds:600},missingState,now).reason,'DEPENDENCY_STATE_MISSING');
 const staleDep=[{sourceDomain:'ORD-001',freshnessState:'stale',dataThrough:'2026-01-03T00:00:00Z'}];eq('dependency stale propagates',f.evaluateLatestWindow([base],{maxLagSeconds:600},staleDep,now).freshnessState,'stale');
 const newerBad={...base,id:'s3',windowStart:'2026-01-03T00:00:00Z',windowEnd:'2026-01-04T00:00:00Z',dataThrough:'2026-01-03T00:00:00Z',computedAt:'2026-01-03T00:02:00Z',revision:1};eq('future window excluded',f.selectCanonicalWindow([older,base,newerBad],now).selected.id,'s2');
 let overclaim=false;try{f.evaluateFreshness({...base,dataThrough:'2026-01-03T00:00:00Z'},{maxLagSeconds:600},[{sourceDomain:'ORD-001',dataThrough:'2026-01-02T23:58:00Z',freshnessState:'fresh'}],now);}catch(e){overclaim=false;}const over=f.evaluateFreshness({...base,dataThrough:'2026-01-03T00:00:00Z'},{maxLagSeconds:600},[{sourceDomain:'ORD-001',dataThrough:'2026-01-02T23:58:00Z',freshnessState:'fresh'}],now);eq('dependency overclaim unavailable',over.reason,'DATATHROUGH_EXCEEDS_DEPENDENCY_WATERMARK');

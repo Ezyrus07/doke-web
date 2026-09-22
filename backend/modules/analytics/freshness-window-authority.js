@@ -7,6 +7,7 @@ const PROJECTION_STATE_BY_FRESHNESS=Object.freeze({fresh:'authoritative',stale:'
 function req(value,code){const v=String(value||'').trim();if(!v)throw new Error(code);return v;}
 function time(value,code){const n=Date.parse(value||'');if(!Number.isFinite(n))throw new Error(code);return n;}
 function isoMs(ms){return new Date(ms).toISOString();}
+function stable(v){if(Array.isArray(v))return '['+v.map(stable).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).sort().map((k)=>JSON.stringify(k)+':'+stable(v[k])).join(',')+'}';return JSON.stringify(v);}
 function revision(value){const n=Number(value==null?1:value);if(!Number.isInteger(n)||n<1)throw new Error('ANA_FRESHNESS_REVISION_INVALID');return n;}
 function maxLag(policy){
   if(!policy||policy.maxLagSeconds==null)return null;
@@ -40,7 +41,7 @@ function selectCanonicalWindow(candidates,now){
   const evaluatedAt=time(now,'ANA_FRESHNESS_NOW_INVALID');
   const rows=candidates.map(normalizeWindow);
   if(rows.length===0)return Object.freeze({selected:null,freshnessState:'unavailable',projectionState:'unavailable',reason:'NO_CANDIDATE_WINDOW'});
-  const series=new Set(rows.map((r)=>r.metricKey+'\u0000'+r.metricVersion+'\u0000'+JSON.stringify(r.dimensions||{})));
+  const series=new Set(rows.map((r)=>r.metricKey+'\u0000'+r.metricVersion+'\u0000'+stable(r.dimensions||{})));
   if(series.size!==1)throw new Error('ANA_FRESHNESS_SERIES_MIXED');
   const closed=rows.filter((r)=>time(r.windowEnd,'ANA_FRESHNESS_WINDOW_END_INVALID')<=evaluatedAt);
   if(closed.length===0)return Object.freeze({selected:null,freshnessState:'unavailable',projectionState:'unavailable',reason:'NO_CLOSED_WINDOW'});
@@ -69,12 +70,15 @@ function dependencyWatermark(dependencies,windowEnd,now){
   for(const dep of dependencies){
     if(!dep||typeof dep!=='object'||Array.isArray(dep))return unavailable('DEPENDENCY_WATERMARK_MISSING',{dataThrough:null});
     const sourceDomain=req(dep.sourceDomain||dep.source_domain,'ANA_FRESHNESS_DEPENDENCY_DOMAIN_REQUIRED');
-    const state=String(dep.freshnessState||dep.freshness_state||'fresh').trim().toLowerCase();
+    const rawState=dep.freshnessState??dep.freshness_state;
+    if(rawState==null)return unavailable('DEPENDENCY_STATE_MISSING',{dataThrough:null,sourceDomain});
+    const state=String(rawState).trim().toLowerCase();
     if(!FRESHNESS_STATES.includes(state))throw new Error('ANA_FRESHNESS_DEPENDENCY_STATE_INVALID');
-    if(state==='unavailable'||dep.dataThrough==null||dep.data_through==null&&dep.dataThrough==null){
+    const rawDataThrough=dep.dataThrough??dep.data_through;
+    if(state==='unavailable'||rawDataThrough==null){
       return unavailable('DEPENDENCY_UNAVAILABLE',{dataThrough:null,sourceDomain});
     }
-    const dt=time(dep.dataThrough||dep.data_through,'ANA_FRESHNESS_DEPENDENCY_DATATHROUGH_INVALID');
+    const dt=time(rawDataThrough,'ANA_FRESHNESS_DEPENDENCY_DATATHROUGH_INVALID');
     if(dt>evaluatedAt)throw new Error('ANA_FRESHNESS_DEPENDENCY_FUTURE_WATERMARK');
     minimum=Math.min(minimum,dt);
     if(state==='stale')sawStale=true;
@@ -127,6 +131,7 @@ module.exports=Object.freeze({
   FRESHNESS_STATES,
   PROJECTION_STATE_BY_FRESHNESS,
   normalizeWindow,
+  stable,
   selectCanonicalWindow,
   dependencyWatermark,
   evaluateFreshness,
