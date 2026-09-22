@@ -119,10 +119,10 @@
     "explicit immutable segmentation authority before category/state funnel claims"
   ],
   "catLiquidityBlocker": {
-    "status": "source_timeline_missing",
-    "evidence": "CAT-A03 mutates public.services.status and statusChangedAt but does not persist an append-only visibility timeline.",
-    "consequence": "ANA must not derive historical active_service_seconds from current mutable service state.",
-    "requiredHandoff": "CAT-owned append-only listing visibility/version timeline before ANA liquidity runtime projection"
+    "status": "source_timeline_available_consumer_materialized",
+    "evidence": "CAT-A06 now owns a staging-validated append-only listing visibility/version ledger with deterministic per-service sequence_no and partial pre-activation coverage.",
+    "consequence": "ANA-A09 does not own liquidity. ANA-A10 now materializes repository-only CAT-ledger interval semantics; runtime projection remains blocked on CAT watermark, ANA-A07 policy, snapshot/reconciliation wiring and controlled staging evidence.",
+    "requiredHandoff": "ANA-A10 runtime activation lot after explicit staging authorization"
   },
   "preservedBoundaries": [
     "Product Analytics remains distinct from operational observability.",
@@ -149,6 +149,6 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A09 closes repository funnel semantics only. Runtime funnel projection/staging evidence, CAT supply/liquidity source timeline and A07/A08 runtime activation remain required for ANA maturity 4."
+    "reason": "A09 closes repository funnel semantics only. CAT-A06 now supplies visibility facts and ANA-A10 closes repository liquidity-consumer semantics, but runtime funnel/liquidity projection, A07 operational freshness policy and controlled staging evidence remain required for ANA maturity 4."
   }
 }

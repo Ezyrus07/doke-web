@@ -1,0 +1,124 @@
+{
+  "contractId": "ana-a10-cat-liquidity-projection-v1",
+  "domain": "ANA-001",
+  "sourceDomain": "CAT-001",
+  "sourceHead": "73cab74809c4e8f415561f4b5e7a0eea99655245",
+  "createdAt": "2026-09-22T09:57:00-03:00",
+  "scope": "repository_only",
+  "status": "repository_contract_ready_runtime_activation_blocked",
+  "objective": "Derive liquidity.active_service_seconds deterministically from the CAT-A06 append-only listing visibility ledger, preserving partial coverage and ANA-A07 freshness boundaries without inferring history from mutable catalog state.",
+  "rootCause": {
+    "sourceGapClosed": "CAT-A06 now persists replay-safe listing visibility/version occurrences with per-service sequence numbers.",
+    "consumerGap": "ANA-A04 buildSupplyIntervals still models conceptual legacy event names and does not consume CAT-A06 eligible_before/eligible_after facts.",
+    "orderingRisk": "CAT-A06 can emit multiple facts with the same occurred_at inside one transaction; ordering by timestamp alone is not canonical.",
+    "completenessRisk": "Staging intentionally wrote no baseline for pre-existing eligible listings, so observed supply cannot be promoted to complete coverage."
+  },
+  "sourceAuthority": {
+    "ledgerTable": "private.cat_listing_visibility_events_v1",
+    "activationStateTable": "private.cat_listing_visibility_ledger_state_v1",
+    "owner": "CAT-001",
+    "lifecycleWriterRemains": "CAT-001",
+    "analyticsReadOnlyConsumer": "ANA-001",
+    "legacyModerationAuditCanonicalForSupply": false,
+    "mutableCurrentServiceStateAllowed": false,
+    "requiredReadRange": "all CAT-A06 rows from activation boundary through canonical dataThrough",
+    "deterministicOrder": [
+      "service_id",
+      "sequence_no"
+    ],
+    "occurredAtIsSoleOrderingKey": false
+  },
+  "intervalRules": [
+    "false->true opens at occurred_at using dimension_snapshot_after",
+    "true->false closes the open interval at occurred_at",
+    "true->true closes and reopens at the same occurred_at using the new visible version/dimensions",
+    "false->false creates no active interval",
+    "events with the same occurred_at remain ordered by sequence_no",
+    "a missing prior open for eligible_before=true is left-truncated evidence and never causes historical fabrication",
+    "open intervals close at canonical dataThrough for projection purposes"
+  ],
+  "metric": {
+    "key": "liquidity.active_service_seconds",
+    "definition": "sum overlap seconds of CAT-owned eligible listing intervals with the selected closed window",
+    "zeroSupplyValue": 0,
+    "partialCoverageCanonicalValue": null,
+    "partialCoverageObservedField": "observedLowerBoundSeconds"
+  },
+  "segmentation": {
+    "required": [
+      "category identity",
+      "state"
+    ],
+    "source": "CAT-A06 frozen dimension snapshots",
+    "mutableCurrentCatalogJoinAllowed": false,
+    "categoryStateHistoricalRewriteAllowed": false
+  },
+  "coverage": {
+    "preActivation": "partial",
+    "missingActivationBaseline": "partial",
+    "leftTruncatedHistory": "partial",
+    "dependencyWatermarkBeforeWindowEnd": "partial",
+    "completeRequires": [
+      "windowStart >= CAT-A06 activated_at",
+      "activation baseline policy explicitly_authorized",
+      "no left-truncated service history",
+      "CAT dependency watermark covers windowEnd",
+      "CAT dependency is not stale"
+    ],
+    "partialValuePolicy": "canonical valueSeconds remains null; observedLowerBoundSeconds may be emitted as diagnostic evidence"
+  },
+  "freshnessDependency": {
+    "contract": "ANA-A07",
+    "sourceDomain": "CAT-001",
+    "metricKey": "liquidity.active_service_seconds",
+    "dataThroughAuthority": "ANA-A07 dependencyWatermark",
+    "metricThresholdStatus": "pending_versioned_metric_policy",
+    "catSourceWatermarkStatus": "runtime_contract_pending",
+    "maxEventTimestampDefinesFreshness": false,
+    "computedAtDefinesFreshness": false,
+    "runtimeActivationBlocked": true
+  },
+  "runtimeRequirements": [
+    "server-side read path for CAT-A06 ledger and activation state without browser access",
+    "versioned CAT-001 source watermark consumed through ANA-A07",
+    "versioned ANA-A07 maxLagSeconds policy for liquidity.active_service_seconds",
+    "append-only A04/A05 metric snapshot and reconciliation integration",
+    "controlled synthetic staging canary covering repeated cycles, same-timestamp ordering, dimension split and partial coverage",
+    "explicit activation-baseline completeness before authoritative global supply claims"
+  ],
+  "preservedBoundaries": [
+    "Product Analytics remains distinct from operational observability.",
+    "CAT-001 remains the only listing lifecycle/visibility fact owner.",
+    "ANA reads CAT facts and never writes service lifecycle state.",
+    "Browser analytics remains disabled by default.",
+    "Anonymous identity stitching remains disabled.",
+    "Pre-ledger and unbaselined supply history is never fabricated."
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "repositoryProjectionSemantics": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "historicalBackfill": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "A10 closes repository liquidity-consumer semantics only. Runtime CAT watermark, A07 metric freshness policy, snapshot/reconciliation wiring and controlled staging evidence remain required."
+  }
+}

@@ -48,11 +48,11 @@ A zero denominator produces `null`, never a synthetic zero-percent conversion ra
 
 The current behavioral ledger does not contain immutable service category/state dimensions suitable for canonical funnel segmentation. ANA-A09 therefore keeps behavioral funnel projection global and forbids joining mutable current service state to manufacture historical segmentation.
 
-## CAT liquidity blocker
+## CAT liquidity handoff
 
-The investigation also confirms why `liquidity.active_service_seconds` cannot be operationalized yet. CAT-A03 updates mutable `public.services.status` and `statusChangedAt`, but there is no append-only CAT listing-visibility timeline. ANA cannot reconstruct historical supply from current service state.
+CAT-A06 now owns a staging-validated append-only listing visibility/version ledger, so the source-timeline blocker described by the original A09 investigation is closed.
 
-A CAT-owned append-only visibility/version ledger is required before liquidity runtime projection.
+Liquidity remains outside A09's ownership. ANA-A10 now defines the repository-only consumer semantics over CAT-A06 facts; runtime liquidity still requires a CAT source watermark, ANA-A07 freshness policy, append-only snapshot/reconciliation wiring and controlled staging evidence.
 
 ## Runtime boundary
 
