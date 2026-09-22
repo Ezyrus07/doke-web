@@ -1,0 +1,154 @@
+{
+  "contractId": "ana-a09-canonical-funnel-projection-v1",
+  "domain": "ANA-001",
+  "sourceHead": "a8ec7e1f4b9a1799e013d7ab17f15f4de7d2b898",
+  "createdAt": "2026-09-21T22:33:00-03:00",
+  "scope": "repository_only",
+  "status": "repository_contract_ready_runtime_projection_blocked",
+  "objective": "Define a deterministic canonical acquisition-to-order funnel from ANA behavioral events and ORD order.requested facts using only explicit linkage keys, without identity stitching or temporal heuristics.",
+  "rootCause": {
+    "projectionGap": "ANA-A02/A03 define and ingest canonical behavioral stages, but there is no canonical funnel projector that composes them with ORD transactional handoff.",
+    "authorityGap": "Legacy service/quote funnel events must remain shadow inputs and cannot become a second analytics authority.",
+    "linkageRisk": "A funnel assembled by actor identity, timestamp proximity or cross-session heuristics would violate the A03 identity boundary and could falsely attribute anonymous behavior."
+  },
+  "stages": [
+    "impression",
+    "click",
+    "detail",
+    "budget_cta",
+    "quote_started",
+    "quote_completed",
+    "quote_submitted",
+    "order_requested"
+  ],
+  "linkageAuthority": {
+    "searchExposure": "search_request_id + service_id",
+    "sessionServiceJourney": "analytics_session_id + service_id",
+    "quoteJourney": "quote_session_id within the same session/service journey",
+    "transactionalHandoff": "quote.submitted.order_id joined to canonical ORD order.requested",
+    "temporalHeuristicJoinAllowed": false,
+    "actorIdJoinAllowed": false,
+    "anonymousCrossSessionJoinAllowed": false,
+    "anonymousToAuthenticatedJoinAllowed": false
+  },
+  "metrics": [
+    {
+      "metricKey": "funnel.search_ctr",
+      "numerator": "unique search_request_id+service_id clicks with matching impression",
+      "denominator": "unique search_request_id+service_id impressions"
+    },
+    {
+      "metricKey": "funnel.impression_to_click",
+      "numerator": "strict session/service journeys reaching click",
+      "denominator": "strict session/service journeys reaching impression"
+    },
+    {
+      "metricKey": "funnel.click_to_detail",
+      "numerator": "strict session/service journeys reaching detail after click",
+      "denominator": "strict journeys reaching click"
+    },
+    {
+      "metricKey": "funnel.detail_to_budget_cta",
+      "numerator": "strict journeys reaching budget CTA after detail",
+      "denominator": "strict journeys reaching detail"
+    },
+    {
+      "metricKey": "funnel.budget_cta_to_quote_started",
+      "numerator": "strict journeys with explicit quote_session_id started",
+      "denominator": "strict journeys reaching budget CTA"
+    },
+    {
+      "metricKey": "funnel.quote_started_to_completed",
+      "numerator": "strict journeys with same quote session completed",
+      "denominator": "strict journeys reaching quote started"
+    },
+    {
+      "metricKey": "funnel.quote_completed_to_submitted",
+      "numerator": "strict journeys with same quote session submitted and explicit order_id",
+      "denominator": "strict journeys reaching quote completed"
+    },
+    {
+      "metricKey": "funnel.quote_submitted_to_order_requested",
+      "numerator": "strict submitted journeys whose order_id exists as canonical ORD order.requested",
+      "denominator": "strict journeys reaching quote submitted"
+    }
+  ],
+  "eventSources": {
+    "behaviorLedger": "private.analytics_behavior_events_v1",
+    "orderProjection": "private.order_metric_events",
+    "behaviorCanonicalTime": "occurred_at = server received_at",
+    "orderCanonicalTime": "occurred_at",
+    "legacySourcesAuthority": false
+  },
+  "invariants": [
+    "All events after dataThrough are excluded.",
+    "Search CTR deduplicates on explicit search_request_id + service_id exposure identity.",
+    "Strict funnel progression is scoped to analytics_session_id + service_id only; no cross-session reconstruction is allowed.",
+    "Quote progression requires the same explicit quote_session_id.",
+    "The behavior-to-transaction handoff requires quote.submitted.order_id and canonical ORD order.requested; order linkage is never inferred from actor or time proximity.",
+    "A later stage missing an earlier explicit stage is recorded as orphan evidence rather than backfilling the missing stage.",
+    "Zero denominator returns null, never zero percent.",
+    "Behavioral and transactional source authorities remain distinct.",
+    "Anonymous identity stitching remains prohibited.",
+    "Current behavior ledger does not carry immutable category/state cohort dimensions, so category/state funnel segmentation is not fabricated."
+  ],
+  "segmentation": {
+    "currentAuthority": "global_only_for_behavioral_stages",
+    "categoryStateStatus": "blocked_until_immutable_behavior_or_explicit_service_snapshot_dimension_authority",
+    "mutableCurrentServiceJoinAllowed": false
+  },
+  "freshnessDependency": {
+    "contract": "ANA-A07",
+    "dataThroughRequired": true,
+    "runtimeFreshnessActivationStillBlocked": true
+  },
+  "authority": {
+    "contractAuthority": true,
+    "funnelDefinitionAuthority": true,
+    "linkageContractAuthority": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "activationRequirements": [
+    "server-side funnel projection over private.analytics_behavior_events_v1 and private.order_metric_events",
+    "append-only A04/A05 metric snapshots/revision semantics",
+    "A07 dataThrough/watermark enforcement",
+    "controlled staging evidence for complete and orphan stage paths",
+    "explicit immutable segmentation authority before category/state funnel claims"
+  ],
+  "catLiquidityBlocker": {
+    "status": "source_timeline_missing",
+    "evidence": "CAT-A03 mutates public.services.status and statusChangedAt but does not persist an append-only visibility timeline.",
+    "consequence": "ANA must not derive historical active_service_seconds from current mutable service state.",
+    "requiredHandoff": "CAT-owned append-only listing visibility/version timeline before ANA liquidity runtime projection"
+  },
+  "preservedBoundaries": [
+    "Product Analytics remains distinct from operational observability.",
+    "ORD remains canonical for order.requested facts.",
+    "CAT remains canonical for service visibility facts.",
+    "Browser analytics remains disabled by default.",
+    "LEGAL-B03 remains authoritative for privacy and identity lifecycle.",
+    "PAY-backed metrics remain unavailable until PAY authority is canonical."
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "paymentMutation": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "A09 closes repository funnel semantics only. Runtime funnel projection/staging evidence, CAT supply/liquidity source timeline and A07/A08 runtime activation remain required for ANA maturity 4."
+  }
+}
