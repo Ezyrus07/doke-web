@@ -4,7 +4,7 @@
   "sourceHead": "0c261b14a6f335e638321a35e4ccc7b14e8b2077",
   "createdAt": "2026-09-21T21:12:00-03:00",
   "scope": "repository_only",
-  "status": "repository_gate_ready_staging_readonly_evidence_hold",
+  "status": "staging_reconciliation_canary_pass",
   "objective": "Turn the A05 structural data-quality rollups already emitted in staging into explicit ownership and fail-closed maturity-promotion evidence without creating a second data authority.",
   "rootCause": {
     "currentRuntime": "ANA-A05 emits projection-missing and reconciliation-mismatch rollups, but their health_state values do not define canonical owner, minimum evidence floor or maturity-promotion semantics.",
@@ -86,13 +86,20 @@
     "remoteReadExecutedByThisSublot": true,
     "authorizationConsumed": true,
     "evidencePath": "reports/generated/ana-a06-staging-readonly-evidence.json",
-    "latestObservedGateState": "hold",
-    "latestObservedReason": "no_data_below_minimum_sample",
-    "latestObservedRunId": "ebe817a0-a7a8-445e-9e59-623d417aa663",
-    "latestObservedAt": "2026-09-21T16:55:56.923384+00:00",
+    "latestObservedGateState": "pass",
+    "latestObservedReason": "controlled_nonempty_reconciliation_zero_structural_defects",
+    "latestObservedRunId": "16f75016-3ab9-425f-b12b-754312e8e6ec",
+    "latestObservedAt": "2026-09-22T00:54:01.842505+00:00",
     "historicalPassingRuns": 2,
-    "stagingMutationExecuted": false,
-    "nextMutationAuthorization": "authorize-ana-a06-staging-reconciliation-canary"
+    "stagingMutationExecuted": true,
+    "nextMutationAuthorization": null,
+    "mutationAuthorizationConsumed": true,
+    "mutationAuthorizationPhrase": "authorize-ana-a06-staging-reconciliation-canary",
+    "reconciliationCanaryEvidencePath": "reports/generated/ana-a06-staging-reconciliation-canary-evidence.json",
+    "reconciliationCanaryRunId": "16f75016-3ab9-425f-b12b-754312e8e6ec",
+    "reconciliationCanaryObservedAt": "2026-09-22T00:54:01.842505+00:00",
+    "reconciliationCanaryGateState": "pass",
+    "freshnessSelectionAuthorityClosed": false
   },
   "authority": {
     "contractAuthority": true,
@@ -132,6 +139,6 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A06 repository governance is implemented and authorized staging read-only evidence is recorded, but the latest staging observation is hold because both required rollups are no_data with sample_count=0. ANA remains 3/6 and still requires a separately authorized non-empty reconciliation canary plus the funnel, CAT supply/liquidity, retention and freshness sublots."
+    "reason": "A06 ownership and zero-tolerance data-quality gate are now proven by a controlled non-empty staging reconciliation canary. ANA remains 3/6 because operational funnel, CAT supply/liquidity, retention and freshness sublots remain incomplete."
   }
 }

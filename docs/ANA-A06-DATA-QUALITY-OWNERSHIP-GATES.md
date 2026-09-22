@@ -61,3 +61,15 @@ A controlled next step would append one new A05 reconciliation run and its two r
 
 `authorize-ana-a06-staging-reconciliation-canary`
 
+## Authorized non-empty reconciliation canary
+
+Authorization `authorize-ana-a06-staging-reconciliation-canary` was consumed for one controlled call to `public.run_analytics_order_reconciliation_v1(...)` over the existing synthetic fact window `2026-09-19T00:00:00Z..02:00:00Z`.
+
+The resulting run is `16f75016-3ab9-425f-b12b-754312e8e6ec`. It observed one canonical ORD fact and one ANA projection, reconciled them as `matched`, and reported zero divergence in every category. The two A06-required rollups both have `sample_count=1`, `value=0`, and `health_state=healthy`, so the A06 promotion-evidence gate evaluates to **pass** for this controlled non-empty canary.
+
+The mutation envelope was exact: source ORD facts remained 1→1, ANA projected facts remained 1→1, reconciliation runs changed 7→8, and data-quality rollups changed 14→16. No duplicate required metric was created. Source, projection and comparison fingerprints exactly match the two earlier runs over the same window, confirming deterministic reconciliation against unchanged source data.
+
+This closes the A06 staging canary itself. It does **not** promote ANA-001 above **3/6** because funnel, CAT supply/liquidity, retention and freshness remain separate maturity-4 requirements. In particular, this canary does not define the operational freshness/window-selection policy.
+
+Machine-readable evidence: `reports/generated/ana-a06-staging-reconciliation-canary-evidence.json`.
+
