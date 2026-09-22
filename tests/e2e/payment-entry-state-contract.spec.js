@@ -75,13 +75,31 @@ test.beforeEach(async ({ page }) => {
   }));
 });
 
-const installFixture = (page) => page.addInitScript((fixture) => {
-  localStorage.setItem('doke.auth.session.v1', JSON.stringify(fixture.session));
-  localStorage.setItem('doke.orders.local.v1', JSON.stringify([fixture.order]));
-  localStorage.setItem('doke.orders', JSON.stringify([fixture.order]));
-  localStorage.setItem('doke.conversations.local.v1', JSON.stringify([fixture.conversation]));
-  localStorage.setItem('doke.messages.local.v1', JSON.stringify([fixture.conversation]));
-}, paymentFixture);
+const installFixture = async (page) => {
+  const conversationFixture = JSON.stringify(paymentFixture.conversation);
+
+  await page.route('**/assets/js/repositories/messages-repository.js*', async (route) => {
+    const response = await route.fetch();
+    const originalBody = await response.text();
+    const harness = `
+;(function () {
+  var Doke = window.Doke || (window.Doke = {});
+  var repositories = Doke.repositories || (Doke.repositories = {});
+  var messages = repositories.messages;
+  if (!messages || typeof messages.writeLocal !== 'function') {
+    throw new Error('PAY E2E fixture-memory authority is unavailable.');
+  }
+  messages.writeLocal([${conversationFixture}]);
+}());`;
+    await route.fulfill({ response, body: `${originalBody}\n${harness}` });
+  });
+
+  await page.addInitScript((fixture) => {
+    localStorage.setItem('doke.auth.session.v1', JSON.stringify(fixture.session));
+    localStorage.setItem('doke.orders.local.v1', JSON.stringify([fixture.order]));
+    localStorage.setItem('doke.orders', JSON.stringify([fixture.order]));
+  }, paymentFixture);
+};
 
 const waitForPaymentState = async (page, expected) => {
   await expect.poll(() => page.evaluate(() => document.body.dataset.pageHydration || 'missing')).toBe(expected);
