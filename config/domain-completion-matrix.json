@@ -1,6 +1,6 @@
 {
-  "version": "1.3.115",
-  "updatedAt": "2026-09-21T21:54:14-03:00",
+  "version": "1.3.116",
+  "updatedAt": "2026-09-21T22:00:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -3312,7 +3312,13 @@
         "scripts/test-ana-a06-data-quality-ownership-gates.js",
         ".github/workflows/ana-a06-data-quality-ownership-gates.yml",
         "reports/generated/ana-a06-staging-readonly-evidence.json",
-        "reports/generated/ana-a06-staging-reconciliation-canary-evidence.json"
+        "reports/generated/ana-a06-staging-reconciliation-canary-evidence.json",
+        "backend/modules/analytics/freshness-window-authority.js",
+        "config/ana-a07-freshness-window-authority.json",
+        "docs/ANA-A07-FRESHNESS-WINDOW-AUTHORITY.md",
+        "scripts/audit-ana-a07-freshness-window-authority.js",
+        "scripts/test-ana-a07-freshness-window-authority.js",
+        ".github/workflows/ana-a07-freshness-window-authority.yml"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3343,7 +3349,9 @@
         "backend/modules/analytics/data-quality-gate.js",
         "config/ana-a06-data-quality-ownership-gates.json",
         "reports/generated/ana-a06-staging-readonly-evidence.json",
-        "reports/generated/ana-a06-staging-reconciliation-canary-evidence.json"
+        "reports/generated/ana-a06-staging-reconciliation-canary-evidence.json",
+        "backend/modules/analytics/freshness-window-authority.js",
+        "config/ana-a07-freshness-window-authority.json"
       ],
       "tables": [
         "service_metric_events",
@@ -3389,7 +3397,9 @@
         "audit:ana-001-defense-in-depth-hardening-readiness",
         "test:ana-001-defense-in-depth-hardening-readiness",
         "audit:ana-a06-data-quality-ownership-gates",
-        "test:ana-a06-data-quality-ownership-gates"
+        "test:ana-a06-data-quality-ownership-gates",
+        "audit:ana-a07-freshness-window-authority",
+        "test:ana-a07-freshness-window-authority"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3413,7 +3423,8 @@
         "ANA defense-in-depth hardening is closed in staging: RLS is enabled on the four private ANA runtime tables without FORCE RLS or policies, grants/RPC authority are preserved, the three target FK advisor findings are cleared, and post-hardening canonical canary run 35628667088 passed 15/15.",
         "ANA-A06 defines repository-only ownership, zero-tolerance structural-integrity thresholds and a fail-closed maturity-promotion gate for the two A05 data-quality rollups currently emitted in staging; it adds no alert delivery, runtime mutation, browser analytics, staging authority or production authority.",
         "ANA-A06 authorized read-only staging evidence inspected all seven A05 reconciliation runs and fourteen rollups. The latest coherent run is hold because both required metrics are no_data with sample_count=0; two earlier non-empty synthetic runs passed with both ratios at zero, but historical pass evidence is not cherry-picked to override the latest no-data observation.",
-        "ANA-A06 controlled non-empty staging reconciliation canary passed: one existing synthetic ORD fact reconciled 1:1 with its ANA projection, both structural defect ratios were zero with sample_count=1, source/projection facts were unchanged, and the new run reproduced the historical fingerprints exactly."
+        "ANA-A06 controlled non-empty staging reconciliation canary passed: one existing synthetic ORD fact reconciled 1:1 with its ANA projection, both structural defect ratios were zero with sample_count=1, source/projection facts were unchanged, and the new run reproduced the historical fingerprints exactly.",
+        "ANA-A07 defines fail-closed repository authority for dataThrough, dependency watermarks, latest closed-window selection and fresh/stale/unavailable propagation. It explicitly forbids computedAt/max-event-time freshness and older-window cherry-picking; no maxLagSeconds default is invented."
       ],
       "blockers": [
         {
@@ -3433,8 +3444,8 @@
       ],
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
-        "ANA-A06 ownership/data-quality staging canary is closed with a controlled non-empty pass. Keep ANA at 3/6 and operationalize the separate funnel, CAT supply/liquidity, retention and freshness maturity-4 sublots.",
-        "Operationalize the remaining maturity-4 funnel, CAT supply/liquidity, retention and freshness sublots separately.",
+        "ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.",
+        "Operationalize the remaining maturity-4 funnel, CAT supply/liquidity and retention sublots separately; complete ANA-A07 runtime freshness activation only under a separately authorized migration/staging lot.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
       ],
       "exitCriteria": [

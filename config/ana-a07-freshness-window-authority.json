@@ -1,0 +1,231 @@
+{
+  "contractId": "ana-a07-freshness-window-authority-v1",
+  "domain": "ANA-001",
+  "sourceHead": "77b3fdd221341cb7334f9c6917230135c24b6855",
+  "createdAt": "2026-09-21T22:00:00-03:00",
+  "scope": "repository_only",
+  "status": "repository_contract_ready_runtime_activation_blocked",
+  "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
+  "rootCause": {
+    "helperGap": "ANA-A05 has an applyFreshness helper that accepts an ad hoc maxLagSeconds but there is no canonical policy registry, dependency-watermark contract or canonical latest-window selector.",
+    "runtimeGap": "ANA-A04 compute_analytics_order_health_v1 currently reports dataThrough=windowEnd and projectionState=authoritative without proving that every canonical dependency is materialized through that boundary.",
+    "evidenceGap": "ANA-A06 proved why selection cannot cherry-pick an older non-empty passing window when a newer canonical observation exists."
+  },
+  "freshnessStates": [
+    "fresh",
+    "stale",
+    "unavailable"
+  ],
+  "projectionStateMapping": {
+    "fresh": "authoritative",
+    "stale": "stale",
+    "unavailable": "unavailable"
+  },
+  "dataThroughAuthority": {
+    "definition": "Greatest timestamp through which all canonical dependencies required by the selected metric snapshot are proven materialized; it is never inferred from computedAt or from max(event timestamp).",
+    "dependencyRule": "canonical dataThrough is bounded by the minimum dependency watermark and windowEnd",
+    "futureWatermark": "fail_closed",
+    "declaredBeyondDependency": "unavailable",
+    "computedAtDefinesFreshness": false,
+    "maxEventTimestampDefinesFreshness": false,
+    "emptyWindowMayStillBeFresh": true
+  },
+  "windowSelection": {
+    "precondition": "candidate rows belong to the same metricKey, metricVersion and dimension set",
+    "closedOnly": true,
+    "order": [
+      "windowEnd desc",
+      "revision desc",
+      "computedAt desc",
+      "id desc"
+    ],
+    "olderHealthyFallbackAllowed": false,
+    "ambiguousTie": "fail_closed",
+    "emptyCandidateState": "unavailable"
+  },
+  "evaluation": {
+    "policyThresholdRequired": true,
+    "implicitDefaultMaxLagForbidden": true,
+    "missingThresholdState": "unavailable",
+    "noCandidateState": "unavailable",
+    "noClosedWindowState": "unavailable",
+    "missingDependencyState": "unavailable",
+    "unavailableDependencyState": "unavailable",
+    "dependencyStalePropagation": "stale",
+    "partialWindowCoverageState": "stale",
+    "noWindowCoverageState": "unavailable",
+    "lagCalculation": "max(0, evaluatedAt - dataThrough)",
+    "thresholdComparison": "stale when lagSeconds > maxLagSeconds; fresh otherwise after full window coverage"
+  },
+  "thresholdAuthority": {
+    "status": "pending_versioned_metric_policy",
+    "defaultMaxLagSeconds": null,
+    "reason": "No canonical analytics cadence or freshness SLO is currently approved in the repository. Repository code must not invent one.",
+    "requiredFields": [
+      "policyId",
+      "metricKey",
+      "metricVersion",
+      "maxLagSeconds",
+      "effectiveFrom"
+    ],
+    "runtimeActivationBlockedUntilThresholds": true
+  },
+  "metricDependencies": [
+    {
+      "metricKey": "funnel.search_ctr",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.time_to_first_quote_seconds",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.resolved_quote_fill_rate",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.mature_quote_fill_rate",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.resolved_fulfillment_rate",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.pre_quote_cancellation_rate",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.dispute_incidence",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "liquidity.active_service_seconds",
+      "sourceDomains": [
+        "CAT-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "retention.repeat_request_30d",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "retention.repeat_completion_90d",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "economics.gmv",
+      "sourceDomains": [
+        "PAY-001"
+      ],
+      "thresholdStatus": "blocked_until_PAY_canonical"
+    },
+    {
+      "metricKey": "economics.take_rate",
+      "sourceDomains": [
+        "PAY-001"
+      ],
+      "thresholdStatus": "blocked_until_PAY_and_policy_canonical"
+    },
+    {
+      "metricKey": "economics.cac",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "blocked_until_spend_attribution_authority"
+    },
+    {
+      "metricKey": "economics.ltv",
+      "sourceDomains": [
+        "ANA-001",
+        "PAY-001"
+      ],
+      "thresholdStatus": "blocked_until_revenue_margin_retention_authority"
+    }
+  ],
+  "invariants": [
+    "Freshness is based on dataThrough and explicit dependency watermarks, never computedAt alone.",
+    "An empty metric window does not become stale merely because sample_count is zero.",
+    "The latest canonical closed window is selected before freshness is evaluated; older fresh/pass windows are never used as fallback.",
+    "A metric cannot be fresh when its dataThrough is before windowEnd.",
+    "A declared dataThrough later than a dependency watermark is unavailable rather than silently clamped into authority.",
+    "Missing threshold policy fails closed as unavailable.",
+    "stale or unavailable dependencies propagate without being converted to authoritative.",
+    "Freshness state does not change transactional source authority or repair source-domain facts."
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "dataThroughContractAuthority": true,
+    "windowSelectionContractAuthority": true,
+    "freshnessStateContractAuthority": true,
+    "thresholdValueAuthority": false,
+    "runtimeWatermarkAuthority": false,
+    "runtimeProjectionAuthority": false,
+    "alertDeliveryAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "activationRequirements": [
+    "versioned metric-specific maxLagSeconds policies",
+    "server-authoritative source-domain watermarks for every required dependency",
+    "runtime projection path that derives dataThrough from dependency watermarks instead of assuming windowEnd",
+    "controlled staging tests for fresh, stale, unavailable, empty-window and no-cherry-pick selection cases"
+  ],
+  "preservedBoundaries": [
+    "Product Analytics remains distinct from operational observability.",
+    "A06 structural data-quality PASS remains separate from A07 freshness state.",
+    "ORD, CAT and PAY remain canonical owners of their source facts.",
+    "Browser analytics remains disabled by default.",
+    "LEGAL-B03 remains authoritative for consent, retention, anonymization and holder rights.",
+    "PAY-backed metrics remain unavailable until PAY authority is canonical."
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "alertDelivery": false,
+    "sourceDomainMutation": false,
+    "paymentMutation": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "A07 closes the repository freshness/window-selection contract only. Operational freshness remains blocked until thresholds, watermarks and runtime enforcement are materialized and proven in staging; funnel, CAT liquidity and retention also remain incomplete."
+  }
+}
