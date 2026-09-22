@@ -344,13 +344,18 @@ function sanitizeOrderMetadata(body, schedulePreference) {
       ? body
       : {};
   const metadata = cloneJson(source) || {};
+  delete metadata.serviceId;
+  delete metadata.service_id;
+  delete metadata.professionalId;
+  delete metadata.professional_id;
+  delete metadata.providerId;
+  delete metadata.provider_id;
   delete metadata.serviceSnapshot;
   delete metadata.service_snapshot;
   delete metadata.serviceVersionId;
   delete metadata.service_version_id;
   delete metadata.serviceSnapshotAuthority;
-  delete metadata.professionalId;
-  delete metadata.providerId;
+  delete metadata.service_snapshot_authority;
   return applySchedulePreference(metadata, schedulePreference);
 }
 
