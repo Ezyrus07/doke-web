@@ -1,0 +1,131 @@
+{
+  "contractId": "cat-a06-listing-visibility-timeline-v1",
+  "domain": "CAT-001",
+  "consumerDomain": "ANA-001",
+  "createdAt": "2026-09-21T22:49:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_migration_required",
+  "maturityImpact": {
+    "cat": "none",
+    "ana": "none",
+    "anaMaturityMustRemain": 3
+  },
+  "ownership": {
+    "lifecycleAuthority": "CAT-001",
+    "analyticsConsumer": "ANA-001",
+    "secondLifecycleAuthorityAllowed": false,
+    "currentLifecycleMutation": "public.transition_owned_service_lifecycle",
+    "currentVersionSubmissionMutation": "public.submit_service_for_review",
+    "currentModerationAuthority": "service-moderation-operations",
+    "publicEligibilityAuthority": "public.search_public_services_v1"
+  },
+  "currentHistoryAssessment": {
+    "table": "public.service_moderation_events",
+    "verdict": "insufficient_for_canonical_supply_replay",
+    "reusableAsCanonicalSupplyLedger": false,
+    "reasons": [
+      "visibility event_key is derived from service_id + before_status + after_status + version_id, so repeated pause/reactivate cycles on the same approved version collide",
+      "visibility inserts use ON CONFLICT(event_key) DO NOTHING, therefore a repeated lifecycle occurrence can be silently omitted",
+      "the visibility trigger fires only on UPDATE OF status, so an approved visible-version change while status remains published is not a dedicated visibility transition",
+      "migration 044 backfills version review history but does not invent historical listing visibility intervals",
+      "pre-ledger visibility coverage therefore cannot be declared complete"
+    ]
+  },
+  "eligibility": {
+    "canonicalVisibleWhenAll": [
+      "services.status = published",
+      "services.approved_version_id is not null",
+      "approved version belongs to the same service and professional",
+      "approved version review_status = approved",
+      "services.moderation_status in [published, changes_pending_review, changes_required]"
+    ],
+    "source": "SEARCH-A04 approved-snapshot public catalog authority",
+    "approvalAloneImpliesVisibility": false
+  },
+  "plannedLedger": {
+    "owner": "CAT-001",
+    "purpose": "append-only server-owned visibility/version transition ledger used to derive deterministic listing supply intervals",
+    "appendOnly": true,
+    "serverOwned": true,
+    "browserWritable": false,
+    "occurrenceIdentityMustBeUnique": true,
+    "perServiceSequenceRequired": true,
+    "occurredAtServerAuthoritative": true,
+    "sourceMutationAuthorityRequired": true,
+    "minimumRecord": [
+      "service_id",
+      "sequence_no",
+      "occurred_at",
+      "source_authority",
+      "source_transition_key",
+      "eligible_before",
+      "eligible_after",
+      "visible_version_id_before",
+      "visible_version_id_after",
+      "dimension_snapshot_after",
+      "coverage_kind"
+    ],
+    "deterministicOrder": [
+      "service_id",
+      "sequence_no"
+    ],
+    "intervalRules": [
+      "false->true opens [occurred_at, next_close_or_split)",
+      "true->false closes the open interval at occurred_at",
+      "true->true with visible version or frozen supply dimensions changed closes and reopens at the same occurred_at",
+      "false->false does not create active supply",
+      "pause/archive/removal/moderation closure closes supply only when canonical eligibility becomes false",
+      "reactivation/republication opens supply only when canonical eligibility becomes true",
+      "version approval does not open supply unless CAT eligibility becomes true",
+      "a keep-public pending edit does not replace the visible approved version before approval"
+    ],
+    "dimensions": {
+      "freezeAtOpenOrSplit": true,
+      "minimum": [
+        "category identity",
+        "state/region identity"
+      ],
+      "mutableCurrentRowsCannotRewriteHistory": true
+    },
+    "activationBaseline": {
+      "allowed": true,
+      "occurredAt": "migration/server observation time only",
+      "historicalInferenceAllowed": false,
+      "currentlyEligibleListingsMayOpenAtActivationTime": true,
+      "coverageBeforeActivation": "partial"
+    },
+    "idempotency": {
+      "retryMustNotDuplicateSameAuthoritativeMutation": true,
+      "repeatedBusinessTransitionMustRemainDistinct": true,
+      "stateTupleAloneCannotBeIdempotencyKey": true
+    },
+    "deletion": {
+      "hardDeleteMustNotEraseSupplyHistory": true,
+      "archivePreferredLifecycle": true
+    }
+  },
+  "anaConsumption": {
+    "metric": "liquidity.active_service_seconds",
+    "definition": "sum overlap of CAT-owned visible intervals with the requested closed window",
+    "catFactsOnly": true,
+    "inferFromCurrentServiceState": false,
+    "useModerationAuditAsCompleteHistory": false,
+    "preLedgerCoverage": "partial",
+    "freshnessMustUse": "ANA-A07 dataThrough/dependency watermark authority",
+    "runtimeProjectionAuthorized": false,
+    "stagingEvidenceAuthorized": false
+  },
+  "prohibitedEffects": {
+    "migrationCreated": false,
+    "schemaChanged": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "deployment": false,
+    "backfill": false,
+    "seed": false,
+    "browserAnalyticsActivated": false,
+    "anonymousIdentityStitching": false,
+    "productionChanged": false
+  },
+  "nextAuthorization": "authorize-cat-a06-listing-visibility-timeline-staging-migration"
+}
