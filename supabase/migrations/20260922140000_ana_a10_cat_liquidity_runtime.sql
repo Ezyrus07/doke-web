@@ -109,7 +109,7 @@ begin
   v_data_through := pg_catalog.least(p_window_end,v_source_watermark);
   v_freshness_lag_seconds := pg_catalog.greatest(
     0,
-    pg_catalog.floor(pg_catalog.extract(epoch from (v_source_watermark-v_data_through)))::bigint
+    pg_catalog.floor(extract(epoch from (v_source_watermark-v_data_through)))::bigint
   );
 
   select p.policy_id,p.max_lag_seconds
@@ -195,7 +195,7 @@ begin
     select
       count(*)::bigint as interval_count,
       coalesce(pg_catalog.floor(pg_catalog.sum(
-        pg_catalog.extract(epoch from (
+        extract(epoch from (
           pg_catalog.least(i.active_until,p_window_end) -
           pg_catalog.greatest(i.active_from,p_window_start)
         ))
@@ -225,7 +225,7 @@ begin
         i.service_state,
         count(*)::bigint as interval_count,
         coalesce(pg_catalog.floor(pg_catalog.sum(
-          pg_catalog.extract(epoch from (
+          extract(epoch from (
             pg_catalog.least(i.active_until,p_window_end) -
             pg_catalog.greatest(i.active_from,p_window_start)
           ))
