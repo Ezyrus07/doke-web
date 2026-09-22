@@ -17,7 +17,7 @@ The future baseline transaction must scan the current catalog and append one `ac
 - `eligible_after` equals current CAT public-visibility eligibility;
 - visible version and category/state are frozen only when currently eligible;
 - each service receives its next monotonic `sequence_no`;
-- `baseline:<runId>:<serviceId>` is the idempotency key.
+- `cat-a07:baseline:<runId>:<serviceId>` is the idempotency key.
 
 This includes currently ineligible services as `false -> false`; that proves the complete catalog state at the coverage epoch instead of proving only the visible subset.
 

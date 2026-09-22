@@ -17,6 +17,7 @@ check('serialization versions',catSql.includes('lock table public.service_versio
 check('serialization categories',catSql.includes('lock table public.service_categories in share row exclusive mode'));
 check('serialization ledger',catSql.includes('lock table private.cat_listing_visibility_events_v1 in share row exclusive mode'));
 check('one event per current service',catSql.includes("'activation_baseline'")&&catSql.includes('get diagnostics v_baseline_event_count = row_count'));
+check('exact baseline key contract',contract.baselineWriteContract?.sourceTransitionKey==='cat-a07:baseline:<baselineRunId>:<serviceId>'&&catSql.includes("pg_catalog.format('cat-a07:baseline:%s:%s',p_baseline_run_id,c.service_id)"));
 check('no source lifecycle mutation',!catSql.match(/update\s+public\.services/i)&&!catSql.match(/delete\s+from\s+public\.services/i)&&!catSql.match(/insert\s+into\s+public\.services/i));
 check('no A06 activation mutation',!catSql.match(/update\s+private\.cat_listing_visibility_ledger_state_v1/i)&&!catSql.match(/delete\s+from\s+private\.cat_listing_visibility_ledger_state_v1/i));
 check('handoff reads certified epoch',anaSql.includes("e.certification_state='certified'")&&anaSql.includes('e.coverage_complete_from <= p_window_start'));
