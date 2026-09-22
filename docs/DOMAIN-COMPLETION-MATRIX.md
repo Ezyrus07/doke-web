@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1217 arquivos no escopo; 291 referências a localStorage; 78 a sessionStorage; 591 referências mock; 229 referências de rede/Supabase; 37 marcadores de implementação pendente.
+**Evidência estática observada:** 1531 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 376 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 222 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 226 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 225 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 229 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1139 arquivos no escopo; 216 referências a localStorage; 70 a sessionStorage; 329 referências mock; 228 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1429 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 374 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -880,7 +880,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 7 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 6 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 124 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 28 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `comunidade.html`, `comunidade-interna.html`.
 
@@ -888,19 +888,57 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Evidências:**
 - Rich local community logic and local runtime domain contracts exist.
-- Backend communities module is empty and all three core community tables have RLS disabled.
 - Public/private discovery, membership, role management and posts now have server-side RLS with canonical owner membership and 18 rollback canaries.
 - Members cannot self-assign moderator/owner, nonmembers cannot read or post in private communities, and owners cannot delete or downgrade the canonical owner row.
+- The communities backend now has a server-authority contract, Supabase repository adapter and private persistence foundation applied and structurally verified in staging.
+- An authenticated read-only composition-root canary passed against staging with an existing aal1 session, rollback and unchanged 0/0/0 domain row counts.
+- COM-B03 scalable realtime channel policy is repository-certified with bounded leases, privacy gates, channel caps, event deduplication, backpressure, resume cursors and deterministic reconnect.
+- COM-B04 canonical moderation case authority is repository-certified with revision-bound evidence, dual control, bounded sanctions, independent appeals, authenticated scan attestations and serializable transaction plans.
+- COM-B04B immutable moderation persistence readiness is repository-certified with private RLS-forced tables, append-only ledgers, service-role-only SECURITY DEFINER RPCs, expected-revision CAS, hash-chain validation and atomic idempotency.
+- COM-B04C applied and structurally verified immutable moderation persistence in staging: eight private RLS-forced tables, six immutable ledger triggers, two service-role-only SECURITY DEFINER RPCs, and complete foreign-key index coverage.
+- A rollback-only canary proved atomic revision creation, idempotent replay, revision-conflict rejection and immutable-ledger enforcement.
+- No synthetic moderation rows persisted; runtime composition, real moderation actions and production remain blocked.
+- COM-B04D repository-certified the moderation runtime composition boundary with server-verified sessions, canonical context binding, domain-first evaluation and a disabled-by-default atomic repository handoff.
+- For new cases, initial report evidence is materialized into the immutable evidence ledger instead of remaining only in the command payload.
+- Live staging invocation, route registration, real moderation actions and production remain blocked.
+- COM-B04E authenticated a real active staging session and proved the moderation composition-to-persistence handoff inside a SERIALIZABLE rollback-only transaction with zero persistent residue.
+- COM-B04F froze the canonical moderation command route and its security requirements while route registration and runtime loading remained blocked.
+- COM-B04G repository-wired communities.moderation.command into the route registry and module loader with a handler that always fails closed as HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED.
+- Live composition activation, staging deployment, traffic, real moderation actions, production and pull-request merge remain blocked.
+- COM-B04H repository-certified the exact live composition activation proof package for server-verified session, canonical context, server UTC clock, service-role RPC allowlist, immutable audit storage, approved policy and request-security boundaries.
+- The COM-B04G route handler remains fail-closed as HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED and the COM-B04D composition remains limited to disabled and local_test_double modes.
+- COM-B04H grants repository readiness only; staging access, deployment, traffic, real moderation, production and pull-request merge remain blocked.
+- COM-B03B-R1 confirmed public.community_posts is present in the staging supabase_realtime publication; the single-use authenticated canary then failed closed at the shared synthetic login boundary with zero persistent domain residue.
+- COM-B03B-R2 repository-certified an ephemeral Auth identity recovery that removes the shared staging credential dependency, verifies the existing publication without mutating it, materializes the account through the canonical auth trigger and keeps staging execution behind a new single-use authorization.
+- COM-B04I authenticated a real staging session and passed the process-local communities.moderation.command route canary inside a SERIALIZABLE rollback-only transaction with zero persistent residue.
+- The successful COM-B04I canary did not deploy a persistent runtime, enable public traffic, change production or merge the pull request; the default handler remains HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED.
+- COM-B03B authenticated community_posts Postgres Changes is proven in Doke staging and remains preserved; R3H through R3L did not re-execute or weaken that proof.
+- COM-B03C-R3H executed the single-use real Presence diagnostic with nine cases, per-case policy cleanup and final synthetic-identity cleanup; zeroResidueProven=true while exactRootCauseProven remained false.
+- COM-B03C-R3I/R3J/R3K repository-certified 16 differential probes plus one separate negative control and connected the harness to reusable R3G adapters while keeping remote credential, dependency, staging and Realtime execution authority false.
+- COM-B03C-R3L repository-certified the single-use differential authorization lifecycle for the 17 cases: certify passed, authorize/canary remained skipped, trigger absent, authorization unreceived/unconsumed, credential wiring and remote executor invocation unprepared, production and merge blocked.
+- COM-B03C-R3M repository-certified the separately governed executable envelope for the R3L 17-case diagnostic on head 9f719759ce0321756835354ab1fd4c1f260433cf (run 31386647462 / certify 93448453187 success): future push-only secret wiring, canary-only dependencies, R3L executor invocation, independent sanitized-report verification, artifact upload and single-use trigger enforcement are prepared; authorize/canary remained skipped, the trigger remains absent and no staging access occurred.
+- COM-B03C-R3L single-use differential staging diagnostic completed on run 31388916899 / canary 93455955823 with artifact 9062928795: all 17 structural gates completed, four direct probes subscribed (control_true, uid_helper_direct, topic_helper_direct, row_topic_direct), extension_direct and every tested presence-extension composition were rejected, policy/identity residue remained zero, the trigger was removed, and exactRootCauseProven remained false.
+- COM-B03C-R5B consumed the fresh R5A-bound corrected-terminal-observation authorization into a frozen receipt without creating a trigger or attempting remote execution; the authorization is permanently non-reusable and remains bound to the corrected R4Z bridge.
+- COM-B03C-R5C repository-certified single-use corrected terminal observation trigger readiness at head 65554baca33933cdbf6c660ba87658ab3ab4c5db; the future trigger remains absent, staging/network/Realtime/credential authority remains false, exactRootCauseProven remains false and causal promotion remains blocked.
+- R5C final CI run 31713609745 / certify job 94492595157 passed repository readiness, consumed receipt and corrected-bridge preservation, remote execution hard block, Domain Completion Matrix, Agent Governance and diff hygiene.
+- COM-B03C-R5D repository-certifies a corrected terminal observation execution envelope bound to R5C head 65554baca33933cdbf6c660ba87658ab3ab4c5db, the frozen R5B receipt 7f83ad580442b634912f776745f25ec2de7d935ed93a6c3f5c0b622e561f3551 and R4Z corrected bridge blob ff083f29e43b2f85045b23bf8f12a4b354fb0005; the future trigger remains absent, all remote/staging/network/credential authority remains false, exactRootCauseProven remains false and causal promotion remains blocked.
+- COM-B03C-R5E repository-prepares a fresh head-bound execution-authorization lifecycle for the certified R5D corrected-terminal-observation envelope. The future authorization must bind the exact final R5E head; no authorization phrase or receipt exists, the R5B lineage receipt is preserved and not reissued, the trigger remains absent, all remote/staging/network/credential authority remains false, exactRootCauseProven remains false and causal promotion remains blocked.
+- COM-B03C-R5F repository-prepares an R5E-bound R5D corrected-terminal-observation execution-authorization issuance/consumption boundary at certified R5E head bc8532c3afacb515ef72ebefb55667937d8925e8. The phrase factory, fingerprint, fresh receipt derivation and R5E receipt-shape compatibility are repository-prepared, but no explicit authorization has been received, no receipt exists, the trigger remains absent, all remote/staging/network/credential authority remains false, exactRootCauseProven remains false and causal promotion remains blocked.
+- COM-B03C-R5G repository-certified the consumed R5F authorization receipt and R5D execution-envelope trigger readiness at head 4fc3577316f6426c12cebdd12bb6374e5c45a5f7 (run 31850460232 / job 94925137596) without creating a trigger or granting remote, staging, credential or network authority.
+- The single-use corrected-terminal-observation trigger was later materialized as the only changed file at head 3e0f5d1de27099009b4f778f6e40e3e944e00ec1 from certified R5G, with blob 0d8b8a39104a1de003f9097a867e51b2313bb750; its creation authorization is consumed, non-reusable and distinct from remote execution authority.
+- COM-B03C-R5H certified the frozen R5G-bound single-use R5D trigger at head a06de307f580c6b787a4c233a342a28a751f3621 (run 31852587738 / job 94931027687). R5H is repository-only: corrected terminal observation staging execution has not occurred, remote/staging/network/credential authority remains false, exactRootCauseProven=false and causalPromotionAllowed=false.
+- COM-B03C established a separate R5D hosted corrected-terminal-observation execution boundary repository-defined on head 14a358b42f4550168c35e72b15622937ebc2c87e and finally repository-certified on head b3a5bdcd35df41ea64d14c9ff562d5615e13ce6d. At boundary-certification time the execution receipt was absent and no staging execution had occurred; the boundary bound the frozen R5H trigger, R5F consumed receipt, certified R5D envelope and corrected R4Z bridge while preserving zero remote authority.
+- COM-B03C-R5D hosted corrected terminal observation executed exactly once in Doke staging from receipt commit 9854d1950223892c16a1939198dec27eab534e16 on workflow run 31916760689 attempt 1: certify 95089752543, authorize 95089810575 and canary 95089999719 all succeeded. The ACTIVE_HEALTHY staging project returned terminalStatus=CHANNEL_ERROR with joinSubscribed=false and sanitizedJoinClassification=realtime_rls_authorization_rejected; identity cleanup succeeded and zero residue was proven across auth.users, public.users, public.user_profiles and public.client_profiles. The execution receipt is consumed and non-reusable; exactRootCauseProven=false and causalPromotionAllowed=false remain preserved, so private Presence, Typing/Broadcast and channel_messages receive no promotion.
 
 **Bloqueadores:**
-- **COM-B02 · CRITICAL · server_authority:** Membership, roles, bans, invitations and posts are not server-canonical. _(Fase 11)_
-- **COM-B03 · HIGH · realtime:** No community realtime publication or scalable channel policy is active. _(Fase 11)_
-- **COM-B04 · HIGH · moderation:** Content reports, sanctions, appeals and media moderation are incomplete. _(Fase 12)_
+- **COM-B02 · CRITICAL · server_runtime_activation:** Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime. _(Fase 11)_
+- **COM-B03 · HIGH · realtime_activation:** Authenticated community_posts Postgres Changes is proven in staging. R3L narrowed the private Presence authorization failure to evaluation involving realtime.messages.extension without proving the exact root cause. R5B and R5F receipts are consumed and non-reusable; R5G certified trigger readiness; the R5D-bound single-use trigger was materialized and R5H certified it at head a06de307f580c6b787a4c233a342a28a751f3621. The separate R5D hosted execution boundary was repository-certified at head b3a5bdcd35df41ea64d14c9ff562d5615e13ce6d. A fresh exact-head single-use execution authorization was then consumed into the sole receipt commit 9854d1950223892c16a1939198dec27eab534e16, and workflow run 31916760689 attempt 1 completed certify/authorize/canary successfully. The corrected staging observation reproduced CHANNEL_ERROR with joinSubscribed=false and sanitized classification realtime_rls_authorization_rejected on an ACTIVE_HEALTHY project; synthetic identity cleanup succeeded and zero residue was proven. This proves a private Realtime authorization rejection under the corrected envelope but does not prove the exact root cause: exactRootCauseProven=false and causalPromotionAllowed=false. No reusable remote/staging/network/credential/Realtime authority remains after the attempt. Private Presence is not promoted, private Typing/Broadcast remains unproven, and channel_messages still lacks canonical remote authority. Any future staging execution requires a separately governed future boundary and a fresh explicit single-use authorization bound to its exact certified head; generic continuation is non-authorizing. _(Fase 11)_
+- **COM-B04 · HIGH · moderation_live_runtime_activation:** COM-B04I proved the authenticated live composition route in a rollback-only process-local staging canary, but the default shared handler remains HTTP 503 and no persistent runtime deployment or public traffic is active. _(Fase 12)_
 
 **Próximas ações:**
-- Implement server-canonical invitations, join requests, bans and appeals.
-- Add scoped realtime and scalable channel policy.
-- Complete content reports, sanctions and media moderation.
+- Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.
+- Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary is defined and authorized.
+- Preserve R5H, the frozen trigger and the consumed R5D hosted execution evidence without rerunning run 31916760689 or reusing any authorization/receipt. Continue only repository-side causal investigation to identify the smallest next proof obligation that can distinguish the exact Realtime RLS authorization cause; do not presume or name R5I before a separate certified boundary exists. Any future staging probe requires a fresh explicit single-use authorization bound to the exact future certified head; generic continuation is non-authorizing.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -1048,7 +1086,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 284 arquivos no escopo; 77 referências a localStorage; 8 a sessionStorage; 275 referências mock; 8 referências de rede/Supabase; 27 marcadores de implementação pendente.
+**Evidência estática observada:** 312 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1108,7 +1146,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2663 arquivos no escopo; 558 referências a localStorage; 151 a sessionStorage; 921 referências mock; 642 referências de rede/Supabase; 91 marcadores de implementação pendente.
+**Evidência estática observada:** 3416 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 812 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1169,4 +1207,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-04T13:50:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-15T21:20:00-03:00._

@@ -1,0 +1,136 @@
+{
+  "validationId": "COM-B03C-R3-CORRECTED-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT",
+  "domain": "COM-001",
+  "contractId": "com-b03c-r3-corrected-realtime-authorization-predicate-ladder-readiness-v1",
+  "status": "staging_diagnostic_completed_full_conjunction_presence_read_rejected_zero_residue_proven",
+  "trigger": {
+    "head": "12ee0d86ead7571b9db44e0dc696f0b0a5b64931",
+    "workflowInstallHead": "745e12b7873e016ae52e0b92a6d4e97a2f84e71a",
+    "singleFileBoundaryVerified": true
+  },
+  "workflow": {
+    "runId": 31288905160,
+    "runAttempt": 1,
+    "event": "push",
+    "result": "success",
+    "certifyJobId": 93182621738,
+    "certifyResult": "success",
+    "authorizeJobId": 93182650960,
+    "authorizeResult": "success",
+    "canaryJobId": 93182724070,
+    "canaryResult": "success"
+  },
+  "artifact": {
+    "artifactId": 9030781850,
+    "name": "com-b03c-r3-corrected-realtime-auth-31288905160",
+    "archiveDigest": "sha256:7d23ba36fa27a82e3ffce867d641ff41acc62669f5381b9ba5a89261a877cc8e",
+    "reportSha256": "1b60c47908c2dd6990414bdea6a2adac0df1b295caf6771703e0d746d26e1777",
+    "sanitized": true,
+    "rawRemoteErrorsPersisted": false
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03C_R3_CORRECTED_REALTIME_AUTHORIZATION_PREDICATE_LADDER_ON_DOKE_STAGING",
+    "consumed": true,
+    "executionAttempted": true,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "mustNotBeRerun": true,
+    "predecessorAuthorizationReusable": false
+  },
+  "preconditions": {
+    "r2aZeroResidueProven": true,
+    "r2aPolicyResidue": 0,
+    "r2aSyntheticAuthResidue": 0,
+    "r2aSyntheticDbResidue": 0,
+    "prOpenDraftUnmerged": true,
+    "triggerParentMatchedCertifiedEvidenceHead": true
+  },
+  "harness": {
+    "listenerRegistrationBeforeSubscribe": true,
+    "presenceObserverRegisteredBeforeSubscribe": true,
+    "broadcastObserverRegisteredBeforeSubscribe": true,
+    "waiterTimerArmedOnlyAfterAction": true,
+    "noPreJoinRejectableWaiterPromise": true,
+    "earlyEventBuffer": true,
+    "freshTopicPerRung": true,
+    "freshRealtimeClientPerRung": true,
+    "jwtAppliedBeforeChannelCreation": true,
+    "readWriteAuthorizationSeparated": true,
+    "negativeControlPrepared": true,
+    "perRungCleanup": true,
+    "outerCleanupFallback": true,
+    "globalPolicyTracking": true,
+    "postExecutionZeroResidueVerification": true
+  },
+  "negativeControl": {
+    "passed": true,
+    "presenceJoinDenied": true,
+    "typingJoinDenied": true,
+    "classification": "realtime_rls_authorization_rejected"
+  },
+  "predicateLadder": {
+    "read_join": {
+      "authenticated_basic": { "presence": true, "typing": true },
+      "topic_only": { "presence": true, "typing": true },
+      "auth_uid_only": { "presence": true, "typing": true },
+      "extension_only": { "presence": true, "typing": true },
+      "full_conjunction": {
+        "presence": false,
+        "presenceFailureClass": "realtime_rls_authorization_rejected",
+        "typing": true
+      }
+    },
+    "write_action": {
+      "authenticated_basic": { "presence": true, "typing": true },
+      "topic_only": { "presence": true, "typing": true },
+      "auth_uid_only": { "presence": true, "typing": true },
+      "extension_only": { "presence": true, "typing": true },
+      "full_conjunction": { "presence": true, "typing": true }
+    }
+  },
+  "interpretation": {
+    "r2HarnessRootCauseResolved": true,
+    "r3PredicateConclusionValid": true,
+    "authenticatedBasicReadProven": true,
+    "authenticatedBasicWriteProven": true,
+    "typingFullConjunctionReadProven": true,
+    "typingFullConjunctionWriteProven": true,
+    "presenceFullConjunctionReadProven": false,
+    "presenceFullConjunctionWriteProvenOnIndependentWriteAxis": true,
+    "observedFailureClass": "full_conjunction_presence_read_rls_rejection",
+    "exactCombinedPredicateCauseIsolated": false,
+    "privatePresencePredicateBoundaryComplete": false,
+    "privateTypingBroadcastPredicateBoundaryComplete": true,
+    "runtimeIntegrated": false,
+    "frontendConnected": false,
+    "e2eProven": false
+  },
+  "cleanup": {
+    "temporaryPoliciesRemovedAfterEveryRung": true,
+    "outerPolicyCleanupFallbackExecuted": true,
+    "policyResidue": 0,
+    "ephemeralAuthIdentityRemoved": true,
+    "persistentIdentityResidue": 0,
+    "persistentDomainResidue": 0,
+    "zeroResidueProven": true
+  },
+  "effects": {
+    "communityPostsReexecuted": false,
+    "channelMessagesExecuted": false,
+    "domainMutationExecuted": false,
+    "publicationMutationExecuted": false,
+    "runtimeDeployed": false,
+    "publicTrafficEnabled": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "realUserMutationExecuted": false
+  },
+  "governance": {
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "maturityPromoted": false,
+    "productionGate": "blocked",
+    "mergeAuthorized": false
+  },
+  "nextBoundary": "repository-only root-cause isolation of the full_conjunction Presence SELECT rejection; any future staging execution requires a new independent boundary and new single-use authorization"
+}

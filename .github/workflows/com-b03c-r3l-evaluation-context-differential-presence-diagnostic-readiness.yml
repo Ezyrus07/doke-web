@@ -1,0 +1,112 @@
+name: COM-B03C-R3L Single-Use Evaluation Context Differential Presence Diagnostic Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3l.js
+      - config/com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.json
+      - scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js
+      - scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+      - scripts/verify-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+      - docs/validation/COM-B03C-R3L-SINGLE-USE-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-DIAGNOSTIC-READINESS.json
+      - .github/workflows/com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.yml
+      - docs/validation/COM-B03C-R3K-DIFFERENTIAL-REMOTE-ADAPTER-LIFECYCLE-READINESS.json
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - reports/generated/domain-completion-matrix-report.json
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
+
+permissions: { contents: read }
+concurrency:
+  group: com-b03c-r3l-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3l.js
+          node --check scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js
+          node --check scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+          node --check scripts/verify-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+      - name: COM-B03C-R3L repository authorization lifecycle readiness
+        if: github.event_name == 'pull_request'
+        run: node scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+      - name: Repository-only lifecycle self-test
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p reports/generated
+          node scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js --repository-self-test > reports/generated/COM-B03C-R3L-REPOSITORY-SELF-TEST.json
+          node scripts/verify-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js reports/generated/COM-B03C-R3L-REPOSITORY-SELF-TEST.json
+      - name: Pre-authorization staging hard-block
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
+          set +e
+          output="$(node scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js 2>&1)"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R3L_STAGING_AUTHORIZATION_REQUIRED'
+      - name: Trigger commit continuity
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          TRIGGER=config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
+          test -f "${TRIGGER}"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "${TRIGGER}"
+      - name: Domain completion matrix audit
+        if: github.event_name == 'pull_request'
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance audit
+        if: github.event_name == 'pull_request'
+        run: npm run audit:agent-governance
+      - name: Governance invariants
+        if: github.event_name == 'pull_request'
+        run: |
+          node - <<'NODE'
+          const e=require('./docs/validation/COM-B03C-R3L-SINGLE-USE-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-DIAGNOSTIC-READINESS.json');
+          if(e.checkpoint?.maturity!==3||e.checkpoint?.productionGate!=='blocked')process.exit(1);
+          if(e.predecessor?.evidenceHeadRecertificationStatus!=='success'||e.predecessor?.remoteAuthority!==false||e.predecessor?.exactRootCauseProven!==false)process.exit(1);
+          if(e.implementation?.totalExecutionCaseCount!==17||e.implementation?.runAttemptMustBeOne!==true||e.implementation?.causalPromotionAllowed!==false)process.exit(1);
+          if(e.futureAuthorization?.defined!==true||e.futureAuthorization?.received!==false||e.futureAuthorization?.consumed!==false||e.futureAuthorization?.singleUse!==true||e.futureAuthorization?.reusableAfterFailure!==false)process.exit(1);
+          if(e.workflowBoundary?.secretsReferencedByFutureCanaryJob!==false||e.workflowBoundary?.futureCanaryCredentialWiringPrepared!==false||e.workflowBoundary?.remoteExecutorInvocationPrepared!==false)process.exit(1);
+          for(const k of ['stagingReadAuthority','stagingMutationAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','authIdentityLifecycleAuthority','realtimePolicyLifecycleAuthority','realtimeSubscriptionAuthority','runtimePolicyChangeAuthority','productionAuthority','pullRequestMergeAuthority'])if(e.authority?.[k]!==false)process.exit(1);
+          for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','policyMutationExecuted','authIdentityMutationExecuted','realtimeSubscriptionExecuted','runtimePolicyChangeExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
+          if(e.exactRootCauseProven!==false)process.exit(1);
+          NODE
+      - name: Diff hygiene
+        if: github.event_name == 'pull_request'
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+
+  authorize:
+    if: github.event_name == 'push'
+    needs: certify
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - name: Validate single-use R3L authorization trigger
+        run: echo push-only-authorize-boundary
+
+  canary:
+    if: github.event_name == 'push'
+    needs: authorize
+    runs-on: ubuntu-24.04
+    environment: doke-staging
+    steps:
+      - run: echo push-only-canary-boundary

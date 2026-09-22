@@ -1,0 +1,76 @@
+name: COM-B03C-R4Z Corrected Terminal Bridge Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4z.js'
+      - 'scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js'
+      - 'scripts/test-com-b03c-r4z-corrected-terminal-bridge-readiness.js'
+      - 'config/com-b03c-r4z-corrected-terminal-bridge-readiness.json'
+      - 'docs/validation/COM-B03C-R4Z-CORRECTED-TERMINAL-BRIDGE-READINESS.json'
+      - '.github/workflows/com-b03c-r4z-corrected-terminal-bridge-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r4z-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4z.js
+          node --check scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js
+          node --check scripts/test-com-b03c-r4z-corrected-terminal-bridge-readiness.js
+      - name: R4Z repository corrected terminal bridge readiness
+        run: node scripts/test-com-b03c-r4z-corrected-terminal-bridge-readiness.js
+      - name: Remote execution hard block
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const r4z = require('./backend/modules/communities/community-realtime-private-auth-r4z');
+          try {
+            r4z.assertRemoteExecutionBoundaryAbsent();
+            process.exit(1);
+          } catch (error) {
+            if (error?.code !== r4z.REMOTE_EXECUTION_BLOCK_CODE) throw error;
+          }
+          NODE
+      - name: Historical R4L R4W R4X R4Y preserved
+        shell: bash
+        run: |
+          set -euo pipefail
+          R4Y_EVIDENCE_HEAD=219c8989bfcbcee115889a43f41c4854b9bbbf12
+          test "$(git rev-parse "$R4Y_EVIDENCE_HEAD:scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js")" = "d611f52376a5495e50389183c9d6df3a93e1f64b"
+          test ! -e config/com-b03c-r4t-single-use-successor-executor-trigger.json
+          test -z "$(git diff --name-only "$R4Y_EVIDENCE_HEAD" "${{ github.event.pull_request.head.sha }}" -- \
+            scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js \
+            backend/modules/communities/community-realtime-private-auth-r4w.js \
+            backend/modules/communities/community-realtime-private-auth-r4x.js \
+            backend/modules/communities/community-realtime-private-auth-r4y.js \
+            docs/validation/COM-B03C-R4Y-R4L-ASYNC-FINALLY-CLEANUP-ORDERING-ROOT-CAUSE-READINESS.json)"
+      - name: Repository-only workflow surface
+        shell: bash
+        run: |
+          ! grep -Eq '^[[:space:]]*push:' .github/workflows/com-b03c-r4z-corrected-terminal-bridge-readiness.yml
+          ! grep -Eq '^[[:space:]]*environment:' .github/workflows/com-b03c-r4z-corrected-terminal-bridge-readiness.yml
+          ! grep -Eq 'secrets\.' .github/workflows/com-b03c-r4z-corrected-terminal-bridge-readiness.yml
+          grep -Fq 'permissions: { contents: read }' .github/workflows/com-b03c-r4z-corrected-terminal-bridge-readiness.yml
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

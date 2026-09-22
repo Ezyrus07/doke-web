@@ -1,0 +1,135 @@
+{
+  "contractId": "com-b04-moderation-case-authority-v1",
+  "domain": "COM-001",
+  "scope": "repository_only",
+  "status": "repository_contract_certified_runtime_blocked",
+  "sourceHead": "ca635b884c960950450b1a483e5664ce9dc7aef6",
+  "predecessors": [
+    "com-a03-governance-discipline-ledger-v1",
+    "com-a05-moderation-appeal-media-readiness-v1",
+    "com-b03-realtime-channel-scale-policy-v1"
+  ],
+  "caseAuthority": {
+    "caseKinds": ["content_report", "member_report", "media_review"],
+    "caseStates": [
+      "open", "triage", "evidence_collection", "decision_pending_approval",
+      "decision_approved", "remediation_pending", "appeal_open", "appeal_review",
+      "appeal_pending_approval", "resolved", "closed", "conflicted"
+    ],
+    "canonicalServerSnapshotRequired": true,
+    "expectedRevisionRequired": true,
+    "serializableTransactionRequired": true,
+    "compareAndSwapProjectionRequired": true,
+    "automaticFinalDecisionAllowed": false,
+    "reportCountCreatesSanction": false
+  },
+  "evidence": {
+    "opaqueReferencesOnly": true,
+    "sha256DigestRequired": true,
+    "rawPayloadAllowed": false,
+    "retentionClasses": ["standard", "extended", "legal_hold"],
+    "appendOnly": true,
+    "hashChained": true
+  },
+  "decisions": {
+    "outcomes": [
+      "dismiss", "hide_content", "remove_content", "warn_member", "mute_member",
+      "restrict_member", "ban_member", "quarantine_media", "reject_media",
+      "restore_content", "release_media"
+    ],
+    "adverseOutcomeRequiresEvidence": true,
+    "recommendationBoundToCaseRevision": true,
+    "recommendationBoundToPolicyFingerprint": true,
+    "recommendationBoundToEvidenceSetHash": true,
+    "recommendationBoundToTargetSnapshotHash": true,
+    "recommenderCannotApprove": true,
+    "reporterTargetAndAuthorCannotDecide": true,
+    "irreversibleOutcomesRequireDualControl": true,
+    "runtimeAppliedByContract": false
+  },
+  "sanctions": {
+    "types": ["warning", "mute", "restriction", "ban"],
+    "maximumMuteDays": 30,
+    "maximumRestrictionDays": 90,
+    "maximumTemporaryBanDays": 365,
+    "onlyBanMayBePermanent": true,
+    "permanentBanRequiresExplicitApproval": true,
+    "expiryIsExplicitEvent": true,
+    "automaticExpiryMutationAllowed": false
+  },
+  "appeals": {
+    "windowDays": 14,
+    "onlyAffectedSubjectMayOpen": true,
+    "originalRecommenderExcluded": true,
+    "originalApproverExcluded": true,
+    "appealRecommenderCannotApprove": true,
+    "priorDecisionImmutable": true,
+    "outcomes": ["uphold", "overturn", "modify"],
+    "remediationIsDraftOnly": true
+  },
+  "media": {
+    "authenticatedScannerRequired": true,
+    "scanDigestMustMatchTarget": true,
+    "scanResultCreatesFinalDecision": false,
+    "cleanScanRequiredForRelease": true,
+    "suspiciousOrMaliciousScanRequiredForRejection": true,
+    "scannerCannotApproveDisposition": true,
+    "quarantineStoreRequired": true,
+    "rawBinaryAllowed": false
+  },
+  "repositoryPort": {
+    "methods": [
+      "loadCanonicalCase", "claimIdempotencyKey", "appendModerationEvent",
+      "insertDecisionRecord", "compareAndSwapCaseProjection", "appendSanctionEvent",
+      "appendAppealEvent", "appendMediaReviewEvent"
+    ],
+    "isolation": "serializable",
+    "atomic": true,
+    "rollbackOnFailure": true,
+    "commitAuthority": false
+  },
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "authority": {
+    "contractAuthority": true,
+    "reportWriteAuthority": false,
+    "moderationWriteAuthority": false,
+    "sanctionWriteAuthority": false,
+    "appealWriteAuthority": false,
+    "mediaWriteAuthority": false,
+    "repositoryWriteAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "certification": {
+    "head": "33c0f454ced665af4363bc86dbecf6b3b59249d5",
+    "run": 31056452918,
+    "job": 92474892858,
+    "audit": "210/210",
+    "conformance": "51/51",
+    "result": "success"
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "realtimePublicationChanges": false,
+    "subscriptionsCreated": false,
+    "realReportCreated": false,
+    "realContentChanged": false,
+    "realSanctionApplied": false,
+    "realAppealChanged": false,
+    "realMediaChanged": false,
+    "productionChanges": false,
+    "pullRequestMerged": false
+  },
+  "nextBoundary": "COM-B04B immutable moderation persistence and migration readiness"
+}

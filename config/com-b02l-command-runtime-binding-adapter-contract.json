@@ -1,0 +1,170 @@
+{
+  "contractId": "com-b02l-command-runtime-binding-adapter-contract-v1",
+  "boundaryId": "COM-B02L",
+  "domain": "COM-001",
+  "scope": "standing_repository_only_runtime_binding_adapter_contract_without_activation_remote_execution_or_migration_application",
+  "status": "repository_only_runtime_binding_adapter_contract_materialized_pending_certification",
+  "authorization": {
+    "received": true,
+    "type": "standing_repository_only",
+    "source": "explicit_user_message",
+    "genericNextAuthorized": true,
+    "singleUse": false,
+    "sensitiveBoundariesExcluded": true,
+    "effectivePredecessorHead": "75b2d31c925399fa1f9bee3e13a4b75067a7c3f0"
+  },
+  "predecessor": {
+    "boundaryId": "COM-B02K",
+    "contractId": "com-b02k-command-runtime-binding-readiness-v1",
+    "certifiedHead": "75b2d31c925399fa1f9bee3e13a4b75067a7c3f0",
+    "certificationRunId": 31984713852,
+    "certificationJobId": 95257587159,
+    "certificationConclusion": "success"
+  },
+  "contractResponsibilities": {
+    "mapAuthenticatedRuntimeActor": true,
+    "runtimeActorSource": "server_verified_authenticated_session",
+    "compositionActorSource": "server_verified_session",
+    "separateTrustedDomainContext": true,
+    "describeCanonicalStateRead": true,
+    "canonicalReadRepositoryContractId": "com-b02b-supabase-repository-migration-readiness-v1",
+    "canonicalReadOperation": "loadCanonicalState",
+    "canonicalReadRpc": "com_load_canonical_state_v1",
+    "prepareIdempotencyClaim": true,
+    "claimRepositoryContractId": "com-b02i-command-source-repository-v2",
+    "claimOperation": "claimIdempotencyKey",
+    "claimRpc": "com_claim_idempotency_key_v2",
+    "composeB02jRepositoryPlan": true,
+    "repositoryWriteOperations": [
+      "createCommunityProjectionOutcome",
+      "commitEventProjectionOutcome"
+    ],
+    "executeRepositoryOperation": false
+  },
+  "routeBindings": {
+    "communities.membership.command": {
+      "domain": "membership",
+      "runtimeHandlerName": "executeMembershipCommand",
+      "composerExportName": "composeMembershipCommandRepositoryOnly"
+    },
+    "communities.governance.command": {
+      "domain": "governance",
+      "runtimeHandlerName": "executeGovernanceCommand",
+      "composerExportName": "composeGovernanceCommandRepositoryOnly"
+    },
+    "communities.content.command": {
+      "domain": "content",
+      "runtimeHandlerName": "executeContentCommand",
+      "composerExportName": "composeContentCommandRepositoryOnly"
+    }
+  },
+  "repositoryPorts": {
+    "canonicalRead": {
+      "contractId": "com-b02b-supabase-repository-migration-readiness-v1",
+      "operation": "loadCanonicalState",
+      "rpc": "com_load_canonical_state_v1",
+      "executorBound": false
+    },
+    "idempotencyClaim": {
+      "contractId": "com-b02i-command-source-repository-v2",
+      "operation": "claimIdempotencyKey",
+      "rpc": "com_claim_idempotency_key_v2",
+      "executorBound": false,
+      "sqlApplied": false
+    },
+    "createCommunityCommit": {
+      "contractId": "com-b02i-command-source-repository-v2",
+      "operation": "createCommunityProjectionOutcome",
+      "rpc": "com_create_community_projection_outcome_v1",
+      "executorBound": false,
+      "sqlApplied": false
+    },
+    "existingCommunityCommit": {
+      "contractId": "com-b02i-command-source-repository-v2",
+      "operation": "commitEventProjectionOutcome",
+      "rpc": "com_commit_event_projection_outcome_v2",
+      "executorBound": false,
+      "sqlApplied": false
+    }
+  },
+  "remainingRuntimeBlockers": [
+    "B02L_RUNTIME_BINDING_ADAPTER_IMPLEMENTATION_NOT_MATERIALIZED",
+    "B02J_COMPOSE_HELPERS_NOT_IN_RUNTIME_HANDLER_MAP",
+    "B02I_V2_REPOSITORY_EXECUTOR_NOT_BOUND",
+    "B02I_V2_SQL_NOT_APPLIED",
+    "RUNTIME_ACTIVATION_NOT_AUTHORIZED"
+  ],
+  "boundFrozenBlobs": {
+    "b02kModule": "154871f0997177ce2c74c0850cba33a45bf0f22e",
+    "b02kConfig": "7a2dbdf2bb7d43309ecd0b7314244b335fca49f8",
+    "b02kTest": "64db7b7d0e597e4f46db8b1a56e2408a3175897f",
+    "b02kWorkflow": "6a1a343957cbdffbce7a4d75c0c27d2a8c16a02d",
+    "b02jComposition": "27b1e212c3656dd4ad5a1f2f604903ce44c8dbfb",
+    "routeHandlers": "990ee5c8895446f44cdcd5819101f0b3d5370e63",
+    "routeRegistry": "04a039c1967ffb59502e05584d05831f7c9a1a41",
+    "moduleRouteLoader": "7b3c897c0bf20069b733632c0b424b8664eb8cf5",
+    "b02bRepositoryAdapter": "94bc05d9797bc2b5673e440d0b25f09485d8215d",
+    "b02iRepositoryContract": "38cd77fd6d3cf0c9f13d4c35ed000b9831481840",
+    "b02iSqlDefinition": "1ff7621973be5ef38aa5e033b91f5b75216b9ec1",
+    "b02dAttempt2": "7d8a864d8c2418e116d21982449ecc1a3fb3e5b8",
+    "domainCompletionMatrixSource": "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+  },
+  "authority": {
+    "repositoryOnlyAdapterContractAuthority": true,
+    "adapterImplementationAuthority": false,
+    "runtimeHandlerMutationAuthority": false,
+    "moduleRouteLoaderMutationAuthority": false,
+    "repositoryExecutorBindingAuthority": false,
+    "runtimeActivationAuthority": false,
+    "stagingDeploymentAuthority": false,
+    "stagingTrafficAuthority": false,
+    "rpcExecutionAuthority": false,
+    "networkAuthority": false,
+    "realtimeActivationAuthority": false,
+    "credentialReadAuthority": false,
+    "identityLifecycleRemoteAuthority": false,
+    "realCommunityMutationAuthority": false,
+    "migrationApplicationAuthority": false,
+    "triggerCreationAuthority": false,
+    "receiptCreationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "r5iCreationAuthority": false
+  },
+  "effects": {
+    "adapterContractMaterialized": true,
+    "adapterImplementationMaterialized": false,
+    "existingB02jCompositionChanged": false,
+    "existingRouteHandlersChanged": false,
+    "routeRegistryChanged": false,
+    "moduleRouteLoaderChanged": false,
+    "runtimeRequestMapperBound": false,
+    "repositoryExecutorBound": false,
+    "runtimeHandlerBound": false,
+    "runtimeActivated": false,
+    "stagingDeploymentExecuted": false,
+    "stagingTrafficEnabled": false,
+    "rpcExecuted": false,
+    "networkRequestExecuted": false,
+    "realtimeSubscriptionExecuted": false,
+    "credentialReadExecuted": false,
+    "remoteIdentityMutationExecuted": false,
+    "realCommunityMutationExecuted": false,
+    "migrationApplied": false,
+    "triggerCreated": false,
+    "receiptCreated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "functionalCheckpoint": {
+    "lastFunctionalCheckpoint": "COM-B03C-R5H",
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false,
+    "privatePresencePromotionAllowed": false,
+    "r5iCreated": false,
+    "r5iInferred": false
+  },
+  "nextActionAfterCertification": "advance_under_standing_repository_only_authority_to_b02m_runtime_binding_adapter_implementation_without_activation_remote_execution_or_migration_application"
+}

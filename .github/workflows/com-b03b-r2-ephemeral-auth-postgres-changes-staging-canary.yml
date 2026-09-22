@@ -1,0 +1,142 @@
+name: COM-B03B-R2 Ephemeral Auth Postgres Changes Staging Canary
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-realtime-ephemeral-auth-recovery.js'
+      - 'config/com-b03b-r2-ephemeral-auth-recovery-readiness.json'
+      - 'scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js'
+      - 'scripts/execute-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.js'
+      - 'scripts/verify-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary-evidence.js'
+      - '.github/workflows/com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.yml'
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b03b-r2-ephemeral-auth-staging-trigger.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-ephemeral-auth-recovery.js
+          node --check scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js
+          node --check scripts/execute-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.js
+          node --check scripts/verify-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary-evidence.js
+      - name: COM-B03B-R2 recovery readiness
+        run: node scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js
+      - name: COM-B03B-R1 regression
+        run: node scripts/test-com-b03b-r1-postgres-changes-recovery-readiness.js
+      - name: COM-B03B repository regression
+        run: node scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js
+      - name: COM-B03 regression
+        run: |
+          node scripts/test-com-b03-community-realtime-channel-scale-policy.js
+          node scripts/audit-com-b03-community-realtime-channel-scale-policy.js
+      - name: Fail-closed and secret-boundary checks
+        shell: bash
+        run: |
+          grep -F '"received": false' config/com-b03b-r2-ephemeral-auth-recovery-readiness.json
+          grep -F '"consumed": false' config/com-b03b-r2-ephemeral-auth-recovery-readiness.json
+          grep -F '"executionAttempted": false' config/com-b03b-r2-ephemeral-auth-recovery-readiness.json
+          grep -F '"sharedCanaryCredentialAllowed": false' config/com-b03b-r2-ephemeral-auth-recovery-readiness.json
+          grep -F '"publicationMutationAllowed": false' config/com-b03b-r2-ephemeral-auth-recovery-readiness.json
+          grep -F '"stagingMutationAuthority": false' config/com-b03b-r2-ephemeral-auth-recovery-readiness.json
+          grep -F '"productionAuthority": false' config/com-b03b-r2-ephemeral-auth-recovery-readiness.json
+          grep -F '"pullRequestMergeAuthority": false' config/com-b03b-r2-ephemeral-auth-recovery-readiness.json
+          ! grep -E '^[[:space:]]+DOKE_STAGING_CLIENT_PASSWORD:' .github/workflows/com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.yml
+          ! grep -R -E 'SUPABASE_(ACCESS_TOKEN|DB_PASSWORD)=[^$]' scripts/execute-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.js
+      - name: Diff hygiene
+        run: git diff --check
+
+  authorize:
+    if: github.event_name == 'push' && github.run_attempt == 1
+    needs: certify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Validate single-use R2 trigger boundary
+        env:
+          REQUIRED_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03B_R2_EPHEMERAL_AUTH_IDENTITY_LIFECYCLE_AND_REALTIME_SUBSCRIPTION_CANARY_ON_DOKE_STAGING
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const cp = require('child_process');
+          const trigger = JSON.parse(fs.readFileSync('config/com-b03b-r2-ephemeral-auth-staging-trigger.json', 'utf8'));
+          const exactScope = ['channel_presence', 'channel_typing', 'community_posts'];
+          const actualScope = [...(trigger.canary?.scope || [])].sort();
+          function same(a,b){ return JSON.stringify(a) === JSON.stringify(b); }
+          if (trigger.contractId !== 'com-b03b-r2-ephemeral-auth-staging-trigger-v1') throw new Error('TRIGGER_CONTRACT_MISMATCH');
+          if (trigger.status !== 'authorization_consumed_execution_pending') throw new Error('TRIGGER_STATUS_MISMATCH');
+          if (trigger.authorization?.phrase !== process.env.REQUIRED_AUTHORIZATION) throw new Error('AUTHORIZATION_MISMATCH');
+          if (trigger.authorization?.received !== true || trigger.authorization?.consumed !== true || trigger.authorization?.executionAttempted !== true) throw new Error('AUTHORIZATION_NOT_CONSUMED');
+          if (trigger.authorization?.singleUse !== true || trigger.authorization?.reusableAfterFailure !== false || trigger.authorization?.r1AuthorizationReusable !== false) throw new Error('SINGLE_USE_CONTRACT_MISMATCH');
+          if (trigger.target?.environment !== 'staging' || trigger.target?.projectId !== 'zwkczgewzbsorbrjuzpb') throw new Error('TARGET_MISMATCH');
+          if (trigger.target?.branch !== 'com/com-001-baseline-audit' || trigger.target?.pullRequest !== 61) throw new Error('PR_BOUNDARY_MISMATCH');
+          if (!same(actualScope, exactScope) || !same(trigger.canary?.excludedTopics || [], ['channel_messages'])) throw new Error('SCOPE_MISMATCH');
+          if (trigger.canary?.ephemeralAuthIdentityLifecycleAllowed !== true || trigger.canary?.authIdentityCleanupRequired !== true) throw new Error('EPHEMERAL_AUTH_BOUNDARY_REQUIRED');
+          if (trigger.canary?.sharedCanaryCredentialAllowed !== false) throw new Error('SHARED_CANARY_CREDENTIAL_PROHIBITED');
+          if (trigger.canary?.publicationVerificationRequired !== true || trigger.canary?.publicationMutationAllowed !== false) throw new Error('PUBLICATION_VERIFY_ONLY_REQUIRED');
+          if (trigger.canary?.syntheticDomainFixtureLifecycleAllowed !== true || trigger.canary?.syntheticDomainCleanupRequired !== true || trigger.canary?.persistentResidueAllowed !== false) throw new Error('ZERO_RESIDUE_BOUNDARY_REQUIRED');
+          if (trigger.canary?.privateBroadcastPresenceChannelsOnly !== true || trigger.canary?.serverVerifiedSessionRequired !== true || trigger.canary?.publicRealtimeChannelAllowed !== false) throw new Error('PRIVATE_AUTH_BOUNDARY_REQUIRED');
+          const parent = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          if (trigger.workflowInstallHead !== parent) throw new Error('INSTALL_HEAD_BINDING_MISMATCH');
+          const files = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\r?\n/).filter(Boolean);
+          if (!same(files, ['config/com-b03b-r2-ephemeral-auth-staging-trigger.json'])) throw new Error('TRIGGER_DIFF_NOT_SINGLE_FILE');
+          console.log('COM-B03B-R2 single-use staging trigger authorized.');
+          NODE
+
+  canary:
+    if: github.event_name == 'push' && github.run_attempt == 1
+    needs: authorize
+    environment: staging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      COM_B03B_R2_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03B_R2_EPHEMERAL_AUTH_IDENTITY_LIFECYCLE_AND_REALTIME_SUBSCRIPTION_CANARY_ON_DOKE_STAGING
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      GITHUB_TOKEN: ${{ github.token }}
+      COM_B03B_R2_REPORT_PATH: reports/generated/COM-B03B-R2-EPHEMERAL-AUTH-POSTGRES-CHANGES-STAGING-CANARY.json
+    steps:
+      - name: Checkout authorized R2 trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install canary-only runtime dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.94.0
+      - name: Execute ephemeral Auth Postgres Changes and private Realtime canary
+        run: node scripts/execute-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.js
+      - name: Verify sanitized R2 canary evidence
+        run: node scripts/verify-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary-evidence.js
+      - name: Upload sanitized R2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary-${{ github.run_id }}
+          path: reports/generated/COM-B03B-R2-EPHEMERAL-AUTH-POSTGRES-CHANGES-STAGING-CANARY.json
+          if-no-files-found: error
+          retention-days: 30

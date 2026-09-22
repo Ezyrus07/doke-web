@@ -1,0 +1,140 @@
+name: COM-B03C-R3C Realtime Messages Policy Catalog Read-Only Staging Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3c.js
+      - config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-readiness.json
+      - scripts/test-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-readiness.js
+      - scripts/execute-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging.js
+      - scripts/verify-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-evidence.js
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - reports/generated/domain-completion-matrix-report.json
+      - docs/validation/COM-B03C-R3C-REALTIME-MESSAGES-POLICY-CATALOG-STAGING-READINESS.json
+      - .github/workflows/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-readiness.yml
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths: [config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json]
+
+permissions: { contents: read }
+concurrency:
+  group: com-b03c-r3c-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3c.js
+          node --check scripts/test-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-readiness.js
+          node --check scripts/execute-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging.js
+          node --check scripts/verify-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-evidence.js
+      - name: COM-B03C-R3C repository staging readiness
+        run: node scripts/test-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-readiness.js
+      - name: Authorization lifecycle on repository certification
+        if: github.event_name == 'pull_request'
+        run: |
+          test ! -f config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json
+          set +e
+          node scripts/execute-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging.js 2> /tmp/r3c.err
+          status="$?"
+          set -e
+          test "${status}" = "2"
+          grep -q 'DOKE_COM_B03C_R3C_STAGING_AUTHORIZATION_REQUIRED' /tmp/r3c.err
+      - name: Trigger commit continuity on staging execution
+        if: github.event_name == 'push'
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test -f config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json"
+      - name: Domain completion matrix audit
+        if: github.event_name == 'pull_request'
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance audit
+        if: github.event_name == 'pull_request'
+        run: npm run audit:agent-governance
+      - name: Governance invariants
+        if: github.event_name == 'pull_request'
+        run: |
+          node - <<'NODE'
+          const e=require('./docs/validation/COM-B03C-R3C-REALTIME-MESSAGES-POLICY-CATALOG-STAGING-READINESS.json');
+          if(e.checkpoint?.maturity!==3||e.checkpoint?.productionGate!=='blocked')process.exit(1);
+          if(e.futureAuthorization?.received!==false||e.futureAuthorization?.consumed!==false||e.futureAuthorization?.executionAttempted!==false||e.futureAuthorization?.triggerExists!==false)process.exit(1);
+          for(const k of ['stagingReadAuthority','stagingMutationAuthority','triggerCreationAuthority','realtimePolicyMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','domainMutationAuthority','publicationMutationAuthority','runtimeDeployAuthority','productionAuthority','pullRequestMergeAuthority'])if(e.authority?.[k]!==false)process.exit(1);
+          if(e.effects?.stagingAccessExecuted!==false||e.effects?.remoteInventoryObserved!==false||e.effects?.remoteMutationExecuted!==false)process.exit(1);
+          NODE
+      - name: Diff hygiene
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then TARGET_SHA="${{ github.event.pull_request.head.sha }}"; git fetch --no-tags --depth=2 origin "${TARGET_SHA}"; else TARGET_SHA="${GITHUB_SHA}"; fi
+          git diff --check "${TARGET_SHA}^" "${TARGET_SHA}"
+
+  authorize:
+    if: github.event_name == 'push'
+    needs: certify
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - name: Validate single-use COM-B03C-R3C read-only trigger boundary
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test -f config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json"
+          node - <<'NODE'
+          const t=require('./config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json');
+          const r=require('./backend/modules/communities/community-realtime-private-auth-r3c');
+          if(t.contractId!==r.TRIGGER_CONTRACT_ID||t.status!=='authorization_consumed_execution_pending'||t.authorization?.phrase!==r.REQUIRED_AUTHORIZATION_PHRASE)process.exit(1);
+          for(const k of ['received','consumed','executionAttempted','singleUse'])if(t.authorization?.[k]!==true)process.exit(1);
+          if(t.authorization?.reusableAfterFailure!==false||t.authorization?.predecessorAuthorizationReusable!==false)process.exit(1);
+          const a=r.evaluateStagingAuthorization({authorizationPhrase:t.authorization.phrase,targetEnvironment:t.target.environment,projectId:t.target.projectId,branch:t.target.branch,pullRequest:t.target.pullRequest,authorizationConsumed:false,executionAttempted:false,predecessorAuthorizationReusable:false,...t.inspection});
+          if(a.decision!=='authorized_for_single_read_only_realtime_messages_policy_catalog_inspection')process.exit(1);
+          NODE
+
+  inspect:
+    if: github.event_name == 'push'
+    needs: authorize
+    runs-on: ubuntu-24.04
+    environment: doke-staging
+    env:
+      COM_B03C_R3C_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03C_R3C_ATTEMPT_2_READ_ONLY_REALTIME_MESSAGES_POLICY_CATALOG_INSPECTION_ON_DOKE_STAGING
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COM_B03C_R3C_REPORT_PATH: reports/generated/COM-B03C-R3C-REALTIME-MESSAGES-POLICY-CATALOG-STAGING.json
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Install read-only inspection dependency
+        run: npm install --no-save --ignore-scripts pg@8
+      - name: Execute read-only realtime.messages policy catalog inspection
+        id: execute
+        continue-on-error: true
+        run: node scripts/execute-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging.js
+      - name: Verify sanitized COM-B03C-R3C evidence
+        if: always()
+        run: node scripts/verify-com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-evidence.js reports/generated/COM-B03C-R3C-REALTIME-MESSAGES-POLICY-CATALOG-STAGING.json
+      - name: Upload sanitized COM-B03C-R3C evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-r3c-policy-catalog-${{ github.run_id }}
+          path: reports/generated/COM-B03C-R3C-REALTIME-MESSAGES-POLICY-CATALOG-STAGING.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Propagate inspection result
+        if: steps.execute.outcome != 'success'
+        run: exit 1

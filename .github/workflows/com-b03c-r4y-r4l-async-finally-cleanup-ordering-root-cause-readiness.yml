@@ -1,0 +1,82 @@
+name: COM-B03C-R4Y R4L Async Finally Cleanup Ordering Root Cause Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4y.js'
+      - 'config/com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.json'
+      - 'scripts/test-com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.js'
+      - 'docs/validation/COM-B03C-R4Y-R4L-ASYNC-FINALLY-CLEANUP-ORDERING-ROOT-CAUSE-READINESS.json'
+      - '.github/workflows/com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.yml'
+      - 'package-lock.json'
+      - 'scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r4y-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4y.js
+          node --check scripts/test-com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.js
+      - name: R4Y repository async finally cleanup ordering root cause readiness
+        run: node scripts/test-com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.js
+      - name: Remote execution hard block
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const r4y = require('./backend/modules/communities/community-realtime-private-auth-r4y');
+          try {
+            r4y.assertRemoteExecutionBoundaryAbsent();
+            process.exit(1);
+          } catch (error) {
+            if (error?.code !== r4y.REMOTE_EXECUTION_BLOCK_CODE) throw error;
+          }
+          NODE
+      - name: Historical R4W and certified R4X preserved
+        shell: bash
+        run: |
+          R4X_EVIDENCE_HEAD=0526aa73e5c0e6a61126a31cf72cab1605ba2b56
+          test ! -e config/com-b03c-r4t-single-use-successor-executor-trigger.json
+          test -z "$(git diff --name-only "$R4X_EVIDENCE_HEAD" "${{ github.event.pull_request.head.sha }}" -- \
+            backend/modules/communities/community-realtime-private-auth-r4w.js \
+            scripts/execute-com-b03c-r4w-single-use-r4t-successor-hosted-execution.js \
+            scripts/verify-com-b03c-r4w-single-use-r4t-successor-hosted-execution-report.js \
+            config/com-b03c-r4w-r4v-consumed-authorization-successor-workflow-installation-readiness.json \
+            docs/validation/COM-B03C-R4W-R4V-CONSUMED-AUTHORIZATION-R4T-SUCCESSOR-WORKFLOW-INSTALLATION-READINESS.json \
+            backend/modules/communities/community-realtime-private-auth-r4x.js \
+            config/com-b03c-r4x-r4w-terminal-no-counter-path-attribution-readiness.json \
+            scripts/test-com-b03c-r4x-r4w-terminal-no-counter-path-attribution-readiness.js \
+            docs/validation/COM-B03C-R4X-R4W-TERMINAL-NO-COUNTER-PATH-ATTRIBUTION-READINESS.json \
+            .github/workflows/com-b03c-r4x-r4w-terminal-no-counter-path-attribution-readiness.yml \
+            package-lock.json \
+            scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js \
+            config/com-b03c-r4v-r4u-fresh-authorization-consumption.json)"
+      - name: Repository-only workflow surface
+        shell: bash
+        run: |
+          ! grep -Eq '^[[:space:]]*push:' .github/workflows/com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.yml
+          ! grep -Eq '^[[:space:]]*environment:' .github/workflows/com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.yml
+          ! grep -Eq 'secrets\.' .github/workflows/com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.yml
+          grep -Fq 'permissions: { contents: read }' .github/workflows/com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.yml
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

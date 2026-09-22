@@ -1,0 +1,176 @@
+name: COM-B02CY Repository-Only Rate-Limit Policy Snapshot Authority Readiness
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-command-post-idempotency-rate-limit-policy-snapshot-authority-readiness.js'
+      - '.github/workflows/com-b02cy-repository-only-post-idempotency-rate-limit-policy-snapshot-authority-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-b02cy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PREDECESSOR_HEAD: 6bb9608ce4b1b5a01ffb249030e3eb8cd71e88ca
+      PREDECESSOR_TREE: e18f83d4e78f077af933b922124531840a23a8c1
+      SOURCE: backend/modules/communities/community-command-post-idempotency-rate-limit-policy-snapshot-authority-readiness.js
+      WORKFLOW: .github/workflows/com-b02cy-repository-only-post-idempotency-rate-limit-policy-snapshot-authority-readiness.yml
+      MATRIX_SOURCE: config/domain-completion-matrix.json
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      MATRIX_GENERATOR: scripts/audit-domain-completion-matrix.js
+      MATRIX_GENERATOR_BLOB: f60d9b9efc8a191822b34d39d4e9137a59b8727e
+      MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+      MATRIX_REPORT: reports/generated/domain-completion-matrix-report.json
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Freeze lineage, authorities and exact four-path scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          ! git cat-file -e "$PREDECESSOR_HEAD:$SOURCE" 2>/dev/null
+          ! git cat-file -e "$PREDECESSOR_HEAD:$WORKFLOW" 2>/dev/null
+
+          actual="$(git diff --name-status "$PREDECESSOR_HEAD" HEAD | sort)"
+          expected="$(printf 'A\t%s\nA\t%s\nM\t%s\nM\t%s\n' "$SOURCE" "$WORKFLOW" "$MATRIX_MD" "$MATRIX_REPORT" | sort)"
+          test "$actual" = "$expected"
+
+          test "$(git rev-parse "HEAD:$MATRIX_SOURCE")" = "$MATRIX_SOURCE_BLOB"
+          test "$(git rev-parse "HEAD:$MATRIX_GENERATOR")" = "$MATRIX_GENERATOR_BLOB"
+
+          for pair in \
+            'backend/modules/communities/community-command-post-idempotency-external-authority-projection-implementation.js:9ad0ac01bc002ba007bb424dd23e6f41cff99bbd' \
+            '.github/workflows/com-b02cx-post-materialization-repository-certification.yml:70bf8d8bc82f5de3f8907f1e83d9d8b782089fa1' \
+            'backend/modules/communities/community-command-post-idempotency-external-authority-projection-contract.js:6ddf9acfad4f41f6769b0d9758bef2b360fe0c7d' \
+            'backend/modules/communities/community-policy-operational-integration-gate.js:4c4424401b52060303735f178058a34d138ff42c' \
+            'config/com-b01-policy-operational-integration-gate.json:ac78012c1ef486cad6877d413460b50937504cbc' \
+            'backend/modules/communities/community-content-realtime-contract.js:ec2c4b01e38b1a9c771154c37ffc8d896d33ce5d' \
+            'config/com-a04-content-realtime-rate-limit.json:194d7a3456b5c749273bcef2223f333e74294b59'
+          do
+            path="${pair%%:*}"; blob="${pair##*:}"
+            test "$(git rev-parse "HEAD:$path")" = "$blob"
+            test "$(git rev-parse "$PREDECESSOR_HEAD:$path")" = "$blob"
+          done
+
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Validate repository governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$SOURCE"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Prove B02CY fail-closed readiness contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_PATH="$PWD/$SOURCE" node <<'NODE'
+          'use strict';
+          const assert = require('assert');
+          const fs = require('fs');
+          const r = require(process.env.SOURCE_PATH);
+          assert.strictEqual(r.BOUNDARY_ID, 'COM-B02CY');
+          assert.strictEqual(r.PREDECESSOR_BOUNDARY_ID, 'COM-B02CX');
+          assert.strictEqual(r.PREDECESSOR_HEAD, process.env.PREDECESSOR_HEAD);
+          assert.strictEqual(r.PREDECESSOR_TREE, process.env.PREDECESSOR_TREE);
+          assert.deepStrictEqual(r.RATE_LIMIT_COMMANDS, ['send_message', 'publish_post']);
+          assert.deepStrictEqual(r.SNAPSHOT_READINESS_CONTRACT.selectorFields, ['actorId', 'communityId', 'command']);
+          assert.strictEqual(r.POLICY_PROJECTION_CONTRACT.policyValuesEmbeddedInBoundary, false);
+          assert.strictEqual(r.POLICY_PROJECTION_CONTRACT.approvedPolicyRequired, true);
+          assert.strictEqual(r.SNAPSHOT_READINESS_CONTRACT.missingActiveBucketUsed, 0);
+          assert.strictEqual(r.SNAPSHOT_READINESS_CONTRACT.sideEffectFreeReadRequired, true);
+          assert.strictEqual(r.SNAPSHOT_READINESS_CONTRACT.atomicConsumeRequiredSeparately, true);
+          assert.strictEqual(r.SNAPSHOT_READINESS_CONTRACT.rateLimitConsumeImplemented, false);
+
+          const d = r.describeBoundary();
+          assert.strictEqual(d.canonicalSnapshotReadAuthorityMaterialized, false);
+          assert.strictEqual(d.rateLimitConsumeMaterialized, false);
+          assert.strictEqual(d.matrixSourceChanged, false);
+          assert.strictEqual(d.matrixDerivativesRefreshed, true);
+
+          const approval = {
+            contractId: r.POLICY_GATE_CONTRACT_ID,
+            policyVersion: '1.2.3',
+            policyHash: 'a'.repeat(64),
+            effectiveAt: '2026-09-01T18:00:00.000Z',
+            policyAuthorId: '66666666-6666-4666-8666-666666666666',
+            policyDomains: ['community_discovery_membership','roles_permissions_discipline','content_realtime_rate_limits','reports_moderation_appeals','media_quarantine_scanning'],
+            approvals: ['trust_safety','legal','privacy','security','community_operations'].map((reviewerRole, i) => ({
+              actorId: `${i + 1}${i + 1}${i + 1}${i + 1}${i + 1}${i + 1}${i + 1}${i + 1}-${i + 1}${i + 1}${i + 1}${i + 1}-4${i + 1}${i + 1}${i + 1}-8${i + 1}${i + 1}${i + 1}-${String(i + 1).repeat(12)}`,
+              reviewerRole, decision: 'approved', policyHash: 'a'.repeat(64), policyVersion: '1.2.3',
+              occurredAt: `2026-09-01T18:0${i}:00.000Z`
+            }))
+          };
+          const projection = {
+            source: 'canonical_server', complete: true, policyDomain: r.POLICY_DOMAIN,
+            policyVersion: '1.2.3', policyHash: 'a'.repeat(64), effectiveAt: '2026-09-01T18:00:00.000Z', approval,
+            commandPolicies: { send_message: { limit: 17, windowSeconds: 73 }, publish_post: { limit: 23, windowSeconds: 91 } }
+          };
+          const valid = r.validatePolicyProjection(projection);
+          assert.strictEqual(valid.valid, true);
+          const plan = r.describeSnapshotReadiness({ actorId: 'actor', communityId: 'community', command: 'send_message', policyProjection: projection });
+          assert.strictEqual(plan.portId, 'canonical_rate_limit_snapshot_read');
+          assert.strictEqual(plan.invoke, false);
+          assert.strictEqual(plan.readPortBound, false);
+          assert.strictEqual(plan.readPortInvoked, false);
+          assert.strictEqual(plan.rateLimitConsumed, false);
+          assert.strictEqual(plan.policy.limit, 17);
+          assert.strictEqual(plan.policy.windowSeconds, 73);
+          assert.strictEqual(r.validatePolicyProjection({ ...projection, source: 'client' }).valid, undefined);
+
+          const text = fs.readFileSync(process.env.SOURCE_PATH, 'utf8');
+          for (const token of ['.rpc(', '.from(', 'fetch(', 'createClient(', 'limit: 10', 'windowSeconds: 60']) {
+            assert.strictEqual(text.includes(token), false, `prohibited token: ${token}`);
+          }
+          NODE
+
+      - name: Prove deterministic Matrix derivative delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          'use strict';
+          const assert = require('assert');
+          const cp = require('child_process');
+          const fs = require('fs');
+          const oldReport = JSON.parse(cp.execFileSync('git', ['show', `${process.env.PREDECESSOR_HEAD}:${process.env.MATRIX_REPORT}`], { encoding: 'utf8' }));
+          const newReport = JSON.parse(fs.readFileSync(process.env.MATRIX_REPORT, 'utf8'));
+          const oldCom = oldReport.domains.find((d) => d.id === 'COM-001');
+          const newCom = newReport.domains.find((d) => d.id === 'COM-001');
+          const oldApp = oldReport.domains.find((d) => d.id === 'APP-001');
+          const newApp = newReport.domains.find((d) => d.id === 'APP-001');
+          assert.strictEqual(newCom.filesMatched, oldCom.filesMatched + 1);
+          assert.deepStrictEqual(newCom.signals, oldCom.signals);
+          assert.strictEqual(newApp.filesMatched, oldApp.filesMatched + 1);
+          assert.deepStrictEqual(newApp.signals, oldApp.signals);
+          assert.deepStrictEqual(newApp.sampleFiles, oldApp.sampleFiles);
+          const a = JSON.parse(JSON.stringify(oldReport));
+          const b = JSON.parse(JSON.stringify(newReport));
+          const ac = a.domains.find((d) => d.id === 'COM-001');
+          const bc = b.domains.find((d) => d.id === 'COM-001');
+          const aa = a.domains.find((d) => d.id === 'APP-001');
+          const ba = b.domains.find((d) => d.id === 'APP-001');
+          ac.filesMatched = bc.filesMatched;
+          ac.sampleFiles = bc.sampleFiles;
+          aa.filesMatched = ba.filesMatched;
+          assert.deepStrictEqual(b, a);
+          NODE
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"

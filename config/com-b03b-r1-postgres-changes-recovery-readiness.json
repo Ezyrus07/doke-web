@@ -1,0 +1,101 @@
+{
+  "contractId": "com-b03b-r1-postgres-changes-recovery-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b03b-realtime-publication-authenticated-subscription-readiness-v1",
+    "com-b03b-realtime-publication-authenticated-subscription-staging-trigger-v1"
+  ],
+  "scope": "repository_only_preinstalled_recovery",
+  "status": "repository_recovery_certified_new_authorization_required",
+  "rootCause": {
+    "failedRun": 31212558707,
+    "failedGate": "foundation_gate",
+    "code": "DOKE_COM_B03B_REALTIME_FOUNDATION_GATE_FAILED",
+    "diagnosis": "attempt_1_incorrectly_required_realtime_messages_to_be_in_supabase_realtime_publication_while_community_posts_was_simulated_with_realtime_send_instead_of_postgres_changes",
+    "previousAuthorizationConsumed": true,
+    "previousAuthorizationReusableAfterFailure": false,
+    "previousTriggerImmutable": true
+  },
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03B_R1_COMMUNITY_POSTS_POSTGRES_CHANGES_MIGRATION_AND_AUTHENTICATED_SUBSCRIPTION_CANARY_ON_DOKE_STAGING",
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "previousAttemptAuthorizationReusable": false,
+    "consumptionBoundary": "new_single_file_r1_trigger_commit_after_repository_certification"
+  },
+  "transportPlan": {
+    "community_posts": {
+      "transport": "authenticated_postgres_changes",
+      "publication": "supabase_realtime",
+      "table": "public.community_posts",
+      "rlsRequired": true,
+      "authenticatedSubscriptionRequired": true,
+      "syntheticFixtureLifecycleRequired": true,
+      "persistentDomainResidueAllowed": false
+    },
+    "channel_presence": {
+      "transport": "private_presence",
+      "authorizationTable": "realtime.messages",
+      "realtimeMessagesPublicationMembershipRequired": false
+    },
+    "channel_typing": {
+      "transport": "private_broadcast",
+      "authorizationTable": "realtime.messages",
+      "realtimeMessagesPublicationMembershipRequired": false
+    },
+    "channel_messages": {
+      "transport": "blocked",
+      "blocker": "REMOTE_CANONICAL_CHANNEL_MESSAGE_AUTHORITY_REQUIRED"
+    }
+  },
+  "migration": {
+    "path": "supabase/migrations/20260808135800_com_b03b_r1_community_posts_postgres_changes.sql",
+    "idempotent": true,
+    "addsOnly": "public.community_posts_to_supabase_realtime_publication",
+    "domainRowsChanged": false,
+    "productionApplicationAuthorized": false
+  },
+  "futureCanary": {
+    "scope": ["community_posts", "channel_presence", "channel_typing"],
+    "excludedTopics": ["channel_messages"],
+    "publicationMutationAllowed": true,
+    "syntheticFixtureLifecycleAllowed": true,
+    "fixtureCleanupRequired": true,
+    "persistentDomainResidueAllowed": false,
+    "serverVerifiedSessionRequired": true,
+    "privateBroadcastPresenceChannelsOnly": true,
+    "publicRealtimeChannelAllowed": false,
+    "anonymousCommunityPostDeliveryMustBeSuppressed": true,
+    "temporaryRealtimePoliciesMustBeRemoved": true,
+    "channelsMustBeRemoved": true
+  },
+  "certification": {
+    "implementationHead": "f4d546affa53eadd313105b156afa0d1484e42be",
+    "runId": 31268746613,
+    "certifyJobId": 93131041133,
+    "result": "success",
+    "authorizeJob": "skipped",
+    "canaryJob": "skipped",
+    "stagingEffectExecuted": false
+  },
+  "authorityBeforeNewTrigger": {
+    "repositoryRecoveryAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimePublicationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "syntheticFixtureAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "nextAction": "obtain_exact_new_single_use_authorization_for_bounded_staging_r1_canary"
+}

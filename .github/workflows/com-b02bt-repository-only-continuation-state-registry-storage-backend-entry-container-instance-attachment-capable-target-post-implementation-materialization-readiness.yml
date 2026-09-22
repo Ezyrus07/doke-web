@@ -1,0 +1,79 @@
+name: COM-B02BT Repository-Only Attachment-Capable Target Post-Implementation Materialization Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-post-implementation-materialization-readiness.js'
+      - 'config/com-b02bt-repository-only-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-post-implementation-materialization-readiness.json'
+      - 'scripts/test-com-b02bt-repository-only-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-post-implementation-materialization-readiness.js'
+      - '.github/workflows/com-b02bt-repository-only-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-post-implementation-materialization-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PREDECESSOR_HEAD: 0223287ce2e64885e2914be203ca3cd8cdcd28f6
+      PREDECESSOR_TREE: ece4b8d5bb0584ccacd5cbf9888b6362402d135c
+      MATRIX_SOURCE_BLOB: b9b2abbee1aed1033c122bf7f2802c7e80844623
+      TARGET: backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-post-implementation-materialization-readiness.js
+      CONFIG: config/com-b02bt-repository-only-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-post-implementation-materialization-readiness.json
+      TEST: scripts/test-com-b02bt-repository-only-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-post-implementation-materialization-readiness.js
+      WORKFLOW: .github/workflows/com-b02bt-repository-only-continuation-state-registry-storage-backend-entry-container-instance-attachment-capable-target-post-implementation-materialization-readiness.yml
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze predecessor lineage and exact scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$PREDECESSOR_HEAD"
+          test "$(git rev-parse "$PREDECESSOR_HEAD^{tree}")" = "$PREDECESSOR_TREE"
+          expected="$(printf '%s\n' "$WORKFLOW" "$TARGET" "$CONFIG" "$TEST" | sort)"
+          actual="$(git diff --name-only "$PREDECESSOR_HEAD" HEAD | sort)"
+          test "$actual" = "$expected"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax semantic and hard-block B02BT
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$TARGET"
+          node --check "$TEST"
+          node "$TEST"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E 'Object\.definePropert(y|ies)\(' "$TARGET"
+          ! grep -E '\.(call|apply)[[:space:]]*\(|Reflect\.apply[[:space:]]*\(' "$TARGET"
+          ! grep -E 'implementationFactoryInvokedByBoundary[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'attachmentCapableTargetMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true|attachmentAppliedToEntryContainerInstance[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'executableOperationMethodsInvoked[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'continuationStateStored[[:space:]]*:[[:space:]]*true|registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: |
+          git diff --check "$PREDECESSOR_HEAD" HEAD
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$MATRIX_SOURCE_BLOB"

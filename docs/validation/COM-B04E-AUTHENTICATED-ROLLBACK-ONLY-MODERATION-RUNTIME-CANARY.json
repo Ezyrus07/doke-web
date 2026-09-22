@@ -1,0 +1,92 @@
+{
+  "validationId": "COM-B04E-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY",
+  "contractId": "com-b04e-authenticated-rollback-only-moderation-runtime-composition-canary-v1",
+  "domain": "COM-001",
+  "status": "authorization_consumed_pre_execution_audit_failed",
+  "authorization": {
+    "source": "explicit_user_message",
+    "receivedAt": "2026-08-05T22:54:00-03:00",
+    "singleUse": true,
+    "consumed": true,
+    "consumedByRun": 31065331290,
+    "reusableAfterFailure": false
+  },
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "pullRequest": 61,
+    "branch": "com/com-001-baseline-audit"
+  },
+  "preflight": {
+    "readExecuted": true,
+    "postgresVersion": "17.6",
+    "migrationPresent": true,
+    "loadRpcPresent": true,
+    "commitRpcPresent": true,
+    "serviceRoleRpcExecute": true,
+    "authenticatedCommitBlocked": true,
+    "activeAuthenticatedSessionCount": 20,
+    "moderationLedgerRowsBeforeCanary": 0,
+    "syntheticProbeAbsent": true
+  },
+  "execution": {
+    "attempted": true,
+    "workflowRunAttempt": 1,
+    "run": 31065331290,
+    "authorizationJob": 92501745650,
+    "job": 92501791534,
+    "head": "b833568d99af00f2405ab231a264646f35de908b",
+    "result": "pre_execution_static_audit_failed",
+    "failureStage": "COM-B04E fail-closed audit",
+    "failureCause": "auditor_required_authorization_literal_in_executor_instead_of_imported_constant",
+    "syntaxPassed": true,
+    "localConformance": "36/36",
+    "executorStarted": false,
+    "databaseConnectionAttemptedByWorkflow": false,
+    "artifact": null,
+    "workflowRerunAllowed": false
+  },
+  "expected": {
+    "authenticatedSessionVerified": true,
+    "coreCompositionActivationMode": "disabled",
+    "coreLivePathBlocked": true,
+    "outerIsolation": "serializable",
+    "transactionRolledBack": true,
+    "initialEvidenceMaterialized": true,
+    "persistentResidue": false,
+    "rawIdentifiersExposed": false
+  },
+  "observed": {
+    "authorizedOneShotBindingPassed": true,
+    "executorReached": false,
+    "authenticatedSessionSelectedByWorkflow": false,
+    "transactionOpenedByWorkflow": false,
+    "rollbackScopedMutationExecuted": false,
+    "persistentMutationExecuted": false,
+    "postflightAllModerationTablesZero": true,
+    "persistentResidue": false
+  },
+  "postflight": {
+    "readExecuted": true,
+    "caseProjectionRows": 0,
+    "caseEventRows": 0,
+    "commandIdempotencyRows": 0,
+    "evidenceRecordRows": 0,
+    "decisionRecordRows": 0,
+    "sanctionEventRows": 0,
+    "appealEventRows": 0,
+    "mediaReviewEventRows": 0
+  },
+  "effects": {
+    "stagingReadExecuted": true,
+    "rollbackScopedMutationExecuted": false,
+    "persistentStagingMutationExecuted": false,
+    "routeRegistered": false,
+    "runtimeDeployed": false,
+    "realModerationExecuted": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "A second authenticated rollback-only canary requires a new distinct explicit authorization and a new one-shot trigger."
+}

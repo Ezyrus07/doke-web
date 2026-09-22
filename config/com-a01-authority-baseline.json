@@ -1,0 +1,232 @@
+{
+  "contractId": "com-a01-authority-baseline-v1",
+  "domain": "COM-001",
+  "sourceHead": "71aca60204a736d219d03f1ec20378932d08c26e",
+  "createdAt": "2026-08-04T21:54:00-03:00",
+  "scope": "repository_only",
+  "status": "baseline_frozen_followup_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "canonicalMembershipCommandsConfigured": false,
+  "canonicalRoleAndDisciplineConfigured": false,
+  "canonicalRealtimeConfigured": false,
+  "canonicalModerationConfigured": false,
+  "currentAuthority": {
+    "communityDiscovery": "split_mock_service_and_browser_local_domain_with_partial_remote_rls",
+    "communityCreation": "authenticated_direct_table_insert_or_browser_local_write",
+    "membership": "public_self_join_direct_dml_plus_browser_local_membership",
+    "privateAccess": "remote_membership_rls_without_server_owned_invitation_or_join_request_command",
+    "roles": "database_fixed_owner_moderator_member_vs_browser_custom_roles_and_permissions",
+    "discipline": "browser_local_bans_mutes_restrictions_and_channel_discipline",
+    "posts": "authenticated_direct_published_insert_plus_browser_local_content",
+    "channelsAndChat": "browser_local_only",
+    "realtime": "absent_for_community_domain",
+    "reportsAndAppeals": "generic_reports_table_without_community_case_or_appeal_contract",
+    "audit": "browser_local_audit_events_without_canonical_append_only_server_ledger",
+    "mediaModeration": "absent"
+  },
+  "observedSurfaces": [
+    "assets/js/features/community/community-domain.js",
+    "assets/js/repositories/community-repository.js",
+    "assets/js/services/community-service.js",
+    "assets/js/pages/comunidade.js",
+    "assets/js/pages/comunidade-interna.js",
+    "supabase/migrations/003_communication_finance_community.sql",
+    "supabase/migrations/116_community_authority.sql",
+    "supabase/migrations/120_community_owner_membership_invariant.sql",
+    "supabase/tests/010_public_data_authority_validation.sql",
+    "scripts/test-community-domain-infrastructure.js",
+    "scripts/test-community-domain-transactions.js",
+    "scripts/test-community-member-discipline-runtime-contract.js"
+  ],
+  "baselineFindings": [
+    {
+      "id": "COM-A01-F01",
+      "severity": "critical",
+      "category": "browser_authority",
+      "finding": "The community domain persists communities, deletion markers, events and audit records in localStorage, so browser state can manufacture membership, roles, discipline and governance outcomes.",
+      "blockedBy": "COM-B02"
+    },
+    {
+      "id": "COM-A01-F02",
+      "severity": "high",
+      "category": "authority_split",
+      "finding": "Discovery uses a mock-data service while the internal community experience uses a separate local browser domain, creating multiple non-canonical sources for the same community identity.",
+      "blockedBy": "COM-A01-CANONICAL-PROJECTION"
+    },
+    {
+      "id": "COM-A01-F03",
+      "severity": "critical",
+      "category": "command_boundary",
+      "finding": "Authenticated browser sessions can directly insert or mutate communities, memberships and posts through table grants and RLS; no server-owned command, idempotent acknowledgement or durable outbox boundary exists.",
+      "blockedBy": "COM-B02"
+    },
+    {
+      "id": "COM-A01-F04",
+      "severity": "critical",
+      "category": "membership_gap",
+      "finding": "The remote model has no canonical invitations, private join requests, approval lifecycle, invitation expiry, request replay or server-audited membership decision contract.",
+      "blockedBy": "COM-B02"
+    },
+    {
+      "id": "COM-A01-F05",
+      "severity": "high",
+      "category": "role_model_drift",
+      "finding": "The database accepts only owner, moderator and member while the browser supports custom roles and granular permissions, so authorization semantics diverge across devices and enforcement layers.",
+      "blockedBy": "COM-B02"
+    },
+    {
+      "id": "COM-A01-F06",
+      "severity": "critical",
+      "category": "discipline",
+      "finding": "Bans, mutes, restrictions, channel discipline and reasons are browser-local and can be edited or removed without a canonical server case, immutable event chain or expiry worker.",
+      "blockedBy": "COM-B04"
+    },
+    {
+      "id": "COM-A01-F07",
+      "severity": "high",
+      "category": "post_moderation",
+      "finding": "Members insert posts directly as published and authors can update title and body directly; no moderation intake, content revision ledger, text safety, rate limit or report linkage is authoritative.",
+      "blockedBy": "COM-B04"
+    },
+    {
+      "id": "COM-A01-F08",
+      "severity": "high",
+      "category": "realtime",
+      "finding": "No community realtime publication, channel subscription authorization, fan-out policy, presence boundary or scalable channel lifecycle is active.",
+      "blockedBy": "COM-B03"
+    },
+    {
+      "id": "COM-A01-F09",
+      "severity": "high",
+      "category": "channels_and_chat",
+      "finding": "Channels, announcement restrictions, slow mode, link blocking, pinned messages and community chat exist only in the browser domain and have no remote schema or server authority.",
+      "blockedBy": "COM-B03"
+    },
+    {
+      "id": "COM-A01-F10",
+      "severity": "high",
+      "category": "moderation_case",
+      "finding": "The generic reports table does not define community-specific target validation, sanction state, restoration, appeal, evidence retention, operator separation or dual-control rules.",
+      "blockedBy": "COM-B04"
+    },
+    {
+      "id": "COM-A01-F11",
+      "severity": "medium",
+      "category": "identity",
+      "finding": "The local domain merges account IDs, profile IDs and email aliases into browser-derived identity keys, which is not a canonical authenticated subject boundary.",
+      "blockedBy": "AUTH-001"
+    },
+    {
+      "id": "COM-A01-F12",
+      "severity": "high",
+      "category": "media_safety",
+      "finding": "No authoritative upload validation, malware scanning, media moderation, retention, deletion, CDN or appeal boundary exists for community content.",
+      "blockedBy": "COM-B04"
+    }
+  ],
+  "mandatoryInvariants": [
+    "authenticated UUID sessions never create authoritative community state in localStorage",
+    "community discovery uses one canonical projection with explicit public private and unavailable states",
+    "community creation and mutation use server-owned commands with stable client request identity",
+    "private communities are not enumerable by nonmembers",
+    "invitations and join requests have canonical identity expiry status and idempotency",
+    "membership decisions are concurrency-safe and auditable",
+    "the canonical owner membership cannot be deleted downgraded or reassigned implicitly",
+    "custom roles and permissions are versioned server-side and cannot exceed the acting role authority",
+    "members cannot self-promote or grant permissions they do not possess",
+    "bans mutes restrictions and channel discipline use canonical cases with reason actor expiry and revision",
+    "sanction expiry and restoration are deterministic and audited",
+    "posts and messages enter an explicit content lifecycle rather than client-selected publication",
+    "content revisions reports removals restorations and appeals are append-only and auditable",
+    "community realtime subscriptions are scoped by canonical membership and channel access",
+    "slow mode rate limits link restrictions and channel send rules are enforced server-side",
+    "lost-response retries return the same membership post message or moderation outcome",
+    "raw credentials identity documents payment data and private unrelated messages are prohibited from community audit events",
+    "community media uses validated private upload authority moderation and retention rules",
+    "local fixtures and caches never create production community or moderation authority"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "baselineAuthority": true,
+    "communityCommandAuthority": false,
+    "membershipAuthority": false,
+    "roleAuthority": false,
+    "disciplineAuthority": false,
+    "postPublicationAuthority": false,
+    "communityRealtimeAuthority": false,
+    "moderationAuthority": false,
+    "mediaAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "COM-B02",
+    "COM-B03",
+    "COM-B04",
+    "AUTH-001",
+    "ADM-B03",
+    "ADM-B04",
+    "LEGAL-B01",
+    "LEGAL-B03",
+    "LEGAL-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realCommunityCreated": false,
+    "realMembershipChanged": false,
+    "realRoleChanged": false,
+    "realSanctionApplied": false,
+    "realPostCreated": false,
+    "realMessageCreated": false,
+    "realReportCreated": false,
+    "realAppealCreated": false,
+    "realMediaUploaded": false,
+    "realUserDataChanged": false,
+    "productionChanges": false
+  },
+  "nextSublots": [
+    "COM-A02 canonical discovery, invitations, join requests and idempotent membership commands",
+    "COM-A03 canonical roles, permissions, bans, mutes, restrictions and audit ledger",
+    "COM-A04 canonical posts, channels, messages, realtime and rate-limit authority",
+    "COM-A05 reports, sanctions, restoration, appeals and media-moderation readiness"
+  ],
+  "certification": {
+    "runId": 30965519488,
+    "jobId": 92178510592,
+    "audit": {
+      "passed": 216,
+      "total": 216
+    },
+    "conformance": {
+      "passed": 84,
+      "total": 84
+    },
+    "repA05Regression": {
+      "auditPassed": 261,
+      "auditTotal": 261,
+      "conformancePassed": 302,
+      "conformanceTotal": 302
+    },
+    "diffCheck": "success"
+  },
+  "canonicalIntegration": {
+    "derivedMatrixRefresh": "completed",
+    "derivedMatrixCommit": "371c019831aafc19e46fc83da217b1fe084283a3",
+    "derivedMatrixRunId": 30965573839,
+    "derivedMatrixJobId": 92178670569,
+    "temporaryWorkflowRemoved": true,
+    "temporaryWorkflowRemovalCommit": "a968aa8f286ef7051347378d58f8a98b8dfb4283",
+    "permanentWorkflow": ".github/workflows/com-a01-authority-baseline.yml"
+  }
+}

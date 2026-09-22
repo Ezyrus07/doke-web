@@ -1,0 +1,79 @@
+{
+  "validationId": "COM-B03C-R3F-CASE-TIME-POLICY-SNAPSHOT-DIAGNOSTIC-READINESS",
+  "contractId": "com-b03c-r3f-case-time-policy-snapshot-diagnostic-implementation-readiness-v1",
+  "status": "repository_case_time_snapshot_diagnostic_implementation_ready_no_staging_authority",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "base": "rep/rep-001-baseline-audit",
+    "preparedFromHead": "4c717d9b3b82c5a4f3962640498ea5e362519402",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R3E-CASE-TIME-POLICY-SNAPSHOT-READINESS",
+    "status": "repository_case_time_policy_snapshot_contract_certified_no_staging_authority",
+    "evidenceHead": "4c717d9b3b82c5a4f3962640498ea5e362519402",
+    "recertification": {
+      "run": 31340520304,
+      "job": 93313410009,
+      "status": "success"
+    },
+    "exactRootCauseProven": false
+  },
+  "implementation": {
+    "caseIds": ["negative_control", "control_true", "uid_topic_direct", "uid_extension_eq", "topic_extension_direct", "full_current_direct", "full_topic_select_wrapper", "full_topic_select_extension_in", "full_docs_canonical_exists"],
+    "policySnapshotColumns": ["policyname", "permissive", "roles", "cmd", "qual", "with_check"],
+    "snapshotPhases": ["before_case", "after_install_before_subscribe", "after_cleanup"],
+    "snapshotSql": "select policyname, permissive, roles, cmd, qual, with_check from pg_policies where schemaname='realtime' and tablename='messages' order by policyname",
+    "diagnosticCore": "scripts/execute-com-b03c-r3f-case-time-policy-snapshot-diagnostic.js",
+    "evidenceVerifier": "scripts/verify-com-b03c-r3f-case-time-policy-snapshot-evidence.js",
+    "dependencyModel": "injected_adapters_only",
+    "remoteConnectorCreated": false
+  },
+  "controls": {
+    "diagnosticHarnessCreated": true,
+    "adapterInjectionRequired": true,
+    "completeCatalogPreserved": true,
+    "expectedAndStoredPredicatePreserved": true,
+    "unexpectedPolicyDeltaFailsClosed": true,
+    "preexistingPolicyMutationFailsClosed": true,
+    "cleanupMismatchFailsClosed": true,
+    "freshRealtimeClientPerCaseEnforced": true,
+    "sameIdentityTokenTopicPlanPreserved": true,
+    "negativeControlPreserved": true,
+    "sanitizedJoinEvidenceRequired": true,
+    "reportVerifierCreated": true,
+    "repositorySelfTestCreated": true,
+    "cliRemoteExecutionHardBlocked": true
+  },
+  "executionIntent": {
+    "stagingReadPlanned": false,
+    "stagingMutationPlanned": false,
+    "triggerCreationPlanned": false,
+    "authorizationPhraseDefined": false,
+    "remoteCredentialLoadingPlanned": false,
+    "pgDependencyLoadingPlanned": false,
+    "supabaseDependencyLoadingPlanned": false,
+    "runtimeDeployPlanned": false,
+    "productionPlanned": false,
+    "mergePlanned": false,
+    "realUserMutationPlanned": false
+  },
+  "authority": {
+    "repositoryImplementationAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "triggerCreationAuthority": false,
+    "authorizationPhraseDefined": false,
+    "realtimePolicyLifecycleAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "realUserMutationAuthority": false
+  },
+  "nextBoundary": "certify R3F repository-only. A later boundary may prepare bounded staging adapters and a single-use authorization lifecycle, but no staging access is authorized by R3F."
+}

@@ -1,0 +1,190 @@
+name: COM-B03C R5H Extension Classification Probe Execution Wiring Implementation Boundary
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary.json'
+      - 'backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-execution-wiring.js'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary.json'
+      - 'backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-execution-wiring.js'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b03c-r5h-extension-classification-wiring-implementation-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Frozen certified execution wiring specification lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.json)" = "0eab5e1ba23bcbd8adfd5b54bad16acb8a1b1e0d"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.yml)" = "b096dfc5fd3b86ba2a9c3be0a7451658522e8ece"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js)" = "723d33aea011a28766b819fa823aad82f341aba3"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-execution-wiring.js)" = "27c1e962f0da3dbf2aaf7f122fa79211d5483dc2"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary.json)" = "86d7ed97336fa8dc7d3f4f6cff8920720fe4d637"
+
+      - name: Exact repository-only push scope
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          boundary=config/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary.json
+          module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-execution-wiring.js
+          workflow=.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary.yml
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-matrix-materialization-temp.yml
+          installation_scope="$(printf '%s\n' "$boundary" "$module" "$workflow" | sort)"
+          maintenance_scope="$workflow"
+          materialization_scope="$(printf '%s\n' "$temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only HEAD^ HEAD | sort)"
+          if [ "$actual" = "$installation_scope" ]; then
+            test "$(git rev-parse HEAD^)" = "a6ac6c76ff22cc34314a177e9496705c94a0bdee"
+          elif [ "$actual" != "$maintenance_scope" ] && [ "$actual" != "$materialization_scope" ]; then
+            printf 'Unexpected repository-only push scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
+
+      - name: Syntax and unbound no-runtime static boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-execution-wiring.js
+          node --check "$module"
+          ! grep -Eq 'process\.env|createClient|@supabase|\.channel\(|\.subscribe\(|fetch\(|https?://|child_process|node:net|node:tls|node:dns' "$module"
+
+      - name: Certify execution wiring implementation repository-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const boundary = require('./config/com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary.json');
+          const spec = require('./config/com-b03c-r5h-extension-classification-probe-execution-wiring-specification.json');
+          const harness = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js');
+          const wiring = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-execution-wiring.js');
+
+          if (boundary.contractId !== 'com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-boundary-v1') throw new Error('WIRING_IMPLEMENTATION_BOUNDARY_CONTRACT_DRIFT');
+          if (boundary.repositoryContext.parentCertifiedWiringSpecificationHead !== 'a6ac6c76ff22cc34314a177e9496705c94a0bdee') throw new Error('PARENT_WIRING_SPEC_HEAD_DRIFT');
+          if (boundary.repositoryContext.parentCertifiedWiringSpecificationTree !== '973a15523b393476c82a2de83213c35ea15f11af') throw new Error('PARENT_WIRING_SPEC_TREE_DRIFT');
+          if (boundary.repositoryContext.parentWiringSpecificationCertificationRun !== 31922436439 || boundary.repositoryContext.parentWiringSpecificationCertificationJob !== 95104395429) throw new Error('PARENT_WIRING_SPEC_CERTIFICATION_DRIFT');
+          if (boundary.repositoryContext.parentWiringSpecificationBlob !== '0eab5e1ba23bcbd8adfd5b54bad16acb8a1b1e0d') throw new Error('PARENT_WIRING_SPEC_BLOB_DRIFT');
+          if (boundary.repositoryContext.parentHarnessModuleBlob !== '723d33aea011a28766b819fa823aad82f341aba3') throw new Error('PARENT_HARNESS_BLOB_DRIFT');
+          if (boundary.repositoryContext.matrixVersion !== '1.3.113' || boundary.repositoryContext.maturity !== 3 || boundary.repositoryContext.productionGate !== 'blocked') throw new Error('MATRIX_STATE_DRIFT');
+          if (boundary.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || boundary.functionalCheckpoint.r5iCreated !== false || boundary.functionalCheckpoint.r5iInferred !== false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+
+          if (spec.contractId !== 'com-b03c-r5h-extension-classification-probe-execution-wiring-specification-v1') throw new Error('PARENT_WIRING_SPEC_CONTRACT_DRIFT');
+          if (spec.executionWiringSpecification.specificationDefined !== true || spec.executionWiringSpecification.executionWiringDefined !== false || spec.executionWiringSpecification.executionWiringImplemented !== false) throw new Error('PARENT_WIRING_SPEC_STATE_DRIFT');
+          if (spec.governance.remoteExecutionAuthority !== false || spec.governance.networkAuthority !== false || spec.governance.stagingReadAuthority !== false || spec.governance.stagingMutationAuthority !== false) throw new Error('PARENT_WIRING_SPEC_REMOTE_AUTHORITY_DRIFT');
+
+          const impl = boundary.implementationBoundary;
+          for (const key of ['repositoryOnlyImplementation','implementationPresent','executionWiringSpecificationDefined','executionWiringDefined','executionWiringImplemented','executionTopologyImplemented','abstractAdapterContractsImplemented','abstractBindingDescriptorValidatorImplemented','unboundPortSetBuilderImplemented','unboundWiringPlannerImplemented','invocationContractBuilderImplemented','authorizationReadinessEvaluatorImplemented','executionDisabledAssertionImplemented','repositorySelfTestMayExercisePureFunctionsOnly']) {
+            if (impl[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          if (impl.moduleBlob !== '27c1e962f0da3dbf2aaf7f122fa79211d5483dc2' || impl.moduleContractId !== 'com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-v1') throw new Error('WIRING_MODULE_BINDING_DRIFT');
+          for (const key of ['remoteRuntimeAdaptersImplemented','transportBound','executionEntryPointExported','executionCommandSpecified','executionWorkflowDefined','targetEnvironmentBound','targetResourceBound','runtimeAdapterBound','credentialProviderBound','identityLifecycleBound','realtimeClientFactoryBound','sanitizedEvidenceRecorderBound','cleanupVerifierBound','concreteTargetEnvironmentSpecified','concreteTargetResourceSpecified','credentialMaterialSpecified','syntheticIdentityMaterialSpecified','networkEndpointSpecified','secretNameSpecified','processEnvironmentReadPresent','remoteClientImportPresent','networkCallPresent','realtimeSubscriptionCallPresent','authIdentityLifecycleCallPresent','runtimeMutationCallPresent']) {
+            if (impl[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+
+          const expectedPorts = ['runtime_adapter','target_environment','target_resource','credential_provider','synthetic_identity_lifecycle','realtime_client_factory','sanitized_evidence_recorder','cleanup_verifier'];
+          if (JSON.stringify(boundary.portContracts.map((item) => item.id)) !== JSON.stringify(expectedPorts)) throw new Error('PORT_CONTRACT_SET_DRIFT');
+          for (const port of boundary.portContracts) {
+            if (port.interfaceImplemented !== true || port.bound !== false || port.concreteValuePresent !== false) throw new Error(`PORT_MUST_REMAIN_UNBOUND:${port.id}`);
+          }
+
+          const gov = boundary.governance;
+          if (gov.repositoryOnlyDefinition !== true || gov.executionWiringSpecificationDefined !== true || gov.executionWiringDefined !== true || gov.executionWiringImplemented !== true || gov.abstractAdapterContractsImplemented !== true || gov.authorizationEvaluatorDefined !== true) throw new Error('WIRING_GOVERNANCE_IMPLEMENTATION_STATE_INVALID');
+          for (const key of ['transportBound','executionEntryPointExported','targetEnvironmentBound','targetResourceBound','runtimeAdapterBound','credentialProviderBound','identityLifecycleBound','realtimeClientFactoryBound','executionWorkflowDefined','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority']) {
+            if (gov[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+
+          for (const key of ['wiringImplementationMustBeRepositoryCertifiedBeforeAnyRuntimeBinding','runtimeTargetBindingMustBeSeparateRepositoryBoundary','credentialProviderBindingMustBeSeparateApplicableBoundary','syntheticIdentityLifecycleBindingMustBeSeparateApplicableBoundary','futureAuthorizationMustBeFresh','futureAuthorizationMustBeExplicit','futureAuthorizationMustBeSingleUse','futureAuthorizationMustBindExactCertifiedWiringImplementationHead','futureAuthorizationMustBindExactNonProductionStagingResource','futureReceiptMustBeSeparateSingleFileCommit','receiptParentMustEqualAuthorizedHead','futureTriggerMustBeSeparateCanonicalBoundary','runAttemptOneRequired','priorR5dAuthorizationReuseForbidden','priorR5dReceiptReuseForbidden','priorR5dTriggerReuseForbidden']) {
+            if (boundary.authorizationModel[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          if (boundary.authorizationModel.genericContinuationGrantsRemoteAuthority !== false) throw new Error('GENERIC_CONTINUATION_MUST_NOT_AUTHORIZE_REMOTE');
+
+          if (wiring.CONTRACT_ID !== 'com-b03c-r5h-extension-classification-probe-execution-wiring-implementation-v1') throw new Error('WIRING_MODULE_CONTRACT_DRIFT');
+          if (wiring.SPEC_BLOB !== '0eab5e1ba23bcbd8adfd5b54bad16acb8a1b1e0d' || wiring.SPEC_CERTIFIED_HEAD !== 'a6ac6c76ff22cc34314a177e9496705c94a0bdee' || wiring.SPEC_CERTIFIED_TREE !== '973a15523b393476c82a2de83213c35ea15f11af' || wiring.SPEC_CERTIFICATION_RUN !== 31922436439 || wiring.SPEC_CERTIFICATION_JOB !== 95104395429) throw new Error('WIRING_SPEC_BINDING_DRIFT');
+          if (wiring.HARNESS_BLOB !== '723d33aea011a28766b819fa823aad82f341aba3') throw new Error('WIRING_HARNESS_BINDING_DRIFT');
+          if (harness.CONTRACT_ID !== 'com-b03c-r5h-extension-classification-probe-harness-implementation-v1') throw new Error('HARNESS_CONTRACT_DRIFT');
+
+          for (const forbiddenExport of ['execute','run','subscribe','createClient','bindRuntime','bindTarget','loadCredentials','provisionIdentity','authorize','trigger']) {
+            if (Object.prototype.hasOwnProperty.call(wiring, forbiddenExport)) throw new Error(`REMOTE_ENTRYPOINT_EXPORT_FORBIDDEN:${forbiddenExport}`);
+          }
+
+          const descriptor = wiring.repositoryDescriptor();
+          if (descriptor.executionWiringDefined !== true || descriptor.executionWiringImplemented !== true || descriptor.abstractAdapterContractsImplemented !== true || descriptor.authorizationReadinessEvaluatorImplemented !== true) throw new Error('WIRING_DESCRIPTOR_IMPLEMENTATION_DRIFT');
+          for (const key of ['transportBound','executionEntryPointExported','targetEnvironmentBound','targetResourceBound','runtimeAdapterBound','credentialProviderBound','identityLifecycleBound','realtimeClientFactoryBound','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority']) {
+            if (descriptor[key] !== false) throw new Error(`WIRING_DESCRIPTOR_${key}_MUST_REMAIN_FALSE`);
+          }
+
+          const ports = wiring.buildUnboundPortSet();
+          if (ports.length !== expectedPorts.length || JSON.stringify(ports.map((item) => item.slotId)) !== JSON.stringify(expectedPorts)) throw new Error('UNBOUND_PORT_SET_DRIFT');
+          if (ports.some((item) => item.interfaceOnly !== true || item.bound !== false || item.concreteValuePresent !== false)) throw new Error('UNBOUND_PORT_SET_MUST_REMAIN_ABSTRACT');
+
+          const validated = wiring.validateAbstractBindingDescriptor({slotId:'runtime_adapter',interfaceOnly:true,bound:false,concreteValuePresent:false});
+          if (validated.decision !== 'abstract_binding_descriptor_valid_repository_only') throw new Error('ABSTRACT_DESCRIPTOR_VALIDATION_DRIFT');
+          const rejected = wiring.validateAbstractBindingDescriptor({slotId:'runtime_adapter',interfaceOnly:true,bound:true,concreteValuePresent:false});
+          if (rejected.decision !== 'blocked_repository_only') throw new Error('BOUND_DESCRIPTOR_MUST_BE_REJECTED');
+          const materialRejected = wiring.validateAbstractBindingDescriptor({slotId:'credential_provider',interfaceOnly:true,bound:false,concreteValuePresent:false,token:'forbidden'});
+          if (materialRejected.decision !== 'blocked_repository_only') throw new Error('CONCRETE_MATERIAL_MUST_BE_REJECTED');
+
+          const plan = wiring.buildUnboundWiringPlan({identityEnvelopeId:'identity_envelope_1',topicEnvelopeId:'topic_envelope_001'});
+          if (plan.executionEnabled !== false || plan.transportBound !== false || plan.observationCount !== 3 || plan.ports.length !== 8) throw new Error('UNBOUND_WIRING_PLAN_DRIFT');
+          if (new Set(plan.observations.map((item) => item.identityEnvelopeId)).size !== 1 || new Set(plan.observations.map((item) => item.topicEnvelopeId)).size !== 1) throw new Error('WIRING_OBSERVATION_ENVELOPE_DRIFT');
+
+          const invocation = wiring.buildInvocationContract({identityEnvelopeId:'identity_envelope_1',topicEnvelopeId:'topic_envelope_001'});
+          if (invocation.executionEnabled !== false || invocation.callableRemoteEntrypointPresent !== false || invocation.requiredFutureBindings.length !== 8) throw new Error('INVOCATION_CONTRACT_DRIFT');
+          if (invocation.requiredFutureAuthorization.fresh !== true || invocation.requiredFutureAuthorization.explicit !== true || invocation.requiredFutureAuthorization.singleUse !== true) throw new Error('FUTURE_AUTHORIZATION_CONTRACT_DRIFT');
+
+          const readiness = wiring.evaluateExecutionReadiness({bindings: ports.map((item) => ({slotId:item.slotId,interfaceOnly:true,bound:false,concreteValuePresent:false}))});
+          if (readiness.decision !== 'blocked_repository_only' || readiness.abstractPortSetValidated !== true || readiness.executionAttempted !== false || readiness.remoteExecutionAuthority !== false) throw new Error('READINESS_MUST_REMAIN_BLOCKED');
+
+          let blockedCode = null;
+          try { wiring.assertExecutionDisabled(); } catch (error) { blockedCode = error && error.code; }
+          if (blockedCode !== wiring.EXECUTION_DISABLED_CODE) throw new Error('EXECUTION_DISABLED_ASSERTION_DRIFT');
+
+          if (boundary.causalState.exactRootCauseProven !== false || boundary.causalState.causalPromotionAllowed !== false || boundary.causalState.privatePresencePromotionAllowed !== false) throw new Error('CAUSAL_STATE_MUST_REMAIN_UNPROMOTED');
+          NODE
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^ HEAD
+          fi

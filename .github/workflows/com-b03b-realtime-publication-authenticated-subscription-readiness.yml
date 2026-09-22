@@ -1,0 +1,53 @@
+name: COM-B03B Realtime Publication Authenticated Subscription Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-realtime-publication-subscription-readiness.js'
+      - 'config/com-b03b-realtime-publication-authenticated-subscription-readiness.json'
+      - 'scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js'
+      - '.github/workflows/com-b03b-realtime-publication-authenticated-subscription-readiness.yml'
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-realtime-publication-subscription-readiness.js'
+      - 'config/com-b03b-realtime-publication-authenticated-subscription-readiness.json'
+      - 'scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js'
+      - '.github/workflows/com-b03b-realtime-publication-authenticated-subscription-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-publication-subscription-readiness.js
+          node --check scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js
+      - name: B03B repository conformance
+        run: node scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js
+      - name: Fail-closed authority checks
+        shell: bash
+        run: |
+          grep -F '"authorizationReceived": false' config/com-b03b-realtime-publication-authenticated-subscription-readiness.json
+          grep -F '"authorizationConsumed": false' config/com-b03b-realtime-publication-authenticated-subscription-readiness.json
+          grep -F '"executionAttempted": false' config/com-b03b-realtime-publication-authenticated-subscription-readiness.json
+          grep -F '"stagingMutationAuthority": false' config/com-b03b-realtime-publication-authenticated-subscription-readiness.json
+          grep -F '"productionAuthority": false' config/com-b03b-realtime-publication-authenticated-subscription-readiness.json
+          ! grep -R -E 'SUPABASE_(ACCESS_TOKEN|DB_PASSWORD|SERVICE_ROLE_KEY)|process\.env' backend/modules/communities/community-realtime-publication-subscription-readiness.js scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js
+      - name: B03 regression
+        run: |
+          node scripts/test-com-b03-community-realtime-channel-scale-policy.js
+          node scripts/audit-com-b03-community-realtime-channel-scale-policy.js
+      - name: Diff hygiene
+        run: git diff --check

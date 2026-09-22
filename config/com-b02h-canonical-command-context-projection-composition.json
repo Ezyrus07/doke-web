@@ -1,0 +1,156 @@
+{
+  "contractId": "com-b02h-canonical-command-context-projection-composition-v1",
+  "boundaryId": "COM-B02H",
+  "domain": "COM-001",
+  "scope": "single_use_repository_only_canonical_command_context_and_deterministic_projection_composition_contract",
+  "status": "repository_only_composition_contract_materialized_pending_certification",
+  "authorization": {
+    "received": true,
+    "receivedAt": "2026-08-16T20:41:00-03:00",
+    "source": "explicit_user_message",
+    "consumed": true,
+    "consumedFromHead": "4a80324287dcc1b41096a675bd90d561ba5e79eb",
+    "executionAttempted": true,
+    "singleExecutionOnly": true,
+    "workflowRerunAllowedAfterAttempt": false
+  },
+  "predecessor": {
+    "boundaryId": "COM-B02G",
+    "contractId": "com-b02g-server-authority-runtime-composition-readiness-v1",
+    "certifiedHead": "4a80324287dcc1b41096a675bd90d561ba5e79eb",
+    "certificationRunId": 31979161428,
+    "certificationConclusion": "success"
+  },
+  "problemStatement": {
+    "canonicalStateRpcShape": [
+      "communityId",
+      "revision",
+      "visibility",
+      "joinPolicy",
+      "projection"
+    ],
+    "evaluatorsRequireRichCanonicalSnapshot": true,
+    "b02dReturnsRawCanonicalState": true,
+    "currentIdempotencyRpcDistinguishesNewVsReplay": false,
+    "currentCreateCommunityEvaluatorIdIsRepositoryUuidCompatible": false,
+    "domainMutationPlanProducerPresent": false,
+    "safeConclusion": "runtime composition must remain blocked until explicit certified sources exist for rich command context, idempotency claim state, community UUID allocation binding, and domain mutation plans"
+  },
+  "contractShapes": {
+    "canonicalCommandContext": {
+      "location": "stateEnvelope.projection.commandContext",
+      "required": [
+        "schemaVersion=1",
+        "source=canonical_server",
+        "complete=true",
+        "id matches stateEnvelope.communityId",
+        "revision matches stateEnvelope.revision"
+      ],
+      "synthesisAllowed": false
+    },
+    "idempotency": {
+      "requiredClaimState": [
+        "new",
+        "existing"
+      ],
+      "currentB02bRpcProvidesClaimState": false,
+      "replayMayBeInferredFromClaimedBoolean": false,
+      "existingClaimRequiresCanonicalPriorOutcome": true
+    },
+    "communityIdentity": {
+      "existingCommunityRequiresUuid": true,
+      "createCommunityRequiresServerAllocatedUuid": true,
+      "opaqueEvaluatorCommunityIdMayBeUsedAsRepositoryUuid": false,
+      "allocationProofMustBindIntentFingerprint": true
+    },
+    "persistenceEnvelope": {
+      "requiresAcceptedEvaluatorDecision": true,
+      "requiresDomainCertifiedMutationPlan": true,
+      "requiresExpectedRevisionBinding": true,
+      "requiresNextRevisionExactlyPlusOne": true,
+      "eventHash": "sha256(stable_canonical_json_of_bound_contract_actor_revision_command_intent_event_payload_projection)",
+      "executesMutation": false
+    }
+  },
+  "boundFrozenBlobs": {
+    "b02gModule": "772875cfe9b6076f2393d6d8ce826973ce7d8011",
+    "b02gConfig": "54732dc9eca329565e4067ebf96675fb13c11275",
+    "b02gWorkflow": "30a07521271b3907a3ddf6649fd4c5c9dbb54fb3",
+    "routeRegistry": "04a039c1967ffb59502e05584d05831f7c9a1a41",
+    "moduleRouteLoader": "7b3c897c0bf20069b733632c0b424b8664eb8cf5",
+    "routeHandlers": "332da22f604806ba06a0687c69d3d89903c4222c",
+    "serverAuthority": "792893c57d8ccc0194f4dc22f16475ae361ebf89",
+    "repositoryAdapter": "94bc05d9797bc2b5673e440d0b25f09485d8215d",
+    "repositoryMigration": "fd74f6abc029023c4e0972b32b35daca975c3d57",
+    "membershipAuthority": "bd26ebf77038cdba5077a2e524a7d15f3055a96f",
+    "governanceAuthority": "c7935bb5881d64b6d3f1b3ea4cccfb88075549b1",
+    "contentAuthority": "ec2c4b01e38b1a9c771154c37ffc8d896d33ce5d",
+    "b02dReadOnlyCompositionRoot": "cbf236ab8be92d0bbd7361aeaab0102e923ccd15"
+  },
+  "authority": {
+    "boundaryDefinitionAuthority": true,
+    "pureShapeContractAuthority": true,
+    "commandContextHydrationAuthority": false,
+    "projectionAssemblyAuthority": false,
+    "domainMutationPlanAuthority": false,
+    "communityUuidAllocationAuthority": false,
+    "repositoryAdapterMutationAuthority": false,
+    "handlerMutationAuthority": false,
+    "runtimeActivationAuthority": false,
+    "stagingDeploymentAuthority": false,
+    "stagingTrafficAuthority": false,
+    "realCommunityMutationAuthority": false,
+    "realtimeActivationAuthority": false,
+    "remoteExecutionAuthority": false,
+    "networkAuthority": false,
+    "credentialReadAuthority": false,
+    "identityLifecycleAuthority": false,
+    "migrationAuthority": false,
+    "triggerCreationAuthority": false,
+    "receiptCreationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "r5iCreationAuthority": false
+  },
+  "effects": {
+    "contractMaterialized": true,
+    "canonicalCommandContextShapeDefined": true,
+    "idempotencyClaimStateShapeDefined": true,
+    "communityUuidBindingShapeDefined": true,
+    "deterministicPersistenceEnvelopeShapeDefined": true,
+    "existingRouteRegistryChanged": false,
+    "existingModuleRouteLoaderChanged": false,
+    "existingCommunityRouteHandlersChanged": false,
+    "repositoryAdapterChanged": false,
+    "migrationChanged": false,
+    "commandContextHydratorConnectedToRuntime": false,
+    "projectionAssemblerConnectedToRuntime": false,
+    "domainMutationPlanProducerCreated": false,
+    "communityUuidAllocatorConnected": false,
+    "runtimeActivated": false,
+    "stagingDeploymentExecuted": false,
+    "stagingTrafficEnabled": false,
+    "rpcExecuted": false,
+    "networkRequestExecuted": false,
+    "realtimeSubscriptionExecuted": false,
+    "credentialReadExecuted": false,
+    "identityMutationExecuted": false,
+    "realCommunityMutationExecuted": false,
+    "migrationExecuted": false,
+    "triggerCreated": false,
+    "receiptCreated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "functionalCheckpoint": {
+    "lastFunctionalCheckpoint": "COM-B03C-R5H",
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false,
+    "privatePresencePromotionAllowed": false,
+    "r5iCreated": false,
+    "r5iInferred": false
+  },
+  "nextActionAfterCertification": "request_separate_repository_only_authority_for_certified_command_context_source_idempotency_claim_state_repository_evolution_uuid_allocator_binding_and_domain_mutation_plan_producer"
+}

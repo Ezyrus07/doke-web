@@ -1,0 +1,102 @@
+{
+  "contractId": "com-b04f-moderation-route-runtime-integration-readiness-v1",
+  "domain": "COM-001",
+  "status": "repository_ready_activation_blocked",
+  "dependsOn": [
+    "com-b04d-moderation-runtime-composition-readiness-v1",
+    "com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-composition-canary-v1"
+  ],
+  "predecessorEvidence": {
+    "compositionActivationMode": "disabled",
+    "compositionRouteRegistered": false,
+    "canaryStatus": "authenticated_rollback_only_canary_passed",
+    "canaryRun": 31067102891,
+    "canaryJob": 92507013853,
+    "canaryHead": "bbe3b52354a7e540a27cadb30c30159fb531485e",
+    "artifactId": 8954212159,
+    "persistentResidue": false,
+    "certifiedHead": "973673091d577c21442639bb20fbe0e88359165b",
+    "certificationRun": 31067665889,
+    "certificationJob": 92508727556
+  },
+  "candidateRoute": {
+    "name": "communities.moderation.command",
+    "method": "POST",
+    "path": "/communities/:communityId/moderation/commands",
+    "module": "communities",
+    "handler": "executeModerationCommand",
+    "allowedRoles": [
+      "client",
+      "professional",
+      "support",
+      "admin"
+    ],
+    "scope": "canonical_community_moderation_authority",
+    "idempotencyRequired": true,
+    "auditRequired": true,
+    "serviceRoleRequired": true,
+    "requestFreshnessRequired": true,
+    "authorizationGate": "backend_route_guard_plus_canonical_domain_authority",
+    "rlsValidationRequired": true
+  },
+  "currentIntegration": {
+    "routeRegistryContainsCandidate": false,
+    "moduleLoaderContainsCommunities": false,
+    "routeHandlerExportedToRuntime": false,
+    "stagingRuntimeChanged": false,
+    "nodeHttpServerChanged": false,
+    "runtimeReleaseContractChanged": false
+  },
+  "repositoryReadiness": {
+    "candidateRouteFrozen": true,
+    "blockedHandlerDefined": true,
+    "compositionContractBound": true,
+    "canaryEvidenceBound": true,
+    "requestFreshnessRequired": true,
+    "idempotencyRequired": true,
+    "auditRequired": true,
+    "serviceRoleRequired": true,
+    "canonicalDomainAuthorizationRequired": true,
+    "zeroPersistentResidueRequired": true
+  },
+  "activationBlockers": [
+    "INSTITUTIONAL_POLICY_APPROVAL_REQUIRED",
+    "EXPLICIT_ROUTE_REGISTRY_AUTHORIZATION_REQUIRED",
+    "EXPLICIT_MODULE_LOADER_AUTHORIZATION_REQUIRED",
+    "EXPLICIT_RUNTIME_WIRING_AUTHORIZATION_REQUIRED",
+    "EXPLICIT_STAGING_DEPLOYMENT_AUTHORIZATION_REQUIRED",
+    "EXPLICIT_STAGING_TRAFFIC_AUTHORIZATION_REQUIRED",
+    "EXPLICIT_REAL_MODERATION_AUTHORIZATION_REQUIRED"
+  ],
+  "authority": {
+    "institutionalPolicyApproved": false,
+    "routeRegistryMutationAuthorized": false,
+    "moduleRouteLoaderMutationAuthorized": false,
+    "runtimeWiringAuthorized": false,
+    "stagingDeploymentAuthorized": false,
+    "stagingTrafficAuthorized": false,
+    "realModerationAuthorized": false,
+    "productionAuthorized": false,
+    "pullRequestMergeAuthorized": false
+  },
+  "effects": {
+    "routeRegistered": false,
+    "moduleLoaded": false,
+    "handlerRuntimeExported": false,
+    "runtimeActivated": false,
+    "stagingReadExecuted": false,
+    "stagingMutationExecuted": false,
+    "stagingDeploymentExecuted": false,
+    "realModerationExecuted": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "matrix": {
+    "version": "1.3.110",
+    "maturityBefore": 3,
+    "maturityAfter": 3,
+    "promotionAllowed": false
+  },
+  "nextSublot": "COM-B04G",
+  "nextAction": "request_separate_authority_for_route_registry_and_runtime_wiring"
+}

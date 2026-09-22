@@ -1,0 +1,158 @@
+name: COM-B03C-R2 Realtime Authorization Predicate Ladder
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r2.js
+      - config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
+      - scripts/test-com-b03c-r2-realtime-auth-predicate-ladder-readiness.js
+      - scripts/execute-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary.js
+      - scripts/verify-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary-evidence.js
+      - .github/workflows/com-b03c-r2-realtime-auth-predicate-ladder-staging-canary.yml
+      - docs/validation/COM-B03C-R1-PRIVATE-REALTIME-AUTH-DIAGNOSTIC-STAGING-CANARY.json
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - config/com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: com-b03c-r2-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r2.js
+          node --check scripts/test-com-b03c-r2-realtime-auth-predicate-ladder-readiness.js
+          node --check scripts/execute-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary.js
+          node --check scripts/verify-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary-evidence.js
+      - name: COM-B03C-R2 readiness
+        run: node scripts/test-com-b03c-r2-realtime-auth-predicate-ladder-readiness.js
+      - name: COM-B03C-R1 regression
+        run: |
+          node scripts/test-com-b03c-r1-private-realtime-auth-recovery-readiness.js
+          test -f docs/validation/COM-B03C-R1-PRIVATE-REALTIME-AUTH-DIAGNOSTIC-STAGING-CANARY.json
+          grep -q '"status": "failed_closed_private_realtime_authorization_diagnostic"' docs/validation/COM-B03C-R1-PRIVATE-REALTIME-AUTH-DIAGNOSTIC-STAGING-CANARY.json
+      - name: Predicate ladder fail-closed boundary
+        run: |
+          grep -q "PREDICATE_RUNGS" backend/modules/communities/community-realtime-private-auth-r2.js
+          grep -q "DIAGNOSTIC_AXES" backend/modules/communities/community-realtime-private-auth-r2.js
+          grep -q '"diagnosticAxes"' config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
+          grep -q '"read_join"' config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
+          grep -q '"write_action"' config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
+          grep -q "freshSyntheticTopicPerRung" config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
+          grep -q "presenceChannelBroadcastConfigOmitted" config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
+          grep -q "communityPostsExecutionAllowed.*false" config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
+          grep -q "channelMessagesExecutionAllowed.*false" config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
+          test ! -f config/com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger.json || test "${{ github.event_name }}" = "push"
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            TARGET_SHA="${{ github.event.pull_request.head.sha }}"
+            git fetch --no-tags --depth=2 origin "${TARGET_SHA}"
+          else
+            TARGET_SHA="${GITHUB_SHA}"
+          fi
+          git diff --check "${TARGET_SHA}^" "${TARGET_SHA}"
+          if git diff --name-only "${TARGET_SHA}^" "${TARGET_SHA}" | grep -E '(^|/)(node_modules|reports/generated)/'; then
+            echo "Generated/runtime files must not be committed by the current head commit"
+            exit 1
+          fi
+
+  authorize:
+    if: github.event_name == 'push'
+    needs: certify
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Validate single-use COM-B03C-R2 trigger boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test -f config/com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger.json
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./config/com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger.json').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "config/com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger.json"
+          node - <<'NODE'
+          const t = require('./config/com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger.json');
+          const r = require('./backend/modules/communities/community-realtime-private-auth-r2');
+          if (t.contractId !== 'com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger-v1') process.exit(1);
+          if (t.status !== 'authorization_consumed_execution_pending') process.exit(1);
+          if (t.authorization?.phrase !== r.REQUIRED_AUTHORIZATION_PHRASE) process.exit(1);
+          for (const k of ['received','consumed','executionAttempted','singleUse']) if (t.authorization?.[k] !== true) process.exit(1);
+          for (const k of ['reusableAfterFailure','predecessorAuthorizationReusable']) if (t.authorization?.[k] !== false) process.exit(1);
+          const a = r.evaluateStagingAuthorization({
+            authorizationPhrase:t.authorization.phrase,
+            targetEnvironment:t.target.environment,
+            projectId:t.target.projectId,
+            branch:t.target.branch,
+            pullRequest:t.target.pullRequest,
+            authorizationConsumed:false,
+            executionAttempted:false,
+            predecessorAuthorizationReusable:t.authorization.predecessorAuthorizationReusable,
+            ...t.canary
+          });
+          if (a.decision !== 'authorized_for_single_bounded_realtime_authorization_predicate_ladder') process.exit(1);
+          NODE
+
+  canary:
+    if: github.event_name == 'push'
+    needs: authorize
+    runs-on: ubuntu-24.04
+    environment: doke-staging
+    env:
+      COM_B03C_R2_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B03C_R2_REALTIME_AUTHORIZATION_PREDICATE_LADDER_ON_DOKE_STAGING
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COM_B03C_R2_REPORT_PATH: reports/generated/COM-B03C-R2-REALTIME-AUTH-PREDICATE-LADDER-STAGING-CANARY.json
+    steps:
+      - name: Checkout authorized COM-B03C-R2 trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install canary-only runtime dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+      - name: Execute Realtime authorization predicate ladder
+        id: execute
+        continue-on-error: true
+        run: node scripts/execute-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary.js
+      - name: Verify sanitized COM-B03C-R2 evidence
+        if: always()
+        run: node scripts/verify-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary-evidence.js
+      - name: Upload sanitized COM-B03C-R2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-r2-realtime-auth-${{ github.run_id }}
+          path: reports/generated/COM-B03C-R2-REALTIME-AUTH-PREDICATE-LADDER-STAGING-CANARY.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Propagate diagnostic result
+        if: steps.execute.outcome != 'success'
+        run: exit 1

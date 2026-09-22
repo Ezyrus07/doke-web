@@ -1,0 +1,147 @@
+name: COM-B02Q Repository Executor Service-Role Provider Binding
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js'
+      - 'config/com-b02q-repository-executor-service-role-provider-binding.json'
+      - 'scripts/test-com-b02q-repository-executor-service-role-provider-binding.js'
+      - '.github/workflows/com-b02q-repository-executor-service-role-provider-binding.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02q-repository-executor-service-role-provider-binding-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02P predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=0181354347cdf785f1dd02f55459e5c1ebe59705
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git merge-base --is-ancestor "$BASE" HEAD
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-implementation.js)" = "19a5918f91df57ce991ff25e9fbd7eb15ecdfc2f"
+          test "$(git rev-parse HEAD:config/com-b02p-runtime-binding-integration-implementation.json)" = "686d9035e6510867fe8989ca60e91bc8be20106a"
+          test "$(git rev-parse HEAD:scripts/test-com-b02p-runtime-binding-integration-implementation.js)" = "d4ce1c90b2870ff64671366ab4fbf7626c960f86"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02p-runtime-binding-integration-implementation.yml)" = "1703cc9f1887ff5d5965930b5de782c20f8cf930"
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-integration-contract.js)" = "ed1536920e281bd3fda3c35f6b4d71a2fbf6107f"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-adapter-contract.js)" = "c48eabab7bb5b37b6a1663a051b3a8a6223cd0c9"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = "38cd77fd6d3cf0c9f13d4c35ed000b9831481840"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "990ee5c8895446f44cdcd5819101f0b3d5370e63"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = "1ff7621973be5ef38aa5e033b91f5b75216b9ec1"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js)" = "384c3a452b7e0e66d1bf2ddfeebb341c8b36f3c9"
+          test "$(git rev-parse HEAD:config/com-b02q-repository-executor-service-role-provider-binding.json)" = "47d7b4207fe572f37bd4a327a7e6e8a18df65c7a"
+          test "$(git rev-parse HEAD:scripts/test-com-b02q-repository-executor-service-role-provider-binding.js)" = "f9427758c4c08bd928fb2e0f3a616ba4c93bbf15"
+
+          required="$(printf '%s\n' \
+            .github/workflows/com-b02q-repository-executor-service-role-provider-binding.yml \
+            backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js \
+            config/com-b02q-repository-executor-service-role-provider-binding.json \
+            scripts/test-com-b02q-repository-executor-service-role-provider-binding.js | sort)"
+          allowed="$(printf '%s\n' \
+            .github/workflows/com-b02q-repository-executor-service-role-provider-binding.yml \
+            backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js \
+            config/com-b02q-repository-executor-service-role-provider-binding.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02q-repository-executor-service-role-provider-binding.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          while IFS= read -r path; do
+            grep -Fxq "$path" <<<"$actual"
+          done <<<"$required"
+          unexpected="$(comm -23 <(printf '%s\n' "$actual") <(printf '%s\n' "$allowed"))"
+          test -z "$unexpected"
+
+      - name: Syntax and semantic repository-executor binding conformance
+        run: |
+          node --check backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js
+          node --check scripts/test-com-b02q-repository-executor-service-role-provider-binding.js
+          node scripts/test-com-b02q-repository-executor-service-role-provider-binding.js
+
+      - name: Binding remains credentialless remote-inert and fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/modules/communities/community-command-repository-executor-service-role-provider-binding.js
+          ! grep -E 'process\.env|Deno\.env|Bun\.env|createClient\(|fetch\(|https?://|SUPABASE_SERVICE_ROLE_KEY|SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.rpc\(' "$TARGET"
+          grep -F "REMOTE_RPC_DISABLED_CODE" "$TARGET"
+          grep -F "credentialSourceBound: false" "$TARGET"
+          grep -F "remoteClientBound: false" "$TARGET"
+          grep -F "remoteCapabilityBound: false" "$TARGET"
+
+          node - <<'NODE'
+          const binding = require('./backend/modules/communities/community-command-repository-executor-service-role-provider-binding');
+          const b02p = require('./backend/modules/communities/community-command-runtime-binding-integration-implementation');
+          const handlers = require('./backend/modules/communities/route-handlers');
+          const loader = require('./backend/shared/http/module-route-loader');
+          const cfg = require('./config/com-b02q-repository-executor-service-role-provider-binding.json');
+
+          if (binding.CONTRACT_ID !== 'com-b02q-repository-executor-service-role-provider-binding-v1') throw new Error('B02Q_CONTRACT_DRIFT');
+          if (binding.PREDECESSOR_CONTRACT_ID !== b02p.CONTRACT_ID) throw new Error('B02Q_B02P_PREDECESSOR_DRIFT');
+          const inspection = binding.inspectRepositoryExecutorBinding();
+          if (inspection.repositoryExecutorBound !== true || inspection.serviceRoleProviderBound !== true) throw new Error('B02Q_BINDING_MISSING');
+          for (const key of ['credentialSourceBound','credentialReferenceBound','credentialMaterialBound','credentialReadImplemented','remoteClientBound','remoteCapabilityBound','runtimeActivated','rpcExecuted','networkExecuted','migrationApplied','productionChanged']) {
+            if (inspection[key] !== false) throw new Error(`B02Q_REMOTE_EFFECT_DRIFT:${key}`);
+          }
+          const executor = binding.createRepositoryExecutorBinding();
+          let blocked = false;
+          try { executor.rpc('forbidden', {}); } catch (error) { blocked = error && error.code === binding.REMOTE_RPC_DISABLED_CODE; }
+          if (!blocked) throw new Error('B02Q_FAIL_CLOSED_RPC_GUARD_MISSING');
+
+          for (const name of ['executeMembershipCommand','executeGovernanceCommand','executeContentCommand']) {
+            if (loader.getHandler('communities', name) !== handlers[name]) throw new Error(`B02Q_ACTIVE_HANDLER_DRIFT:${name}`);
+          }
+          for (const name of ['bindRepositoryOperation','createRepositoryExecutorBinding']) {
+            if (loader.getHandler('communities', name) !== null) throw new Error(`B02Q_RUNTIME_EXPOSED:${name}`);
+          }
+
+          if (cfg.authorization.type !== 'explicit_single_use_repository_only' || cfg.authorization.singleUse !== true || cfg.authorization.consumedByBoundary !== 'COM-B02Q' || cfg.authorization.genericNextAuthorized !== false) throw new Error('B02Q_AUTHORIZATION_DRIFT');
+          if (cfg.authority.repositoryExecutorBindingAuthority !== true || cfg.authority.serviceRoleProviderClassBindingAuthority !== true) throw new Error('B02Q_BINDING_AUTHORITY_DRIFT');
+          for (const key of ['credentialSourceBindingAuthority','credentialReadAuthority','remoteClientBindingAuthority','runtimeHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','runtimeActivationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','rpcExecutionAuthority','networkAuthority','realtimeActivationAuthority','identityLifecycleRemoteAuthority','realCommunityMutationAuthority','migrationApplicationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority']) {
+            if (cfg.authority[key] !== false) throw new Error(`B02Q_FORBIDDEN_AUTHORITY:${key}`);
+          }
+          NODE
+
+          ! git diff --name-only 0181354347cdf785f1dd02f55459e5c1ebe59705 HEAD | grep '^supabase/migrations/'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check 0181354347cdf785f1dd02f55459e5c1ebe59705 HEAD

@@ -1,0 +1,99 @@
+name: COM-B02AQ Repository-Only Continuation State Registry Storage Backend Instance Materialization Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-materialization-readiness.js'
+      - 'config/com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.json'
+      - 'scripts/test-com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.js'
+      - '.github/workflows/com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02AP predecessor and exact repository-only readiness scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=10c159ae94910af9beb8bdd718e8e17724bcc194
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse "$BASE^{tree}")" = "5b9a871512cfa509e770fee4cc764fcb6cabda55"
+          git merge-base --is-ancestor "$BASE" HEAD
+
+          expected_candidate="$(printf '%s\n' \
+            .github/workflows/com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-materialization-readiness.js \
+            config/com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.json \
+            scripts/test-com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.js | sort)"
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-materialization-readiness.js \
+            config/com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected_candidate" || test "$actual" = "$expected_final"
+          ! printf '%s\n' "$actual" | grep '^supabase/migrations/'
+          ! printf '%s\n' "$actual" | grep '^\.github/workflows/temp-'
+
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-implementation.js)" = "41d8c87a9a553b7f9ea8229b6a7d992bbde8198c"
+          test "$(git rev-parse HEAD:config/com-b02ap-repository-only-continuation-state-registry-storage-backend-instance-implementation.json)" = "92b7b44ee0e6846c5307109369fd8390b8663a81"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+      - name: Syntax and semantic B02AQ materialization readiness conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-materialization-readiness.js
+          node --check scripts/test-com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.js
+          node scripts/test-com-b02aq-repository-only-continuation-state-registry-storage-backend-instance-materialization-readiness.js
+
+      - name: Readiness remains instance-free containerless operation-free and side-effect-free
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-instance-materialization-readiness.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'storageBackendInstanceMaterialized[[:space:]]*:[[:space:]]*true|storageBackendMaterialized[[:space:]]*:[[:space:]]*true|entryContainerMaterialized[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true|carrierInstanceMaterialized[[:space:]]*:[[:space:]]*true|opaqueStateHandleGenerated[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'continuationStateStored[[:space:]]*:[[:space:]]*true|registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'rawStateSerialized[[:space:]]*:[[:space:]]*true|rawStateExported[[:space:]]*:[[:space:]]*true|executableReferencesExported[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check 10c159ae94910af9beb8bdd718e8e17724bcc194 HEAD

@@ -1,0 +1,174 @@
+name: COM-B03C R5H Synthetic Identity Lifecycle Binding Boundary
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-synthetic-identity-lifecycle.js'
+      - 'config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Frozen certified synthetic-identity-lifecycle descriptor lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=b29066bd9fa87e4ad39f371396371a1ace5ec3ef
+          certified=feb50f13e3dc312deffeadb3d8814f3fca98be17
+          git merge-base --is-ancestor "$parent" HEAD
+          git merge-base --is-ancestor "$certified" HEAD
+          test "$(git rev-parse "$parent^{tree}")" = "ebe15564df82769fea0c3da3f71d37908c85c308"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-descriptor-boundary.json)" = "37be2271a1413696729b6c80fce7127265bd25b6"
+          test "$(git rev-parse "$parent:.github/workflows/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-descriptor-boundary.yml")" = "cbf61470e9cc7a04e4546663397edc8f64058296"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-credential-provider.js)" = "6419696544fb9e1906df92e3591e93efcf04b826"
+
+      - name: Exact repository-only materialization scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=b29066bd9fa87e4ad39f371396371a1ace5ec3ef
+          certified=feb50f13e3dc312deffeadb3d8814f3fca98be17
+          module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-synthetic-identity-lifecycle.js
+          boundary=config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.json
+          certifier=.github/workflows/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.yml
+          initial="$(printf '%s\n' "$boundary" "$certifier" "$module" | sort)"
+          final="$(printf '%s\n' "$boundary" "$certifier" "$module" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only "$parent" "$certified" | sort)"
+          if [ "$actual" != "$initial" ] && [ "$actual" != "$final" ]; then
+            printf 'Unexpected scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
+          test "$(git rev-parse HEAD:$module)" = "ebc2e17cc27721c14c06d068de7889d119953e5c"
+          test "$(git rev-parse HEAD:$boundary)" = "9525ec59debc3f9595f6cdcda9e5bd3a79881ff3"
+
+      - name: Syntax and inert no-runtime lifecycle boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-synthetic-identity-lifecycle.js
+          boundary=config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.json
+          node --check "$module"
+          if grep -En 'process\.env|@supabase|createClient|\.channel\(|\.subscribe\(|fetch\(|https?://|SUPABASE_|service_role|\.auth\.admin|createUser\(|deleteUser\(|signUp\(' "$module"; then
+            echo 'Remote runtime or identity mutation syntax is forbidden in repository lifecycle module' >&2
+            exit 1
+          fi
+          if grep -En 'https?://|process\.env|secrets\.|@supabase|createClient|\.channel\(|\.subscribe\(|fetch\(|projectRef|projectUrl|apiKey|service_role|anonKey|SUPABASE_|\.auth\.admin|createUser\(|deleteUser\(|signUp\(' "$boundary"; then
+            echo 'Runtime, endpoint, secret-source or identity mutation syntax is forbidden in lifecycle binding boundary' >&2
+            exit 1
+          fi
+
+      - name: Semantic synthetic-identity-lifecycle binding assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const boundary = require('./config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary.json');
+          const descriptor = require('./config/com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-descriptor-boundary.json');
+          const providerBoundary = require('./config/com-b03c-r5h-extension-classification-probe-credential-provider-binding-boundary.json');
+          const lifecycle = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-synthetic-identity-lifecycle.js');
+
+          const expectedContract='com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-boundary-v1';
+          const expectedLifecycleContract='com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-repository-implementation-v1';
+          const expectedLifecyclePath='backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-synthetic-identity-lifecycle.js';
+          const expectedLifecycleBlob='ebc2e17cc27721c14c06d068de7889d119953e5c';
+          const expectedFields=['lifecycleContractId','lifecycleModulePath','lifecycleModuleBlob','bindingBoundaryHead'];
+          const allTrue=(o,keys,label)=>keys.forEach(k=>{if(o[k]!==true)throw new Error(`${label}:${k}`)});
+          const allFalse=(o,keys,label)=>keys.forEach(k=>{if(o[k]!==false)throw new Error(`${label}:${k}`)});
+
+          if(boundary.contractId!==expectedContract) throw new Error('BOUNDARY_CONTRACT_DRIFT');
+          const rc=boundary.repositoryContext;
+          if(rc.parentCertifiedSyntheticIdentityLifecycleDescriptorHead!=='b29066bd9fa87e4ad39f371396371a1ace5ec3ef' || rc.parentCertifiedSyntheticIdentityLifecycleDescriptorTree!=='ebe15564df82769fea0c3da3f71d37908c85c308' || rc.parentSyntheticIdentityLifecycleDescriptorCertificationRun!==31959343489 || rc.parentSyntheticIdentityLifecycleDescriptorCertificationJob!==95194821923) throw new Error('PARENT_CERTIFICATION_DRIFT');
+          if(rc.parentSyntheticIdentityLifecycleDescriptorBlob!=='37be2271a1413696729b6c80fce7127265bd25b6' || rc.parentSyntheticIdentityLifecycleDescriptorCertifierBlob!=='cbf61470e9cc7a04e4546663397edc8f64058296' || rc.lifecycleModuleBlob!==expectedLifecycleBlob) throw new Error('PARENT_OR_MODULE_BLOB_DRIFT');
+          if(boundary.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H' || boundary.functionalCheckpoint.r5iCreated!==false || boundary.functionalCheckpoint.r5iInferred!==false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+
+          const parent=descriptor.syntheticIdentityLifecycleBindingDescriptor;
+          if(descriptor.contractId!=='com-b03c-r5h-extension-classification-probe-synthetic-identity-lifecycle-binding-descriptor-boundary-v1' || parent.requiredFields.join('|')!==expectedFields.join('|')) throw new Error('PARENT_DESCRIPTOR_DRIFT');
+          if(parent.syntheticIdentityLifecycleBindingDescriptorDefined!==true || parent.syntheticIdentityLifecycleBindingDefined!==false || parent.identityLifecycleBound!==false || parent.schemaOnly!==true) throw new Error('PARENT_DESCRIPTOR_STATE_DRIFT');
+          ['lifecycleContractId','lifecycleModulePath','lifecycleModuleBlob','bindingBoundaryHead','syntheticIdentityReference','syntheticIdentityMaterial','syntheticIdentity'].forEach(k=>{if(parent[k]!==null)throw new Error(`PARENT_CONCRETE_IDENTITY:${k}`)});
+
+          const md=lifecycle.repositoryDescriptor();
+          if(lifecycle.CONTRACT_ID!==expectedLifecycleContract || md.contractId!==expectedLifecycleContract || md.syntheticIdentityLifecycleImplementationPresent!==true || md.lifecycleRequestDescriptorValidationImplemented!==true || md.identityLifecycleMutationHardBlockImplemented!==true) throw new Error('LIFECYCLE_IMPLEMENTATION_DRIFT');
+          allFalse(md,['syntheticIdentityLifecycleBindingDefined','identityLifecycleBound','identityReferenceBound','identityMaterialPresent','identityProvisioningImplemented','identityDeletionImplemented','identityMaterializationImplemented','credentialReadImplemented','remoteDependencyLoadImplemented','transportBound','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','remoteCredentialReadAuthority','remoteExecutionAuthority','executionAttempted','exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed','r5iCreated','r5iInferred'],'LIFECYCLE_MODULE_MUST_REMAIN_FALSE');
+
+          const request=lifecycle.createLifecycleRequestDescriptor({purpose:'realtime_extension_classification_probe'});
+          if(request.decision!=='repository_only_identity_lifecycle_request_descriptor_validated' || request.identityReferenceAllowed!==false || request.identityMaterialAllowed!==false || request.identityProvisioningAllowed!==false || request.identityDeletionAllowed!==false || request.identityMaterializationAllowed!==false || request.credentialReadAllowed!==false || request.transportBound!==false || request.networkAuthority!==false || request.authIdentityLifecycleAuthority!==false || request.remoteExecutionAuthority!==false) throw new Error('LIFECYCLE_REQUEST_DESCRIPTOR_DRIFT');
+          const rejected=lifecycle.createLifecycleRequestDescriptor({purpose:'realtime_extension_classification_probe',syntheticIdentityMaterial:'forbidden-test-value'});
+          if(rejected.decision!=='blocked_repository_only' || rejected.reason!=='SYNTHETIC_IDENTITY_LIFECYCLE_CONCRETE_IDENTITY_INPUT_FORBIDDEN') throw new Error('LIFECYCLE_FORBIDDEN_INPUT_GATE_DRIFT');
+          const readiness=lifecycle.evaluateRepositoryLifecycleReadiness({requestDescriptor:request});
+          if(readiness.decision!=='blocked_repository_only' || readiness.reason!=='SYNTHETIC_IDENTITY_LIFECYCLE_REMOTE_OPERATIONS_REQUIRE_LATER_CERTIFIED_BOUNDARIES_AND_FUTURE_EXPLICIT_AUTHORIZATION' || readiness.authIdentityLifecycleAuthority!==false || readiness.remoteExecutionAuthority!==false) throw new Error('LIFECYCLE_READINESS_DRIFT');
+          let hardBlocked=false;
+          try{lifecycle.assertIdentityLifecycleMutationDisabled();}catch(error){hardBlocked=error&&error.code===lifecycle.IDENTITY_LIFECYCLE_MUTATION_DISABLED_CODE;}
+          if(!hardBlocked) throw new Error('LIFECYCLE_MUTATION_HARD_BLOCK_MISSING');
+
+          const impl=boundary.lifecycleImplementation;
+          if(impl.contractId!==expectedLifecycleContract || impl.path!==expectedLifecyclePath || impl.blob!==expectedLifecycleBlob || impl.repositoryOwned!==true || impl.repositoryRelativeModulePath!==true || impl.immutableModuleBlob!==true || impl.inertUntilLaterAuthorizedComposition!==true) throw new Error('LIFECYCLE_IMPLEMENTATION_BINDING_DRIFT');
+          allFalse(impl,['identityReferenceResolutionImplemented','identityProvisioningImplemented','identityDeletionImplemented','identityMaterializationImplemented','credentialReadImplemented','remoteDependencyLoadImplemented','transportImplemented','networkAuthority','authIdentityLifecycleAuthority','remoteExecutionAuthority'],'LIFECYCLE_IMPLEMENTATION_REMOTE_CAPABILITY');
+
+          const binding=boundary.syntheticIdentityLifecycleBinding;
+          if(binding.slotId!=='synthetic_identity_lifecycle' || binding.syntheticIdentityLifecycleBindingDescriptorDefined!==true || binding.syntheticIdentityLifecycleBindingDefined!==true || binding.identityLifecycleBound!==true || binding.bindingKind!=='repository_owned_immutable_inert_module' || binding.localRepositoryBindingOnly!==true) throw new Error('LIFECYCLE_BINDING_STATE_DRIFT');
+          if(binding.lifecycleContractId!==expectedLifecycleContract || binding.lifecycleModulePath!==expectedLifecyclePath || binding.lifecycleModuleBlob!==expectedLifecycleBlob || binding.bindingBoundaryHead!==null || binding.bindingBoundaryHeadResolvedByCertifierSubjectHead!==true) throw new Error('LIFECYCLE_BINDING_IDENTITY_DRIFT');
+          ['syntheticIdentityReference','syntheticIdentityMaterial','syntheticIdentity'].forEach(k=>{if(binding[k]!==null)throw new Error(`IDENTITY_VALUE_MUST_REMAIN_NULL:${k}`)});
+          allFalse(binding,['identityReferenceResolutionImplemented','identityProvisioningImplemented','identityDeletionImplemented','identityMaterializationImplemented','credentialReadImplemented','transportBound','stagingReadAuthority','stagingMutationAuthority','networkAuthority','authIdentityLifecycleAuthority','remoteCredentialReadAuthority','remoteExecutionAuthority'],'LIFECYCLE_BINDING_AUTHORITY');
+
+          const u=boundary.preservedUpstreamBindings;
+          if(u.runtimeAdapter.bound!==true || u.runtimeAdapter.bindingBoundaryHead!=='e2809ba029930eac76729c9ae5f1496919a500de' || u.runtimeAdapter.adapterModuleBlob!=='6fc34e1b365ec801665fdab0c7d0c6761a8013e6') throw new Error('UPSTREAM_RUNTIME_ADAPTER_DRIFT');
+          if(u.targetEnvironment.bound!==true || u.targetEnvironment.bindingBoundaryHead!=='10ddea2bb7a4ded9bf1b7654585092a396f885cb' || u.targetEnvironment.stableEnvironmentIdentifier!=='doke-web-staging' || u.targetEnvironment.production!==false) throw new Error('UPSTREAM_ENV_DRIFT');
+          if(u.targetResource.bound!==true || u.targetResource.bindingBoundaryHead!=='e297b7f921c72864471e123a3d628a7f3e2dd3fd' || u.targetResource.resourceScopeFingerprint!=='sha256:2ab84b52b269ef4c9556c9818f4355d466bce9f735878213b49d9840cdd00fbf') throw new Error('UPSTREAM_RESOURCE_DRIFT');
+          if(u.credentialProvider.bound!==true || u.credentialProvider.bindingBoundaryHead!=='8ebf9cce39ded220df4a361b82145884041048bb' || u.credentialProvider.providerModuleBlob!=='6419696544fb9e1906df92e3591e93efcf04b826' || u.credentialProvider.credentialReadImplemented!==false) throw new Error('UPSTREAM_PROVIDER_DRIFT');
+          if(providerBoundary.credentialProviderBinding.credentialProviderBound!==true || providerBoundary.credentialProviderBinding.credentialReadImplemented!==false) throw new Error('FROZEN_PROVIDER_PARENT_DRIFT');
+
+          const remaining=['realtime_client_factory','sanitized_evidence_recorder','cleanup_verifier'];
+          if(boundary.remainingDependentPortState.map(x=>x.slotId).join('|')!==remaining.join('|')) throw new Error('REMAINING_PORT_SET_DRIFT');
+          boundary.remainingDependentPortState.forEach(x=>{if(x.descriptorDefined!==false || x.bound!==false || x.concreteValuePresent!==false || x.separateCertifiedBindingBoundaryRequired!==true)throw new Error(`REMAINING_PORT_STATE:${x.slotId}`)});
+
+          const concrete=boundary.concreteBindingState;
+          if(!concrete.syntheticIdentityLifecycle || concrete.syntheticIdentityLifecycle.lifecycleContractId!==expectedLifecycleContract || concrete.syntheticIdentityLifecycle.lifecycleModulePath!==expectedLifecyclePath || concrete.syntheticIdentityLifecycle.lifecycleModuleBlob!==expectedLifecycleBlob || concrete.syntheticIdentityLifecycle.bindingBoundaryHead!==null) throw new Error('CONCRETE_LIFECYCLE_BINDING_DRIFT');
+          ['credentialSecretName','credentialReference','credentialMaterial','syntheticIdentityReference','syntheticIdentityMaterial','syntheticIdentity','realtimeClientFactory','sanitizedEvidenceRecorder','cleanupVerifier','networkEndpoint','executionCommand','executionWorkflow','executionEntrypoint'].forEach(k=>{if(concrete[k]!==null)throw new Error(`FORBIDDEN_CONCRETE_STATE:${k}`)});
+
+          const completeness=boundary.bindingCompleteness;
+          if(completeness.runtimeAdapterSlotBound!==true || completeness.targetEnvironmentSlotBound!==true || completeness.targetResourceSlotBound!==true || completeness.credentialProviderSlotBound!==true || completeness.syntheticIdentityLifecycleSlotBound!==true || completeness.allDependentPortsBound!==false || completeness.transportBound!==false || completeness.executionReady!==false) throw new Error('BINDING_COMPLETENESS_DRIFT');
+
+          const future=boundary.futureBoundaryRequirements;
+          if(future.nextDependentPortDescriptorMustBeSeparateCertifiedBoundary!==true || future.nextDependentPortDescriptorSlot!=='realtime_client_factory' || future.syntheticIdentityLifecycleBindingMustRemainExact!==true) throw new Error('NEXT_BOUNDARY_DRIFT');
+          allTrue(future,['identityReferenceMustRemainAbsent','identityMaterialMustRemainAbsent','identityProvisioningAuthorityMustRemainFalse','identityDeletionAuthorityMustRemainFalse','identityMaterializationAuthorityMustRemainFalse','credentialReadAuthorityMustRemainFalse','remoteDependencyLoadAuthorityMustRemainFalse','realtimeClientFactoryMustRemainUnbound','sanitizedEvidenceRecorderMustRemainUnbound','cleanupVerifierMustRemainUnbound','endpointMustRemainAbsent','transportMustRemainUnbound','stagingReadAuthorityMustRemainFalse','stagingMutationAuthorityMustRemainFalse','networkAuthorityMustRemainFalse','authIdentityLifecycleAuthorityMustRemainFalse','executionEntrypointMustRemainAbsent','executionWorkflowMustRemainAbsent','remoteExecutionAuthorityMustRemainFalse'],'FUTURE_FAIL_CLOSED');
+
+          const a=boundary.authorizationState;
+          if(a.genericContinuationGrantsRemoteAuthority!==false || a.priorR5dAuthorizationReusable!==false || a.priorR5dReceiptReusable!==false || a.priorR5dTriggerReusable!==false) throw new Error('AUTH_REUSE_DRIFT');
+          const c=boundary.causalState;
+          allFalse(c,['exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed','privateTypingBroadcastProven','channelMessagesCanonicalRemoteAuthority','r5iCreated','r5iInferred'],'CAUSAL_DRIFT');
+
+          const g=boundary.governance;
+          allTrue(g,['repositoryOnlyDefinition','repositoryOnlyBinding','runtimeAdapterBound','targetEnvironmentBound','targetResourceBound','credentialProviderBound','syntheticIdentityLifecycleBindingDescriptorDefined','syntheticIdentityLifecycleImplementationPresent','syntheticIdentityLifecycleBindingDefined','identityLifecycleBound'],'GOV_TRUE');
+          allFalse(g,['identityProvisioningImplemented','identityDeletionImplemented','identityMaterializationImplemented','credentialReadImplemented','transportBound','realtimeClientFactoryBound','sanitizedEvidenceRecorderBound','cleanupVerifierBound','executionEntryPointExported','executionWorkflowDefined','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority'],'GOV_FALSE');
+          NODE
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check b29066bd9fa87e4ad39f371396371a1ace5ec3ef...HEAD

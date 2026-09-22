@@ -1,0 +1,98 @@
+name: COM-B02AK Repository-Only Continuation State Registry Storage Backend Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-readiness.js'
+      - 'config/com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.json'
+      - 'scripts/test-com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.js'
+      - '.github/workflows/com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02AJ predecessor and exact repository-only readiness scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=102c9b93b51f7c2062fd2f051e5a8672751c3b26
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git merge-base --is-ancestor "$BASE" HEAD
+
+          expected_candidate="$(printf '%s\n' \
+            .github/workflows/com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-readiness.js \
+            config/com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.json \
+            scripts/test-com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.js | sort)"
+          expected_final="$(printf '%s\n' \
+            .github/workflows/com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.yml \
+            backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-readiness.js \
+            config/com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected_candidate" || test "$actual" = "$expected_final"
+          ! printf '%s\n' "$actual" | grep '^supabase/migrations/'
+          ! printf '%s\n' "$actual" | grep '^\.github/workflows/temp-'
+
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-continuation-state-registry-adapter-to-instance-binding.js)" = "17774147674ea37a91ab9bf83ec0b83e092e9ccf"
+          test "$(git rev-parse HEAD:config/com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.json)" = "3c6849cdbea7dfcebe211430992e23a3268570b8"
+          test "$(git rev-parse HEAD:scripts/test-com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.js)" = "f8e254e3c1dd88436c7732ac3e7f46ab13a954ee"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02aj-repository-only-continuation-state-registry-adapter-to-instance-binding.yml)" = "998d18c043d6e121f4dce0b8f0d4ad0aedc91cc1"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+      - name: Syntax and semantic B02AK storage backend readiness conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-readiness.js
+          node --check scripts/test-com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.js
+          node scripts/test-com-b02ak-repository-only-continuation-state-registry-storage-backend-readiness.js
+
+      - name: Readiness remains storage-free operation-free and side-effect-free
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=backend/shared/http/repository-only-route-continuation-state-registry-storage-backend-readiness.js
+          ! grep -E 'new (Map|WeakMap|Set|WeakSet)\(|randomUUID\(|randomBytes\(|crypto\.' "$TARGET"
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E '\.(registerOpaqueContinuationState|resolveOpaqueContinuationState|releaseOpaqueContinuationState)\(' "$TARGET"
+          ! grep -E 'storageBackendMaterialized[[:space:]]*:[[:space:]]*true|entryContainerMaterialized[[:space:]]*:[[:space:]]*true|operationMethodsAttachedToInstance[[:space:]]*:[[:space:]]*true|continuationStateStored[[:space:]]*:[[:space:]]*true' "$TARGET"
+          ! grep -E 'registryOperationInvoked[[:space:]]*:[[:space:]]*true|registryLookupExecuted[[:space:]]*:[[:space:]]*true|registryReleaseExecuted[[:space:]]*:[[:space:]]*true' "$TARGET"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check 102c9b93b51f7c2062fd2f051e5a8672751c3b26 HEAD

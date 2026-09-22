@@ -1,0 +1,136 @@
+{
+  "contractId": "com-b02g-server-authority-runtime-composition-readiness-v1",
+  "boundaryId": "COM-B02G",
+  "domain": "COM-001",
+  "scope": "single_use_repository_only_static_authority_repository_composition_binding",
+  "status": "repository_only_static_composition_binding_materialized_pending_certification",
+  "authorization": {
+    "received": true,
+    "receivedAt": "2026-08-16T19:58:00-03:00",
+    "source": "explicit_user_message",
+    "consumed": true,
+    "consumedFromHead": "e834f28db83949fe852a96cde89499ba928b26fc",
+    "executionAttempted": true,
+    "singleExecutionOnly": true,
+    "workflowRerunAllowedAfterAttempt": false
+  },
+  "predecessor": {
+    "contractId": "com-b02f-server-authority-main-runtime-wiring-v1",
+    "path": "config/com-b02f-server-authority-main-runtime-wiring-authorization.json",
+    "blob": "a1905e3cba0182edbda0741c96853a2e7bfacc53",
+    "certifiedHead": "e834f28db83949fe852a96cde89499ba928b26fc"
+  },
+  "rootCause": {
+    "summary": "B02F registered the three canonical community command routes and preserved fail-closed handlers, while the certified repository exposes canonical-state read, idempotency claim and atomic event/projection commit primitives. No certified layer currently hydrates the full canonical command context, assembles deterministic projections, or composes those decisions into the route handlers. Inventing those transformations here would create new business authority rather than bind already-certified authority.",
+    "routesRegistered": true,
+    "blockedHandlersPreserved": true,
+    "repositoryPersistencePrimitivesPresent": true,
+    "domainEvaluatorsPresent": true,
+    "commandContextHydratorPresent": false,
+    "projectionAssemblerPresent": false,
+    "handlerCompositionPresent": false,
+    "runtimeActivationReady": false
+  },
+  "boundBlobs": {
+    "b02fAuthorization": "a1905e3cba0182edbda0741c96853a2e7bfacc53",
+    "routeRegistry": "04a039c1967ffb59502e05584d05831f7c9a1a41",
+    "moduleRouteLoader": "7b3c897c0bf20069b733632c0b424b8664eb8cf5",
+    "routeHandlers": "332da22f604806ba06a0687c69d3d89903c4222c",
+    "serverAuthority": "792893c57d8ccc0194f4dc22f16475ae361ebf89",
+    "repositoryAdapter": "94bc05d9797bc2b5673e440d0b25f09485d8215d",
+    "membershipAuthority": "bd26ebf77038cdba5077a2e524a7d15f3055a96f",
+    "governanceAuthority": "c7935bb5881d64b6d3f1b3ea4cccfb88075549b1",
+    "contentAuthority": "ec2c4b01e38b1a9c771154c37ffc8d896d33ce5d",
+    "b02dReadOnlyCompositionRoot": "cbf236ab8be92d0bbd7361aeaab0102e923ccd15"
+  },
+  "routeBindings": [
+    {
+      "routeName": "communities.membership.command",
+      "handlerName": "executeMembershipCommand",
+      "authorityContractId": "com-a02-canonical-discovery-membership-v1"
+    },
+    {
+      "routeName": "communities.governance.command",
+      "handlerName": "executeGovernanceCommand",
+      "authorityContractId": "com-a03-governance-discipline-ledger-v1"
+    },
+    {
+      "routeName": "communities.content.command",
+      "handlerName": "executeContentCommand",
+      "authorityContractId": "com-a04-content-realtime-rate-limit-v1"
+    }
+  ],
+  "repositoryRpcAllowlist": [
+    "com_load_canonical_state_v1",
+    "com_claim_idempotency_key_v1",
+    "com_commit_event_projection_v1"
+  ],
+  "currentRuntime": {
+    "routesRegistered": true,
+    "blockedHandlersPreserved": true,
+    "moduleAlreadyLoaded": true,
+    "runtimeActivated": false,
+    "stagingTrafficEnabled": false
+  },
+  "missingComposition": {
+    "commandContextHydratorPresent": false,
+    "projectionAssemblerPresent": false,
+    "handlerCompositionPresent": false,
+    "runtimeActivationReady": false
+  },
+  "authority": {
+    "boundaryDefinitionAuthority": true,
+    "staticCompositionBindingAuthority": true,
+    "repositoryOnlyReadinessAuthority": true,
+    "commandContextHydrationAuthority": false,
+    "projectionAssemblyAuthority": false,
+    "handlerMutationAuthority": false,
+    "runtimeActivationAuthority": false,
+    "stagingDeploymentAuthority": false,
+    "stagingTrafficAuthority": false,
+    "realCommunityMutationAuthority": false,
+    "realtimeActivationAuthority": false,
+    "remoteExecutionAuthority": false,
+    "networkAuthority": false,
+    "credentialReadAuthority": false,
+    "identityLifecycleAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "triggerCreationAuthority": false,
+    "receiptCreationAuthority": false,
+    "r5iCreationAuthority": false
+  },
+  "effects": {
+    "boundaryMaterialized": true,
+    "staticAuthorityRepositoryBindingDefined": true,
+    "existingRouteRegistryChanged": false,
+    "existingModuleRouteLoaderChanged": false,
+    "existingCommunityRouteHandlersChanged": false,
+    "commandContextHydratorCreated": false,
+    "projectionAssemblerCreated": false,
+    "handlerCompositionCreated": false,
+    "runtimeActivated": false,
+    "stagingDeploymentExecuted": false,
+    "stagingTrafficEnabled": false,
+    "networkRequestExecuted": false,
+    "realtimeSubscriptionExecuted": false,
+    "credentialReadExecuted": false,
+    "identityMutationExecuted": false,
+    "realCommunityMutationExecuted": false,
+    "triggerCreated": false,
+    "receiptCreated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "functionalCheckpoint": {
+    "lastFunctionalCheckpoint": "COM-B03C-R5H",
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false,
+    "privatePresencePromotionAllowed": false,
+    "r5iCreated": false,
+    "r5iInferred": false
+  },
+  "nextActionAfterCertification": "request_separate_explicit_repository_only_authority_for_command_context_and_projection_composition_implementation"
+}

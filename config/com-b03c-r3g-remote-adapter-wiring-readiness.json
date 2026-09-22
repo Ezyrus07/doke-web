@@ -1,0 +1,80 @@
+{
+  "validationId": "COM-B03C-R3G-REMOTE-ADAPTER-WIRING-READINESS",
+  "contractId": "com-b03c-r3g-remote-adapter-wiring-readiness-v1",
+  "status": "repository_remote_adapter_wiring_ready_no_staging_authority",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "preparedFromHead": "5ebd559cbc88a2aa16d0e8a00275f9cea33eb576",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R3F-CASE-TIME-POLICY-SNAPSHOT-DIAGNOSTIC-READINESS",
+    "status": "repository_case_time_snapshot_diagnostic_implementation_certified_no_staging_authority",
+    "evidenceHead": "5ebd559cbc88a2aa16d0e8a00275f9cea33eb576",
+    "recertificationRun": 31341111150,
+    "recertificationJob": 93314909216,
+    "recertified": true
+  },
+  "remoteWiring": {
+    "remoteDependencies": ["pg", "@supabase/supabase-js"],
+    "credentialNames": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD", "SUPABASE_PROJECT_REF"],
+    "futureTriggerPath": "config/com-b03c-r3g-case-time-policy-snapshot-staging-trigger.json",
+    "remoteAdapterScaffoldCreated": true,
+    "r3fHarnessBridgePrepared": true,
+    "lazyDependencyLoadingPrepared": true,
+    "credentialNameContractPrepared": true,
+    "projectPreflightPrepared": true,
+    "databaseAdapterPrepared": true,
+    "supabaseRealtimeAdapterPrepared": true,
+    "supabaseAdminAdapterPrepared": true,
+    "singleUseLifecycleSchemaPrepared": true,
+    "sanitizedRemoteErrorsPrepared": true,
+    "cleanupPlanPrepared": true,
+    "repositorySelfTestPrepared": true,
+    "hardBlockBeforeCredentialReadPrepared": true,
+    "hardBlockBeforeDependencyLoadPrepared": true
+  },
+  "safety": {
+    "triggerExists": false,
+    "authorizationPhraseDefined": false,
+    "workflowSecretsReferenced": false,
+    "stagingEnvironmentReferenced": false,
+    "remoteExecutionJobCreated": false,
+    "stagingReadPlanned": false,
+    "stagingMutationPlanned": false,
+    "remoteCredentialReadPlanned": false,
+    "remoteDependencyLoadPlanned": false,
+    "authIdentityMutationPlanned": false,
+    "realtimePolicyMutationPlanned": false,
+    "realtimeSubscriptionPlanned": false,
+    "runtimeDeployPlanned": false,
+    "productionPlanned": false,
+    "mergePlanned": false,
+    "realUserMutationPlanned": false
+  },
+  "singleUseLifecycle": {
+    "singleUseRequired": true,
+    "reusableAfterFailure": false,
+    "predecessorAuthorizationReusable": false,
+    "triggerMustBeAbsentAtReadiness": true,
+    "authorizationPhraseMustBeAbsentAtReadiness": true,
+    "runAttemptMustBeOneWhenEventuallyAuthorized": true
+  },
+  "authority": {
+    "repositoryRemoteWiringAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "realtimePolicyLifecycleAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "remoteCredentialReadAuthority": false,
+    "remoteDependencyLoadAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "nextBoundary": "repository certification only. A later boundary may define the fresh single-use authorization contract and install an executable staging workflow, but no authorization phrase or trigger exists in R3G."
+}

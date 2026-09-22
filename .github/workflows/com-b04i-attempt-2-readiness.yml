@@ -1,0 +1,63 @@
+name: COM-B04I Attempt 2 Repository Readiness
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b04i-attempt-2-readiness.json'
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - 'backend/runtime/staging/community-moderation-live-route-canary.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'scripts/test-com-b04i-staging-live-composition-route-canary.js'
+      - 'scripts/audit-com-b04i-attempt-2-readiness.js'
+      - 'config/com-b04i-attempt-2-readiness.json'
+      - 'docs/COM-B04I-ATTEMPT-2-READINESS.md'
+      - 'docs/validation/COM-B04I-ATTEMPT-2-READINESS.json'
+      - '.github/workflows/com-b04i-attempt-2-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/runtime/staging/community-moderation-live-route-canary.js
+          node --check backend/modules/communities/route-handlers.js
+          node --check scripts/test-com-b04i-staging-live-composition-route-canary.js
+          node --check scripts/audit-com-b04i-attempt-2-readiness.js
+      - name: Corrected COM-B04I local conformance
+        run: node scripts/test-com-b04i-staging-live-composition-route-canary.js
+      - name: COM-B04I attempt-2 readiness audit
+        run: node scripts/audit-com-b04i-attempt-2-readiness.js
+      - name: COM-B04H regression
+        run: |
+          node scripts/test-com-b04h-live-composition-activation-readiness.js
+          node scripts/audit-com-b04h-live-composition-activation-readiness.js
+      - name: COM-B04G regression
+        run: |
+          node scripts/test-com-b04g-route-runtime-wiring-execution.js
+          node scripts/audit-com-b04g-route-runtime-wiring-execution.js
+      - name: Repository-only security checks
+        shell: bash
+        run: |
+          ! grep -R -E 'process\.env|SUPABASE_(SERVICE_ROLE_KEY|ACCESS_TOKEN|DB_PASSWORD)' backend/runtime/staging/community-moderation-live-route-canary.js
+          grep -F 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          grep -F 'config/com-b04i-attempt-1-archived-never-trigger.json' .github/workflows/com-b04i-staging-live-composition-route-canary.yml
+          ! grep -F "initialEvidenceRef: 'opaque://" scripts/test-com-b04i-staging-live-composition-route-canary.js
+          grep -F '"canonicalOpaqueReference": "opaque:com-b04i:staging-live-route-canary"' config/com-b04i-attempt-2-readiness.json
+      - name: Diff hygiene
+        run: git diff --check

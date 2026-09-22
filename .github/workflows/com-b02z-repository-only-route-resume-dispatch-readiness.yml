@@ -1,0 +1,100 @@
+name: COM-B02Z Repository-Only Route Resume Dispatch Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/repository-only-route-resume-dispatch-readiness.js'
+      - 'config/com-b02z-repository-only-route-resume-dispatch-readiness.json'
+      - 'scripts/test-com-b02z-repository-only-route-resume-dispatch-readiness.js'
+      - '.github/workflows/com-b02z-repository-only-route-resume-dispatch-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02z-repository-only-route-resume-dispatch-readiness-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02Y predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=82def4ebc68837830796c8188e3df3525ac599e1
+          git merge-base --is-ancestor "$BASE" HEAD
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-begin-dispatcher.js)" = "00d8d8e62dfb7c30b70753f83fa172f3953aad83"
+          test "$(git rev-parse HEAD:config/com-b02y-repository-only-route-begin-dispatch-integration.json)" = "bfc98f91d0aa0d87ab002b8a5826ec76201efaeb"
+          test "$(git rev-parse HEAD:scripts/test-com-b02y-repository-only-route-begin-dispatch-integration.js)" = "b793ba0ac8feaf5179712686bcedb119cebac793"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02y-repository-only-route-begin-dispatch-integration.yml)" = "b6cd243d922a8b9bc2cc993aa6f7eabbaee42a1e"
+          test "$(git rev-parse HEAD:backend/shared/http/repository-only-route-surface-resolver.js)" = "00df5c48a9ac4a72fefde4aa31486fe8ed46ea8c"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-repository-orchestration.js)" = "f094ddc01a3f05975794bafb925d64f146a51ea2"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "85e061fe36339596ba9558a503b2fa7ce02574ae"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "b7f9f330f6d92c676eb76456b669bdf8dc749c20"
+          test "$(git rev-parse HEAD:backend/runtime/staging/staging-api-runtime.js)" = "69de100fe3a269507a0da7847ae8e9887f831ceb"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02z-repository-only-route-resume-dispatch-readiness.yml \
+            backend/shared/http/repository-only-route-resume-dispatch-readiness.js \
+            config/com-b02z-repository-only-route-resume-dispatch-readiness.json \
+            scripts/test-com-b02z-repository-only-route-resume-dispatch-readiness.js | sort)"
+          expected_reconciled="$(printf '%s\n' \
+            .github/workflows/com-b02z-repository-only-route-resume-dispatch-readiness.yml \
+            backend/shared/http/repository-only-route-resume-dispatch-readiness.js \
+            config/com-b02z-repository-only-route-resume-dispatch-readiness.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02z-repository-only-route-resume-dispatch-readiness.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$expected_reconciled"
+
+      - name: Syntax and semantic resume-dispatch readiness conformance
+        run: |
+          node --check backend/shared/http/repository-only-route-resume-dispatch-readiness.js
+          node --check scripts/test-com-b02z-repository-only-route-resume-dispatch-readiness.js
+          node scripts/test-com-b02z-repository-only-route-resume-dispatch-readiness.js
+
+      - name: Resume dispatch remains unimplemented and remote effects remain blocked
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -F 'resolution.resumeSurface(' backend/shared/http/repository-only-route-resume-dispatch-readiness.js
+          ! grep -F 'dispatchRepositoryOnlyRouteResume' backend/shared/http/repository-only-route-resume-dispatch-readiness.js
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/shared/http/repository-only-route-resume-dispatch-readiness.js
+          ! grep -F 'repository-only-route-resume-dispatch-readiness' backend/runtime/staging/staging-api-runtime.js
+          grep -F "const { getHandler } = require('../../shared/http/module-route-loader');" backend/runtime/staging/staging-api-runtime.js
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=82def4ebc68837830796c8188e3df3525ac599e1
+          git diff --check "$BASE" HEAD

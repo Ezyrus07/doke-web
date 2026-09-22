@@ -1,0 +1,205 @@
+name: COM-B03C-R3Y Fresh Single-Use Hosted Runtime Observation Lifecycle
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r3y.js'
+      - 'scripts/execute-com-b03c-r3y-single-use-hosted-runtime-observation.js'
+      - 'scripts/verify-com-b03c-r3y-single-use-hosted-runtime-observation.js'
+      - 'scripts/test-com-b03c-r3y-fresh-single-use-hosted-runtime-execution-lifecycle-readiness.js'
+      - 'config/com-b03c-r3y-fresh-single-use-hosted-runtime-execution-lifecycle-readiness.json'
+      - 'config/com-b03c-r3y-single-use-hosted-runtime-observation-trigger.json'
+      - 'docs/validation/COM-B03C-R3Y-FRESH-SINGLE-USE-HOSTED-RUNTIME-EXECUTION-LIFECYCLE-READINESS.json'
+      - '.github/workflows/com-b03c-r3y-fresh-single-use-hosted-runtime-execution-lifecycle.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r3y-single-use-hosted-runtime-observation-trigger.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r3y-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+
+      - run: npm ci --ignore-scripts
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3y.js
+          node --check scripts/execute-com-b03c-r3y-single-use-hosted-runtime-observation.js
+          node --check scripts/verify-com-b03c-r3y-single-use-hosted-runtime-observation.js
+          node --check scripts/test-com-b03c-r3y-fresh-single-use-hosted-runtime-execution-lifecycle-readiness.js
+
+      - name: R3Y hosted execution lifecycle readiness
+        if: github.event_name == 'pull_request'
+        run: node scripts/test-com-b03c-r3y-fresh-single-use-hosted-runtime-execution-lifecycle-readiness.js
+
+      - name: R3Y executor repository self-test
+        if: github.event_name == 'pull_request'
+        run: node scripts/execute-com-b03c-r3y-single-use-hosted-runtime-observation.js --repository-self-test
+
+      - name: Pre-authorization hard block
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          TRIGGER=config/com-b03c-r3y-single-use-hosted-runtime-observation-trigger.json
+          test ! -e "$TRIGGER"
+          set +e
+          output="$(node scripts/execute-com-b03c-r3y-single-use-hosted-runtime-observation.js 2>&1)"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R3Y_FRESH_HEAD_BOUND_AUTHORIZATION_REQUIRED'
+
+      - name: Trigger commit continuity
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          TRIGGER=config/com-b03c-r3y-single-use-hosted-runtime-observation-trigger.json
+          test -f "$TRIGGER"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$TRIGGER"
+          node - <<'NODE'
+          const cp = require('node:child_process');
+          const r3y = require('./backend/modules/communities/community-realtime-private-auth-r3y');
+          const trigger = require('./config/com-b03c-r3y-single-use-hosted-runtime-observation-trigger.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const authorizationReceipt = r3y.buildExpectedConsumedReceipt(trigger.authorizationEvidenceHead);
+          const result = r3y.validateFutureTriggerCommit({
+            trigger,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            authorizationReceipt
+          });
+          if (result.decision !== 'fresh_trigger_commit_valid_execution_authority_available_for_this_attempt') {
+            console.error(result);
+            process.exit(1);
+          }
+          NODE
+
+      - name: Domain Completion Matrix
+        if: github.event_name == 'pull_request'
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        if: github.event_name == 'pull_request'
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        if: github.event_name == 'pull_request'
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+
+  authorize:
+    if: github.event_name == 'push'
+    needs: certify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+
+      - name: Authorize exact single-use R3Y trigger attempt
+        shell: bash
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          TRIGGER=config/com-b03c-r3y-single-use-hosted-runtime-observation-trigger.json
+          test -f "$TRIGGER"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$TRIGGER"
+          node - <<'NODE'
+          const cp = require('node:child_process');
+          const r3y = require('./backend/modules/communities/community-realtime-private-auth-r3y');
+          const trigger = require('./config/com-b03c-r3y-single-use-hosted-runtime-observation-trigger.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const authorizationReceipt = r3y.buildExpectedConsumedReceipt(trigger.authorizationEvidenceHead);
+          const result = r3y.authorizeExecution({
+            trigger,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            authorizationReceipt
+          });
+          if (result.decision !== r3y.AUTHORIZED_DECISION) {
+            console.error(result);
+            process.exit(1);
+          }
+          if (
+            result.remoteExecutionAuthority !== true ||
+            result.stagingReadAuthority !== true ||
+            result.stagingMutationAuthority !== true ||
+            result.remoteCredentialReadAuthority !== true ||
+            result.remoteDependencyLoadAuthority !== true ||
+            result.runtimeChangeAuthority !== false ||
+            result.productionAuthority !== false ||
+            result.pullRequestMergeAuthority !== false
+          ) {
+            process.exit(1);
+          }
+          NODE
+
+  canary:
+    if: github.event_name == 'push'
+    needs: authorize
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: doke-staging
+    env:
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      COM_B03C_R3Y_REPORT_PATH: reports/generated/COM-B03C-R3Y-SINGLE-USE-HOSTED-RUNTIME-OBSERVATION.json
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+
+      - name: Install canary-only dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+
+      - name: Execute single-use hosted runtime observation
+        id: execute
+        continue-on-error: true
+        run: node scripts/execute-com-b03c-r3y-single-use-hosted-runtime-observation.js
+
+      - name: Verify sanitized hosted runtime evidence
+        if: always()
+        run: node scripts/verify-com-b03c-r3y-single-use-hosted-runtime-observation.js reports/generated/COM-B03C-R3Y-SINGLE-USE-HOSTED-RUNTIME-OBSERVATION.json
+
+      - name: Upload sanitized hosted runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-r3y-hosted-runtime-observation-${{ github.run_id }}
+          path: reports/generated/COM-B03C-R3Y-SINGLE-USE-HOSTED-RUNTIME-OBSERVATION.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Propagate hosted observation result
+        if: steps.execute.outcome != 'success'
+        run: exit 1

@@ -1,0 +1,131 @@
+{
+  "validationId": "COM-B03C-R4F-PRESENCE-ONLY-JOIN-TERMINAL-STATUS-NARROWING-READINESS",
+  "contractId": "com-b03c-r4f-presence-only-join-terminal-status-narrowing-readiness-v1",
+  "status": "repository_presence_only_join_terminal_status_narrowing_certified_no_remote_authority",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "predecessorR4e": {
+    "evidenceHead": "afddf996dace46d0ca7c809800bfe2d04c201e7e",
+    "recertRun": 31502286011,
+    "recertJob": 93815143669,
+    "recertConclusion": "success",
+    "matrixRun": 31502285208,
+    "matrixJob": 93815079259,
+    "matrixConclusion": "success",
+    "validationId": "COM-B03C-R4E-R4C-BRIDGED-RETRY-EXECUTION-AUTHORIZATION-LIFECYCLE-READINESS",
+    "status": "hosted_r4c_bridged_retry_observed_single_use_authorization_terminal_cleanup_verified",
+    "hostedClassification": "hosted_presence_only_or_join_diverged",
+    "presenceOnlyJoinSubscribed": false,
+    "presenceOnlyBroadcastDelta": 1,
+    "presenceOnlyPresenceDelta": 1,
+    "executionFailure": null,
+    "failurePhase": null,
+    "zeroResidueProven": true,
+    "baselineRestored": true,
+    "identityCleanupSucceeded": true,
+    "authorizationReusable": false,
+    "secondStagingExecutionOccurred": false
+  },
+  "narrowing": {
+    "preciseObservation": "hosted_presence_only_join_terminal_outcome_with_counter_correlation",
+    "missingObservation": "terminal subscribe callback status for the Presence-only join",
+    "currentJoinBoundary": "subscribeChannel(channel) already receives status and sanitizes error",
+    "terminalStatuses": [
+      "SUBSCRIBED",
+      "CHANNEL_ERROR",
+      "TIMED_OUT",
+      "CLOSED",
+      "UNKNOWN"
+    ],
+    "sanitizedJoinClassifications": [
+      "subscribed",
+      "realtime_rls_authorization_rejected",
+      "jwt_or_auth_context_rejected",
+      "channel_join_timeout",
+      "channel_closed_during_join",
+      "unknown_channel_join_failure"
+    ],
+    "counterCorrelation": {
+      "broadcast": true,
+      "presence": true
+    },
+    "rawRemoteErrorPersistenceAllowed": false
+  },
+  "authority": {
+    "repositoryNarrowing": true,
+    "triggerCreation": false,
+    "remoteExecution": false,
+    "remoteCredentialRead": false,
+    "remoteDependencyLoad": false,
+    "network": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "realtimeSubscription": false,
+    "authIdentityLifecycle": false,
+    "runtimeChange": false,
+    "production": false,
+    "merge": false
+  },
+  "effects": {
+    "stagingAccessExecuted": false,
+    "remoteCredentialReadExecuted": false,
+    "remoteDependencyLoadExecuted": false,
+    "networkAccessExecuted": false,
+    "databaseConnectionExecuted": false,
+    "databaseQueryAgainstRemoteExecuted": false,
+    "realtimeSubscriptionExecuted": false,
+    "authIdentityMutationExecuted": false,
+    "runtimePolicyChangeExecuted": false,
+    "triggerCreated": false,
+    "productionExecuted": false,
+    "mergeExecuted": false
+  },
+  "certificationHistory": {
+    "initialBoundaryCommit": {
+      "head": "cf9b6b570bb9b94b8bb79a1d8d6e90dd24ab6648",
+      "r4fRun": 31504091868,
+      "r4fJob": 93821152159,
+      "r4fConclusion": "failure",
+      "syntaxPassed": true,
+      "terminalStatusNarrowingPassed": true,
+      "noRemoteAuthorityPassed": true,
+      "failedStep": "Domain Completion Matrix",
+      "stagingExecuted": false
+    },
+    "initialMatrixDrift": {
+      "matrixRun": 31504092112,
+      "matrixJob": 93821152415,
+      "matrixConclusion": "failure",
+      "failedStep": "Domain Completion Matrix",
+      "reason": "generated_domain_completion_matrix_stale"
+    },
+    "canonicalMatrixReconciliation": {
+      "writerInstallHead": "6c6db6ffc63a5547ac5e446d00fcfd8d2b6138f0",
+      "writerRun": 31504616026,
+      "writerJob": 93822921659,
+      "writerConclusion": "success",
+      "writerOutputCommit": "738a874471dc4d437acb5b1d64deddbd7dc1b863",
+      "writerOutputs": [
+        "docs/DOMAIN-COMPLETION-MATRIX.md",
+        "reports/generated/domain-completion-matrix-report.json"
+      ],
+      "matrixSourceChanged": false,
+      "workflowRestoredHead": "a88bfd6062be5ca185d8cc06b967316506a520fd",
+      "workflowRestoredBlob": "299108d86dc097ba090392ebe9f218f6849e74ad",
+      "workflowPermissions": "contents: read"
+    },
+    "restoredHeadCertification": {
+      "head": "a88bfd6062be5ca185d8cc06b967316506a520fd",
+      "r4fRun": 31504828787,
+      "r4fJob": 93823629117,
+      "r4fConclusion": "success",
+      "matrixRun": 31504828972,
+      "matrixJob": 93823629397,
+      "matrixConclusion": "success"
+    }
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "After R4F evidence-head certification, design a separate repository-only executable observation envelope that preserves the terminal subscribe status in sanitized form. Do not create a staging trigger or reuse R4E authorization. Any hosted execution requires a fresh head-bound single-use authorization."
+}

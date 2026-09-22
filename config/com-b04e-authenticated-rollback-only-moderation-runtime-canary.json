@@ -1,0 +1,108 @@
+{
+  "contractId": "com-b04e-authenticated-rollback-only-moderation-runtime-composition-canary-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b04d-moderation-runtime-composition-readiness-v1",
+    "com-b04b-immutable-moderation-persistence-readiness-v1",
+    "com-b04c-moderation-persistence-staging-verification-v1"
+  ],
+  "status": "authorization_consumed_pre_execution_audit_failed",
+  "authorization": {
+    "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B04E_AUTHENTICATED_ROLLBACK_ONLY_MODERATION_RUNTIME_COMPOSITION_CANARY_ON_DOKE_STAGING",
+    "source": "explicit_user_message",
+    "receivedAt": "2026-08-05T22:54:00-03:00",
+    "received": true,
+    "singleUse": true,
+    "consumed": true,
+    "consumedByRun": 31065331290,
+    "reusableAfterFailure": false
+  },
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "pullRequest": 61,
+    "branch": "com/com-001-baseline-audit",
+    "requiredMigrationVersions": [
+      "20260806004634",
+      "20260806004832"
+    ]
+  },
+  "readiness": {
+    "head": "904f0ce05e59409f1ddf3e38676facff88318b84",
+    "run": 31065275827,
+    "job": 92501580895,
+    "result": "success",
+    "conformance": "36/36",
+    "predecessorRegressions": "passed",
+    "diffHygiene": "passed"
+  },
+  "synthetic": {
+    "communityId": "00000000-0000-4000-8004-0000000004a1",
+    "targetId": "00000000-0000-4000-8004-0000000004b1",
+    "targetOwnerId": "00000000-0000-4000-8004-0000000004c1",
+    "clientRequestId": "00000000-0000-4000-8004-0000000004d1",
+    "initialEvidenceReference": "opaque:moderation:canary:b04e:report",
+    "initialEvidenceDigestSeed": "com-b04e-authenticated-rollback-only-initial-evidence"
+  },
+  "canary": {
+    "syntheticOnly": true,
+    "rollbackOnly": true,
+    "outerIsolation": "serializable",
+    "coreCompositionActivationMode": "disabled",
+    "coreLivePathMustRemainBlocked": true,
+    "authenticatedExistingSessionRequired": true,
+    "newSessionCreationAllowed": false,
+    "singleAtomicCommitRpc": true,
+    "expectedRevisionInsideTransaction": 1,
+    "expectedPersistentResidue": false
+  },
+  "execution": {
+    "attempted": true,
+    "workflowRerunAllowed": false,
+    "run": 31065331290,
+    "authorizationJob": 92501745650,
+    "job": 92501791534,
+    "head": "b833568d99af00f2405ab231a264646f35de908b",
+    "result": "pre_execution_static_audit_failed",
+    "failureStage": "COM-B04E fail-closed audit",
+    "failureCause": "auditor_required_authorization_literal_in_executor_instead_of_imported_constant",
+    "syntaxPassed": true,
+    "localConformance": "36/36",
+    "executorStarted": false,
+    "databaseConnectionAttemptedByWorkflow": false,
+    "rollbackScopedMutationExecuted": false,
+    "reportArtifactCreated": false
+  },
+  "postflight": {
+    "verifiedAt": "2026-08-05T23:24:00-03:00",
+    "caseProjectionRows": 0,
+    "caseEventRows": 0,
+    "commandIdempotencyRows": 0,
+    "evidenceRecordRows": 0,
+    "decisionRecordRows": 0,
+    "sanctionEventRows": 0,
+    "appealEventRows": 0,
+    "mediaReviewEventRows": 0,
+    "persistentResidue": false
+  },
+  "effects": {
+    "stagingReadAllowed": true,
+    "stagingPreflightAndPostflightReadExecuted": true,
+    "rollbackScopedMutationAllowed": true,
+    "rollbackScopedMutationExecuted": false,
+    "persistentStagingMutationAllowed": false,
+    "persistentStagingMutationExecuted": false,
+    "routeRegistrationAllowed": false,
+    "routeRegistered": false,
+    "runtimeDeploymentAllowed": false,
+    "runtimeDeployed": false,
+    "realModerationAllowed": false,
+    "realModerationExecuted": false,
+    "productionAllowed": false,
+    "productionChanged": false,
+    "pullRequestMergeAllowed": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "A second authenticated rollback-only canary requires a new distinct explicit authorization and a new one-shot trigger."
+}

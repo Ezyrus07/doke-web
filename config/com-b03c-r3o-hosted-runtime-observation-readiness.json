@@ -1,0 +1,102 @@
+{
+  "contractId": "com-b03c-r3o-hosted-runtime-observation-readiness-v1",
+  "validationId": "COM-B03C-R3O-HOSTED-RUNTIME-OBSERVATION-READINESS",
+  "status": "repository_hosted_runtime_observation_contract_ready_no_remote_authority",
+  "domain": "COM-001",
+  "boundary": "COM-B03C-R3O",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "predecessor": {
+    "validationId": "COM-B03C-R3N-HOSTED-REALTIME-RUNTIME-PARITY-READINESS",
+    "status": "repository_hosted_realtime_runtime_parity_contradiction_certified_no_remote_authority",
+    "head": "ea8c3825aa8f3a16a405549ffb9bc6155cb2e673",
+    "recertRun": 31393980380,
+    "recertJob": 93472241908,
+    "recertSuccess": true
+  },
+  "upstream": {
+    "repository": "supabase/realtime",
+    "commit": "744c6d60f000f721c3942b6df0e7601f54a3b69d",
+    "sourcePaths": [
+      "lib/realtime/tenants/authorization.ex",
+      "lib/realtime/api/message.ex",
+      "lib/realtime_web/channels/realtime_channel.ex",
+      "lib/realtime_web/channels/realtime_channel/message_dispatcher.ex",
+      "lib/realtime_web/channels/realtime_channel/presence_handler.ex"
+    ]
+  },
+  "preciseObservation": "hosted_presence_extension_selection_read_flag_and_or_join_authorization",
+  "probePlan": {
+    "probeIds": [
+      "presence_read_effective_gate",
+      "presence_only_join"
+    ],
+    "observationPhases": [
+      "baseline_before_probe",
+      "after_presence_read_effective_gate",
+      "after_presence_only_join",
+      "after_cleanup"
+    ],
+    "counters": [
+      "broadcast_rls_evaluations",
+      "presence_rls_evaluations"
+    ],
+    "instrumentation": {
+      "futureMechanism": "temporary_security_definer_probe_function_plus_nontransactional_sequences",
+      "executableSqlPrepared": false,
+      "remoteExecutorPrepared": false,
+      "notes": [
+        "The policy instrumentation must count RLS evaluation separately for broadcast and presence rows.",
+        "The presence_read_effective_gate probe must allow both extensions so join success does not depend on Presence.",
+        "The presence_read_effective_gate probe must treat presence_state receipt as the effective presence.read observation.",
+        "The presence_only_join probe must deny broadcast and allow presence to isolate the private join OR rule.",
+        "Counters must be read as deltas between phases and cleaned with all temporary objects."
+      ]
+    }
+  },
+  "controls": {
+    "r3lExtensionDirectWasLiteralPresencePredicateObserved": true,
+    "r3lStructuralPolicyMaterializationCompleteObserved": true,
+    "r3lZeroResidueObserved": true,
+    "r3nContradictionCertifiedObserved": true,
+    "upstreamPresenceEnabledControlsExtensionSelectionObserved": true,
+    "upstreamReadFlagsDerivedFromReturnedSyntheticIdsObserved": true,
+    "upstreamJoinUsesBroadcastOrPresenceReadObserved": true,
+    "upstreamPresenceStateRequiresPresenceReadObserved": true,
+    "upstreamPresenceDiffFastlaneRequiresPresenceReadObserved": true,
+    "anchorProbeJoinGuaranteedByBroadcastDesign": true,
+    "anchorProbePresenceStateIsEffectiveReadFlagObservation": true,
+    "presenceOnlyProbeDeniesBroadcastAndAllowsPresenceDesign": true,
+    "policyInstrumentationCountsBroadcastAndPresenceRlsEvaluation": true,
+    "sequenceCountersSelectedBecauseNextvalSurvivesTransactionAbort": true,
+    "sameSyntheticIdentityTokenRequired": true,
+    "freshRealtimeClientPerProbeRequired": true,
+    "uniqueTopicPerProbeRequired": true,
+    "privateChannelRequired": true,
+    "presenceExplicitlyEnabledRequired": true,
+    "presenceListenerRegisteredBeforeSubscribeRequired": true,
+    "completeRealtimeMessagesPolicySnapshotRequired": true,
+    "baselinePolicyImmutabilityRequired": true,
+    "cleanupAndZeroResidueRequired": true,
+    "sanitizedArtifactRequired": true,
+    "noCausalPromotionWithoutFutureObservation": true
+  },
+  "prohibitedPreparation": {
+    "authorizationPhraseDefined": false,
+    "triggerPrepared": false,
+    "stagingEnvironmentJobPrepared": false,
+    "remoteCredentialLoadingPrepared": false,
+    "remoteDependencyLoadingPrepared": false,
+    "remoteExecutorPrepared": false,
+    "stagingReadPrepared": false,
+    "stagingMutationPrepared": false,
+    "runtimePolicyChangePrepared": false,
+    "runtimeDeployPrepared": false,
+    "productionPrepared": false,
+    "mergePrepared": false
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "Build and certify a repository-only synthetic harness for the exact two-probe observation contract. Do not define staging authorization, trigger, secrets, environment jobs or a remote executor in R3O."
+}

@@ -1,0 +1,86 @@
+name: COM-B03C-R4P R4O Fresh Authorization Consumption
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4p.js'
+      - 'scripts/test-com-b03c-r4p-r4o-fresh-authorization-consumption.js'
+      - 'config/com-b03c-r4p-r4o-fresh-authorization-consumption.json'
+      - 'docs/validation/COM-B03C-R4P-R4O-FRESH-AUTHORIZATION-CONSUMPTION.json'
+      - '.github/workflows/com-b03c-r4p-r4o-fresh-authorization-consumption.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r4p-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4p.js
+          node --check scripts/test-com-b03c-r4p-r4o-fresh-authorization-consumption.js
+      - name: R4P repository authorization consumption receipt
+        run: node scripts/test-com-b03c-r4p-r4o-fresh-authorization-consumption.js
+      - name: R4O and historical consumed authorization boundaries unchanged
+        shell: bash
+        run: |
+          R4O_HEAD=d4f0b3c2395571d25ffb8cf4be459e161326def3
+          test -z "$(git diff --name-only "$R4O_HEAD" "${{ github.event.pull_request.head.sha }}" -- \
+            backend/modules/communities/community-realtime-private-auth-r4o.js \
+            scripts/execute-com-b03c-r4o-phase-attributed-hosted-terminal-observation.js \
+            scripts/verify-com-b03c-r4o-phase-attributed-hosted-terminal-observation-report.js \
+            config/com-b03c-r4o-fresh-single-use-phase-attributed-execution-readiness.json \
+            docs/validation/COM-B03C-R4O-FRESH-SINGLE-USE-PHASE-ATTRIBUTED-EXECUTION-READINESS.json \
+            backend/modules/communities/community-realtime-private-auth-r4i.js \
+            config/com-b03c-r4i-r4h-terminal-observation-authorization-consumption.json)"
+      - name: No trigger or remote authority
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r4o-single-use-phase-attributed-hosted-terminal-observation-trigger.json
+          node - <<'NODE'
+          const r4p = require('./backend/modules/communities/community-realtime-private-auth-r4p');
+          const config = require('./config/com-b03c-r4p-r4o-fresh-authorization-consumption.json');
+          if (!r4p.validatePersistedReceipt(config.receipt)) process.exit(1);
+          for (const field of [
+            'triggerCreationAuthority','remoteExecutionAuthority','remoteCredentialReadAuthority',
+            'remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority',
+            'stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority',
+            'runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority'
+          ]) if (config.receipt[field] !== false) process.exit(1);
+          if (config.receipt.authorizationConsumed !== true ||
+              config.receipt.authorizationReusable !== false ||
+              config.receipt.reusableAfterFailure !== false ||
+              config.receipt.historicalAuthorizationReceiptReused !== false ||
+              config.receipt.executionAttempted !== false ||
+              config.receipt.triggerCreated !== false ||
+              config.receipt.rawAuthorizationPhrasePersisted !== false ||
+              config.receipt.separateHostedExecutionBoundaryRequired !== true) process.exit(1);
+          NODE
+      - name: Repository-only workflow surface
+        shell: bash
+        run: |
+          WF=.github/workflows/com-b03c-r4p-r4o-fresh-authorization-consumption.yml
+          ! grep -Eq '^[[:space:]]*push:' "$WF"
+          ! grep -Eq 'workflow_dispatch' "$WF"
+          ! grep -Eq 'environment:' "$WF"
+          ! grep -Eq 'secrets\.' "$WF"
+          ! grep -Eq 'contents:[[:space:]]*write' "$WF"
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

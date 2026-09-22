@@ -1,0 +1,158 @@
+{
+  "validationId": "COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS",
+  "contractId": "com-b03c-r3b-realtime-messages-policy-composition-readiness-v1",
+  "status": "repository_policy_composition_rca_complete_current_staging_inventory_unobserved",
+  "sanitized": true,
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "base": "rep/rep-001-baseline-audit",
+    "preparedFromHead": "2e07b5d2fa2c8b9b06ac7952cc071ac837681dcd",
+    "certifiedPackageHead": "d05db152930ec2367375fd5b840019c6e8f2dc19",
+    "priorCertifiedEvidenceHead": "6eec45ac65fa56b00107e87a4f7a5b5a3c968a0f",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "finding": {
+    "rootCauseGap": "R3A did not freeze the complete active policy inventory for realtime.messages; it introspected only the temporary policies created by the canary.",
+    "restrictivePolicyInterferenceExcluded": false,
+    "otherActivePolicyCompositionExcluded": false,
+    "presenceExtensionInternalSemanticsProven": false,
+    "exactRootCauseProven": false
+  },
+  "historicalRepositoryEvidence": {
+    "searchComplete": true,
+    "knownB03cExecutorsInspected": [
+      "scripts/execute-com-b03c-private-presence-typing-staging-canary.js",
+      "scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js",
+      "scripts/execute-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary.js",
+      "scripts/execute-com-b03c-r2a-residue-cleanup-staging-canary.js",
+      "scripts/execute-com-b03c-r3-corrected-realtime-auth-predicate-ladder-staging-canary.js",
+      "scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js"
+    ],
+    "diagnosticPolicyIntrospectionPattern": "B03C/R1/R2/R3/R3A select pg_policies only for the temporary policy names created by each canary via policyname = any($1::text[]).",
+    "cleanupPolicyIntrospectionPattern": "R2A selects only policy names matching the R2 synthetic residue prefix.",
+    "completeRealtimeMessagesInventoryCapturedByKnownB03cRuns": false,
+    "permissiveColumnCapturedByKnownDiagnosticPolicyIntrospection": false,
+    "persistentRealtimeMessagesPolicyMigrationFoundInRepositorySearch": false,
+    "migrationSearchNote": "The repository search result that mentioned realtime policy work resolved to public.notifications publication/RLS setup and did not define policies on realtime.messages.",
+    "currentStagingCatalogReconstructableFromRepositoryEvidence": false,
+    "repositoryAndHistoricalEvidenceExhaustedForCurrentCatalog": true,
+    "remoteReadOnlyCatalogObservationRequiredToKnowCurrentStagingState": true
+  },
+  "requiredInventory": {
+    "source": "pg_policies",
+    "schema": "realtime",
+    "table": "messages",
+    "columns": ["policyname", "permissive", "roles", "cmd", "qual", "with_check"],
+    "completeInventoryRequired": true,
+    "authenticatedSelectPoliciesMustBeClassified": true,
+    "restrictivePoliciesMustBeDetected": true,
+    "remoteInventoryObserved": false
+  },
+  "repositoryPackage": {
+    "module": "backend/modules/communities/community-realtime-private-auth-r3b.js",
+    "config": "config/com-b03c-r3b-realtime-messages-policy-composition-readiness.json",
+    "test": "scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js",
+    "workflow": ".github/workflows/com-b03c-r3b-realtime-messages-policy-composition-readiness.yml",
+    "stagingExecutorPresent": false,
+    "stagingVerifierPresent": false,
+    "stagingTriggerPresent": false,
+    "authorizationPhraseDefined": false,
+    "finalWorkflowContentsPermission": "read"
+  },
+  "canonicalMatrixRegeneration": {
+    "run": 31317937900,
+    "job": 93256135585,
+    "status": "success",
+    "generatedCommit": "78e2b750e8649fb29ebcde079ac7aa778d3cdc8e",
+    "writer": "npm run write:domain-completion-matrix",
+    "matrixVersionChanged": false,
+    "maturityChanged": false,
+    "authorityChanged": false,
+    "blockersChanged": false
+  },
+  "certification": {
+    "packageHead": "d05db152930ec2367375fd5b840019c6e8f2dc19",
+    "packageRun": 31318069409,
+    "packageJob": 93256474645,
+    "packageStatus": "success",
+    "priorEvidenceHead": "6eec45ac65fa56b00107e87a4f7a5b5a3c968a0f",
+    "priorEvidenceRun": 31318222454,
+    "priorEvidenceJob": 93256856898,
+    "priorEvidenceStatus": "success",
+    "r3bReadinessChecks": 64,
+    "syntax": "success",
+    "domainMatrixAudit": "success",
+    "agentGovernanceAudit": "success",
+    "repositoryOnlyBoundaryGuard": "success",
+    "diffHygiene": "success",
+    "stagingAccessExecuted": false,
+    "remoteEffectsExecuted": false
+  },
+  "bookkeeping": {
+    "intermediateRepositoryOnlyFailures": [
+      {
+        "run": 31317122588,
+        "job": 93254068727,
+        "cause": "self_referential_repository_boundary_guard",
+        "remoteEffectsExecuted": false
+      },
+      {
+        "run": 31317293163,
+        "job": 93254488203,
+        "cause": "canonical_domain_matrix_generated_artifacts_stale",
+        "remoteEffectsExecuted": false
+      },
+      {
+        "run": 31317660803,
+        "job": 93255408078,
+        "cause": "canonical_writer_scope_guard_discovered_generated_report",
+        "remoteEffectsExecuted": false
+      },
+      {
+        "run": 31317744048,
+        "job": 93255613225,
+        "cause": "tracked_generated_report_recreated_under_ignore_rule",
+        "remoteEffectsExecuted": false
+      },
+      {
+        "run": 31317826829,
+        "job": 93255835323,
+        "cause": "tracked_generated_report_still_part_of_deterministic_diff",
+        "remoteEffectsExecuted": false
+      }
+    ],
+    "allFailuresWereRepositoryOnly": true,
+    "newRemoteAuthorizationReceived": false,
+    "newRemoteAuthorizationConsumed": false
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "triggerCreationAuthority": false,
+    "realtimePolicyMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "realUserMutationAuthority": false
+  },
+  "effects": {
+    "stagingAccessExecuted": false,
+    "remoteInventoryObserved": false,
+    "remoteEffectsExecuted": false,
+    "communityPostsExecuted": false,
+    "channelMessagesExecuted": false,
+    "publicationMutationExecuted": false,
+    "runtimeDeployed": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "realUserMutationExecuted": false
+  },
+  "nextBoundary": "A separate future read-only staging catalog inspection is required to observe the current realtime.messages pg_policies inventory. It must have a new explicit single-use authorization and must not create/drop policies, create synthetic users or domain rows, open Realtime subscriptions, mutate publication configuration, deploy runtime, touch production, merge, or mutate real users. No authorization phrase or trigger is defined by R3B."
+}
