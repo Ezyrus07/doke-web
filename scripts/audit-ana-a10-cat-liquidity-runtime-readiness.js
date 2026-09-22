@@ -2,10 +2,12 @@
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a10-cat-liquidity-runtime-readiness.json'),'utf8'));
 const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260922140000_ana_a10_cat_liquidity_runtime.sql'),'utf8');
+const compatibility=fs.readFileSync(path.join(root,'supabase','migrations','20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('authorized staging scope',c.scope==='repository_and_authorized_staging'&&c.authorization?.received===true);
 check('migration path',c.migration==='supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql');
 ['analytics_metric_freshness_policies_v1','cat_listing_visibility_watermark_v1','compute_analytics_cat_liquidity_v1','run_analytics_cat_liquidity_reconciliation_v1','run_analytics_cat_liquidity_projection_v1'].forEach(x=>check('runtime '+x,sql.includes(x)));
+check('compatibility followup redefines compute',compatibility.includes('create or replace function public.compute_analytics_cat_liquidity_v1')&&!compatibility.includes('pg_catalog.least(')&&!compatibility.includes('pg_catalog.greatest('));
 check('transaction snapshot watermark',sql.includes("'basis','transaction_snapshot_barrier_v1'")&&sql.includes('transaction_timestamp()'));
 check('no max event freshness',!sql.match(/max\s*\(\s*[^)]*occurred_at/i));
 check('policy registry empty by migration',!sql.match(/insert\s+into\s+private\.analytics_metric_freshness_policies_v1/i));
