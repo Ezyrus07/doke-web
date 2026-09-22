@@ -82,7 +82,7 @@ check(liquidity && liquidity.source.includes('CAT-001') && liquidity.definition 
 check(a04.invariants.includes('pre-visibility-ledger supply history is partial coverage rather than fabricated complete history'), 'ANA-A04 partial-coverage invariant missing');
 check(ana && ana.maturity === 3, 'ANA maturity must remain 3/6');
 check(ana && ana.serverAuthority === 'partial', 'ANA server authority must remain partial');
-check(ana && ana.evidence.some((item) => item.includes('CAT liquidity remains source-blocked')), 'matrix must preserve CAT liquidity blocker evidence');
+check(ana && ana.evidence.some((item) => item.includes('CAT-A06') && item.includes('append-only listing visibility/version ledger')), 'matrix must preserve CAT-A06 liquidity dependency evidence');
 
 if (failures.length) {
   console.error('[CAT-A06] audit failed');
@@ -91,5 +91,5 @@ if (failures.length) {
 } else {
   console.log('[CAT-A06] existing CAT lifecycle authority confirmed.');
   console.log('[CAT-A06] service_moderation_events is correctly rejected as complete supply history.');
-  console.log('[CAT-A06] staging migration is prepared without historical/current listing baseline and ANA remains 3/6.');
+  console.log('[CAT-A06] staging ledger canary evidence is present; pre-activation coverage remains partial and ANA remains 3/6.');
 }
