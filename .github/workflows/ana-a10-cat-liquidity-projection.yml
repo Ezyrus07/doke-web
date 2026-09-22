@@ -4,6 +4,12 @@ on:
     paths:
       - 'backend/modules/analytics/marketplace-health-projection.js'
       - 'config/ana-a10-cat-liquidity-projection.json'
+      - 'config/ana-a10-cat-liquidity-runtime-readiness.json'
+      - 'supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql'
+      - 'supabase/tests/032_ana_a10_cat_liquidity_runtime_validation.sql'
+      - 'scripts/audit-ana-a10-cat-liquidity-runtime-readiness.js'
+      - 'scripts/test-ana-a10-cat-liquidity-runtime-readiness.js'
+      - 'docs/ANA-A10-CAT-LIQUIDITY-RUNTIME-READINESS.md'
       - 'docs/ANA-A10-CAT-LIQUIDITY-PROJECTION.md'
       - 'scripts/audit-ana-a10-cat-liquidity-projection.js'
       - 'scripts/test-ana-a10-cat-liquidity-projection.js'
@@ -36,6 +42,8 @@ jobs:
           node --check scripts/test-ana-a10-cat-liquidity-projection.js
       - run: npm run audit:ana-a10-cat-liquidity-projection
       - run: npm run test:ana-a10-cat-liquidity-projection
+      - run: npm run audit:ana-a10-cat-liquidity-runtime-readiness
+      - run: npm run test:ana-a10-cat-liquidity-runtime-readiness
       - run: |
           npm run audit:cat-a06-listing-visibility-timeline
           npm run test:cat-a06-listing-visibility-timeline

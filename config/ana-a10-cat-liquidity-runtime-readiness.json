@@ -1,0 +1,58 @@
+{
+  "contractId": "ana-a10-cat-liquidity-runtime-readiness-v1",
+  "domain": "ANA-001",
+  "sourceContract": "ana-a10-cat-liquidity-projection-v1",
+  "sourceDomain": "CAT-001",
+  "sourceHead": "3142c021fe8bb53fd6abc071c963e3fc09baa665",
+  "createdAt": "2026-09-22T10:55:00-03:00",
+  "scope": "repository_and_authorized_staging",
+  "authorization": {
+    "token": "authorize-ana-a10-cat-liquidity-runtime-staging",
+    "received": true
+  },
+  "status": "migration_prepared_staging_application_pending",
+  "migration": "supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql",
+  "validationSql": "supabase/tests/032_ana_a10_cat_liquidity_runtime_validation.sql",
+  "runtime": {
+    "watermarkFunction": "private.cat_listing_visibility_watermark_v1",
+    "computeFunction": "public.compute_analytics_cat_liquidity_v1",
+    "reconciliationFunction": "public.run_analytics_cat_liquidity_reconciliation_v1",
+    "projectionRunner": "public.run_analytics_cat_liquidity_projection_v1",
+    "snapshotTable": "private.analytics_metric_snapshots_v1",
+    "reconciliationTable": "private.analytics_reconciliation_runs_v1",
+    "dataQualityTable": "private.analytics_data_quality_rollups_v1",
+    "freshnessPolicyTable": "private.analytics_metric_freshness_policies_v1"
+  },
+  "freshness": {
+    "watermarkBasis": "transaction_snapshot_barrier_v1",
+    "maxEventTimestampUsed": false,
+    "computedAtUsedAsFreshness": false,
+    "policyRegistryVersioned": true,
+    "liquidityPolicyInserted": false,
+    "missingPolicyBehavior": "projection_state_unavailable",
+    "reason": "No canonical maxLagSeconds is approved; staging runtime must fail closed instead of inventing a threshold."
+  },
+  "coverage": {
+    "existingBaselinePolicy": "not_performed_synthetic_only",
+    "canonicalPartialValue": null,
+    "diagnosticLowerBoundPersistedAsNumerator": true,
+    "historicalBackfill": false
+  },
+  "canaryPlan": {
+    "source": "existing CAT-A06 synthetic 7-row canary ledger",
+    "sourceMutation": false,
+    "expectedRepeatedCycles": true,
+    "expectedSameTimestampOrdering": true,
+    "expectedDimensionSplit": "BA->SP",
+    "expectedGlobalCoverage": "partial",
+    "expectedFreshnessReason": "POLICY_THRESHOLD_MISSING"
+  },
+  "prohibited": {
+    "production": false,
+    "browserAnalyticsActivation": false,
+    "anonymousIdentityStitching": false,
+    "CATLifecycleMutation": false,
+    "historicalBackfill": false,
+    "policyThresholdGuess": false
+  }
+}

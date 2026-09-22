@@ -1,0 +1,15 @@
+'use strict';
+const fs=require('fs');const path=require('path');const sql=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260922140000_ana_a10_cat_liquidity_runtime.sql'),'utf8');
+const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('policy service read only',sql.includes('grant select on table private.analytics_metric_freshness_policies_v1 to service_role'));
+check('watermark service only',sql.includes('grant execute on function private.cat_listing_visibility_watermark_v1() to service_role'));
+check('compute service only',sql.includes('grant execute on function public.compute_analytics_cat_liquidity_v1(timestamptz,timestamptz,text,text)')&&sql.includes('to service_role'));
+check('runner service only',sql.includes('grant execute on function public.run_analytics_cat_liquidity_projection_v1(timestamptz,timestamptz,text,text)')&&sql.includes('to service_role'));
+check('closed window required',sql.includes('DOKE_ANALYTICS_LIQUIDITY_WINDOW_NOT_CLOSED'));
+check('sequence gaps counted',sql.includes('sequence_gap_count')&&sql.includes('o.sequence_no <> o.expected_sequence'));
+check('state mismatch counted',sql.includes('state_mismatch_count')&&sql.includes('o.eligible_before is distinct from o.previous_eligible_after'));
+check('time regression counted',sql.includes('time_regression_count')&&sql.includes('o.occurred_at < o.previous_occurred_at'));
+check('left truncation distinct from defects',sql.includes('left_truncated_count')&&sql.includes('v_structural_defects := v_sequence_gap+v_state_mismatch+v_time_regression+v_missing_dimensions'));
+check('partial value null',sql.includes("v_value_seconds := case when v_coverage_state='complete'"));
+check('low-cardinality DQ only',sql.includes('analytics_cat_liquidity_structural_defect_rate')&&sql.includes('analytics_cat_liquidity_left_truncated_rate'));
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:'ana-a10-cat-liquidity-runtime-readiness-v1',total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'passed':'failed',failedCases:failed},null,2));if(failed.length)process.exitCode=1;
