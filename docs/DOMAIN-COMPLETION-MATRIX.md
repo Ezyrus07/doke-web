@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1589 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1595 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -300,7 +300,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI remote; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 17 arquivos no escopo; 2 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 18 arquivos no escopo; 2 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `detalhe-anuncio.html`, `admin-anuncio-revisao.html`, `index.html`, `resultados.html`.
 
@@ -324,6 +324,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-B04 complete: approved service versions and historical order snapshots are immutable on 09e77e5236d2bc0c820d73768f0161f326adeefe.
 - CAT-A05 complete: Quality #1237, blocking E2E, 105 guards, Canary #806 and Diagnostic #901 converged on one stable head.
 - CAT-A06 is active in staging as a CAT-owned append-only listing visibility/version ledger. Synthetic canary preserved two repeated pause/restore cycles, a BA->SP visible-version dimension split, and history after source deletion; no existing non-synthetic listing baseline or historical backfill was written.
+- CAT-A07 defines a forward-only CAT-owned coverage epoch: a future authorized baseline must atomically snapshot every current service, append activation_baseline facts without rewriting CAT-A06 activation/history, and abort on any current-state/ledger drift. No baseline is executed by this contract.
 
 **Bloqueadores:**
 - Nenhum.
@@ -331,7 +332,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep all CAT-001 authority, lifecycle and CAT-A06 visibility-ledger audits cumulative in Quality.
 - Expose CAT-A06 only as a server-side source dependency for ANA liquidity; do not create a second lifecycle writer.
-- Keep pre-activation/pre-observation supply coverage partial and production blocked until global release gates are satisfied.
+- Keep supply coverage partial until CAT-A07 is separately authorized and a forward coverage epoch is certified; never rewrite CAT-A06 activation evidence or infer historical visibility.
 
 **Gate de saída:**
 - Create, submit, moderate, publish, edit, pause and archive work remotely.
@@ -540,7 +541,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1481 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1485 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1057,7 +1058,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 40 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 41 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`.
 
@@ -1092,6 +1093,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-A06 now provides a server-owned append-only listing visibility/version ledger in staging with deterministic per-service sequencing and synthetic canary evidence. Existing pre-activation listing history remains partial; ANA liquidity runtime has not yet consumed the ledger.
 - ANA-A10 defines deterministic repository liquidity projection from CAT-A06 service_id+sequence_no facts, keeps partial/unbaselined supply as a diagnostic lower bound rather than an authoritative metric, segments only by frozen CAT category/state dimensions, and delegates dataThrough to ANA-A07.
 - ANA-A10 server runtime is applied in staging with a CAT transaction-snapshot watermark, A04 append-only liquidity snapshots, A05 CAT→ANA reconciliation and technical DQ. Global/BA/SP synthetic canary appended 3 snapshots, 3 matched reconciliation runs and 6 healthy rollups while the 7-row CAT source/fingerprint stayed unchanged; no maxLag policy was invented, so freshness remains fail-closed and supply coverage remains partial.
+- ANA-A11 proves the missing liquidity freshness number is downstream of a missing analytics publication cadence/SLO. It freezes maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds, forbids implicit grace, and keeps all three values unset until a versioned scheduler/cadence is approved.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1100,7 +1102,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.
-- ANA-A10 staging runtime/canary is closed. Next approve a versioned maxLagSeconds policy for liquidity.active_service_seconds and separately decide whether/how to establish a complete CAT activation baseline; until then the runtime must stay unavailable/partial rather than fabricate authoritative liquidity.
+- ANA-A10 staging runtime/canary is closed. ANA-A11 now defines threshold derivation but leaves windowStepSeconds, projectionDelaySloSeconds and maxLagSeconds unset; CAT-A07 defines the forward-only coverage epoch but performs no baseline. Next choose/version the liquidity publication cadence + delay SLO and separately authorize CAT-A07 baseline execution.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
 **Gate de saída:**
@@ -1115,7 +1117,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 328 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 330 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1175,7 +1177,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3524 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3532 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1236,4 +1238,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T11:06:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T11:27:00-03:00._
