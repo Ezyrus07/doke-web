@@ -1111,6 +1111,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A07 now defines repository-only behavior/ORD dependency watermark authority using active_transaction_floor_v1: behavior completeness is fenced by server-owned received_at, ORD metric completeness by DB-owned created_at, max(event timestamp)/computedAt/windowEnd shortcuts are forbidden, prepared transactions fail closed, empty windows may advance, and late materialized facts must use A05 append-only revisions. Runtime watermark functions and migration remain unapplied; ANA stays 3/6.
 - ANA-A07 behavior/ORD watermark runtime candidate is repository-ready but unapplied: migration 20260923224000 defines a postgres-owned active_transaction_floor_v1 helper plus service-role-only behavior/ORD wrappers, scans active transactions before prepared transactions, uses a 1-microsecond inclusive predecessor, never derives watermarks from source maxima, and ships rollback-only validation 041. Staging application and multi-session concurrent-writer/late-fact evidence remain pending; ANA stays 3/6.
 - ANA-A07 staging migration 20260923230106 applied, but validation 041 failed at runtime with PostgreSQL 42883 because pg_catalog.least(timestamptz,timestamptz) does not exist. The historical migration remains immutable. Forward-only compatibility candidate 20260923231000 redefines only private.analytics_transaction_floor_watermark_v1() with an explicit CASE while preserving active-before-prepared scan order, prepared fail-closed behavior, the 1-microsecond predecessor and server-only grants. Candidate is repository-ready but unapplied; ANA remains 3/6.
+- ANA-A07 forward-only compatibility migration is applied in staging as 20260923231132 and validation 041 now passes. Read-only post-validation evidence confirms explicit-CASE helper execution, postgres owners, helper denied to service_role, behavior/ORD wrappers service-role-only, fresh NO_ACTIVE_TRANSACTION envelopes, preparedTransactionCount=0 and zero watermark cron jobs. This is structural/runtime-envelope certification only: multi-session concurrent-writer and downstream late-fact evidence remain pending, runtimeWatermarkAuthority stays false and ANA remains 3/6.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1118,7 +1119,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
-- Apply only the forward-only A07 watermark compatibility migration 20260923231000 to staging after explicit authorization, then rerun validation 041; do not run concurrent-writer/late-fact canaries or enable A09 until 041 passes.
+- Run only the A07 multi-session concurrent-writer watermark canary after explicit staging authorization; do not enable A09 or claim runtimeWatermarkAuthority until that canary proves the active transaction floor under a real in-flight writer.
 - Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.
 - Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
@@ -1256,4 +1257,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-23T23:04:09.442513Z._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-23T23:14:56.197764Z._
