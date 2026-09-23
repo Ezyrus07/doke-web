@@ -97,5 +97,75 @@
     "before": 3,
     "after": 3,
     "reason": "A11 closes the derivation rule and identifies the missing scheduler/SLO authority. It deliberately leaves the numeric threshold unset."
+  },
+  "sourceDomainWatermarkSemantics": {
+    "sourceDomain": "CAT-001",
+    "authorityContract": "cat-a06-listing-visibility-watermark-v1",
+    "runtimeFunction": "private.cat_listing_visibility_watermark_v1",
+    "basis": "transaction_snapshot_barrier_v1",
+    "meaning": "Greatest timestamp through which CAT listing-visibility facts are proven readable in the same database snapshot used by the ANA projection.",
+    "canonicalDataThrough": "min(windowEnd, sourceWatermark.dataThrough)",
+    "windowClosureRule": "A liquidity window is not closed for ANA when windowEnd is later than the authoritative CAT source watermark.",
+    "maxEventOccurredAtIsWatermark": false,
+    "computedAtIsWatermark": false,
+    "sourceLagFoldedIntoMaxLagSeconds": false,
+    "thresholdCouplingReason": "CAT dependency availability is evaluated independently from the ANA publication-age threshold; source lag must not be hidden inside maxLagSeconds."
+  },
+  "freshnessStateSemantics": {
+    "authorityContract": "ana-a07-freshness-window-authority-v1",
+    "selectionRule": "Evaluate only the latest canonical closed window; never fall back to an older healthy window.",
+    "unavailable": [
+      "metric freshness threshold is missing",
+      "authoritative dependency watermark is missing or unavailable",
+      "no canonical closed window exists",
+      "selected window lacks required coverage",
+      "declared dataThrough exceeds an authoritative dependency watermark",
+      "structural source/projection defects make the selected liquidity projection unavailable"
+    ],
+    "stale": [
+      "evaluatedAt minus canonical dataThrough exceeds the approved maxLagSeconds",
+      "an authoritative dependency is stale",
+      "selected liquidity coverage is partial"
+    ],
+    "fresh": [
+      "latest canonical window is closed and fully covered",
+      "required dependency watermarks are available",
+      "structural integrity gates pass",
+      "evaluatedAt minus canonical dataThrough is less than or equal to maxLagSeconds"
+    ],
+    "projectionStateMapping": {
+      "fresh": "authoritative",
+      "stale": "stale",
+      "unavailable": "unavailable"
+    },
+    "zeroSampleAloneDeterminesFreshness": false
+  },
+  "pendingAuthorityDecisions": {
+    "windowStepSeconds": {
+      "owner": "ANA-001",
+      "decision": "Approve and version the canonical closed-window cadence for liquidity.active_service_seconds v1.",
+      "cannotBeInferredFrom": [
+        "canary window sizes",
+        "GitHub Actions timing",
+        "ORD worker cron",
+        "REL SLO jobs",
+        "browser refresh intervals"
+      ]
+    },
+    "projectionDelaySloSeconds": {
+      "owner": "ANA-001 operational policy",
+      "decision": "Approve and version the maximum healthy materialization delay after each canonical window boundary.",
+      "cannotBeInferredFrom": [
+        "single observed execution duration",
+        "retry backoff",
+        "another domain's SLO",
+        "computedAt timestamps"
+      ]
+    },
+    "scheduler": {
+      "owner": "ANA-001",
+      "decision": "Choose and version a server-side publication mechanism that implements the approved cadence and deterministic missed-window handling.",
+      "currentlyAuthorized": false
+    }
   }
 }
