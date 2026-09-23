@@ -5,7 +5,7 @@
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
   "scope": "repository_only",
-  "status": "runtime_enforcement_staging_validated_values_unset_activation_unauthorized",
+  "status": "initial_policy_persisted_future_effective_scheduler_unactivated",
   "createdAt": "2026-09-23T13:29:17.102Z",
   "createdAgainst": {
     "repositoryHead": "3c544b7aa395a6f637127473ce3f605b6970a24d",
@@ -154,7 +154,7 @@
     "envelopeSchemaEnforcedByDatabase": true,
     "activationInvocationAuthorized": false,
     "stagingMutationAuthorized": false,
-    "note": "Runtime approval-envelope enforcement is installed and validated in staging. No real policy activation is authorized until an exact completed envelope with operational values is separately approved.",
+    "note": "Runtime envelope enforcement is active in staging and the single-use initial policy activation has been consumed successfully. The persisted policy becomes effective at 2026-09-23T16:00:00Z. Scheduler activation remains separately unauthorized.",
     "runtimeEnforcementCandidate": {
       "authorization": "authorize-ana-a11-policy-envelope-runtime-enforcement-candidate-repository-only head=ce1d49bae29f92f4cb31c38849fb8292b71a6a85 matrix=v1.3.132",
       "migration": "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
@@ -222,8 +222,8 @@
   },
   "authority": {
     "repositoryContractAuthority": true,
-    "completedApprovalAuthority": false,
-    "policyValueSelectionAuthority": false,
+    "completedApprovalAuthority": true,
+    "policyValueSelectionAuthority": true,
     "policyInsertAuthority": false,
     "activationInvocationAuthority": false,
     "schedulerActivationAuthority": false,
@@ -231,7 +231,8 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "runtimeEnforcementCandidateAuthority": true,
-    "runtimeEnforcementAppliedAuthority": true
+    "runtimeEnforcementAppliedAuthority": true,
+    "initialPolicyActivationCompleted": true
   },
   "prohibitedEffects": {
     "policyValuesSelected": false,
@@ -248,5 +249,85 @@
     "pullRequestMerged": false,
     "readyForReviewChanged": false
   },
-  "updatedAt": "2026-09-23T14:00:00.000Z"
+  "updatedAt": "2026-09-23T14:16:48.529532Z",
+  "prohibitedEffectsScope": "Repository-contract and runtime-enforcement preparation lots only; superseded operational effects are recorded in operationalActivationEvidence.",
+  "operationalActivationEvidence": {
+    "authorization": "authorize-ana-a11-liquidity-policy-activation-staging head=889d99586c19d178bc08d9beec380e3aa1b5904e matrix=v1.3.132 revision=1 windowStepSeconds=300 projectionDelaySloSeconds=60 windowAnchor=1970-01-01T00:00:00Z maxCatchUpWindowsPerInvocation=3 effectiveFrom=2026-09-23T16:00:00Z effectiveUntil=null",
+    "sourceHead": "889d99586c19d178bc08d9beec380e3aa1b5904e",
+    "matrixVersion": "1.3.132",
+    "activationFunction": "private.activate_analytics_cat_liquidity_policy_approved_v1",
+    "approvalEvidence": {
+      "schemaId": "ana-a11-liquidity-policy-approval-evidence-v1",
+      "approvalId": "ana-a11-liquidity-approval-r1-52ff083086f2",
+      "approvalChannel": "chat_explicit_authorization",
+      "approvalActorRole": "project_owner",
+      "authorizationDigestSha256": "52ff083086f2748905f1ff75a5357d65b9c8c7403bac31f5fbead29795396ae7",
+      "approvedAt": "2026-09-23T14:14:42.814387Z",
+      "environment": "staging",
+      "repositoryHead": "889d99586c19d178bc08d9beec380e3aa1b5904e",
+      "matrixVersion": "1.3.132",
+      "domain": "ANA-001",
+      "metricKey": "liquidity.active_service_seconds",
+      "metricVersion": "v1",
+      "derivationContractId": "ana-a11-liquidity-freshness-policy-derivation-v1",
+      "seriesContractId": "ana-a11-liquidity-series-orchestration-v1",
+      "schedulerMechanism": "supabase_pg_cron_database_local",
+      "lifecycle": {
+        "mode": "initial"
+      },
+      "policyIdentity": {
+        "revision": 1,
+        "policyId": "ana-a11-liquidity-v1-r1"
+      },
+      "approvedParameters": {
+        "windowStepSeconds": 300,
+        "projectionDelaySloSeconds": 60,
+        "windowAnchor": "1970-01-01T00:00:00Z",
+        "maxCatchUpWindowsPerInvocation": 3,
+        "derivedMaxLagSeconds": 360,
+        "effectiveFrom": "2026-09-23T16:00:00Z",
+        "effectiveUntil": null
+      },
+      "boundaries": {
+        "policyInsertAuthorized": true,
+        "activationInvocationLimit": 1,
+        "schedulerActivationAuthorized": false,
+        "productionAuthorized": false,
+        "browserAnalyticsActivationAuthorized": false,
+        "anonymousIdentityStitchingAuthorized": false,
+        "pullRequestMergeAuthorized": false
+      },
+      "evidenceDigestSha256": "f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d"
+    },
+    "activatedAt": "2026-09-23T14:16:20.971548Z",
+    "policyId": "ana-a11-liquidity-v1-r1",
+    "revision": 1,
+    "persisted": {
+      "publicationPolicyRows": 1,
+      "freshnessPolicyRows": 1,
+      "windowStepSeconds": 300,
+      "projectionDelaySloSeconds": 60,
+      "windowAnchor": "1970-01-01T00:00:00Z",
+      "maxCatchUpWindowsPerInvocation": 3,
+      "derivedMaxLagSeconds": 360,
+      "missedWindowOrder": "oldest_first",
+      "schedulerMechanism": "supabase_pg_cron_database_local",
+      "effectiveFrom": "2026-09-23T16:00:00Z",
+      "effectiveUntil": null
+    },
+    "temporalVerification": {
+      "observedAt": "2026-09-23T14:16:48.529532Z",
+      "activeAtObservedTime": false,
+      "activeAtEffectiveFrom": true,
+      "plannerAtObservedTime": [],
+      "plannerAtEffectiveFrom": []
+    },
+    "singleUseAuthorizationConsumed": true,
+    "schedulerActivated": false,
+    "anaLiquidityCronJobs": 0,
+    "productionAuthorized": false,
+    "browserAnalyticsActivationAuthorized": false,
+    "anonymousIdentityStitchingAuthorized": false,
+    "pullRequestMergeAuthorized": false
+  }
 }

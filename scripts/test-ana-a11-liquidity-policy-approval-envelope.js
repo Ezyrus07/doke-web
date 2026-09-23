@@ -74,5 +74,17 @@ ok('candidate preserves scheduler separation and fail closed validation',()=>{
   assert(enforcementValidation.includes('rollback;'));
 });
 
-assert.equal(passed,21);
-console.log('ANA-A11 liquidity policy approval envelope conformance passed: 21/21.');
+ok('persisted initial policy evidence remains scheduler-separated',()=>{
+  assert.equal(envelopeConfig.status,'initial_policy_persisted_future_effective_scheduler_unactivated');
+  assert.equal(envelopeConfig.operationalActivationEvidence.policyId,'ana-a11-liquidity-v1-r1');
+  assert.equal(envelopeConfig.operationalActivationEvidence.persisted.windowStepSeconds,300);
+  assert.equal(envelopeConfig.operationalActivationEvidence.persisted.projectionDelaySloSeconds,60);
+  assert.equal(envelopeConfig.operationalActivationEvidence.persisted.derivedMaxLagSeconds,360);
+  assert.equal(envelopeConfig.operationalActivationEvidence.persisted.maxCatchUpWindowsPerInvocation,3);
+  assert.equal(envelopeConfig.operationalActivationEvidence.persisted.effectiveFrom,'2026-09-23T16:00:00Z');
+  assert.equal(envelopeConfig.operationalActivationEvidence.singleUseAuthorizationConsumed,true);
+  assert.equal(envelopeConfig.operationalActivationEvidence.schedulerActivated,false);
+  assert.equal(envelopeConfig.operationalActivationEvidence.anaLiquidityCronJobs,0);
+});
+assert.equal(passed,22);
+console.log('ANA-A11 liquidity policy approval envelope conformance passed: 22/22.');

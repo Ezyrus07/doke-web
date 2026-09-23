@@ -6,7 +6,7 @@
   "sourceHead": "1825c11544a19162438c2b63c099d9e6d2b4547f",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "staging_structural_authorities_and_runtime_enforcement_validated_values_unset_scheduler_unactivated",
+  "status": "initial_policy_persisted_future_effective_scheduler_unactivated",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -25,12 +25,14 @@
   "thresholdDerivation": {
     "formula": "maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds",
     "windowStepSeconds": {
-      "status": "pending_versioned_projection_schedule",
-      "definition": "Seconds between successive canonical closed-window boundaries for this metric series."
+      "status": "approved_and_persisted_revision_1",
+      "definition": "Seconds between successive canonical closed-window boundaries for this metric series.",
+      "value": 300
     },
     "projectionDelaySloSeconds": {
-      "status": "pending_versioned_projection_slo",
-      "definition": "Maximum approved delay from a canonical window boundary until its snapshot is expected to be materialized and selectable."
+      "status": "approved_and_persisted_revision_1",
+      "definition": "Maximum approved delay from a canonical window boundary until its snapshot is expected to be materialized and selectable.",
+      "value": 60
     },
     "extraGrace": {
       "implicitGraceAllowed": false,
@@ -38,7 +40,8 @@
       "reason": "An unversioned recovery cushion would hide missed publications and recreate an implicit threshold."
     },
     "sourceWatermarkLagAddedToThreshold": false,
-    "reason": "CAT freshness is proven independently by its dependency watermark; source delay must not be hidden inside the metric age threshold."
+    "reason": "CAT freshness is proven independently by its dependency watermark; source delay must not be hidden inside the metric age threshold.",
+    "derivedMaxLagSeconds": 360
   },
   "activationPreconditions": [
     "The staging-validated CAT-fact-backed global + category/state series authority remains installed and owner-only.",
@@ -96,38 +99,41 @@
     "couplingRule": "Canonical activation inserts publication and freshness policy rows atomically with the same policyId/effective window and derives maxLagSeconds mechanically from windowStepSeconds + projectionDelaySloSeconds. Overlap fails closed; hand-entered freshness thresholds are outside authority."
   },
   "currentDecision": {
-    "windowStepSeconds": null,
-    "projectionDelaySloSeconds": null,
-    "maxLagSeconds": null,
+    "windowStepSeconds": 300,
+    "projectionDelaySloSeconds": 60,
+    "maxLagSeconds": 360,
     "policyInsertAuthorized": false,
-    "runtimeBehavior": "POLICY_THRESHOLD_MISSING",
-    "windowBoundaryAnchor": null,
+    "runtimeBehavior": "POLICY_PERSISTED_FUTURE_EFFECTIVE",
+    "windowBoundaryAnchor": "1970-01-01T00:00:00Z",
     "windowBoundaryTimeZone": "not_applicable_fixed_duration_grid",
-    "maxCatchUpWindowsPerInvocation": null,
+    "maxCatchUpWindowsPerInvocation": 3,
     "schedulerMechanism": "supabase_pg_cron_database_local",
     "dimensionEnumeratorAuthorized": true,
     "schedulerActivationAuthorized": false,
-    "policyRevision": null,
-    "policyEffectiveFrom": null,
+    "policyRevision": 1,
+    "policyEffectiveFrom": "2026-09-23T16:00:00Z",
     "policyEffectiveUntil": null,
-    "policyApprovalEnvelopeComplete": false
+    "policyApprovalEnvelopeComplete": true,
+    "policyId": "ana-a11-liquidity-v1-r1",
+    "policyActivationCompleted": true,
+    "activationAuthorizationConsumed": true
   },
   "authority": {
     "derivationContractAuthority": true,
-    "thresholdValueAuthority": false,
+    "thresholdValueAuthority": true,
     "schedulerAuthority": false,
     "stagingMutationAuthority": false,
     "productionAuthority": false,
     "schedulerTopologyAuthority": true,
-    "windowGridValueAuthority": false,
+    "windowGridValueAuthority": true,
     "dimensionEnumeratorAuthority": false,
-    "missedWindowBatchValueAuthority": false,
+    "missedWindowBatchValueAuthority": true,
     "schedulerActivationAuthority": false,
     "dimensionEnumeratorContractAuthority": true,
     "dimensionEnumeratorRuntimeAuthority": true,
     "publicationPolicySchemaAuthority": true,
-    "publicationPolicyValueAuthority": false,
-    "freshnessPolicySyncAuthority": false,
+    "publicationPolicyValueAuthority": true,
+    "freshnessPolicySyncAuthority": true,
     "windowPlannerContractAuthority": true,
     "windowPlannerRuntimeAuthority": true,
     "catchUpExecutorContractAuthority": true,
@@ -157,7 +163,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A11 has staging structural planner/executor/activation authorities and staging-validated approval-envelope runtime enforcement. Operational cadence/SLO/anchor/catch-up values, completed approval evidence, one real policy activation and scheduler activation remain unresolved."
+    "reason": "A11 now has staging structural authorities, runtime-enforced approval evidence, and a persisted revision-1 publication/freshness policy effective from 2026-09-23T16:00:00Z. Scheduler activation and scheduled-runtime evidence remain unresolved, so ANA stays 3/6."
   },
   "sourceDomainWatermarkSemantics": {
     "sourceDomain": "CAT-001",
@@ -204,40 +210,43 @@
   "pendingAuthorityDecisions": {
     "windowStepSeconds": {
       "owner": "ANA-001",
-      "decision": "Approve and version the canonical closed-window cadence for liquidity.active_service_seconds v1.",
+      "decision": "Resolved: revision 1 persists windowStepSeconds=300.",
       "cannotBeInferredFrom": [
         "canary window sizes",
         "GitHub Actions timing",
         "ORD worker cron",
         "REL SLO jobs",
         "browser refresh intervals"
-      ]
+      ],
+      "resolved": true
     },
     "projectionDelaySloSeconds": {
       "owner": "ANA-001 operational policy",
-      "decision": "Approve and version the maximum healthy materialization delay after each canonical window boundary.",
+      "decision": "Resolved: revision 1 persists projectionDelaySloSeconds=60; maxLagSeconds is mechanically derived as 360.",
       "cannotBeInferredFrom": [
         "single observed execution duration",
         "retry backoff",
         "another domain's SLO",
         "computedAt timestamps"
-      ]
+      ],
+      "resolved": true
     },
     "scheduler": {
       "owner": "ANA-001",
-      "decision": "Activate the selected database-local Supabase pg_cron topology only after the grid, dimension enumerator, cadence/SLO and bounded recovery contract are complete.",
+      "decision": "Publication/freshness policy revision 1 is persisted and becomes effective at 2026-09-23T16:00:00Z. Remaining operational gate: separately authorize the selected database-local pg_cron scheduler, then prove scheduled window closure/replay/freshness behavior in staging.",
       "selectedTopology": "supabase_pg_cron_database_local",
       "currentlyAuthorized": false
     },
     "windowBoundaryGrid": {
       "owner": "ANA-001",
-      "decision": "Approve and version the concrete windowStepSeconds and windowAnchor values consumed by the already-defined policy-driven planner.",
+      "decision": "Resolved: revision 1 persists windowAnchor=1970-01-01T00:00:00Z with a 300-second fixed-duration grid.",
       "cannotBeInferredFrom": [
         "canary window boundaries",
         "clock_timestamp at execution",
         "GitHub Actions timing",
         "existing ORD cron boundaries"
-      ]
+      ],
+      "resolved": true
     },
     "dimensionSeries": {
       "owner": "ANA-001 consuming CAT-001 facts",
@@ -247,36 +256,33 @@
     },
     "missedWindowRecovery": {
       "owner": "ANA-001 operational policy",
-      "decision": "Approve maxCatchUpWindowsPerInvocation in the publication-policy row; the planner already enforces oldest-first bounded selection and has no numeric default.",
+      "decision": "Resolved: revision 1 persists maxCatchUpWindowsPerInvocation=3 with oldest-first recovery.",
       "cannotBeInferredFrom": [
         "retry backoff",
         "current backlog size",
         "single canary execution"
-      ]
+      ],
+      "resolved": true
     },
     "publicationPolicyActivation": {
       "owner": "ANA-001 operational policy",
-      "decision": "Approve one completed ANA-A11 liquidity policy approval envelope bound to the exact current repository HEAD/matrix and explicit operational values, then separately authorize one call to private.activate_analytics_cat_liquidity_policy_approved_v1 in staging. Generic continuation remains insufficient.",
-      "unresolvedFields": [
-        "policyRevision",
-        "windowStepSeconds",
-        "projectionDelaySloSeconds",
-        "windowAnchor",
-        "maxCatchUpWindowsPerInvocation",
-        "effectiveFrom",
-        "effectiveUntil",
-        "approvalEvidence"
-      ],
+      "decision": "Resolved: the single-use approved activation persisted ana-a11-liquidity-v1-r1 atomically into publication + freshness registries. The authorization is consumed.",
+      "unresolvedFields": [],
       "structuralCandidate": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
       "policyIdRule": "derived as ana-a11-liquidity-v1-r<revision>; not independently selected",
       "approvalEnvelopeContract": "config/ana-a11-liquidity-policy-approval-envelope.json",
       "runtimeEnvelopeEnforcement": true,
       "runtimeEnforcementCandidate": "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
       "runtimeEnforcementValidation": "039 PASS",
-      "runtimeEnforcementStagingMigrationVersion": "20260923135957"
+      "runtimeEnforcementStagingMigrationVersion": "20260923135957",
+      "resolved": true,
+      "policyId": "ana-a11-liquidity-v1-r1",
+      "activationAuthorizationConsumed": true,
+      "effectiveFrom": "2026-09-23T16:00:00Z",
+      "effectiveUntil": null
     }
   },
-  "updatedAt": "2026-09-23T14:00:00.000Z",
+  "updatedAt": "2026-09-23T14:16:48.529532Z",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -703,7 +709,7 @@
     "audit": "scripts/audit-ana-a11-liquidity-policy-approval-envelope.js",
     "test": "scripts/test-ana-a11-liquidity-policy-approval-envelope.js",
     "scope": "repository_only",
-    "status": "runtime_enforcement_staging_validated_values_unset_activation_unauthorized",
+    "status": "initial_policy_persisted_future_effective_scheduler_unactivated",
     "policyIdDerived": true,
     "initialPolicyRevision": 1,
     "effectiveFromExplicit": true,
@@ -737,6 +743,21 @@
       "rollbackCanary": "PASS",
       "persistentPolicyRows": 0,
       "persistentCronJobs": 0
+    },
+    "completedApproval": {
+      "sourceHead": "889d99586c19d178bc08d9beec380e3aa1b5904e",
+      "matrixVersion": "1.3.132",
+      "authorization": "authorize-ana-a11-liquidity-policy-activation-staging head=889d99586c19d178bc08d9beec380e3aa1b5904e matrix=v1.3.132 revision=1 windowStepSeconds=300 projectionDelaySloSeconds=60 windowAnchor=1970-01-01T00:00:00Z maxCatchUpWindowsPerInvocation=3 effectiveFrom=2026-09-23T16:00:00Z effectiveUntil=null",
+      "approvalId": "ana-a11-liquidity-approval-r1-52ff083086f2",
+      "authorizationDigestSha256": "52ff083086f2748905f1ff75a5357d65b9c8c7403bac31f5fbead29795396ae7",
+      "evidenceDigestSha256": "f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d",
+      "approvedAt": "2026-09-23T14:14:42.814387Z",
+      "activatedAt": "2026-09-23T14:16:20.971548Z",
+      "policyId": "ana-a11-liquidity-v1-r1",
+      "revision": 1,
+      "effectiveFrom": "2026-09-23T16:00:00Z",
+      "effectiveUntil": null,
+      "activationAuthorizationConsumed": true
     }
   }
 }

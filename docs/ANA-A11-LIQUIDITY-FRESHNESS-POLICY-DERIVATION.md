@@ -469,3 +469,50 @@ After rollback, persistent staging state is:
 - ANA/liquidity cron jobs: **0**.
 
 No operational `windowStepSeconds`, `projectionDelaySloSeconds`, `windowAnchor`, `maxCatchUpWindowsPerInvocation`, `effectiveFrom` or `maxLagSeconds` has been selected. Real policy activation and scheduler activation remain separately unauthorized. ANA remains **3/6**.
+
+
+## Initial liquidity policy activation — staging
+
+Explicit authorization:
+
+`authorize-ana-a11-liquidity-policy-activation-staging head=889d99586c19d178bc08d9beec380e3aa1b5904e matrix=v1.3.132 revision=1 windowStepSeconds=300 projectionDelaySloSeconds=60 windowAnchor=1970-01-01T00:00:00Z maxCatchUpWindowsPerInvocation=3 effectiveFrom=2026-09-23T16:00:00Z effectiveUntil=null`
+
+The completed approval envelope was validated by PostgreSQL before mutation and then consumed exactly once by `private.activate_analytics_cat_liquidity_policy_approved_v1(...)`.
+
+Persistent revision-1 policy:
+
+- `policyId = ana-a11-liquidity-v1-r1`;
+- `windowStepSeconds = 300`;
+- `projectionDelaySloSeconds = 60`;
+- `maxLagSeconds = 360` (mechanically derived);
+- `windowAnchor = 1970-01-01T00:00:00Z`;
+- `maxCatchUpWindowsPerInvocation = 3`;
+- missed-window order = `oldest_first`;
+- `effectiveFrom = 2026-09-23T16:00:00Z`;
+- `effectiveUntil = null`;
+- scheduler mechanism metadata = `supabase_pg_cron_database_local`.
+
+Approval provenance:
+
+- source HEAD: `889d99586c19d178bc08d9beec380e3aa1b5904e`;
+- Matrix: `v1.3.132`;
+- approval ID: `ana-a11-liquidity-approval-r1-52ff083086f2`;
+- authorization SHA-256: `52ff083086f2748905f1ff75a5357d65b9c8c7403bac31f5fbead29795396ae7`;
+- evidence SHA-256: `f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d`;
+- approval timestamp: `2026-09-23T14:14:42.814387Z`;
+- atomic publication/freshness creation timestamp: `2026-09-23T14:16:20.971548Z`.
+
+Post-write verification proved exactly one publication row and one matching freshness row. Before `16:00Z`, `current_analytics_metric_publication_policy_v1(...)` returns no active policy and the planner returns no windows. At the exact effective boundary, revision 1 resolves as the active publication policy; the first closed 5-minute window can only exist after `16:05Z`.
+
+The single-use activation authorization is now consumed. `policyInsertAuthorized=false` and no second activation is implied.
+
+Scheduler remains separate and **not authorized**:
+
+- ANA/liquidity cron jobs: **0**;
+- `schedulerActivationAuthorized=false`;
+- production: unchanged;
+- browser analytics: unchanged;
+- anonymous identity stitching: unchanged;
+- PR merge/ready-for-review: unchanged.
+
+This section supersedes earlier statements that operational policy values were unset. ANA remains **3/6** until scheduled runtime behavior is activated and evidenced.
