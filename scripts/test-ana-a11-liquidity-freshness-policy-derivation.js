@@ -1,5 +1,5 @@
 'use strict';
-const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');
+const fs=require('fs');const path=require('path');const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');const migration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});const eq=(n,a,b)=>check(n,a===b);
 function derive(input){
   if(!input||!Number.isInteger(input.windowStepSeconds)||input.windowStepSeconds<=0)throw new Error('ANA_LIQUIDITY_WINDOW_STEP_REQUIRED');
@@ -11,6 +11,14 @@ eq('synthetic derivation',derive({windowStepSeconds:3600,projectionDelaySloSecon
 let noStep=false;try{derive({projectionDelaySloSeconds:300});}catch(e){noStep=e.message==='ANA_LIQUIDITY_WINDOW_STEP_REQUIRED';}check('missing cadence rejected',noStep);
 let noDelay=false;try{derive({windowStepSeconds:3600});}catch(e){noDelay=e.message==='ANA_LIQUIDITY_PROJECTION_DELAY_SLO_REQUIRED';}check('missing delay rejected',noDelay);
 let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300,recoveryGraceSeconds:60});}catch(e){grace=e.message==='ANA_LIQUIDITY_IMPLICIT_GRACE_FORBIDDEN';}check('unapproved grace rejected',grace);
+
+
+check('series candidate remains staging-unapplied',c.seriesOrchestrationCandidate.stagingApplied===false&&c.seriesOrchestrationCandidate.cronCreated===false&&c.seriesOrchestrationCandidate.policyRowsWritten===false);
+check('series universe is CAT-fact-backed',migration.includes('dimension_snapshot_after')&&migration.includes('cat_listing_supply_coverage_epochs_v1')&&migration.includes('cat_listing_visibility_watermark_v1'));
+check('series universe never joins mutable catalog',!migration.includes('public.services')&&!migration.includes('public.service_versions'));
+check('window orchestration is canonical delegation',migration.includes('run_analytics_cat_liquidity_window_v1')&&migration.includes('run_analytics_cat_liquidity_projection_v1'));
+check('window orchestration accepts only append authority states',migration.includes("'APPENDED', 'NO_CHANGE'")&&migration.includes('DOKE_ANALYTICS_LIQUIDITY_SNAPSHOT_STATE_INVALID'));
+check('dimension runtime authority remains false',c.authority.dimensionEnumeratorRuntimeAuthority===false&&c.dimensionSeriesAuthority.stagingEnumeratorExists===false);
 
 eq('scheduler topology','supabase_pg_cron_database_local',c.schedulerTopology.mechanism);
 check('scheduler uses direct A10 runner',c.schedulerTopology.invocation==='direct_sql_public.run_analytics_cat_liquidity_projection_v1'&&c.schedulerTopology.edgeFunctionRequired===false);

@@ -3,7 +3,7 @@ const fs=require('fs');const path=require('path');const root=path.resolve(__dirn
 const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a11-liquidity-freshness-policy-derivation.json'),'utf8'));
 const a07=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-freshness-window-authority.json'),'utf8'));
 const a10=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a10-cat-liquidity-projection.json'),'utf8'));
-const matrix=JSON.parse(fs.readFileSync(path.join(root,'config','domain-completion-matrix.json'),'utf8'));
+const matrix=JSON.parse(fs.readFileSync(path.join(root,'config','domain-completion-matrix.json'),'utf8'));const seriesMigration=fs.readFileSync(path.join(root,'supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');const seriesValidation=fs.readFileSync(path.join(root,'supabase','tests','034_ana_a11_liquidity_series_orchestration_validation.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('contract id',c.contractId==='ana-a11-liquidity-freshness-policy-derivation-v1');
 check('metric exact',c.metricKey==='liquidity.active_service_seconds'&&c.metricVersion==='v1');
@@ -17,6 +17,16 @@ check('watermark anti-inference',c.sourceDomainWatermarkSemantics?.maxEventOccur
 check('freshness states inherit A07',c.freshnessStateSemantics?.authorityContract==='ana-a07-freshness-window-authority-v1'&&c.freshnessStateSemantics?.projectionStateMapping?.fresh==='authoritative'&&c.freshnessStateSemantics?.projectionStateMapping?.stale==='stale'&&c.freshnessStateSemantics?.projectionStateMapping?.unavailable==='unavailable');
 check('latest closed window only',String(c.freshnessStateSemantics?.selectionRule||'').includes('latest canonical closed window'));
 check('pending authorities remain unapproved',c.pendingAuthorityDecisions?.scheduler?.currentlyAuthorized===false);
+
+
+check('series candidate registered',c.seriesOrchestrationCandidate?.migration==='supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql'&&c.seriesOrchestrationCandidate?.validationSql==='supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql'&&c.seriesOrchestrationCandidate?.stagingApplied===false&&c.seriesOrchestrationCandidate?.cronCreated===false);
+check('series enumerator candidate not runtime authority',c.dimensionSeriesAuthority?.repositoryEnumeratorCandidateExists===true&&c.dimensionSeriesAuthority?.stagingEnumeratorExists===false&&c.authority?.dimensionEnumeratorRuntimeAuthority===false);
+check('series source remains CAT frozen facts',c.dimensionSeriesAuthority?.sourceAuthority?.includes('CAT-A06 frozen dimension snapshots')&&c.dimensionSeriesAuthority?.schedulerMayReuseExistingSnapshotDimensionsAsAuthority===false&&c.dimensionSeriesAuthority?.mutableCurrentCatalogJoinAllowed===false);
+check('series migration preserves coverage authority',seriesMigration.includes('private.cat_listing_supply_coverage_epochs_v1')&&seriesMigration.includes("certification_state = 'certified'")&&seriesMigration.includes('private.cat_listing_visibility_watermark_v1()'));
+check('series migration forbids mutable catalog join',!seriesMigration.includes('public.services')&&!seriesMigration.includes('public.service_versions'));
+check('series migration delegates A10 runner',seriesMigration.includes('private.list_analytics_cat_liquidity_series_v1')&&seriesMigration.includes('private.run_analytics_cat_liquidity_window_v1')&&seriesMigration.includes('public.run_analytics_cat_liquidity_projection_v1'));
+check('series helpers owner-only',seriesMigration.includes('from public, anon, authenticated, service_role')&&!seriesMigration.includes('grant execute on function private.list_analytics_cat_liquidity_series_v1')&&!seriesMigration.includes('grant execute on function private.run_analytics_cat_liquidity_window_v1'));
+check('series SQL validation rollback-only',seriesValidation.includes('begin;')&&seriesValidation.includes('rollback;')&&seriesValidation.includes('mutable catalog state'));
 
 check('scheduler topology database local',c.schedulerTopology?.mechanism==='supabase_pg_cron_database_local'&&c.schedulerTopology?.invocation==='direct_sql_public.run_analytics_cat_liquidity_projection_v1'&&c.schedulerTopology?.edgeFunctionRequired===false&&c.schedulerTopology?.githubActionsSchedulerAllowed===false);
 check('scheduler runtime boundary',c.schedulerTopology?.runtimeEvidence?.runnerOwner==='postgres'&&c.schedulerTopology?.runtimeEvidence?.authenticatedExecute===false&&c.schedulerTopology?.runtimeEvidence?.anonExecute===false&&c.schedulerTopology?.runtimeEvidence?.activeAnaLiquidityCronFound===false);

@@ -3,10 +3,10 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "2ae8231b12b768252989662512d13c8e42a0915c",
+  "sourceHead": "d1c419f18b2ea4574362a880e0782e5cec8ac8e9",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "repository_only",
-  "status": "scheduler_topology_ready_policy_values_window_grid_and_dimension_enumerator_unset",
+  "status": "series_orchestration_candidate_ready_staging_unapplied_policy_values_and_window_grid_unset",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -38,7 +38,7 @@
     "A versioned canonical windowStepSeconds is approved for liquidity.active_service_seconds.",
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
-    "A canonical server-side dimension-series enumerator covers the global series plus required category identity + state series from CAT-owned frozen facts.",
+    "The repository candidate for the CAT-fact-backed global + category/state dimension-series enumerator is explicitly authorized, applied and structurally validated in staging.",
     "A bounded missed-window recovery limit is versioned; recovery processes oldest missing closed windows before newer windows.",
     "A Supabase pg_cron job invokes the database-local ANA-A10 runner at the approved cadence.",
     "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
@@ -91,7 +91,9 @@
     "windowGridValueAuthority": false,
     "dimensionEnumeratorAuthority": false,
     "missedWindowBatchValueAuthority": false,
-    "schedulerActivationAuthority": false
+    "schedulerActivationAuthority": false,
+    "dimensionEnumeratorContractAuthority": true,
+    "dimensionEnumeratorRuntimeAuthority": false
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -213,7 +215,7 @@
       ]
     }
   },
-  "updatedAt": "2026-09-22T22:00:00-03:00",
+  "updatedAt": "2026-09-22T22:11:51-03:00",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -249,7 +251,7 @@
     ]
   },
   "dimensionSeriesAuthority": {
-    "status": "missing_canonical_enumerator",
+    "status": "repository_candidate_ready_staging_unapplied",
     "globalSeriesRequired": true,
     "requiredSegmentation": [
       "category identity",
@@ -260,7 +262,15 @@
     "sourceAuthority": "CAT-A06 frozen dimension snapshots plus CAT-A07 forward coverage state",
     "schedulerMayReuseExistingSnapshotDimensionsAsAuthority": false,
     "activationBlockedUntilEnumerator": true,
-    "reason": "Existing snapshots contain only previously materialized series and cannot discover a new category/state pair. Mutable current catalog state is not historical dimension authority."
+    "reason": "Existing snapshots contain only previously materialized series and cannot discover a new category/state pair. Mutable current catalog state is not historical dimension authority.",
+    "repositoryEnumeratorCandidateExists": true,
+    "stagingEnumeratorExists": false,
+    "repositoryCandidate": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
+    "validationSql": "supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql",
+    "enumerationRule": "global series plus every valid CAT-frozen category/state pair observed from the certified CAT-A07 coverage epoch through windowEnd",
+    "zeroSeriesContinuity": "The universe is monotonic from the certified epoch, so a previously observed pair remains enumerable and can materialize canonical zero supply after its active intervals disappear.",
+    "atomicWindowOrchestrator": "private.run_analytics_cat_liquidity_window_v1",
+    "atomicity": "All series for one window execute in one SQL statement/transaction; an uncaught series error prevents partial window publication."
   },
   "missedWindowRecovery": {
     "status": "structural_contract_ready_batch_limit_unset",
@@ -271,5 +281,26 @@
     "maxCatchUpWindowsPerInvocation": null,
     "unboundedCatchUpAllowed": false,
     "reason": "The append-only snapshot writer is replay-safe, but a bounded recovery budget must be versioned before scheduler activation."
+  },
+  "seriesOrchestrationCandidate": {
+    "contractId": "ana-a11-liquidity-series-orchestration-v1",
+    "migration": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
+    "validationSql": "supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql",
+    "scope": "repository_only_candidate",
+    "stagingApplied": false,
+    "cronCreated": false,
+    "policyRowsWritten": false,
+    "functions": [
+      "private.list_analytics_cat_liquidity_series_v1(timestamptz,timestamptz)",
+      "private.run_analytics_cat_liquidity_window_v1(timestamptz,timestamptz)"
+    ],
+    "sourceFacts": "private.cat_listing_visibility_events_v1",
+    "coverageAuthority": "private.cat_listing_supply_coverage_epochs_v1",
+    "sourceWatermark": "private.cat_listing_visibility_watermark_v1",
+    "projectionDelegate": "public.run_analytics_cat_liquidity_projection_v1",
+    "mutableCatalogJoin": false,
+    "browserAuthority": false,
+    "serviceRoleAuthority": false,
+    "schedulerActivationAuthority": false
   }
 }

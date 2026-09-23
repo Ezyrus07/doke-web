@@ -124,3 +124,27 @@ The following remain `null`/unauthorized:
 
 This refinement changes no runtime and does not promote ANA above **3/6**.
 
+## Repository candidate — dimension-series orchestration
+
+The remaining dimension-series gap now has a repository-only candidate:
+
+- `supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql`
+- `supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql`
+
+It defines two private, owner-only helpers:
+
+1. `private.list_analytics_cat_liquidity_series_v1(windowStart, windowEnd)`
+   - emits the global series first;
+   - then emits every valid category/state pair frozen in CAT-A06 facts from the certified CAT-A07 coverage epoch through `windowEnd`;
+   - validates the same certified epoch and CAT transaction-snapshot watermark used by A10;
+   - never joins `public.services`, `service_versions`, or another mutable catalog projection.
+
+2. `private.run_analytics_cat_liquidity_window_v1(windowStart, windowEnd)`
+   - delegates every series to the existing canonical `public.run_analytics_cat_liquidity_projection_v1`;
+   - treats only `APPENDED` and `NO_CHANGE` as valid append outcomes;
+   - executes all series for one window inside one SQL statement/transaction, so an uncaught series failure cannot commit a partially published window.
+
+The category/state universe is intentionally monotonic from the certified coverage epoch. If a pair previously had supply and later reaches zero, it remains enumerable, allowing the canonical series to publish zero rather than silently disappearing.
+
+This candidate **does not** create a cron, choose a window grid, choose a catch-up bound, insert a freshness policy, or mutate staging. Explicit staging migration authorization is still required before these functions exist remotely.
+

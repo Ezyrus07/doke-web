@@ -1,6 +1,6 @@
 {
-  "version": "1.3.124",
-  "updatedAt": "2026-09-22T22:00:00-03:00",
+  "version": "1.3.125",
+  "updatedAt": "2026-09-22T22:11:51-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -3399,7 +3399,9 @@
         "scripts/test-ana-a11-liquidity-freshness-policy-derivation.js",
         ".github/workflows/ana-a11-liquidity-freshness-policy-derivation.yml",
         "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
-        "reports/generated/cat-a07-staging-coverage-epoch-evidence.json"
+        "reports/generated/cat-a07-staging-coverage-epoch-evidence.json",
+        "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
+        "supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3442,7 +3444,8 @@
         "supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql",
         "supabase/migrations/20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql",
         "config/ana-a11-liquidity-freshness-policy-derivation.json",
-        "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql"
+        "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
+        "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql"
       ],
       "tables": [
         "service_metric_events",
@@ -3536,7 +3539,8 @@
         "ANA-A10 has a repository-only CAT-A07 handoff migration candidate: only windows beginning at/after a certified coverage_complete_from may become complete; pre-epoch history stays partial and freshness remains fail-closed until ANA-A11 policy activation.",
         "CAT-A07 staging baseline is currently blocked fail-closed because one eligible CAT listing lacks canonical state; ANA-A10 coverage handoff was intentionally not applied and liquidity remains partial.",
         "CAT-A07 certified a forward coverage epoch in staging and ANA-A10 handoff proves pre-epoch windows remain partial while post-epoch windows become complete. Freshness still fails closed because the ANA-A11 policy is unset.",
-        "ANA-A11 read-only scheduler reconciliation selected a database-local Supabase pg_cron topology for the existing A10 runner, proved no active ANA/liquidity cron exists, and identified two additional activation gaps: no canonical window-grid anchor/alignment and no server-side enumerator for the required global + category/state liquidity series."
+        "ANA-A11 read-only scheduler reconciliation selected a database-local Supabase pg_cron topology for the existing A10 runner, proved no active ANA/liquidity cron exists, and identified two additional activation gaps: no canonical window-grid anchor/alignment and no server-side enumerator for the required global + category/state liquidity series.",
+        "ANA-A11 now has a repository-only series-orchestration candidate: a private CAT-fact-backed enumerator emits the global series plus the monotonic category/state universe from the certified coverage epoch, and an atomic per-window wrapper delegates every series to the existing A10 runner. The candidate is not applied to staging and creates no cron or policy row."
       ],
       "blockers": [
         {
@@ -3557,7 +3561,7 @@
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
         "ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.",
-        "ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 selected database-local pg_cron topology but still requires versioned windowStepSeconds, projectionDelaySloSeconds, canonical boundary alignment, a CAT-fact-backed dimension-series enumerator and a bounded missed-window recovery limit before any scheduler or freshness-policy activation.",
+        "ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 has selected database-local pg_cron topology and prepared a repository-only CAT-fact-backed series enumerator/window orchestrator candidate. Remaining decisions are windowStepSeconds, projectionDelaySloSeconds, canonical boundary alignment and bounded missed-window recovery; applying the candidate or activating cron/policy still requires explicit staging authorization.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
       ],
       "exitCriteria": [
