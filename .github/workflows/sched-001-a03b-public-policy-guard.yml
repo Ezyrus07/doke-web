@@ -33,6 +33,11 @@ jobs:
       - name: Preserve platform ACL validation contract
         run: node scripts/test-platform-default-acl-contract.js
       - name: Validate patch whitespace
-        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check "${{ github.sha }}^...${{ github.sha }}"
+          fi
 
 # Repository-only gate. No Supabase mutation, deploy, merge or production action.
