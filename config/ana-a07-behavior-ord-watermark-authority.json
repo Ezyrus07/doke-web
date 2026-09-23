@@ -1,0 +1,164 @@
+{
+  "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
+  "domain": "ANA-001",
+  "sourceHead": "751928eb69b86b0010eace33b5978f4ff779d0b8",
+  "createdAt": "2026-09-23T22:38:52.389634Z",
+  "scope": "repository_only",
+  "status": "repository_authority_ready_runtime_unapplied",
+  "objective": "Define fail-closed server-side materialization watermarks for ANA behavioral facts and ORD metric facts so A07/A09 can derive dataThrough without max(event timestamp), computedAt, or assumed windowEnd authority.",
+  "rootCause": {
+    "behaviorGap": "private.analytics_behavior_events_v1 has server-owned received_at/occurred_at facts but no server-authoritative watermark proving the ledger is materialized through an empty or non-empty time boundary.",
+    "orderGap": "private.order_metric_events is an atomic ORD projection but no watermark proves which committed projection facts are materialized through a boundary; occurred_at is event time and cannot itself prove materialization completeness.",
+    "concurrencyRisk": "A transaction can be in flight while a projection reads. A max event timestamp or clock-only watermark could overclaim completeness if that transaction commits later with a materialization timestamp at or before the claimed boundary.",
+    "rejectedShortcuts": [
+      "max(occurred_at)",
+      "max(received_at)",
+      "max(created_at)",
+      "computedAt",
+      "windowEnd by assumption",
+      "track_commit_timestamp dependency"
+    ]
+  },
+  "platformObservation": {
+    "environment": "staging",
+    "observedAt": "2026-09-23T22:38:52.389634Z",
+    "postgresVersion": "17.6",
+    "defaultTransactionIsolation": "read committed",
+    "trackCommitTimestamp": "off",
+    "maxPreparedTransactions": 0,
+    "preparedTransactionCount": 0,
+    "behaviorCommitSequencePresent": false,
+    "orderMetricCommitSequencePresent": false,
+    "mutationPerformed": false
+  },
+  "watermarkBasis": {
+    "id": "active_transaction_floor_v1",
+    "observationClock": "pg_catalog.clock_timestamp()",
+    "activeTransactionSource": "pg_catalog.pg_stat_activity.xact_start",
+    "activeTransactionScope": "all backends in current_database() with xact_start not null, excluding pg_backend_pid()",
+    "preparedTransactionPolicy": "fail_closed_when_any_current_database_prepared_transaction_exists",
+    "noActiveTransactionBoundary": "observationClock",
+    "activeTransactionBoundary": "least(observationClock, earliestActiveXactStart - interval '1 microsecond')",
+    "boundarySemantics": "inclusive materialization boundary",
+    "rationale": "Any transaction already in flight has a transaction start strictly after the predecessor boundary; any transaction starting later is also after it. Therefore a later commit cannot introduce a source row whose server-owned materialization timestamp is <= the published watermark. Prepared transactions are separately fail-closed.",
+    "maxEventTimestampDefinesWatermark": false,
+    "eventTimeDefinesMaterialization": false,
+    "computedAtDefinesWatermark": false,
+    "emptyWindowCanAdvance": true,
+    "globalTransactionFloorIsConservative": true
+  },
+  "dependencies": [
+    {
+      "dependencyId": "behavior",
+      "sourceDomain": "ANA-001",
+      "sourceRelation": "private.analytics_behavior_events_v1",
+      "canonicalEventTime": "occurred_at",
+      "materializationTime": "received_at",
+      "materializationTimeAuthority": "server-owned clock_timestamp assigned by public.record_analytics_behavior_event_v1",
+      "proposedWatermarkFunction": "private.analytics_behavior_watermark_v1()",
+      "requiredFunctionResult": {
+        "contractId": "ana-a07-behavior-watermark-v1",
+        "sourceDomain": "ANA-001",
+        "sourceRelation": "private.analytics_behavior_events_v1",
+        "dataThrough": "timestamptz|null",
+        "freshnessState": "fresh|unavailable",
+        "basis": "active_transaction_floor_v1",
+        "materializationTime": "received_at"
+      }
+    },
+    {
+      "dependencyId": "order_metric",
+      "sourceDomain": "ORD-001",
+      "sourceRelation": "private.order_metric_events",
+      "canonicalEventTime": "occurred_at",
+      "materializationTime": "created_at",
+      "materializationTimeAuthority": "database default now() on private ORD metric projection inserted atomically by private.project_order_domain_event",
+      "proposedWatermarkFunction": "private.order_metric_watermark_v1()",
+      "requiredFunctionResult": {
+        "contractId": "ana-a07-order-metric-watermark-v1",
+        "sourceDomain": "ORD-001",
+        "sourceRelation": "private.order_metric_events",
+        "dataThrough": "timestamptz|null",
+        "freshnessState": "fresh|unavailable",
+        "basis": "active_transaction_floor_v1",
+        "materializationTime": "created_at"
+      }
+    }
+  ],
+  "projectionRules": {
+    "behaviorRowEligibility": "received_at <= behaviorWatermark.dataThrough AND occurred_at <= metricDataThrough",
+    "orderRowEligibility": "created_at <= orderWatermark.dataThrough AND occurred_at <= metricDataThrough",
+    "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
+    "behaviorAndOrderDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough)",
+    "lateFactPolicy": "A source fact whose event time belongs to an older metric period but whose materialization time is after a prior dataThrough is excluded from that prior read and must enter through A05 append-only revision/backfill semantics when recomputed; prior finalized snapshots are never silently overwritten.",
+    "emptyWindowRule": "A watermark may advance with zero source rows because completeness is proven by the transaction floor rather than by event presence.",
+    "missingWatermark": "unavailable",
+    "preparedTransactionPresent": "unavailable",
+    "futureWatermark": "fail_closed"
+  },
+  "funnelDependencySets": {
+    "behaviorOnly": [
+      "funnel.search_ctr",
+      "funnel.impression_to_click",
+      "funnel.click_to_detail",
+      "funnel.detail_to_budget_cta",
+      "funnel.budget_cta_to_quote_started",
+      "funnel.quote_started_to_completed",
+      "funnel.quote_completed_to_submitted"
+    ],
+    "behaviorAndOrder": [
+      "funnel.quote_submitted_to_order_requested"
+    ]
+  },
+  "runtimeCandidate": {
+    "migrationCreated": false,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "helperFunction": "private.analytics_transaction_floor_watermark_v1()",
+    "behaviorFunction": "private.analytics_behavior_watermark_v1()",
+    "orderFunction": "private.order_metric_watermark_v1()",
+    "functionOwner": "postgres",
+    "securityDefinerRequired": true,
+    "browserExecuteAllowed": false,
+    "serviceRoleExecuteCandidate": true,
+    "schedulerRequired": false,
+    "sourceMutationRequired": false
+  },
+  "activationRequirements": [
+    "create a new forward-only migration; do not edit historical A03/ORD migrations",
+    "implement prepared-transaction fail-closed behavior and current-database active-transaction floor",
+    "return source-specific behavior and ORD watermark envelopes using received_at and created_at materialization semantics",
+    "ensure anon/authenticated cannot execute private watermark functions",
+    "make A09 runtime filter source rows by materialization time as well as canonical event time",
+    "preserve A05 append-only revision semantics for late materialized facts",
+    "validate no-active-transaction, in-flight-transaction, empty-window, prepared-transaction fail-closed and late-fact scenarios in staging",
+    "require explicit staging authorization before applying the migration or executing mutating canaries"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "materializationTimeAuthority": true,
+    "watermarkAlgorithmAuthority": true,
+    "funnelDependencySetAuthority": true,
+    "runtimeWatermarkAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "databaseMutation": false,
+    "migrationCreated": false,
+    "migrationApplied": false,
+    "edgeDeployment": false,
+    "schedulerCreated": false,
+    "browserAnalyticsActivated": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "This lot closes the repository authority for behavior/ORD dependency watermarks only. Runtime functions, migration application, A09 projector/freshness thresholds and controlled staging evidence remain required before maturity can change."
+  }
+}

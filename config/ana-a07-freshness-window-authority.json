@@ -1,14 +1,14 @@
 {
   "contractId": "ana-a07-freshness-window-authority-v1",
   "domain": "ANA-001",
-  "sourceHead": "77b3fdd221341cb7334f9c6917230135c24b6855",
+  "sourceHead": "751928eb69b86b0010eace33b5978f4ff779d0b8",
   "createdAt": "2026-09-21T22:00:00-03:00",
   "scope": "repository_only",
-  "status": "repository_contract_ready_runtime_activation_blocked",
+  "status": "repository_contract_ready_behavior_ord_watermark_authority_runtime_unapplied",
   "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
   "rootCause": {
     "helperGap": "ANA-A05 has an applyFreshness helper that accepts an ad hoc maxLagSeconds but there is no canonical policy registry, dependency-watermark contract or canonical latest-window selector.",
-    "runtimeGap": "ANA-A04 compute_analytics_order_health_v1 currently reports dataThrough=windowEnd and projectionState=authoritative without proving that every canonical dependency is materialized through that boundary.",
+    "runtimeGap": "CAT liquidity now has a certified runtime watermark, but behavior and ORD metric dependencies still lack runtime watermarks. A repository authority now defines their materialization semantics and active-transaction-floor algorithm; runtime functions remain unapplied.",
     "evidenceGap": "ANA-A06 proved why selection cannot cherry-pick an older non-empty passing window when a newer canonical observation exists."
   },
   "freshnessStates": [
@@ -28,7 +28,9 @@
     "declaredBeyondDependency": "unavailable",
     "computedAtDefinesFreshness": false,
     "maxEventTimestampDefinesFreshness": false,
-    "emptyWindowMayStillBeFresh": true
+    "emptyWindowMayStillBeFresh": true,
+    "materializationFenceRequired": true,
+    "eventTimeMayDifferFromMaterializationTime": true
   },
   "windowSelection": {
     "precondition": "candidate rows belong to the same metricKey, metricVersion and dimension set",
@@ -209,10 +211,12 @@
     "productionAuthority": false
   },
   "activationRequirements": [
-    "versioned metric-specific maxLagSeconds policies",
+    "versioned metric-specific maxLagSeconds policies for each metric being activated",
+    "forward-only runtime implementation of the A07 behavior/ORD active_transaction_floor_v1 watermark authority",
     "server-authoritative source-domain watermarks for every required dependency",
     "runtime projection path that derives dataThrough from dependency watermarks instead of assuming windowEnd",
-    "controlled staging tests for fresh, stale, unavailable, empty-window and no-cherry-pick selection cases"
+    "materialization-time filtering plus A05 append-only revision semantics for late facts",
+    "controlled staging tests for no-active-transaction, concurrent-writer, empty-window, prepared-transaction fail-closed, late-fact, fresh, stale, unavailable and no-cherry-pick cases"
   ],
   "preservedBoundaries": [
     "Product Analytics remains distinct from operational observability.",
@@ -241,6 +245,26 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A07 remains the canonical freshness/window-selection contract. For liquidity.active_service_seconds, the metric-specific r1 threshold, CAT watermark and post-effective staging behavior are now active and certified; other ANA metrics still require their own thresholds/runtime evidence, so ANA remains 3/6."
+    "reason": "Liquidity freshness is operationally certified. Behavior/ORD watermark semantics are now repository-authoritative but runtime-unapplied; funnel/retention thresholds, runtime projection and staging evidence remain open, so ANA stays 3/6."
+  },
+  "dependencyWatermarkAuthority": {
+    "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
+    "configPath": "config/ana-a07-behavior-ord-watermark-authority.json",
+    "modulePath": "backend/modules/analytics/dependency-watermark-authority.js",
+    "status": "repository_authority_ready_runtime_unapplied",
+    "basis": "active_transaction_floor_v1",
+    "behavior": {
+      "sourceRelation": "private.analytics_behavior_events_v1",
+      "materializationTime": "received_at",
+      "eventTime": "occurred_at"
+    },
+    "orderMetric": {
+      "sourceRelation": "private.order_metric_events",
+      "materializationTime": "created_at",
+      "eventTime": "occurred_at"
+    },
+    "maxEventTimestampAuthority": false,
+    "preparedTransactionPolicy": "fail_closed",
+    "runtimeMigrationApplied": false
   }
 }

@@ -1,7 +1,7 @@
 {
   "contractId": "ana-a09-canonical-funnel-projection-v1",
   "domain": "ANA-001",
-  "sourceHead": "a8ec7e1f4b9a1799e013d7ab17f15f4de7d2b898",
+  "sourceHead": "751928eb69b86b0010eace33b5978f4ff779d0b8",
   "createdAt": "2026-09-21T22:33:00-03:00",
   "scope": "repository_only",
   "status": "repository_contract_ready_runtime_projection_blocked",
@@ -100,6 +100,14 @@
   "freshnessDependency": {
     "contract": "ANA-A07",
     "dataThroughRequired": true,
+    "watermarkContractId": "ana-a07-behavior-ord-watermark-authority-v1",
+    "watermarkContractPath": "config/ana-a07-behavior-ord-watermark-authority.json",
+    "status": "repository_watermark_authority_defined_runtime_unapplied",
+    "behaviorMaterializationTime": "received_at",
+    "orderMaterializationTime": "created_at",
+    "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
+    "behaviorAndOrderDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough)",
+    "lateFactRevisionAuthority": "ANA-A05",
     "runtimeFreshnessActivationStillBlocked": true
   },
   "authority": {
@@ -112,17 +120,19 @@
     "productionAuthority": false
   },
   "activationRequirements": [
+    "forward-only runtime implementation of ANA-A07 behavior/ORD watermarks after explicit staging authorization",
     "server-side funnel projection over private.analytics_behavior_events_v1 and private.order_metric_events",
+    "source filtering by received_at/created_at materialization boundaries plus canonical occurred_at event boundaries",
     "append-only A04/A05 metric snapshots/revision semantics",
-    "A07 dataThrough/watermark enforcement",
-    "controlled staging evidence for complete and orphan stage paths",
+    "metric-specific A07 freshness threshold policies for the funnel metrics being activated",
+    "controlled staging evidence for complete, orphan, empty-window and late-materialized stage paths",
     "explicit immutable segmentation authority before category/state funnel claims"
   ],
   "catLiquidityBlocker": {
-    "status": "source_timeline_available_consumer_materialized",
-    "evidence": "CAT-A06 now owns a staging-validated append-only listing visibility/version ledger with deterministic per-service sequence_no and partial pre-activation coverage.",
-    "consequence": "ANA-A09 does not own liquidity. ANA-A10 now materializes repository-only CAT-ledger interval semantics; runtime projection remains blocked on CAT watermark, ANA-A07 policy, snapshot/reconciliation wiring and controlled staging evidence.",
-    "requiredHandoff": "ANA-A10 runtime activation lot after explicit staging authorization"
+    "status": "liquidity_runtime_closed_outside_a09",
+    "evidence": "ANA-A10/A11 now own and operationally certify CAT liquidity, publication cadence, freshness policy and scheduler runtime in staging.",
+    "consequence": "Liquidity is no longer an A09 blocker. A09 remains blocked on its own behavior/ORD dependency watermarks, server-side funnel projector, funnel freshness thresholds and controlled staging evidence.",
+    "requiredHandoff": "ANA-A07 behavior/ORD watermark runtime -> ANA-A09 funnel runtime"
   },
   "preservedBoundaries": [
     "Product Analytics remains distinct from operational observability.",
@@ -149,6 +159,6 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A09 closes repository funnel semantics only. CAT-A06 now supplies visibility facts and ANA-A10 closes repository liquidity-consumer semantics, but runtime funnel/liquidity projection, A07 operational freshness policy and controlled staging evidence remain required for ANA maturity 4."
+    "reason": "A09 funnel semantics are repository-defined and the required behavior/ORD watermark semantics now have a repository authority. Runtime watermarks, funnel projector, funnel freshness thresholds and controlled staging evidence remain required; ANA stays 3/6."
   }
 }

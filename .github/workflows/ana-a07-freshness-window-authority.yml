@@ -5,6 +5,9 @@ on:
   pull_request:
     paths:
       - 'backend/modules/analytics/freshness-window-authority.js'
+      - 'backend/modules/analytics/dependency-watermark-authority.js'
+      - 'config/ana-a07-behavior-ord-watermark-authority.json'
+      - 'docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-AUTHORITY.md'
       - 'config/ana-a07-freshness-window-authority.json'
       - 'docs/ANA-A07-FRESHNESS-WINDOW-AUTHORITY.md'
       - 'scripts/audit-ana-a07-freshness-window-authority.js'
@@ -36,6 +39,7 @@ jobs:
       - name: Syntax
         run: |
           node --check backend/modules/analytics/freshness-window-authority.js
+          node --check backend/modules/analytics/dependency-watermark-authority.js
           node --check scripts/audit-ana-a07-freshness-window-authority.js
           node --check scripts/test-ana-a07-freshness-window-authority.js
       - name: ANA-A07 audit

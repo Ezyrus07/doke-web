@@ -61,3 +61,15 @@ This lot is repository-only. It creates no migration, staging read/write, deploy
 Runtime closure still requires a server-side projector, A04/A05 append-only snapshot/revision semantics, A07 watermarks, controlled staging evidence, and explicit immutable segmentation authority.
 
 ANA-001 remains **3/6**.
+
+## A07 dependency-watermark handoff
+
+The funnel now has a repository-defined watermark dependency contract, but no runtime watermark functions are applied yet.
+
+Behavioral rows must be bounded by server-owned `received_at`; ORD metric rows must be bounded by DB-owned `created_at`. `occurred_at` remains the canonical event-time dimension for funnel chronology and never becomes a completeness watermark.
+
+Behavior-only funnel metrics use `min(windowEnd, behaviorWatermark)`. The final `quote_submitted → order_requested` handoff requires `min(windowEnd, behaviorWatermark, orderWatermark)`.
+
+A fact materialized after a prior watermark but carrying an older `occurred_at` is a late fact and must enter via A05 append-only revision/backfill semantics. It is never retroactively injected by mutating a finalized snapshot.
+
+ANA-A10/A11 liquidity is operationally closed outside A09 and is no longer an A09 blocker. The remaining A09 blockers are its own runtime watermarks, projector, metric-specific freshness thresholds and controlled staging evidence.

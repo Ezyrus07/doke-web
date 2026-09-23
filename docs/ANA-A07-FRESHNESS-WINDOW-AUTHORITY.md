@@ -60,3 +60,16 @@ This sublot is repository-only. It performs no database access, migration, stagi
 A06 structural data quality and A07 freshness remain distinct dimensions: a reconciliation can be structurally correct and still stale.
 
 ANA-001 remains **3/6**. For CAT liquidity, watermark materialization, threshold activation and post-effective staging proof are closed; remaining ANA metrics and broader maturity gates stay independently governed.
+
+## Behavior + ORD dependency watermark authority
+
+A07 now has a repository-only authority for the two non-CAT dependencies used by the canonical funnel. The detailed contract is `config/ana-a07-behavior-ord-watermark-authority.json`.
+
+The authority deliberately separates **event time** from **materialization time**:
+
+- behavior: `occurred_at` is event time; server-owned `received_at` is materialization time;
+- ORD metrics: `occurred_at` is event time; DB-owned `created_at` on `private.order_metric_events` is materialization time.
+
+The proposed runtime basis is `active_transaction_floor_v1`: use the current database's earliest active transaction start with an inclusive-boundary predecessor, and fail closed if any prepared transaction exists. This allows empty windows to advance without relying on `max(event timestamp)` and prevents a later commit from being silently counted below an already-published materialization watermark.
+
+The runtime implementation is **not applied** in this lot. A future forward-only migration and concurrency canary require separate authorization.

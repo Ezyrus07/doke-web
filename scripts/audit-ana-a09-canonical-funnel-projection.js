@@ -6,6 +6,7 @@ const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a09-canonical-fu
 const a02=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a02-canonical-event-taxonomy.json'),'utf8'));
 const a03=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a03-behavioral-ingestion-identity-boundary.json'),'utf8'));
 const a07=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-freshness-window-authority.json'),'utf8'));
+const watermark=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-behavior-ord-watermark-authority.json'),'utf8'));
 const matrix=JSON.parse(fs.readFileSync(path.join(root,'config','domain-completion-matrix.json'),'utf8'));
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('contract id',f.CONTRACT_ID===c.contractId);
@@ -16,7 +17,7 @@ check('ORD projection source',c.eventSources?.orderProjection==='private.order_m
 check('no actor join',c.linkageAuthority?.actorIdJoinAllowed===false);
 check('no temporal heuristic',c.linkageAuthority?.temporalHeuristicJoinAllowed===false);
 check('no anonymous stitching',c.linkageAuthority?.anonymousCrossSessionJoinAllowed===false&&c.linkageAuthority?.anonymousToAuthenticatedJoinAllowed===false);
-check('A07 dependency',c.freshnessDependency?.contract==='ANA-A07'&&a07.contractId==='ana-a07-freshness-window-authority-v1');
+check('A07 dependency',c.freshnessDependency?.contract==='ANA-A07'&&a07.contractId==='ana-a07-freshness-window-authority-v1');check('watermark handoff bound',c.freshnessDependency?.watermarkContractId===watermark.contractId&&c.freshnessDependency?.status==='repository_watermark_authority_defined_runtime_unapplied'&&c.freshnessDependency?.behaviorMaterializationTime==='received_at'&&c.freshnessDependency?.orderMaterializationTime==='created_at');check('watermark runtime still blocked',c.freshnessDependency?.runtimeFreshnessActivationStillBlocked===true&&watermark.runtimeCandidate?.migrationApplied===false);check('liquidity no longer A09 blocker',c.catLiquidityBlocker?.status==='liquidity_runtime_closed_outside_a09');
 check('A03 identity boundary preserved',a03.sessionPolicy?.anonymousToAuthenticatedStitching===false);
 check('taxonomy baseline present',a02.contractId==='ana-a02-canonical-event-taxonomy-v1');
 check('CAT liquidity handoff current',c.catLiquidityBlocker?.status==='source_timeline_available_consumer_materialized');
