@@ -20,7 +20,7 @@ check('no anonymous stitching',c.linkageAuthority?.anonymousCrossSessionJoinAllo
 check('A07 dependency',c.freshnessDependency?.contract==='ANA-A07'&&a07.contractId==='ana-a07-freshness-window-authority-v1');check('watermark handoff bound',c.freshnessDependency?.watermarkContractId===watermark.contractId&&c.freshnessDependency?.status==='repository_watermark_authority_defined_runtime_unapplied'&&c.freshnessDependency?.behaviorMaterializationTime==='received_at'&&c.freshnessDependency?.orderMaterializationTime==='created_at');check('watermark runtime still blocked',c.freshnessDependency?.runtimeFreshnessActivationStillBlocked===true&&watermark.runtimeCandidate?.migrationApplied===false);check('liquidity no longer A09 blocker',c.catLiquidityBlocker?.status==='liquidity_runtime_closed_outside_a09');
 check('A03 identity boundary preserved',a03.sessionPolicy?.anonymousToAuthenticatedStitching===false);
 check('taxonomy baseline present',a02.contractId==='ana-a02-canonical-event-taxonomy-v1');
-check('CAT liquidity handoff current',c.catLiquidityBlocker?.status==='source_timeline_available_consumer_materialized');
+check('CAT liquidity handoff current',c.catLiquidityBlocker?.status==='liquidity_runtime_closed_outside_a09');
 check('runtime authority false',c.authority?.runtimeProjectionAuthority===false);
 check('maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
 Object.entries(c.prohibitedEffects||{}).forEach(([k,v])=>check('effect '+k,v===false));
