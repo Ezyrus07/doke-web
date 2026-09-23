@@ -96,8 +96,13 @@ begin
      or p_authorization_command is null
      or pg_catalog.btrim(p_authorization_command) = ''
      or p_approval_evidence is null
-     or pg_catalog.jsonb_typeof(p_approval_evidence) is distinct from 'object'
-     or (
+     or pg_catalog.jsonb_typeof(p_approval_evidence) is distinct from 'object' then
+    raise exception using
+      errcode = '22023',
+      message = 'DOKE_ANALYTICS_POLICY_APPROVAL_EVIDENCE_INVALID';
+  end if;
+
+  if (
        select pg_catalog.count(*)
        from pg_catalog.jsonb_object_keys(p_approval_evidence)
      ) <> 20
@@ -174,8 +179,13 @@ begin
   v_boundaries := p_approval_evidence -> 'boundaries';
 
   if v_lifecycle is null
-     or pg_catalog.jsonb_typeof(v_lifecycle) is distinct from 'object'
-     or (select pg_catalog.count(*) from pg_catalog.jsonb_object_keys(v_lifecycle)) <> 1
+     or pg_catalog.jsonb_typeof(v_lifecycle) is distinct from 'object' then
+    raise exception using
+      errcode = '22023',
+      message = 'DOKE_ANALYTICS_POLICY_APPROVAL_EVIDENCE_INVALID';
+  end if;
+
+  if (select pg_catalog.count(*) from pg_catalog.jsonb_object_keys(v_lifecycle)) <> 1
      or not (v_lifecycle ?& array['mode']::text[])
      or (v_lifecycle ->> 'mode') is distinct from 'initial' then
     raise exception using
@@ -184,8 +194,13 @@ begin
   end if;
 
   if v_policy_identity is null
-     or pg_catalog.jsonb_typeof(v_policy_identity) is distinct from 'object'
-     or (select pg_catalog.count(*) from pg_catalog.jsonb_object_keys(v_policy_identity)) <> 2
+     or pg_catalog.jsonb_typeof(v_policy_identity) is distinct from 'object' then
+    raise exception using
+      errcode = '55000',
+      message = 'DOKE_ANALYTICS_POLICY_APPROVAL_BINDING_MISMATCH';
+  end if;
+
+  if (select pg_catalog.count(*) from pg_catalog.jsonb_object_keys(v_policy_identity)) <> 2
      or not (v_policy_identity ?& array['revision','policyId']::text[])
      or pg_catalog.jsonb_typeof(v_policy_identity -> 'revision') is distinct from 'number'
      or (v_policy_identity ->> 'revision') is distinct from '1'
@@ -198,8 +213,13 @@ begin
   end if;
 
   if v_parameters is null
-     or pg_catalog.jsonb_typeof(v_parameters) is distinct from 'object'
-     or (select pg_catalog.count(*) from pg_catalog.jsonb_object_keys(v_parameters)) <> 7
+     or pg_catalog.jsonb_typeof(v_parameters) is distinct from 'object' then
+    raise exception using
+      errcode = '22023',
+      message = 'DOKE_ANALYTICS_POLICY_APPROVAL_VALUE_MISMATCH';
+  end if;
+
+  if (select pg_catalog.count(*) from pg_catalog.jsonb_object_keys(v_parameters)) <> 7
      or not (
        v_parameters ?& array[
          'windowStepSeconds','projectionDelaySloSeconds','windowAnchor',
@@ -284,8 +304,13 @@ begin
   end if;
 
   if v_boundaries is null
-     or pg_catalog.jsonb_typeof(v_boundaries) is distinct from 'object'
-     or (select pg_catalog.count(*) from pg_catalog.jsonb_object_keys(v_boundaries)) <> 7
+     or pg_catalog.jsonb_typeof(v_boundaries) is distinct from 'object' then
+    raise exception using
+      errcode = '55000',
+      message = 'DOKE_ANALYTICS_POLICY_APPROVAL_BOUNDARY_INVALID';
+  end if;
+
+  if (select pg_catalog.count(*) from pg_catalog.jsonb_object_keys(v_boundaries)) <> 7
      or not (
        v_boundaries ?& array[
          'policyInsertAuthorized','activationInvocationLimit',
