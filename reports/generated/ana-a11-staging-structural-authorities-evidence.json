@@ -1,0 +1,100 @@
+{
+  "contractId": "ana-a11-staging-structural-authorities-evidence-v1",
+  "domain": "ANA-001",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "authorization": "authorize-ana-a11-structural-authorities-staging",
+  "observedAt": "2026-09-23T02:15:47.312085+00:00",
+  "repositoryHeadAtFinalValidation": "acb4a93bcf22ca772a3c5dc38d08e8565b759339",
+  "migrations": [
+    {
+      "path": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
+      "appliedVersion": "20260923021120",
+      "name": "ana_a11_liquidity_series_orchestration",
+      "validationSql": "supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql",
+      "validation": "PASS"
+    },
+    {
+      "path": "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
+      "appliedVersion": "20260923021316",
+      "name": "ana_a11_liquidity_publication_policy_authority",
+      "validationSql": "supabase/tests/035_ana_a11_liquidity_publication_policy_authority_validation.sql",
+      "validation": "PASS"
+    }
+  ],
+  "seriesCanary": {
+    "result": "PASS",
+    "rollbackOnly": true,
+    "windowStart": "2026-09-23T00:06:30.6835+00:00",
+    "windowEnd": "2026-09-23T02:14:26.560042+00:00",
+    "series": [
+      {
+        "ordinal": 0,
+        "serviceCategory": null,
+        "serviceState": null
+      },
+      {
+        "ordinal": 1,
+        "serviceCategory": "17263173-c179-455f-bd43-2c3d9a55a8fd",
+        "serviceState": "BA"
+      },
+      {
+        "ordinal": 2,
+        "serviceCategory": "limpeza",
+        "serviceState": "BA"
+      }
+    ],
+    "firstRun": {
+      "seriesCount": 3,
+      "appendedCount": 3,
+      "noChangeCount": 0
+    },
+    "replayRun": {
+      "seriesCount": 3,
+      "appendedCount": 0,
+      "noChangeCount": 3
+    }
+  },
+  "publicationPolicyCanary": {
+    "result": "PASS",
+    "rollbackOnly": true,
+    "authoritativePolicyCreated": false,
+    "missingPolicyReturnsNull": true,
+    "syntheticInputs": {
+      "windowStepSeconds": 300,
+      "projectionDelaySloSeconds": 60,
+      "maxCatchUpWindowsPerInvocation": 2
+    },
+    "generatedDerivedMaxLagSeconds": 360,
+    "overlapFailsClosed": true,
+    "overlapError": "DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS"
+  },
+  "postState": {
+    "publicationPolicyRows": 0,
+    "freshnessPolicyRows": 0,
+    "anaLiquidityCronJobs": 0,
+    "liquiditySnapshotRows": 3,
+    "securityDefinerTotal": 203,
+    "publicTables": 48,
+    "publicRlsDisabled": 0,
+    "publicRlsNoPolicies": 0
+  },
+  "boundaries": {
+    "productionChanged": false,
+    "cronCreated": false,
+    "publicationPolicyRowInserted": false,
+    "freshnessPolicyRowInserted": false,
+    "browserAnalyticsActivated": false,
+    "anonymousIdentityStitching": false,
+    "edgeFunctionDeployment": false,
+    "pullRequestMerge": false
+  },
+  "unresolvedPolicyValues": {
+    "windowStepSeconds": null,
+    "projectionDelaySloSeconds": null,
+    "windowAnchor": null,
+    "maxCatchUpWindowsPerInvocation": null,
+    "maxLagSeconds": null
+  },
+  "result": "staging_structural_authorities_pass_policy_unset"
+}

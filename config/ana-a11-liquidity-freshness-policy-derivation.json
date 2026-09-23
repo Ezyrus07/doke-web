@@ -3,10 +3,10 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "1360310d99070755ae204ee0440f9b8295f9070b",
+  "sourceHead": "acb4a93bcf22ca772a3c5dc38d08e8565b759339",
   "createdAt": "2026-09-22T11:27:00-03:00",
-  "scope": "repository_only",
-  "status": "publication_policy_and_series_candidates_ready_staging_unapplied_numeric_policy_values_unset",
+  "scope": "staging_structural_authorities",
+  "status": "structural_authorities_staging_validated_policy_values_unset_scheduler_unactivated",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -14,7 +14,7 @@
     "sourceWatermarkAvailable": "CAT-A06 transaction-snapshot watermark is active in staging through ANA-A10.",
     "consequence": "A numeric maxLagSeconds and an active scheduler remain non-authoritative until cadence/SLO, canonical window-grid alignment, dimension-series enumeration and missed-window recovery are versioned.",
     "windowGridAuthorityMissing": "windowStepSeconds alone does not define deterministic windows: ANA-001 still lacks a versioned boundary anchor/alignment rule for liquidity.active_service_seconds.",
-    "dimensionSeriesAuthorityMissing": "ANA-A10 requires category identity + state segmentation, but staging exposes no liquidity/CAT dimension-series enumerator; the current runner only materializes one explicitly supplied series per call.",
+    "dimensionSeriesAuthorityMissing": "resolved structurally in staging: owner-only CAT-fact-backed series enumeration and atomic per-window orchestration are installed and validated; scheduler activation remains separate.",
     "publicationPolicyProvenanceGap": "private.analytics_metric_freshness_policies_v1 stores only the derived max_lag_seconds/effective window. It cannot prove which window step, projection-delay SLO, boundary anchor, catch-up bound or approval evidence produced that threshold.",
     "currentFreshnessPolicyRows": "staging currently has zero freshness-policy rows, so no existing row requires data migration."
   },
@@ -37,10 +37,10 @@
     "reason": "CAT freshness is proven independently by its dependency watermark; source delay must not be hidden inside the metric age threshold."
   },
   "activationPreconditions": [
+    "The staging-validated CAT-fact-backed global + category/state series authority remains installed and owner-only.",
     "A publication-policy row is explicitly approved with versioned windowStepSeconds, projectionDelaySloSeconds, windowAnchor, bounded catch-up and approval evidence; the row is inserted only under separate staging authorization.",
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
-    "The repository candidate for the CAT-fact-backed global + category/state dimension-series enumerator is explicitly authorized, applied and structurally validated in staging.",
     "A bounded missed-window recovery limit is versioned; recovery processes oldest missing closed windows before newer windows.",
     "A Supabase pg_cron job invokes the database-local ANA-A10 runner at the approved cadence.",
     "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
@@ -100,7 +100,7 @@
     "windowBoundaryTimeZone": "not_applicable_fixed_duration_grid",
     "maxCatchUpWindowsPerInvocation": null,
     "schedulerMechanism": "supabase_pg_cron_database_local",
-    "dimensionEnumeratorAuthorized": false,
+    "dimensionEnumeratorAuthorized": true,
     "schedulerActivationAuthorized": false
   },
   "authority": {
@@ -115,7 +115,7 @@
     "missedWindowBatchValueAuthority": false,
     "schedulerActivationAuthority": false,
     "dimensionEnumeratorContractAuthority": true,
-    "dimensionEnumeratorRuntimeAuthority": false,
+    "dimensionEnumeratorRuntimeAuthority": true,
     "publicationPolicySchemaAuthority": true,
     "publicationPolicyValueAuthority": false,
     "freshnessPolicySyncAuthority": false
@@ -223,12 +223,9 @@
     },
     "dimensionSeries": {
       "owner": "ANA-001 consuming CAT-001 facts",
-      "decision": "Implement and version a server-side enumerator for the global liquidity series and every required category identity + state series using CAT-owned frozen dimension facts.",
-      "cannotBeInferredFrom": [
-        "mutable current catalog rows",
-        "previously materialized ANA snapshot dimensions",
-        "browser filters"
-      ]
+      "resolved": true,
+      "decision": "Structural series authority is installed and validated in staging. No further dimension-enumerator implementation decision blocks scheduler readiness.",
+      "remainingBoundary": "Scheduler activation remains unauthorized until publication policy values and catch-up/window-grid decisions are approved."
     },
     "missedWindowRecovery": {
       "owner": "ANA-001 operational policy",
@@ -251,7 +248,7 @@
       ]
     }
   },
-  "updatedAt": "2026-09-22T22:58:00-03:00",
+  "updatedAt": "2026-09-22T23:15:47-03:00",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -289,20 +286,20 @@
     "timeZoneIsIndependentAuthority": false
   },
   "dimensionSeriesAuthority": {
-    "status": "repository_candidate_ready_staging_unapplied",
+    "status": "staging_structural_authority_validated_scheduler_unactivated",
     "globalSeriesRequired": true,
     "requiredSegmentation": [
       "category identity",
       "state"
     ],
-    "enumeratorExists": false,
+    "enumeratorExists": true,
     "mutableCurrentCatalogJoinAllowed": false,
     "sourceAuthority": "CAT-A06 frozen dimension snapshots plus CAT-A07 forward coverage state",
     "schedulerMayReuseExistingSnapshotDimensionsAsAuthority": false,
-    "activationBlockedUntilEnumerator": true,
+    "activationBlockedUntilEnumerator": false,
     "reason": "Existing snapshots contain only previously materialized series and cannot discover a new category/state pair. Mutable current catalog state is not historical dimension authority.",
     "repositoryEnumeratorCandidateExists": true,
-    "stagingEnumeratorExists": false,
+    "stagingEnumeratorExists": true,
     "repositoryCandidate": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
     "validationSql": "supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql",
     "enumerationRule": "global series plus every valid CAT-frozen category/state pair observed from the certified CAT-A07 coverage epoch through windowEnd",
@@ -339,7 +336,9 @@
         "legacyFreeformServiceHasCanonicalCategoryRow": false,
         "conclusion": "mixed representation is valid under current CAT-A06/A07 fallback authority, not current-state drift"
       }
-    }
+    },
+    "stagingMigrationVersion": "20260923021120",
+    "stagingValidation": "PASS"
   },
   "missedWindowRecovery": {
     "status": "structural_contract_ready_batch_limit_unset",
@@ -355,8 +354,8 @@
     "contractId": "ana-a11-liquidity-series-orchestration-v1",
     "migration": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
     "validationSql": "supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql",
-    "scope": "repository_only_candidate",
-    "stagingApplied": false,
+    "scope": "staging_structural_authority",
+    "stagingApplied": true,
     "cronCreated": false,
     "policyRowsWritten": false,
     "functions": [
@@ -372,15 +371,49 @@
     "serviceRoleAuthority": false,
     "schedulerActivationAuthority": false,
     "categorySeriesKey": "lower(coalesce(categoryId, categorySlug, category))",
-    "crossRepresentationMergeAllowed": false
+    "crossRepresentationMergeAllowed": false,
+    "stagingMigrationVersion": "20260923021120",
+    "stagingValidation": "PASS",
+    "canary": {
+      "rollbackOnly": true,
+      "windowStart": "2026-09-23T00:06:30.6835+00:00",
+      "windowEnd": "2026-09-23T02:14:26.560042+00:00",
+      "seriesCount": 3,
+      "series": [
+        {
+          "ordinal": 0,
+          "serviceCategory": null,
+          "serviceState": null
+        },
+        {
+          "ordinal": 1,
+          "serviceCategory": "17263173-c179-455f-bd43-2c3d9a55a8fd",
+          "serviceState": "BA"
+        },
+        {
+          "ordinal": 2,
+          "serviceCategory": "limpeza",
+          "serviceState": "BA"
+        }
+      ],
+      "firstRun": {
+        "appendedCount": 3,
+        "noChangeCount": 0
+      },
+      "replayRun": {
+        "appendedCount": 0,
+        "noChangeCount": 3
+      },
+      "persistentSnapshotRowsAfterRollback": 3
+    }
   },
   "publicationPolicyAuthority": {
-    "status": "repository_candidate_ready_staging_unapplied_no_rows",
+    "status": "staging_schema_validated_no_rows",
     "table": "private.analytics_metric_publication_policies_v1",
     "selector": "private.current_analytics_metric_publication_policy_v1",
     "migration": "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
     "validationSql": "supabase/tests/035_ana_a11_liquidity_publication_policy_authority_validation.sql",
-    "stagingApplied": false,
+    "stagingApplied": true,
     "stagingRows": 0,
     "freshnessRegistry": "private.analytics_metric_freshness_policies_v1",
     "separation": "publication policy stores approved derivation inputs/provenance; freshness policy stores the derived threshold consumed by runtime",
@@ -391,6 +424,48 @@
     "ownerBoundary": "postgres only",
     "overlappingEffectivePolicies": "fail_closed_DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS",
     "missingEffectivePolicy": "null_no_default",
-    "effectiveSelectionAuthority": "exactly zero or one policy may be effective for a metric/version at p_at; >1 is unavailable by exception"
+    "effectiveSelectionAuthority": "exactly zero or one policy may be effective for a metric/version at p_at; >1 is unavailable by exception",
+    "stagingMigrationVersion": "20260923021316",
+    "stagingValidation": "PASS",
+    "canary": {
+      "rollbackOnly": true,
+      "missingPolicyReturnsNull": true,
+      "syntheticInputs": {
+        "windowStepSeconds": 300,
+        "projectionDelaySloSeconds": 60
+      },
+      "derivedMaxLagSeconds": 360,
+      "overlapFailsClosed": true,
+      "overlapError": "DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS",
+      "persistentRowsAfterRollback": 0
+    }
+  },
+  "stagingStructuralEvidence": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "authorization": "authorize-ana-a11-structural-authorities-staging",
+    "observedAt": "2026-09-23T02:15:47.312085+00:00",
+    "repositoryHeadAtExecution": "acb4a93bcf22ca772a3c5dc38d08e8565b759339",
+    "evidence": "reports/generated/ana-a11-staging-structural-authorities-evidence.json",
+    "migrations": [
+      {
+        "repositoryPath": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
+        "appliedVersion": "20260923021120",
+        "name": "ana_a11_liquidity_series_orchestration",
+        "validation": "034 PASS"
+      },
+      {
+        "repositoryPath": "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
+        "appliedVersion": "20260923021316",
+        "name": "ana_a11_liquidity_publication_policy_authority",
+        "validation": "035 PASS"
+      }
+    ],
+    "postState": {
+      "publicationPolicyRows": 0,
+      "freshnessPolicyRows": 0,
+      "anaLiquidityCrons": 0,
+      "liquiditySnapshotRows": 3,
+      "securityDefinerTotal": 203
+    }
   }
 }

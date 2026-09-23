@@ -15,7 +15,9 @@ let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300
 
 
 
-check('publication policy remains empty/unapplied',c.publicationPolicyAuthority.stagingApplied===false&&c.publicationPolicyAuthority.stagingRows===0&&c.publicationPolicyAuthority.rowCreationAuthorized===false);
+check('publication policy schema is applied but empty',c.publicationPolicyAuthority.stagingApplied===true&&c.publicationPolicyAuthority.stagingMigrationVersion==='20260923021316'&&c.publicationPolicyAuthority.stagingRows===0&&c.publicationPolicyAuthority.rowCreationAuthorized===false);
+check('staging canaries left no residue',c.stagingStructuralEvidence.postState.publicationPolicyRows===0&&c.stagingStructuralEvidence.postState.freshnessPolicyRows===0&&c.stagingStructuralEvidence.postState.anaLiquidityCrons===0&&c.stagingStructuralEvidence.postState.liquiditySnapshotRows===3);
+check('staging canaries proved replay and ambiguity',c.seriesOrchestrationCandidate.canary.firstRun.appendedCount===3&&c.seriesOrchestrationCandidate.canary.replayRun.noChangeCount===3&&c.publicationPolicyAuthority.canary.derivedMaxLagSeconds===360&&c.publicationPolicyAuthority.canary.overlapError==='DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS');
 check('publication policy has no implicit default',publicationMigration.includes('if v_count = 0 then')&&c.publicationPolicyAuthority.missingEffectivePolicy==='null_no_default');
 check('publication policy overlap is unavailable',publicationMigration.includes('DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS')&&c.publicationPolicyAuthority.overlappingEffectivePolicies==='fail_closed_DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS');
 check('publication policy stores derivation inputs',publicationMigration.includes('window_step_seconds integer not null')&&publicationMigration.includes('projection_delay_slo_seconds integer not null')&&publicationMigration.includes('window_anchor timestamptz not null')&&publicationMigration.includes('max_catch_up_windows_per_invocation integer not null'));
@@ -27,12 +29,12 @@ check('category series key is case-normalized',migration.includes('pg_catalog.lo
 check('category representation classes are not merged',c.dimensionSeriesAuthority.categoryIdentityContinuity.categoryIdEquivalentToSlugOrName===false&&c.dimensionSeriesAuthority.categoryIdentityContinuity.historicalRepresentationRewriteAllowed===false&&c.seriesOrchestrationCandidate.crossRepresentationMergeAllowed===false);
 check('legacy freeform identity remains valid',c.dimensionSeriesAuthority.categoryIdentityContinuity.stagingEvidence.legacyFreeformServiceHasCanonicalCategoryRow===false);
 
-check('series candidate remains staging-unapplied',c.seriesOrchestrationCandidate.stagingApplied===false&&c.seriesOrchestrationCandidate.cronCreated===false&&c.seriesOrchestrationCandidate.policyRowsWritten===false);
+check('series authority is staging-applied without activation',c.seriesOrchestrationCandidate.stagingApplied===true&&c.seriesOrchestrationCandidate.stagingMigrationVersion==='20260923021120'&&c.seriesOrchestrationCandidate.cronCreated===false&&c.seriesOrchestrationCandidate.policyRowsWritten===false);
 check('series universe is CAT-fact-backed',migration.includes('dimension_snapshot_after')&&migration.includes('cat_listing_supply_coverage_epochs_v1')&&migration.includes('cat_listing_visibility_watermark_v1'));
 check('series universe never joins mutable catalog',!migration.includes('public.services')&&!migration.includes('public.service_versions'));
 check('window orchestration is canonical delegation',migration.includes('run_analytics_cat_liquidity_window_v1')&&migration.includes('run_analytics_cat_liquidity_projection_v1'));
 check('window orchestration accepts only append authority states',migration.includes("'APPENDED', 'NO_CHANGE'")&&migration.includes('DOKE_ANALYTICS_LIQUIDITY_SNAPSHOT_STATE_INVALID'));
-check('dimension runtime authority remains false',c.authority.dimensionEnumeratorRuntimeAuthority===false&&c.dimensionSeriesAuthority.stagingEnumeratorExists===false);
+check('dimension runtime authority is staging validated',c.authority.dimensionEnumeratorRuntimeAuthority===true&&c.dimensionSeriesAuthority.stagingEnumeratorExists===true&&c.dimensionSeriesAuthority.enumeratorExists===true);
 
 eq('scheduler topology','supabase_pg_cron_database_local',c.schedulerTopology.mechanism);
 check('scheduler uses direct A10 runner',c.schedulerTopology.invocation==='direct_sql_public.run_analytics_cat_liquidity_projection_v1'&&c.schedulerTopology.edgeFunctionRequired===false);

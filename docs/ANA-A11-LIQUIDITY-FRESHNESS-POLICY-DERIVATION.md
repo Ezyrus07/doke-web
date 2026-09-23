@@ -188,3 +188,29 @@ The publication-policy selector is intentionally fail-closed. If zero rows are e
 
 This keeps versioned effective windows auditable even if a future operator accidentally creates overlap.
 
+## Staging structural-authority closure
+
+Authorization `authorize-ana-a11-structural-authorities-staging` was executed only against `doke-web-staging`.
+
+Applied migrations:
+
+- `20260923021120 / ana_a11_liquidity_series_orchestration`;
+- `20260923021316 / ana_a11_liquidity_publication_policy_authority`.
+
+Validation SQL `034` and `035` passed.
+
+The series canary was rollback-only. It enumerated exactly three series for the certified CAT window: global, the canonical UUID/BA series, and the legacy `limpeza`/BA series. The first orchestration appended all three snapshots inside the transaction; exact replay returned `NO_CHANGE` for all three; rollback restored the persistent liquidity snapshot count to the original three rows.
+
+The publication-policy canary was also rollback-only. With synthetic, explicitly non-authoritative values, `windowStepSeconds=300` and `projectionDelaySloSeconds=60` produced generated `derivedMaxLagSeconds=360`. A missing policy returned `null`; overlapping policies failed closed with `DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS`. Rollback left the publication-policy table empty.
+
+Post-validation staging state remains:
+
+- publication policy rows: **0**;
+- freshness policy rows: **0**;
+- ANA/liquidity cron jobs: **0**;
+- persistent liquidity snapshots: **3**;
+- browser analytics: unchanged/disabled;
+- anonymous identity stitching: unchanged/disabled.
+
+The structural authorities are now real staging runtime, but no cadence, delay SLO, window anchor, catch-up bound, freshness threshold, publication row, or scheduler has been approved. ANA therefore remains **3/6** and `POLICY_THRESHOLD_MISSING` remains the correct runtime behavior.
+

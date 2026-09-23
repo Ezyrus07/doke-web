@@ -15,14 +15,14 @@ A leitura correta é: a Doke possui fundações e canários avançados, especial
 
 ## Snapshot real do staging
 
-Observado em `2026-09-23T00:44:21.298472+00:00` no projeto `zwkczgewzbsorbrjuzpb`.
+Observado em `2026-09-23T02:15:47.312085+00:00` no projeto `zwkczgewzbsorbrjuzpb`.
 
 | Indicador | Valor |
 | --- | ---: |
 | Tabelas públicas | 48 |
 | Tabelas públicas sem RLS | 0 |
 | Tabelas com RLS sem policies | 0 |
-| Funções SECURITY DEFINER | 200 |
+| Funções SECURITY DEFINER | 203 |
 | SECURITY DEFINER executáveis por anon | 3 |
 | SECURITY DEFINER executáveis por authenticated | 10 |
 | Tabelas no Realtime | 2 |
@@ -1065,7 +1065,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Evidência estática observada:** 44 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
-**Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`.
+**Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`, `private.analytics_metric_publication_policies_v1`.
 
 **Edge Functions:** `analytics-behavior-v1`.
 
@@ -1107,6 +1107,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A11 category-identity reconciliation proved that the certified CAT epoch legitimately mixes a canonical UUID category and a legacy freeform category with no canonical category row. The series candidate normalizes only casing to match A10 comparison semantics, forbids UUID/name/slug equivalence inference and preserves historical representation changes as distinct forward series.
 - ANA-A11 read-only registry reconciliation proved the existing freshness-policy table stores only the derived threshold and currently has zero rows. A repository-only publication-policy candidate now stores cadence/SLO/anchor/catch-up/approval provenance with generated max lag, while keeping publication rows, freshness sync and scheduler activation unauthorized.
 - ANA-A11 publication-policy selector now fails closed on overlapping effective policies and returns no implicit/default policy when none is effective; future operator overlap cannot silently become analytics authority.
+- ANA-A11 structural authorities are now validated in staging: series enumeration/window orchestration is installed as postgres-only runtime, publication-policy provenance schema is installed empty, rollback-only canaries proved 3-series append/replay idempotency and generated-threshold/overlap fail-closed behavior, and no ANA cron or policy row was activated.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1115,7 +1116,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.
-- ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 has repository-only candidates for CAT-fact-backed series orchestration and versioned publication-policy provenance. Remaining policy values are windowStepSeconds, projectionDelaySloSeconds, windowAnchor and bounded catch-up; no publication row, freshness row or cron may be activated without explicit staging authorization.
+- ANA-A10/CAT-A07 and ANA-A11 structural staging authorities are closed. Remaining ANA-A11 decisions are the concrete publication-policy values: windowStepSeconds, projectionDelaySloSeconds, windowAnchor and bounded catch-up. No publication row, freshness row or pg_cron activation is authorized yet.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
 **Gate de saída:**
@@ -1251,4 +1252,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T22:58:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T23:15:47-03:00._
