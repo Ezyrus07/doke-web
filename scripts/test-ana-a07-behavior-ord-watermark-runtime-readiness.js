@@ -18,10 +18,10 @@ check('validation read only',!v.match(/insert\s+into|update\s+|delete\s+from|tru
 check('validation invokes wrappers',v.includes('private.analytics_behavior_watermark_v1()')&&v.includes('private.order_metric_watermark_v1()'));
 check('concurrent canary not falsely certified',c.validationPlan?.concurrentWriterCase==='requires_multi_session_staging_canary');
 check('late fact remains future proof',c.validationPlan?.lateFactCase==='requires_A09_projection_canary_after_watermark_application');
-check('original applied but uncertified',c.repositoryEvidence?.migrationApplied===true&&c.repositoryEvidence?.stagingValidated===false&&c.validationPlan?.validation041Status==='failed');
+check('original and compatibility applied, full certification pending',c.repositoryEvidence?.migrationApplied===true&&c.repositoryEvidence?.compatibilityMigrationApplied===true&&c.repositoryEvidence?.stagingValidated===false&&c.validationPlan?.validation041Status==='passed'&&c.validationPlan?.concurrentWriterCase==='requires_multi_session_staging_canary');
 check('compatibility uses explicit CASE',compatibility.includes('v_data_through := case')&&!compatibility.includes('pg_catalog.least('));
 check('compatibility preserves active/prepared order',compatibility.indexOf('from pg_catalog.pg_stat_activity')>=0&&compatibility.indexOf('from pg_catalog.pg_prepared_xacts')>compatibility.indexOf('from pg_catalog.pg_stat_activity'));
-check('compatibility remains unapplied',c.compatibilityCandidate?.migrationApplied===false&&c.compatibilityCandidate?.stagingApplyAuthorized===false);
+check('compatibility applied and 041 passed',c.compatibilityCandidate?.migrationApplied===true&&c.compatibilityCandidate?.stagingMigrationVersion==='20260923231132'&&c.compatibilityCandidate?.validation041Status==='PASS'&&c.compatibilityCandidate?.stagingApplyAuthorizationConsumed===true);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;

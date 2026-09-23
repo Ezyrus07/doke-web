@@ -80,4 +80,4 @@ The repository now contains `supabase/migrations/20260923224000_ana_a07_behavior
 
 ## Watermark staging validation status
 
-The behavior/ORD migration is present in staging, but validation 041 failed on invalid `pg_catalog.least` qualification. Runtime watermark authority therefore remains false. Forward-only candidate `supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql` is repository-ready and unapplied.
+The behavior/ORD migration and forward-only compatibility migration are present in staging. Validation 041 now passes and the no-active-transaction envelopes/grants are healthy. Runtime watermark authority nevertheless remains false until the multi-session concurrent-writer canary proves the transaction-floor behavior under a real in-flight writer.

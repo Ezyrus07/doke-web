@@ -42,4 +42,8 @@ The candidate preserves:
 - behavior and ORD wrappers unchanged;
 - no scheduler and no source-domain DML.
 
-This compatibility migration is **not applied in this lot**. Validation 041 must be rerun only after separate staging authorization.
+The compatibility migration was subsequently applied in staging as `20260923231132 / ana_a07_behavior_ord_watermark_compatibility`. Validation 041 was rerun and **PASSED**. This closes the structural/runtime-envelope failure, but does not certify multi-session concurrency or late-fact behavior.
+
+## Compatibility runtime reconciliation
+
+Canonical runtime evidence is persisted at `reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json`. The helper now executes with explicit `CASE`, wrappers return healthy `fresh / NO_ACTIVE_TRANSACTION` envelopes, and owner/grant boundaries pass validation 041. A07 runtime watermark authority remains intentionally false until the separately authorized multi-session concurrent-writer canary passes. Late-fact certification remains downstream with A09 projection evidence.

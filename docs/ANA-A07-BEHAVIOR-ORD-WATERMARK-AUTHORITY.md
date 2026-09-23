@@ -79,4 +79,6 @@ The migration file exists only in the repository. No migration application, stag
 
 Staging application of the original runtime candidate exposed an execution defect: `pg_catalog.least(...)` is not resolvable because `LEAST` is not a schema-qualified catalog function. The original migration is not edited.
 
-`supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql` redefines only the shared transaction-floor helper using an explicit `CASE`. Runtime authority remains uncertified until the compatibility migration is separately applied and validation 041 passes.
+`supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql` redefines only the shared transaction-floor helper using an explicit `CASE`. The compatibility migration is now applied in staging and validation 041 passes. Runtime authority remains uncertified only because multi-session concurrent-writer evidence is still pending; late-fact behavior remains a downstream A09/A05 revision proof.
+
+Runtime evidence: `reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json`.
