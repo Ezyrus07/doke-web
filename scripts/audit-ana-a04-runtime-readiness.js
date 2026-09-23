@@ -3,7 +3,7 @@ const fs=require('fs');const path=require('path');const root=path.resolve(__dirn
 const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a04-marketplace-funnel-health-projections.json'),'utf8'));
 const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260918233000_ana_a04_metric_projection_runtime.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
-check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration not applied',c.migrationApplied===false);check('staging not validated',c.stagingValidated===false);
+check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration applied',c.migrationApplied===true);check('staging validated',c.stagingValidated===true);
 ['enrich_order_metric_dimensions_for_analytics_v1','analytics_metric_snapshots_v1','append_analytics_metric_snapshot_v1','compute_analytics_order_health_v1'].forEach(x=>check('runtime '+x,migration.includes(x)));
 check('service snapshot category',migration.includes("service_snapshot ->> 'category'"));check('service snapshot state',migration.includes("service_snapshot ->> 'state'"));
 check('requested demand freeze',migration.includes("when new.event_type = 'order.requested' then nullif(v_order.city, '')"));

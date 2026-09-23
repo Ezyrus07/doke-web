@@ -8,7 +8,7 @@ const edge=fs.readFileSync(path.join(root,'supabase','functions','analytics-beha
 const proof=fs.readFileSync(path.join(root,'supabase','functions','_shared','analytics-proof.ts'),'utf8');
 const search=fs.readFileSync(path.join(root,'supabase','functions','search-public-services-v2','index.ts'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
-check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration not applied',c.migrationApplied===false);check('staging not validated',c.stagingValidated===false);
+check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration applied',c.migrationApplied===true);check('staging validated',c.stagingValidated===true);
 ['private.analytics_behavior_events_v1','record_analytics_behavior_event_v1','semantic_key text not null unique','analytics_behavior_server_client_event_unique','DOKE_ANALYTICS_IDEMPOTENCY_CONFLICT','exception when unique_violation'].forEach(x=>check('runtime sql '+x,runtimeSql.includes(x)));
 check('browser roles revoked',migration.includes('revoke all on function public.record_analytics_behavior_event_v1(jsonb) from public, anon, authenticated'));
 check('service role writer',migration.includes('grant execute on function public.record_analytics_behavior_event_v1(jsonb) to service_role'));

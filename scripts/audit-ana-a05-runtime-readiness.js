@@ -5,7 +5,7 @@ const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260918234000
 const hardening=fs.readFileSync(path.join(root,'supabase','migrations','20260919002100_ana_a05_reconciliation_dimension_hardening.sql'),'utf8');
 const runtimeSql=sql+'\n'+hardening;
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
-check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration not applied',c.migrationApplied===false);check('staging not validated',c.stagingValidated===false);
+check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration applied',c.migrationApplied===true);check('staging validated',c.stagingValidated===true);
 ['analytics_reconciliation_runs_v1','analytics_data_quality_rollups_v1','run_analytics_order_reconciliation_v1','analytics_projection_missing_rate','analytics_reconciliation_mismatch_rate'].forEach(x=>check('runtime '+x,runtimeSql.includes(x)));
 check('source uses created_at',runtimeSql.includes('from private.order_domain_events e')&&runtimeSql.includes('where e.created_at >= p_window_start'));
 check('projection uses occurred_at',runtimeSql.includes('from private.order_metric_events e')&&runtimeSql.includes('where e.occurred_at >= p_window_start'));
