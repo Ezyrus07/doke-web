@@ -11,6 +11,16 @@ eq('synthetic derivation',derive({windowStepSeconds:3600,projectionDelaySloSecon
 let noStep=false;try{derive({projectionDelaySloSeconds:300});}catch(e){noStep=e.message==='ANA_LIQUIDITY_WINDOW_STEP_REQUIRED';}check('missing cadence rejected',noStep);
 let noDelay=false;try{derive({windowStepSeconds:3600});}catch(e){noDelay=e.message==='ANA_LIQUIDITY_PROJECTION_DELAY_SLO_REQUIRED';}check('missing delay rejected',noDelay);
 let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300,recoveryGraceSeconds:60});}catch(e){grace=e.message==='ANA_LIQUIDITY_IMPLICIT_GRACE_FORBIDDEN';}check('unapproved grace rejected',grace);
+
+eq('scheduler topology','supabase_pg_cron_database_local',c.schedulerTopology.mechanism);
+check('scheduler uses direct A10 runner',c.schedulerTopology.invocation==='direct_sql_public.run_analytics_cat_liquidity_projection_v1'&&c.schedulerTopology.edgeFunctionRequired===false);
+check('window grid remains unapproved',c.canonicalWindowGrid.windowStepSeconds===null&&c.canonicalWindowGrid.boundaryAnchor===null&&c.canonicalWindowGrid.boundaryTimeZone===null);
+check('dimension enumerator cannot reuse snapshots',c.dimensionSeriesAuthority.enumeratorExists===false&&c.dimensionSeriesAuthority.schedulerMayReuseExistingSnapshotDimensionsAsAuthority===false&&c.dimensionSeriesAuthority.mutableCurrentCatalogJoinAllowed===false);
+check('catch-up cannot skip gaps',c.missedWindowRecovery.processingOrder==='oldest missing canonical closed window first'&&c.missedWindowRecovery.skipDirectlyToLatestAllowed===false);
+check('catch-up limit remains unset',c.missedWindowRecovery.maxCatchUpWindowsPerInvocation===null&&c.missedWindowRecovery.unboundedCatchUpAllowed===false);
+check('exact replay remains safe',c.missedWindowRecovery.exactReplayBehavior.includes('NO_CHANGE'));
+eq('divergent concurrency fails closed',c.missedWindowRecovery.divergentConcurrentWriteBehavior,'DOKE_ANALYTICS_METRIC_REVISION_CONFLICT');
+
 check('contract leaves values unset',c.currentDecision.windowStepSeconds===null&&c.currentDecision.projectionDelaySloSeconds===null&&c.currentDecision.maxLagSeconds===null);
 check('CAT watermark uses snapshot barrier',c.sourceDomainWatermarkSemantics.sourceDomain==='CAT-001'&&c.sourceDomainWatermarkSemantics.basis==='transaction_snapshot_barrier_v1');
 check('event max is not watermark',c.sourceDomainWatermarkSemantics.maxEventOccurredAtIsWatermark===false);

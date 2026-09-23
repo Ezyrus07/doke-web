@@ -17,6 +17,15 @@ check('watermark anti-inference',c.sourceDomainWatermarkSemantics?.maxEventOccur
 check('freshness states inherit A07',c.freshnessStateSemantics?.authorityContract==='ana-a07-freshness-window-authority-v1'&&c.freshnessStateSemantics?.projectionStateMapping?.fresh==='authoritative'&&c.freshnessStateSemantics?.projectionStateMapping?.stale==='stale'&&c.freshnessStateSemantics?.projectionStateMapping?.unavailable==='unavailable');
 check('latest closed window only',String(c.freshnessStateSemantics?.selectionRule||'').includes('latest canonical closed window'));
 check('pending authorities remain unapproved',c.pendingAuthorityDecisions?.scheduler?.currentlyAuthorized===false);
+
+check('scheduler topology database local',c.schedulerTopology?.mechanism==='supabase_pg_cron_database_local'&&c.schedulerTopology?.invocation==='direct_sql_public.run_analytics_cat_liquidity_projection_v1'&&c.schedulerTopology?.edgeFunctionRequired===false&&c.schedulerTopology?.githubActionsSchedulerAllowed===false);
+check('scheduler runtime boundary',c.schedulerTopology?.runtimeEvidence?.runnerOwner==='postgres'&&c.schedulerTopology?.runtimeEvidence?.authenticatedExecute===false&&c.schedulerTopology?.runtimeEvidence?.anonExecute===false&&c.schedulerTopology?.runtimeEvidence?.activeAnaLiquidityCronFound===false);
+check('canonical window grid unset',c.canonicalWindowGrid?.status==='pending_versioned_window_grid'&&c.canonicalWindowGrid?.windowStepSeconds===null&&c.canonicalWindowGrid?.boundaryAnchor===null&&c.canonicalWindowGrid?.boundaryTimeZone===null);
+check('dimension enumerator missing',c.dimensionSeriesAuthority?.status==='missing_canonical_enumerator'&&c.dimensionSeriesAuthority?.globalSeriesRequired===true&&c.dimensionSeriesAuthority?.enumeratorExists===false&&c.dimensionSeriesAuthority?.mutableCurrentCatalogJoinAllowed===false&&c.dimensionSeriesAuthority?.schedulerMayReuseExistingSnapshotDimensionsAsAuthority===false);
+check('missed window recovery bounded pending',c.missedWindowRecovery?.processingOrder==='oldest missing canonical closed window first'&&c.missedWindowRecovery?.skipDirectlyToLatestAllowed===false&&c.missedWindowRecovery?.maxCatchUpWindowsPerInvocation===null&&c.missedWindowRecovery?.unboundedCatchUpAllowed===false);
+check('replay semantics explicit',c.missedWindowRecovery?.exactReplayBehavior?.includes('NO_CHANGE')&&c.missedWindowRecovery?.divergentConcurrentWriteBehavior==='DOKE_ANALYTICS_METRIC_REVISION_CONFLICT');
+check('scheduler activation unauthorized',c.currentDecision?.schedulerActivationAuthorized===false&&c.currentDecision?.dimensionEnumeratorAuthorized===false&&c.pendingAuthorityDecisions?.scheduler?.currentlyAuthorized===false);
+
 check('values unset',c.currentDecision?.windowStepSeconds===null&&c.currentDecision?.projectionDelaySloSeconds===null&&c.currentDecision?.maxLagSeconds===null);
 check('policy insert unauthorized',c.currentDecision?.policyInsertAuthorized===false);
 check('A07 threshold pending',a07.thresholdAuthority?.defaultMaxLagSeconds===null&&a07.thresholdAuthority?.status==='pending_versioned_metric_policy');

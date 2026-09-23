@@ -65,3 +65,62 @@ The repository currently has neither a versioned window step nor a projection-de
 A future activation requires a versioned publication schedule, a versioned delay SLO, a server-side trigger/scheduler, controlled staging evidence of that cadence, the mechanically derived threshold, and a separately authorized insert into the freshness-policy registry.
 
 ANA-A11 is repository-only and changes no cron, database, staging resource, deployment or production state. ANA-001 remains **3/6**.
+
+## Scheduler topology readiness
+
+Read-only reconciliation now closes the mechanism question without creating a schedule. The canonical candidate topology is **Supabase `pg_cron` with a database-local SQL invocation of `public.run_analytics_cat_liquidity_projection_v1`**.
+
+This is an architectural selection, not scheduler activation:
+
+- the A10 runner is already database-local, `SECURITY DEFINER` and owned by `postgres`;
+- existing Doke cron jobs in staging run as `postgres`;
+- the runner is not executable by `anon` or `authenticated`;
+- no ANA/liquidity cron exists today;
+- introducing an Edge Function or GitHub Actions publisher would create a second authority without a runtime requirement.
+
+Therefore `pg_cron` is the selected topology, while `schedulerActivationAuthorized=false`.
+
+## Additional root-cause gaps
+
+Cadence and delay SLO are necessary but not sufficient. Two structural authorities are also missing.
+
+### Canonical window grid
+
+The runner accepts arbitrary `windowStart/windowEnd`. A numeric `windowStepSeconds` alone does not identify which boundaries belong to the canonical series. Before activation, ANA must version the boundary anchor/alignment rule (and time-zone semantics if applicable).
+
+Canary windows, execution time and another domain's cron boundaries are not valid substitutes.
+
+### Canonical dimension-series enumeration
+
+ANA-A10 requires liquidity segmentation by **category identity + state**, but the runtime exposes only a per-series runner:
+
+`run_analytics_cat_liquidity_projection_v1(windowStart, windowEnd, serviceCategory, serviceState)`
+
+No staging function currently enumerates the required liquidity dimension series. Existing ANA snapshots cannot be used as the enumerator because they only represent series that were already materialized and would miss a newly appearing CAT category/state pair. Mutable current catalog rows are also forbidden as historical dimension authority.
+
+The future enumerator must derive the global series plus required category/state series from CAT-owned frozen dimension facts and the CAT-A07 forward-coverage state.
+
+## Missed-window recovery
+
+The existing append-only snapshot writer already supplies the necessary replay primitive:
+
+- exact replay with unchanged source/projection fingerprints returns `NO_CHANGE`;
+- divergent concurrent writes fail closed with `DOKE_ANALYTICS_METRIC_REVISION_CONFLICT`.
+
+The scheduler contract therefore requires **oldest missing canonical closed window first** and forbids silently jumping to the latest window. The per-invocation catch-up bound remains unset; unbounded backlog processing is not authorized.
+
+## Values still intentionally unset
+
+The following remain `null`/unauthorized:
+
+- `windowStepSeconds`;
+- `projectionDelaySloSeconds`;
+- `maxLagSeconds`;
+- canonical window-boundary anchor/time-zone semantics;
+- `maxCatchUpWindowsPerInvocation`;
+- dimension-series enumerator activation;
+- scheduler activation;
+- freshness-policy insert.
+
+This refinement changes no runtime and does not promote ANA above **3/6**.
+
