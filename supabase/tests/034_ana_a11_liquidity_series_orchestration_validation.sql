@@ -26,7 +26,8 @@ begin
   if position('private.cat_listing_supply_coverage_epochs_v1' in v_series_def) = 0
      or position('certification_state = ''certified''' in v_series_def) = 0
      or position('private.cat_listing_visibility_watermark_v1()' in v_series_def) = 0
-     or position('dimension_snapshot_after' in v_series_def) = 0 then
+     or position('dimension_snapshot_after' in v_series_def) = 0
+     or position('pg_catalog.lower' in v_series_def) = 0 then
     raise exception 'ANA-A11 series enumerator does not preserve CAT-A07/A06 authority';
   end if;
 

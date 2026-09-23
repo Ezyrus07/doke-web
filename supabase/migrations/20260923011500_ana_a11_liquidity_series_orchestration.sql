@@ -58,11 +58,11 @@ begin
   return query
   with raw_pairs as (
     select
-      coalesce(
+      pg_catalog.lower(coalesce(
         nullif(e.dimension_snapshot_after ->> 'categoryId', ''),
         nullif(e.dimension_snapshot_after ->> 'categorySlug', ''),
         nullif(e.dimension_snapshot_after ->> 'category', '')
-      ) as category_identity,
+      )) as category_identity,
       nullif(pg_catalog.upper(e.dimension_snapshot_after ->> 'state'), '') as state_identity
     from private.cat_listing_visibility_events_v1 e
     where e.occurred_at >= v_coverage_complete_from
@@ -103,7 +103,7 @@ revoke all privileges on function private.list_analytics_cat_liquidity_series_v1
   from public, anon, authenticated, service_role;
 
 comment on function private.list_analytics_cat_liquidity_series_v1(timestamptz,timestamptz) is
-  'ANA-A11 server-only series universe for liquidity.active_service_seconds. Emits the global series plus every valid CAT-frozen category/state pair observed from the certified CAT-A07 coverage epoch through the requested closed window; never joins mutable current catalog state.';
+  'ANA-A11 server-only series universe for liquidity.active_service_seconds. Emits the global series plus every valid CAT-frozen category/state pair observed from the certified CAT-A07 coverage epoch through the requested closed window. The ANA series key lowercases only the frozen fallback token because A10 category filtering is case-insensitive; it never equates a freeform name/slug with a category UUID and never joins mutable current catalog state.';
 
 create or replace function private.run_analytics_cat_liquidity_window_v1(
   p_window_start timestamptz,

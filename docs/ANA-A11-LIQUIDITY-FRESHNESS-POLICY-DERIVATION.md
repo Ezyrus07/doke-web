@@ -148,3 +148,16 @@ The category/state universe is intentionally monotonic from the certified covera
 
 This candidate **does not** create a cron, choose a window grid, choose a catch-up bound, insert a freshness policy, or mutate staging. Explicit staging migration authorization is still required before these functions exist remotely.
 
+## Category identity continuity
+
+The certified CAT-A07 epoch currently contains two valid BA category identities with different representation classes:
+
+- canonical category UUID: `17263173-c179-455f-bd43-2c3d9a55a8fd`;
+- legacy freeform category: `Limpeza`.
+
+Read-only staging reconciliation proved that the `Limpeza` service has no `service_categories` row, no `category_id`, and no approved-version `categoryId/categorySlug`. Therefore CAT did not lose a canonical ID: the textual fallback is the frozen historical identity explicitly allowed by CAT-A06/A07.
+
+ANA must preserve that boundary. The series candidate now lowercases the frozen fallback token because A10 category filtering is already case-insensitive, preventing casing-only duplicates such as `Limpeza` vs `limpeza`. This normalization **does not** equate a name or slug with a UUID.
+
+If CAT later maps that legacy service to a canonical category UUID, that CAT transition starts a new UUID-backed analytical series from that point forward. The historical text-backed series is not rewritten or merged and remains enumerable so it can correctly publish zero supply. A cross-representation merge would require a separate versioned category-equivalence authority; none exists today.
+

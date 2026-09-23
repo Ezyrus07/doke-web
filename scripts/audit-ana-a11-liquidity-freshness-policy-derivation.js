@@ -19,6 +19,12 @@ check('latest closed window only',String(c.freshnessStateSemantics?.selectionRul
 check('pending authorities remain unapproved',c.pendingAuthorityDecisions?.scheduler?.currentlyAuthorized===false);
 
 
+
+check('category identity continuity frozen',Array.isArray(c.dimensionSeriesAuthority?.categoryIdentityContinuity?.catFrozenTokenPriority)&&c.dimensionSeriesAuthority.categoryIdentityContinuity.catFrozenTokenPriority.join('>')==='categoryId>categorySlug>category'&&c.dimensionSeriesAuthority.categoryIdentityContinuity.a10FilterComparison==='case_insensitive');
+check('category series normalization is casing only',c.dimensionSeriesAuthority?.categoryIdentityContinuity?.anaSeriesKeyNormalization==='lowercase frozen fallback token only'&&c.dimensionSeriesAuthority.categoryIdentityContinuity.categoryIdEquivalentToSlugOrName===false&&c.dimensionSeriesAuthority.categoryIdentityContinuity.historicalRepresentationRewriteAllowed===false);
+check('mixed representation classified not drift',c.dimensionSeriesAuthority?.categoryIdentityContinuity?.stagingEvidence?.certifiedEpochPairs===2&&c.dimensionSeriesAuthority.categoryIdentityContinuity.stagingEvidence.legacyFreeformServiceHasCanonicalCategoryRow===false);
+check('candidate lowercases frozen category key',seriesMigration.includes('pg_catalog.lower(coalesce(')&&c.seriesOrchestrationCandidate?.crossRepresentationMergeAllowed===false);
+
 check('series candidate registered',c.seriesOrchestrationCandidate?.migration==='supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql'&&c.seriesOrchestrationCandidate?.validationSql==='supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql'&&c.seriesOrchestrationCandidate?.stagingApplied===false&&c.seriesOrchestrationCandidate?.cronCreated===false);
 check('series enumerator candidate not runtime authority',c.dimensionSeriesAuthority?.repositoryEnumeratorCandidateExists===true&&c.dimensionSeriesAuthority?.stagingEnumeratorExists===false&&c.authority?.dimensionEnumeratorRuntimeAuthority===false);
 check('series source remains CAT frozen facts',c.dimensionSeriesAuthority?.sourceAuthority?.includes('CAT-A06 frozen dimension snapshots')&&c.dimensionSeriesAuthority?.schedulerMayReuseExistingSnapshotDimensionsAsAuthority===false&&c.dimensionSeriesAuthority?.mutableCurrentCatalogJoinAllowed===false);

@@ -3,7 +3,7 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "d1c419f18b2ea4574362a880e0782e5cec8ac8e9",
+  "sourceHead": "3d729a0d349c17851d699bcdab9948b999b779f1",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "repository_only",
   "status": "series_orchestration_candidate_ready_staging_unapplied_policy_values_and_window_grid_unset",
@@ -215,7 +215,7 @@
       ]
     }
   },
-  "updatedAt": "2026-09-22T22:11:51-03:00",
+  "updatedAt": "2026-09-22T22:21:00-03:00",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -270,7 +270,38 @@
     "enumerationRule": "global series plus every valid CAT-frozen category/state pair observed from the certified CAT-A07 coverage epoch through windowEnd",
     "zeroSeriesContinuity": "The universe is monotonic from the certified epoch, so a previously observed pair remains enumerable and can materialize canonical zero supply after its active intervals disappear.",
     "atomicWindowOrchestrator": "private.run_analytics_cat_liquidity_window_v1",
-    "atomicity": "All series for one window execute in one SQL statement/transaction; an uncaught series error prevents partial window publication."
+    "atomicity": "All series for one window execute in one SQL statement/transaction; an uncaught series error prevents partial window publication.",
+    "categoryIdentityContinuity": {
+      "catFrozenTokenPriority": [
+        "categoryId",
+        "categorySlug",
+        "category"
+      ],
+      "a10FilterComparison": "case_insensitive",
+      "anaSeriesKeyNormalization": "lowercase frozen fallback token only",
+      "categoryIdEquivalentToSlugOrName": false,
+      "historicalRepresentationRewriteAllowed": false,
+      "existingSnapshotDimensionsAreEquivalenceAuthority": false,
+      "futureCanonicalRemapBehavior": "A future CAT transition from a legacy text/slug token to a canonical category UUID starts a distinct ANA series from that CAT fact forward; the historical token series remains enumerable and can publish zero supply.",
+      "equivalenceRegistryStatus": "absent",
+      "stagingEvidence": {
+        "certifiedEpochPairs": 2,
+        "examples": [
+          {
+            "state": "BA",
+            "categoryIdentityType": "categoryId",
+            "categoryIdentity": "17263173-c179-455f-bd43-2c3d9a55a8fd"
+          },
+          {
+            "state": "BA",
+            "categoryIdentityType": "category",
+            "categoryIdentity": "Limpeza"
+          }
+        ],
+        "legacyFreeformServiceHasCanonicalCategoryRow": false,
+        "conclusion": "mixed representation is valid under current CAT-A06/A07 fallback authority, not current-state drift"
+      }
+    }
   },
   "missedWindowRecovery": {
     "status": "structural_contract_ready_batch_limit_unset",
@@ -301,6 +332,8 @@
     "mutableCatalogJoin": false,
     "browserAuthority": false,
     "serviceRoleAuthority": false,
-    "schedulerActivationAuthority": false
+    "schedulerActivationAuthority": false,
+    "categorySeriesKey": "lower(coalesce(categoryId, categorySlug, category))",
+    "crossRepresentationMergeAllowed": false
   }
 }

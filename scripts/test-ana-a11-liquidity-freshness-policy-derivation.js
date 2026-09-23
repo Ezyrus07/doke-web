@@ -13,6 +13,11 @@ let noDelay=false;try{derive({windowStepSeconds:3600});}catch(e){noDelay=e.messa
 let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300,recoveryGraceSeconds:60});}catch(e){grace=e.message==='ANA_LIQUIDITY_IMPLICIT_GRACE_FORBIDDEN';}check('unapproved grace rejected',grace);
 
 
+
+check('category series key is case-normalized',migration.includes('pg_catalog.lower(coalesce(')&&c.seriesOrchestrationCandidate.categorySeriesKey==='lower(coalesce(categoryId, categorySlug, category))');
+check('category representation classes are not merged',c.dimensionSeriesAuthority.categoryIdentityContinuity.categoryIdEquivalentToSlugOrName===false&&c.dimensionSeriesAuthority.categoryIdentityContinuity.historicalRepresentationRewriteAllowed===false&&c.seriesOrchestrationCandidate.crossRepresentationMergeAllowed===false);
+check('legacy freeform identity remains valid',c.dimensionSeriesAuthority.categoryIdentityContinuity.stagingEvidence.legacyFreeformServiceHasCanonicalCategoryRow===false);
+
 check('series candidate remains staging-unapplied',c.seriesOrchestrationCandidate.stagingApplied===false&&c.seriesOrchestrationCandidate.cronCreated===false&&c.seriesOrchestrationCandidate.policyRowsWritten===false);
 check('series universe is CAT-fact-backed',migration.includes('dimension_snapshot_after')&&migration.includes('cat_listing_supply_coverage_epochs_v1')&&migration.includes('cat_listing_visibility_watermark_v1'));
 check('series universe never joins mutable catalog',!migration.includes('public.services')&&!migration.includes('public.service_versions'));
