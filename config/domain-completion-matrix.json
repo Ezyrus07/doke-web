@@ -1,6 +1,6 @@
 {
   "version": "1.3.132",
-  "updatedAt": "2026-09-23T23:14:56.197764Z",
+  "updatedAt": "2026-09-23T23:32:33.778851Z",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -3430,7 +3430,8 @@
         "scripts/audit-ana-a07-behavior-ord-watermark-runtime-readiness.js",
         "scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js",
         "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
-        "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json"
+        "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
+        "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3595,7 +3596,8 @@
         "ANA-A07 now defines repository-only behavior/ORD dependency watermark authority using active_transaction_floor_v1: behavior completeness is fenced by server-owned received_at, ORD metric completeness by DB-owned created_at, max(event timestamp)/computedAt/windowEnd shortcuts are forbidden, prepared transactions fail closed, empty windows may advance, and late materialized facts must use A05 append-only revisions. Runtime watermark functions and migration remain unapplied; ANA stays 3/6.",
         "ANA-A07 behavior/ORD watermark runtime candidate is repository-ready but unapplied: migration 20260923224000 defines a postgres-owned active_transaction_floor_v1 helper plus service-role-only behavior/ORD wrappers, scans active transactions before prepared transactions, uses a 1-microsecond inclusive predecessor, never derives watermarks from source maxima, and ships rollback-only validation 041. Staging application and multi-session concurrent-writer/late-fact evidence remain pending; ANA stays 3/6.",
         "ANA-A07 staging migration 20260923230106 applied, but validation 041 failed at runtime with PostgreSQL 42883 because pg_catalog.least(timestamptz,timestamptz) does not exist. The historical migration remains immutable. Forward-only compatibility candidate 20260923231000 redefines only private.analytics_transaction_floor_watermark_v1() with an explicit CASE while preserving active-before-prepared scan order, prepared fail-closed behavior, the 1-microsecond predecessor and server-only grants. Candidate is repository-ready but unapplied; ANA remains 3/6.",
-        "ANA-A07 forward-only compatibility migration is applied in staging as 20260923231132 and validation 041 now passes. Read-only post-validation evidence confirms explicit-CASE helper execution, postgres owners, helper denied to service_role, behavior/ORD wrappers service-role-only, fresh NO_ACTIVE_TRANSACTION envelopes, preparedTransactionCount=0 and zero watermark cron jobs. This is structural/runtime-envelope certification only: multi-session concurrent-writer and downstream late-fact evidence remain pending, runtimeWatermarkAuthority stays false and ANA remains 3/6."
+        "ANA-A07 forward-only compatibility migration is applied in staging as 20260923231132 and validation 041 now passes. Read-only post-validation evidence confirms explicit-CASE helper execution, postgres owners, helper denied to service_role, behavior/ORD wrappers service-role-only, fresh NO_ACTIVE_TRANSACTION envelopes, preparedTransactionCount=0 and zero watermark cron jobs. This is structural/runtime-envelope certification only: multi-session concurrent-writer and downstream late-fact evidence remain pending, runtimeWatermarkAuthority stays false and ANA remains 3/6.",
+        "ANA-A07 behavior/ORD concurrent-writer staging canary passed using a transient pg_cron second session: writer xact_start=2026-09-23T23:31:34.252362Z, helper/behavior/ORD dataThrough=2026-09-23T23:31:34.252361Z (exactly 1 microsecond earlier), ACTIVE_TRANSACTION_FLOOR observed with activeTransactionCount=1, and all before-writer assertions passed. Job 9 was unscheduled immediately; its terminal failed/job canceled status is expected cleanup after evidence capture, with no residual job/session/prepared transaction/watermark cron and post-cleanup NO_ACTIVE_TRANSACTION recovery. The behavior/ORD runtime watermark mechanism is now certified; broader A07 staging authority and A09 projector/threshold/empty-window/late-fact evidence remain open. ANA stays 3/6."
       ],
       "blockers": [
         {
@@ -3615,7 +3617,7 @@
       ],
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
-        "Run only the A07 multi-session concurrent-writer watermark canary after explicit staging authorization; do not enable A09 or claim runtimeWatermarkAuthority until that canary proves the active transaction floor under a real in-flight writer.",
+        "Advance ANA-A09 with a repository-only server-side funnel projector candidate that consumes the now-certified A07 behavior/ORD runtime watermarks; keep A09 runtime activation, metric-specific thresholds and empty-window/late-fact staging evidence separately gated.",
         "Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.",
         "Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
