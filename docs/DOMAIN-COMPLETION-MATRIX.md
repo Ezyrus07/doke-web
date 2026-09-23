@@ -1102,6 +1102,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A10 has a repository-only CAT-A07 handoff migration candidate: only windows beginning at/after a certified coverage_complete_from may become complete; pre-epoch history stays partial and freshness remains fail-closed until ANA-A11 policy activation.
 - CAT-A07 staging baseline is currently blocked fail-closed because one eligible CAT listing lacks canonical state; ANA-A10 coverage handoff was intentionally not applied and liquidity remains partial.
 - CAT-A07 certified a forward coverage epoch in staging and ANA-A10 handoff proves pre-epoch windows remain partial while post-epoch windows become complete. Freshness still fails closed because the ANA-A11 policy is unset.
+- ANA-A11 read-only scheduler reconciliation selected a database-local Supabase pg_cron topology for the existing A10 runner, proved no active ANA/liquidity cron exists, and identified two additional activation gaps: no canonical window-grid anchor/alignment and no server-side enumerator for the required global + category/state liquidity series.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1110,7 +1111,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.
-- ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 still leaves windowStepSeconds, projectionDelaySloSeconds and maxLagSeconds unset; define/version that cadence/SLO before activating freshness.
+- ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 selected database-local pg_cron topology but still requires versioned windowStepSeconds, projectionDelaySloSeconds, canonical boundary alignment, a CAT-fact-backed dimension-series enumerator and a bounded missed-window recovery limit before any scheduler or freshness-policy activation.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
 **Gate de saída:**
@@ -1246,4 +1247,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T21:44:21-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T22:00:00-03:00._
