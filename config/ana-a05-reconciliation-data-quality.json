@@ -1,14 +1,14 @@
 {
   "contractId": "ana-a05-reconciliation-data-quality-v1",
   "domain": "ANA-001",
-  "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
+  "sourceHead": "3b5d03a7252facc385148a1d3ff95c6c8beb3df6",
   "createdAt": "2026-09-18T19:20:00-03:00",
   "scope": "repository_only",
-  "status": "runtime_implemented_activation_blocked",
-  "runtimeIntegrated": false,
+  "status": "staging_runtime_active",
+  "runtimeIntegrated": true,
   "migrationPrepared": true,
-  "migrationApplied": false,
-  "stagingValidated": false,
+  "migrationApplied": true,
+  "stagingValidated": true,
   "projectionStates": [
     "authoritative",
     "stale",
@@ -75,7 +75,7 @@
     "ORD reconciliation validates canonical event keys and immutable service dimensions"
   ],
   "maturityGate": {
-    "current": 2,
+    "current": 3,
     "to3": [
       "A01-A05 materialized",
       "A03 runtime ingestion implemented",
@@ -102,7 +102,8 @@
       "stale unavailable states operational",
       "backfill revision path proven",
       "data-quality metrics and ownership operational"
-    ]
+    ],
+    "to3Status": "certified"
   },
   "authority": {
     "contractAuthority": true,
@@ -112,10 +113,10 @@
     "freshnessContractAuthority": true,
     "backfillContractAuthority": true,
     "runtimeProjectionAuthority": false,
-    "runtimeReconciliationAuthority": false,
+    "runtimeReconciliationAuthority": true,
     "alertDeliveryAuthority": false,
     "privacyDecisionAuthority": false,
-    "stagingAuthority": false,
+    "stagingAuthority": true,
     "productionAuthority": false
   },
   "preservedBlockers": [
@@ -159,6 +160,24 @@
       "controlled_staging_reconciliation_canary"
     ],
     "eventKeyReconciliation": true,
-    "immutableServiceDimensionReconciliation": true
+    "immutableServiceDimensionReconciliation": true,
+    "activationRequirementsSatisfied": true,
+    "stagingActivation": {
+      "environment": "staging",
+      "projectRef": "zwkczgewzbsorbrjuzpb",
+      "migrationVersion": "20260919000826",
+      "hardeningMigrationVersion": "20260919003223",
+      "canonicalCanaryRunId": 35481347306,
+      "postHardeningCanaryRunId": 35628667088,
+      "activationEvidence": "config/ana-001-staging-activation-evidence.json",
+      "canaryEvidence": "reports/generated/ana-001-staging-canary.json",
+      "orderReconciliationValidated": true,
+      "unchangedFingerprintNoChangeValidated": true,
+      "observedReconciliationRows": 242,
+      "observedDataQualityRows": 484,
+      "sourceMutationAllowed": false,
+      "productionTouched": false,
+      "reconciledAt": "2026-09-23T22:28:56.674297Z"
+    }
   }
 }

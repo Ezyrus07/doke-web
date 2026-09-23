@@ -1,14 +1,14 @@
 {
   "contractId": "ana-a03-behavioral-ingestion-identity-boundary-v1",
   "domain": "ANA-001",
-  "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
+  "sourceHead": "3b5d03a7252facc385148a1d3ff95c6c8beb3df6",
   "createdAt": "2026-09-18T19:10:00-03:00",
   "scope": "repository_only",
-  "status": "runtime_implemented_activation_blocked",
-  "runtimeIntegrated": false,
+  "status": "staging_runtime_active_browser_client_disabled",
+  "runtimeIntegrated": true,
   "migrationPrepared": true,
-  "migrationApplied": false,
-  "stagingValidated": false,
+  "migrationApplied": true,
+  "stagingValidated": true,
   "sessionPolicy": {
     "anonymousSession": "server_issued_ephemeral_session_storage",
     "authenticatedActor": "server_auth_uid",
@@ -61,10 +61,10 @@
     "identityBoundaryContractAuthority": true,
     "semanticDedupContractAuthority": true,
     "searchExposureContractAuthority": true,
-    "runtimeIngestionAuthority": false,
+    "runtimeIngestionAuthority": true,
     "anonymousStitchingAuthority": false,
     "consentPolicyAuthority": false,
-    "stagingAuthority": false,
+    "stagingAuthority": true,
     "productionAuthority": false
   },
   "preservedBlockers": [
@@ -124,7 +124,7 @@
       "orcamento.html"
     ],
     "clientStorage": "sessionStorage_only",
-    "legacyMetricsCoexistence": "shadow_migration_only_until_canonical_activation",
+    "legacyMetricsCoexistence": "shadow_migration_only_until_controlled_browser_activation",
     "edgeGatewayVerifyJwt": false,
     "platformApiKeyModel": "publishable_secret",
     "platformKeyEnvironment": [
@@ -133,6 +133,24 @@
     ],
     "browserEdgeInvocation": "DokeSupabase.invokeEdgeFunction",
     "authenticatedActorResolution": "auth.getUser on user JWT; publishable-key bearer degrades to anon",
-    "legacyGlobalClientPreserved": true
+    "legacyGlobalClientPreserved": true,
+    "activationRequirementsSatisfied": true,
+    "stagingActivation": {
+      "environment": "staging",
+      "projectRef": "zwkczgewzbsorbrjuzpb",
+      "migrationVersion": "20260919000818",
+      "hardeningMigrationVersion": "20260919003220",
+      "edgeFunction": "analytics-behavior-v1",
+      "edgeFunctionStatus": "ACTIVE",
+      "edgeFunctionObservedVersion": 7,
+      "canonicalCanaryRunId": 35481347306,
+      "postHardeningCanaryRunId": 35628667088,
+      "activationEvidence": "config/ana-001-staging-activation-evidence.json",
+      "canaryEvidence": "reports/generated/ana-001-staging-canary.json",
+      "browserClientActivated": false,
+      "anonymousIdentityStitching": false,
+      "productionTouched": false,
+      "reconciledAt": "2026-09-23T22:28:56.674297Z"
+    }
   }
 }
