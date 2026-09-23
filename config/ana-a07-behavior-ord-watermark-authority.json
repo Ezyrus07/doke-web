@@ -1,10 +1,10 @@
 {
   "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
   "domain": "ANA-001",
-  "sourceHead": "612348f0695c7cf8d573ff1e330c872ef5eedc70",
+  "sourceHead": "94b7c0b825b8ba6f30953de6c187c2c28cbfa908",
   "createdAt": "2026-09-23T22:38:52.389634Z",
   "scope": "repository_only",
-  "status": "staging_041_pass_concurrency_canary_pending",
+  "status": "staging_runtime_watermark_certified_downstream_projection_evidence_pending",
   "objective": "Define fail-closed server-side materialization watermarks for ANA behavioral facts and ORD metric facts so A07/A09 can derive dataThrough without max(event timestamp), computedAt, or assumed windowEnd authority.",
   "rootCause": {
     "behaviorGap": "private.analytics_behavior_events_v1 has server-owned received_at/occurred_at facts but no server-authoritative watermark proving the ledger is materialized through an empty or non-empty time boundary.",
@@ -113,7 +113,7 @@
   "runtimeCandidate": {
     "migrationCreated": true,
     "migrationApplied": true,
-    "stagingValidated": false,
+    "stagingValidated": true,
     "helperFunction": "private.analytics_transaction_floor_watermark_v1()",
     "behaviorFunction": "private.analytics_behavior_watermark_v1()",
     "orderFunction": "private.order_metric_watermark_v1()",
@@ -136,7 +136,7 @@
         "rootCause": "invalid pg_catalog.least qualification"
       },
       "remediation": "compatibility migration 20260923231132",
-      "concurrentWriterCovered": false,
+      "concurrentWriterCovered": true,
       "lateFactCovered": false
     },
     "compatibilityCandidate": {
@@ -160,24 +160,29 @@
       "validation041Status": "PASS",
       "appliedAuthorization": "authorize-ana-a07-watermark-compatibility-staging head=612348f0695c7cf8d573ff1e330c872ef5eedc70 matrix=v1.3.132 migration=20260923231000 validation=041"
     },
-    "structuralValidation041Passed": true
+    "structuralValidation041Passed": true,
+    "concurrentWriterCanary": {
+      "status": "PASS",
+      "evidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+      "executor": "transient_pg_cron_second_session",
+      "transientCronJobId": 9,
+      "cleanup": "PASS",
+      "activeTransactionFloorProven": true,
+      "oneMicrosecondPredecessorProven": true
+    }
   },
   "activationRequirements": [
-    "create a new forward-only migration; do not edit historical A03/ORD migrations",
-    "implement prepared-transaction fail-closed behavior and current-database active-transaction floor",
-    "return source-specific behavior and ORD watermark envelopes using received_at and created_at materialization semantics",
-    "ensure anon/authenticated cannot execute private watermark functions",
     "make A09 runtime filter source rows by materialization time as well as canonical event time",
     "preserve A05 append-only revision semantics for late materialized facts",
-    "validate no-active-transaction, in-flight-transaction, empty-window, prepared-transaction fail-closed and late-fact scenarios in staging",
-    "require explicit staging authorization before applying the migration or executing mutating canaries"
+    "validate empty-window and late-fact projection behavior in staging after the A09 projector exists",
+    "require explicit staging authorization before executing downstream mutating canaries"
   ],
   "authority": {
     "contractAuthority": true,
     "materializationTimeAuthority": true,
     "watermarkAlgorithmAuthority": true,
     "funnelDependencySetAuthority": true,
-    "runtimeWatermarkAuthority": false,
+    "runtimeWatermarkAuthority": true,
     "stagingAuthority": false,
     "productionAuthority": false
   },
@@ -197,15 +202,28 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Original and compatibility migrations are applied in staging and validation 041 passes. Runtime envelopes/grants are healthy, but multi-session concurrent-writer and late-fact evidence remain open; ANA stays 3/6."
+    "reason": "Behavior/ORD watermark runtime is certified in staging: validation 041 passes and a real concurrent writer proved dataThrough=xact_start-1us with cleanup complete. Full A07 staging authority remains false because downstream projection/empty-window/late-fact and metric-policy evidence are separate gates. ANA stays 3/6."
   },
   "runtimeEvidence": {
-    "artifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
-    "status": "041_pass_concurrency_pending",
-    "observedAt": "2026-09-23T23:14:56.197764Z",
+    "artifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "priorArtifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
+    "status": "runtime_watermark_certified",
+    "observedAt": "2026-09-23T23:32:33.778851Z",
     "helperExecutionHealthy": true,
     "wrappersHealthy": true,
-    "concurrentWriterCertified": false,
-    "lateFactCertified": false
+    "concurrentWriterCertified": true,
+    "lateFactCertified": false,
+    "cleanupPassed": true
+  },
+  "runtimeWatermarkCertification": {
+    "status": "certified",
+    "basis": "active_transaction_floor_v1",
+    "validation041Passed": true,
+    "noActiveTransactionObserved": true,
+    "concurrentWriterPassed": true,
+    "grantsValidated": true,
+    "preparedTransactionPolicy": "static_fail_closed_runtime_branch_unexercisable_while_max_prepared_transactions_0",
+    "emptyWindowSemantics": "algorithmic_property_no_source_max_dependency",
+    "evidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json"
   }
 }

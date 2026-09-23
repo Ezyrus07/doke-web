@@ -2,7 +2,7 @@
   "contractId": "ana-a07-behavior-ord-watermark-runtime-readiness-v1",
   "domain": "ANA-001",
   "sourceContract": "ana-a07-behavior-ord-watermark-authority-v1",
-  "sourceHead": "612348f0695c7cf8d573ff1e330c872ef5eedc70",
+  "sourceHead": "94b7c0b825b8ba6f30953de6c187c2c28cbfa908",
   "createdAt": "2026-09-23T22:45:00Z",
   "scope": "repository_only",
   "authorization": {
@@ -11,7 +11,7 @@
     "stagingApplyAuthorized": false,
     "productionAuthorized": false
   },
-  "status": "validation_041_pass_concurrency_canary_pending",
+  "status": "runtime_watermark_certified_downstream_projection_canaries_pending",
   "migration": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
   "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
   "runtime": {
@@ -50,10 +50,10 @@
     "structuralSqlCandidate": true,
     "structuralSqlExecutedInStaging": true,
     "noActiveTransactionCase": "read_only_runtime_observed_pass",
-    "emptyWindowCase": "pending_staging_validation",
-    "concurrentWriterCase": "requires_multi_session_staging_canary",
+    "emptyWindowCase": "downstream_projection_validation_pending",
+    "concurrentWriterCase": "staging_transient_cron_canary_pass",
     "preparedTransactionCase": "static fail-closed branch; staging runtime branch unavailable while max_prepared_transactions=0",
-    "lateFactCase": "requires_A09_projection_canary_after_watermark_concurrency_certification",
+    "lateFactCase": "requires_A09_projection_canary_after_watermark_certification",
     "grantBoundaryCase": "validation_041_pass",
     "validation041Status": "passed"
   },
@@ -61,13 +61,15 @@
     "migrationCreated": true,
     "validationCreated": true,
     "migrationApplied": true,
-    "stagingValidated": false,
+    "stagingValidated": true,
     "sourceRowsMutated": false,
     "stagingMigrationVersion": "20260923230106",
     "structuralValidation041Passed": true,
     "compatibilityMigrationApplied": true,
     "compatibilityStagingMigrationVersion": "20260923231132",
-    "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json"
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
+    "concurrentWriterCanaryPassed": true,
+    "concurrentWriterEvidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json"
   },
   "preservedBoundaries": {
     "browserAnalyticsActivated": false,
@@ -83,7 +85,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Compatibility is applied and validation 041 passes. Full staging certification remains intentionally false until multi-session concurrent-writer evidence, followed later by late-fact/A09 projection evidence. ANA remains 3/6."
+    "reason": "The A07 behavior/ORD watermark mechanism is staging-certified after validation 041 and the real concurrent-writer canary. Downstream empty-window/late-fact projection evidence remains with A09/A05, so ANA stays 3/6."
   },
   "compatibilityCandidate": {
     "migration": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
@@ -98,12 +100,22 @@
     "stagingApplyAuthorizationConsumed": true
   },
   "runtimeEvidence": {
-    "artifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
-    "status": "validation_041_pass_concurrency_pending",
-    "observedAt": "2026-09-23T23:14:56.197764Z",
+    "artifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "priorArtifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
+    "status": "runtime_watermark_certified",
+    "observedAt": "2026-09-23T23:32:33.778851Z",
     "noActiveTransactionObserved": true,
     "grantsValidated": true,
-    "concurrentWriterCertified": false,
-    "lateFactCertified": false
+    "concurrentWriterCertified": true,
+    "lateFactCertified": false,
+    "cleanupPassed": true
+  },
+  "concurrentWriterCanary": {
+    "status": "PASS",
+    "transientCronJobId": 9,
+    "cleanup": "PASS",
+    "writerXactStart": "2026-09-23T23:31:34.252362Z",
+    "certifiedDataThrough": "2026-09-23T23:31:34.252361Z",
+    "evidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json"
   }
 }

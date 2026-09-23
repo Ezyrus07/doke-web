@@ -1,7 +1,7 @@
 {
   "contractId": "ana-a09-canonical-funnel-projection-v1",
   "domain": "ANA-001",
-  "sourceHead": "612348f0695c7cf8d573ff1e330c872ef5eedc70",
+  "sourceHead": "94b7c0b825b8ba6f30953de6c187c2c28cbfa908",
   "createdAt": "2026-09-21T22:33:00-03:00",
   "scope": "repository_only",
   "status": "repository_contract_ready_runtime_projection_blocked",
@@ -102,7 +102,7 @@
     "dataThroughRequired": true,
     "watermarkContractId": "ana-a07-behavior-ord-watermark-authority-v1",
     "watermarkContractPath": "config/ana-a07-behavior-ord-watermark-authority.json",
-    "status": "watermark_041_pass_concurrency_canary_pending",
+    "status": "watermark_runtime_certified_projector_pending",
     "behaviorMaterializationTime": "received_at",
     "orderMaterializationTime": "created_at",
     "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
@@ -113,13 +113,14 @@
     "migrationPath": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
     "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
     "runtimeMigrationApplied": true,
-    "runtimeWatermarkCertified": false,
+    "runtimeWatermarkCertified": true,
     "validation041Status": "passed",
     "compatibilityMigrationPath": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
     "compatibilityMigrationApplied": true,
     "compatibilityStagingMigrationVersion": "20260923231132",
-    "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
-    "concurrentWriterCertified": false
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "concurrentWriterCertified": true,
+    "concurrentWriterCleanupPassed": true
   },
   "authority": {
     "contractAuthority": true,
@@ -131,7 +132,6 @@
     "productionAuthority": false
   },
   "activationRequirements": [
-    "forward-only runtime implementation of ANA-A07 behavior/ORD watermarks after explicit staging authorization",
     "server-side funnel projection over private.analytics_behavior_events_v1 and private.order_metric_events",
     "source filtering by received_at/created_at materialization boundaries plus canonical occurred_at event boundaries",
     "append-only A04/A05 metric snapshots/revision semantics",
@@ -170,6 +170,6 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A07 watermark functions are installed and validation 041 passes, but concurrent-writer certification is still required before A09 may consume the runtime watermark authority. Funnel projector and metric-specific funnel freshness thresholds also remain unapplied; ANA stays 3/6."
+    "reason": "A07 behavior/ORD runtime watermark authority is certified and can be consumed by A09. A09 itself remains blocked on its server-side projector, materialization filtering, funnel thresholds, segmentation authority and controlled empty/late-fact staging evidence. ANA stays 3/6."
   }
 }

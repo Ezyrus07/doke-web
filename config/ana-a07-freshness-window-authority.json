@@ -1,14 +1,14 @@
 {
   "contractId": "ana-a07-freshness-window-authority-v1",
   "domain": "ANA-001",
-  "sourceHead": "612348f0695c7cf8d573ff1e330c872ef5eedc70",
+  "sourceHead": "94b7c0b825b8ba6f30953de6c187c2c28cbfa908",
   "createdAt": "2026-09-21T22:00:00-03:00",
   "scope": "repository_only",
-  "status": "behavior_ord_watermark_041_pass_concurrency_canary_pending",
+  "status": "behavior_ord_runtime_watermark_certified_projection_validation_pending",
   "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
   "rootCause": {
     "helperGap": "ANA-A05 has an applyFreshness helper that accepts an ad hoc maxLagSeconds but there is no canonical policy registry, dependency-watermark contract or canonical latest-window selector.",
-    "runtimeGap": "CAT liquidity now has a certified runtime watermark, but behavior and ORD metric dependencies still lack runtime watermarks. A repository authority now defines their materialization semantics and active-transaction-floor algorithm; runtime functions remain unapplied.",
+    "runtimeGap": "CAT liquidity and behavior/ORD now have certified server-side runtime watermarks. Remaining A07 work is downstream metric-specific freshness policy plus projection/selection evidence, not watermark materialization.",
     "evidenceGap": "ANA-A06 proved why selection cannot cherry-pick an older non-empty passing window when a newer canonical observation exists."
   },
   "freshnessStates": [
@@ -204,7 +204,7 @@
     "windowSelectionContractAuthority": true,
     "freshnessStateContractAuthority": true,
     "thresholdValueAuthority": false,
-    "runtimeWatermarkAuthority": false,
+    "runtimeWatermarkAuthority": true,
     "runtimeProjectionAuthority": false,
     "alertDeliveryAuthority": false,
     "stagingAuthority": false,
@@ -212,11 +212,9 @@
   },
   "activationRequirements": [
     "versioned metric-specific maxLagSeconds policies for each metric being activated",
-    "forward-only runtime implementation of the A07 behavior/ORD active_transaction_floor_v1 watermark authority",
-    "server-authoritative source-domain watermarks for every required dependency",
-    "runtime projection path that derives dataThrough from dependency watermarks instead of assuming windowEnd",
+    "runtime projection path that derives dataThrough from certified dependency watermarks instead of assuming windowEnd",
     "materialization-time filtering plus A05 append-only revision semantics for late facts",
-    "controlled staging tests for no-active-transaction, concurrent-writer, empty-window, prepared-transaction fail-closed, late-fact, fresh, stale, unavailable and no-cherry-pick cases"
+    "controlled staging projection tests for empty-window, late-fact, fresh, stale, unavailable and no-cherry-pick cases"
   ],
   "preservedBoundaries": [
     "Product Analytics remains distinct from operational observability.",
@@ -245,13 +243,13 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Behavior/ORD watermark functions are installed and validation 041 passes after the forward-only compatibility migration. Runtime authority remains fail-closed pending multi-session concurrent-writer evidence; ANA stays 3/6."
+    "reason": "Behavior/ORD runtime watermark authority is now certified by validation 041 plus a real concurrent-writer canary. Full A07 staging authority remains open for metric-specific thresholds and downstream projection/selection evidence. ANA stays 3/6."
   },
   "dependencyWatermarkAuthority": {
     "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
     "configPath": "config/ana-a07-behavior-ord-watermark-authority.json",
     "modulePath": "backend/modules/analytics/dependency-watermark-authority.js",
-    "status": "validation_041_pass_concurrency_canary_pending",
+    "status": "runtime_watermark_certified",
     "basis": "active_transaction_floor_v1",
     "behavior": {
       "sourceRelation": "private.analytics_behavior_events_v1",
@@ -270,14 +268,15 @@
     "migrationPath": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
     "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
     "stagingMigrationVersion": "20260923230106",
-    "stagingValidated": false,
+    "stagingValidated": true,
     "validation041Status": "passed",
     "compatibilityMigrationPath": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
     "structuralValidation041Passed": true,
     "compatibilityMigrationApplied": true,
     "compatibilityStagingMigrationVersion": "20260923231132",
-    "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
-    "concurrentWriterCertified": false,
-    "lateFactCertified": false
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "concurrentWriterCertified": true,
+    "lateFactCertified": false,
+    "concurrentWriterCleanupPassed": true
   }
 }
