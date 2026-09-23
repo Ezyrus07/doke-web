@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('fs');const path=require('path');const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');const publicationMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923012500_ana_a11_liquidity_publication_policy_authority.sql'),'utf8');const migration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');
+const fs=require('fs');const path=require('path');const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');const publicationMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923012500_ana_a11_liquidity_publication_policy_authority.sql'),'utf8');const plannerMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923023000_ana_a11_liquidity_window_planner.sql'),'utf8');const migration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});const eq=(n,a,b)=>check(n,a===b);
 function derive(input){
   if(!input||!Number.isInteger(input.windowStepSeconds)||input.windowStepSeconds<=0)throw new Error('ANA_LIQUIDITY_WINDOW_STEP_REQUIRED');
@@ -16,6 +16,13 @@ let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300
 
 
 check('publication policy schema is applied but empty',c.publicationPolicyAuthority.stagingApplied===true&&c.publicationPolicyAuthority.stagingMigrationVersion==='20260923021316'&&c.publicationPolicyAuthority.stagingRows===0&&c.publicationPolicyAuthority.rowCreationAuthorized===false);
+
+check('planner remains repository-only',c.windowPlannerCandidate.stagingApplied===false&&c.windowPlannerCandidate.createsCron===false&&c.windowPlannerCandidate.writesSnapshots===false);
+check('planner requires explicit policy',c.windowPlannerCandidate.policyRowRequired===true&&plannerMigration.includes('DOKE_ANALYTICS_PUBLICATION_POLICY_REQUIRED'));
+check('planner grid comes from policy',plannerMigration.includes('v_policy.window_anchor')&&plannerMigration.includes('v_policy.window_step_seconds')&&plannerMigration.includes('v_policy.max_catch_up_windows_per_invocation'));
+check('planner checks full series completion',plannerMigration.includes('expected_series')&&plannerMigration.includes('missing_count > 0')&&plannerMigration.includes("m.dimensions = e.expected_dimensions"));
+check('planner is oldest-first and bounded',plannerMigration.includes('order by w.candidate_window_start')&&plannerMigration.includes('limit v_policy.max_catch_up_windows_per_invocation'));
+
 check('staging canaries left no residue',c.stagingStructuralEvidence.postState.publicationPolicyRows===0&&c.stagingStructuralEvidence.postState.freshnessPolicyRows===0&&c.stagingStructuralEvidence.postState.anaLiquidityCrons===0&&c.stagingStructuralEvidence.postState.liquiditySnapshotRows===3);
 check('staging canaries proved replay and ambiguity',c.seriesOrchestrationCandidate.canary.firstRun.appendedCount===3&&c.seriesOrchestrationCandidate.canary.replayRun.noChangeCount===3&&c.publicationPolicyAuthority.canary.derivedMaxLagSeconds===360&&c.publicationPolicyAuthority.canary.overlapError==='DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS');
 check('publication policy has no implicit default',publicationMigration.includes('if v_count = 0 then')&&c.publicationPolicyAuthority.missingEffectivePolicy==='null_no_default');

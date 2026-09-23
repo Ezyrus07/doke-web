@@ -214,3 +214,28 @@ Post-validation staging state remains:
 
 The structural authorities are now real staging runtime, but no cadence, delay SLO, window anchor, catch-up bound, freshness threshold, publication row, or scheduler has been approved. ANA therefore remains **3/6** and `POLICY_THRESHOLD_MISSING` remains the correct runtime behavior.
 
+## Repository candidate — canonical window planner
+
+The remaining scheduling mechanics now have a repository-only planner candidate:
+
+- `supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql`
+- `supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql`
+
+`private.plan_analytics_cat_liquidity_windows_v1(policyId, evaluatedAt)` is intentionally policy-driven. It contains no cadence, anchor, SLO or catch-up default.
+
+For the supplied versioned policy it:
+
+1. reads `windowStepSeconds`, `windowAnchor`, effective dates and `maxCatchUpWindowsPerInvocation`;
+2. bounds the grid below by the later of policy activation and the certified CAT-A07 coverage epoch;
+3. bounds closed windows above by the earliest of `evaluatedAt`, the CAT transaction-snapshot watermark and policy expiry;
+4. aligns every window to `windowAnchor + N × windowStepSeconds`;
+5. asks the staging-validated CAT-backed series authority which global/category/state series belong to each window;
+6. treats a window as materialized only when **every required series** has an exact-window ANA snapshot;
+7. returns only missing windows, oldest first, capped by the policy catch-up bound.
+
+This deliberately does not rely on the global snapshot as a completion marker, because historical A10 canaries could have materialized only a subset of the required dimension series.
+
+The candidate is read-only and owner-only. It inserts no snapshots, creates no cron and cannot choose policy values. Missing/unknown policy fails closed with `DOKE_ANALYTICS_PUBLICATION_POLICY_REQUIRED`.
+
+The planner is **not applied to staging** by this repository-only lot.
+

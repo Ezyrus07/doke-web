@@ -3,17 +3,17 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "acb4a93bcf22ca772a3c5dc38d08e8565b759339",
+  "sourceHead": "a559eadcdb1612c5d957dc35225d9f083eb8fb99",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "structural_authorities_staging_validated_policy_values_unset_scheduler_unactivated",
+  "status": "staging_structural_authorities_validated_window_planner_candidate_ready_policy_values_unset",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
     "cadenceAuthorityMissing": "ANA-001 has no canonical cron/publication cadence in the domain matrix and repository search found no analytics freshness cadence or metric-specific maxLagSeconds authority.",
     "sourceWatermarkAvailable": "CAT-A06 transaction-snapshot watermark is active in staging through ANA-A10.",
     "consequence": "A numeric maxLagSeconds and an active scheduler remain non-authoritative until cadence/SLO, canonical window-grid alignment, dimension-series enumeration and missed-window recovery are versioned.",
-    "windowGridAuthorityMissing": "windowStepSeconds alone does not define deterministic windows: ANA-001 still lacks a versioned boundary anchor/alignment rule for liquidity.active_service_seconds.",
+    "windowGridAuthorityMissing": "numeric grid values remain unapproved, but a policy-driven repository planner now defines how approved anchor/step values will generate canonical closed windows without defaults.",
     "dimensionSeriesAuthorityMissing": "resolved structurally in staging: owner-only CAT-fact-backed series enumeration and atomic per-window orchestration are installed and validated; scheduler activation remains separate.",
     "publicationPolicyProvenanceGap": "private.analytics_metric_freshness_policies_v1 stores only the derived max_lag_seconds/effective window. It cannot prove which window step, projection-delay SLO, boundary anchor, catch-up bound or approval evidence produced that threshold.",
     "currentFreshnessPolicyRows": "staging currently has zero freshness-policy rows, so no existing row requires data migration."
@@ -41,7 +41,7 @@
     "A publication-policy row is explicitly approved with versioned windowStepSeconds, projectionDelaySloSeconds, windowAnchor, bounded catch-up and approval evidence; the row is inserted only under separate staging authorization.",
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
-    "A bounded missed-window recovery limit is versioned; recovery processes oldest missing closed windows before newer windows.",
+    "The repository window-planner candidate is explicitly authorized, applied and validated in staging; its catch-up limit remains sourced only from the approved publication-policy row.",
     "A Supabase pg_cron job invokes the database-local ANA-A10 runner at the approved cadence.",
     "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
     "The effective publication policy derivedMaxLagSeconds is synchronized into private.analytics_metric_freshness_policies_v1 only under a separately authorized staging mutation; hand-entered thresholds are forbidden.",
@@ -118,7 +118,9 @@
     "dimensionEnumeratorRuntimeAuthority": true,
     "publicationPolicySchemaAuthority": true,
     "publicationPolicyValueAuthority": false,
-    "freshnessPolicySyncAuthority": false
+    "freshnessPolicySyncAuthority": false,
+    "windowPlannerContractAuthority": true,
+    "windowPlannerRuntimeAuthority": false
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -213,7 +215,7 @@
     },
     "windowBoundaryGrid": {
       "owner": "ANA-001",
-      "decision": "Approve and version the canonical boundary anchor/alignment (and time-zone semantics if applicable) used with windowStepSeconds.",
+      "decision": "Approve and version the concrete windowStepSeconds and windowAnchor values consumed by the already-defined policy-driven planner.",
       "cannotBeInferredFrom": [
         "canary window boundaries",
         "clock_timestamp at execution",
@@ -229,7 +231,7 @@
     },
     "missedWindowRecovery": {
       "owner": "ANA-001 operational policy",
-      "decision": "Approve a bounded maximum number of missing canonical windows processed per scheduler invocation.",
+      "decision": "Approve maxCatchUpWindowsPerInvocation in the publication-policy row; the planner already enforces oldest-first bounded selection and has no numeric default.",
       "cannotBeInferredFrom": [
         "retry backoff",
         "current backlog size",
@@ -248,7 +250,7 @@
       ]
     }
   },
-  "updatedAt": "2026-09-22T23:15:47-03:00",
+  "updatedAt": "2026-09-22T23:28:00-03:00",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -269,10 +271,15 @@
       "anonExecute": false,
       "activeAnaLiquidityCronFound": false
     },
-    "activationAuthorized": false
+    "activationAuthorized": false,
+    "executionChain": [
+      "Supabase pg_cron (future separately authorized)",
+      "policy-driven missing-window planner",
+      "private.run_analytics_cat_liquidity_window_v1 for each planned window"
+    ]
   },
   "canonicalWindowGrid": {
-    "status": "pending_versioned_window_grid",
+    "status": "planner_contract_ready_values_unset",
     "windowStepSeconds": null,
     "boundaryAnchor": null,
     "boundaryTimeZone": "not_applicable_fixed_duration_grid",
@@ -283,7 +290,10 @@
       "A window is not publishable while windowEnd exceeds the authoritative CAT source watermark."
     ],
     "boundarySemantics": "fixed-duration absolute grid: windowAnchor + N * windowStepSeconds",
-    "timeZoneIsIndependentAuthority": false
+    "timeZoneIsIndependentAuthority": false,
+    "plannerContract": "ana-a11-liquidity-window-planner-v1",
+    "alignmentRule": "first start boundary at or after max(policy effectiveFrom, CAT certified coverage epoch); each next boundary advances exactly windowStepSeconds from windowAnchor",
+    "upperClosureRule": "windowEnd must be <= min(evaluatedAt, CAT source watermark, policy effectiveUntil when present)"
   },
   "dimensionSeriesAuthority": {
     "status": "staging_structural_authority_validated_scheduler_unactivated",
@@ -341,14 +351,20 @@
     "stagingValidation": "PASS"
   },
   "missedWindowRecovery": {
-    "status": "structural_contract_ready_batch_limit_unset",
+    "status": "repository_window_planner_candidate_ready_batch_value_unset",
     "processingOrder": "oldest missing canonical closed window first",
     "skipDirectlyToLatestAllowed": false,
     "exactReplayBehavior": "NO_CHANGE when source/projection fingerprints are unchanged",
     "divergentConcurrentWriteBehavior": "DOKE_ANALYTICS_METRIC_REVISION_CONFLICT",
     "maxCatchUpWindowsPerInvocation": null,
     "unboundedCatchUpAllowed": false,
-    "reason": "The append-only snapshot writer is replay-safe, but a bounded recovery budget must be versioned before scheduler activation."
+    "reason": "The planner is structurally defined and policy-driven, but its grid and catch-up bound remain unavailable until a concrete publication-policy row is approved.",
+    "plannerContract": "ana-a11-liquidity-window-planner-v1",
+    "repositoryPlannerCandidate": "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
+    "validationSql": "supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql",
+    "plannerStagingApplied": false,
+    "completionRule": "A canonical window is complete only when every series returned by the CAT-backed series authority for that window has a matching liquidity snapshot.",
+    "materializedStateIndependent": true
   },
   "seriesOrchestrationCandidate": {
     "contractId": "ana-a11-liquidity-series-orchestration-v1",
@@ -467,5 +483,35 @@
       "liquiditySnapshotRows": 3,
       "securityDefinerTotal": 203
     }
+  },
+  "windowPlannerCandidate": {
+    "contractId": "ana-a11-liquidity-window-planner-v1",
+    "migration": "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
+    "validationSql": "supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql",
+    "scope": "repository_only_candidate",
+    "stagingApplied": false,
+    "policyRowRequired": true,
+    "implicitPolicyAllowed": false,
+    "plannerInputs": [
+      "policyId",
+      "evaluatedAt"
+    ],
+    "policyDerivedInputs": [
+      "windowStepSeconds",
+      "windowAnchor",
+      "maxCatchUpWindowsPerInvocation",
+      "effectiveFrom",
+      "effectiveUntil"
+    ],
+    "sourceBounds": [
+      "CAT certified coverage epoch",
+      "CAT transaction-snapshot watermark"
+    ],
+    "completionAuthority": "all CAT-required series have exact-window ANA snapshots",
+    "ordering": "oldest missing canonical window first",
+    "writesSnapshots": false,
+    "createsCron": false,
+    "activatesScheduler": false,
+    "choosesNumericPolicy": false
   }
 }
