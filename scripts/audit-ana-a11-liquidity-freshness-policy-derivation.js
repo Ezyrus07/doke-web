@@ -95,7 +95,7 @@ check('policy insert unauthorized',c.currentDecision?.policyInsertAuthorized===f
 check('A07 threshold pending',a07.thresholdAuthority?.defaultMaxLagSeconds===null&&a07.thresholdAuthority?.status==='pending_versioned_metric_policy');
 check('A10 still fail closed',a10.freshnessDependency?.metricThresholdStatus!=='active'&&a10.runtimeImplementation?.liquidityPolicyInserted===false);
 const ana=matrix.domains.find(d=>d.id==='ANA-001');
-check('ANA no cron authority',Array.isArray(ana?.crons)&&ana.crons.length===0);
+check('ANA canonical scheduler authority',Array.isArray(ana?.crons)&&ana.crons.length===1&&ana.crons[0]==='doke-ana-liquidity-v1-r1');
 check('ANA remains 3/6',ana?.maturity===3);
 check('A11 registered',ana?.requiredPaths?.includes('config/ana-a11-liquidity-freshness-policy-derivation.json')&&ana?.tests?.includes('audit:ana-a11-liquidity-freshness-policy-derivation'));
 Object.entries(c.prohibitedEffects||{}).forEach(([k,v])=>check('effect '+k,v===false));
