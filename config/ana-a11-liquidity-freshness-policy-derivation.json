@@ -3,10 +3,10 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "a559eadcdb1612c5d957dc35225d9f083eb8fb99",
+  "sourceHead": "b73c23c0ca6d01b9841776e27e1a8c0776477a31",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "staging_structural_authorities_validated_window_planner_candidate_ready_policy_values_unset",
+  "status": "staging_structural_authorities_validated_planner_and_executor_candidates_ready_policy_values_unset",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -41,7 +41,7 @@
     "A publication-policy row is explicitly approved with versioned windowStepSeconds, projectionDelaySloSeconds, windowAnchor, bounded catch-up and approval evidence; the row is inserted only under separate staging authorization.",
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
-    "The repository window-planner candidate is explicitly authorized, applied and validated in staging; its catch-up limit remains sourced only from the approved publication-policy row.",
+    "The repository window-planner and catch-up-executor candidates are explicitly authorized, applied and validated in staging; both remain driven only by an approved publication-policy row.",
     "A Supabase pg_cron job invokes the database-local ANA-A10 runner at the approved cadence.",
     "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
     "The effective publication policy derivedMaxLagSeconds is synchronized into private.analytics_metric_freshness_policies_v1 only under a separately authorized staging mutation; hand-entered thresholds are forbidden.",
@@ -120,7 +120,9 @@
     "publicationPolicyValueAuthority": false,
     "freshnessPolicySyncAuthority": false,
     "windowPlannerContractAuthority": true,
-    "windowPlannerRuntimeAuthority": false
+    "windowPlannerRuntimeAuthority": false,
+    "catchUpExecutorContractAuthority": true,
+    "catchUpExecutorRuntimeAuthority": false
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -250,7 +252,7 @@
       ]
     }
   },
-  "updatedAt": "2026-09-22T23:28:00-03:00",
+  "updatedAt": "2026-09-22T23:36:00-03:00",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -274,9 +276,11 @@
     "activationAuthorized": false,
     "executionChain": [
       "Supabase pg_cron (future separately authorized)",
-      "policy-driven missing-window planner",
-      "private.run_analytics_cat_liquidity_window_v1 for each planned window"
-    ]
+      "private.run_analytics_cat_liquidity_catch_up_v1",
+      "private.plan_analytics_cat_liquidity_windows_v1",
+      "private.run_analytics_cat_liquidity_window_v1"
+    ],
+    "futureCronTarget": "private.run_analytics_cat_liquidity_catch_up_v1"
   },
   "canonicalWindowGrid": {
     "status": "planner_contract_ready_values_unset",
@@ -364,7 +368,12 @@
     "validationSql": "supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql",
     "plannerStagingApplied": false,
     "completionRule": "A canonical window is complete only when every series returned by the CAT-backed series authority for that window has a matching liquidity snapshot.",
-    "materializedStateIndependent": true
+    "materializedStateIndependent": true,
+    "executorContract": "ana-a11-liquidity-catch-up-executor-v1",
+    "repositoryExecutorCandidate": "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
+    "executorValidationSql": "supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql",
+    "executorStagingApplied": false,
+    "batchAtomicity": "One executor call is one PostgreSQL statement/transaction boundary; any uncaught planned-window failure aborts the invocation instead of committing a partial catch-up batch."
   },
   "seriesOrchestrationCandidate": {
     "contractId": "ana-a11-liquidity-series-orchestration-v1",
@@ -513,5 +522,25 @@
     "createsCron": false,
     "activatesScheduler": false,
     "choosesNumericPolicy": false
+  },
+  "catchUpExecutorCandidate": {
+    "contractId": "ana-a11-liquidity-catch-up-executor-v1",
+    "migration": "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
+    "validationSql": "supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql",
+    "scope": "repository_only_candidate",
+    "stagingApplied": false,
+    "planner": "private.plan_analytics_cat_liquidity_windows_v1",
+    "windowOrchestrator": "private.run_analytics_cat_liquidity_window_v1",
+    "inputs": [
+      "policyId",
+      "evaluatedAt"
+    ],
+    "directPolicyRead": false,
+    "directFreshnessPolicyWrite": false,
+    "createsCron": false,
+    "choosesNumericPolicy": false,
+    "ownerBoundary": "postgres only",
+    "executionOrder": "planner windowOrdinal ascending",
+    "batchAtomicity": "uncaught failure aborts the executor invocation transaction"
   }
 }

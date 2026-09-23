@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('fs');const path=require('path');const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');const publicationMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923012500_ana_a11_liquidity_publication_policy_authority.sql'),'utf8');const plannerMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923023000_ana_a11_liquidity_window_planner.sql'),'utf8');const migration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');
+const fs=require('fs');const path=require('path');const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');const publicationMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923012500_ana_a11_liquidity_publication_policy_authority.sql'),'utf8');const plannerMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923023000_ana_a11_liquidity_window_planner.sql'),'utf8');const executorMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923024000_ana_a11_liquidity_catch_up_executor.sql'),'utf8');const migration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});const eq=(n,a,b)=>check(n,a===b);
 function derive(input){
   if(!input||!Number.isInteger(input.windowStepSeconds)||input.windowStepSeconds<=0)throw new Error('ANA_LIQUIDITY_WINDOW_STEP_REQUIRED');
@@ -16,6 +16,12 @@ let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300
 
 
 check('publication policy schema is applied but empty',c.publicationPolicyAuthority.stagingApplied===true&&c.publicationPolicyAuthority.stagingMigrationVersion==='20260923021316'&&c.publicationPolicyAuthority.stagingRows===0&&c.publicationPolicyAuthority.rowCreationAuthorized===false);
+
+
+check('catch-up executor remains repository-only',c.catchUpExecutorCandidate.stagingApplied===false&&c.catchUpExecutorCandidate.createsCron===false&&c.catchUpExecutorCandidate.choosesNumericPolicy===false);
+check('catch-up executor delegates planner and window authority',executorMigration.includes('private.plan_analytics_cat_liquidity_windows_v1')&&executorMigration.includes('private.run_analytics_cat_liquidity_window_v1'));
+check('catch-up executor has no direct policy authority',c.catchUpExecutorCandidate.directPolicyRead===false&&c.catchUpExecutorCandidate.directFreshnessPolicyWrite===false&&!executorMigration.includes('analytics_metric_publication_policies_v1'));
+check('catch-up executor preserves planner order',executorMigration.includes('order by p.window_ordinal')&&c.catchUpExecutorCandidate.executionOrder==='planner windowOrdinal ascending');
 
 check('planner remains repository-only',c.windowPlannerCandidate.stagingApplied===false&&c.windowPlannerCandidate.createsCron===false&&c.windowPlannerCandidate.writesSnapshots===false);
 check('planner requires explicit policy',c.windowPlannerCandidate.policyRowRequired===true&&plannerMigration.includes('DOKE_ANALYTICS_PUBLICATION_POLICY_REQUIRED'));

@@ -239,3 +239,22 @@ The candidate is read-only and owner-only. It inserts no snapshots, creates no c
 
 The planner is **not applied to staging** by this repository-only lot.
 
+## Repository candidate — bounded catch-up executor
+
+The execution bridge after the window planner is now explicit:
+
+- `supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql`
+- `supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql`
+
+`private.run_analytics_cat_liquidity_catch_up_v1(policyId, evaluatedAt)` does not calculate policy, select arbitrary windows or schedule itself. It consumes the already-bounded, oldest-first windows from `private.plan_analytics_cat_liquidity_windows_v1` and delegates each window to `private.run_analytics_cat_liquidity_window_v1`.
+
+This has three important properties:
+
+- **single planning authority:** the executor cannot bypass the policy-driven planner;
+- **single projection authority:** every planned window still uses the staging-validated A11 series/window orchestrator and A10 projection runtime;
+- **batch atomicity:** an uncaught failure in any window aborts the executor call/transaction instead of committing only part of the catch-up batch.
+
+The executor reads no publication-policy table directly, writes no freshness-policy row and creates no `pg_cron` job. Its only inputs are `policyId` and `evaluatedAt`; therefore it has no numeric defaults or hidden schedule authority.
+
+This executor remains repository-only and is **not applied to staging** by this lot.
+
