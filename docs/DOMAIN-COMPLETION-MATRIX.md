@@ -103,7 +103,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | --- | --- | --- | --- | --- | --- |
 | FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail |  |
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
-| FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
+| FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04 |
 | FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B02 |
 | FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation |  |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1531 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 376 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1535 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 412 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 226 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 239 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 6 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -278,15 +278,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Reviewer operations require an independently authenticated admin/moderator Edge Function context.
 - Role promotion is atomic, idempotent and synchronized through public.users to app_metadata.
 - Client operational metrics and public reputation remain separated into private and aggregate-only authorities.
+- PROF-B05 is technically closed in staging: the managed Storage policy authority removed legacy owner-prefix KYC mutation policies, leaving one canonical referenced-read policy and zero browser INSERT/UPDATE/DELETE policies for the KYC bucket.
+- PROF-B05 G1-G5 validations 030 through 033 pass in staging; the signed-upload runtime E2E proves immutable S1 submit/review/reject/reopen history, a distinct S2 submission, direct approval, deterministic event ordering and final professional role promotion.
+- The KYC GC authority is dry-run only: current real evidence remains KEEP_REFERENCE, technical GC eligibility is zero and no physical Storage deletion path is enabled before approved retention governance.
+- A versioned PROF-B04 retention/governance/legal-hold authority and validation 034 exist on the candidate branch in a sealed state, with no approved policy seed, no default retention interval and no physical GC implementation; they are not applied to staging.
+- PROF-B04 is machine-gated by a fail-closed KYC policy decision contract: no default retention interval, G6/G7 blocked, and legal/privacy/provider/biometric/rejection-appeal/legal-hold decisions remain explicit.
 
 **Bloqueadores:**
 - **PROF-B04 · HIGH · external_policy:** Final KYC rules, document retention and legal verification provider are not approved. _(Fase 2)_
-- **PROF-B05 · HIGH · storage_policy:** Legacy owner-prefix Storage write policies remain because storage.objects is owned by the managed supabase_storage_admin role; the new signed-intent submission flow no longer trusts them. _(Fase 1)_
 
 **Próximas ações:**
-- Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.
-- Define final KYC policy, document retention, rejection, appeal and legal verification provider rules.
-- Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving external blockers.
+- Complete PROF-B04 / LEGAL-B03 approval for retention classes, anchors, intervals, rejection/appeal rules, verification provider, biometric-processing mode, privacy records and legal-hold semantics before activating any retention or physical GC authority.
+- Keep Storage containment, signed-intent E2E, immutable evidence lifecycle, deterministic event ordering and dry-run GC validations cumulative.
+- Keep physical KYC evidence deletion disabled; the sealed B04 authority must remain inactive until explicit policy approval and a separately reviewed G7 execution gate.
+- Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving the external policy blocker.
 
 **Gate de saída:**
 - A professional can complete, submit, be reviewed and receive a decision across devices.
@@ -344,7 +349,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 229 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 242 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +544,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1429 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 374 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1440 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 410 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1086,7 +1091,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 312 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 313 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1146,7 +1151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3416 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 812 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3434 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 849 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1207,4 +1212,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-15T21:20:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-18T21:55:00-03:00._

@@ -27,11 +27,27 @@ const files = {
   evidenceJson: 'docs/validation/PROF-001-A01-AUTHORITY-BASELINE.json',
   a02EvidenceJson: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.json',
   a04EvidenceJson: 'docs/validation/PROF-001-A04-KYC-DRAFT-AUTHORITY-RETIREMENT.json',
-  b03EvidenceJson: 'docs/validation/PROF-001-B03-KYC-EVIDENCE-AUTHORITY-RETIREMENT.json'
+  b03EvidenceJson: 'docs/validation/PROF-001-B03-KYC-EVIDENCE-AUTHORITY-RETIREMENT.json',
+  b05ContainmentTest: 'supabase/tests/030_professional_kyc_storage_containment_validation.sql',
+  b05ReopenTest: 'supabase/tests/031_professional_kyc_reopen_lineage_validation.sql',
+  b05LifecycleTest: 'supabase/tests/032_professional_kyc_evidence_lifecycle_validation.sql',
+  b05GcTest: 'supabase/tests/033_professional_kyc_gc_dry_run_validation.sql',
+  b05EventOrderingMigration: 'supabase/migrations/20260918213000_professional_kyc_evidence_event_ordering_authority.sql',
+  b05SignedIntentRuntime: 'scripts/validate-professional-kyc-evidence-lifecycle-runtime.mjs'
 };
 
 Object.entries(files).forEach(([key, file]) => {
-  if (!['a02EvidenceJson', 'a04EvidenceJson', 'b03EvidenceJson'].includes(key)) {
+  if (![
+    'a02EvidenceJson',
+    'a04EvidenceJson',
+    'b03EvidenceJson',
+    'b05ContainmentTest',
+    'b05ReopenTest',
+    'b05LifecycleTest',
+    'b05GcTest',
+    'b05EventOrderingMigration',
+    'b05SignedIntentRuntime'
+  ].includes(key)) {
     assert(exists(file), `required file missing: ${file}`);
   }
 });
@@ -41,7 +57,25 @@ const a04Started = exists(files.a04EvidenceJson);
 const b03Started = exists(files.b03EvidenceJson);
 const matrix = JSON.parse(read(files.matrix));
 const prof = (matrix.domains || []).find((domain) => domain.id === 'PROF-001');
-const expectedBlockers = b03Started ? ['PROF-B04', 'PROF-B05'] : ['PROF-B03', 'PROF-B04', 'PROF-B05'];
+const b05ArtifactsPresent = [
+  files.b05ContainmentTest,
+  files.b05ReopenTest,
+  files.b05LifecycleTest,
+  files.b05GcTest,
+  files.b05EventOrderingMigration,
+  files.b05SignedIntentRuntime
+].every(exists);
+const b05ClosureEvidence = Boolean(
+  prof && (prof.evidence || []).some((item) =>
+    String(item).includes('PROF-B05 is technically closed in staging')
+  )
+);
+const b05Closed = b05ArtifactsPresent && b05ClosureEvidence;
+const expectedBlockers = [
+  ...(!b03Started ? ['PROF-B03'] : []),
+  'PROF-B04',
+  ...(!b05Closed ? ['PROF-B05'] : [])
+];
 assert(Boolean(prof), 'PROF-001 is missing from the domain completion matrix');
 assert(
   prof && prof.userFacingAuthority === (b03Started ? 'remote' : 'hybrid'),
@@ -56,6 +90,41 @@ assert(
   same((prof && prof.blockers || []).map((blocker) => blocker.id).sort(), expectedBlockers),
   'PROF-001 blockers changed without reconciling PROF-A01 evidence'
 );
+
+if (b05Closed) {
+  const containment = read(files.b05ContainmentTest);
+  const reopen = read(files.b05ReopenTest);
+  const lifecycle = read(files.b05LifecycleTest);
+  const gc = read(files.b05GcTest);
+  const ordering = read(files.b05EventOrderingMigration);
+  const runtime = read(files.b05SignedIntentRuntime);
+
+  [
+    'professional_verification_reference_read',
+    'PROF_B05_BROWSER_STORAGE_MUTATION_POLICY_REMAINS'
+  ].forEach((marker) => assert(containment.includes(marker), `PROF-B05 containment closure marker missing: ${marker}`));
+
+  [
+    'PROF_B05_REOPEN_CURRENT_MAPPING_REMAINS',
+    'PROF_B05_REOPEN_LEDGER_ORDER_INVALID'
+  ].forEach((marker) => assert(reopen.includes(marker), `PROF-B05 reopen closure marker missing: ${marker}`));
+
+  [
+    'PROF_B05_EVIDENCE_EVENT_SEQUENCE_MISSING',
+    'PROF_B05_S2_EVENT_ORDER_INVALID',
+    'PROF_B05_EVIDENCE_TRUNCATE_ALLOWED'
+  ].forEach((marker) => assert(lifecycle.includes(marker), `PROF-B05 lifecycle closure marker missing: ${marker}`));
+
+  [
+    'PROF_B05_GC_CLASSIFIER_MATRIX_FAILED',
+    'PROF_B05_GC_RETENTION_GATE_MISSING',
+    'historical_legacy_evidence'
+  ].forEach((marker) => assert(gc.includes(marker), `PROF-B05 GC closure marker missing: ${marker}`));
+
+  assert(ordering.includes('event_sequence bigint generated always as identity'), 'PROF-B05 deterministic event ordering authority is missing');
+  assert(runtime.includes('prof-b05-g4-e2e-pass'), 'PROF-B05 signed evidence lifecycle E2E proof marker is missing');
+  assert(!(prof.blockers || []).some((blocker) => blocker.id === 'PROF-B05'), 'PROF-B05 cannot remain a blocker after closure evidence is present');
+}
 
 const profileService = read(files.profileService);
 [
@@ -219,5 +288,6 @@ if (!process.exitCode) {
   console.log(`[PROF-A01] profile browser persistence retired: ${a02Started ? 'yes' : 'no'}`);
   console.log(`[PROF-A01] KYC record and draft browser persistence retired: ${a04Started ? 'yes' : 'no'}`);
   console.log(`[PROF-A01] KYC binary evidence browser persistence retired: ${b03Started ? 'yes' : 'no'}`);
+  console.log(`[PROF-A01] PROF-B05 technical closure: ${b05Closed ? 'proved by cumulative artifacts' : 'open'}.`);
   console.log(`[PROF-A01] remaining blockers: ${expectedBlockers.join(', ')}.`);
 }

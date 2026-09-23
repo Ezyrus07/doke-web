@@ -1,0 +1,73 @@
+name: Doke PROF-B05 G2A Signed Intent Staging Canary
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/validate-professional-kyc-signed-intent-runtime.mjs'
+      - 'scripts/test-professional-kyc-authority-contract.js'
+      - 'docs/PROFESSIONAL-VERIFICATION-STORAGE-SETUP.md'
+      - 'supabase/tests/030_professional_kyc_storage_containment_validation.sql'
+      - 'supabase/migrations/20260919005500_professional_kyc_retention_policy_authority.sql'
+      - 'supabase/tests/034_professional_kyc_retention_policy_validation.sql'
+      - '.github/workflows/prof-b05-g2a-signed-intent-staging-canary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-prof-b05-g2a-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: node --check scripts/validate-professional-kyc-signed-intent-runtime.mjs
+      - name: KYC static authority
+        run: node scripts/test-professional-kyc-authority-contract.js
+      - name: Professional authority baseline
+        run: node scripts/audit-professional-authority-baseline.js
+      - name: KYC policy decision gate
+        run: npm run audit:professional-kyc-policy-decision-contract
+      - name: Focused KYC policy decision contract
+        run: npm run test:professional-kyc-policy-decision-contract
+      - name: Generate canonical domain matrix
+        run: npm run write:domain-completion-matrix
+      - name: Upload generated domain matrix
+        uses: actions/upload-artifact@v4
+        with:
+          name: prof-domain-completion-generated
+          path: docs/DOMAIN-COMPLETION-MATRIX.md
+          if-no-files-found: error
+          retention-days: 1
+      - name: Domain matrix must already be canonical
+        run: git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md
+      - name: Domain completion matrix
+        run: npm run audit:domain-completion-matrix
+      - name: G2A dry-run contract
+        run: node scripts/validate-professional-kyc-signed-intent-runtime.mjs --dry-run
+      - name: Diff hygiene
+        run: git diff --check
+
+  # Disabled after G4 became active in staging: a signed-intent submit now creates
+  # immutable evidence provenance, so zero-residue teardown must run only in an
+  # isolated disposable project. Keep this workflow as static/dry-run certification.
+  canary:
+    if: ${{ false }}
+    needs: certify
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "G2A staging mutation disabled post-G4; use the disposable G4 E2E workflow."
+
