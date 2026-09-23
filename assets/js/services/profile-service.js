@@ -72,6 +72,77 @@
     }).slice(0, 8);
   }
 
+  function normalizePublicProfileRole(value) {
+    var role = normalizeText(value).toLowerCase();
+    return role === 'client' || role === 'professional' ? role : '';
+  }
+
+  function isCanonicalUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeText(value));
+  }
+
+  function unwrapPublicRead(response) {
+    if (response && response.error) throw response.error;
+    return response && response.data || null;
+  }
+
+  function readPublicProfileRow(client, userId) {
+    return Promise.resolve(client
+      .from('user_profiles')
+      .select('user_id,display_name,username,avatar_url,cover_url,city,state,country,bio,interests,created_at,updated_at')
+      .eq('user_id', userId)
+      .maybeSingle()).then(unwrapPublicRead);
+  }
+
+  function readPublicProfileRole(client, userId) {
+    return Promise.resolve(client
+      .from('public_profile_role_projection')
+      .select('user_id,role,updated_at')
+      .eq('user_id', userId)
+      .maybeSingle()).then(unwrapPublicRead);
+  }
+
+  function normalizeRemotePublicProfile(profileRow, roleRow) {
+    var userId = normalizeText(profileRow && profileRow.user_id);
+    var roleUserId = normalizeText(roleRow && roleRow.user_id);
+    var role = normalizePublicProfileRole(roleRow && roleRow.role);
+    if (!userId || userId !== roleUserId || !role) return null;
+
+    var name = normalizeText(profileRow.display_name, 80) || 'Perfil Doke';
+    var handle = normalizeHandle(profileRow.username || '');
+    return Object.freeze({
+      id: userId,
+      userId: userId,
+      role: role,
+      type: role,
+      name: name,
+      displayName: name,
+      handle: handle,
+      username: handle,
+      avatarUrl: normalizeMediaUrl(profileRow.avatar_url || ''),
+      coverUrl: normalizeMediaUrl(profileRow.cover_url || ''),
+      city: normalizeText(profileRow.city, 60),
+      state: normalizeText(profileRow.state, 2).toUpperCase(),
+      country: normalizeText(profileRow.country, 2).toUpperCase() || 'BR',
+      bio: normalizeText(profileRow.bio, 500),
+      interests: normalizeInterests(profileRow.interests),
+      createdAt: profileRow.created_at || '',
+      updatedAt: profileRow.updated_at || ''
+    });
+  }
+
+  function getRemotePublicProfile(userId) {
+    var id = normalizeText(userId);
+    var client = getSupabaseClient();
+    if (!id || !isCanonicalUuid(id) || !client || typeof client.from !== 'function') return Promise.resolve(null);
+    return Promise.all([
+      readPublicProfileRow(client, id),
+      readPublicProfileRole(client, id)
+    ]).then(function (rows) {
+      return normalizeRemotePublicProfile(rows[0], rows[1]);
+    });
+  }
+
   function normalizeMediaUrl(value) {
     var url = String(value || '').trim();
     if (!url) return '';
@@ -313,6 +384,11 @@
 
     if (!id) return Promise.resolve(null);
     if (cachedProfile) return Promise.resolve(cachedProfile);
+    if (usesSupabaseProvider()) {
+      return getRemotePublicProfile(id).then(function (profile) {
+        return profile || sessionFallback;
+      });
+    }
     if (!repository || typeof repository.findById !== 'function') {
       return Promise.resolve(sessionFallback);
     }
