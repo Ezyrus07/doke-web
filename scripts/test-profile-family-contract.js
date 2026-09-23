@@ -46,6 +46,18 @@ forbidTerm('perfil-cliente.html', publicClient, 'data-client-profile-editor', 'p
 forbidTerm('perfil-cliente.html', publicClient, 'client-profile-editor.js', 'perfil público não pode carregar controller de edição');
 forbidTerm('perfil-cliente.html', publicClient, 'data-client-edit-action', 'perfil público não pode conter affordances de edição');
 forbidTerm('perfil-cliente.html', publicClient, 'profile-avatar--editable', 'avatar público não pode usar variante editável');
+requireTerm('perfil-cliente.html', publicClient, '<p class="profile-heading__eyebrow">Perfil de cliente</p>', 'eyebrow público deve ser descritivo, não uma alegação de confiança');
+requireTerm('perfil-cliente.html', publicClient, 'data-profile-verified hidden', 'selo de identidade deve permanecer condicionado ao runtime');
+forbidTerm('perfil-cliente.html', publicClient, 'Cliente verificado', 'perfil público não pode alegar verificação sem autoridade de runtime');
+forbidTerm('perfil-cliente.html', publicClient, 'Responde rápido', 'perfil público não pode alegar responsividade sem métrica canônica');
+forbidTerm('perfil-cliente.html', publicClient, 'data-client-public-action', 'perfil público não pode expor ação sem contrato funcional');
+forbidTerm('perfil-cliente.html', publicClient, '>Seguir</button>', 'perfil público não pode expor seguir sem domínio canônico');
+forbidTerm('perfil-cliente.html', publicClient, '>Mensagem</button>', 'perfil público não pode expor mensagem direta sem criação canônica de conversa');
+forbidTerm('perfil-cliente.html', publicClient, 'Mais ações do perfil', 'perfil público não pode expor menu inexistente');
+forbidTerm('perfil-cliente.html', publicClient, '<dt>Seguidores</dt><dd>0</dd>', 'perfil público não pode publicar contagem de seguidores sem autoridade');
+forbidTerm('perfil-cliente.html', publicClient, '<dt>Seguindo</dt><dd>0</dd>', 'perfil público não pode publicar contagem de seguindo sem autoridade');
+forbidTerm('perfil-cliente.html', publicClient, '<dt>Conquistas</dt><dd>0</dd>', 'perfil público não pode publicar contagem de conquistas sem autoridade');
+forbidTerm('perfil-cliente.html', publicClient, 'doke-page-hydration-skeleton__metrics', 'skeleton público não pode reservar métricas ausentes do estado pronto');
 
 const ownerClient = read('meu-perfil.html');
 requireTerm('meu-perfil.html', ownerClient, 'data-state-scope="meu-perfil"', 'scope da região de estado deve coincidir com a boundary');
@@ -54,6 +66,10 @@ requireTerm('meu-perfil.html', ownerClient, 'data-profile-media-trigger="cover"'
 requireTerm('meu-perfil.html', ownerClient, 'data-profile-media-trigger="avatar"', 'avatar deve usar botão canônico de mídia');
 requireTerm('meu-perfil.html', ownerClient, 'close-button-authority.css', 'modal owner deve carregar a autoridade canônica de fechar');
 requireTerm('meu-perfil.html', ownerClient, 'data-client-profile-editor', 'modal deve existir somente na rota owner');
+forbidTerm('meu-perfil.html', ownerClient, '<dt>Seguidores</dt><dd>0</dd>', 'perfil owner não pode publicar contagem de seguidores sem autoridade');
+forbidTerm('meu-perfil.html', ownerClient, '<dt>Seguindo</dt><dd>0</dd>', 'perfil owner não pode publicar contagem de seguindo sem autoridade');
+forbidTerm('meu-perfil.html', ownerClient, '<dt>Conquistas</dt><dd>0</dd>', 'perfil owner não pode publicar contagem de conquistas sem autoridade');
+forbidTerm('meu-perfil.html', ownerClient, 'doke-page-hydration-skeleton__metrics', 'skeleton owner não pode reservar métricas ausentes do estado pronto');
 
 const foundation = read('assets/css/pages/profile-page.css');
 requireTerm('profile-page.css', foundation, 'body.profile-page-shell[data-profile-contract="clean-v1"] .profile-heading h1', 'título deve pertencer à fundação compartilhada');
