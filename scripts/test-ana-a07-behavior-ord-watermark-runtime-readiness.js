@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql'),'utf8');
+const compatibility=fs.readFileSync(path.join(root,'supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql'),'utf8');
 const v=fs.readFileSync(path.join(root,'supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql'),'utf8');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a07-behavior-ord-watermark-runtime-readiness.json'),'utf8'));
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
@@ -17,7 +18,10 @@ check('validation read only',!v.match(/insert\s+into|update\s+|delete\s+from|tru
 check('validation invokes wrappers',v.includes('private.analytics_behavior_watermark_v1()')&&v.includes('private.order_metric_watermark_v1()'));
 check('concurrent canary not falsely certified',c.validationPlan?.concurrentWriterCase==='requires_multi_session_staging_canary');
 check('late fact remains future proof',c.validationPlan?.lateFactCase==='requires_A09_projection_canary_after_watermark_application');
-check('staging unapplied',c.repositoryEvidence?.migrationApplied===false&&c.repositoryEvidence?.stagingValidated===false);
+check('original applied but uncertified',c.repositoryEvidence?.migrationApplied===true&&c.repositoryEvidence?.stagingValidated===false&&c.validationPlan?.validation041Status==='failed');
+check('compatibility uses explicit CASE',compatibility.includes('v_data_through := case')&&!compatibility.includes('pg_catalog.least('));
+check('compatibility preserves active/prepared order',compatibility.indexOf('from pg_catalog.pg_stat_activity')>=0&&compatibility.indexOf('from pg_catalog.pg_prepared_xacts')>compatibility.indexOf('from pg_catalog.pg_stat_activity'));
+check('compatibility remains unapplied',c.compatibilityCandidate?.migrationApplied===false&&c.compatibilityCandidate?.stagingApplyAuthorized===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;

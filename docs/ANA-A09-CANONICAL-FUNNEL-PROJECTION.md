@@ -75,3 +75,5 @@ A fact materialized after a prior watermark but carrying an older `occurred_at` 
 ANA-A10/A11 liquidity is operationally closed outside A09 and is no longer an A09 blocker. The remaining A09 blockers are its own runtime watermarks, projector, metric-specific freshness thresholds and controlled staging evidence.
 
 The A07 behavior/ORD watermark runtime candidate is now repository-ready at `supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql`, but remains unapplied. A09 activation still requires validation 041 plus multi-session concurrency/late-fact staging evidence.
+
+A09 remains blocked because the A07 watermark runtime has not passed validation 041. The forward-only compatibility candidate is `supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql`; no funnel runtime activation is allowed until that candidate is applied and the A07 runtime is recertified.

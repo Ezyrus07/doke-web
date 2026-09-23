@@ -2,7 +2,7 @@
   "contractId": "ana-a07-behavior-ord-watermark-runtime-readiness-v1",
   "domain": "ANA-001",
   "sourceContract": "ana-a07-behavior-ord-watermark-authority-v1",
-  "sourceHead": "ef2b4cc5c63e3231fd044130f27ea7c0ef80f3cf",
+  "sourceHead": "7fa6a7dbe5fcca7da9a617138a19e7014c897f7b",
   "createdAt": "2026-09-23T22:45:00Z",
   "scope": "repository_only",
   "authorization": {
@@ -11,7 +11,7 @@
     "stagingApplyAuthorized": false,
     "productionAuthorized": false
   },
-  "status": "runtime_candidate_repository_ready_staging_unapplied",
+  "status": "staging_applied_validation_failed_compatibility_candidate_ready",
   "migration": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
   "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
   "runtime": {
@@ -48,20 +48,27 @@
   },
   "validationPlan": {
     "structuralSqlCandidate": true,
-    "structuralSqlExecutedInStaging": false,
+    "structuralSqlExecutedInStaging": true,
     "noActiveTransactionCase": "pending_staging_validation",
     "emptyWindowCase": "pending_staging_validation",
     "concurrentWriterCase": "requires_multi_session_staging_canary",
     "preparedTransactionCase": "static fail-closed branch; staging runtime branch unavailable while max_prepared_transactions=0",
     "lateFactCase": "requires_A09_projection_canary_after_watermark_application",
-    "grantBoundaryCase": "pending_staging_validation"
+    "grantBoundaryCase": "pending_staging_validation",
+    "validation041Status": "failed",
+    "validation041Failure": {
+      "errorCode": "42883",
+      "expression": "pg_catalog.least(timestamptz,timestamptz)",
+      "rootCause": "LEAST cannot be schema-qualified as pg_catalog.least."
+    }
   },
   "repositoryEvidence": {
     "migrationCreated": true,
     "validationCreated": true,
-    "migrationApplied": false,
+    "migrationApplied": true,
     "stagingValidated": false,
-    "sourceRowsMutated": false
+    "sourceRowsMutated": false,
+    "stagingMigrationVersion": "20260923230106"
   },
   "preservedBoundaries": {
     "browserAnalyticsActivated": false,
@@ -77,6 +84,15 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Repository runtime candidate only. Staging application, validation 041, concurrent-writer/late-fact proof and A09 runtime remain pending."
+    "reason": "Original migration applied; validation 041 failed. Compatibility candidate is repository-ready but unapplied. A07 remains uncertified in staging and ANA remains 3/6."
+  },
+  "compatibilityCandidate": {
+    "migration": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
+    "migrationCreated": true,
+    "migrationApplied": false,
+    "validationToRerun": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+    "remediation": "Replace pg_catalog.least with explicit CASE while preserving all transaction-floor semantics.",
+    "historicalMigrationMutation": false,
+    "stagingApplyAuthorized": false
   }
 }

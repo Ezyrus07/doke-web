@@ -74,3 +74,9 @@ The repository candidate `supabase/migrations/20260923224000_ana_a07_behavior_or
 The candidate is forward-only, server-owned, fails closed on prepared transactions and denies browser execution. Validation `supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql` is also repository-ready. Multi-session concurrent-writer and late-fact canaries remain separate staging evidence.
 
 The migration file exists only in the repository. No migration application, staging mutation, deploy, scheduler, production change, merge or Ready for review is authorized by this contract.
+
+## Forward-only staging compatibility candidate
+
+Staging application of the original runtime candidate exposed an execution defect: `pg_catalog.least(...)` is not resolvable because `LEAST` is not a schema-qualified catalog function. The original migration is not edited.
+
+`supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql` redefines only the shared transaction-floor helper using an explicit `CASE`. Runtime authority remains uncertified until the compatibility migration is separately applied and validation 041 passes.

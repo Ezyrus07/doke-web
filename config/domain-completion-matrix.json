@@ -1,6 +1,6 @@
 {
   "version": "1.3.132",
-  "updatedAt": "2026-09-23T22:45:00Z",
+  "updatedAt": "2026-09-23T23:04:09.442513Z",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -3428,7 +3428,8 @@
         "config/ana-a07-behavior-ord-watermark-runtime-readiness.json",
         "docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-RUNTIME-READINESS.md",
         "scripts/audit-ana-a07-behavior-ord-watermark-runtime-readiness.js",
-        "scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js"
+        "scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js",
+        "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3485,7 +3486,8 @@
         "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
         "config/ana-a07-behavior-ord-watermark-runtime-readiness.json",
         "scripts/audit-ana-a07-behavior-ord-watermark-runtime-readiness.js",
-        "scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js"
+        "scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js",
+        "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql"
       ],
       "tables": [
         "service_metric_events",
@@ -3590,7 +3592,8 @@
         "ANA-A11 scheduler activation candidate is applied and validation 040 passed; the persistent staging scheduler is job 8 named doke-ana-liquidity-v1-r1, active on * * * * * as postgres/postgres, and invokes only private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp()), preserving the canonical planner -> window orchestrator -> A10 projection chain.",
         "ANA-A11 post-effective read-only runtime certification passed: the first 16:00Z-16:05Z canonical window materialized 3/3 required series by 16:05:00.148650Z; 40/40 observed closed windows through 19:20Z were 300-second, complete, authoritative and reconciled; max publication delay was ~0.487s against the 60s SLO; duplicate snapshot keys and cron failures were zero; planner was empty; and ANA-A07 evaluated the latest 19:15Z-19:20Z canonical window at ~194.31s age against maxLagSeconds=360 with no older-window fallback. ANA-A11 is operationally certified in staging while ANA remains 3/6.",
         "ANA-A07 now defines repository-only behavior/ORD dependency watermark authority using active_transaction_floor_v1: behavior completeness is fenced by server-owned received_at, ORD metric completeness by DB-owned created_at, max(event timestamp)/computedAt/windowEnd shortcuts are forbidden, prepared transactions fail closed, empty windows may advance, and late materialized facts must use A05 append-only revisions. Runtime watermark functions and migration remain unapplied; ANA stays 3/6.",
-        "ANA-A07 behavior/ORD watermark runtime candidate is repository-ready but unapplied: migration 20260923224000 defines a postgres-owned active_transaction_floor_v1 helper plus service-role-only behavior/ORD wrappers, scans active transactions before prepared transactions, uses a 1-microsecond inclusive predecessor, never derives watermarks from source maxima, and ships rollback-only validation 041. Staging application and multi-session concurrent-writer/late-fact evidence remain pending; ANA stays 3/6."
+        "ANA-A07 behavior/ORD watermark runtime candidate is repository-ready but unapplied: migration 20260923224000 defines a postgres-owned active_transaction_floor_v1 helper plus service-role-only behavior/ORD wrappers, scans active transactions before prepared transactions, uses a 1-microsecond inclusive predecessor, never derives watermarks from source maxima, and ships rollback-only validation 041. Staging application and multi-session concurrent-writer/late-fact evidence remain pending; ANA stays 3/6.",
+        "ANA-A07 staging migration 20260923230106 applied, but validation 041 failed at runtime with PostgreSQL 42883 because pg_catalog.least(timestamptz,timestamptz) does not exist. The historical migration remains immutable. Forward-only compatibility candidate 20260923231000 redefines only private.analytics_transaction_floor_watermark_v1() with an explicit CASE while preserving active-before-prepared scan order, prepared fail-closed behavior, the 1-microsecond predecessor and server-only grants. Candidate is repository-ready but unapplied; ANA remains 3/6."
       ],
       "blockers": [
         {
@@ -3610,7 +3613,7 @@
       ],
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
-        "Apply the repository-ready A07 behavior/ORD watermark migration to staging only after explicit authorization, run validation 041, then execute multi-session concurrent-writer and late-fact canaries before enabling any A09 runtime projection.",
+        "Apply only the forward-only A07 watermark compatibility migration 20260923231000 to staging after explicit authorization, then rerun validation 041; do not run concurrent-writer/late-fact canaries or enable A09 until 041 passes.",
         "Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.",
         "Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."

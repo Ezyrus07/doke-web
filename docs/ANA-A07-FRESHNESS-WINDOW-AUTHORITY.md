@@ -77,3 +77,7 @@ The runtime implementation is **not applied** in this lot. A future forward-only
 ## Behavior/ORD runtime candidate
 
 The repository now contains `supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql` and rollback-only validation `supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql`. They remain unapplied in staging. No scheduler or source-data write is part of the candidate.
+
+## Watermark staging validation status
+
+The behavior/ORD migration is present in staging, but validation 041 failed on invalid `pg_catalog.least` qualification. Runtime watermark authority therefore remains false. Forward-only candidate `supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql` is repository-ready and unapplied.

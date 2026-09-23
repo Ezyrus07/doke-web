@@ -1,10 +1,10 @@
 {
   "contractId": "ana-a07-freshness-window-authority-v1",
   "domain": "ANA-001",
-  "sourceHead": "ef2b4cc5c63e3231fd044130f27ea7c0ef80f3cf",
+  "sourceHead": "7fa6a7dbe5fcca7da9a617138a19e7014c897f7b",
   "createdAt": "2026-09-21T22:00:00-03:00",
   "scope": "repository_only",
-  "status": "behavior_ord_watermark_runtime_candidate_ready_staging_unapplied",
+  "status": "behavior_ord_watermark_staging_validation_failed_compatibility_candidate_ready",
   "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
   "rootCause": {
     "helperGap": "ANA-A05 has an applyFreshness helper that accepts an ad hoc maxLagSeconds but there is no canonical policy registry, dependency-watermark contract or canonical latest-window selector.",
@@ -245,13 +245,13 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Behavior/ORD watermark authority now has a repository-ready forward-only runtime candidate. It remains unapplied; staging concurrency/late-fact evidence plus A09 runtime remain open. ANA stays 3/6."
+    "reason": "Behavior/ORD watermark migration is applied in staging but validation 041 failed on pg_catalog.least. A forward-only compatibility candidate is repository-ready and unapplied. Runtime watermark authority is not certified; ANA stays 3/6."
   },
   "dependencyWatermarkAuthority": {
     "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
     "configPath": "config/ana-a07-behavior-ord-watermark-authority.json",
     "modulePath": "backend/modules/analytics/dependency-watermark-authority.js",
-    "status": "runtime_candidate_ready_staging_unapplied",
+    "status": "staging_applied_validation_failed_compatibility_candidate_ready",
     "basis": "active_transaction_floor_v1",
     "behavior": {
       "sourceRelation": "private.analytics_behavior_events_v1",
@@ -265,9 +265,13 @@
     },
     "maxEventTimestampAuthority": false,
     "preparedTransactionPolicy": "fail_closed",
-    "runtimeMigrationApplied": false,
+    "runtimeMigrationApplied": true,
     "runtimeCandidatePath": "config/ana-a07-behavior-ord-watermark-runtime-readiness.json",
     "migrationPath": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
-    "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql"
+    "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+    "stagingMigrationVersion": "20260923230106",
+    "stagingValidated": false,
+    "validation041Status": "failed",
+    "compatibilityMigrationPath": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql"
   }
 }

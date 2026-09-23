@@ -3,11 +3,13 @@ const fs=require('fs');const path=require('path');const root=path.resolve(__dirn
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a07-behavior-ord-watermark-runtime-readiness.json'),'utf8'));
 const a=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-behavior-ord-watermark-authority.json'),'utf8'));
 const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql'),'utf8');
+const compatibility=fs.readFileSync(path.join(root,'supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql'),'utf8');
 const v=fs.readFileSync(path.join(root,'supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql'),'utf8');
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('contract',c.contractId==='ana-a07-behavior-ord-watermark-runtime-readiness-v1'&&c.sourceContract===a.contractId);
 check('repository only',c.scope==='repository_only'&&c.authorization?.stagingApplyAuthorized===false&&c.authorization?.productionAuthorized===false);
-check('candidate ready unapplied',c.status==='runtime_candidate_repository_ready_staging_unapplied'&&c.repositoryEvidence?.migrationCreated===true&&c.repositoryEvidence?.migrationApplied===false&&c.repositoryEvidence?.stagingValidated===false);
+check('staging failure recorded',c.status==='staging_applied_validation_failed_compatibility_candidate_ready'&&c.repositoryEvidence?.migrationApplied===true&&c.repositoryEvidence?.stagingValidated===false&&c.repositoryEvidence?.stagingMigrationVersion==='20260923230106'&&c.validationPlan?.validation041Status==='failed');
+check('compatibility candidate ready unapplied',c.compatibilityCandidate?.migration==='supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql'&&c.compatibilityCandidate?.migrationCreated===true&&c.compatibilityCandidate?.migrationApplied===false&&c.compatibilityCandidate?.historicalMigrationMutation===false);
 ['analytics_transaction_floor_watermark_v1','analytics_behavior_watermark_v1','order_metric_watermark_v1'].forEach(x=>check('function '+x,sql.includes(x)));
 check('stats snapshot cleared',sql.includes('pg_catalog.pg_stat_clear_snapshot()'));
 check('clock captured',sql.includes('pg_catalog.clock_timestamp()'));
@@ -15,7 +17,12 @@ const ai=sql.indexOf('from pg_catalog.pg_stat_activity'),pi=sql.indexOf('from pg
 check('active scan before prepared scan',ai>=0&&pi>ai);
 check('current db active scope',sql.includes('a.datname = pg_catalog.current_database()')&&sql.includes('a.pid <> pg_catalog.pg_backend_pid()')&&sql.includes('a.xact_start is not null'));
 check('prepared fail closed',sql.includes("'reason','PREPARED_TRANSACTION_PRESENT'")&&sql.includes("'dataThrough',null"));
-check('microsecond predecessor',sql.includes("interval '1 microsecond'"));
+check('microsecond predecessor',sql.includes("interval '1 microsecond'")&&compatibility.includes("interval '1 microsecond'"));
+check('compatibility removes invalid qualification',sql.includes('pg_catalog.least(')&&!compatibility.includes('pg_catalog.least(')&&compatibility.includes('v_data_through := case'));
+const cai=compatibility.indexOf('from pg_catalog.pg_stat_activity'),cpi=compatibility.indexOf('from pg_catalog.pg_prepared_xacts');
+check('compatibility preserves scan order',cai>=0&&cpi>cai);
+check('compatibility helper only',compatibility.includes('create or replace function private.analytics_transaction_floor_watermark_v1()')&&!compatibility.includes('create or replace function private.analytics_behavior_watermark_v1()')&&!compatibility.includes('create or replace function private.order_metric_watermark_v1()'));
+check('compatibility no source DML',!compatibility.match(/insert\s+into\s+(private\.analytics_behavior_events_v1|private\.order_metric_events)/i)&&!compatibility.match(/update\s+(private\.analytics_behavior_events_v1|private\.order_metric_events)/i)&&!compatibility.match(/delete\s+from\s+(private\.analytics_behavior_events_v1|private\.order_metric_events)/i));
 check('no source max watermark',!sql.match(/max\s*\(\s*[^)]*(occurred_at|received_at|created_at)/i));
 check('behavior materialization',sql.includes("'materializationTime','received_at'")&&sql.includes("'eventTime','occurred_at'"));
 check('ORD materialization',sql.includes("'materializationTime','created_at'")&&sql.includes("'eventTime','occurred_at'"));
