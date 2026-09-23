@@ -196,7 +196,7 @@ async function assertShellPresence(page, pageEntry, viewport) {
 
   if (viewport.kind === 'mobile' && shellContract.mobile !== false) {
     const mobileShell = page
-      .locator('.doke-mobile-app-shell:visible, .mobile-bottom-nav:visible, .doke-bottom-nav:visible, .doke-mobile-bottom-nav:visible')
+      .locator('.doke-mobile-app-shell:visible, .doke-mobile-shell:visible, .mobile-bottom-nav:visible, .doke-bottom-nav:visible, .doke-mobile-bottom-nav:visible')
       .first();
     await expect(mobileShell, `${pagePath} deve manter navegação/shell mobile`).toBeVisible();
   }
