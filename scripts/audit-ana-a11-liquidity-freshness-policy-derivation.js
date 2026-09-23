@@ -3,7 +3,7 @@ const fs=require('fs');const path=require('path');const root=path.resolve(__dirn
 const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a11-liquidity-freshness-policy-derivation.json'),'utf8'));
 const a07=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-freshness-window-authority.json'),'utf8'));
 const a10=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a10-cat-liquidity-projection.json'),'utf8'));
-const matrix=JSON.parse(fs.readFileSync(path.join(root,'config','domain-completion-matrix.json'),'utf8'));const seriesMigration=fs.readFileSync(path.join(root,'supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');const seriesValidation=fs.readFileSync(path.join(root,'supabase','tests','034_ana_a11_liquidity_series_orchestration_validation.sql'),'utf8');
+const matrix=JSON.parse(fs.readFileSync(path.join(root,'config','domain-completion-matrix.json'),'utf8'));const publicationMigration=fs.readFileSync(path.join(root,'supabase','migrations','20260923012500_ana_a11_liquidity_publication_policy_authority.sql'),'utf8');const publicationValidation=fs.readFileSync(path.join(root,'supabase','tests','035_ana_a11_liquidity_publication_policy_authority_validation.sql'),'utf8');const seriesMigration=fs.readFileSync(path.join(root,'supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');const seriesValidation=fs.readFileSync(path.join(root,'supabase','tests','034_ana_a11_liquidity_series_orchestration_validation.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('contract id',c.contractId==='ana-a11-liquidity-freshness-policy-derivation-v1');
 check('metric exact',c.metricKey==='liquidity.active_service_seconds'&&c.metricVersion==='v1');
@@ -19,6 +19,14 @@ check('latest closed window only',String(c.freshnessStateSemantics?.selectionRul
 check('pending authorities remain unapproved',c.pendingAuthorityDecisions?.scheduler?.currentlyAuthorized===false);
 
 
+
+
+check('publication policy candidate registered',c.publicationPolicyAuthority?.migration==='supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql'&&c.publicationPolicyAuthority?.validationSql==='supabase/tests/035_ana_a11_liquidity_publication_policy_authority_validation.sql'&&c.publicationPolicyAuthority?.stagingApplied===false&&c.publicationPolicyAuthority?.stagingRows===0);
+check('publication/freshness authority separated',c.policyShape?.publicationPolicyRegistry?.table==='private.analytics_metric_publication_policies_v1'&&c.policyShape?.freshnessPolicyRegistry?.table==='private.analytics_metric_freshness_policies_v1'&&c.publicationPolicyAuthority?.freshnessPolicySyncAuthorized===false);
+check('derived lag mechanical',c.publicationPolicyAuthority?.generatedDerivation==='derived_max_lag_seconds = window_step_seconds + projection_delay_slo_seconds'&&publicationMigration.includes('generated always as')&&publicationMigration.includes('window_step_seconds::bigint + projection_delay_slo_seconds::bigint'));
+check('fixed duration grid needs no timezone authority',c.canonicalWindowGrid?.boundarySemantics?.includes('windowAnchor + N * windowStepSeconds')&&c.canonicalWindowGrid?.timeZoneIsIndependentAuthority===false&&c.currentDecision?.windowBoundaryTimeZone==='not_applicable_fixed_duration_grid');
+check('publication policy inserts no rows',!publicationMigration.includes('insert into private.analytics_metric_publication_policies_v1')&&publicationValidation.includes('v_policy_count <> 0'));
+check('publication policy owner-only',publicationMigration.includes('from public, anon, authenticated, service_role')&&!publicationMigration.includes('grant select on table private.analytics_metric_publication_policies_v1')&&!publicationMigration.includes('grant execute on function private.current_analytics_metric_publication_policy_v1'));
 
 check('category identity continuity frozen',Array.isArray(c.dimensionSeriesAuthority?.categoryIdentityContinuity?.catFrozenTokenPriority)&&c.dimensionSeriesAuthority.categoryIdentityContinuity.catFrozenTokenPriority.join('>')==='categoryId>categorySlug>category'&&c.dimensionSeriesAuthority.categoryIdentityContinuity.a10FilterComparison==='case_insensitive');
 check('category series normalization is casing only',c.dimensionSeriesAuthority?.categoryIdentityContinuity?.anaSeriesKeyNormalization==='lowercase frozen fallback token only'&&c.dimensionSeriesAuthority.categoryIdentityContinuity.categoryIdEquivalentToSlugOrName===false&&c.dimensionSeriesAuthority.categoryIdentityContinuity.historicalRepresentationRewriteAllowed===false);

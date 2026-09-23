@@ -3,10 +3,10 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "3d729a0d349c17851d699bcdab9948b999b779f1",
+  "sourceHead": "4fcc488543f1dd5ef05a70a9a9f4d5a642c0acbc",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "repository_only",
-  "status": "series_orchestration_candidate_ready_staging_unapplied_policy_values_and_window_grid_unset",
+  "status": "publication_policy_and_series_candidates_ready_staging_unapplied_numeric_policy_values_unset",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -14,7 +14,9 @@
     "sourceWatermarkAvailable": "CAT-A06 transaction-snapshot watermark is active in staging through ANA-A10.",
     "consequence": "A numeric maxLagSeconds and an active scheduler remain non-authoritative until cadence/SLO, canonical window-grid alignment, dimension-series enumeration and missed-window recovery are versioned.",
     "windowGridAuthorityMissing": "windowStepSeconds alone does not define deterministic windows: ANA-001 still lacks a versioned boundary anchor/alignment rule for liquidity.active_service_seconds.",
-    "dimensionSeriesAuthorityMissing": "ANA-A10 requires category identity + state segmentation, but staging exposes no liquidity/CAT dimension-series enumerator; the current runner only materializes one explicitly supplied series per call."
+    "dimensionSeriesAuthorityMissing": "ANA-A10 requires category identity + state segmentation, but staging exposes no liquidity/CAT dimension-series enumerator; the current runner only materializes one explicitly supplied series per call.",
+    "publicationPolicyProvenanceGap": "private.analytics_metric_freshness_policies_v1 stores only the derived max_lag_seconds/effective window. It cannot prove which window step, projection-delay SLO, boundary anchor, catch-up bound or approval evidence produced that threshold.",
+    "currentFreshnessPolicyRows": "staging currently has zero freshness-policy rows, so no existing row requires data migration."
   },
   "thresholdDerivation": {
     "formula": "maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds",
@@ -35,14 +37,14 @@
     "reason": "CAT freshness is proven independently by its dependency watermark; source delay must not be hidden inside the metric age threshold."
   },
   "activationPreconditions": [
-    "A versioned canonical windowStepSeconds is approved for liquidity.active_service_seconds.",
+    "A publication-policy row is explicitly approved with versioned windowStepSeconds, projectionDelaySloSeconds, windowAnchor, bounded catch-up and approval evidence; the row is inserted only under separate staging authorization.",
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
     "The repository candidate for the CAT-fact-backed global + category/state dimension-series enumerator is explicitly authorized, applied and structurally validated in staging.",
     "A bounded missed-window recovery limit is versioned; recovery processes oldest missing closed windows before newer windows.",
     "A Supabase pg_cron job invokes the database-local ANA-A10 runner at the approved cadence.",
     "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
-    "The derived integer maxLagSeconds is inserted into private.analytics_metric_freshness_policies_v1 only under a separately authorized staging mutation.",
+    "The effective publication policy derivedMaxLagSeconds is synchronized into private.analytics_metric_freshness_policies_v1 only under a separately authorized staging mutation; hand-entered thresholds are forbidden.",
     "ANA-A07 boundary tests prove fresh at <= maxLagSeconds and stale at > maxLagSeconds without older-window fallback."
   ],
   "nonAuthorities": [
@@ -53,20 +55,40 @@
     "browser refresh behavior"
   ],
   "policyShape": {
-    "required": [
-      "policyId",
-      "metricKey",
-      "metricVersion",
-      "maxLagSeconds",
-      "effectiveFrom"
-    ],
-    "additionallyRequiredByThisContract": [
-      "windowStepSeconds",
-      "projectionDelaySloSeconds",
-      "derivationContractId",
-      "approvalEvidence"
-    ],
-    "effectiveUntilOptional": true
+    "publicationPolicyRegistry": {
+      "table": "private.analytics_metric_publication_policies_v1",
+      "required": [
+        "policyId",
+        "metricKey",
+        "metricVersion",
+        "windowStepSeconds",
+        "projectionDelaySloSeconds",
+        "windowAnchor",
+        "maxCatchUpWindowsPerInvocation",
+        "missedWindowOrder",
+        "schedulerMechanism",
+        "derivationContractId",
+        "seriesContractId",
+        "approvalEvidence",
+        "effectiveFrom"
+      ],
+      "derived": [
+        "derivedMaxLagSeconds"
+      ],
+      "effectiveUntilOptional": true
+    },
+    "freshnessPolicyRegistry": {
+      "table": "private.analytics_metric_freshness_policies_v1",
+      "required": [
+        "policyId",
+        "metricKey",
+        "metricVersion",
+        "maxLagSeconds",
+        "effectiveFrom"
+      ],
+      "effectiveUntilOptional": true
+    },
+    "couplingRule": "A future separately authorized activation must derive freshness maxLagSeconds from the effective publication policy; no hand-entered threshold may bypass the derivation contract."
   },
   "currentDecision": {
     "windowStepSeconds": null,
@@ -75,7 +97,7 @@
     "policyInsertAuthorized": false,
     "runtimeBehavior": "POLICY_THRESHOLD_MISSING",
     "windowBoundaryAnchor": null,
-    "windowBoundaryTimeZone": null,
+    "windowBoundaryTimeZone": "not_applicable_fixed_duration_grid",
     "maxCatchUpWindowsPerInvocation": null,
     "schedulerMechanism": "supabase_pg_cron_database_local",
     "dimensionEnumeratorAuthorized": false,
@@ -93,7 +115,10 @@
     "missedWindowBatchValueAuthority": false,
     "schedulerActivationAuthority": false,
     "dimensionEnumeratorContractAuthority": true,
-    "dimensionEnumeratorRuntimeAuthority": false
+    "dimensionEnumeratorRuntimeAuthority": false,
+    "publicationPolicySchemaAuthority": true,
+    "publicationPolicyValueAuthority": false,
+    "freshnessPolicySyncAuthority": false
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -213,9 +238,20 @@
         "current backlog size",
         "single canary execution"
       ]
+    },
+    "publicationPolicyActivation": {
+      "owner": "ANA-001 operational policy",
+      "decision": "Approve one concrete liquidity publication-policy row and its evidence. No row exists or is authorized by the repository candidate.",
+      "unresolvedFields": [
+        "windowStepSeconds",
+        "projectionDelaySloSeconds",
+        "windowAnchor",
+        "maxCatchUpWindowsPerInvocation",
+        "approvalEvidence"
+      ]
     }
   },
-  "updatedAt": "2026-09-22T22:21:00-03:00",
+  "updatedAt": "2026-09-22T22:58:00-03:00",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -242,13 +278,15 @@
     "status": "pending_versioned_window_grid",
     "windowStepSeconds": null,
     "boundaryAnchor": null,
-    "boundaryTimeZone": null,
+    "boundaryTimeZone": "not_applicable_fixed_duration_grid",
     "invariants": [
       "Every materialized window must belong to one versioned canonical grid.",
       "Ad hoc canary window boundaries must never become production schedule authority.",
       "Only canonical closed windows may be published.",
       "A window is not publishable while windowEnd exceeds the authoritative CAT source watermark."
-    ]
+    ],
+    "boundarySemantics": "fixed-duration absolute grid: windowAnchor + N * windowStepSeconds",
+    "timeZoneIsIndependentAuthority": false
   },
   "dimensionSeriesAuthority": {
     "status": "repository_candidate_ready_staging_unapplied",
@@ -335,5 +373,21 @@
     "schedulerActivationAuthority": false,
     "categorySeriesKey": "lower(coalesce(categoryId, categorySlug, category))",
     "crossRepresentationMergeAllowed": false
+  },
+  "publicationPolicyAuthority": {
+    "status": "repository_candidate_ready_staging_unapplied_no_rows",
+    "table": "private.analytics_metric_publication_policies_v1",
+    "selector": "private.current_analytics_metric_publication_policy_v1",
+    "migration": "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
+    "validationSql": "supabase/tests/035_ana_a11_liquidity_publication_policy_authority_validation.sql",
+    "stagingApplied": false,
+    "stagingRows": 0,
+    "freshnessRegistry": "private.analytics_metric_freshness_policies_v1",
+    "separation": "publication policy stores approved derivation inputs/provenance; freshness policy stores the derived threshold consumed by runtime",
+    "generatedDerivation": "derived_max_lag_seconds = window_step_seconds + projection_delay_slo_seconds",
+    "rowCreationAuthorized": false,
+    "schedulerActivationAuthorized": false,
+    "freshnessPolicySyncAuthorized": false,
+    "ownerBoundary": "postgres only"
   }
 }

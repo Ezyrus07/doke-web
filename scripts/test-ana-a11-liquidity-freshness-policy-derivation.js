@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('fs');const path=require('path');const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');const migration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');
+const fs=require('fs');const path=require('path');const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');const publicationMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923012500_ana_a11_liquidity_publication_policy_authority.sql'),'utf8');const migration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});const eq=(n,a,b)=>check(n,a===b);
 function derive(input){
   if(!input||!Number.isInteger(input.windowStepSeconds)||input.windowStepSeconds<=0)throw new Error('ANA_LIQUIDITY_WINDOW_STEP_REQUIRED');
@@ -13,6 +13,13 @@ let noDelay=false;try{derive({windowStepSeconds:3600});}catch(e){noDelay=e.messa
 let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300,recoveryGraceSeconds:60});}catch(e){grace=e.message==='ANA_LIQUIDITY_IMPLICIT_GRACE_FORBIDDEN';}check('unapproved grace rejected',grace);
 
 
+
+
+check('publication policy remains empty/unapplied',c.publicationPolicyAuthority.stagingApplied===false&&c.publicationPolicyAuthority.stagingRows===0&&c.publicationPolicyAuthority.rowCreationAuthorized===false);
+check('publication policy stores derivation inputs',publicationMigration.includes('window_step_seconds integer not null')&&publicationMigration.includes('projection_delay_slo_seconds integer not null')&&publicationMigration.includes('window_anchor timestamptz not null')&&publicationMigration.includes('max_catch_up_windows_per_invocation integer not null'));
+check('publication policy derives lag',publicationMigration.includes('derived_max_lag_seconds bigint generated always as')&&publicationMigration.includes('window_step_seconds::bigint + projection_delay_slo_seconds::bigint'));
+check('freshness threshold cannot be hand-authorized by candidate',c.publicationPolicyAuthority.freshnessPolicySyncAuthorized===false&&c.authority.freshnessPolicySyncAuthority===false);
+eq('fixed duration timezone semantics',c.currentDecision.windowBoundaryTimeZone,'not_applicable_fixed_duration_grid');
 
 check('category series key is case-normalized',migration.includes('pg_catalog.lower(coalesce(')&&c.seriesOrchestrationCandidate.categorySeriesKey==='lower(coalesce(categoryId, categorySlug, category))');
 check('category representation classes are not merged',c.dimensionSeriesAuthority.categoryIdentityContinuity.categoryIdEquivalentToSlugOrName===false&&c.dimensionSeriesAuthority.categoryIdentityContinuity.historicalRepresentationRewriteAllowed===false&&c.seriesOrchestrationCandidate.crossRepresentationMergeAllowed===false);

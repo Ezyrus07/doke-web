@@ -161,3 +161,24 @@ ANA must preserve that boundary. The series candidate now lowercases the frozen 
 
 If CAT later maps that legacy service to a canonical category UUID, that CAT transition starts a new UUID-backed analytical series from that point forward. The historical text-backed series is not rewritten or merged and remains enumerable so it can correctly publish zero supply. A cross-representation merge would require a separate versioned category-equivalence authority; none exists today.
 
+## Publication policy authority
+
+Read-only staging inspection confirmed that `private.analytics_metric_freshness_policies_v1` currently has **0 rows** and stores only the derived threshold shape: `policy_id`, metric identity, `max_lag_seconds`, and effective dates. It cannot prove how a threshold was derived.
+
+ANA-A11 therefore separates two authorities:
+
+- **publication policy** — approved inputs and provenance: cadence, projection-delay SLO, absolute window anchor, bounded oldest-first catch-up, selected scheduler mechanism and approval evidence;
+- **freshness policy** — the derived `maxLagSeconds` consumed by the A10/A07 runtime.
+
+The repository-only candidate `supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql` introduces `private.analytics_metric_publication_policies_v1` with a generated `derived_max_lag_seconds = window_step_seconds + projection_delay_slo_seconds`. No row is inserted. The owner-only selector has no implicit/default policy.
+
+Because the window model uses a fixed number of seconds, the canonical grid is mathematically defined by:
+
+`windowAnchor + N × windowStepSeconds`
+
+The `timestamptz` anchor fixes absolute boundaries; timezone is therefore **not an independent grid input** for this fixed-duration model. Presentation timezone may exist elsewhere, but cannot move canonical boundaries.
+
+A later activation must atomically preserve provenance: an approved publication-policy row is the cause, and any freshness-policy row must copy its mechanically derived threshold. A hand-entered `maxLagSeconds` that cannot be traced to the effective publication policy is forbidden.
+
+This candidate remains repository-only: no table/function exists in staging yet, no publication-policy row exists, no freshness-policy row exists, and no cron is activated.
+
