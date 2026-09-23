@@ -602,3 +602,50 @@ Persistent state after rollback:
 - ANA/liquidity cron jobs: **0**.
 
 The validation proves the scheduler activation boundary, not scheduled runtime. Persistent invocation of the activation function remains **unauthorized**. Production, browser analytics, anonymous identity stitching, merge and Ready for review remain untouched. ANA remains **3/6**.
+
+
+## Scheduler activation — staging
+
+Explicit authorization:
+
+`authorize-ana-a11-liquidity-scheduler-activation-staging head=396c4bbb8fb40d75c81b2ab39210c6f9a8c06851 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1 jobName=doke-ana-liquidity-v1-r1 schedule="* * * * *"`
+
+The scheduler activation boundary was invoked exactly once after a final drift check.
+
+Activation result:
+
+- status: `APPENDED`;
+- job ID: `8`;
+- job name: `doke-ana-liquidity-v1-r1`;
+- schedule: `* * * * *`;
+- poll interval: `60s`;
+- publication window: `300s`;
+- target: `private.run_analytics_cat_liquidity_catch_up_v1`;
+- `plannerBypassed=false`.
+
+Persistent cron row:
+
+- database: `postgres`;
+- username: `postgres`;
+- active: `true`;
+- command: `select private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp());`.
+
+The policy remains future-effective until `2026-09-23T16:00:00Z`. The planner explicitly returns no windows before that boundary, so enabling the cron early is safe.
+
+Observed real pg_cron executions before policy effectiveness:
+
+- run `147213`: `2026-09-23T14:56:00.051145Z → 14:56:00.056204Z`, **succeeded**, ~`5.059 ms`;
+- run `147215`: `2026-09-23T14:57:00.032006Z → 14:57:00.038737Z`, **succeeded**, ~`6.731 ms`.
+
+At `2026-09-23T14:57:15.961250Z`:
+
+- planner output: `[]`;
+- total historical liquidity snapshots: `3`;
+- snapshots with `window_start >= 2026-09-23T16:00:00Z`: **0**;
+- CAT→ANA reconciliation rows after that boundary: **0**.
+
+This is the expected pre-effective behavior. The first canonical five-minute window cannot close until `2026-09-23T16:05:00Z`.
+
+The activation authorization is consumed. Scheduler activation is complete, but post-effective scheduled-runtime evidence is not yet available. The next required evidence must prove that a real five-minute window is materialized after `16:05Z`, that all required series are covered, replay is idempotent, and publication remains within the approved `projectionDelaySloSeconds=60` when the CAT watermark permits.
+
+No production mutation, browser analytics activation, anonymous identity stitching, merge or Ready for review was performed. ANA remains **3/6**.

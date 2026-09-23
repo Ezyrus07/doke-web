@@ -6,13 +6,13 @@
   "sourceHead": "1825c11544a19162438c2b63c099d9e6d2b4547f",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "initial_policy_persisted_scheduler_candidate_staging_validated_activation_unauthorized",
+  "status": "initial_policy_persisted_scheduler_active_policy_future_effective_pending_post_effective_runtime_evidence",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
     "cadenceAuthorityMissing": "Resolved by persisted revision 1: windowStepSeconds=300 is now the approved cadence input for liquidity.active_service_seconds v1.",
     "sourceWatermarkAvailable": "CAT-A06 transaction-snapshot watermark is active in staging through ANA-A10.",
-    "consequence": "Publication/freshness values are now authoritative in staging, but scheduled execution remains non-authoritative until the separately approved pg_cron job is activated and runtime-evidenced.",
+    "consequence": "Publication/freshness values and the pg_cron scheduler are now authoritative in staging. Remaining A11 evidence is post-effective scheduled materialization after 2026-09-23T16:05:00Z plus downstream ANA-A07 freshness-boundary proof.",
     "windowGridAuthorityMissing": "Resolved by persisted revision 1: windowAnchor=1970-01-01T00:00:00Z with 300-second fixed-duration alignment.",
     "dimensionSeriesAuthorityMissing": "resolved structurally in staging: owner-only CAT-fact-backed series enumeration and atomic per-window orchestration are installed and validated; scheduler activation remains separate.",
     "publicationPolicyProvenanceGap": "Resolved by persisted revision 1: the publication policy stores the approved cadence/SLO/grid/catch-up/provenance and the matching freshness row stores the mechanically derived threshold.",
@@ -103,7 +103,7 @@
     "projectionDelaySloSeconds": 60,
     "maxLagSeconds": 360,
     "policyInsertAuthorized": false,
-    "runtimeBehavior": "POLICY_PERSISTED_FUTURE_EFFECTIVE",
+    "runtimeBehavior": "SCHEDULER_ACTIVE_POLICY_FUTURE_EFFECTIVE",
     "windowBoundaryAnchor": "1970-01-01T00:00:00Z",
     "windowBoundaryTimeZone": "not_applicable_fixed_duration_grid",
     "maxCatchUpWindowsPerInvocation": 3,
@@ -116,12 +116,18 @@
     "policyApprovalEnvelopeComplete": true,
     "policyId": "ana-a11-liquidity-v1-r1",
     "policyActivationCompleted": true,
-    "activationAuthorizationConsumed": true
+    "activationAuthorizationConsumed": true,
+    "schedulerActivationCompleted": true,
+    "schedulerActivated": true,
+    "schedulerJobId": 8,
+    "schedulerJobName": "doke-ana-liquidity-v1-r1",
+    "schedulerSchedule": "* * * * *",
+    "schedulerPollIntervalSeconds": 60
   },
   "authority": {
     "derivationContractAuthority": true,
     "thresholdValueAuthority": true,
-    "schedulerAuthority": false,
+    "schedulerAuthority": true,
     "stagingMutationAuthority": false,
     "productionAuthority": false,
     "schedulerTopologyAuthority": true,
@@ -144,7 +150,8 @@
     "policyApprovalEnvelopeRuntimeEnforcementAuthority": true,
     "policyApprovalEnvelopeRuntimeEnforcementCandidateAuthority": true,
     "schedulerActivationCandidateAuthority": true,
-    "schedulerActivationCandidateRuntimeAuthority": true
+    "schedulerActivationCandidateRuntimeAuthority": true,
+    "schedulerRuntimeAuthority": true
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -165,7 +172,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A11 has staging structural authorities, runtime-enforced approval evidence, persisted revision-1 publication/freshness policy, and a staging-validated scheduler activation boundary. Validation 040 proved APPENDED -> NO_CHANGE -> rollback with zero persistent cron. The real scheduler is still unactivated, so ANA stays 3/6."
+    "reason": "A11 now has staging structural authorities, runtime-enforced approval evidence, persisted revision-1 publication/freshness policy, and an active staging pg_cron scheduler. Two pre-effective scheduled runs succeeded with zero windows, proving safe future-effective behavior. Post-effective real-window materialization and ANA-A07 freshness-boundary evidence are still pending, so ANA remains 3/6."
   },
   "sourceDomainWatermarkSemantics": {
     "sourceDomain": "CAT-001",
@@ -235,7 +242,7 @@
     },
     "scheduler": {
       "owner": "ANA-001",
-      "decision": "Scheduler activation candidate is installed and validation 040 passed rollback-only in staging. Persistent scheduler activation remains a separate gate: explicitly authorize one invocation of private.activate_analytics_cat_liquidity_scheduler_v1('ana-a11-liquidity-v1-r1'), then prove scheduled-runtime behavior.",
+      "decision": "Resolved for activation: the persistent staging scheduler is active as job 8 with one-minute polling and bounded catch-up target. No further activation authorization is implied. Remaining requirement is post-effective scheduled-runtime evidence after 2026-09-23T16:05:00Z.",
       "selectedTopology": "supabase_pg_cron_database_local",
       "currentlyAuthorized": false,
       "candidate": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
@@ -247,7 +254,12 @@
       "activationFunction": "private.activate_analytics_cat_liquidity_scheduler_v1",
       "stagingCandidateApplied": true,
       "stagingMigrationVersion": "20260923144627",
-      "validation040": "PASS"
+      "validation040": "PASS",
+      "resolved": true,
+      "schedulerActivated": true,
+      "jobId": 8,
+      "activationAuthorizationConsumed": true,
+      "remainingEvidence": "First real five-minute window must be materialized by scheduled runtime after 2026-09-23T16:05:00Z and checked against the 60-second projection-delay SLO."
     },
     "windowBoundaryGrid": {
       "owner": "ANA-001",
@@ -294,9 +306,9 @@
       "effectiveUntil": null
     }
   },
-  "updatedAt": "2026-09-23T14:47:07.947594Z",
+  "updatedAt": "2026-09-23T14:57:15.961250Z",
   "schedulerTopology": {
-    "status": "repository_topology_selected_activation_unauthorized",
+    "status": "staging_scheduler_active_policy_future_effective_pending_post_effective_runtime_evidence",
     "mechanism": "supabase_pg_cron_database_local",
     "invocation": "direct_sql_private.run_analytics_cat_liquidity_catch_up_v1",
     "edgeFunctionRequired": false,
@@ -314,13 +326,20 @@
       "serviceRoleExecute": true,
       "authenticatedExecute": false,
       "anonExecute": false,
-      "activeAnaLiquidityCronFound": false,
+      "activeAnaLiquidityCronFound": true,
       "schedulerActivationFunction": "private.activate_analytics_cat_liquidity_scheduler_v1",
       "schedulerActivationFunctionOwner": "postgres",
       "schedulerActivationFunctionSecurityDefiner": true,
       "schedulerActivationFunctionAnonExecute": false,
       "schedulerActivationFunctionAuthenticatedExecute": false,
-      "schedulerActivationFunctionServiceRoleExecute": false
+      "schedulerActivationFunctionServiceRoleExecute": false,
+      "activeJobId": 8,
+      "activeJobName": "doke-ana-liquidity-v1-r1",
+      "activeSchedule": "* * * * *",
+      "activeDatabase": "postgres",
+      "activeUsername": "postgres",
+      "preEffectiveSuccessfulRuns": 2,
+      "postEffectiveWindowEvidencePending": true
     },
     "activationAuthorized": false,
     "executionChain": [
@@ -341,7 +360,8 @@
       "reason": "Polling every minute is intentionally more frequent than the 5-minute publication grid. The planner emits only canonical 300-second closed windows, while minute polling prevents a boundary/watermark race from waiting an additional full publication window.",
       "subWindowPublicationAllowed": false,
       "plannerRemainsWindowAuthority": true
-    }
+    },
+    "schedulerActivated": true
   },
   "canonicalWindowGrid": {
     "status": "revision_1_persisted_future_effective",
@@ -797,7 +817,7 @@
     "contractId": "ana-a11-liquidity-scheduler-activation-v1",
     "migration": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
     "validationSql": "supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql",
-    "status": "staging_applied_validated_scheduler_unactivated",
+    "status": "staging_scheduler_active_policy_future_effective",
     "sourcePolicyId": "ana-a11-liquidity-v1-r1",
     "sourcePolicyEvidenceDigestSha256": "f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d",
     "jobName": "doke-ana-liquidity-v1-r1",
@@ -815,7 +835,7 @@
     "migrationCreatesCronAtApplyTime": false,
     "stagingApplied": true,
     "validationExecutedInStaging": true,
-    "schedulerActivated": false,
+    "schedulerActivated": true,
     "stagingMigrationVersion": "20260923144627",
     "stagingAuthorization": "authorize-ana-a11-liquidity-scheduler-activation-candidate-staging head=794dc639f0bd7c597d28fbad572fc775f7b50307 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1",
     "validation040Passed": true,
@@ -833,6 +853,63 @@
       "duplicateCountAfterReplay": 1,
       "rolledBack": true,
       "persistentCronJobsAfterRollback": 0
+    },
+    "activationAuthorization": "authorize-ana-a11-liquidity-scheduler-activation-staging head=396c4bbb8fb40d75c81b2ab39210c6f9a8c06851 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1 jobName=doke-ana-liquidity-v1-r1 schedule=\"* * * * *\"",
+    "activationAuthorizationConsumed": true,
+    "activationResult": {
+      "status": "APPENDED",
+      "jobId": 8,
+      "jobName": "doke-ana-liquidity-v1-r1",
+      "schedule": "* * * * *",
+      "pollIntervalSeconds": 60,
+      "publicationWindowStepSeconds": 300,
+      "projectionDelaySloSeconds": 60,
+      "target": "private.run_analytics_cat_liquidity_catch_up_v1",
+      "plannerBypassed": false
+    },
+    "persistentRuntime": {
+      "relevantCronCount": 1,
+      "jobId": 8,
+      "active": true,
+      "database": "postgres",
+      "username": "postgres",
+      "command": "select private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp());",
+      "activationConfirmedAt": "2026-09-23T14:56:12.828818Z",
+      "policyEffectiveFrom": "2026-09-23T16:00:00Z",
+      "firstClosedWindowEligibleAfter": "2026-09-23T16:05:00Z",
+      "preEffectiveRuns": [
+        {
+          "runId": 147213,
+          "startTime": "2026-09-23T14:56:00.051145Z",
+          "endTime": "2026-09-23T14:56:00.056204Z",
+          "durationMs": 5.059,
+          "status": "succeeded"
+        },
+        {
+          "runId": 147215,
+          "startTime": "2026-09-23T14:57:00.032006Z",
+          "endTime": "2026-09-23T14:57:00.038737Z",
+          "durationMs": 6.731,
+          "status": "succeeded"
+        }
+      ],
+      "preEffectivePlannerReturnedNoWindows": true,
+      "preEffectivePostPolicySnapshotCount": 0,
+      "preEffectivePostPolicyReconciliationCount": 0
+    }
+  },
+  "pendingRuntimeEvidence": {
+    "schedulerPostEffective": {
+      "status": "pending_time_gate",
+      "earliestEvidenceTime": "2026-09-23T16:05:00Z",
+      "required": [
+        "cron run succeeds after the first canonical window closes",
+        "planner selects only canonical 300-second windows",
+        "required global + category/state series are materialized",
+        "replay remains idempotent",
+        "materialization occurs within projectionDelaySloSeconds=60 when CAT watermark permits",
+        "ANA-A07 evaluates the latest canonical window using maxLagSeconds=360 without fallback"
+      ]
     }
   }
 }
