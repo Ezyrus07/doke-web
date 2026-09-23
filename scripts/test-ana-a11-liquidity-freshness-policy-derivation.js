@@ -22,6 +22,7 @@ check('catch-up executor remains repository-only',c.catchUpExecutorCandidate.sta
 check('catch-up executor delegates planner and window authority',executorMigration.includes('private.plan_analytics_cat_liquidity_windows_v1')&&executorMigration.includes('private.run_analytics_cat_liquidity_window_v1'));
 check('catch-up executor has no direct policy authority',c.catchUpExecutorCandidate.directPolicyRead===false&&c.catchUpExecutorCandidate.directFreshnessPolicyWrite===false&&!executorMigration.includes('analytics_metric_publication_policies_v1'));
 check('catch-up executor preserves planner order',executorMigration.includes('order by p.window_ordinal')&&c.catchUpExecutorCandidate.executionOrder==='planner windowOrdinal ascending');
+check('catch-up rejects corrupted planner order',executorMigration.includes('DOKE_ANALYTICS_LIQUIDITY_PLANNER_ORDER_INVALID')&&executorMigration.includes('v_window.window_ordinal <> v_planned_count + 1')&&c.catchUpExecutorCandidate.plannerBypassAllowed===false);
 
 
 check('policy activation remains repository-only',c.policyActivationCandidate.stagingApplied===false&&c.policyActivationCandidate.createsCron===false&&c.policyActivationCandidate.policyValuesChosen===false);
@@ -57,7 +58,7 @@ check('window orchestration accepts only append authority states',migration.incl
 check('dimension runtime authority is staging validated',c.authority.dimensionEnumeratorRuntimeAuthority===true&&c.dimensionSeriesAuthority.stagingEnumeratorExists===true&&c.dimensionSeriesAuthority.enumeratorExists===true);
 
 eq('scheduler topology','supabase_pg_cron_database_local',c.schedulerTopology.mechanism);
-check('scheduler uses direct A10 runner',c.schedulerTopology.invocation==='direct_sql_public.run_analytics_cat_liquidity_projection_v1'&&c.schedulerTopology.edgeFunctionRequired===false);
+check('scheduler uses bounded A11 catch-up target',c.schedulerTopology.invocation==='direct_sql_private.run_analytics_cat_liquidity_catch_up_v1'&&c.schedulerTopology.futureCronTarget==='private.run_analytics_cat_liquidity_catch_up_v1'&&c.schedulerTopology.bypassPlannerAllowed===false&&c.schedulerTopology.edgeFunctionRequired===false);
 check('window grid remains unapproved',c.canonicalWindowGrid.windowStepSeconds===null&&c.canonicalWindowGrid.boundaryAnchor===null&&c.canonicalWindowGrid.boundaryTimeZone==='not_applicable_fixed_duration_grid'&&c.canonicalWindowGrid.timeZoneIsIndependentAuthority===false);
 check('dimension enumerator cannot reuse snapshots as authority',c.dimensionSeriesAuthority.enumeratorExists===true&&c.dimensionSeriesAuthority.stagingEnumeratorExists===true&&c.dimensionSeriesAuthority.schedulerMayReuseExistingSnapshotDimensionsAsAuthority===false&&c.dimensionSeriesAuthority.mutableCurrentCatalogJoinAllowed===false);
 check('catch-up cannot skip gaps',c.missedWindowRecovery.processingOrder==='oldest missing canonical closed window first'&&c.missedWindowRecovery.skipDirectlyToLatestAllowed===false);

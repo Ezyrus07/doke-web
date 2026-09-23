@@ -35,6 +35,12 @@ begin
     ) p
     order by p.window_ordinal
   loop
+    if v_window.window_ordinal <> v_planned_count + 1 then
+      raise exception using
+        errcode = '55000',
+        message = 'DOKE_ANALYTICS_LIQUIDITY_PLANNER_ORDER_INVALID';
+    end if;
+
     v_window_result := private.run_analytics_cat_liquidity_window_v1(
       v_window.window_start,
       v_window.window_end
@@ -77,4 +83,4 @@ revoke all privileges on function private.run_analytics_cat_liquidity_catch_up_v
   from public, anon, authenticated, service_role;
 
 comment on function private.run_analytics_cat_liquidity_catch_up_v1(text,timestamptz) is
-  'ANA-A11 owner-only bounded catch-up executor. Consumes only windows emitted by the explicit-policy planner and delegates each to the atomic A11 window orchestrator. No cron or policy default is created. An uncaught window failure aborts the caller transaction, preventing a partially committed catch-up invocation.';
+  'ANA-A11 owner-only bounded catch-up executor. Consumes only windows emitted by the explicit-policy planner and delegates each to the atomic A11 window orchestrator. No cron or policy default is created. Planner ordinals must be contiguous from 1; structural order violations fail closed before window execution. An uncaught window failure aborts the caller transaction, preventing a partially committed catch-up invocation.';

@@ -19,7 +19,9 @@ begin
 
   if position('private.plan_analytics_cat_liquidity_windows_v1' in v_def) = 0
      or position('private.run_analytics_cat_liquidity_window_v1' in v_def) = 0
-     or position('order by p.window_ordinal' in v_def) = 0 then
+     or position('order by p.window_ordinal' in v_def) = 0
+     or position('DOKE_ANALYTICS_LIQUIDITY_PLANNER_ORDER_INVALID' in v_def) = 0
+     or position('v_window.window_ordinal <> v_planned_count + 1' in v_def) = 0 then
     raise exception 'ANA-A11 catch-up executor bypasses canonical planner/orchestrator';
   end if;
 

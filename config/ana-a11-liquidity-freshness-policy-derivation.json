@@ -3,7 +3,7 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "1b87bba994f96dc96cb342d0583439d22734b0d2",
+  "sourceHead": "1afeb3617d63523b4b0108e00c7956496313501e",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
   "status": "staging_structural_authorities_validated_planner_executor_and_activation_candidates_ready_policy_values_unset",
@@ -43,7 +43,7 @@
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
     "The repository window-planner and catch-up-executor candidates are explicitly authorized, applied and validated in staging; both remain driven only by an approved publication-policy row.",
-    "A Supabase pg_cron job invokes the database-local ANA-A10 runner at the approved cadence.",
+    "A Supabase pg_cron job invokes private.run_analytics_cat_liquidity_catch_up_v1 at the approved cadence; direct cron invocation of the A10 per-series runner is forbidden.",
     "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
     "ANA-A07 boundary tests prove fresh at <= maxLagSeconds and stale at > maxLagSeconds without older-window fallback.",
     "The canonical activation call atomically creates the publication policy and matching freshness policy; no independent hand-entered freshness insert is permitted."
@@ -256,17 +256,18 @@
       "structuralCandidate": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql"
     }
   },
-  "updatedAt": "2026-09-23T08:10:00-03:00",
+  "updatedAt": "2026-09-23T09:39:00-03:00",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
-    "invocation": "direct_sql_public.run_analytics_cat_liquidity_projection_v1",
+    "invocation": "direct_sql_private.run_analytics_cat_liquidity_catch_up_v1",
     "edgeFunctionRequired": false,
     "githubActionsSchedulerAllowed": false,
     "rationale": [
-      "The ANA-A10 runner is database-local, SECURITY DEFINER and owned by postgres.",
-      "Existing Doke staging cron jobs execute as postgres in the postgres database.",
-      "A database-local invocation avoids introducing an HTTP/Edge authority that ANA-A10 does not require."
+      "The future scheduler must invoke the bounded A11 catch-up executor, not bypass the planner by calling the A10 per-series runner directly.",
+      "The catch-up executor delegates to the policy-driven planner, which owns canonical grid alignment and bounded oldest-first recovery.",
+      "The executor delegates each planned window to the atomic A11 window orchestrator, which delegates each required series to the canonical A10 projection runner.",
+      "Existing Doke staging cron jobs execute as postgres in the postgres database; no Edge Function or GitHub Actions publisher is required."
     ],
     "runtimeEvidence": {
       "runnerOwner": "postgres",
@@ -282,9 +283,11 @@
       "Supabase pg_cron (future separately authorized)",
       "private.run_analytics_cat_liquidity_catch_up_v1",
       "private.plan_analytics_cat_liquidity_windows_v1",
-      "private.run_analytics_cat_liquidity_window_v1"
+      "private.run_analytics_cat_liquidity_window_v1",
+      "public.run_analytics_cat_liquidity_projection_v1"
     ],
-    "futureCronTarget": "private.run_analytics_cat_liquidity_catch_up_v1"
+    "futureCronTarget": "private.run_analytics_cat_liquidity_catch_up_v1",
+    "bypassPlannerAllowed": false
   },
   "canonicalWindowGrid": {
     "status": "planner_contract_ready_values_unset",
@@ -545,7 +548,9 @@
     "choosesNumericPolicy": false,
     "ownerBoundary": "postgres only",
     "executionOrder": "planner windowOrdinal ascending",
-    "batchAtomicity": "uncaught failure aborts the executor invocation transaction"
+    "batchAtomicity": "uncaught failure aborts the executor invocation transaction",
+    "plannerOrdinalInvariant": "contiguous planner ordinals starting at 1",
+    "plannerBypassAllowed": false
   },
   "policyActivationCandidate": {
     "contractId": "ana-a11-liquidity-policy-activation-v1",

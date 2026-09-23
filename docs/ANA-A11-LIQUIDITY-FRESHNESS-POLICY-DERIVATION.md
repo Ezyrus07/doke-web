@@ -282,3 +282,15 @@ The activation boundary is owner-only, creates no cron and invokes no catch-up e
 
 Concrete policy values remain unset and unauthorized.
 
+## Scheduler target reconciliation
+
+The future scheduler target is:
+
+`pg_cron → private.run_analytics_cat_liquidity_catch_up_v1 → private.plan_analytics_cat_liquidity_windows_v1 → private.run_analytics_cat_liquidity_window_v1 → public.run_analytics_cat_liquidity_projection_v1`
+
+Direct cron invocation of the A10 per-series runner is forbidden because it would bypass canonical window planning and bounded oldest-first recovery.
+
+The catch-up executor also fails closed when planner ordinals are not contiguous from `1`, preventing execution against a structurally corrupted planner result.
+
+This remains repository-only: no cron, policy row, freshness row or new staging function is created by this reconciliation.
+
