@@ -60,14 +60,14 @@ check('dimension runtime authority is staging validated',c.authority.dimensionEn
 
 eq('scheduler topology','supabase_pg_cron_database_local',c.schedulerTopology.mechanism);
 check('scheduler uses bounded A11 catch-up target',c.schedulerTopology.invocation==='direct_sql_private.run_analytics_cat_liquidity_catch_up_v1'&&c.schedulerTopology.futureCronTarget==='private.run_analytics_cat_liquidity_catch_up_v1'&&c.schedulerTopology.bypassPlannerAllowed===false&&c.schedulerTopology.edgeFunctionRequired===false);
-check('window grid remains unapproved',c.canonicalWindowGrid.windowStepSeconds===null&&c.canonicalWindowGrid.boundaryAnchor===null&&c.canonicalWindowGrid.boundaryTimeZone==='not_applicable_fixed_duration_grid'&&c.canonicalWindowGrid.timeZoneIsIndependentAuthority===false);
+check('window grid revision 1 persisted',c.canonicalWindowGrid.windowStepSeconds===300&&c.canonicalWindowGrid.boundaryAnchor==='1970-01-01T00:00:00Z'&&c.canonicalWindowGrid.boundaryTimeZone==='not_applicable_fixed_duration_grid'&&c.canonicalWindowGrid.timeZoneIsIndependentAuthority===false);
 check('dimension enumerator cannot reuse snapshots as authority',c.dimensionSeriesAuthority.enumeratorExists===true&&c.dimensionSeriesAuthority.stagingEnumeratorExists===true&&c.dimensionSeriesAuthority.schedulerMayReuseExistingSnapshotDimensionsAsAuthority===false&&c.dimensionSeriesAuthority.mutableCurrentCatalogJoinAllowed===false);
 check('catch-up cannot skip gaps',c.missedWindowRecovery.processingOrder==='oldest missing canonical closed window first'&&c.missedWindowRecovery.skipDirectlyToLatestAllowed===false);
 check('catch-up limit remains unset',c.missedWindowRecovery.maxCatchUpWindowsPerInvocation===null&&c.missedWindowRecovery.unboundedCatchUpAllowed===false);
 check('exact replay remains safe',c.missedWindowRecovery.exactReplayBehavior.includes('NO_CHANGE'));
 eq('divergent concurrency fails closed',c.missedWindowRecovery.divergentConcurrentWriteBehavior,'DOKE_ANALYTICS_METRIC_REVISION_CONFLICT');
 
-check('contract leaves values unset',c.currentDecision.windowStepSeconds===null&&c.currentDecision.projectionDelaySloSeconds===null&&c.currentDecision.maxLagSeconds===null);
+check('contract records revision 1 values',c.currentDecision.windowStepSeconds===300&&c.currentDecision.projectionDelaySloSeconds===60&&c.currentDecision.maxLagSeconds===360&&c.currentDecision.maxCatchUpWindowsPerInvocation===3);
 check('CAT watermark uses snapshot barrier',c.sourceDomainWatermarkSemantics.sourceDomain==='CAT-001'&&c.sourceDomainWatermarkSemantics.basis==='transaction_snapshot_barrier_v1');
 check('event max is not watermark',c.sourceDomainWatermarkSemantics.maxEventOccurredAtIsWatermark===false);
 check('computedAt is not watermark',c.sourceDomainWatermarkSemantics.computedAtIsWatermark===false);

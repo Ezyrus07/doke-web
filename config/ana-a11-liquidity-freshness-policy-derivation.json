@@ -10,14 +10,14 @@
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
-    "cadenceAuthorityMissing": "ANA-001 has no canonical cron/publication cadence in the domain matrix and repository search found no analytics freshness cadence or metric-specific maxLagSeconds authority.",
+    "cadenceAuthorityMissing": "Resolved by persisted revision 1: windowStepSeconds=300 is now the approved cadence input for liquidity.active_service_seconds v1.",
     "sourceWatermarkAvailable": "CAT-A06 transaction-snapshot watermark is active in staging through ANA-A10.",
-    "consequence": "A numeric maxLagSeconds and an active scheduler remain non-authoritative until cadence/SLO, canonical window-grid alignment, dimension-series enumeration and missed-window recovery are versioned.",
-    "windowGridAuthorityMissing": "numeric grid values remain unapproved, but a policy-driven repository planner now defines how approved anchor/step values will generate canonical closed windows without defaults.",
+    "consequence": "Publication/freshness values are now authoritative in staging, but scheduled execution remains non-authoritative until the separately approved pg_cron job is activated and runtime-evidenced.",
+    "windowGridAuthorityMissing": "Resolved by persisted revision 1: windowAnchor=1970-01-01T00:00:00Z with 300-second fixed-duration alignment.",
     "dimensionSeriesAuthorityMissing": "resolved structurally in staging: owner-only CAT-fact-backed series enumeration and atomic per-window orchestration are installed and validated; scheduler activation remains separate.",
-    "publicationPolicyProvenanceGap": "private.analytics_metric_freshness_policies_v1 stores only the derived max_lag_seconds/effective window. It cannot prove which window step, projection-delay SLO, boundary anchor, catch-up bound or approval evidence produced that threshold.",
-    "currentFreshnessPolicyRows": "staging currently has zero freshness-policy rows, so no existing row requires data migration.",
-    "policyCouplingGap": "resolved structurally in repository candidate: publication and freshness rows must be inserted atomically from the same explicit inputs; no hand-entered maxLagSeconds is accepted by the canonical activation path.",
+    "publicationPolicyProvenanceGap": "Resolved by persisted revision 1: the publication policy stores the approved cadence/SLO/grid/catch-up/provenance and the matching freshness row stores the mechanically derived threshold.",
+    "currentFreshnessPolicyRows": "Staging has exactly one revision-1 freshness row paired with the publication policy, effective from 2026-09-23T16:00:00Z.",
+    "policyCouplingGap": "Resolved in staging: the approved activation inserted publication and freshness rows atomically with policyId ana-a11-liquidity-v1-r1 and derived maxLagSeconds=360.",
     "approvalEvidenceSchemaGap": "Resolved in staging: the envelope-aware validator is installed and the legacy object-only activation is tombstoned.",
     "policyIdentityEffectiveWindowGap": "Resolved at repository contract level for the first policy: policy identity is revision-derived, effectiveFrom must be explicitly approved and grid-aligned, initial effectiveUntil must be null, and replacement requires a separate transition contract.",
     "runtimeApprovalBypassGap": "Resolved in staging by migration 20260923135957. The legacy activation now fails closed with DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED; only the approved activation path can reach policy inserts."
@@ -316,9 +316,9 @@
     "bypassPlannerAllowed": false
   },
   "canonicalWindowGrid": {
-    "status": "planner_contract_ready_values_unset",
-    "windowStepSeconds": null,
-    "boundaryAnchor": null,
+    "status": "revision_1_persisted_future_effective",
+    "windowStepSeconds": 300,
+    "boundaryAnchor": "1970-01-01T00:00:00Z",
     "boundaryTimeZone": "not_applicable_fixed_duration_grid",
     "invariants": [
       "Every materialized window must belong to one versioned canonical grid.",
@@ -388,14 +388,14 @@
     "stagingValidation": "PASS"
   },
   "missedWindowRecovery": {
-    "status": "staging_planner_executor_validated_batch_value_unset",
+    "status": "revision_1_batch_value_persisted_scheduler_unactivated",
     "processingOrder": "oldest missing canonical closed window first",
     "skipDirectlyToLatestAllowed": false,
     "exactReplayBehavior": "NO_CHANGE when source/projection fingerprints are unchanged",
     "divergentConcurrentWriteBehavior": "DOKE_ANALYTICS_METRIC_REVISION_CONFLICT",
-    "maxCatchUpWindowsPerInvocation": null,
+    "maxCatchUpWindowsPerInvocation": 3,
     "unboundedCatchUpAllowed": false,
-    "reason": "Planner and bounded catch-up executor are installed and validated in staging. Concrete grid/catch-up values remain unavailable until an explicitly approved publication-policy row exists.",
+    "reason": "Planner and bounded catch-up executor are installed and validated in staging. Revision 1 persists a batch bound of 3 with oldest-first recovery; scheduler activation remains separate.",
     "plannerContract": "ana-a11-liquidity-window-planner-v1",
     "repositoryPlannerCandidate": "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
     "validationSql": "supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql",
@@ -466,13 +466,13 @@
     }
   },
   "publicationPolicyAuthority": {
-    "status": "staging_schema_validated_no_rows",
+    "status": "revision_1_persisted_future_effective",
     "table": "private.analytics_metric_publication_policies_v1",
     "selector": "private.current_analytics_metric_publication_policy_v1",
     "migration": "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
     "validationSql": "supabase/tests/035_ana_a11_liquidity_publication_policy_authority_validation.sql",
     "stagingApplied": true,
-    "stagingRows": 0,
+    "stagingRows": 1,
     "freshnessRegistry": "private.analytics_metric_freshness_policies_v1",
     "separation": "publication policy stores approved derivation inputs/provenance; freshness policy stores the derived threshold consumed by runtime",
     "generatedDerivation": "derived_max_lag_seconds = window_step_seconds + projection_delay_slo_seconds",
@@ -496,7 +496,12 @@
       "overlapFailsClosed": true,
       "overlapError": "DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS",
       "persistentRowsAfterRollback": 0
-    }
+    },
+    "rowCreationCompleted": true,
+    "freshnessPolicySyncCompleted": true,
+    "activePolicyId": "ana-a11-liquidity-v1-r1",
+    "effectiveFrom": "2026-09-23T16:00:00Z",
+    "effectiveUntil": null
   },
   "stagingStructuralEvidence": {
     "projectRef": "zwkczgewzbsorbrjuzpb",
