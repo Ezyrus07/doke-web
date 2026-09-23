@@ -1104,6 +1104,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-A07 certified a forward coverage epoch in staging and ANA-A10 handoff proves pre-epoch windows remain partial while post-epoch windows become complete. Freshness still fails closed because the ANA-A11 policy is unset.
 - ANA-A11 read-only scheduler reconciliation selected a database-local Supabase pg_cron topology for the existing A10 runner, proved no active ANA/liquidity cron exists, and identified two additional activation gaps: no canonical window-grid anchor/alignment and no server-side enumerator for the required global + category/state liquidity series.
 - ANA-A11 now has a repository-only series-orchestration candidate: a private CAT-fact-backed enumerator emits the global series plus the monotonic category/state universe from the certified coverage epoch, and an atomic per-window wrapper delegates every series to the existing A10 runner. The candidate is not applied to staging and creates no cron or policy row.
+- ANA-A11 category-identity reconciliation proved that the certified CAT epoch legitimately mixes a canonical UUID category and a legacy freeform category with no canonical category row. The series candidate normalizes only casing to match A10 comparison semantics, forbids UUID/name/slug equivalence inference and preserves historical representation changes as distinct forward series.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1112,7 +1113,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.
-- ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 has selected database-local pg_cron topology and prepared a repository-only CAT-fact-backed series enumerator/window orchestrator candidate. Remaining decisions are windowStepSeconds, projectionDelaySloSeconds, canonical boundary alignment and bounded missed-window recovery; applying the candidate or activating cron/policy still requires explicit staging authorization.
+- ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 has a repository-only CAT-fact-backed series orchestrator with case-normalized frozen category keys and explicit no-cross-representation merging. Remaining decisions are windowStepSeconds, projectionDelaySloSeconds, canonical boundary alignment and bounded missed-window recovery; applying the candidate or activating cron/policy still requires explicit staging authorization.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
 **Gate de saída:**
@@ -1248,4 +1249,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T22:11:51-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T22:21:00-03:00._
