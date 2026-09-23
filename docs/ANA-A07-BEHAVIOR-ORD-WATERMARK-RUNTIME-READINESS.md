@@ -46,4 +46,6 @@ The compatibility migration was subsequently applied in staging as `202609232311
 
 ## Compatibility runtime reconciliation
 
-Canonical runtime evidence is persisted at `reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json`. The helper now executes with explicit `CASE`, wrappers return healthy `fresh / NO_ACTIVE_TRANSACTION` envelopes, and owner/grant boundaries pass validation 041. A07 runtime watermark authority remains intentionally false until the separately authorized multi-session concurrent-writer canary passes. Late-fact certification remains downstream with A09 projection evidence.
+Canonical runtime evidence is persisted at `reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json`. The helper now executes with explicit `CASE`, wrappers return healthy `fresh / NO_ACTIVE_TRANSACTION` envelopes, and owner/grant boundaries pass validation 041. The separately authorized multi-session concurrent-writer canary has passed. A real transaction remained active while an independent observer called the helper and both wrappers; all returned `ACTIVE_TRANSACTION_FLOOR` at exactly `writerXactStart - 1 microsecond`. The transient cron executor was unscheduled and no tagged session or watermark cron remained. The watermark runtime mechanism is therefore certified. Late-fact and empty-window projection evidence remain downstream with A09/A05.
+
+Canonical concurrent-writer evidence: `reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json`.

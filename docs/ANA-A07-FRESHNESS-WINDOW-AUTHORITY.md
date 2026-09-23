@@ -80,4 +80,4 @@ The repository now contains `supabase/migrations/20260923224000_ana_a07_behavior
 
 ## Watermark staging validation status
 
-The behavior/ORD migration and forward-only compatibility migration are present in staging. Validation 041 now passes and the no-active-transaction envelopes/grants are healthy. Runtime watermark authority nevertheless remains false until the multi-session concurrent-writer canary proves the transaction-floor behavior under a real in-flight writer.
+The behavior/ORD migration and forward-only compatibility migration are present in staging. Validation 041 now passes and the no-active-transaction envelopes/grants are healthy. The multi-session concurrent-writer canary now proves the transaction-floor behavior under a real in-flight writer, so behavior/ORD `runtimeWatermarkAuthority` is certified. Broader A07 `stagingAuthority` remains false until metric-specific thresholds and downstream projection/selection evidence—including empty-window and late-fact paths—are closed.

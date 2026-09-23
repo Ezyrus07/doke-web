@@ -76,4 +76,4 @@ ANA-A10/A11 liquidity is operationally closed outside A09 and is no longer an A0
 
 The A07 behavior/ORD watermark runtime candidate is now repository-ready at `supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql`, but remains unapplied. A09 activation still requires validation 041 plus multi-session concurrency/late-fact staging evidence.
 
-A07 validation 041 now passes after the compatibility migration. A09 remains blocked because A07 still needs a multi-session concurrent-writer canary before its runtime watermark authority can be consumed. The A09 projector, funnel thresholds and late-fact projection evidence remain subsequent gates.
+A07 validation 041 now passes after the compatibility migration. A07 behavior/ORD runtime watermark authority is now certified and can be consumed by A09. A09 remains blocked on the server-side funnel projector, materialization-time filtering, metric-specific funnel thresholds, segmentation authority and controlled empty-window/late-fact projection evidence.

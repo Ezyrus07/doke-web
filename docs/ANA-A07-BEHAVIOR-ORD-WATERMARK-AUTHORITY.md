@@ -79,6 +79,8 @@ The migration file exists only in the repository. No migration application, stag
 
 Staging application of the original runtime candidate exposed an execution defect: `pg_catalog.least(...)` is not resolvable because `LEAST` is not a schema-qualified catalog function. The original migration is not edited.
 
-`supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql` redefines only the shared transaction-floor helper using an explicit `CASE`. The compatibility migration is now applied in staging and validation 041 passes. Runtime authority remains uncertified only because multi-session concurrent-writer evidence is still pending; late-fact behavior remains a downstream A09/A05 revision proof.
+`supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql` redefines only the shared transaction-floor helper using an explicit `CASE`. The compatibility migration is now applied in staging and validation 041 passes. The multi-session concurrent-writer canary has now passed in staging. The helper and both wrappers held `dataThrough` exactly one microsecond below the real writer `xact_start`, and cleanup removed the transient cron/session completely. Therefore the **watermark mechanism itself is runtime-certified**. Late-fact behavior remains a downstream A09/A05 projection proof and does not reopen the certified watermark algorithm.
 
 Runtime evidence: `reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json`.
+
+Concurrent-writer evidence: `reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json`.
