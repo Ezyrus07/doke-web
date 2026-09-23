@@ -15,7 +15,7 @@ let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300
 
 
 
-check('publication policy schema is applied but empty',c.publicationPolicyAuthority.stagingApplied===true&&c.publicationPolicyAuthority.stagingMigrationVersion==='20260923021316'&&c.publicationPolicyAuthority.stagingRows===0&&c.publicationPolicyAuthority.rowCreationAuthorized===false);
+check('publication policy schema has revision 1 row',c.publicationPolicyAuthority.stagingApplied===true&&c.publicationPolicyAuthority.stagingMigrationVersion==='20260923021316'&&c.publicationPolicyAuthority.stagingRows===1&&c.publicationPolicyAuthority.rowCreationAuthorized===false&&c.publicationPolicyAuthority.rowCreationCompleted===true);
 
 
 check('catch-up executor staging structural runtime only',c.catchUpExecutorCandidate.stagingApplied===true&&c.catchUpExecutorCandidate.stagingMigrationVersion==='20260923130307'&&c.catchUpExecutorCandidate.stagingValidation==='PASS'&&c.catchUpExecutorCandidate.createsCron===false&&c.catchUpExecutorCandidate.choosesNumericPolicy===false&&c.authority.catchUpExecutorRuntimeAuthority===true);
@@ -44,7 +44,7 @@ check('publication policy has no implicit default',publicationMigration.includes
 check('publication policy overlap is unavailable',publicationMigration.includes('DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS')&&c.publicationPolicyAuthority.overlappingEffectivePolicies==='fail_closed_DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS');
 check('publication policy stores derivation inputs',publicationMigration.includes('window_step_seconds integer not null')&&publicationMigration.includes('projection_delay_slo_seconds integer not null')&&publicationMigration.includes('window_anchor timestamptz not null')&&publicationMigration.includes('max_catch_up_windows_per_invocation integer not null'));
 check('publication policy derives lag',publicationMigration.includes('derived_max_lag_seconds bigint generated always as')&&publicationMigration.includes('window_step_seconds::bigint + projection_delay_slo_seconds::bigint'));
-check('freshness threshold cannot be hand-authorized by candidate',c.publicationPolicyAuthority.freshnessPolicySyncAuthorized===false&&c.authority.freshnessPolicySyncAuthority===false);
+check('freshness threshold was atomically synchronized',c.publicationPolicyAuthority.freshnessPolicySyncAuthorized===false&&c.publicationPolicyAuthority.freshnessPolicySyncCompleted===true&&c.authority.freshnessPolicySyncAuthority===true);
 eq('fixed duration timezone semantics',c.currentDecision.windowBoundaryTimeZone,'not_applicable_fixed_duration_grid');
 
 check('category series key is case-normalized',migration.includes('pg_catalog.lower(coalesce(')&&c.seriesOrchestrationCandidate.categorySeriesKey==='lower(coalesce(categoryId, categorySlug, category))');
@@ -63,7 +63,7 @@ check('scheduler uses bounded A11 catch-up target',c.schedulerTopology.invocatio
 check('window grid revision 1 persisted',c.canonicalWindowGrid.windowStepSeconds===300&&c.canonicalWindowGrid.boundaryAnchor==='1970-01-01T00:00:00Z'&&c.canonicalWindowGrid.boundaryTimeZone==='not_applicable_fixed_duration_grid'&&c.canonicalWindowGrid.timeZoneIsIndependentAuthority===false);
 check('dimension enumerator cannot reuse snapshots as authority',c.dimensionSeriesAuthority.enumeratorExists===true&&c.dimensionSeriesAuthority.stagingEnumeratorExists===true&&c.dimensionSeriesAuthority.schedulerMayReuseExistingSnapshotDimensionsAsAuthority===false&&c.dimensionSeriesAuthority.mutableCurrentCatalogJoinAllowed===false);
 check('catch-up cannot skip gaps',c.missedWindowRecovery.processingOrder==='oldest missing canonical closed window first'&&c.missedWindowRecovery.skipDirectlyToLatestAllowed===false);
-check('catch-up limit remains unset',c.missedWindowRecovery.maxCatchUpWindowsPerInvocation===null&&c.missedWindowRecovery.unboundedCatchUpAllowed===false);
+check('catch-up limit revision 1 persisted',c.missedWindowRecovery.maxCatchUpWindowsPerInvocation===3&&c.missedWindowRecovery.unboundedCatchUpAllowed===false);
 check('exact replay remains safe',c.missedWindowRecovery.exactReplayBehavior.includes('NO_CHANGE'));
 eq('divergent concurrency fails closed',c.missedWindowRecovery.divergentConcurrentWriteBehavior,'DOKE_ANALYTICS_METRIC_REVISION_CONFLICT');
 
