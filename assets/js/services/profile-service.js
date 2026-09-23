@@ -383,12 +383,10 @@
     var repository = usersRepository();
 
     if (!id) return Promise.resolve(null);
-    if (cachedProfile) return Promise.resolve(cachedProfile);
     if (usesSupabaseProvider()) {
-      return getRemotePublicProfile(id).then(function (profile) {
-        return profile || sessionFallback;
-      });
+      return getRemotePublicProfile(id);
     }
+    if (cachedProfile) return Promise.resolve(cachedProfile);
     if (!repository || typeof repository.findById !== 'function') {
       return Promise.resolve(sessionFallback);
     }
