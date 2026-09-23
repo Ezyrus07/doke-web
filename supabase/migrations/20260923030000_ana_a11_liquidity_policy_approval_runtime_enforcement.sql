@@ -266,7 +266,7 @@ begin
 
   v_grid_delta_microseconds :=
     (
-      pg_catalog.extract(epoch from (v_evidence_effective_from - v_evidence_anchor))
+      extract(epoch from (v_evidence_effective_from - v_evidence_anchor))
       * 1000000
     )::bigint;
 

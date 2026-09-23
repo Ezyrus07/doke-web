@@ -71,6 +71,7 @@ assert(!historicalMig.includes(c.approvalEvidenceSchemaId));
   'analytics_metric_publication_policies_v1',
   'analytics_metric_freshness_policies_v1'
 ].forEach((fragment)=>assert(enforcementMig.includes(fragment),'runtime enforcement candidate missing: '+fragment));
+assert(!enforcementMig.includes('pg_catalog.extract'));
 assert(!enforcementMig.toLowerCase().includes('cron.schedule('));
 assert(!enforcementMig.includes('run_analytics_cat_liquidity_catch_up_v1'));
 
