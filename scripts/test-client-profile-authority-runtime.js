@@ -76,7 +76,7 @@ function createPublicProfileServiceFixture(options = {}) {
   const targetWindow = {
     Doke: {
       session: {
-        getCurrentUser() { return null; },
+        getCurrentUser() { return options.currentUser || null; },
         getSession() { return options.anonymous ? null : { provider: 'supabase' }; }
       }
     },
@@ -205,6 +205,54 @@ function createPublicProfileServiceFixture(options = {}) {
   });
   assert.strictEqual(await missingRoleFixture.service.getById('44444444-4444-4444-8444-444444444444'), null);
 
+  const ownerMissingRoleFixture = createPublicProfileServiceFixture({
+    requestedId: '77777777-7777-4777-8777-777777777777',
+    currentUser: {
+      id: '77777777-7777-4777-8777-777777777777',
+      role: 'client',
+      profile: {
+        id: '77777777-7777-4777-8777-777777777777',
+        userId: '77777777-7777-4777-8777-777777777777',
+        role: 'client',
+        name: 'Perfil local obsoleto'
+      }
+    },
+    profileRow: {
+      user_id: '77777777-7777-4777-8777-777777777777',
+      display_name: 'Perfil Remoto Suspenso'
+    },
+    roleRow: null
+  });
+  assert.strictEqual(
+    await ownerMissingRoleFixture.service.getById('77777777-7777-4777-8777-777777777777'),
+    null,
+    'Signed-in owners must not fall back to stale session profile data when the public role projection is missing.'
+  );
+
+  const ownerMissingProfileFixture = createPublicProfileServiceFixture({
+    requestedId: '88888888-8888-4888-8888-888888888888',
+    currentUser: {
+      id: '88888888-8888-4888-8888-888888888888',
+      role: 'client',
+      profile: {
+        id: '88888888-8888-4888-8888-888888888888',
+        userId: '88888888-8888-4888-8888-888888888888',
+        role: 'client',
+        name: 'Perfil local obsoleto'
+      }
+    },
+    profileRow: null,
+    roleRow: {
+      user_id: '88888888-8888-4888-8888-888888888888',
+      role: 'client'
+    }
+  });
+  assert.strictEqual(
+    await ownerMissingProfileFixture.service.getById('88888888-8888-4888-8888-888888888888'),
+    null,
+    'Signed-in owners must not fall back to stale session profile data when the public profile row is missing.'
+  );
+
   const invalidIdFixture = createPublicProfileServiceFixture({
     requestedId: 'user_001',
     anonymous: true,
@@ -245,6 +293,8 @@ function createPublicProfileServiceFixture(options = {}) {
     anonymousPublicClientProjected: true,
     publicProfessionalRoleProjected: true,
     missingProjectionFailsClosed: true,
+    ownerMissingProjectionFailsClosed: true,
+    ownerMissingProfileFailsClosed: true,
     invalidPublicIdFailsClosed: true,
     remoteErrorsDoNotFallback: true
   }));
