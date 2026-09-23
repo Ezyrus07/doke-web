@@ -16,6 +16,8 @@ let grace=false;try{derive({windowStepSeconds:3600,projectionDelaySloSeconds:300
 
 
 check('publication policy remains empty/unapplied',c.publicationPolicyAuthority.stagingApplied===false&&c.publicationPolicyAuthority.stagingRows===0&&c.publicationPolicyAuthority.rowCreationAuthorized===false);
+check('publication policy has no implicit default',publicationMigration.includes('if v_count = 0 then')&&c.publicationPolicyAuthority.missingEffectivePolicy==='null_no_default');
+check('publication policy overlap is unavailable',publicationMigration.includes('DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS')&&c.publicationPolicyAuthority.overlappingEffectivePolicies==='fail_closed_DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS');
 check('publication policy stores derivation inputs',publicationMigration.includes('window_step_seconds integer not null')&&publicationMigration.includes('projection_delay_slo_seconds integer not null')&&publicationMigration.includes('window_anchor timestamptz not null')&&publicationMigration.includes('max_catch_up_windows_per_invocation integer not null'));
 check('publication policy derives lag',publicationMigration.includes('derived_max_lag_seconds bigint generated always as')&&publicationMigration.includes('window_step_seconds::bigint + projection_delay_slo_seconds::bigint'));
 check('freshness threshold cannot be hand-authorized by candidate',c.publicationPolicyAuthority.freshnessPolicySyncAuthorized===false&&c.authority.freshnessPolicySyncAuthority===false);

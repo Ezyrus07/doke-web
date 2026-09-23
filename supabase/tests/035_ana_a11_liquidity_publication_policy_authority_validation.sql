@@ -45,6 +45,8 @@ begin
 
   if position('effective_from <= p_at' in v_selector_def) = 0
      or position('effective_until is null or p.effective_until > p_at' in v_selector_def) = 0
+     or position('DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS' in v_selector_def) = 0
+     or position('if v_count = 0 then' in v_selector_def) = 0
      or position('order by p.effective_from desc' in v_selector_def) = 0 then
     raise exception 'ANA-A11 publication policy selection is not deterministic';
   end if;

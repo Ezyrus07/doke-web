@@ -76,39 +76,65 @@ create or replace function private.current_analytics_metric_publication_policy_v
   p_at timestamptz
 )
 returns jsonb
-language sql
+language plpgsql
 stable
 security definer
 set search_path = pg_catalog
-as $$
-  select pg_catalog.jsonb_build_object(
-    'policyId',p.policy_id,
-    'metricKey',p.metric_key,
-    'metricVersion',p.metric_version,
-    'windowStepSeconds',p.window_step_seconds,
-    'projectionDelaySloSeconds',p.projection_delay_slo_seconds,
-    'derivedMaxLagSeconds',p.derived_max_lag_seconds,
-    'windowAnchor',p.window_anchor,
-    'maxCatchUpWindowsPerInvocation',p.max_catch_up_windows_per_invocation,
-    'missedWindowOrder',p.missed_window_order,
-    'schedulerMechanism',p.scheduler_mechanism,
-    'derivationContractId',p.derivation_contract_id,
-    'seriesContractId',p.series_contract_id,
-    'approvalEvidence',p.approval_evidence,
-    'effectiveFrom',p.effective_from,
-    'effectiveUntil',p.effective_until
-  )
+as $
+declare
+  v_count integer;
+  v_policy private.analytics_metric_publication_policies_v1%rowtype;
+begin
+  select count(*)::integer
+    into v_count
+  from private.analytics_metric_publication_policies_v1 p
+  where p.metric_key = pg_catalog.btrim(p_metric_key)
+    and p.metric_version = pg_catalog.btrim(p_metric_version)
+    and p.effective_from <= p_at
+    and (p.effective_until is null or p.effective_until > p_at);
+
+  if v_count > 1 then
+    raise exception using
+      errcode = '55000',
+      message = 'DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS';
+  end if;
+
+  if v_count = 0 then
+    return null;
+  end if;
+
+  select p.*
+    into v_policy
   from private.analytics_metric_publication_policies_v1 p
   where p.metric_key = pg_catalog.btrim(p_metric_key)
     and p.metric_version = pg_catalog.btrim(p_metric_version)
     and p.effective_from <= p_at
     and (p.effective_until is null or p.effective_until > p_at)
   order by p.effective_from desc
-  limit 1
-$$;
+  limit 1;
+
+  return pg_catalog.jsonb_build_object(
+    'policyId',v_policy.policy_id,
+    'metricKey',v_policy.metric_key,
+    'metricVersion',v_policy.metric_version,
+    'windowStepSeconds',v_policy.window_step_seconds,
+    'projectionDelaySloSeconds',v_policy.projection_delay_slo_seconds,
+    'derivedMaxLagSeconds',v_policy.derived_max_lag_seconds,
+    'windowAnchor',v_policy.window_anchor,
+    'maxCatchUpWindowsPerInvocation',v_policy.max_catch_up_windows_per_invocation,
+    'missedWindowOrder',v_policy.missed_window_order,
+    'schedulerMechanism',v_policy.scheduler_mechanism,
+    'derivationContractId',v_policy.derivation_contract_id,
+    'seriesContractId',v_policy.series_contract_id,
+    'approvalEvidence',v_policy.approval_evidence,
+    'effectiveFrom',v_policy.effective_from,
+    'effectiveUntil',v_policy.effective_until
+  );
+end;
+$;
 
 revoke all privileges on function private.current_analytics_metric_publication_policy_v1(text,text,timestamptz)
   from public, anon, authenticated, service_role;
 
 comment on function private.current_analytics_metric_publication_policy_v1(text,text,timestamptz) is
-  'ANA-A11 owner-only selector for the versioned publication policy effective at a point in time. No implicit/default policy exists.';
+  'ANA-A11 owner-only selector for the versioned publication policy effective at a point in time. No implicit/default policy exists; overlapping effective policies fail closed with DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS.';

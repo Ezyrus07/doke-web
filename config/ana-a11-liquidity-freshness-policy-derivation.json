@@ -3,7 +3,7 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "4fcc488543f1dd5ef05a70a9a9f4d5a642c0acbc",
+  "sourceHead": "1360310d99070755ae204ee0440f9b8295f9070b",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "repository_only",
   "status": "publication_policy_and_series_candidates_ready_staging_unapplied_numeric_policy_values_unset",
@@ -88,7 +88,7 @@
       ],
       "effectiveUntilOptional": true
     },
-    "couplingRule": "A future separately authorized activation must derive freshness maxLagSeconds from the effective publication policy; no hand-entered threshold may bypass the derivation contract."
+    "couplingRule": "A future separately authorized activation must derive freshness maxLagSeconds from the effective publication policy; no hand-entered threshold may bypass the derivation contract. Overlapping effective publication policies are invalid and fail closed."
   },
   "currentDecision": {
     "windowStepSeconds": null,
@@ -388,6 +388,9 @@
     "rowCreationAuthorized": false,
     "schedulerActivationAuthorized": false,
     "freshnessPolicySyncAuthorized": false,
-    "ownerBoundary": "postgres only"
+    "ownerBoundary": "postgres only",
+    "overlappingEffectivePolicies": "fail_closed_DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS",
+    "missingEffectivePolicy": "null_no_default",
+    "effectiveSelectionAuthority": "exactly zero or one policy may be effective for a metric/version at p_at; >1 is unavailable by exception"
   }
 }

@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 246 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 248 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -351,7 +351,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 249 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 251 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -546,7 +546,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1492 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1493 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1063,7 +1063,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 43 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 44 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`.
 
@@ -1105,6 +1105,8 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A11 read-only scheduler reconciliation selected a database-local Supabase pg_cron topology for the existing A10 runner, proved no active ANA/liquidity cron exists, and identified two additional activation gaps: no canonical window-grid anchor/alignment and no server-side enumerator for the required global + category/state liquidity series.
 - ANA-A11 now has a repository-only series-orchestration candidate: a private CAT-fact-backed enumerator emits the global series plus the monotonic category/state universe from the certified coverage epoch, and an atomic per-window wrapper delegates every series to the existing A10 runner. The candidate is not applied to staging and creates no cron or policy row.
 - ANA-A11 category-identity reconciliation proved that the certified CAT epoch legitimately mixes a canonical UUID category and a legacy freeform category with no canonical category row. The series candidate normalizes only casing to match A10 comparison semantics, forbids UUID/name/slug equivalence inference and preserves historical representation changes as distinct forward series.
+- ANA-A11 read-only registry reconciliation proved the existing freshness-policy table stores only the derived threshold and currently has zero rows. A repository-only publication-policy candidate now stores cadence/SLO/anchor/catch-up/approval provenance with generated max lag, while keeping publication rows, freshness sync and scheduler activation unauthorized.
+- ANA-A11 publication-policy selector now fails closed on overlapping effective policies and returns no implicit/default policy when none is effective; future operator overlap cannot silently become analytics authority.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1113,7 +1115,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.
-- ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 has a repository-only CAT-fact-backed series orchestrator with case-normalized frozen category keys and explicit no-cross-representation merging. Remaining decisions are windowStepSeconds, projectionDelaySloSeconds, canonical boundary alignment and bounded missed-window recovery; applying the candidate or activating cron/policy still requires explicit staging authorization.
+- ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 has repository-only candidates for CAT-fact-backed series orchestration and versioned publication-policy provenance. Remaining policy values are windowStepSeconds, projectionDelaySloSeconds, windowAnchor and bounded catch-up; no publication row, freshness row or cron may be activated without explicit staging authorization.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
 **Gate de saída:**
@@ -1188,7 +1190,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3543 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3545 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1249,4 +1251,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T22:21:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T22:58:00-03:00._

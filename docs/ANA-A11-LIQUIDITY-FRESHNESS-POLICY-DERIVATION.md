@@ -182,3 +182,9 @@ A later activation must atomically preserve provenance: an approved publication-
 
 This candidate remains repository-only: no table/function exists in staging yet, no publication-policy row exists, no freshness-policy row exists, and no cron is activated.
 
+### Effective-policy ambiguity
+
+The publication-policy selector is intentionally fail-closed. If zero rows are effective for a metric/version at the requested instant, it returns no policy; there is no default. If more than one row is effective, it raises `DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS` rather than silently selecting the newest row.
+
+This keeps versioned effective windows auditable even if a future operator accidentally creates overlap.
+
