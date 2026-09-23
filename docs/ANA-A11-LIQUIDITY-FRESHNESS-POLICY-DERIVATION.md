@@ -391,3 +391,36 @@ This defines the fields only. It does not supply real values.
 The database boundary still accepts only object shape for `approval_evidence`; the already-applied migration was not edited by this repository-only lot. A real policy insert therefore remains unauthorized until the completed envelope is validated immediately before activation. Database-native envelope enforcement, if added, requires separate authorization.
 
 No publication policy, freshness policy or scheduler is created by this contract. ANA remains **3/6**.
+
+
+## Repository candidate — approval-envelope runtime enforcement
+
+Authorization: `authorize-ana-a11-policy-envelope-runtime-enforcement-candidate-repository-only head=ce1d49bae29f92f4cb31c38849fb8292b71a6a85 matrix=v1.3.132`.
+
+The remaining bypass is now represented by an additive repository candidate:
+
+- `supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql`
+- `supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql`
+
+This candidate does **not** edit the historical `20260923025000` migration and is not applied to staging by this lot.
+
+When separately applied, it changes the current runtime boundary in three steps:
+
+1. `private.canonicalize_analytics_json_v1(jsonb)` reproduces the contract's recursively key-sorted compact JSON representation for SHA-256 verification.
+2. `private.validate_analytics_cat_liquidity_policy_approval_envelope_v1(...)` validates exact envelope keys, metric/contract identity, expected repository HEAD + Matrix version, SHA-256 of the raw explicit authorization command, policy identity, every scalar policy value, effective-window/grid rules, boundary flags and the canonical evidence digest.
+3. `private.activate_analytics_cat_liquidity_policy_approved_v1(...)` calls that validator before the publication/freshness inserts. The previously applied `private.activate_analytics_cat_liquidity_policy_v1(...)` becomes a fail-closed tombstone raising `DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED`.
+
+This is required because merely adding a second 'approved' function would leave the object-only activation function as a bypass.
+
+`039` is the successor current-state validation after this candidate is eventually applied. It checks the validator/canonicalizer/approved activation, verifies the legacy path is tombstoned, preserves owner-only grants, rejects an empty envelope and confirms policy-row counts do not change in fail-closed canaries. Historical validation `038` remains evidence for the earlier activation structure and must not be interpreted as current-state validation after the successor migration is applied.
+
+The candidate contains no operational cadence, SLO, anchor or catch-up value; the only numbers in its structural rules are schema/lifecycle invariants such as initial revision `1`, digest lengths and key counts. Synthetic values in validation `039` are rollback-only fail-closed fixtures and are not policy authority.
+
+Current state remains unchanged until separate staging authorization:
+
+- runtime envelope enforcement applied: **false**;
+- publication policy rows created by this lot: **0**;
+- freshness policy rows created by this lot: **0**;
+- scheduler/cron activation: **false**;
+- production changes: **false**;
+- ANA maturity: **3/6**.

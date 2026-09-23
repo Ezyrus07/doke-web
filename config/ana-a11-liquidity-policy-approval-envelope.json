@@ -5,7 +5,7 @@
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
   "scope": "repository_only",
-  "status": "contract_ready_values_unset_activation_unauthorized",
+  "status": "runtime_enforcement_candidate_ready_repository_only_values_unset_activation_unauthorized",
   "createdAt": "2026-09-23T13:29:17.102Z",
   "createdAgainst": {
     "repositoryHead": "3c544b7aa395a6f637127473ce3f605b6970a24d",
@@ -17,7 +17,8 @@
     "approvalEvidenceShapeGap": "The staging activation function currently accepts any JSON object as approval_evidence; an empty object is structurally valid at the database boundary.",
     "policyIdentityGap": "policy_id is currently constrained only by non-empty length and has no versioned ANA-A11 naming or revision rule.",
     "effectiveWindowGap": "effective_from/effective_until are structurally validated for ordering and overlap but have no canonical first-policy activation semantics.",
-    "consequence": "A technically valid row could otherwise be inserted without proving exactly what was approved, against which repository/matrix state, or under which effective-window decision."
+    "consequence": "A technically valid row could otherwise be inserted without proving exactly what was approved, against which repository/matrix state, or under which effective-window decision.",
+    "runtimeBypassClosureCandidate": "Prepared repository-only: an additive migration tombstones the legacy object-only activation path and introduces an approved activation path that validates exact envelope structure, expected repository/matrix bindings, the raw explicit-authorization SHA-256, scalar policy values, effective-window semantics, boundary flags and canonical evidence SHA-256 before any policy insert."
   },
   "policyIdentity": {
     "lifecycleMode": "initial_only",
@@ -143,7 +144,9 @@
     "library": "scripts/lib/ana-a11-liquidity-policy-approval-envelope.js",
     "audit": "scripts/audit-ana-a11-liquidity-policy-approval-envelope.js",
     "test": "scripts/test-ana-a11-liquidity-policy-approval-envelope.js",
-    "integratedWorkflow": ".github/workflows/ana-a11-liquidity-freshness-policy-derivation.yml"
+    "integratedWorkflow": ".github/workflows/ana-a11-liquidity-freshness-policy-derivation.yml",
+    "runtimeEnforcementMigration": "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
+    "runtimeEnforcementSqlValidation": "supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql"
   },
   "databaseBoundary": {
     "currentActivationFunction": "private.activate_analytics_cat_liquidity_policy_v1",
@@ -151,7 +154,30 @@
     "envelopeSchemaEnforcedByDatabase": false,
     "activationInvocationAuthorized": false,
     "stagingMutationAuthorized": false,
-    "note": "This repository-only contract does not edit the already-applied activation migration. A later activation path must validate the completed envelope before invoking the function; database-native schema enforcement may be added only under separate authorization."
+    "note": "The repository now contains an additive runtime-enforcement candidate. The currently applied staging function still validates approval_evidence only as a JSON object until that candidate is separately authorized, applied and validated.",
+    "runtimeEnforcementCandidate": {
+      "authorization": "authorize-ana-a11-policy-envelope-runtime-enforcement-candidate-repository-only head=ce1d49bae29f92f4cb31c38849fb8292b71a6a85 matrix=v1.3.132",
+      "migration": "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
+      "validation": "supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql",
+      "status": "repository_candidate_not_applied",
+      "additiveMigration": true,
+      "editsHistoricalMigration": false,
+      "legacyActivationTombstonedWhenApplied": true,
+      "approvedActivationFunction": "private.activate_analytics_cat_liquidity_policy_approved_v1",
+      "envelopeValidatorFunction": "private.validate_analytics_cat_liquidity_policy_approval_envelope_v1",
+      "canonicalJsonFunction": "private.canonicalize_analytics_json_v1",
+      "expectedRepositoryHeadArgumentRequired": true,
+      "expectedMatrixVersionArgumentRequired": true,
+      "rawAuthorizationCommandRequired": true,
+      "authorizationDigestVerifiedInDatabase": true,
+      "evidenceDigestVerifiedInDatabase": true,
+      "scalarParameterBindingVerifiedInDatabase": true,
+      "effectiveWindowVerifiedInDatabase": true,
+      "boundaryFlagsVerifiedInDatabase": true,
+      "schedulerActivationIncluded": false,
+      "cronIncluded": false,
+      "stagingApplied": false
+    }
   },
   "authority": {
     "repositoryContractAuthority": true,
@@ -162,7 +188,9 @@
     "schedulerActivationAuthority": false,
     "stagingAuthority": false,
     "productionAuthority": false,
-    "mergeAuthority": false
+    "mergeAuthority": false,
+    "runtimeEnforcementCandidateAuthority": true,
+    "runtimeEnforcementAppliedAuthority": false
   },
   "prohibitedEffects": {
     "policyValuesSelected": false,
@@ -178,5 +206,6 @@
     "anonymousIdentityStitchingActivated": false,
     "pullRequestMerged": false,
     "readyForReviewChanged": false
-  }
+  },
+  "updatedAt": "2026-09-23T13:46:14.770Z"
 }
