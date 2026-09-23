@@ -1,0 +1,182 @@
+{
+  "contractId": "ana-a11-liquidity-policy-approval-envelope-v1",
+  "approvalEvidenceSchemaId": "ana-a11-liquidity-policy-approval-evidence-v1",
+  "domain": "ANA-001",
+  "metricKey": "liquidity.active_service_seconds",
+  "metricVersion": "v1",
+  "scope": "repository_only",
+  "status": "contract_ready_values_unset_activation_unauthorized",
+  "createdAt": "2026-09-23T13:29:17.102Z",
+  "createdAgainst": {
+    "repositoryHead": "3c544b7aa395a6f637127473ce3f605b6970a24d",
+    "matrixVersion": "1.3.132",
+    "authorization": "authorize-ana-a11-policy-approval-envelope-repository-only head=3c544b7aa395a6f637127473ce3f605b6970a24d matrix=v1.3.132"
+  },
+  "objective": "Make the first real liquidity publication-policy activation auditable and fail-closed by binding exact approved policy values, repository state, matrix state, policy identity and effective-window semantics to one single-use approval evidence object.",
+  "rootCause": {
+    "approvalEvidenceShapeGap": "The staging activation function currently accepts any JSON object as approval_evidence; an empty object is structurally valid at the database boundary.",
+    "policyIdentityGap": "policy_id is currently constrained only by non-empty length and has no versioned ANA-A11 naming or revision rule.",
+    "effectiveWindowGap": "effective_from/effective_until are structurally validated for ordering and overlap but have no canonical first-policy activation semantics.",
+    "consequence": "A technically valid row could otherwise be inserted without proving exactly what was approved, against which repository/matrix state, or under which effective-window decision."
+  },
+  "policyIdentity": {
+    "lifecycleMode": "initial_only",
+    "initialRevisionRequired": 1,
+    "policyIdFormat": "ana-a11-liquidity-v1-r<revision>",
+    "policyIdRegex": "^ana-a11-liquidity-v1-r[1-9][0-9]*$",
+    "policyIdDerivedNotHumanSelected": true,
+    "approvalIdFormat": "ana-a11-liquidity-approval-r<revision>-<authorizationDigestPrefix12>",
+    "replacementRequiresSeparateTransitionContract": true
+  },
+  "effectiveWindowSemantics": {
+    "effectiveFromExplicitlyApproved": true,
+    "effectiveFromUtcRequired": true,
+    "effectiveFromMustNotPrecedeApproval": true,
+    "effectiveFromMustAlignToCanonicalGrid": true,
+    "windowAnchorMustNotFollowEffectiveFrom": true,
+    "initialEffectiveUntilMustBeNull": true,
+    "replacementGapOrOverlapForbidden": true,
+    "replacementRequiresSeparateTransitionContract": true
+  },
+  "approvalEvidenceSchema": {
+    "exactTopLevelFields": [
+      "schemaId",
+      "approvalId",
+      "approvalChannel",
+      "approvalActorRole",
+      "authorizationDigestSha256",
+      "approvedAt",
+      "environment",
+      "repositoryHead",
+      "matrixVersion",
+      "domain",
+      "metricKey",
+      "metricVersion",
+      "derivationContractId",
+      "seriesContractId",
+      "schedulerMechanism",
+      "lifecycle",
+      "policyIdentity",
+      "approvedParameters",
+      "boundaries",
+      "evidenceDigestSha256"
+    ],
+    "exactLifecycleFields": [
+      "mode"
+    ],
+    "exactPolicyIdentityFields": [
+      "revision",
+      "policyId"
+    ],
+    "exactApprovedParameterFields": [
+      "windowStepSeconds",
+      "projectionDelaySloSeconds",
+      "windowAnchor",
+      "maxCatchUpWindowsPerInvocation",
+      "derivedMaxLagSeconds",
+      "effectiveFrom",
+      "effectiveUntil"
+    ],
+    "exactBoundaryFields": [
+      "policyInsertAuthorized",
+      "activationInvocationLimit",
+      "schedulerActivationAuthorized",
+      "productionAuthorized",
+      "browserAnalyticsActivationAuthorized",
+      "anonymousIdentityStitchingAuthorized",
+      "pullRequestMergeAuthorized"
+    ],
+    "approvalChannel": "chat_explicit_authorization",
+    "approvalActorRole": "project_owner",
+    "environment": "staging",
+    "derivationContractId": "ana-a11-liquidity-freshness-policy-derivation-v1",
+    "seriesContractId": "ana-a11-liquidity-series-orchestration-v1",
+    "schedulerMechanism": "supabase_pg_cron_database_local",
+    "authorizationDigestAlgorithm": "sha256",
+    "evidenceDigestAlgorithm": "sha256",
+    "exactValueBindingRequired": true,
+    "repositoryHeadBindingRequired": true,
+    "matrixVersionBindingRequired": true,
+    "activationInvocationLimit": 1
+  },
+  "activationAuthorization": {
+    "commandName": "authorize-ana-a11-liquidity-policy-activation-staging",
+    "requiredArguments": [
+      "head",
+      "matrix",
+      "revision",
+      "windowStepSeconds",
+      "projectionDelaySloSeconds",
+      "windowAnchor",
+      "maxCatchUpWindowsPerInvocation",
+      "effectiveFrom",
+      "effectiveUntil"
+    ],
+    "template": "authorize-ana-a11-liquidity-policy-activation-staging head=<40hex> matrix=v<version> revision=1 windowStepSeconds=<int> projectionDelaySloSeconds=<int> windowAnchor=<UTC> maxCatchUpWindowsPerInvocation=<int> effectiveFrom=<UTC> effectiveUntil=null",
+    "genericProceedIsAuthorization": false,
+    "valuesMayBeInferred": false
+  },
+  "pendingTemplate": {
+    "repositoryHead": null,
+    "matrixVersion": null,
+    "authorizationDigestSha256": null,
+    "approvedAt": null,
+    "policyRevision": null,
+    "policyId": null,
+    "windowStepSeconds": null,
+    "projectionDelaySloSeconds": null,
+    "windowAnchor": null,
+    "maxCatchUpWindowsPerInvocation": null,
+    "derivedMaxLagSeconds": null,
+    "effectiveFrom": null,
+    "effectiveUntil": null,
+    "evidenceDigestSha256": null,
+    "policyInsertAuthorized": false,
+    "activationInvocationLimit": 0,
+    "schedulerActivationAuthorized": false,
+    "productionAuthorized": false,
+    "browserAnalyticsActivationAuthorized": false,
+    "anonymousIdentityStitchingAuthorized": false,
+    "pullRequestMergeAuthorized": false
+  },
+  "validation": {
+    "library": "scripts/lib/ana-a11-liquidity-policy-approval-envelope.js",
+    "audit": "scripts/audit-ana-a11-liquidity-policy-approval-envelope.js",
+    "test": "scripts/test-ana-a11-liquidity-policy-approval-envelope.js",
+    "integratedWorkflow": ".github/workflows/ana-a11-liquidity-freshness-policy-derivation.yml"
+  },
+  "databaseBoundary": {
+    "currentActivationFunction": "private.activate_analytics_cat_liquidity_policy_v1",
+    "currentApprovalEvidenceValidation": "json_object_only",
+    "envelopeSchemaEnforcedByDatabase": false,
+    "activationInvocationAuthorized": false,
+    "stagingMutationAuthorized": false,
+    "note": "This repository-only contract does not edit the already-applied activation migration. A later activation path must validate the completed envelope before invoking the function; database-native schema enforcement may be added only under separate authorization."
+  },
+  "authority": {
+    "repositoryContractAuthority": true,
+    "completedApprovalAuthority": false,
+    "policyValueSelectionAuthority": false,
+    "policyInsertAuthority": false,
+    "activationInvocationAuthority": false,
+    "schedulerActivationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false
+  },
+  "prohibitedEffects": {
+    "policyValuesSelected": false,
+    "approvalFabricated": false,
+    "publicationPolicyInserted": false,
+    "freshnessPolicyInserted": false,
+    "activationFunctionInvoked": false,
+    "cronCreated": false,
+    "schedulerActivated": false,
+    "stagingMutated": false,
+    "productionChanged": false,
+    "browserAnalyticsActivated": false,
+    "anonymousIdentityStitchingActivated": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  }
+}

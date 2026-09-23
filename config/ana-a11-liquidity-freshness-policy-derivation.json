@@ -6,7 +6,7 @@
   "sourceHead": "1825c11544a19162438c2b63c099d9e6d2b4547f",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "staging_structural_authorities_validated_planner_executor_activation_applied_policy_values_unset_scheduler_unactivated",
+  "status": "staging_structural_authorities_validated_approval_envelope_contract_ready_values_unset_scheduler_unactivated",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -17,7 +17,9 @@
     "dimensionSeriesAuthorityMissing": "resolved structurally in staging: owner-only CAT-fact-backed series enumeration and atomic per-window orchestration are installed and validated; scheduler activation remains separate.",
     "publicationPolicyProvenanceGap": "private.analytics_metric_freshness_policies_v1 stores only the derived max_lag_seconds/effective window. It cannot prove which window step, projection-delay SLO, boundary anchor, catch-up bound or approval evidence produced that threshold.",
     "currentFreshnessPolicyRows": "staging currently has zero freshness-policy rows, so no existing row requires data migration.",
-    "policyCouplingGap": "resolved structurally in repository candidate: publication and freshness rows must be inserted atomically from the same explicit inputs; no hand-entered maxLagSeconds is accepted by the canonical activation path."
+    "policyCouplingGap": "resolved structurally in repository candidate: publication and freshness rows must be inserted atomically from the same explicit inputs; no hand-entered maxLagSeconds is accepted by the canonical activation path.",
+    "approvalEvidenceSchemaGap": "Resolved at repository contract level: ANA-A11 now defines an exact single-use approval evidence envelope bound to explicit values, repository HEAD, matrix version, policy identity and effective window. The already-applied database activation function still validates only JSON-object shape, so runtime envelope enforcement remains a separate gate.",
+    "policyIdentityEffectiveWindowGap": "Resolved at repository contract level for the first policy: policy identity is revision-derived, effectiveFrom must be explicitly approved and grid-aligned, initial effectiveUntil must be null, and replacement requires a separate transition contract."
   },
   "thresholdDerivation": {
     "formula": "maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds",
@@ -102,7 +104,11 @@
     "maxCatchUpWindowsPerInvocation": null,
     "schedulerMechanism": "supabase_pg_cron_database_local",
     "dimensionEnumeratorAuthorized": true,
-    "schedulerActivationAuthorized": false
+    "schedulerActivationAuthorized": false,
+    "policyRevision": null,
+    "policyEffectiveFrom": null,
+    "policyEffectiveUntil": null,
+    "policyApprovalEnvelopeComplete": false
   },
   "authority": {
     "derivationContractAuthority": true,
@@ -125,7 +131,9 @@
     "catchUpExecutorContractAuthority": true,
     "catchUpExecutorRuntimeAuthority": true,
     "policyActivationContractAuthority": true,
-    "policyActivationRuntimeAuthority": true
+    "policyActivationRuntimeAuthority": true,
+    "policyApprovalEnvelopeContractAuthority": true,
+    "policyApprovalEnvelopeRuntimeEnforcementAuthority": false
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -146,7 +154,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A11 closes the derivation rule and identifies the missing scheduler/SLO authority. It deliberately leaves the numeric threshold unset."
+    "reason": "A11 now has staging structural planner/executor/activation authorities plus a repository-only approval-envelope contract. Numeric policy values, completed approval evidence, runtime envelope enforcement and scheduler activation remain unresolved."
   },
   "sourceDomainWatermarkSemantics": {
     "sourceDomain": "CAT-001",
@@ -245,18 +253,24 @@
     },
     "publicationPolicyActivation": {
       "owner": "ANA-001 operational policy",
-      "decision": "Approve the concrete liquidity policy values/evidence and separately authorize one invocation of the canonical atomic activation boundary after its staging structure is validated.",
+      "decision": "Approve one completed ANA-A11 liquidity policy approval envelope bound to the exact current HEAD/matrix and explicit operational values, then separately authorize a single staging activation invocation. Generic continuation is not approval.",
       "unresolvedFields": [
+        "policyRevision",
         "windowStepSeconds",
         "projectionDelaySloSeconds",
         "windowAnchor",
         "maxCatchUpWindowsPerInvocation",
+        "effectiveFrom",
+        "effectiveUntil",
         "approvalEvidence"
       ],
-      "structuralCandidate": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql"
+      "structuralCandidate": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
+      "policyIdRule": "derived as ana-a11-liquidity-v1-r<revision>; not independently selected",
+      "approvalEnvelopeContract": "config/ana-a11-liquidity-policy-approval-envelope.json",
+      "runtimeEnvelopeEnforcement": false
     }
   },
-  "updatedAt": "2026-09-23T10:08:17.16683-03:00",
+  "updatedAt": "2026-09-23T13:29:17.102Z",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -674,5 +688,25 @@
       "persistentPublicationRowsAfterRollback": 0,
       "persistentFreshnessRowsAfterRollback": 0
     }
+  },
+  "policyApprovalEnvelopeContract": {
+    "contractId": "ana-a11-liquidity-policy-approval-envelope-v1",
+    "approvalEvidenceSchemaId": "ana-a11-liquidity-policy-approval-evidence-v1",
+    "config": "config/ana-a11-liquidity-policy-approval-envelope.json",
+    "validationLibrary": "scripts/lib/ana-a11-liquidity-policy-approval-envelope.js",
+    "audit": "scripts/audit-ana-a11-liquidity-policy-approval-envelope.js",
+    "test": "scripts/test-ana-a11-liquidity-policy-approval-envelope.js",
+    "scope": "repository_only",
+    "status": "contract_ready_values_unset_activation_unauthorized",
+    "policyIdDerived": true,
+    "initialPolicyRevision": 1,
+    "effectiveFromExplicit": true,
+    "initialEffectiveUntil": null,
+    "replacementRequiresSeparateTransitionContract": true,
+    "singleUseActivationLimit": 1,
+    "databaseRuntimeEnforcement": false,
+    "stagingMutationAuthorized": false,
+    "schedulerActivationAuthorized": false,
+    "productionAuthorized": false
   }
 }

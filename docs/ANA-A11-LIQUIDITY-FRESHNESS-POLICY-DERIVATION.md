@@ -343,3 +343,51 @@ Persistent post-rollback state:
 - canary-window snapshots: **0**.
 
 No `windowStepSeconds`, `projectionDelaySloSeconds`, `windowAnchor`, `maxCatchUpWindowsPerInvocation` or `maxLagSeconds` has been selected as an operational value. Scheduler activation remains separately unauthorized. ANA remains **3/6**.
+
+
+## Policy approval evidence envelope
+
+The remaining activation decision now has a repository-only approval evidence envelope:
+
+- `config/ana-a11-liquidity-policy-approval-envelope.json`
+- `scripts/lib/ana-a11-liquidity-policy-approval-envelope.js`
+- `scripts/audit-ana-a11-liquidity-policy-approval-envelope.js`
+- `scripts/test-ana-a11-liquidity-policy-approval-envelope.js`
+
+The root cause was provenance, not another missing number. The staging activation function accepts any JSON object as `approval_evidence`; therefore an empty object could satisfy the current database shape without proving which values were approved, against which repository state, or for which effective window.
+
+The envelope contract closes that ambiguity at repository level without selecting any operational value.
+
+### Policy identity
+
+For the first liquidity v1 policy, `policyId` is derived rather than freely selected:
+
+`ana-a11-liquidity-v1-r<revision>`
+
+The v1 envelope supports only lifecycle mode `initial`, and the initial revision must be `1`. A future replacement policy is outside this contract and requires a separate transition authority.
+
+### Effective window
+
+A completed approval must bind an explicit `effectiveFrom`. It must be UTC, not precede the recorded approval time, fall exactly on the approved `windowAnchor + N × windowStepSeconds` grid, and use `effectiveUntil=null` for the initial policy.
+
+No timestamp is inferred from canaries, GitHub Actions, another domain's cron, or execution time.
+
+### Approval evidence envelope
+
+A completed envelope binds the full repository HEAD, Domain Completion Matrix version, SHA-256 of the exact explicit authorization command, approval timestamp, staging environment, metric identity, derivation/series contract IDs, policy revision and derived `policyId`, every approved operational value, and a canonical SHA-256 digest of the evidence itself.
+
+The envelope is single-use: at most one activation invocation. It explicitly does **not** authorize scheduler activation, production, browser analytics, anonymous identity stitching or PR merge.
+
+A generic `prossiga` is not approval and no policy value may be inferred.
+
+### Future explicit activation command
+
+`authorize-ana-a11-liquidity-policy-activation-staging head=<40hex> matrix=v<version> revision=1 windowStepSeconds=<int> projectionDelaySloSeconds=<int> windowAnchor=<UTC> maxCatchUpWindowsPerInvocation=<int> effectiveFrom=<UTC> effectiveUntil=null`
+
+This defines the fields only. It does not supply real values.
+
+### Current runtime boundary
+
+The database boundary still accepts only object shape for `approval_evidence`; the already-applied migration was not edited by this repository-only lot. A real policy insert therefore remains unauthorized until the completed envelope is validated immediately before activation. Database-native envelope enforcement, if added, requires separate authorization.
+
+No publication policy, freshness policy or scheduler is created by this contract. ANA remains **3/6**.

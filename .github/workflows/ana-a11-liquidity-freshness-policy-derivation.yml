@@ -5,6 +5,10 @@ on:
   pull_request:
     paths:
       - 'config/ana-a11-liquidity-freshness-policy-derivation.json'
+      - 'config/ana-a11-liquidity-policy-approval-envelope.json'
+      - 'scripts/lib/ana-a11-liquidity-policy-approval-envelope.js'
+      - 'scripts/audit-ana-a11-liquidity-policy-approval-envelope.js'
+      - 'scripts/test-ana-a11-liquidity-policy-approval-envelope.js'
       - 'docs/ANA-A11-LIQUIDITY-FRESHNESS-POLICY-DERIVATION.md'
       - 'scripts/audit-ana-a11-liquidity-freshness-policy-derivation.js'
       - 'scripts/test-ana-a11-liquidity-freshness-policy-derivation.js'
@@ -45,11 +49,16 @@ jobs:
       - run: |
           node --check scripts/audit-ana-a11-liquidity-freshness-policy-derivation.js
           node --check scripts/test-ana-a11-liquidity-freshness-policy-derivation.js
+          node --check scripts/lib/ana-a11-liquidity-policy-approval-envelope.js
+          node --check scripts/audit-ana-a11-liquidity-policy-approval-envelope.js
+          node --check scripts/test-ana-a11-liquidity-policy-approval-envelope.js
           node --check scripts/audit-cat-a07-supply-coverage-baseline.js
           node --check scripts/test-cat-a07-supply-coverage-baseline.js
       - run: |
           npm run audit:ana-a11-liquidity-freshness-policy-derivation
           npm run test:ana-a11-liquidity-freshness-policy-derivation
+          npm run audit:ana-a11-liquidity-policy-approval-envelope
+          npm run test:ana-a11-liquidity-policy-approval-envelope
           npm run audit:cat-a07-supply-coverage-baseline
           npm run test:cat-a07-supply-coverage-baseline
       - run: |
