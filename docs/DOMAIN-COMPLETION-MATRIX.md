@@ -104,7 +104,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail |  |
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
 | FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
-| FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
+| FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version | CAT-B06 |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B02 |
 | FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation |  |
 | FLOW-07 | Conversa transacional | hybrid | MSG-001 | conversation → message → attachment → read_state → realtime → notification | MSG-B02, MSG-B03 |
@@ -327,14 +327,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-A07 defines a forward-only CAT-owned coverage epoch: a future authorized baseline must atomically snapshot every current service, append activation_baseline facts without rewriting CAT-A06 activation/history, and abort on any current-state/ledger drift. No baseline is executed by this contract.
 - CAT-A07 staging readiness now includes a serialized forward-baseline migration candidate, fail-closed current-state/ledger preflight, one activation_baseline fact per current service, append-only certified coverage epoch, and no CAT-A06 activation rewrite; nothing is applied to staging without the exact CAT-A07 authorization.
 - CAT-A07 schema is applied in staging, but baseline certification is fail-closed on CAT-A07-B01: one currently eligible published service lacks canonical state. Two baseline attempts persisted zero baseline facts and zero coverage epochs; the second aborts before writes via DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE.
+- CAT-A07 staging coverage is certified from 2026-09-23T00:06:30.6835Z: 2 current services reconciled to 2 activation_baseline facts, replay is idempotent, the CAT-A06 activation row remains immutable, and ANA-A10 consumes the certified epoch.
 
 **Bloqueadores:**
-- **CAT-A07-B01 · HIGH · canonical_dimension_completeness:** At least one currently eligible published service lacks canonical state. CAT public eligibility does not currently require state, but ANA liquidity requires category/state segmentation; CAT-A07 must not infer region or certify a complete epoch while this gap exists. _(Fase 5)_
+- **CAT-B06 · HIGH · moderation_operator_context:** The staging approve_service_version_internal wrapper does not propagate request.jwt.claim.sub, so the downstream auth.uid/current_user_role check returns ADMIN_REQUIRED. Canonical approval works when the real active operator context is supplied directly; the wrapper itself still requires hardening. _(Fase 5)_
 
 **Próximas ações:**
 - Keep all CAT-001 authority, lifecycle and CAT-A06 visibility-ledger audits cumulative in Quality.
 - Expose CAT-A06 only as a server-side source dependency for ANA liquidity; do not create a second lifecycle writer.
 - CAT-A07 migration/readiness is repository-prepared. Keep supply coverage partial until the exact staging authorization is consumed, the serialized baseline certifies a coverage epoch, and ANA-A10 coverage handoff is applied.
+- Harden approve_service_version_internal so the service-role wrapper propagates the operator sub consistently with current_user_role/auth.uid, then run the existing moderation operator canary.
 
 **Gate de saída:**
 - Create, submit, moderate, publish, edit, pause and archive work remotely.
@@ -1098,6 +1100,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A11 proves the missing liquidity freshness number is downstream of a missing analytics publication cadence/SLO. It freezes maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds, forbids implicit grace, and keeps all three values unset until a versioned scheduler/cadence is approved.
 - ANA-A10 has a repository-only CAT-A07 handoff migration candidate: only windows beginning at/after a certified coverage_complete_from may become complete; pre-epoch history stays partial and freshness remains fail-closed until ANA-A11 policy activation.
 - CAT-A07 staging baseline is currently blocked fail-closed because one eligible CAT listing lacks canonical state; ANA-A10 coverage handoff was intentionally not applied and liquidity remains partial.
+- CAT-A07 certified a forward coverage epoch in staging and ANA-A10 handoff proves pre-epoch windows remain partial while post-epoch windows become complete. Freshness still fails closed because the ANA-A11 policy is unset.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1106,7 +1109,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.
-- ANA-A10 staging runtime/canary is closed. ANA-A11 still leaves freshness cadence/SLO unset. CAT-A07 schema is active but CAT-A07-B01 blocks epoch certification until canonical CAT state completeness is repaired; A10 handoff remains unapplied.
+- ANA-A10 runtime and CAT-A07 coverage handoff are closed in staging. ANA-A11 still leaves windowStepSeconds, projectionDelaySloSeconds and maxLagSeconds unset; define/version that cadence/SLO before activating freshness.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
 **Gate de saída:**
@@ -1242,4 +1245,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T12:08:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T21:08:00-03:00._

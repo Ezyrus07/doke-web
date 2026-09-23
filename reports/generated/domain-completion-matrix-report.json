@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.121",
-  "generatedAt": "2026-09-22T12:08:00-03:00",
+  "version": "1.3.122",
+  "generatedAt": "2026-09-22T21:08:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -3870,10 +3870,10 @@
       },
       "blockers": [
         {
-          "id": "CAT-A07-B01",
+          "id": "CAT-B06",
           "severity": "high",
-          "category": "canonical_dimension_completeness",
-          "description": "At least one currently eligible published service lacks canonical state. CAT public eligibility does not currently require state, but ANA liquidity requires category/state segmentation; CAT-A07 must not infer region or certify a complete epoch while this gap exists.",
+          "category": "moderation_operator_context",
+          "description": "The staging approve_service_version_internal wrapper does not propagate request.jwt.claim.sub, so the downstream auth.uid/current_user_role check returns ADMIN_REQUIRED. Canonical approval works when the real active operator context is supplied directly; the wrapper itself still requires hardening.",
           "targetPhase": "Fase 5"
         }
       ],
@@ -15165,7 +15165,9 @@
       ],
       "status": "hybrid",
       "owner": "CAT-001",
-      "blockers": []
+      "blockers": [
+        "CAT-B06"
+      ]
     },
     {
       "id": "FLOW-05",
