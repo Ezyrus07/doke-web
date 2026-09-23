@@ -36,7 +36,7 @@ check('dimension runtime authority remains false',c.authority.dimensionEnumerato
 
 eq('scheduler topology','supabase_pg_cron_database_local',c.schedulerTopology.mechanism);
 check('scheduler uses direct A10 runner',c.schedulerTopology.invocation==='direct_sql_public.run_analytics_cat_liquidity_projection_v1'&&c.schedulerTopology.edgeFunctionRequired===false);
-check('window grid remains unapproved',c.canonicalWindowGrid.windowStepSeconds===null&&c.canonicalWindowGrid.boundaryAnchor===null&&c.canonicalWindowGrid.boundaryTimeZone===null);
+check('window grid remains unapproved',c.canonicalWindowGrid.windowStepSeconds===null&&c.canonicalWindowGrid.boundaryAnchor===null&&c.canonicalWindowGrid.boundaryTimeZone==='not_applicable_fixed_duration_grid'&&c.canonicalWindowGrid.timeZoneIsIndependentAuthority===false);
 check('dimension enumerator cannot reuse snapshots',c.dimensionSeriesAuthority.enumeratorExists===false&&c.dimensionSeriesAuthority.schedulerMayReuseExistingSnapshotDimensionsAsAuthority===false&&c.dimensionSeriesAuthority.mutableCurrentCatalogJoinAllowed===false);
 check('catch-up cannot skip gaps',c.missedWindowRecovery.processingOrder==='oldest missing canonical closed window first'&&c.missedWindowRecovery.skipDirectlyToLatestAllowed===false);
 check('catch-up limit remains unset',c.missedWindowRecovery.maxCatchUpWindowsPerInvocation===null&&c.missedWindowRecovery.unboundedCatchUpAllowed===false);
