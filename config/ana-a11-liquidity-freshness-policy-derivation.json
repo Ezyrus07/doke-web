@@ -6,7 +6,7 @@
   "sourceHead": "1825c11544a19162438c2b63c099d9e6d2b4547f",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "initial_policy_persisted_scheduler_activation_candidate_ready_repository_only",
+  "status": "initial_policy_persisted_scheduler_candidate_staging_validated_activation_unauthorized",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -143,7 +143,8 @@
     "policyApprovalEnvelopeContractAuthority": true,
     "policyApprovalEnvelopeRuntimeEnforcementAuthority": true,
     "policyApprovalEnvelopeRuntimeEnforcementCandidateAuthority": true,
-    "schedulerActivationCandidateAuthority": true
+    "schedulerActivationCandidateAuthority": true,
+    "schedulerActivationCandidateRuntimeAuthority": true
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -164,7 +165,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A11 has staging structural authorities, runtime-enforced approval evidence and persisted revision-1 publication/freshness policy. A repository-only scheduler activation candidate now derives one-minute polling from the approved 60-second projection-delay SLO while preserving the 300-second planner grid. Scheduler runtime is still unactivated, so ANA stays 3/6."
+    "reason": "A11 has staging structural authorities, runtime-enforced approval evidence, persisted revision-1 publication/freshness policy, and a staging-validated scheduler activation boundary. Validation 040 proved APPENDED -> NO_CHANGE -> rollback with zero persistent cron. The real scheduler is still unactivated, so ANA stays 3/6."
   },
   "sourceDomainWatermarkSemantics": {
     "sourceDomain": "CAT-001",
@@ -234,7 +235,7 @@
     },
     "scheduler": {
       "owner": "ANA-001",
-      "decision": "Repository-only scheduler activation candidate is ready. Next gate is separate staging authorization to apply only the candidate migration and execute validation 040 rollback-only. A later, separate authorization is still required to invoke the activation function and persist the cron job.",
+      "decision": "Scheduler activation candidate is installed and validation 040 passed rollback-only in staging. Persistent scheduler activation remains a separate gate: explicitly authorize one invocation of private.activate_analytics_cat_liquidity_scheduler_v1('ana-a11-liquidity-v1-r1'), then prove scheduled-runtime behavior.",
       "selectedTopology": "supabase_pg_cron_database_local",
       "currentlyAuthorized": false,
       "candidate": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
@@ -243,7 +244,10 @@
       "pollSchedule": "* * * * *",
       "pollIntervalSeconds": 60,
       "publicationWindowStepSeconds": 300,
-      "activationFunction": "private.activate_analytics_cat_liquidity_scheduler_v1"
+      "activationFunction": "private.activate_analytics_cat_liquidity_scheduler_v1",
+      "stagingCandidateApplied": true,
+      "stagingMigrationVersion": "20260923144627",
+      "validation040": "PASS"
     },
     "windowBoundaryGrid": {
       "owner": "ANA-001",
@@ -290,7 +294,7 @@
       "effectiveUntil": null
     }
   },
-  "updatedAt": "2026-09-23T14:32:00.000Z",
+  "updatedAt": "2026-09-23T14:47:07.947594Z",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -310,7 +314,13 @@
       "serviceRoleExecute": true,
       "authenticatedExecute": false,
       "anonExecute": false,
-      "activeAnaLiquidityCronFound": false
+      "activeAnaLiquidityCronFound": false,
+      "schedulerActivationFunction": "private.activate_analytics_cat_liquidity_scheduler_v1",
+      "schedulerActivationFunctionOwner": "postgres",
+      "schedulerActivationFunctionSecurityDefiner": true,
+      "schedulerActivationFunctionAnonExecute": false,
+      "schedulerActivationFunctionAuthenticatedExecute": false,
+      "schedulerActivationFunctionServiceRoleExecute": false
     },
     "activationAuthorized": false,
     "executionChain": [
@@ -787,7 +797,7 @@
     "contractId": "ana-a11-liquidity-scheduler-activation-v1",
     "migration": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
     "validationSql": "supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql",
-    "status": "repository_candidate_not_applied",
+    "status": "staging_applied_validated_scheduler_unactivated",
     "sourcePolicyId": "ana-a11-liquidity-v1-r1",
     "sourcePolicyEvidenceDigestSha256": "f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d",
     "jobName": "doke-ana-liquidity-v1-r1",
@@ -803,8 +813,26 @@
     "replayBehavior": "NO_CHANGE_when_exact_active_job_already_exists",
     "ownerBoundary": "postgres_only",
     "migrationCreatesCronAtApplyTime": false,
-    "stagingApplied": false,
-    "validationExecutedInStaging": false,
-    "schedulerActivated": false
+    "stagingApplied": true,
+    "validationExecutedInStaging": true,
+    "schedulerActivated": false,
+    "stagingMigrationVersion": "20260923144627",
+    "stagingAuthorization": "authorize-ana-a11-liquidity-scheduler-activation-candidate-staging head=794dc639f0bd7c597d28fbad572fc775f7b50307 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1",
+    "validation040Passed": true,
+    "privilegeBoundary": {
+      "owner": "postgres",
+      "securityDefiner": true,
+      "anonExecute": false,
+      "authenticatedExecute": false,
+      "serviceRoleExecute": false
+    },
+    "rollbackValidation": {
+      "firstActivationStatus": "APPENDED",
+      "exactCronRowVerified": true,
+      "replayStatus": "NO_CHANGE",
+      "duplicateCountAfterReplay": 1,
+      "rolledBack": true,
+      "persistentCronJobsAfterRollback": 0
+    }
   }
 }

@@ -557,3 +557,48 @@ Current state:
 - ANA/liquidity cron jobs: **0**;
 - production: unchanged;
 - ANA maturity: **3/6**.
+
+
+## Scheduler activation candidate — staging validation closure
+
+Explicit authorization:
+
+`authorize-ana-a11-liquidity-scheduler-activation-candidate-staging head=794dc639f0bd7c597d28fbad572fc775f7b50307 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1`
+
+The repository candidate was applied only to `doke-web-staging` and registered as:
+
+- `20260923144627 / ana_a11_liquidity_scheduler_activation`.
+
+Applying the migration installed only:
+
+`private.activate_analytics_cat_liquidity_scheduler_v1(text)`
+
+and created **no persistent cron job**.
+
+Privilege verification:
+
+- owner: `postgres`;
+- `SECURITY DEFINER=true`;
+- `anon EXECUTE=false`;
+- `authenticated EXECUTE=false`;
+- `service_role EXECUTE=false`.
+
+Validation `040` passed in staging. Its transaction proved:
+
+1. precondition: zero ANA/liquidity cron jobs;
+2. first activation: `APPENDED`;
+3. exact job name `doke-ana-liquidity-v1-r1`;
+4. schedule `* * * * *`;
+5. command targets only `private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp())`;
+6. database = current staging database and username = `postgres`;
+7. exact replay: `NO_CHANGE`;
+8. relevant cron count after replay: exactly one;
+9. transaction rollback completed.
+
+Persistent state after rollback:
+
+- revision-1 publication policy rows: **1**;
+- revision-1 freshness policy rows: **1**;
+- ANA/liquidity cron jobs: **0**.
+
+The validation proves the scheduler activation boundary, not scheduled runtime. Persistent invocation of the activation function remains **unauthorized**. Production, browser analytics, anonymous identity stitching, merge and Ready for review remain untouched. ANA remains **3/6**.
