@@ -1107,7 +1107,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A11 approval-envelope runtime enforcement is applied in staging as migration 20260923135957; validation 039 passed, the legacy object-only activation path is tombstoned, and policy activation is bound to exact repository/matrix/authorization/value/effective-window evidence.
 - ANA-A11 revision-1 operational policy is persistently active for liquidity.active_service_seconds: policyId ana-a11-liquidity-v1-r1, windowStepSeconds=300, projectionDelaySloSeconds=60, derived maxLagSeconds=360, windowAnchor=1970-01-01T00:00:00Z, maxCatchUpWindowsPerInvocation=3, oldest-first recovery, effectiveFrom=2026-09-23T16:00:00Z, effectiveUntil=null; publication and freshness registries each contain the single coupled revision-1 policy.
 - ANA-A11 scheduler activation candidate is applied and validation 040 passed; the persistent staging scheduler is job 8 named doke-ana-liquidity-v1-r1, active on * * * * * as postgres/postgres, and invokes only private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp()), preserving the canonical planner -> window orchestrator -> A10 projection chain.
-- Real pre-effective pg_cron executions succeeded while the planner returned zero windows, proving safe future-effective behavior. Post-effective first-window materialization, complete global + category/state coverage, 60-second projection-delay budget and ANA-A07 latest-window/no-fallback behavior still require read-only runtime evidence before ANA-A11 can be operationally certified or ANA maturity reconsidered.
+- ANA-A11 post-effective read-only runtime certification passed: the first 16:00Z-16:05Z canonical window materialized 3/3 required series by 16:05:00.148650Z; 40/40 observed closed windows through 19:20Z were 300-second, complete, authoritative and reconciled; max publication delay was ~0.487s against the 60s SLO; duplicate snapshot keys and cron failures were zero; planner was empty; and ANA-A07 evaluated the latest 19:15Z-19:20Z canonical window at ~194.31s age against maxLagSeconds=360 with no older-window fallback. ANA-A11 is operationally certified in staging while ANA remains 3/6.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1115,7 +1115,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
-- Run read-only post-effective ANA-A11 verification against the persistent staging scheduler: prove job 8 uniqueness/health, the first canonical 16:00Z-16:05Z window and subsequent 300-second windows, required global + category/state coverage, no duplication, replay/idempotency, CAT watermark eligibility, reconciliation health, the 60-second projection-delay SLO, and ANA-A07 latest canonical closed-window evaluation with maxLagSeconds=360 and no older-window fallback.
+- Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.
 - Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
@@ -1252,4 +1252,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-23T08:10:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-23T22:08:09.686739Z._
