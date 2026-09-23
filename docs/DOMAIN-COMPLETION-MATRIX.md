@@ -15,18 +15,18 @@ A leitura correta é: a Doke possui fundações e canários avançados, especial
 
 ## Snapshot real do staging
 
-Observado em `2026-07-23T13:29:46.102113+00:00` no projeto `zwkczgewzbsorbrjuzpb`.
+Observado em `2026-09-23T00:44:21.298472+00:00` no projeto `zwkczgewzbsorbrjuzpb`.
 
 | Indicador | Valor |
 | --- | ---: |
-| Tabelas públicas | 45 |
+| Tabelas públicas | 48 |
 | Tabelas públicas sem RLS | 0 |
 | Tabelas com RLS sem policies | 0 |
-| Funções SECURITY DEFINER | 134 |
-| SECURITY DEFINER executáveis por anon | 0 |
-| SECURITY DEFINER executáveis por authenticated | 7 |
-| Tabelas no Realtime | 1 |
-| Edge Functions ativas | 8 |
+| Funções SECURITY DEFINER | 200 |
+| SECURITY DEFINER executáveis por anon | 3 |
+| SECURITY DEFINER executáveis por authenticated | 10 |
+| Tabelas no Realtime | 2 |
+| Edge Functions ativas | 11 |
 | Crons operacionais ativos | 5 |
 
 ### Dívida de RLS que bloqueia produção
@@ -104,7 +104,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail |  |
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
 | FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
-| FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version | CAT-B06 |
+| FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B02 |
 | FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation |  |
 | FLOW-07 | Conversa transacional | hybrid | MSG-001 | conversation → message → attachment → read_state → realtime → notification | MSG-B02, MSG-B03 |
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 243 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 244 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -176,7 +176,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Four self-service financial RPCs remain explicitly authenticated and revalidate active canonical roles from public.users; forged JWT metadata cannot elevate financial authority.
 - Support/admin financial decisions now pass through financial-operations version 1 with verify_jwt enabled and service-role-only internal RPCs that revalidate the canonical actor.
 - Twenty-six remote financial persona and mutation canaries passed in one rolled-back transaction, including withdrawal idempotency, dispute lifecycle, direct-DML denial and operator separation.
-- All 45 public tables now have RLS enabled; the security advisor reports zero rls_disabled_in_public findings.
+- All 48 public tables currently observed in staging have RLS enabled and all 48 have at least one public-schema RLS policy; zero public tables are RLS-disabled.
 - Notifications are authenticated-only with recipient RLS, column-scoped state updates, safe search_path and immutable idempotency context.
 - audit_logs, categories, favorites, availability, reviews, budgets, message attachments, reports and community tables now use explicit least-privilege grants and persona RLS.
 - service-media no longer exposes a broad storage listing policy; owner operations are folder- and identity-scoped while public object delivery remains bucket-native.
@@ -190,7 +190,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The JWT-protected self-service-operations Edge Function derives the actor from auth.getUser and invokes a service-role-only dispatcher; actor identity is never accepted from the request body.
 - The dispatcher reconstructs auth.uid for the existing hardened domain implementations and rejects operations outside a fourteen-action allowlist.
 - Five new remote dispatcher assertions passed with rollback; the cumulative SEC-001 remote assertion count is 121.
-- The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.
+- The current staging security advisor reports the intentionally public SECURITY DEFINER surfaces for username availability/public search, authenticated canonical order-command surfaces, and leaked-password protection disabled; CAT-B06 moderation wrappers remain service-role-only and are not among those findings.
 - Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.
 - Source files for migrations 110-134, the service-moderation-operations Edge Function, SQL validations and contract tests were recovered byte-for-byte from the prior validated public-data-authority delivery; the published SHA-256 manifest was verified. This recovery is packaged for review but is not Git-authoritative until committed and validated in CI.
 - SEC-B08 was closed after the checksum-proven migrations 110-134 and service-moderation sources were committed at d0ae2657, the GitHub quality gates passed on that SHA, and the matching migration names plus service-moderation-operations v2 were observed read-only in staging.
@@ -328,15 +328,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-A07 staging readiness now includes a serialized forward-baseline migration candidate, fail-closed current-state/ledger preflight, one activation_baseline fact per current service, append-only certified coverage epoch, and no CAT-A06 activation rewrite; nothing is applied to staging without the exact CAT-A07 authorization.
 - CAT-A07 schema is applied in staging, but baseline certification is fail-closed on CAT-A07-B01: one currently eligible published service lacks canonical state. Two baseline attempts persisted zero baseline facts and zero coverage epochs; the second aborts before writes via DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE.
 - CAT-A07 staging coverage is certified from 2026-09-23T00:06:30.6835Z: 2 current services reconciled to 2 activation_baseline facts, replay is idempotent, the CAT-A06 activation row remains immutable, and ANA-A10 consumes the certified epoch.
+- CAT-B06 is closed in staging by migration 20260923003844: all six service-role moderation wrappers revalidate the canonical active operator, reconstruct request.jwt.claim.sub/role/claims before delegating to auth.uid/current_user_role authorities, remain non-executable by anon/authenticated, and passed read, approve, request-changes, reject and negative-role canaries with mutation paths rolled back and zero persistent residue.
 
 **Bloqueadores:**
-- **CAT-B06 · HIGH · moderation_operator_context:** The staging approve_service_version_internal wrapper does not propagate request.jwt.claim.sub, so the downstream auth.uid/current_user_role check returns ADMIN_REQUIRED. Canonical approval works when the real active operator context is supplied directly; the wrapper itself still requires hardening. _(Fase 5)_
+- Nenhum.
 
 **Próximas ações:**
 - Keep all CAT-001 authority, lifecycle and CAT-A06 visibility-ledger audits cumulative in Quality.
 - Expose CAT-A06 only as a server-side source dependency for ANA liquidity; do not create a second lifecycle writer.
-- CAT-A07 migration/readiness is repository-prepared. Keep supply coverage partial until the exact staging authorization is consumed, the serialized baseline certifies a coverage epoch, and ANA-A10 coverage handoff is applied.
-- Harden approve_service_version_internal so the service-role wrapper propagates the operator sub consistently with current_user_role/auth.uid, then run the existing moderation operator canary.
+- Preserve the certified CAT-A07 coverage epoch and keep all pre-epoch history partial; do not backfill or rewrite the CAT-A06 activation row.
+- Keep the CAT-B06 operator-context regression gate cumulative for all six service-role moderation wrappers.
 
 **Gate de saída:**
 - Create, submit, moderate, publish, edit, pause and archive work remotely.
@@ -350,7 +351,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 246 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 247 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -545,7 +546,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1490 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1491 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1184,7 +1185,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3540 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3541 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1245,4 +1246,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T21:08:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-22T21:44:21-03:00._

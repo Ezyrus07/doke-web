@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.122",
-  "generatedAt": "2026-09-22T21:08:00-03:00",
+  "version": "1.3.123",
+  "generatedAt": "2026-09-22T21:44:21-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -25,16 +25,16 @@
     },
     "blockerCounts": {
       "medium": 7,
-      "high": 36,
+      "high": 35,
       "critical": 12
     },
     "activeHtmlPages": 30,
     "repositories": 28,
     "backendModules": 18,
-    "migrations": 200,
+    "migrations": 201,
     "packageScripts": 1097,
     "staging": {
-      "publicTotal": 45,
+      "publicTotal": 48,
       "publicRlsDisabled": 0,
       "publicRlsNoPolicies": 0
     }
@@ -47,32 +47,24 @@
     "source": "assets/js/core/runtime-config.js for auth; assets/js/config/runtime-flags.js for legacy data flags"
   },
   "stagingSnapshot": {
-    "observedAt": "2026-07-23T13:29:46.102113+00:00",
+    "observedAt": "2026-09-23T00:44:21.298472+00:00",
     "projectRef": "zwkczgewzbsorbrjuzpb",
     "readOnlyEvidence": true,
     "tableSummary": {
-      "publicTotal": 45,
+      "publicTotal": 48,
       "publicRlsDisabled": 0,
       "publicRlsNoPolicies": 0
     },
     "rlsDisabledTables": [],
     "rlsEnabledNoPolicies": [],
     "securityDefinerSummary": {
-      "total": 134,
-      "anonExecutable": 0,
-      "authenticatedExecutable": 7,
-      "rawAnonExecuteGrants": 3,
-      "rawAuthenticatedExecuteGrants": 7
+      "total": 200,
+      "anonExecutable": 3,
+      "authenticatedExecutable": 10,
+      "rawAnonExecuteGrants": 4,
+      "rawAuthenticatedExecuteGrants": 11
     },
     "securityDefinerEvidence": [
-      {
-        "schema": "private",
-        "name": "audit_order_operational_incident_lifecycle",
-        "anonSchemaUsage": false,
-        "anonExecuteGrant": true,
-        "authenticatedSchemaUsage": true,
-        "authenticatedExecuteGrant": true
-      },
       {
         "schema": "private",
         "name": "can_access_transaction_attachment",
@@ -106,71 +98,122 @@
         "authenticatedExecuteGrant": true
       },
       {
-        "schema": "private",
-        "name": "materialize_order_operational_postmortem",
-        "anonSchemaUsage": false,
+        "schema": "public",
+        "name": "check_username_availability",
+        "anonSchemaUsage": true,
         "anonExecuteGrant": true,
         "authenticatedSchemaUsage": true,
         "authenticatedExecuteGrant": true
       },
       {
-        "schema": "private",
-        "name": "prepare_order_operational_incident",
-        "anonSchemaUsage": false,
+        "schema": "public",
+        "name": "create_order_command",
+        "anonSchemaUsage": true,
+        "anonExecuteGrant": false,
+        "authenticatedSchemaUsage": true,
+        "authenticatedExecuteGrant": true
+      },
+      {
+        "schema": "public",
+        "name": "search_public_services_v1",
+        "anonSchemaUsage": true,
         "anonExecuteGrant": true,
+        "authenticatedSchemaUsage": true,
+        "authenticatedExecuteGrant": true
+      },
+      {
+        "schema": "public",
+        "name": "search_public_services_v2",
+        "anonSchemaUsage": true,
+        "anonExecuteGrant": true,
+        "authenticatedSchemaUsage": true,
+        "authenticatedExecuteGrant": true
+      },
+      {
+        "schema": "public",
+        "name": "submit_order_quote_command",
+        "anonSchemaUsage": true,
+        "anonExecuteGrant": false,
+        "authenticatedSchemaUsage": true,
+        "authenticatedExecuteGrant": true
+      },
+      {
+        "schema": "public",
+        "name": "transition_order_status",
+        "anonSchemaUsage": true,
+        "anonExecuteGrant": false,
         "authenticatedSchemaUsage": true,
         "authenticatedExecuteGrant": true
       }
     ],
     "realtimeTables": [
+      "public.community_posts",
       "public.notifications"
     ],
     "edgeFunctions": [
       {
-        "slug": "quote-template-ai",
-        "version": 6,
+        "slug": "ana-staging-canary-operator",
+        "version": 5,
+        "status": "ACTIVE",
+        "verifyJwt": false
+      },
+      {
+        "slug": "analytics-behavior-v1",
+        "version": 7,
+        "status": "ACTIVE",
+        "verifyJwt": false
+      },
+      {
+        "slug": "financial-operations",
+        "version": 5,
+        "status": "ACTIVE",
+        "verifyJwt": true
+      },
+      {
+        "slug": "order-event-operations",
+        "version": 12,
         "status": "ACTIVE",
         "verifyJwt": true
       },
       {
         "slug": "order-event-worker",
+        "version": 13,
+        "status": "ACTIVE",
+        "verifyJwt": false
+      },
+      {
+        "slug": "professional-verification-operations",
+        "version": 5,
+        "status": "ACTIVE",
+        "verifyJwt": true
+      },
+      {
+        "slug": "quote-template-ai",
+        "version": 10,
+        "status": "ACTIVE",
+        "verifyJwt": true
+      },
+      {
+        "slug": "search-public-services-v2",
         "version": 9,
         "status": "ACTIVE",
         "verifyJwt": false
       },
       {
-        "slug": "order-event-operations",
-        "version": 8,
-        "status": "ACTIVE",
-        "verifyJwt": true
-      },
-      {
-        "slug": "professional-verification-operations",
-        "version": 1,
-        "status": "ACTIVE",
-        "verifyJwt": true
-      },
-      {
-        "slug": "financial-operations",
-        "version": 1,
+        "slug": "self-service-operations",
+        "version": 11,
         "status": "ACTIVE",
         "verifyJwt": true
       },
       {
         "slug": "service-moderation-operations",
-        "version": 2,
-        "status": "ACTIVE",
-        "verifyJwt": true
-      },
-      {
-        "slug": "self-service-operations",
-        "version": 3,
+        "version": 7,
         "status": "ACTIVE",
         "verifyJwt": true
       },
       {
         "slug": "staging-finance-sandbox",
-        "version": 1,
+        "version": 5,
         "status": "ACTIVE",
         "verifyJwt": true
       }
@@ -209,9 +252,31 @@
     ],
     "securityAdvisors": [
       {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "title": "RLS Enabled No Policy",
+        "count": 23,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN",
+        "title": "Public Can Execute SECURITY DEFINER Function",
+        "count": 3,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+        "count": 6,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      },
+      {
         "name": "auth_leaked_password_protection",
         "level": "WARN",
         "title": "Leaked Password Protection Disabled",
+        "count": 1,
         "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
       }
     ]
@@ -3236,7 +3301,7 @@
       "id": "SEC-001",
       "name": "Segurança, RLS, grants e autoridade dos dados",
       "maturity": 4,
-      "filesMatched": 243,
+      "filesMatched": 244,
       "sampleFiles": [
         "backend/shared/auth/supabase-actor-resolver.js",
         "backend/shared/security/audit-event-contract.js",
@@ -3868,15 +3933,7 @@
         ],
         "todo": []
       },
-      "blockers": [
-        {
-          "id": "CAT-B06",
-          "severity": "high",
-          "category": "moderation_operator_context",
-          "description": "The staging approve_service_version_internal wrapper does not propagate request.jwt.claim.sub, so the downstream auth.uid/current_user_role check returns ADMIN_REQUIRED. Canonical approval works when the real active operator context is supplied directly; the wrapper itself still requires hardening.",
-          "targetPhase": "Fase 5"
-        }
-      ],
+      "blockers": [],
       "tests": [
         "test:public-service-catalog-contract",
         "test:services-supabase-repository-contract",
@@ -3887,14 +3944,17 @@
         "audit:cat-a07-supply-coverage-baseline",
         "test:cat-a07-supply-coverage-baseline",
         "audit:cat-a07-supply-coverage-baseline-readiness",
-        "test:cat-a07-supply-coverage-baseline-readiness"
+        "test:cat-a07-supply-coverage-baseline-readiness",
+        "test:service-moderation-operator-authority-contract",
+        "test:service-moderation-operations-runtime",
+        "test:service-moderation-audit-history-contract"
       ]
     },
     {
       "id": "SEARCH-001",
       "name": "Busca, descoberta, favoritos e ranking",
       "maturity": 4,
-      "filesMatched": 246,
+      "filesMatched": 247,
       "sampleFiles": [
         "assets/js/components/service-favorites-controller.js",
         "assets/js/pages/resultados-data-controller.js",
@@ -4277,7 +4337,7 @@
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1490,
+      "filesMatched": 1491,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -10077,7 +10137,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 3540,
+      "filesMatched": 3541,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -15165,9 +15225,7 @@
       ],
       "status": "hybrid",
       "owner": "CAT-001",
-      "blockers": [
-        "CAT-B06"
-      ]
+      "blockers": []
     },
     {
       "id": "FLOW-05",
