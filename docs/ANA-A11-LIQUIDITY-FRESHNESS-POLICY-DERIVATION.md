@@ -64,17 +64,17 @@ The repository currently has neither a versioned window step nor a projection-de
 
 A future activation requires a versioned publication schedule, a versioned delay SLO, a server-side trigger/scheduler, controlled staging evidence of that cadence, the mechanically derived threshold, and a separately authorized insert into the freshness-policy registry.
 
-ANA-A11 is repository-only and changes no cron, database, staging resource, deployment or production state. ANA-001 remains **3/6**.
+ANA-A11 structural planner/executor/activation functions are now installed in staging, but no publication/freshness policy row or scheduler is active. Production remains untouched and ANA-001 remains **3/6**.
 
 ## Scheduler topology readiness
 
-Read-only reconciliation now closes the mechanism question without creating a schedule. The canonical candidate topology is **Supabase `pg_cron` with a database-local SQL invocation of `public.run_analytics_cat_liquidity_projection_v1`**.
+Read-only reconciliation now closes the mechanism question without creating a schedule. The selected future topology is **Supabase `pg_cron` invoking `private.run_analytics_cat_liquidity_catch_up_v1`**, which must pass through the canonical planner before window orchestration and the A10 per-series runner.
 
 This is an architectural selection, not scheduler activation:
 
-- the A10 runner is already database-local, `SECURITY DEFINER` and owned by `postgres`;
+- the A11 catch-up executor is database-local, `SECURITY DEFINER` and owned by `postgres`, and delegates to the planner/window/A10 chain;
 - existing Doke cron jobs in staging run as `postgres`;
-- the runner is not executable by `anon` or `authenticated`;
+- planner, catch-up executor and activation boundary are not executable by `anon`, `authenticated` or `service_role`;
 - no ANA/liquidity cron exists today;
 - introducing an Edge Function or GitHub Actions publisher would create a second authority without a runtime requirement.
 
@@ -122,7 +122,7 @@ The following remain `null`/unauthorized:
 - scheduler activation;
 - freshness-policy insert.
 
-This refinement changes no runtime and does not promote ANA above **3/6**.
+The structural runtime is now present in staging, but operational policy values and scheduler activation remain unset; this does not promote ANA above **3/6**.
 
 ## Repository candidate — dimension-series orchestration
 
@@ -237,7 +237,7 @@ This deliberately does not rely on the global snapshot as a completion marker, b
 
 The candidate is read-only and owner-only. It inserts no snapshots, creates no cron and cannot choose policy values. Missing/unknown policy fails closed with `DOKE_ANALYTICS_PUBLICATION_POLICY_REQUIRED`.
 
-The planner is **not applied to staging** by this repository-only lot.
+The planner is applied to staging as migration `20260923130303 / ana_a11_liquidity_window_planner`; validation `036` passed. No concrete publication-policy row is present.
 
 ## Repository candidate — bounded catch-up executor
 
@@ -256,7 +256,7 @@ This has three important properties:
 
 The executor reads no publication-policy table directly, writes no freshness-policy row and creates no `pg_cron` job. Its only inputs are `policyId` and `evaluatedAt`; therefore it has no numeric defaults or hidden schedule authority.
 
-This executor remains repository-only and is **not applied to staging** by this lot.
+The executor is applied to staging as migration `20260923130307 / ana_a11_liquidity_catch_up_executor`; validation `037` passed. It remains owner-only and unscheduled.
 
 ## Repository candidate — atomic policy activation
 
@@ -278,7 +278,7 @@ Within one transaction it:
 
 This closes a real integrity gap: A10 consumes the freshness registry directly, while A11 owns richer publication provenance. Independent inserts could otherwise leave the two registries inconsistent.
 
-The activation boundary is owner-only, creates no cron and invokes no catch-up executor. The migration itself inserts **zero rows**. The function is also **not applied to staging** by this repository-only lot.
+The activation boundary is owner-only, creates no cron and invokes no catch-up executor. It is applied to staging as migration `20260923130310 / ana_a11_liquidity_policy_activation`; validation `038` passed. The migration itself inserted **zero rows**, and no activation call with real policy values has been authorized.
 
 Concrete policy values remain unset and unauthorized.
 
@@ -292,5 +292,54 @@ Direct cron invocation of the A10 per-series runner is forbidden because it woul
 
 The catch-up executor also fails closed when planner ordinals are not contiguous from `1`, preventing execution against a structurally corrupted planner result.
 
-This remains repository-only: no cron, policy row, freshness row or new staging function is created by this reconciliation.
+The topology remains unactivated: the structural functions now exist in staging, but there is still no cron, publication-policy row or freshness-policy row.
 
+
+
+## Staging planner/executor/activation closure
+
+Authorization `authorize-ana-a11-planner-executor-activation-structures-staging head=1825c11544a19162438c2b63c099d9e6d2b4547f matrix=v1.3.132` was executed only against `doke-web-staging` (`zwkczgewzbsorbrjuzpb`).
+
+Applied migrations:
+
+- `20260923130303 / ana_a11_liquidity_window_planner`;
+- `20260923130307 / ana_a11_liquidity_catch_up_executor`;
+- `20260923130310 / ana_a11_liquidity_policy_activation`.
+
+Validations `036`, `037` and `038` passed.
+
+All behavioral canaries were transactional and rollback-only. Synthetic values were used only as test fixtures and are not policy authority.
+
+Planner evidence:
+
+- bounded selection returned exactly 2 oldest missing windows;
+- the first window required 3 CAT-backed series;
+- after materializing only 1 series, the window remained incomplete with 2 series missing;
+- only after all required series existed did the planner advance to the next oldest missing window.
+
+Executor evidence:
+
+- first catch-up invocation processed 2 windows / 6 series;
+- second invocation processed the next 2 windows / 6 series;
+- third replay planned 0 windows;
+- direct replay of a completed window returned `NO_CHANGE 3/3`.
+
+Fail-closed activation evidence:
+
+- missing policy was rejected by the planner;
+- invalid activation input was rejected;
+- an overlapping second publication policy was rejected;
+- publication + freshness rows existed only inside the rollback transaction;
+- no cron was created.
+
+Privilege boundaries for planner, executor and activation are identical: owner `postgres`, `SECURITY DEFINER`, `postgres EXECUTE=true`, and `anon/authenticated/service_role EXECUTE=false`.
+
+Persistent post-rollback state:
+
+- publication policy rows: **0**;
+- freshness policy rows: **0**;
+- ANA/liquidity cron jobs: **0**;
+- liquidity snapshots: **3** (baseline restored);
+- canary-window snapshots: **0**.
+
+No `windowStepSeconds`, `projectionDelaySloSeconds`, `windowAnchor`, `maxCatchUpWindowsPerInvocation` or `maxLagSeconds` has been selected as an operational value. Scheduler activation remains separately unauthorized. ANA remains **3/6**.

@@ -4,8 +4,8 @@
   "environment": "staging",
   "projectRef": "zwkczgewzbsorbrjuzpb",
   "authorization": "authorize-ana-a11-structural-authorities-staging",
-  "observedAt": "2026-09-23T02:15:47.312085+00:00",
-  "repositoryHeadAtFinalValidation": "acb4a93bcf22ca772a3c5dc38d08e8565b759339",
+  "observedAt": "2026-09-23T13:08:17.16683+00:00",
+  "repositoryHeadAtFinalValidation": "1825c11544a19162438c2b63c099d9e6d2b4547f",
   "migrations": [
     {
       "path": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
@@ -19,6 +19,27 @@
       "appliedVersion": "20260923021316",
       "name": "ana_a11_liquidity_publication_policy_authority",
       "validationSql": "supabase/tests/035_ana_a11_liquidity_publication_policy_authority_validation.sql",
+      "validation": "PASS"
+    },
+    {
+      "path": "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
+      "appliedVersion": "20260923130303",
+      "name": "ana_a11_liquidity_window_planner",
+      "validationSql": "supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql",
+      "validation": "PASS"
+    },
+    {
+      "path": "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
+      "appliedVersion": "20260923130307",
+      "name": "ana_a11_liquidity_catch_up_executor",
+      "validationSql": "supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql",
+      "validation": "PASS"
+    },
+    {
+      "path": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
+      "appliedVersion": "20260923130310",
+      "name": "ana_a11_liquidity_policy_activation",
+      "validationSql": "supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql",
       "validation": "PASS"
     }
   ],
@@ -74,10 +95,11 @@
     "freshnessPolicyRows": 0,
     "anaLiquidityCronJobs": 0,
     "liquiditySnapshotRows": 3,
-    "securityDefinerTotal": 203,
+    "securityDefinerTotal": 206,
     "publicTables": 48,
     "publicRlsDisabled": 0,
-    "publicRlsNoPolicies": 0
+    "publicRlsNoPolicies": 0,
+    "canaryWindowSnapshotRows": 0
   },
   "boundaries": {
     "productionChanged": false,
@@ -96,5 +118,76 @@
     "maxCatchUpWindowsPerInvocation": null,
     "maxLagSeconds": null
   },
-  "result": "staging_structural_authorities_pass_policy_unset"
+  "result": "staging_planner_executor_activation_structures_pass_policy_unset_scheduler_unactivated",
+  "followUpAuthorization": "authorize-ana-a11-planner-executor-activation-structures-staging head=1825c11544a19162438c2b63c099d9e6d2b4547f matrix=v1.3.132",
+  "plannerCanary": {
+    "result": "PASS",
+    "rollbackOnly": true,
+    "syntheticOnly": true,
+    "syntheticInputs": {
+      "windowStepSeconds": 37,
+      "projectionDelaySloSeconds": 11,
+      "maxCatchUpWindowsPerInvocation": 2
+    },
+    "derivedFreshnessSeconds": 48,
+    "initialPlannedWindowCount": 2,
+    "requiredSeriesFirstWindow": 3,
+    "afterPartial": {
+      "materializedSeries": 1,
+      "missingSeries": 2
+    },
+    "completeOnlyAfterAllRequiredSeries": true,
+    "advancedToNextOldest": true
+  },
+  "executorCanary": {
+    "result": "PASS",
+    "rollbackOnly": true,
+    "syntheticOnly": true,
+    "syntheticInputs": {
+      "windowStepSeconds": 43,
+      "projectionDelaySloSeconds": 17,
+      "maxCatchUpWindowsPerInvocation": 2
+    },
+    "firstBatch": {
+      "plannedWindowCount": 2,
+      "appendedSeriesCount": 6
+    },
+    "secondBatch": {
+      "plannedWindowCount": 2,
+      "appendedSeriesCount": 6
+    },
+    "thirdReplay": {
+      "plannedWindowCount": 0,
+      "appendedSeriesCount": 0
+    },
+    "directWindowReplay": {
+      "seriesCount": 3,
+      "appendedCount": 0,
+      "noChangeCount": 3
+    },
+    "boundedOldestFirst": true
+  },
+  "activationBoundaryCanary": {
+    "result": "PASS",
+    "rollbackOnly": true,
+    "syntheticOnly": true,
+    "missingPolicyRejected": true,
+    "invalidPolicyRejected": true,
+    "overlappingPolicyRejected": true,
+    "publicationAndFreshnessInsertedOnlyInsideTransaction": true,
+    "cronCreated": false
+  },
+  "privilegeBoundary": {
+    "functions": [
+      "private.plan_analytics_cat_liquidity_windows_v1",
+      "private.run_analytics_cat_liquidity_catch_up_v1",
+      "private.activate_analytics_cat_liquidity_policy_v1"
+    ],
+    "owner": "postgres",
+    "securityDefiner": true,
+    "anonExecute": false,
+    "authenticatedExecute": false,
+    "serviceRoleExecute": false,
+    "postgresExecute": true
+  }
 }
