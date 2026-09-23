@@ -78,12 +78,12 @@ begin
       message = 'DOKE_ANALYTICS_LIQUIDITY_SOURCE_WATERMARK_REQUIRED';
   end if;
 
-  v_lower_bound := pg_catalog.greatest(
+  v_lower_bound := greatest(
     v_policy.effective_from,
     v_coverage_complete_from
   );
 
-  v_upper_bound := pg_catalog.least(
+  v_upper_bound := least(
     p_at,
     v_source_watermark,
     coalesce(v_policy.effective_until,p_at)
@@ -94,12 +94,12 @@ begin
   end if;
 
   v_first_index := pg_catalog.ceil(
-    pg_catalog.extract(epoch from (v_lower_bound - v_policy.window_anchor))
+    extract(epoch from (v_lower_bound - v_policy.window_anchor))
       / v_step_seconds
   )::bigint;
 
   v_last_end_index := pg_catalog.floor(
-    pg_catalog.extract(epoch from (v_upper_bound - v_policy.window_anchor))
+    extract(epoch from (v_upper_bound - v_policy.window_anchor))
       / v_step_seconds
   )::bigint;
 

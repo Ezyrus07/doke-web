@@ -21,6 +21,7 @@ check('planner remains repository-only',c.windowPlannerCandidate.stagingApplied=
 check('planner requires explicit policy',c.windowPlannerCandidate.policyRowRequired===true&&plannerMigration.includes('DOKE_ANALYTICS_PUBLICATION_POLICY_REQUIRED'));
 check('planner grid comes from policy',plannerMigration.includes('v_policy.window_anchor')&&plannerMigration.includes('v_policy.window_step_seconds')&&plannerMigration.includes('v_policy.max_catch_up_windows_per_invocation'));
 check('planner checks full series completion',plannerMigration.includes('expected_series')&&plannerMigration.includes('missing_count > 0')&&plannerMigration.includes("m.dimensions = e.expected_dimensions"));
+check('planner special SQL forms compile portably',!plannerMigration.includes('pg_catalog.extract')&&!plannerMigration.includes('pg_catalog.greatest')&&!plannerMigration.includes('pg_catalog.least')&&plannerMigration.includes('extract(epoch from'));
 check('planner is oldest-first and bounded',plannerMigration.includes('order by w.candidate_window_start')&&plannerMigration.includes('limit v_policy.max_catch_up_windows_per_invocation'));
 
 check('staging canaries left no residue',c.stagingStructuralEvidence.postState.publicationPolicyRows===0&&c.stagingStructuralEvidence.postState.freshnessPolicyRows===0&&c.stagingStructuralEvidence.postState.anaLiquidityCrons===0&&c.stagingStructuralEvidence.postState.liquiditySnapshotRows===3);
