@@ -3,10 +3,10 @@
   "domain": "ANA-001",
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
-  "sourceHead": "b73c23c0ca6d01b9841776e27e1a8c0776477a31",
+  "sourceHead": "1b87bba994f96dc96cb342d0583439d22734b0d2",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "staging_structural_authorities_validated_planner_and_executor_candidates_ready_policy_values_unset",
+  "status": "staging_structural_authorities_validated_planner_executor_and_activation_candidates_ready_policy_values_unset",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -16,7 +16,8 @@
     "windowGridAuthorityMissing": "numeric grid values remain unapproved, but a policy-driven repository planner now defines how approved anchor/step values will generate canonical closed windows without defaults.",
     "dimensionSeriesAuthorityMissing": "resolved structurally in staging: owner-only CAT-fact-backed series enumeration and atomic per-window orchestration are installed and validated; scheduler activation remains separate.",
     "publicationPolicyProvenanceGap": "private.analytics_metric_freshness_policies_v1 stores only the derived max_lag_seconds/effective window. It cannot prove which window step, projection-delay SLO, boundary anchor, catch-up bound or approval evidence produced that threshold.",
-    "currentFreshnessPolicyRows": "staging currently has zero freshness-policy rows, so no existing row requires data migration."
+    "currentFreshnessPolicyRows": "staging currently has zero freshness-policy rows, so no existing row requires data migration.",
+    "policyCouplingGap": "resolved structurally in repository candidate: publication and freshness rows must be inserted atomically from the same explicit inputs; no hand-entered maxLagSeconds is accepted by the canonical activation path."
   },
   "thresholdDerivation": {
     "formula": "maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds",
@@ -38,14 +39,14 @@
   },
   "activationPreconditions": [
     "The staging-validated CAT-fact-backed global + category/state series authority remains installed and owner-only.",
-    "A publication-policy row is explicitly approved with versioned windowStepSeconds, projectionDelaySloSeconds, windowAnchor, bounded catch-up and approval evidence; the row is inserted only under separate staging authorization.",
+    "The repository atomic policy-activation candidate is explicitly authorized and applied in staging; a later separately authorized invocation must supply the approved windowStepSeconds, projectionDelaySloSeconds, windowAnchor, catch-up bound, approval evidence and effective window.",
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
     "The repository window-planner and catch-up-executor candidates are explicitly authorized, applied and validated in staging; both remain driven only by an approved publication-policy row.",
     "A Supabase pg_cron job invokes the database-local ANA-A10 runner at the approved cadence.",
     "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
-    "The effective publication policy derivedMaxLagSeconds is synchronized into private.analytics_metric_freshness_policies_v1 only under a separately authorized staging mutation; hand-entered thresholds are forbidden.",
-    "ANA-A07 boundary tests prove fresh at <= maxLagSeconds and stale at > maxLagSeconds without older-window fallback."
+    "ANA-A07 boundary tests prove fresh at <= maxLagSeconds and stale at > maxLagSeconds without older-window fallback.",
+    "The canonical activation call atomically creates the publication policy and matching freshness policy; no independent hand-entered freshness insert is permitted."
   ],
   "nonAuthorities": [
     "ORD worker one-minute cron",
@@ -88,7 +89,7 @@
       ],
       "effectiveUntilOptional": true
     },
-    "couplingRule": "A future separately authorized activation must derive freshness maxLagSeconds from the effective publication policy; no hand-entered threshold may bypass the derivation contract. Overlapping effective publication policies are invalid and fail closed."
+    "couplingRule": "Canonical activation inserts publication and freshness policy rows atomically with the same policyId/effective window and derives maxLagSeconds mechanically from windowStepSeconds + projectionDelaySloSeconds. Overlap fails closed; hand-entered freshness thresholds are outside authority."
   },
   "currentDecision": {
     "windowStepSeconds": null,
@@ -122,7 +123,9 @@
     "windowPlannerContractAuthority": true,
     "windowPlannerRuntimeAuthority": false,
     "catchUpExecutorContractAuthority": true,
-    "catchUpExecutorRuntimeAuthority": false
+    "catchUpExecutorRuntimeAuthority": false,
+    "policyActivationContractAuthority": true,
+    "policyActivationRuntimeAuthority": false
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -242,17 +245,18 @@
     },
     "publicationPolicyActivation": {
       "owner": "ANA-001 operational policy",
-      "decision": "Approve one concrete liquidity publication-policy row and its evidence. No row exists or is authorized by the repository candidate.",
+      "decision": "Approve the concrete liquidity policy values/evidence and separately authorize one invocation of the canonical atomic activation boundary after its staging structure is validated.",
       "unresolvedFields": [
         "windowStepSeconds",
         "projectionDelaySloSeconds",
         "windowAnchor",
         "maxCatchUpWindowsPerInvocation",
         "approvalEvidence"
-      ]
+      ],
+      "structuralCandidate": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql"
     }
   },
-  "updatedAt": "2026-09-22T23:36:00-03:00",
+  "updatedAt": "2026-09-23T08:10:00-03:00",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -542,5 +546,23 @@
     "ownerBoundary": "postgres only",
     "executionOrder": "planner windowOrdinal ascending",
     "batchAtomicity": "uncaught failure aborts the executor invocation transaction"
+  },
+  "policyActivationCandidate": {
+    "contractId": "ana-a11-liquidity-policy-activation-v1",
+    "migration": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
+    "validationSql": "supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql",
+    "scope": "repository_only_candidate",
+    "stagingApplied": false,
+    "ownerBoundary": "postgres only",
+    "insertsPublicationPolicy": true,
+    "insertsFreshnessPolicy": true,
+    "derivesMaxLagMechanically": true,
+    "samePolicyId": true,
+    "sameEffectiveWindow": true,
+    "overlapPolicy": "fail_closed",
+    "createsCron": false,
+    "invokesCatchUp": false,
+    "numericDefaults": false,
+    "policyValuesChosen": false
   }
 }

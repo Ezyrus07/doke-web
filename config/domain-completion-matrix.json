@@ -1,6 +1,6 @@
 {
-  "version": "1.3.131",
-  "updatedAt": "2026-09-22T23:36:00-03:00",
+  "version": "1.3.132",
+  "updatedAt": "2026-09-23T08:10:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -3408,7 +3408,9 @@
         "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
         "supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql",
         "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
-        "supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql"
+        "supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql",
+        "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
+        "supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3455,7 +3457,8 @@
         "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
         "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
         "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
-        "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql"
+        "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
+        "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql"
       ],
       "tables": [
         "service_metric_events",
@@ -3557,7 +3560,8 @@
         "ANA-A11 publication-policy selector now fails closed on overlapping effective policies and returns no implicit/default policy when none is effective; future operator overlap cannot silently become analytics authority.",
         "ANA-A11 structural authorities are now validated in staging: series enumeration/window orchestration is installed as postgres-only runtime, publication-policy provenance schema is installed empty, rollback-only canaries proved 3-series append/replay idempotency and generated-threshold/overlap fail-closed behavior, and no ANA cron or policy row was activated.",
         "ANA-A11 now has a repository-only, policy-driven canonical-window planner candidate. It aligns windows from approved anchor/step values, bounds them by CAT certified coverage and watermark, verifies every required CAT-backed dimension series, and returns oldest missing windows capped by the policy catch-up limit without creating snapshots or cron.",
-        "ANA-A11 now has a repository-only bounded catch-up executor candidate. It consumes only planner-selected windows in ordinal order and delegates each to the canonical A11 window orchestrator; it reads no policy table directly, creates no cron and carries no numeric defaults."
+        "ANA-A11 now has a repository-only bounded catch-up executor candidate. It consumes only planner-selected windows in ordinal order and delegates each to the canonical A11 window orchestrator; it reads no policy table directly, creates no cron and carries no numeric defaults.",
+        "ANA-A11 now has a repository-only atomic policy-activation candidate. It accepts explicit publication inputs, derives maxLag mechanically, rejects overlap in both registries, and inserts publication + freshness rows with the same policyId/effective window in one transaction; it creates no cron and chooses no values."
       ],
       "blockers": [
         {
@@ -3578,7 +3582,7 @@
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
         "ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.",
-        "ANA-A10/CAT-A07 and ANA-A11 structural staging authorities are closed. Repository-only planner and catch-up-executor candidates now complete the scheduler mechanics without values. Remaining authority is the concrete publication-policy values and, after separate staging validation of these candidates, publication/freshness row + pg_cron activation.",
+        "ANA-A10/CAT-A07 and ANA-A11 structural staging authorities are closed. Repository-only planner, bounded catch-up executor and atomic policy-activation candidates are ready but unapplied. The only remaining policy authority is the concrete values/evidence; no policy row or pg_cron activation is authorized.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
       ],
       "exitCriteria": [

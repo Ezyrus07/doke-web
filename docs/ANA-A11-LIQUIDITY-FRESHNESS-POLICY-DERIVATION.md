@@ -258,3 +258,27 @@ The executor reads no publication-policy table directly, writes no freshness-pol
 
 This executor remains repository-only and is **not applied to staging** by this lot.
 
+## Repository candidate — atomic policy activation
+
+The final registry-coupling gap now has a repository-only candidate:
+
+- `supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql`
+- `supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql`
+
+`private.activate_analytics_cat_liquidity_policy_v1(...)` is the only proposed canonical write path for the first liquidity publication policy. It accepts every operational value explicitly; it contains no cadence, SLO, anchor or catch-up default.
+
+Within one transaction it:
+
+- validates the explicit publication-policy inputs;
+- computes `maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds`;
+- rejects overlapping publication-policy effective windows;
+- rejects overlapping freshness-policy effective windows;
+- inserts the publication policy;
+- inserts the matching freshness policy with the same `policyId`, metric/version and effective window.
+
+This closes a real integrity gap: A10 consumes the freshness registry directly, while A11 owns richer publication provenance. Independent inserts could otherwise leave the two registries inconsistent.
+
+The activation boundary is owner-only, creates no cron and invokes no catch-up executor. The migration itself inserts **zero rows**. The function is also **not applied to staging** by this repository-only lot.
+
+Concrete policy values remain unset and unauthorized.
+
