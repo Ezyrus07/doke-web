@@ -16,9 +16,9 @@ check('browser grants absent',!sql.match(/grant execute[^;]+to\s+(anon|authentic
 check('helper hidden from service role',!sql.includes('grant execute on function private.analytics_transaction_floor_watermark_v1() to service_role'));
 check('validation read only',!v.match(/insert\s+into|update\s+|delete\s+from|truncate\s+|cron\.schedule/i));
 check('validation invokes wrappers',v.includes('private.analytics_behavior_watermark_v1()')&&v.includes('private.order_metric_watermark_v1()'));
-check('concurrent canary not falsely certified',c.validationPlan?.concurrentWriterCase==='requires_multi_session_staging_canary');
-check('late fact remains future proof',c.validationPlan?.lateFactCase==='requires_A09_projection_canary_after_watermark_concurrency_certification');
-check('original and compatibility applied, full certification pending',c.repositoryEvidence?.migrationApplied===true&&c.repositoryEvidence?.compatibilityMigrationApplied===true&&c.repositoryEvidence?.stagingValidated===false&&c.validationPlan?.validation041Status==='passed'&&c.validationPlan?.concurrentWriterCase==='requires_multi_session_staging_canary');
+check('concurrent canary certified',c.validationPlan?.concurrentWriterCase==='staging_transient_cron_canary_pass'&&c.repositoryEvidence?.concurrentWriterCanaryPassed===true);
+check('late fact remains downstream',c.validationPlan?.lateFactCase==='requires_A09_projection_canary_after_watermark_certification');
+check('watermark runtime staging certified',c.repositoryEvidence?.migrationApplied===true&&c.repositoryEvidence?.compatibilityMigrationApplied===true&&c.repositoryEvidence?.stagingValidated===true&&c.validationPlan?.validation041Status==='passed'&&c.validationPlan?.concurrentWriterCase==='staging_transient_cron_canary_pass');
 check('compatibility uses explicit CASE',compatibility.includes('v_data_through := case')&&!compatibility.includes('pg_catalog.least('));
 check('compatibility preserves active/prepared order',compatibility.indexOf('from pg_catalog.pg_stat_activity')>=0&&compatibility.indexOf('from pg_catalog.pg_prepared_xacts')>compatibility.indexOf('from pg_catalog.pg_stat_activity'));
 check('compatibility applied and 041 passed',c.compatibilityCandidate?.migrationApplied===true&&c.compatibilityCandidate?.stagingMigrationVersion==='20260923231132'&&c.compatibilityCandidate?.validation041Status==='PASS'&&c.compatibilityCandidate?.stagingApplyAuthorizationConsumed===true);
