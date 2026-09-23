@@ -80,7 +80,7 @@ language plpgsql
 stable
 security definer
 set search_path = pg_catalog
-as $
+as $$
 declare
   v_count integer;
   v_policy private.analytics_metric_publication_policies_v1%rowtype;
@@ -131,7 +131,7 @@ begin
     'effectiveUntil',v_policy.effective_until
   );
 end;
-$;
+$$;
 
 revoke all privileges on function private.current_analytics_metric_publication_policy_v1(text,text,timestamptz)
   from public, anon, authenticated, service_role;
