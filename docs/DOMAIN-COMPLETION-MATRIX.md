@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1601 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1602 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -1063,7 +1063,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 50 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 52 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`, `private.analytics_metric_publication_policies_v1`.
 
@@ -1108,6 +1108,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A11 revision-1 operational policy is persistently active for liquidity.active_service_seconds: policyId ana-a11-liquidity-v1-r1, windowStepSeconds=300, projectionDelaySloSeconds=60, derived maxLagSeconds=360, windowAnchor=1970-01-01T00:00:00Z, maxCatchUpWindowsPerInvocation=3, oldest-first recovery, effectiveFrom=2026-09-23T16:00:00Z, effectiveUntil=null; publication and freshness registries each contain the single coupled revision-1 policy.
 - ANA-A11 scheduler activation candidate is applied and validation 040 passed; the persistent staging scheduler is job 8 named doke-ana-liquidity-v1-r1, active on * * * * * as postgres/postgres, and invokes only private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp()), preserving the canonical planner -> window orchestrator -> A10 projection chain.
 - ANA-A11 post-effective read-only runtime certification passed: the first 16:00Z-16:05Z canonical window materialized 3/3 required series by 16:05:00.148650Z; 40/40 observed closed windows through 19:20Z were 300-second, complete, authoritative and reconciled; max publication delay was ~0.487s against the 60s SLO; duplicate snapshot keys and cron failures were zero; planner was empty; and ANA-A07 evaluated the latest 19:15Z-19:20Z canonical window at ~194.31s age against maxLagSeconds=360 with no older-window fallback. ANA-A11 is operationally certified in staging while ANA remains 3/6.
+- ANA-A07 now defines repository-only behavior/ORD dependency watermark authority using active_transaction_floor_v1: behavior completeness is fenced by server-owned received_at, ORD metric completeness by DB-owned created_at, max(event timestamp)/computedAt/windowEnd shortcuts are forbidden, prepared transactions fail closed, empty windows may advance, and late materialized facts must use A05 append-only revisions. Runtime watermark functions and migration remain unapplied; ANA stays 3/6.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1115,6 +1116,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
+- Implement the A07 behavior/ORD active_transaction_floor_v1 runtime candidate as a new forward-only migration only after explicit staging authorization; validate no-active, concurrent-writer, empty-window, prepared-xact fail-closed and late-fact cases, then hand off to the A09 server-side funnel projector without reopening A11.
 - Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.
 - Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
@@ -1131,7 +1133,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 331 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 332 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1191,7 +1193,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3559 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3562 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1252,4 +1254,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-23T22:08:09.686739Z._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-23T22:38:52.389634Z._
