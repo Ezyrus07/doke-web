@@ -1,10 +1,10 @@
 {
   "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
   "domain": "ANA-001",
-  "sourceHead": "751928eb69b86b0010eace33b5978f4ff779d0b8",
+  "sourceHead": "ef2b4cc5c63e3231fd044130f27ea7c0ef80f3cf",
   "createdAt": "2026-09-23T22:38:52.389634Z",
   "scope": "repository_only",
-  "status": "repository_authority_ready_runtime_unapplied",
+  "status": "repository_runtime_candidate_ready_staging_unapplied",
   "objective": "Define fail-closed server-side materialization watermarks for ANA behavioral facts and ORD metric facts so A07/A09 can derive dataThrough without max(event timestamp), computedAt, or assumed windowEnd authority.",
   "rootCause": {
     "behaviorGap": "private.analytics_behavior_events_v1 has server-owned received_at/occurred_at facts but no server-authoritative watermark proving the ledger is materialized through an empty or non-empty time boundary.",
@@ -111,7 +111,7 @@
     ]
   },
   "runtimeCandidate": {
-    "migrationCreated": false,
+    "migrationCreated": true,
     "migrationApplied": false,
     "stagingValidated": false,
     "helperFunction": "private.analytics_transaction_floor_watermark_v1()",
@@ -122,7 +122,10 @@
     "browserExecuteAllowed": false,
     "serviceRoleExecuteCandidate": true,
     "schedulerRequired": false,
-    "sourceMutationRequired": false
+    "sourceMutationRequired": false,
+    "migration": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
+    "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+    "readinessContract": "config/ana-a07-behavior-ord-watermark-runtime-readiness.json"
   },
   "activationRequirements": [
     "create a new forward-only migration; do not edit historical A03/ORD migrations",
@@ -159,6 +162,6 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "This lot closes the repository authority for behavior/ORD dependency watermarks only. Runtime functions, migration application, A09 projector/freshness thresholds and controlled staging evidence remain required before maturity can change."
+    "reason": "Forward-only migration candidate and validation 041 now exist repository-side. They remain unapplied; staging concurrency/late-fact evidence and A09 runtime are still required, so ANA stays 3/6."
   }
 }

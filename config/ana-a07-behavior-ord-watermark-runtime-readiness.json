@@ -1,0 +1,82 @@
+{
+  "contractId": "ana-a07-behavior-ord-watermark-runtime-readiness-v1",
+  "domain": "ANA-001",
+  "sourceContract": "ana-a07-behavior-ord-watermark-authority-v1",
+  "sourceHead": "ef2b4cc5c63e3231fd044130f27ea7c0ef80f3cf",
+  "createdAt": "2026-09-23T22:45:00Z",
+  "scope": "repository_only",
+  "authorization": {
+    "token": "authorize-ana-a07-behavior-ord-watermark-runtime-candidate-repository-only head=ef2b4cc5c63e3231fd044130f27ea7c0ef80f3cf matrix=v1.3.132",
+    "received": true,
+    "stagingApplyAuthorized": false,
+    "productionAuthorized": false
+  },
+  "status": "runtime_candidate_repository_ready_staging_unapplied",
+  "migration": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
+  "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+  "runtime": {
+    "helperFunction": "private.analytics_transaction_floor_watermark_v1",
+    "behaviorFunction": "private.analytics_behavior_watermark_v1",
+    "orderFunction": "private.order_metric_watermark_v1",
+    "basis": "active_transaction_floor_v1",
+    "helperExecute": "postgres_owner_only",
+    "wrapperExecute": "service_role_only",
+    "schedulerRequired": false
+  },
+  "concurrency": {
+    "observationClock": "clock_timestamp()",
+    "activitySource": "pg_stat_activity.xact_start",
+    "activeScanBeforePreparedScan": true,
+    "currentBackendExcluded": true,
+    "currentDatabaseOnly": true,
+    "inclusiveBoundaryPredecessor": "1 microsecond",
+    "preparedTransactions": "fail_closed",
+    "maxEventTimestampUsed": false,
+    "trackCommitTimestampRequired": false
+  },
+  "sourceSemantics": {
+    "behavior": {
+      "relation": "private.analytics_behavior_events_v1",
+      "eventTime": "occurred_at",
+      "materializationTime": "received_at"
+    },
+    "orderMetric": {
+      "relation": "private.order_metric_events",
+      "eventTime": "occurred_at",
+      "materializationTime": "created_at"
+    }
+  },
+  "validationPlan": {
+    "structuralSqlCandidate": true,
+    "structuralSqlExecutedInStaging": false,
+    "noActiveTransactionCase": "pending_staging_validation",
+    "emptyWindowCase": "pending_staging_validation",
+    "concurrentWriterCase": "requires_multi_session_staging_canary",
+    "preparedTransactionCase": "static fail-closed branch; staging runtime branch unavailable while max_prepared_transactions=0",
+    "lateFactCase": "requires_A09_projection_canary_after_watermark_application",
+    "grantBoundaryCase": "pending_staging_validation"
+  },
+  "repositoryEvidence": {
+    "migrationCreated": true,
+    "validationCreated": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "sourceRowsMutated": false
+  },
+  "preservedBoundaries": {
+    "browserAnalyticsActivated": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "analyticsSnapshotMutation": false,
+    "policyMutation": false,
+    "schedulerMutation": false,
+    "productionMutation": false,
+    "pullRequestMerge": false,
+    "readyForReview": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "Repository runtime candidate only. Staging application, validation 041, concurrent-writer/late-fact proof and A09 runtime remain pending."
+  }
+}

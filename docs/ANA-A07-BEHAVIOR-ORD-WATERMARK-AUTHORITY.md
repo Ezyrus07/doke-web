@@ -63,14 +63,14 @@ This preserves all existing boundaries:
 - no silent snapshot overwrite;
 - no invented freshness threshold.
 
-## Future runtime candidate
+## Repository runtime candidate
 
-A later explicitly authorized migration may create:
+The repository candidate `supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql` now creates:
 
 - `private.analytics_transaction_floor_watermark_v1()`;
 - `private.analytics_behavior_watermark_v1()`;
 - `private.order_metric_watermark_v1()`.
 
-That migration must be forward-only, server-owned, fail closed on prepared transactions, deny browser execution, and be validated with concurrent-writer, empty-window, late-fact and no-active-transaction canaries before A09 runtime activation.
+The candidate is forward-only, server-owned, fails closed on prepared transactions and denies browser execution. Validation `supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql` is also repository-ready. Multi-session concurrent-writer and late-fact canaries remain separate staging evidence.
 
-No database mutation, migration, deploy, scheduler, production change, merge or Ready for review is authorized by this contract.
+The migration file exists only in the repository. No migration application, staging mutation, deploy, scheduler, production change, merge or Ready for review is authorized by this contract.

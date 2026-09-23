@@ -7,6 +7,12 @@ on:
       - 'backend/modules/analytics/freshness-window-authority.js'
       - 'backend/modules/analytics/dependency-watermark-authority.js'
       - 'config/ana-a07-behavior-ord-watermark-authority.json'
+      - 'supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql'
+      - 'supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql'
+      - 'config/ana-a07-behavior-ord-watermark-runtime-readiness.json'
+      - 'docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-RUNTIME-READINESS.md'
+      - 'scripts/audit-ana-a07-behavior-ord-watermark-runtime-readiness.js'
+      - 'scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js'
       - 'docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-AUTHORITY.md'
       - 'config/ana-a07-freshness-window-authority.json'
       - 'docs/ANA-A07-FRESHNESS-WINDOW-AUTHORITY.md'
@@ -44,6 +50,10 @@ jobs:
           node --check scripts/test-ana-a07-freshness-window-authority.js
       - name: ANA-A07 audit
         run: npm run audit:ana-a07-freshness-window-authority
+      - name: ANA-A07 watermark runtime candidate audit
+        run: node scripts/audit-ana-a07-behavior-ord-watermark-runtime-readiness.js
+      - name: ANA-A07 watermark runtime candidate conformance
+        run: node scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js
       - name: ANA-A07 conformance
         run: npm run test:ana-a07-freshness-window-authority
       - name: ANA-A05 regression

@@ -73,3 +73,7 @@ The authority deliberately separates **event time** from **materialization time*
 The proposed runtime basis is `active_transaction_floor_v1`: use the current database's earliest active transaction start with an inclusive-boundary predecessor, and fail closed if any prepared transaction exists. This allows empty windows to advance without relying on `max(event timestamp)` and prevents a later commit from being silently counted below an already-published materialization watermark.
 
 The runtime implementation is **not applied** in this lot. A future forward-only migration and concurrency canary require separate authorization.
+
+## Behavior/ORD runtime candidate
+
+The repository now contains `supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql` and rollback-only validation `supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql`. They remain unapplied in staging. No scheduler or source-data write is part of the candidate.

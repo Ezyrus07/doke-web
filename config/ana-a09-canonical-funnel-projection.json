@@ -1,7 +1,7 @@
 {
   "contractId": "ana-a09-canonical-funnel-projection-v1",
   "domain": "ANA-001",
-  "sourceHead": "751928eb69b86b0010eace33b5978f4ff779d0b8",
+  "sourceHead": "ef2b4cc5c63e3231fd044130f27ea7c0ef80f3cf",
   "createdAt": "2026-09-21T22:33:00-03:00",
   "scope": "repository_only",
   "status": "repository_contract_ready_runtime_projection_blocked",
@@ -102,13 +102,16 @@
     "dataThroughRequired": true,
     "watermarkContractId": "ana-a07-behavior-ord-watermark-authority-v1",
     "watermarkContractPath": "config/ana-a07-behavior-ord-watermark-authority.json",
-    "status": "repository_watermark_authority_defined_runtime_unapplied",
+    "status": "runtime_watermark_candidate_ready_staging_unapplied",
     "behaviorMaterializationTime": "received_at",
     "orderMaterializationTime": "created_at",
     "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
     "behaviorAndOrderDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough)",
     "lateFactRevisionAuthority": "ANA-A05",
-    "runtimeFreshnessActivationStillBlocked": true
+    "runtimeFreshnessActivationStillBlocked": true,
+    "runtimeCandidatePath": "config/ana-a07-behavior-ord-watermark-runtime-readiness.json",
+    "migrationPath": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
+    "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql"
   },
   "authority": {
     "contractAuthority": true,
@@ -159,6 +162,6 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A09 funnel semantics are repository-defined and the required behavior/ORD watermark semantics now have a repository authority. Runtime watermarks, funnel projector, funnel freshness thresholds and controlled staging evidence remain required; ANA stays 3/6."
+    "reason": "A09 funnel semantics and the A07 behavior/ORD watermark runtime candidate are repository-ready. The migration, staging concurrency evidence, server-side funnel projector and metric-specific funnel freshness thresholds remain unapplied; ANA stays 3/6."
   }
 }
