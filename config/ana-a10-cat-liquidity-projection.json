@@ -5,7 +5,7 @@
   "sourceHead": "73cab74809c4e8f415561f4b5e7a0eea99655245",
   "createdAt": "2026-09-22T09:57:00-03:00",
   "scope": "repository_and_staging_runtime",
-  "status": "staging_runtime_canary_pass_policy_unset",
+  "status": "staging_runtime_coverage_epoch_active_policy_unset",
   "objective": "Derive liquidity.active_service_seconds deterministically from the CAT-A06 append-only listing visibility ledger, preserving partial coverage and ANA-A07 freshness boundaries without inferring history from mutable catalog state.",
   "rootCause": {
     "sourceGapClosed": "CAT-A06 now persists replay-safe listing visibility/version occurrences with per-service sequence numbers.",
@@ -55,21 +55,21 @@
   },
   "coverage": {
     "preActivation": "partial",
-    "missingActivationBaseline": "partial",
-    "leftTruncatedHistory": "partial",
+    "missingActivationBaseline": "partial before certified CAT-A07 coverage epoch",
+    "leftTruncatedHistory": "partial only before the certified CAT-A07 coverage epoch; the forward baseline establishes complete state from coverageCompleteFrom onward",
     "dependencyWatermarkBeforeWindowEnd": "partial",
     "completeRequires": [
-      "windowStart >= CAT-A06 activated_at",
-      "activation baseline policy explicitly_authorized",
-      "no left-truncated service history",
+      "windowStart >= a certified CAT-A07 coverage_complete_from",
+      "CAT-A06/CAT-A07 ledger remains structurally valid",
       "CAT dependency watermark covers windowEnd",
       "CAT dependency is not stale"
     ],
     "partialValuePolicy": "canonical valueSeconds remains null; observedLowerBoundSeconds may be emitted as diagnostic evidence",
     "forwardCoverageContract": "cat-a07-supply-coverage-baseline-v1",
-    "forwardCoverageStatus": "staging_baseline_blocked_fail_closed_no_epoch",
+    "forwardCoverageStatus": "staging_coverage_epoch_certified",
     "forwardCoverageHandoffMigration": "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
-    "forwardCoverageHandoffStatus": "not_applied_no_certified_epoch"
+    "forwardCoverageHandoffStatus": "staging_active",
+    "coverageCompleteFrom": "2026-09-23T00:06:30.6835Z"
   },
   "freshnessDependency": {
     "contract": "ANA-A07",
@@ -124,7 +124,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A10 server runtime, snapshot/reconciliation integration and synthetic staging evidence are closed, but ANA remains 3/6 because liquidity freshness has no approved maxLagSeconds policy, CAT activation baseline coverage remains partial, and broader ANA blockers still apply."
+    "reason": "A10 runtime, CAT-A07 forward coverage epoch and coverage handoff are active in staging. ANA remains 3/6 because the liquidity publication cadence/projection-delay SLO and derived maxLagSeconds policy are still unset, plus broader ANA blockers remain."
   },
   "runtimeImplementation": {
     "baseMigration": "supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql",
@@ -137,10 +137,12 @@
     "stagingApplied": true,
     "stagingCanary": true,
     "stagingEvidence": "reports/generated/ana-a10-cat-liquidity-runtime-staging-evidence.json",
-    "liquidityPolicyInserted": false
+    "liquidityPolicyInserted": false,
+    "coverageEpochHandoffMigration": "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
+    "coverageEpochHandoffAppliedVersion": "20260923000720",
+    "coverageCompleteFrom": "2026-09-23T00:06:30.6835Z"
   },
   "remainingAuthorities": [
-    "ANA-A11 versioned windowStepSeconds and projectionDelaySloSeconds, followed by derived maxLagSeconds policy activation",
-    "CAT-A07-B01 canonical state completeness remediation, then a certified forward coverage epoch plus A10 runtime handoff for windows at/after coverageCompleteFrom"
+    "ANA-A11 versioned windowStepSeconds and projectionDelaySloSeconds, followed by derived maxLagSeconds policy activation"
   ]
 }

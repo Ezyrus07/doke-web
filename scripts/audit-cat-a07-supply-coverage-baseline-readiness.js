@@ -7,8 +7,8 @@ const anaSql=fs.readFileSync(path.join(root,'supabase','migrations','20260922154
 const matrix=JSON.parse(fs.readFileSync(path.join(root,'config','domain-completion-matrix.json'),'utf8'));
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('readiness id',c.contractId==='cat-a07-supply-coverage-baseline-readiness-v1');
-check('exact authorization pending',c.authorization?.requiredToken==='authorize-cat-a07-supply-coverage-baseline-staging'&&c.authorization?.received===false&&c.authorization?.genericContinuationAuthorizesStaging===false);
-check('repository only',c.scope==='repository_only');
+check('authorization consumed',c.authorization?.requiredToken==='authorize-cat-a07-supply-coverage-baseline-staging'&&c.authorization?.received===true&&c.authorization?.dimensionRemediationReceived===true&&c.authorization?.genericContinuationAuthorizesStaging===false);
+check('repository and staging scope',c.scope==='repository_and_staging');
 check('contract forward only',contract.strategy?.historicalInferenceAllowed===false&&contract.strategy?.originalActivationStateMutationAllowed===false);
 check('coverage epoch table',catSql.includes('private.cat_listing_supply_coverage_epochs_v1'));
 check('service-only baseline runner',catSql.includes('grant execute on function public.run_cat_listing_supply_coverage_baseline_v1(uuid)')&&catSql.includes('to service_role'));
@@ -23,7 +23,9 @@ check('no A06 activation mutation',!catSql.match(/update\s+private\.cat_listing_
 check('handoff reads certified epoch',anaSql.includes("e.certification_state='certified'")&&anaSql.includes('e.coverage_complete_from <= p_window_start'));
 check('pre epoch remains partial',anaSql.includes("when v_coverage_complete_from is not null then 'complete'")&&anaSql.includes("else 'partial'"));
 check('freshness still policy-owned',anaSql.includes("v_reason_code := 'POLICY_THRESHOLD_MISSING'"));
-check('staging untouched',c.effectsThisLot?.stagingReads===false&&c.effectsThisLot?.stagingMutations===false&&c.effectsThisLot?.migrationsApplied===false);
+check('staging execution recorded',c.effectsThisLot?.stagingReads===true&&c.effectsThisLot?.stagingMutations===true&&c.effectsThisLot?.migrationsApplied===true&&c.effectsThisLot?.productionChanges===false);
+check('coverage epoch certified',c.stagingExecution?.certificationState==='certified'&&c.stagingExecution?.coverageCompleteFrom==='2026-09-23T00:06:30.6835Z'&&c.stagingExecution?.anaCoverageHandoffApplied===true);
+check('freshness remains unset',c.stagingExecution?.postEpochProjectionState==='unavailable'&&c.stagingExecution?.postEpochReasonCode==='POLICY_THRESHOLD_MISSING'&&c.stagingExecution?.freshnessPolicyRows===0);
 const cat=matrix.domains.find(d=>d.id==='CAT-001'),ana=matrix.domains.find(d=>d.id==='ANA-001');
 check('maturity unchanged',cat?.maturity===4&&ana?.maturity===3);
 check('readiness registered',cat?.requiredPaths?.includes('config/cat-a07-supply-coverage-baseline-readiness.json')&&cat?.tests?.includes('audit:cat-a07-supply-coverage-baseline-readiness'));

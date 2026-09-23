@@ -4,12 +4,14 @@
   "consumerDomain": "ANA-001",
   "sourceHead": "0841f99eb822527e274e5987a1de8934cfa3575d",
   "createdAt": "2026-09-22T11:42:00-03:00",
-  "scope": "repository_only",
-  "status": "staging_baseline_blocked_fail_closed_no_epoch",
+  "scope": "repository_and_staging",
+  "status": "staging_coverage_epoch_certified_handoff_active",
   "authorization": {
     "requiredToken": "authorize-cat-a07-supply-coverage-baseline-staging",
-    "received": false,
-    "genericContinuationAuthorizesStaging": false
+    "received": true,
+    "genericContinuationAuthorizesStaging": false,
+    "dimensionRemediationToken": "authorize-cat-a07-b01-canonical-dimension-remediation-staging state=BA",
+    "dimensionRemediationReceived": true
   },
   "migrations": {
     "catBaseline": "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql",
@@ -17,7 +19,8 @@
     "stagingApplied": true,
     "dimensionPreflightFollowup": "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql",
     "baseAppliedVersion": "20260922145541",
-    "dimensionPreflightFollowupAppliedVersion": "20260922145917"
+    "dimensionPreflightFollowupAppliedVersion": "20260922145917",
+    "anaCoverageHandoffAppliedVersion": "20260923000720"
   },
   "validationSql": "supabase/tests/033_cat_a07_supply_coverage_baseline_validation.sql",
   "executionOrder": [
@@ -50,16 +53,18 @@
   "boundaries": {
     "originalCatA06ActivationRowMutated": false,
     "historicalVisibilityInferred": false,
-    "publicServicesMutated": false,
+    "publicServicesMutated": true,
     "analyticsOwnsBaselineWriter": false,
     "browserExecutable": false,
-    "production": false
+    "production": false,
+    "directPublicServicesUpdate": false,
+    "canonicalVersionedRemediation": true
   },
   "effectsThisLot": {
     "repositoryMigrationFilesCreated": true,
-    "stagingReads": false,
-    "stagingMutations": false,
-    "migrationsApplied": false,
+    "stagingReads": true,
+    "stagingMutations": true,
+    "migrationsApplied": true,
     "deployments": false,
     "productionChanges": false
   },
@@ -87,10 +92,34 @@
     "secondBaselineAttempt": "blocked_pre_write",
     "secondBaselineError": "DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE",
     "secondBaselineDetail": "eligible_services_with_incomplete_dimensions=1",
-    "finalLedgerRows": 7,
-    "finalBaselineEvents": 0,
-    "finalCoverageEpochRows": 0,
-    "anaCoverageHandoffApplied": false
+    "finalLedgerRows": 11,
+    "finalBaselineEvents": 2,
+    "finalCoverageEpochRows": 1,
+    "anaCoverageHandoffApplied": true,
+    "blockerResolved": true,
+    "canonicalState": "BA",
+    "approvedRemediationVersion": "a758f6a9-1242-417b-b71a-c5145605bbb2",
+    "restoredPendingVersion": "02988f67-b2c8-4695-8afd-27e24445c809",
+    "successfulBaselineRunId": "04566ad6-8bc8-0c93-4205-7f9134e8d65f",
+    "baselineEventCount": 2,
+    "certificationState": "certified",
+    "coverageCompleteFrom": "2026-09-23T00:06:30.6835Z",
+    "sourceFingerprint": "bfb50940a4c9559111882381ebe4d4092c6c9c9c33fba94e6d03cce5bdc98402",
+    "ledgerFingerprint": "25d89b55e25f661f4fda009f86dfcaf216f6beeb0a2a6b313c230403dfd500e1",
+    "replayIdempotent": true,
+    "preEpochCoverageState": "partial",
+    "postEpochCoverageState": "complete",
+    "postEpochProjectionState": "unavailable",
+    "postEpochReasonCode": "POLICY_THRESHOLD_MISSING",
+    "freshnessPolicyRows": 0
   },
-  "stagingEvidence": "reports/generated/cat-a07-staging-baseline-attempt-evidence.json"
+  "stagingEvidence": "reports/generated/cat-a07-staging-coverage-epoch-evidence.json",
+  "incidentalFinding": {
+    "id": "CAT-B06",
+    "severity": "high",
+    "category": "moderation_operator_context",
+    "description": "approve_service_version_internal in staging sets request.jwt.claims but not request.jwt.claim.sub; approve_service_version resolves auth.uid() through current_user_role and therefore returns ADMIN_REQUIRED when invoked through the wrapper.",
+    "workaroundUsedForThisAuthorizedRemediation": "Called the canonical approve_service_version function with a transaction-local authenticated context for an existing active admin after a rollback-only proof that auth.uid/current_user_role/is_active_admin_or_moderator resolved correctly.",
+    "fixedInThisLot": false
+  }
 }
