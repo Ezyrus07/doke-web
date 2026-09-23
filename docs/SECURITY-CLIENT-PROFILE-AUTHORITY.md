@@ -33,6 +33,18 @@ A projeção é removida quando a conta é suspensa, excluída, deixa de ser ele
 
 As métricas são recalculadas por funções `private` acionadas por mudanças em pedidos e avaliações. A única RPC pública de reconciliação, `refresh_client_profile_metrics_internal(uuid)`, é executável exclusivamente por `service_role`. Funções `SECURITY DEFINER` usam `search_path = pg_catalog`, referências qualificadas e não são executáveis por `PUBLIC`, `anon`, `authenticated` ou diretamente por `service_role` quando são helpers internos.
 
+### 4. Papel público do perfil
+
+`public.public_profile_role_projection` é uma projeção pública mínima e server-owned da autoridade `public.users.role`. Ela contém somente `user_id`, `role` e `updated_at`, mantendo linhas apenas para contas `active` com papel `client` ou `professional`.
+
+- `anon` e `authenticated` recebem somente `SELECT`;
+- nenhuma escrita de navegador é permitida;
+- a sincronização ocorre por trigger privado a partir de `public.users`;
+- suspensão, exclusão ou mudança para papel não público remove a projeção;
+- `user_profiles` continua sendo a autoridade dos campos públicos editáveis e nunca é usado para inferir `role`.
+
+No frontend, `profile-service.getById()` combina `user_profiles` com essa projeção quando o provider Supabase está ativo. A ausência de qualquer uma das autoridades produz perfil indisponível, e falhas remotas não degradam silenciosamente para um perfil local potencialmente obsoleto. Identificadores públicos que não sejam UUID falham fechado antes de qualquer filtro remoto, preservando o estado vazio canônico para rotas sem sujeito válido.
+
 ## Decisões de arquitetura
 
 - O nome `client_profiles` foi preservado para evitar rename destrutivo, mas sua responsabilidade foi documentada como métricas privadas server-owned.
@@ -44,6 +56,6 @@ As métricas são recalculadas por funções `private` acionadas por mudanças e
 
 - Contrato estático: `npm run test:client-profile-authority-contract`.
 - Runtime JS: `npm run test:client-profile-authority-runtime`.
-- Staging/SQL transacional: `supabase/tests/008_client_profile_authority_validation.sql`.
+- Staging/SQL transacional: `supabase/tests/008_client_profile_authority_validation.sql` e `supabase/tests/015_public_profile_role_projection_validation.sql`.
 
 O teste SQL usa apenas contas existentes, executa mutações dentro de uma transação e termina com `ROLLBACK`.
