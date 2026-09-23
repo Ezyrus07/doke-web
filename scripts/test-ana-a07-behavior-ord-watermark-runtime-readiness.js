@@ -17,7 +17,7 @@ check('helper hidden from service role',!sql.includes('grant execute on function
 check('validation read only',!v.match(/insert\s+into|update\s+|delete\s+from|truncate\s+|cron\.schedule/i));
 check('validation invokes wrappers',v.includes('private.analytics_behavior_watermark_v1()')&&v.includes('private.order_metric_watermark_v1()'));
 check('concurrent canary not falsely certified',c.validationPlan?.concurrentWriterCase==='requires_multi_session_staging_canary');
-check('late fact remains future proof',c.validationPlan?.lateFactCase==='requires_A09_projection_canary_after_watermark_application');
+check('late fact remains future proof',c.validationPlan?.lateFactCase==='requires_A09_projection_canary_after_watermark_concurrency_certification');
 check('original and compatibility applied, full certification pending',c.repositoryEvidence?.migrationApplied===true&&c.repositoryEvidence?.compatibilityMigrationApplied===true&&c.repositoryEvidence?.stagingValidated===false&&c.validationPlan?.validation041Status==='passed'&&c.validationPlan?.concurrentWriterCase==='requires_multi_session_staging_canary');
 check('compatibility uses explicit CASE',compatibility.includes('v_data_through := case')&&!compatibility.includes('pg_catalog.least('));
 check('compatibility preserves active/prepared order',compatibility.indexOf('from pg_catalog.pg_stat_activity')>=0&&compatibility.indexOf('from pg_catalog.pg_prepared_xacts')>compatibility.indexOf('from pg_catalog.pg_stat_activity'));
