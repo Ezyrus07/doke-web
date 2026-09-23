@@ -58,9 +58,9 @@
     "thresholdComparison": "stale when lagSeconds > maxLagSeconds; fresh otherwise after full window coverage"
   },
   "thresholdAuthority": {
-    "status": "pending_versioned_metric_policy",
+    "status": "metric_specific_policy_active_no_global_default",
     "defaultMaxLagSeconds": null,
-    "reason": "No canonical analytics cadence or freshness SLO is currently approved in the repository. Repository code must not invent one.",
+    "reason": "ANA-A07 still forbids any implicit global maxLagSeconds. liquidity.active_service_seconds v1 now has an explicit versioned revision-1 policy with maxLagSeconds=360; metrics without an approved metric-specific policy continue to fail closed.",
     "requiredFields": [
       "policyId",
       "metricKey",
@@ -68,7 +68,19 @@
       "maxLagSeconds",
       "effectiveFrom"
     ],
-    "runtimeActivationBlockedUntilThresholds": true
+    "runtimeActivationBlockedUntilThresholds": true,
+    "activeMetricPolicies": [
+      {
+        "policyId": "ana-a11-liquidity-v1-r1",
+        "metricKey": "liquidity.active_service_seconds",
+        "metricVersion": "v1",
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-23T16:00:00Z",
+        "effectiveUntil": null,
+        "runtimeCertified": true,
+        "evidenceArtifact": "reports/generated/ana-a11-post-effective-runtime-evidence.json"
+      }
+    ]
   },
   "metricDependencies": [
     {
@@ -125,7 +137,10 @@
       "sourceDomains": [
         "CAT-001"
       ],
-      "thresholdStatus": "pending"
+      "thresholdStatus": "active_policy_r1",
+      "policyId": "ana-a11-liquidity-v1-r1",
+      "maxLagSeconds": 360,
+      "runtimeCertified": true
     },
     {
       "metricKey": "retention.repeat_request_30d",
@@ -226,6 +241,6 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A07 closes the repository freshness/window-selection contract only. Operational freshness remains blocked until thresholds, watermarks and runtime enforcement are materialized and proven in staging; funnel, CAT liquidity and retention also remain incomplete."
+    "reason": "A07 remains the canonical freshness/window-selection contract. For liquidity.active_service_seconds, the metric-specific r1 threshold, CAT watermark and post-effective staging behavior are now active and certified; other ANA metrics still require their own thresholds/runtime evidence, so ANA remains 3/6."
   }
 }

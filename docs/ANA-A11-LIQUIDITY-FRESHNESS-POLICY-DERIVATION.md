@@ -630,7 +630,7 @@ Persistent cron row:
 - active: `true`;
 - command: `select private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp());`.
 
-The policy remains future-effective until `2026-09-23T16:00:00Z`. The planner explicitly returns no windows before that boundary, so enabling the cron early is safe.
+At scheduler activation time, the policy was future-effective until `2026-09-23T16:00:00Z`. The planner correctly returned no windows before that boundary, proving that enabling the cron early did not force premature publication.
 
 Observed real pg_cron executions before policy effectiveness:
 
@@ -646,6 +646,35 @@ At `2026-09-23T14:57:15.961250Z`:
 
 This is the expected pre-effective behavior. The first canonical five-minute window cannot close until `2026-09-23T16:05:00Z`.
 
-The activation authorization is consumed. Scheduler activation is complete, but post-effective scheduled-runtime evidence is not yet available. The next required evidence must prove that a real five-minute window is materialized after `16:05Z`, that all required series are covered, replay is idempotent, and publication remains within the approved `projectionDelaySloSeconds=60` when the CAT watermark permits.
+The activation authorization is consumed. The pre-effective observation above remains historical evidence; the time gate has now closed.
 
-No production mutation, browser analytics activation, anonymous identity stitching, merge or Ready for review was performed. ANA remains **3/6**.
+## Post-effective scheduled-runtime certification — read-only
+
+Authorized repository-evidence scope:
+
+`authorize-ana-a11-post-effective-runtime-evidence-repository-only head=b6bc5a94569faf9e0aab0fa646a57e7b8ade28cf matrix=v1.3.132`
+
+Canonical read-only observation at `2026-09-23T19:23:51.047151Z` proved:
+
+- job `8` remained the single relevant active ANA/liquidity cron;
+- the first canonical window `16:00Z → 16:05Z` materialized exactly **3/3** required series: global, UUID-category/BA and `limpeza`/BA;
+- the first window was fully materialized at `16:05:00.148650Z`, approximately **0.149s** after close versus the approved **60s** projection-delay SLO;
+- **40/40** canonical closed windows from `16:00Z` through `19:20Z` were present, each exactly **300s** and exactly **3** series;
+- maximum observed completion delay was approximately **0.487s**; windows over the 60s SLO: **0**;
+- all observed post-effective snapshots were `coverageState=complete`, `projectionState=authoritative` and snapshot-reconciled;
+- all 40 reconciliation windows were matched with zero core structural divergences;
+- duplicate snapshot keys: **0**;
+- planner at observation: `[]`, so there was no closed-window backlog;
+- the latest canonical closed window was `19:15Z → 19:20Z`, fully materialized **3/3**, with `dataThrough=19:20Z`;
+- at `19:23:14.310840Z`, that latest window age was approximately **194.31s**, below `maxLagSeconds=360`;
+- ANA-A07 therefore evaluated the latest canonical window directly with **no fallback** to an older window.
+
+The lot intentionally performed no manual replay because the scope was read-only. Idempotency remains supported by the already-certified rollback replay canary plus the real scheduler evidence: repeated one-minute polls created no duplicate snapshot keys or extra revisions for completed windows, and the planner was empty after full materialization.
+
+A later read-only drift check at `2026-09-23T22:08:09.686739Z` corroborated continuity: publication policy count **1**, freshness policy count **1**, relevant cron count **1**, failed runs since effective **0**, planner `[]`, duplicate snapshot keys **0**, and the latest snapshot window had advanced to `22:05Z`.
+
+Canonical evidence is persisted at `reports/generated/ana-a11-post-effective-runtime-evidence.json`.
+
+**ANA-A11 is operationally certified in staging.** This does not promote ANA-001 by itself: ANA remains **3/6** because broader funnel/retention/data-quality ownership gates plus LEGAL/PAY dependencies remain separately governed.
+
+No staging mutation was performed by this evidence lot. No policy or scheduler value changed. Production, browser analytics, anonymous identity stitching, merge and Ready for review remain untouched.

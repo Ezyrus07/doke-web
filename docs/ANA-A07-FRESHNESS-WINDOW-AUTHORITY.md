@@ -6,7 +6,7 @@ ANA-A07 defines the repository authority for `dataThrough`, dependency watermark
 
 ## Root cause
 
-A05 already contains a local `applyFreshness(...)` helper, but its `maxLagSeconds` is supplied ad hoc. There is no canonical threshold registry or dependency-watermark authority.
+A05 already contains a local `applyFreshness(...)` helper, but its `maxLagSeconds` was historically supplied ad hoc. ANA-A07 therefore established the versioned threshold/dependency-watermark authority. `liquidity.active_service_seconds` now consumes explicit revision-1 policy `ana-a11-liquidity-v1-r1`; no global default was introduced.
 
 A04 also returns `dataThrough = windowEnd` from `compute_analytics_order_health_v1(...)`. That is acceptable as a calculation boundary only when every canonical dependency is actually proven materialized through the same point. The current runtime does not yet prove that watermark.
 
@@ -49,9 +49,9 @@ Freshness is evaluated **after** selecting that latest canonical window. There i
 
 ## Threshold boundary
 
-No repository authority currently defines a canonical analytics cadence or `maxLagSeconds` per metric. ANA-A07 therefore forbids an implicit default. Missing threshold policy evaluates fail-closed as **unavailable**.
+ANA-A07 continues to forbid an implicit global default. Missing metric-specific threshold policy evaluates fail-closed as **unavailable**.
 
-Runtime activation requires a versioned metric-specific policy containing at least `policyId`, `metricKey`, `metricVersion`, `maxLagSeconds` and `effectiveFrom`.
+For `liquidity.active_service_seconds v1`, revision-1 policy `ana-a11-liquidity-v1-r1` is active from `2026-09-23T16:00:00Z` with `maxLagSeconds=360`. Post-effective staging evidence confirms that the latest canonical closed window is evaluated directly against that threshold with no fallback to an older window. Other metrics remain independently pending until they receive their own versioned policies.
 
 ## Boundaries
 
@@ -59,4 +59,4 @@ This sublot is repository-only. It performs no database access, migration, stagi
 
 A06 structural data quality and A07 freshness remain distinct dimensions: a reconciliation can be structurally correct and still stale.
 
-ANA-001 remains **3/6**. Runtime watermark materialization, threshold activation and staging proof require a separate authorized lot.
+ANA-001 remains **3/6**. For CAT liquidity, watermark materialization, threshold activation and post-effective staging proof are closed; remaining ANA metrics and broader maturity gates stay independently governed.

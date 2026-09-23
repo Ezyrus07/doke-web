@@ -21,22 +21,22 @@ Replay order is `service_id + sequence_no`; `occurred_at` is an interval boundar
 
 Because staging intentionally did not baseline existing non-synthetic eligible listings, observed seconds are not automatically canonical. `observedLowerBoundSeconds` is diagnostic; `valueSeconds` remains null until coverage is complete.
 
-Coverage is partial before CAT-A06 activation, without a complete activation baseline, on left-truncated history, when the CAT watermark stops before window end, or when CAT is stale.
+Coverage is partial before the certified CAT-A07 forward-coverage epoch, when no certified epoch covers the selected window, when the CAT watermark stops before window end, or when CAT is stale. Historical left-truncation remains diagnostic and is never rewritten, but it does not invalidate windows beginning at or after the certified `coverageCompleteFrom` boundary.
 
 ## Segmentation and freshness
 
 Category/state comes only from CAT-A06 frozen dimension snapshots; historical joins to mutable catalog rows are forbidden.
 
-`dataThrough` is now backed in staging by the versioned CAT transaction-snapshot watermark. A04/A05 snapshot and reconciliation wiring plus the controlled synthetic canary are closed. Authoritative freshness remains blocked only because no versioned liquidity `maxLagSeconds` policy is approved; the runtime therefore returns `POLICY_THRESHOLD_MISSING` fail-closed.
+`dataThrough` is backed in staging by the versioned CAT transaction-snapshot watermark. Revision-1 liquidity policy `ana-a11-liquidity-v1-r1` is now active with `maxLagSeconds=360`, and post-effective scheduled runtime proves authoritative freshness for complete post-epoch windows. Missing or expired future policies still fail closed; no implicit threshold exists.
 
 Staging now has the A10 runtime and synthetic evidence. No deploy, browser activation, identity stitching, CAT source mutation, historical backfill or production change occurred.
 
 ## Staging evidence
 
-Migration `20260922140215` plus compatibility follow-up `20260922140344` are applied. The global/BA/SP canary appended three snapshots and three matched CAT→ANA reconciliation runs, plus six healthy technical DQ rollups. CAT remained 7 rows with sequence 1–7 and the global source fingerprint stayed unchanged. No freshness policy row was inserted, so all snapshots correctly remain `projectionState=unavailable`, `coverageState=partial`, `value=null`.
+Migration `20260922140215` plus compatibility follow-up `20260922140344` are applied. The earlier global/BA/SP synthetic canary remains valid historical evidence. After CAT-A07 coverage handoff and ANA-A11 policy/scheduler activation, the first real `16:00Z→16:05Z` window materialized all three required global + category/state series by `16:05:00.148650Z`; 40/40 closed windows observed through `19:20Z` were complete, authoritative and reconciled, with zero duplicate snapshot keys and a maximum publication delay of ~`0.487s` against the `60s` SLO.
 
 ## Policy and coverage handoffs
 
-ANA-A11 now owns the derivation rule for the missing freshness threshold: `maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds`. All three values remain unset because no analytics publication cadence/SLO is currently authoritative.
+ANA-A11 owns the derivation rule `maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds`. Revision 1 is persisted as `300 + 60 = 360`, and the scheduler consumes only planner-selected canonical windows.
 
-CAT-A07 now owns the only acceptable path to complete supply coverage: a forward-only CAT baseline and separately certified coverage epoch. It does not rewrite the CAT-A06 activation row or infer prior publish times. The current A10 runtime remains partial until that future epoch is implemented and consumed.
+CAT-A07 owns the forward-only supply-coverage epoch. That epoch is certified and consumed by A10 without rewriting CAT-A06 history. Pre-epoch history remains partial; qualifying post-epoch windows can be complete and authoritative when the CAT watermark and structural checks pass.

@@ -76,12 +76,16 @@
     "sourceDomain": "CAT-001",
     "metricKey": "liquidity.active_service_seconds",
     "dataThroughAuthority": "ANA-A07 dependencyWatermark",
-    "metricThresholdStatus": "pending_publication_cadence_and_projection_delay_slo",
+    "metricThresholdStatus": "active_policy_r1",
     "catSourceWatermarkStatus": "staging_runtime_active",
     "maxEventTimestampDefinesFreshness": false,
     "computedAtDefinesFreshness": false,
-    "runtimeActivationBlocked": true,
-    "policyDerivationContract": "ana-a11-liquidity-freshness-policy-derivation-v1"
+    "runtimeActivationBlocked": false,
+    "policyDerivationContract": "ana-a11-liquidity-freshness-policy-derivation-v1",
+    "policyId": "ana-a11-liquidity-v1-r1",
+    "maxLagSeconds": 360,
+    "runtimeCertified": true,
+    "evidenceArtifact": "reports/generated/ana-a11-post-effective-runtime-evidence.json"
   },
   "runtimeRequirements": [
     "server-side read path for CAT-A06 ledger and activation state without browser access",
@@ -124,7 +128,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A10 runtime, CAT-A07 forward coverage epoch and coverage handoff are active in staging. ANA remains 3/6 because the liquidity publication cadence/projection-delay SLO and derived maxLagSeconds policy are still unset, plus broader ANA blockers remain."
+    "reason": "A10 runtime, CAT-A07 forward coverage epoch/handoff and ANA-A11 revision-1 freshness policy are active in staging. Post-effective scheduled runtime proves complete authoritative global + category/state liquidity windows with matched reconciliation and bounded freshness. ANA remains 3/6 because broader ANA gates are independent of A10/A11 closure."
   },
   "runtimeImplementation": {
     "baseMigration": "supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql",
@@ -137,12 +141,14 @@
     "stagingApplied": true,
     "stagingCanary": true,
     "stagingEvidence": "reports/generated/ana-a10-cat-liquidity-runtime-staging-evidence.json",
-    "liquidityPolicyInserted": false,
+    "liquidityPolicyInserted": true,
     "coverageEpochHandoffMigration": "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
     "coverageEpochHandoffAppliedVersion": "20260923000720",
-    "coverageCompleteFrom": "2026-09-23T00:06:30.6835Z"
+    "coverageCompleteFrom": "2026-09-23T00:06:30.6835Z",
+    "liquidityPolicyId": "ana-a11-liquidity-v1-r1",
+    "liquidityFreshnessMaxLagSeconds": 360,
+    "postEffectiveRuntimeCertified": true,
+    "postEffectiveEvidence": "reports/generated/ana-a11-post-effective-runtime-evidence.json"
   },
-  "remainingAuthorities": [
-    "ANA-A11 versioned windowStepSeconds and projectionDelaySloSeconds, followed by derived maxLagSeconds policy activation"
-  ]
+  "remainingAuthorities": []
 }
