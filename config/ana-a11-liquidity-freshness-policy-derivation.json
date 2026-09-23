@@ -6,7 +6,7 @@
   "sourceHead": "1825c11544a19162438c2b63c099d9e6d2b4547f",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "initial_policy_persisted_future_effective_scheduler_unactivated",
+  "status": "initial_policy_persisted_scheduler_activation_candidate_ready_repository_only",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -50,7 +50,7 @@
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
     "The repository window-planner and catch-up-executor candidates are explicitly authorized, applied and validated in staging; both remain driven only by an approved publication-policy row.",
-    "A Supabase pg_cron job invokes private.run_analytics_cat_liquidity_catch_up_v1 at the approved cadence; direct cron invocation of the A10 per-series runner is forbidden.",
+    "A Supabase pg_cron job polls private.run_analytics_cat_liquidity_catch_up_v1 no slower than the approved projectionDelaySloSeconds; the policy-driven planner, not cron frequency, remains the authority for 300-second publication windows.",
     "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
     "ANA-A07 boundary tests prove fresh at <= maxLagSeconds and stale at > maxLagSeconds without older-window fallback.",
     "The canonical activation call atomically creates the publication policy and matching freshness policy; no independent hand-entered freshness insert is permitted."
@@ -142,7 +142,8 @@
     "policyActivationRuntimeAuthority": true,
     "policyApprovalEnvelopeContractAuthority": true,
     "policyApprovalEnvelopeRuntimeEnforcementAuthority": true,
-    "policyApprovalEnvelopeRuntimeEnforcementCandidateAuthority": true
+    "policyApprovalEnvelopeRuntimeEnforcementCandidateAuthority": true,
+    "schedulerActivationCandidateAuthority": true
   },
   "prohibitedEffects": {
     "networkRequests": false,
@@ -163,7 +164,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A11 now has staging structural authorities, runtime-enforced approval evidence, and a persisted revision-1 publication/freshness policy effective from 2026-09-23T16:00:00Z. Scheduler activation and scheduled-runtime evidence remain unresolved, so ANA stays 3/6."
+    "reason": "A11 has staging structural authorities, runtime-enforced approval evidence and persisted revision-1 publication/freshness policy. A repository-only scheduler activation candidate now derives one-minute polling from the approved 60-second projection-delay SLO while preserving the 300-second planner grid. Scheduler runtime is still unactivated, so ANA stays 3/6."
   },
   "sourceDomainWatermarkSemantics": {
     "sourceDomain": "CAT-001",
@@ -233,9 +234,16 @@
     },
     "scheduler": {
       "owner": "ANA-001",
-      "decision": "Publication/freshness policy revision 1 is persisted and becomes effective at 2026-09-23T16:00:00Z. Remaining operational gate: separately authorize the selected database-local pg_cron scheduler, then prove scheduled window closure/replay/freshness behavior in staging.",
+      "decision": "Repository-only scheduler activation candidate is ready. Next gate is separate staging authorization to apply only the candidate migration and execute validation 040 rollback-only. A later, separate authorization is still required to invoke the activation function and persist the cron job.",
       "selectedTopology": "supabase_pg_cron_database_local",
-      "currentlyAuthorized": false
+      "currentlyAuthorized": false,
+      "candidate": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
+      "validation": "supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql",
+      "jobName": "doke-ana-liquidity-v1-r1",
+      "pollSchedule": "* * * * *",
+      "pollIntervalSeconds": 60,
+      "publicationWindowStepSeconds": 300,
+      "activationFunction": "private.activate_analytics_cat_liquidity_scheduler_v1"
     },
     "windowBoundaryGrid": {
       "owner": "ANA-001",
@@ -282,7 +290,7 @@
       "effectiveUntil": null
     }
   },
-  "updatedAt": "2026-09-23T14:16:48.529532Z",
+  "updatedAt": "2026-09-23T14:32:00.000Z",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -313,7 +321,17 @@
       "public.run_analytics_cat_liquidity_projection_v1"
     ],
     "futureCronTarget": "private.run_analytics_cat_liquidity_catch_up_v1",
-    "bypassPlannerAllowed": false
+    "bypassPlannerAllowed": false,
+    "publicationCadenceSeconds": 300,
+    "schedulerPollIntervalSeconds": 60,
+    "schedulerPollCron": "* * * * *",
+    "pollingSemantics": {
+      "publicationCadenceAuthority": "windowStepSeconds=300 from persisted policy revision 1",
+      "pollIntervalDerivation": "projectionDelaySloSeconds=60 -> pg_cron minute polling",
+      "reason": "Polling every minute is intentionally more frequent than the 5-minute publication grid. The planner emits only canonical 300-second closed windows, while minute polling prevents a boundary/watermark race from waiting an additional full publication window.",
+      "subWindowPublicationAllowed": false,
+      "plannerRemainsWindowAuthority": true
+    }
   },
   "canonicalWindowGrid": {
     "status": "revision_1_persisted_future_effective",
@@ -764,5 +782,29 @@
       "effectiveUntil": null,
       "activationAuthorizationConsumed": true
     }
+  },
+  "schedulerActivationCandidate": {
+    "contractId": "ana-a11-liquidity-scheduler-activation-v1",
+    "migration": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
+    "validationSql": "supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql",
+    "status": "repository_candidate_not_applied",
+    "sourcePolicyId": "ana-a11-liquidity-v1-r1",
+    "sourcePolicyEvidenceDigestSha256": "f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d",
+    "jobName": "doke-ana-liquidity-v1-r1",
+    "schedule": "* * * * *",
+    "pollIntervalSeconds": 60,
+    "publicationWindowStepSeconds": 300,
+    "projectionDelaySloSeconds": 60,
+    "target": "private.run_analytics_cat_liquidity_catch_up_v1",
+    "targetCommand": "select private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp());",
+    "plannerBypassAllowed": false,
+    "directA10InvocationAllowed": false,
+    "conflictPolicy": "fail_closed_DOKE_ANALYTICS_SCHEDULER_JOB_CONFLICT",
+    "replayBehavior": "NO_CHANGE_when_exact_active_job_already_exists",
+    "ownerBoundary": "postgres_only",
+    "migrationCreatesCronAtApplyTime": false,
+    "stagingApplied": false,
+    "validationExecutedInStaging": false,
+    "schedulerActivated": false
   }
 }

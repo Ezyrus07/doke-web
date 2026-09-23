@@ -1,5 +1,6 @@
 'use strict';
 const fs=require('fs');const path=require('path');const c=require('../config/ana-a11-liquidity-freshness-policy-derivation.json');const publicationMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923012500_ana_a11_liquidity_publication_policy_authority.sql'),'utf8');const plannerMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923023000_ana_a11_liquidity_window_planner.sql'),'utf8');const activationMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923025000_ana_a11_liquidity_policy_activation.sql'),'utf8');const executorMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923024000_ana_a11_liquidity_catch_up_executor.sql'),'utf8');const migration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923011500_ana_a11_liquidity_series_orchestration.sql'),'utf8');
+const schedulerMigration=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260923031000_ana_a11_liquidity_scheduler_activation.sql'),'utf8');const schedulerValidation=fs.readFileSync(path.join(__dirname,'..','supabase','tests','040_ana_a11_liquidity_scheduler_activation_validation.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});const eq=(n,a,b)=>check(n,a===b);
 function derive(input){
   if(!input||!Number.isInteger(input.windowStepSeconds)||input.windowStepSeconds<=0)throw new Error('ANA_LIQUIDITY_WINDOW_STEP_REQUIRED');
@@ -76,6 +77,11 @@ eq('fresh maps authoritative',c.freshnessStateSemantics.projectionStateMapping.f
 eq('stale maps stale',c.freshnessStateSemantics.projectionStateMapping.stale,'stale');
 eq('unavailable maps unavailable',c.freshnessStateSemantics.projectionStateMapping.unavailable,'unavailable');
 check('scheduler remains unauthorized',c.pendingAuthorityDecisions.scheduler.currentlyAuthorized===false);
+check('scheduler candidate remains repository only',c.schedulerActivationCandidate.status==='repository_candidate_not_applied'&&c.schedulerActivationCandidate.stagingApplied===false&&c.schedulerActivationCandidate.schedulerActivated===false&&c.authority.schedulerActivationCandidateAuthority===true&&c.authority.schedulerActivationAuthority===false);
+check('scheduler polls on SLO while planner keeps five-minute grid',c.schedulerActivationCandidate.schedule==='* * * * *'&&c.schedulerActivationCandidate.pollIntervalSeconds===60&&c.schedulerActivationCandidate.publicationWindowStepSeconds===300&&c.schedulerTopology.pollingSemantics.plannerRemainsWindowAuthority===true);
+check('scheduler activation targets only bounded catch-up executor',schedulerMigration.includes("'doke-ana-liquidity-v1-r1'")&&schedulerMigration.includes('private.run_analytics_cat_liquidity_catch_up_v1')&&!schedulerMigration.includes('run_analytics_cat_liquidity_projection_v1')&&!schedulerMigration.includes('run_analytics_cat_liquidity_window_v1'));
+check('scheduler activation exact binding and idempotency encoded',schedulerMigration.includes('f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d')&&schedulerMigration.includes('DOKE_ANALYTICS_SCHEDULER_JOB_CONFLICT')&&schedulerMigration.includes("'NO_CHANGE'"));
+check('scheduler validation is rollback-only',schedulerValidation.includes('begin;')&&schedulerValidation.includes('rollback;')&&schedulerValidation.includes("v_after <> 1"));
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;

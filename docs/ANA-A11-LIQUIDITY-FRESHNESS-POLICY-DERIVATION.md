@@ -516,3 +516,44 @@ Scheduler remains separate and **not authorized**:
 - PR merge/ready-for-review: unchanged.
 
 This section supersedes earlier statements that operational policy values were unset. ANA remains **3/6** until scheduled runtime behavior is activated and evidenced.
+
+
+## Scheduler activation candidate — repository only
+
+The persisted revision-1 policy separates two time concepts that must not be conflated:
+
+- **publication cadence:** `windowStepSeconds=300`; only the planner may emit these canonical five-minute windows;
+- **scheduler poll interval:** **60 seconds**, mechanically constrained by `projectionDelaySloSeconds=60`.
+
+A cron expression of `*/5 * * * *` would poll only once per publication window. If that invocation races the CAT watermark at a boundary, the next opportunity would be a full five minutes later. The repository candidate therefore uses:
+
+`* * * * *`
+
+This does **not** create one-minute liquidity windows. Every invocation still enters:
+
+`pg_cron → private.run_analytics_cat_liquidity_catch_up_v1 → private.plan_analytics_cat_liquidity_windows_v1 → private.run_analytics_cat_liquidity_window_v1 → A10`
+
+and the planner continues to emit only the persisted 300-second grid.
+
+Repository candidate:
+
+- `supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql`;
+- `supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql`;
+- activation function: `private.activate_analytics_cat_liquidity_scheduler_v1(text)`;
+- job name: `doke-ana-liquidity-v1-r1`;
+- target: `private.run_analytics_cat_liquidity_catch_up_v1`;
+- schedule: `* * * * *`.
+
+The activation function is bound to the exact persisted r1 policy/evidence digest, rejects unsupported policy identity or binding drift, fails closed if any conflicting ANA/liquidity cron exists, and is idempotent only when the exact active job already exists (`NO_CHANGE`). It is owner-only and grants no execute privilege to `anon`, `authenticated` or `service_role`.
+
+Applying this migration **does not schedule anything**. It only installs the activation boundary.
+
+Validation `040` is designed for a later separately authorized staging application. Inside a transaction it will create the job, verify schedule/command/database/postgres owner, replay the activation as `NO_CHANGE`, assert a single job, and then rollback. Persistent scheduler activation remains a separate authorization after that validation.
+
+Current state:
+
+- candidate applied in staging: **false**;
+- scheduler activated: **false**;
+- ANA/liquidity cron jobs: **0**;
+- production: unchanged;
+- ANA maturity: **3/6**.
