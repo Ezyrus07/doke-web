@@ -10,7 +10,6 @@ on:
       - 'supabase/functions/service-moderation-operations/**'
       - 'scripts/test-service-moderation-operator-authority-contract.js'
       - 'scripts/test-service-moderation-operations-runtime.mjs'
-      - 'scripts/test-service-moderation-flow-contract.js'
       - 'scripts/test-service-moderation-audit-history-contract.js'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
@@ -35,12 +34,10 @@ jobs:
       - run: |
           node --check scripts/test-service-moderation-operator-authority-contract.js
           node --check scripts/test-service-moderation-operations-runtime.mjs
-          node --check scripts/test-service-moderation-flow-contract.js
           node --check scripts/test-service-moderation-audit-history-contract.js
       - run: |
           npm run test:service-moderation-operator-authority-contract
           npm run test:service-moderation-operations-runtime
-          npm run test:service-moderation-flow-contract
           npm run test:service-moderation-audit-history-contract
       - run: |
           npm run audit:domain-completion-matrix

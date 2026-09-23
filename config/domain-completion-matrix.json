@@ -1,6 +1,6 @@
 {
-  "version": "1.3.122",
-  "updatedAt": "2026-09-22T21:08:00-03:00",
+  "version": "1.3.123",
+  "updatedAt": "2026-09-22T21:44:21-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -291,7 +291,7 @@
         "Four self-service financial RPCs remain explicitly authenticated and revalidate active canonical roles from public.users; forged JWT metadata cannot elevate financial authority.",
         "Support/admin financial decisions now pass through financial-operations version 1 with verify_jwt enabled and service-role-only internal RPCs that revalidate the canonical actor.",
         "Twenty-six remote financial persona and mutation canaries passed in one rolled-back transaction, including withdrawal idempotency, dispute lifecycle, direct-DML denial and operator separation.",
-        "All 45 public tables now have RLS enabled; the security advisor reports zero rls_disabled_in_public findings.",
+        "All 48 public tables currently observed in staging have RLS enabled and all 48 have at least one public-schema RLS policy; zero public tables are RLS-disabled.",
         "Notifications are authenticated-only with recipient RLS, column-scoped state updates, safe search_path and immutable idempotency context.",
         "audit_logs, categories, favorites, availability, reviews, budgets, message attachments, reports and community tables now use explicit least-privilege grants and persona RLS.",
         "service-media no longer exposes a broad storage listing policy; owner operations are folder- and identity-scoped while public object delivery remains bucket-native.",
@@ -305,7 +305,7 @@
         "The JWT-protected self-service-operations Edge Function derives the actor from auth.getUser and invokes a service-role-only dispatcher; actor identity is never accepted from the request body.",
         "The dispatcher reconstructs auth.uid for the existing hardened domain implementations and rejects operations outside a fourteen-action allowlist.",
         "Five new remote dispatcher assertions passed with rollback; the cumulative SEC-001 remote assertion count is 121.",
-        "The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.",
+        "The current staging security advisor reports the intentionally public SECURITY DEFINER surfaces for username availability/public search, authenticated canonical order-command surfaces, and leaked-password protection disabled; CAT-B06 moderation wrappers remain service-role-only and are not among those findings.",
         "Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.",
         "Source files for migrations 110-134, the service-moderation-operations Edge Function, SQL validations and contract tests were recovered byte-for-byte from the prior validated public-data-authority delivery; the published SHA-256 manifest was verified. This recovery is packaged for review but is not Git-authoritative until committed and validated in CI.",
         "SEC-B08 was closed after the checksum-proven migrations 110-134 and service-moderation sources were committed at d0ae2657, the GitHub quality gates passed on that SHA, and the matching migration names plus service-moderation-operations v2 were observed read-only in staging.",
@@ -685,7 +685,12 @@
         "scripts/test-cat-a07-supply-coverage-baseline-readiness.js",
         "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql",
         "reports/generated/cat-a07-staging-baseline-attempt-evidence.json",
-        "reports/generated/cat-a07-staging-coverage-epoch-evidence.json"
+        "reports/generated/cat-a07-staging-coverage-epoch-evidence.json",
+        "supabase/migrations/20260923002000_cat_b06_moderation_operator_context.sql",
+        "scripts/test-service-moderation-operator-authority-contract.js",
+        "scripts/test-service-moderation-operations-runtime.mjs",
+        ".github/workflows/cat-b06-moderation-operator-context.yml",
+        "reports/generated/cat-b06-staging-moderation-operator-context-evidence.json"
       ],
       "scanRoots": [
         "assets/js/repositories/services-repository.js",
@@ -726,7 +731,10 @@
         "audit:cat-a07-supply-coverage-baseline",
         "test:cat-a07-supply-coverage-baseline",
         "audit:cat-a07-supply-coverage-baseline-readiness",
-        "test:cat-a07-supply-coverage-baseline-readiness"
+        "test:cat-a07-supply-coverage-baseline-readiness",
+        "test:service-moderation-operator-authority-contract",
+        "test:service-moderation-operations-runtime",
+        "test:service-moderation-audit-history-contract"
       ],
       "evidence": [
         "Supabase service repository, version moderation and admin review exist.",
@@ -747,22 +755,15 @@
         "CAT-A07 defines a forward-only CAT-owned coverage epoch: a future authorized baseline must atomically snapshot every current service, append activation_baseline facts without rewriting CAT-A06 activation/history, and abort on any current-state/ledger drift. No baseline is executed by this contract.",
         "CAT-A07 staging readiness now includes a serialized forward-baseline migration candidate, fail-closed current-state/ledger preflight, one activation_baseline fact per current service, append-only certified coverage epoch, and no CAT-A06 activation rewrite; nothing is applied to staging without the exact CAT-A07 authorization.",
         "CAT-A07 schema is applied in staging, but baseline certification is fail-closed on CAT-A07-B01: one currently eligible published service lacks canonical state. Two baseline attempts persisted zero baseline facts and zero coverage epochs; the second aborts before writes via DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE.",
-        "CAT-A07 staging coverage is certified from 2026-09-23T00:06:30.6835Z: 2 current services reconciled to 2 activation_baseline facts, replay is idempotent, the CAT-A06 activation row remains immutable, and ANA-A10 consumes the certified epoch."
+        "CAT-A07 staging coverage is certified from 2026-09-23T00:06:30.6835Z: 2 current services reconciled to 2 activation_baseline facts, replay is idempotent, the CAT-A06 activation row remains immutable, and ANA-A10 consumes the certified epoch.",
+        "CAT-B06 is closed in staging by migration 20260923003844: all six service-role moderation wrappers revalidate the canonical active operator, reconstruct request.jwt.claim.sub/role/claims before delegating to auth.uid/current_user_role authorities, remain non-executable by anon/authenticated, and passed read, approve, request-changes, reject and negative-role canaries with mutation paths rolled back and zero persistent residue."
       ],
-      "blockers": [
-        {
-          "id": "CAT-B06",
-          "severity": "high",
-          "category": "moderation_operator_context",
-          "description": "The staging approve_service_version_internal wrapper does not propagate request.jwt.claim.sub, so the downstream auth.uid/current_user_role check returns ADMIN_REQUIRED. Canonical approval works when the real active operator context is supplied directly; the wrapper itself still requires hardening.",
-          "targetPhase": "Fase 5"
-        }
-      ],
+      "blockers": [],
       "nextActions": [
         "Keep all CAT-001 authority, lifecycle and CAT-A06 visibility-ledger audits cumulative in Quality.",
         "Expose CAT-A06 only as a server-side source dependency for ANA liquidity; do not create a second lifecycle writer.",
-        "CAT-A07 migration/readiness is repository-prepared. Keep supply coverage partial until the exact staging authorization is consumed, the serialized baseline certifies a coverage epoch, and ANA-A10 coverage handoff is applied.",
-        "Harden approve_service_version_internal so the service-role wrapper propagates the operator sub consistently with current_user_role/auth.uid, then run the existing moderation operator canary."
+        "Preserve the certified CAT-A07 coverage epoch and keep all pre-epoch history partial; do not backfill or rewrite the CAT-A06 activation row.",
+        "Keep the CAT-B06 operator-context regression gate cumulative for all six service-role moderation wrappers."
       ],
       "exitCriteria": [
         "Create, submit, moderate, publish, edit, pause and archive work remotely.",
