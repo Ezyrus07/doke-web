@@ -3410,7 +3410,15 @@
         "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
         "supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql",
         "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
-        "supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql"
+        "supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql",
+        "config/ana-a11-liquidity-policy-approval-envelope.json",
+        "scripts/lib/ana-a11-liquidity-policy-approval-envelope.js",
+        "scripts/audit-ana-a11-liquidity-policy-approval-envelope.js",
+        "scripts/test-ana-a11-liquidity-policy-approval-envelope.js",
+        "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
+        "supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql",
+        "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
+        "supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3458,7 +3466,10 @@
         "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
         "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
         "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
-        "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql"
+        "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
+        "config/ana-a11-liquidity-policy-approval-envelope.json",
+        "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
+        "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql"
       ],
       "tables": [
         "service_metric_events",
@@ -3475,7 +3486,9 @@
       "edgeFunctions": [
         "analytics-behavior-v1"
       ],
-      "crons": [],
+      "crons": [
+        "doke-ana-liquidity-v1-r1"
+      ],
       "tests": [
         "test:quote-template-conversion-metrics-contract",
         "test:service-metrics-sync-contract",
@@ -3518,7 +3531,9 @@
         "audit:ana-a10-cat-liquidity-runtime-readiness",
         "test:ana-a10-cat-liquidity-runtime-readiness",
         "audit:ana-a11-liquidity-freshness-policy-derivation",
-        "test:ana-a11-liquidity-freshness-policy-derivation"
+        "test:ana-a11-liquidity-freshness-policy-derivation",
+        "audit:ana-a11-liquidity-policy-approval-envelope",
+        "test:ana-a11-liquidity-policy-approval-envelope"
       ],
       "evidence": [
         "Service and quote-template metric events exist.",
@@ -3549,19 +3564,15 @@
         "CAT-A06 now provides a server-owned append-only listing visibility/version ledger in staging with deterministic per-service sequencing and synthetic canary evidence. Existing pre-activation listing history remains partial; ANA liquidity runtime has not yet consumed the ledger.",
         "ANA-A10 defines deterministic repository liquidity projection from CAT-A06 service_id+sequence_no facts, keeps partial/unbaselined supply as a diagnostic lower bound rather than an authoritative metric, segments only by frozen CAT category/state dimensions, and delegates dataThrough to ANA-A07.",
         "ANA-A10 server runtime is applied in staging with a CAT transaction-snapshot watermark, A04 append-only liquidity snapshots, A05 CAT→ANA reconciliation and technical DQ. Global/BA/SP synthetic canary appended 3 snapshots, 3 matched reconciliation runs and 6 healthy rollups while the 7-row CAT source/fingerprint stayed unchanged; no maxLag policy was invented, so freshness remains fail-closed and supply coverage remains partial.",
-        "ANA-A11 proves the missing liquidity freshness number is downstream of a missing analytics publication cadence/SLO. It freezes maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds, forbids implicit grace, and keeps all three values unset until a versioned scheduler/cadence is approved.",
         "ANA-A10 has a repository-only CAT-A07 handoff migration candidate: only windows beginning at/after a certified coverage_complete_from may become complete; pre-epoch history stays partial and freshness remains fail-closed until ANA-A11 policy activation.",
-        "CAT-A07 staging baseline is currently blocked fail-closed because one eligible CAT listing lacks canonical state; ANA-A10 coverage handoff was intentionally not applied and liquidity remains partial.",
-        "CAT-A07 certified a forward coverage epoch in staging and ANA-A10 handoff proves pre-epoch windows remain partial while post-epoch windows become complete. Freshness still fails closed because the ANA-A11 policy is unset.",
-        "ANA-A11 read-only scheduler reconciliation selected a database-local Supabase pg_cron topology for the existing A10 runner, proved no active ANA/liquidity cron exists, and identified two additional activation gaps: no canonical window-grid anchor/alignment and no server-side enumerator for the required global + category/state liquidity series.",
-        "ANA-A11 now has a repository-only series-orchestration candidate: a private CAT-fact-backed enumerator emits the global series plus the monotonic category/state universe from the certified coverage epoch, and an atomic per-window wrapper delegates every series to the existing A10 runner. The candidate is not applied to staging and creates no cron or policy row.",
         "ANA-A11 category-identity reconciliation proved that the certified CAT epoch legitimately mixes a canonical UUID category and a legacy freeform category with no canonical category row. The series candidate normalizes only casing to match A10 comparison semantics, forbids UUID/name/slug equivalence inference and preserves historical representation changes as distinct forward series.",
-        "ANA-A11 read-only registry reconciliation proved the existing freshness-policy table stores only the derived threshold and currently has zero rows. A repository-only publication-policy candidate now stores cadence/SLO/anchor/catch-up/approval provenance with generated max lag, while keeping publication rows, freshness sync and scheduler activation unauthorized.",
         "ANA-A11 publication-policy selector now fails closed on overlapping effective policies and returns no implicit/default policy when none is effective; future operator overlap cannot silently become analytics authority.",
-        "ANA-A11 structural authorities are now validated in staging: series enumeration/window orchestration is installed as postgres-only runtime, publication-policy provenance schema is installed empty, rollback-only canaries proved 3-series append/replay idempotency and generated-threshold/overlap fail-closed behavior, and no ANA cron or policy row was activated.",
-        "ANA-A11 now has a repository-only, policy-driven canonical-window planner candidate. It aligns windows from approved anchor/step values, bounds them by CAT certified coverage and watermark, verifies every required CAT-backed dimension series, and returns oldest missing windows capped by the policy catch-up limit without creating snapshots or cron.",
-        "ANA-A11 now has a repository-only bounded catch-up executor candidate. It consumes only planner-selected windows in ordinal order and delegates each to the canonical A11 window orchestrator; it reads no policy table directly, creates no cron and carries no numeric defaults.",
-        "ANA-A11 now has a repository-only atomic policy-activation candidate. It accepts explicit publication inputs, derives maxLag mechanically, rejects overlap in both registries, and inserts publication + freshness rows with the same policyId/effective window in one transaction; it creates no cron and chooses no values."
+        "CAT-A07 forward coverage is certified in staging and the ANA-A10 handoff preserves pre-epoch history as partial while allowing post-epoch windows to become complete when CAT watermark and required-series coverage permit.",
+        "ANA-A11 series orchestration, canonical-window planner, bounded catch-up executor and atomic policy-activation structures are applied and validated in staging; validations 034-038 and rollback canaries proved required-series enumeration, 300-second grid planning, oldest-first bounded recovery and replay/idempotency behavior without bypassing the planner.",
+        "ANA-A11 approval-envelope runtime enforcement is applied in staging as migration 20260923135957; validation 039 passed, the legacy object-only activation path is tombstoned, and policy activation is bound to exact repository/matrix/authorization/value/effective-window evidence.",
+        "ANA-A11 revision-1 operational policy is persistently active for liquidity.active_service_seconds: policyId ana-a11-liquidity-v1-r1, windowStepSeconds=300, projectionDelaySloSeconds=60, derived maxLagSeconds=360, windowAnchor=1970-01-01T00:00:00Z, maxCatchUpWindowsPerInvocation=3, oldest-first recovery, effectiveFrom=2026-09-23T16:00:00Z, effectiveUntil=null; publication and freshness registries each contain the single coupled revision-1 policy.",
+        "ANA-A11 scheduler activation candidate is applied and validation 040 passed; the persistent staging scheduler is job 8 named doke-ana-liquidity-v1-r1, active on * * * * * as postgres/postgres, and invokes only private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp()), preserving the canonical planner -> window orchestrator -> A10 projection chain.",
+        "Real pre-effective pg_cron executions succeeded while the planner returned zero windows, proving safe future-effective behavior. Post-effective first-window materialization, complete global + category/state coverage, 60-second projection-delay budget and ANA-A07 latest-window/no-fallback behavior still require read-only runtime evidence before ANA-A11 can be operationally certified or ANA maturity reconsidered."
       ],
       "blockers": [
         {
@@ -3581,8 +3592,8 @@
       ],
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
-        "ANA-A06 ownership/data-quality staging canary is closed. ANA-A07 repository freshness/window authority is materialized, but operational freshness still requires versioned metric thresholds, source-domain watermarks and runtime/staging enforcement.",
-        "ANA-A10/CAT-A07 and ANA-A11 structural staging authorities are closed. Repository-only planner, bounded catch-up executor and atomic policy-activation candidates are ready but unapplied. The only remaining policy authority is the concrete values/evidence; no policy row or pg_cron activation is authorized.",
+        "Run read-only post-effective ANA-A11 verification against the persistent staging scheduler: prove job 8 uniqueness/health, the first canonical 16:00Z-16:05Z window and subsequent 300-second windows, required global + category/state coverage, no duplication, replay/idempotency, CAT watermark eligibility, reconciliation health, the 60-second projection-delay SLO, and ANA-A07 latest canonical closed-window evaluation with maxLagSeconds=360 and no older-window fallback.",
+        "Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
       ],
       "exitCriteria": [
