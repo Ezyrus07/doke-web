@@ -5,7 +5,7 @@
   "metricKey": "liquidity.active_service_seconds",
   "metricVersion": "v1",
   "scope": "repository_only",
-  "status": "runtime_enforcement_candidate_ready_repository_only_values_unset_activation_unauthorized",
+  "status": "runtime_enforcement_staging_validated_values_unset_activation_unauthorized",
   "createdAt": "2026-09-23T13:29:17.102Z",
   "createdAgainst": {
     "repositoryHead": "3c544b7aa395a6f637127473ce3f605b6970a24d",
@@ -14,11 +14,11 @@
   },
   "objective": "Make the first real liquidity publication-policy activation auditable and fail-closed by binding exact approved policy values, repository state, matrix state, policy identity and effective-window semantics to one single-use approval evidence object.",
   "rootCause": {
-    "approvalEvidenceShapeGap": "The staging activation function currently accepts any JSON object as approval_evidence; an empty object is structurally valid at the database boundary.",
+    "approvalEvidenceShapeGap": "Resolved in staging by the additive runtime-enforcement migration. The legacy object-only activation path is now a fail-closed tombstone and the envelope-aware approved activation validates exact bindings before insert.",
     "policyIdentityGap": "policy_id is currently constrained only by non-empty length and has no versioned ANA-A11 naming or revision rule.",
     "effectiveWindowGap": "effective_from/effective_until are structurally validated for ordering and overlap but have no canonical first-policy activation semantics.",
     "consequence": "A technically valid row could otherwise be inserted without proving exactly what was approved, against which repository/matrix state, or under which effective-window decision.",
-    "runtimeBypassClosureCandidate": "Prepared repository-only: an additive migration tombstones the legacy object-only activation path and introduces an approved activation path that validates exact envelope structure, expected repository/matrix bindings, the raw explicit-authorization SHA-256, scalar policy values, effective-window semantics, boundary flags and canonical evidence SHA-256 before any policy insert."
+    "runtimeBypassClosureCandidate": "Realized in staging under separate authorization: the additive migration tombstones the legacy object-only activation path and installs the envelope validator + approved activation without selecting operational policy values."
   },
   "policyIdentity": {
     "lifecycleMode": "initial_only",
@@ -149,17 +149,17 @@
     "runtimeEnforcementSqlValidation": "supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql"
   },
   "databaseBoundary": {
-    "currentActivationFunction": "private.activate_analytics_cat_liquidity_policy_v1",
-    "currentApprovalEvidenceValidation": "json_object_only",
-    "envelopeSchemaEnforcedByDatabase": false,
+    "currentActivationFunction": "private.activate_analytics_cat_liquidity_policy_approved_v1",
+    "currentApprovalEvidenceValidation": "canonical_envelope_runtime_enforced",
+    "envelopeSchemaEnforcedByDatabase": true,
     "activationInvocationAuthorized": false,
     "stagingMutationAuthorized": false,
-    "note": "The repository now contains an additive runtime-enforcement candidate. The currently applied staging function still validates approval_evidence only as a JSON object until that candidate is separately authorized, applied and validated.",
+    "note": "Runtime approval-envelope enforcement is installed and validated in staging. No real policy activation is authorized until an exact completed envelope with operational values is separately approved.",
     "runtimeEnforcementCandidate": {
       "authorization": "authorize-ana-a11-policy-envelope-runtime-enforcement-candidate-repository-only head=ce1d49bae29f92f4cb31c38849fb8292b71a6a85 matrix=v1.3.132",
       "migration": "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
       "validation": "supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql",
-      "status": "repository_candidate_not_applied",
+      "status": "staging_applied_validated",
       "additiveMigration": true,
       "editsHistoricalMigration": false,
       "legacyActivationTombstonedWhenApplied": true,
@@ -176,7 +176,48 @@
       "boundaryFlagsVerifiedInDatabase": true,
       "schedulerActivationIncluded": false,
       "cronIncluded": false,
-      "stagingApplied": false
+      "stagingApplied": true,
+      "stagingMigrationVersion": "20260923135957",
+      "stagingAuthorization": "authorize-ana-a11-policy-envelope-runtime-enforcement-staging head=f3f7e20363a92ca7383e8df73bcb7b139dd85f83 matrix=v1.3.132",
+      "validation039Passed": true,
+      "legacyActivationCurrentBehavior": "DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED",
+      "canonicalDigestCompatibilityPassed": true,
+      "rollbackCanaryPassed": true,
+      "persistentPublicationPolicyRows": 0,
+      "persistentFreshnessPolicyRows": 0,
+      "persistentAnaLiquidityCronJobs": 0
+    },
+    "runtimeEnforcementEvidence": {
+      "sourceHead": "f3f7e20363a92ca7383e8df73bcb7b139dd85f83",
+      "matrixVersion": "1.3.132",
+      "stagingMigrationVersion": "20260923135957",
+      "validation": "039 PASS",
+      "privilegeBoundary": {
+        "owner": "postgres",
+        "securityDefiner": true,
+        "anonExecute": false,
+        "authenticatedExecute": false,
+        "serviceRoleExecute": false
+      },
+      "rollbackOnlyCanary": {
+        "syntheticOnly": true,
+        "syntheticWindowStepSeconds": 47,
+        "syntheticProjectionDelaySloSeconds": 14,
+        "syntheticDerivedMaxLagSeconds": 61,
+        "syntheticMaxCatchUpWindowsPerInvocation": 2,
+        "canonicalEvidenceDigestExpected": "b15e17306af843bab8cac6ef4ac3ad390cce791306172ae6e15af01971718b23",
+        "canonicalEvidenceDigestMatchedPostgres": true,
+        "authorizationDigestMatchedPostgres": true,
+        "legacyActivationRejected": true,
+        "repositoryHeadMismatchRejected": true,
+        "matrixMismatchRejected": true,
+        "authorizationDigestMismatchRejected": true,
+        "scalarMismatchRejected": true,
+        "evidenceDigestMismatchRejected": true,
+        "approvedActivationInsertedTransientPair": true,
+        "secondActivationRejectedByOverlap": true,
+        "rolledBack": true
+      }
     }
   },
   "authority": {
@@ -190,7 +231,7 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "runtimeEnforcementCandidateAuthority": true,
-    "runtimeEnforcementAppliedAuthority": false
+    "runtimeEnforcementAppliedAuthority": true
   },
   "prohibitedEffects": {
     "policyValuesSelected": false,
@@ -207,5 +248,5 @@
     "pullRequestMerged": false,
     "readyForReviewChanged": false
   },
-  "updatedAt": "2026-09-23T13:46:14.770Z"
+  "updatedAt": "2026-09-23T14:00:00.000Z"
 }

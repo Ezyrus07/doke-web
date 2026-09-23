@@ -45,12 +45,18 @@ rejects('single use','ANA_A11_APPROVAL_BOUNDARY_INVALID',()=>{const x=JSON.parse
 rejects('extra field','ANA_A11_APPROVAL_SCHEMA_INVALID',()=>c.validateCompletedApprovalEvidence({...v,extraAuthority:true}));
 rejects('digest tamper','ANA_A11_APPROVAL_EVIDENCE_DIGEST_INVALID',()=>{const x=JSON.parse(JSON.stringify(v));x.evidenceDigestSha256='0'.repeat(64);c.validateCompletedApprovalEvidence(x);});
 
-ok('runtime enforcement candidate remains repository only',()=>{
-  assert.equal(envelopeConfig.databaseBoundary.runtimeEnforcementCandidate.status,'repository_candidate_not_applied');
-  assert.equal(envelopeConfig.databaseBoundary.runtimeEnforcementCandidate.stagingApplied,false);
-  assert.equal(envelopeConfig.databaseBoundary.envelopeSchemaEnforcedByDatabase,false);
+ok('runtime enforcement is staging validated without policy authority',()=>{
+  assert.equal(envelopeConfig.databaseBoundary.runtimeEnforcementCandidate.status,'staging_applied_validated');
+  assert.equal(envelopeConfig.databaseBoundary.runtimeEnforcementCandidate.stagingApplied,true);
+  assert.equal(envelopeConfig.databaseBoundary.runtimeEnforcementCandidate.stagingMigrationVersion,'20260923135957');
+  assert.equal(envelopeConfig.databaseBoundary.envelopeSchemaEnforcedByDatabase,true);
   assert.equal(envelopeConfig.authority.runtimeEnforcementCandidateAuthority,true);
-  assert.equal(envelopeConfig.authority.runtimeEnforcementAppliedAuthority,false);
+  assert.equal(envelopeConfig.authority.runtimeEnforcementAppliedAuthority,true);
+  assert.equal(envelopeConfig.authority.policyValueSelectionAuthority,false);
+  assert.equal(envelopeConfig.authority.policyInsertAuthority,false);
+  assert.equal(envelopeConfig.authority.activationInvocationAuthority,false);
+  assert.equal(envelopeConfig.authority.schedulerActivationAuthority,false);
+  assert.equal(envelopeConfig.databaseBoundary.runtimeEnforcementEvidence.rollbackOnlyCanary.rolledBack,true);
 });
 ok('legacy activation is tombstoned by candidate',()=>{
   assert(enforcementMig.includes('create or replace function private.activate_analytics_cat_liquidity_policy_v1'));

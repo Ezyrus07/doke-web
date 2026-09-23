@@ -21,7 +21,7 @@ assert.equal(c.contractId,'ana-a11-liquidity-policy-approval-envelope-v1');
 assert.equal(c.createdAgainst.repositoryHead,'3c544b7aa395a6f637127473ce3f605b6970a24d');
 assert.equal(c.createdAgainst.matrixVersion,'1.3.132');
 assert.equal(c.createdAgainst.authorization,'authorize-ana-a11-policy-approval-envelope-repository-only head=3c544b7aa395a6f637127473ce3f605b6970a24d matrix=v1.3.132');
-assert.equal(c.status,'runtime_enforcement_candidate_ready_repository_only_values_unset_activation_unauthorized');
+assert.equal(c.status,'runtime_enforcement_staging_validated_values_unset_activation_unauthorized');
 assert.equal(c.policyIdentity.initialRevisionRequired,1);
 assert.equal(c.policyIdentity.policyIdDerivedNotHumanSelected,true);
 assert.equal(c.effectiveWindowSemantics.initialEffectiveUntilMustBeNull,true);
@@ -40,18 +40,22 @@ assert.equal(c.pendingTemplate.policyInsertAuthorized,false);
 assert.equal(c.authority.repositoryContractAuthority,true);
 assert.equal(c.authority.runtimeEnforcementCandidateAuthority,true);
 Object.entries(c.authority)
-  .filter(([k])=>!['repositoryContractAuthority','runtimeEnforcementCandidateAuthority'].includes(k))
+  .filter(([k])=>!['repositoryContractAuthority','runtimeEnforcementCandidateAuthority','runtimeEnforcementAppliedAuthority'].includes(k))
   .forEach(([k,v])=>assert.equal(v,false,'authority false: '+k));
 Object.entries(c.prohibitedEffects).forEach(([k,v])=>assert.equal(v,false,'effect false: '+k));
 
-assert.equal(c.databaseBoundary.envelopeSchemaEnforcedByDatabase,false);
-assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.status,'repository_candidate_not_applied');
+assert.equal(c.databaseBoundary.envelopeSchemaEnforcedByDatabase,true);
+assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.status,'staging_applied_validated');
 assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.additiveMigration,true);
 assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.editsHistoricalMigration,false);
 assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.legacyActivationTombstonedWhenApplied,true);
 assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.authorizationDigestVerifiedInDatabase,true);
 assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.evidenceDigestVerifiedInDatabase,true);
-assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.stagingApplied,false);
+assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.stagingApplied,true);
+assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.stagingMigrationVersion,'20260923135957');
+assert.equal(c.databaseBoundary.runtimeEnforcementCandidate.validation039Passed,true);
+assert.equal(c.databaseBoundary.runtimeEnforcementEvidence.rollbackOnlyCanary.rolledBack,true);
+assert.equal(c.authority.runtimeEnforcementAppliedAuthority,true);
 
 assert(historicalMig.includes("pg_catalog.jsonb_typeof(p_approval_evidence) <> 'object'"));
 assert(!historicalMig.includes(c.approvalEvidenceSchemaId));
@@ -84,12 +88,13 @@ assert(!enforcementMig.includes('run_analytics_cat_liquidity_catch_up_v1'));
 
 assert.equal(d.authority.policyApprovalEnvelopeContractAuthority,true);
 assert.equal(d.authority.policyApprovalEnvelopeRuntimeEnforcementCandidateAuthority,true);
-assert.equal(d.authority.policyApprovalEnvelopeRuntimeEnforcementAuthority,false);
+assert.equal(d.authority.policyApprovalEnvelopeRuntimeEnforcementAuthority,true);
 assert.equal(d.currentDecision.policyApprovalEnvelopeComplete,false);
 assert.equal(d.currentDecision.policyInsertAuthorized,false);
 assert.equal(d.policyApprovalEnvelopeContract.contractId,c.contractId);
-assert.equal(d.policyApprovalEnvelopeContract.databaseRuntimeEnforcement,false);
-assert.equal(d.policyApprovalEnvelopeContract.runtimeEnforcementCandidate.currentStagingApplied,false);
+assert.equal(d.policyApprovalEnvelopeContract.databaseRuntimeEnforcement,true);
+assert.equal(d.policyApprovalEnvelopeContract.runtimeEnforcementCandidate.currentStagingApplied,true);
+assert.equal(d.policyApprovalEnvelopeContract.runtimeEnforcementCandidate.stagingMigrationVersion,'20260923135957');
 
 assert.equal(pkg.scripts['audit:ana-a11-liquidity-policy-approval-envelope'],'node scripts/audit-ana-a11-liquidity-policy-approval-envelope.js');
 assert.equal(pkg.scripts['test:ana-a11-liquidity-policy-approval-envelope'],'node scripts/test-ana-a11-liquidity-policy-approval-envelope.js');
@@ -114,7 +119,7 @@ assert(wf.includes('permissions:\n  contents: read'));
   'generic `prossiga` is not approval',
   'repository candidate — approval-envelope runtime enforcement',
   'DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED',
-  'current state remains unchanged until separate staging authorization'
+  'staging closure — approval-envelope runtime enforcement'
 ].forEach(x=>assert(doc.toLowerCase().includes(x.toLowerCase()),'docs missing '+x));
 
 console.log('ANA-A11 liquidity policy approval envelope audit passed.');

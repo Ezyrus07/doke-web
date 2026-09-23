@@ -6,7 +6,7 @@
   "sourceHead": "1825c11544a19162438c2b63c099d9e6d2b4547f",
   "createdAt": "2026-09-22T11:27:00-03:00",
   "scope": "staging_structural_authorities",
-  "status": "staging_structural_authorities_validated_runtime_enforcement_candidate_ready_repository_only_values_unset_scheduler_unactivated",
+  "status": "staging_structural_authorities_and_runtime_enforcement_validated_values_unset_scheduler_unactivated",
   "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
   "rootCause": {
     "missingNumberIsNotRootCause": true,
@@ -18,9 +18,9 @@
     "publicationPolicyProvenanceGap": "private.analytics_metric_freshness_policies_v1 stores only the derived max_lag_seconds/effective window. It cannot prove which window step, projection-delay SLO, boundary anchor, catch-up bound or approval evidence produced that threshold.",
     "currentFreshnessPolicyRows": "staging currently has zero freshness-policy rows, so no existing row requires data migration.",
     "policyCouplingGap": "resolved structurally in repository candidate: publication and freshness rows must be inserted atomically from the same explicit inputs; no hand-entered maxLagSeconds is accepted by the canonical activation path.",
-    "approvalEvidenceSchemaGap": "Closed at repository-contract level and now backed by an additive runtime-enforcement candidate. Staging remains on the earlier object-only activation definition until separate migration authorization.",
+    "approvalEvidenceSchemaGap": "Resolved in staging: the envelope-aware validator is installed and the legacy object-only activation is tombstoned.",
     "policyIdentityEffectiveWindowGap": "Resolved at repository contract level for the first policy: policy identity is revision-derived, effectiveFrom must be explicitly approved and grid-aligned, initial effectiveUntil must be null, and replacement requires a separate transition contract.",
-    "runtimeApprovalBypassGap": "Repository candidate prepared: when applied, the legacy object-only activation function becomes a fail-closed tombstone and only the envelope-aware approved activation path may insert liquidity publication/freshness policy rows."
+    "runtimeApprovalBypassGap": "Resolved in staging by migration 20260923135957. The legacy activation now fails closed with DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED; only the approved activation path can reach policy inserts."
   },
   "thresholdDerivation": {
     "formula": "maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds",
@@ -42,7 +42,7 @@
   },
   "activationPreconditions": [
     "The staging-validated CAT-fact-backed global + category/state series authority remains installed and owner-only.",
-    "The approval-envelope runtime-enforcement candidate is separately authorized, applied in staging and passes validation 039 before any real policy activation.",
+    "The approval-envelope runtime-enforcement migration is installed in staging as 20260923135957 and validation 039 plus rollback-only canaries passed.",
     "The repository atomic policy-activation candidate is explicitly authorized and applied in staging; a later separately authorized invocation must supply the approved windowStepSeconds, projectionDelaySloSeconds, windowAnchor, catch-up bound, approval evidence and effective window.",
     "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
     "A versioned canonical window-boundary anchor/alignment rule is approved.",
@@ -135,7 +135,7 @@
     "policyActivationContractAuthority": true,
     "policyActivationRuntimeAuthority": true,
     "policyApprovalEnvelopeContractAuthority": true,
-    "policyApprovalEnvelopeRuntimeEnforcementAuthority": false,
+    "policyApprovalEnvelopeRuntimeEnforcementAuthority": true,
     "policyApprovalEnvelopeRuntimeEnforcementCandidateAuthority": true
   },
   "prohibitedEffects": {
@@ -157,7 +157,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A11 has staging structural planner/executor/activation authorities, a repository approval-envelope contract, and a repository-only runtime-enforcement candidate. The enforcement migration is not applied; policy values, completed approval evidence and scheduler activation remain unresolved."
+    "reason": "A11 has staging structural planner/executor/activation authorities and staging-validated approval-envelope runtime enforcement. Operational cadence/SLO/anchor/catch-up values, completed approval evidence, one real policy activation and scheduler activation remain unresolved."
   },
   "sourceDomainWatermarkSemantics": {
     "sourceDomain": "CAT-001",
@@ -256,7 +256,7 @@
     },
     "publicationPolicyActivation": {
       "owner": "ANA-001 operational policy",
-      "decision": "First authorize/apply/validate the ANA-A11 approval-envelope runtime-enforcement candidate in staging. Only after that gate may exact operational values be approved in a completed envelope and a single envelope-aware staging activation be separately authorized.",
+      "decision": "Approve one completed ANA-A11 liquidity policy approval envelope bound to the exact current repository HEAD/matrix and explicit operational values, then separately authorize one call to private.activate_analytics_cat_liquidity_policy_approved_v1 in staging. Generic continuation remains insufficient.",
       "unresolvedFields": [
         "policyRevision",
         "windowStepSeconds",
@@ -270,12 +270,13 @@
       "structuralCandidate": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
       "policyIdRule": "derived as ana-a11-liquidity-v1-r<revision>; not independently selected",
       "approvalEnvelopeContract": "config/ana-a11-liquidity-policy-approval-envelope.json",
-      "runtimeEnvelopeEnforcement": false,
+      "runtimeEnvelopeEnforcement": true,
       "runtimeEnforcementCandidate": "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
-      "runtimeEnforcementValidation": "supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql"
+      "runtimeEnforcementValidation": "039 PASS",
+      "runtimeEnforcementStagingMigrationVersion": "20260923135957"
     }
   },
-  "updatedAt": "2026-09-23T13:46:14.770Z",
+  "updatedAt": "2026-09-23T14:00:00.000Z",
   "schedulerTopology": {
     "status": "repository_topology_selected_activation_unauthorized",
     "mechanism": "supabase_pg_cron_database_local",
@@ -702,14 +703,14 @@
     "audit": "scripts/audit-ana-a11-liquidity-policy-approval-envelope.js",
     "test": "scripts/test-ana-a11-liquidity-policy-approval-envelope.js",
     "scope": "repository_only",
-    "status": "runtime_enforcement_candidate_ready_repository_only_values_unset_activation_unauthorized",
+    "status": "runtime_enforcement_staging_validated_values_unset_activation_unauthorized",
     "policyIdDerived": true,
     "initialPolicyRevision": 1,
     "effectiveFromExplicit": true,
     "initialEffectiveUntil": null,
     "replacementRequiresSeparateTransitionContract": true,
     "singleUseActivationLimit": 1,
-    "databaseRuntimeEnforcement": false,
+    "databaseRuntimeEnforcement": true,
     "stagingMutationAuthorized": false,
     "schedulerActivationAuthorized": false,
     "productionAuthorized": false,
@@ -719,9 +720,23 @@
       "legacyActivationBehaviorWhenApplied": "DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED",
       "approvedActivationFunction": "private.activate_analytics_cat_liquidity_policy_approved_v1",
       "databaseEnvelopeValidationWhenApplied": true,
-      "currentStagingApplied": false,
+      "currentStagingApplied": true,
       "schedulerActivationAuthorized": false,
-      "policyInsertAuthorized": false
+      "policyInsertAuthorized": false,
+      "stagingMigrationVersion": "20260923135957",
+      "validation039Passed": true,
+      "legacyActivationTombstoned": true,
+      "canonicalDigestCompatibilityPassed": true
+    },
+    "stagingValidationEvidence": {
+      "sourceHead": "f3f7e20363a92ca7383e8df73bcb7b139dd85f83",
+      "matrixVersion": "1.3.132",
+      "stagingAuthorization": "authorize-ana-a11-policy-envelope-runtime-enforcement-staging head=f3f7e20363a92ca7383e8df73bcb7b139dd85f83 matrix=v1.3.132",
+      "migrationVersion": "20260923135957",
+      "validation039": "PASS",
+      "rollbackCanary": "PASS",
+      "persistentPolicyRows": 0,
+      "persistentCronJobs": 0
     }
   }
 }

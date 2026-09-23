@@ -386,9 +386,9 @@ A generic `prossiga` is not approval and no policy value may be inferred.
 
 This defines the fields only. It does not supply real values.
 
-### Current runtime boundary
+### Historical pre-enforcement runtime boundary
 
-The database boundary still accepts only object shape for `approval_evidence`; the already-applied migration was not edited by this repository-only lot. A real policy insert therefore remains unauthorized until the completed envelope is validated immediately before activation. Database-native envelope enforcement, if added, requires separate authorization.
+At approval-envelope contract creation time, the database boundary still accepted only object shape for `approval_evidence`. That historical gap is superseded by the staging runtime-enforcement closure below; the historical migration remains immutable.
 
 No publication policy, freshness policy or scheduler is created by this contract. ANA remains **3/6**.
 
@@ -402,7 +402,7 @@ The remaining bypass is now represented by an additive repository candidate:
 - `supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql`
 - `supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql`
 
-This candidate does **not** edit the historical `20260923025000` migration and is not applied to staging by this lot.
+This candidate does **not** edit the historical `20260923025000` migration. At candidate creation time it was not applied; it was later applied under the separate staging authorization recorded below.
 
 When separately applied, it changes the current runtime boundary in three steps:
 
@@ -416,7 +416,7 @@ This is required because merely adding a second 'approved' function would leave 
 
 The candidate contains no operational cadence, SLO, anchor or catch-up value; the only numbers in its structural rules are schema/lifecycle invariants such as initial revision `1`, digest lengths and key counts. Synthetic values in validation `039` are rollback-only fail-closed fixtures and are not policy authority.
 
-Current state remains unchanged until separate staging authorization:
+State at repository-candidate creation time, before the later staging authorization:
 
 - runtime envelope enforcement applied: **false**;
 - publication policy rows created by this lot: **0**;
@@ -424,3 +424,48 @@ Current state remains unchanged until separate staging authorization:
 - scheduler/cron activation: **false**;
 - production changes: **false**;
 - ANA maturity: **3/6**.
+
+
+## Staging closure — approval-envelope runtime enforcement
+
+Authorization:
+
+`authorize-ana-a11-policy-envelope-runtime-enforcement-staging head=f3f7e20363a92ca7383e8df73bcb7b139dd85f83 matrix=v1.3.132`
+
+The additive candidate was applied only to `doke-web-staging` and registered in the migration ledger as:
+
+- `20260923135957 / ana_a11_liquidity_policy_approval_runtime_enforcement`.
+
+Validation `039` passed after application.
+
+Current staging runtime boundary:
+
+- legacy `private.activate_analytics_cat_liquidity_policy_v1(...)` is a fail-closed tombstone returning `DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED`;
+- canonical write path is `private.activate_analytics_cat_liquidity_policy_approved_v1(...)`;
+- envelope validator and approved activation are owned by `postgres`, use `SECURITY DEFINER`, and expose no EXECUTE privilege to `anon`, `authenticated` or `service_role`;
+- envelope structure, HEAD/Matrix binding, raw authorization SHA-256, scalar values, effective-window rules, boundaries and canonical evidence SHA-256 are enforced before any insert.
+
+A rollback-only runtime canary used synthetic values only: step `47s`, projection-delay `14s`, catch-up bound `2`, with mechanically derived lag `61s`. These are test fixtures, not operational policy values.
+
+The canary proved:
+
+- the canonical evidence digest expected by the repository contract matched PostgreSQL;
+- the raw authorization digest matched PostgreSQL;
+- legacy activation failed closed;
+- repository HEAD mismatch failed closed;
+- Matrix mismatch failed closed;
+- authorization-command mismatch failed closed;
+- scalar mismatch failed closed;
+- evidence-digest mismatch failed closed;
+- one approved activation transiently inserted exactly one publication row and one matching freshness row;
+- a second activation of the same policy failed closed on overlap;
+- no cron was created.
+
+After rollback, persistent staging state is:
+
+- publication-policy rows for liquidity v1: **0**;
+- freshness-policy rows for liquidity v1: **0**;
+- canary policy rows: **0**;
+- ANA/liquidity cron jobs: **0**.
+
+No operational `windowStepSeconds`, `projectionDelaySloSeconds`, `windowAnchor`, `maxCatchUpWindowsPerInvocation`, `effectiveFrom` or `maxLagSeconds` has been selected. Real policy activation and scheduler activation remain separately unauthorized. ANA remains **3/6**.
