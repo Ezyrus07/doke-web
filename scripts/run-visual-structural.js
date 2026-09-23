@@ -5,7 +5,7 @@ const { spawnSync } = require('child_process');
 const path = require('path');
 const manifest = require('../tests/visual/visual-regression.manifest.json');
 
-const expectedTests = 105;
+const expectedTests = 112;
 const actualTests = (manifest.pages || []).length * (manifest.viewports || []).length;
 
 if (actualTests !== expectedTests) {
