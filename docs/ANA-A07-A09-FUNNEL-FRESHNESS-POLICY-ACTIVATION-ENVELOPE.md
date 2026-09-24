@@ -4,7 +4,7 @@ This is the repository-only approval envelope for `ana-a07-a09-funnel-v1-r1`. It
 
 ## Approved binding
 
-- source HEAD: `${expectedHead}`
+- source HEAD: `0c45856b82b08fe5265c3e71b40c0d83fed871a7`
 - Matrix: `v1.3.132`
 - policy set: `ana-a07-a09-funnel-v1-r1`
 - revision: `1`
@@ -13,10 +13,10 @@ This is the repository-only approval envelope for `ana-a07-a09-funnel-v1-r1`. It
 - window reference: `300s`
 - projection-delay budget: `60s`
 - max lag: `360s`
-- effectiveFrom: `${effectiveFrom}`
+- effectiveFrom: `2026-09-24T14:00:00Z`
 - effectiveUntil: `null`
-- authorization SHA-256: `${authDigest}`
-- evidence SHA-256: `${evidenceDigest}`
+- authorization SHA-256: `4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a`
+- evidence SHA-256: `9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5`
 
 ## Repository-only approval envelope
 
