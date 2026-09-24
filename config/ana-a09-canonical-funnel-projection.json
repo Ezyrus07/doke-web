@@ -1,10 +1,10 @@
 {
   "contractId": "ana-a09-canonical-funnel-projection-v1",
   "domain": "ANA-001",
-  "sourceHead": "fb0a8082b7eec9038348d6aee4065704d3ee30a5",
+  "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
   "createdAt": "2026-09-21T22:33:00-03:00",
   "scope": "staging_runtime_installed_policy_pending",
-  "status": "server_side_projector_staging_validated_freshness_policy_candidate_ready",
+  "status": "server_side_projector_validated_freshness_policy_structure_installed_inactive",
   "objective": "Define a deterministic canonical acquisition-to-order funnel from ANA behavioral events and ORD order.requested facts using only explicit linkage keys, without identity stitching or temporal heuristics.",
   "rootCause": {
     "projectionGap": "The server-side compute projector is installed and validation 042 passes in staging. Runtime projection authority remains false because metric-specific freshness thresholds, controlled complete/orphan/empty-window/late-fact evidence and snapshot publication policy remain open.",
@@ -102,7 +102,7 @@
     "dataThroughRequired": true,
     "watermarkContractId": "ana-a07-behavior-ord-watermark-authority-v1",
     "watermarkContractPath": "config/ana-a07-behavior-ord-watermark-authority.json",
-    "status": "watermark_projector_certified_funnel_policy_candidate_ready_unapplied",
+    "status": "watermark_projector_certified_funnel_policy_structure_installed_inactive",
     "behaviorMaterializationTime": "received_at",
     "orderMaterializationTime": "created_at",
     "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
@@ -134,8 +134,8 @@
     "productionAuthority": false
   },
   "activationRequirements": [
-    "apply and validate the repository-ready funnel freshness policy activation structure after separate staging authorization",
-    "activate the exact eight r1 freshness policies only under a separate explicit effective-window authorization",
+    "approve an explicit effectiveFrom/effectiveUntil for the exact eight r1 funnel freshness policies under separate authorization",
+    "activate the exact policy set only after that effective window is approved",
     "run controlled staging evidence for complete, orphan, empty-window and late-materialized stage paths",
     "keep snapshotPublicationAllowed=false until policy activation and path canaries pass",
     "wire append-only A04/A05 snapshot publication only after the publication policy gate closes",
@@ -172,7 +172,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The A09 projector is installed and validation 042 passes. A versioned eight-metric 360-second freshness-policy candidate now exists repository-side but is unapplied and inactive; path canaries and snapshot publication remain open. ANA stays 3/6."
+    "reason": "The A09 projector and the funnel freshness activation structure are installed and structurally validated, but the eight r1 policies remain inactive with no effective window. Runtime projection/snapshot authority stays false and ANA remains 3/6."
   },
   "runtimeCandidate": {
     "status": "staging_applied_validation_042_pass_policy_canaries_pending",
@@ -212,11 +212,16 @@
     "proposedMaxLagSeconds": 360,
     "migration": "supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql",
     "validationSql": "supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql",
-    "migrationApplied": false,
-    "validation043Status": "not_run",
+    "migrationApplied": true,
+    "validation043Status": "PASS",
     "activationInvoked": false,
     "effectiveFrom": null,
     "effectiveUntil": null,
-    "snapshotPublicationAllowed": false
+    "snapshotPublicationAllowed": false,
+    "stagingMigrationVersion": "20260924005631",
+    "stagingValidated": true,
+    "activationFunctionInstalled": true,
+    "policyRowsPersisted": 0,
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json"
   }
 }
