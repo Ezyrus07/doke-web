@@ -90,4 +90,6 @@ The candidate consumes the certified A07 behavior/ORD watermarks and separates e
 
 The final `quote_submitted -> order_requested` transition is recomputed at the cross-domain minimum watermark, so an ORD lag cannot create a false missing-order denominator.
 
-The RPC is compute-only and keeps `snapshotPublicationAllowed=false`. A04 append-only snapshot publication, A07 metric-specific thresholds and complete/orphan/empty-window/late-fact staging canaries remain separate gates. The migration is **not applied** by this repository-only lot.
+The RPC remains compute-only and keeps `snapshotPublicationAllowed=false`. The migration is now installed in staging as `20260924002741 / ana_a09_canonical_funnel_projector`, and validation 042 passes. The live compute result is `computed_policy_pending` with eight metrics, `runtimeAuthority=false`, `freshnessPolicyState=threshold_pending`, and `segmentation=global_only`. A04 append-only snapshot publication, A07 metric-specific thresholds and complete/orphan/empty-window/late-fact staging canaries remain separate gates.
+
+Runtime evidence: `reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json`.

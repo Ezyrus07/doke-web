@@ -1,6 +1,6 @@
 # ANA-A09 — Server-side funnel projector runtime readiness
 
-This lot creates the **repository-only** server-side funnel projector candidate. Nothing is applied to staging.
+The server-side funnel projector is now installed in **staging** and validation 042 passes. This document still treats policy activation and snapshot publication as separate gates.
 
 - migration: `supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql`
 - validation: `supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql`
@@ -29,4 +29,8 @@ Stages must occur chronologically. Actor IDs, time-proximity reconstruction, cro
 
 The compute result exposes source fingerprints and the A04 append RPC handoff, but sets `snapshotPublicationAllowed=false`. No metric-specific A07 threshold is invented in this lot.
 
-A later separately authorized lot must apply the migration, run validation 042, define/approve required funnel freshness policies, and prove complete/orphan/empty-window/late-materialized behavior before snapshots can become runtime authority.
+Migration application and structural validation are complete. A later separately authorized lot must define/approve funnel freshness policies and prove complete/orphan/empty-window/late-materialized behavior before runtime projection authority or snapshot publication can become authoritative.
+
+## Staging runtime reconciliation
+
+Migration `20260924002741` is applied and validation 042 is **PASS**. The compute RPC is healthy and service-role-only, but returns `runtimeAuthority=false` and `snapshotPublicationAllowed=false` while `freshnessPolicyState=threshold_pending`. No A09 cron job exists. Canonical evidence: `reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json`.
