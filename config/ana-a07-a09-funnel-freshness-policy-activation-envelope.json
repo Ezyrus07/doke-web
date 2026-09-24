@@ -203,7 +203,8 @@
     "stagingMutationAuthority": false,
     "productionAuthority": false,
     "mergeAuthority": false,
-    "readyForReviewAuthority": false
+    "readyForReviewAuthority": false,
+    "runtimeEnforcementCandidateAuthority": true
   },
   "prohibitedEffects": {
     "activationFunctionInvoked": false,
@@ -223,9 +224,31 @@
     "workflow": ".github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml"
   },
   "nextGates": [
-    "Create an approval-aware runtime-enforcement successor that verifies the exact envelope bindings before any policy insert.",
-    "Apply and validate that runtime enforcement in staging only under a separate explicit authorization.",
-    "Invoke the owner-only activation path with this exact envelope only after runtime enforcement is proven.",
+    "Apply the approval-envelope runtime-enforcement candidate in staging under a separate explicit authorization and execute validation 044.",
+    "After runtime validator/tombstone staging evidence is certified, create a separate activation-invocation authorization contract; do not infer activation authority from the repository-only envelope.",
+    "Only after explicit activation authority exists may an approval-aware activating successor be introduced and invoked.",
     "Run complete/orphan/empty-window/late-fact canaries before any snapshot-publication authority."
-  ]
+  ],
+  "runtimeEnforcementCandidate": {
+    "migration": "supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql",
+    "validationSql": "supabase/tests/044_ana_a07_a09_funnel_policy_approval_runtime_enforcement_validation.sql",
+    "validatorFunction": "private.validate_analytics_a09_funnel_freshness_policy_approval_envelope_v1",
+    "legacyActivationFunction": "private.activate_analytics_a09_funnel_freshness_policy_v1",
+    "canonicalJsonDependency": "private.canonicalize_analytics_json_v1",
+    "status": "repository_ready_staging_unauthorized",
+    "sourceHead": "e19457d1e099f65240ecb34999411590be3b4673",
+    "matrixVersion": "1.3.132",
+    "additiveMigration": true,
+    "editsHistoricalMigration": false,
+    "createsPolicyRows": false,
+    "writesSnapshots": false,
+    "createsCron": false,
+    "createsActivationCapableSuccessor": false,
+    "tombstonesLegacyActivationWhenApplied": true,
+    "stagingApplied": false,
+    "validation044Passed": false,
+    "runtimeEnvelopeValidatorInstalled": false,
+    "legacyActivationTombstoned": false,
+    "runtimeEnforcementAuthority": false
+  }
 }

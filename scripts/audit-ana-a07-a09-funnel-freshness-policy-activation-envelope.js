@@ -15,6 +15,8 @@ const workflow=read('.github/workflows/ana-a07-a09-funnel-freshness-policy-activ
 const migration=read('supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql');
 const doc=read('docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md');
 const lib=require('./lib/ana-a07-a09-funnel-freshness-policy-activation-envelope');
+const runtimeEnforcementMigration=read('supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql');
+const runtimeEnforcementValidation=read('supabase/tests/044_ana_a07_a09_funnel_policy_approval_runtime_enforcement_validation.sql');
 
 assert.equal(envelope.contractId,lib.CONTRACT_ID);
 assert.equal(envelope.approvalEvidenceSchemaId,lib.SCHEMA_ID);
@@ -96,5 +98,37 @@ assert(workflow.includes('permissions:\n  contents: read'));
   'runtime binding is still pending',
   'no policy row is persisted'
 ].forEach((fragment)=>assert(doc.toLowerCase().includes(fragment.toLowerCase()),'docs missing '+fragment));
+
+
+assert.equal(envelope.runtimeEnforcementCandidate.status,'repository_ready_staging_unauthorized');
+assert.equal(envelope.runtimeEnforcementCandidate.stagingApplied,false);
+assert.equal(envelope.runtimeEnforcementCandidate.validation044Passed,false);
+assert.equal(envelope.runtimeEnforcementCandidate.runtimeEnforcementAuthority,false);
+assert.equal(envelope.runtimeEnforcementCandidate.createsActivationCapableSuccessor,false);
+assert.equal(candidate.runtimeEnforcementCandidate.status,'repository_ready_staging_unauthorized');
+assert.equal(candidate.runtimeEnforcementCandidate.stagingApplied,false);
+assert.equal(candidate.runtimeEnforcementCandidate.runtimeEnforcementAuthority,false);
+
+[
+  'private.validate_analytics_a09_funnel_freshness_policy_approval_envelope_v1',
+  'private.canonicalize_analytics_json_v1',
+  'DOKE_ANALYTICS_A09_FUNNEL_APPROVAL_ENVELOPE_REQUIRED',
+  'DOKE_ANALYTICS_A09_FUNNEL_APPROVAL_BINDING_MISMATCH',
+  'DOKE_ANALYTICS_A09_FUNNEL_APPROVAL_AUTHORIZATION_MISMATCH',
+  'DOKE_ANALYTICS_A09_FUNNEL_APPROVAL_POLICY_SET_MISMATCH',
+  'DOKE_ANALYTICS_A09_FUNNEL_APPROVAL_BOUNDARY_INVALID',
+  'DOKE_ANALYTICS_A09_FUNNEL_APPROVAL_DIGEST_MISMATCH'
+].forEach((fragment)=>assert(runtimeEnforcementMigration.includes(fragment),'runtime enforcement candidate missing '+fragment));
+assert(!/insert\s+into\s+private\.analytics_metric_freshness_policies_v1/i.test(runtimeEnforcementMigration));
+assert(!/insert\s+into\s+private\.analytics_metric_snapshots_v1/i.test(runtimeEnforcementMigration));
+assert(!/cron\.schedule/i.test(runtimeEnforcementMigration));
+assert(!runtimeEnforcementMigration.includes('activate_analytics_a09_funnel_freshness_policy_approved_v1'));
+
+[
+  'VALIDATION_044_VALIDATOR_MISSING',
+  'has_function_privilege',
+  'DOKE_ANALYTICS_A09_FUNNEL_APPROVAL_ENVELOPE_REQUIRED',
+  'rollback;'
+].forEach((fragment)=>assert(runtimeEnforcementValidation.includes(fragment),'validation 044 missing '+fragment));
 
 console.log('ANA-A07/A09 funnel freshness activation envelope audit passed.');
