@@ -81,7 +81,7 @@ assert(ana);
   'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md',
   '.github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml'
 ].forEach((file)=>assert(ana.requiredPaths.includes(file),'matrix missing '+file));
-assert(ana.nextActions.some((action)=>action.includes('Obtain explicit ANA-A07/A09 activation authorization')));
+assert(ana.nextActions.some((action)=>action.includes('Obtain explicit ANA-A07/A09 repository-only activation-approval authorization')));
 
 assert.equal(pkg.scripts['audit:ana-a07-a09-funnel-freshness-policy-activation-envelope'],'node scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-envelope.js');
 assert.equal(pkg.scripts['test:ana-a07-a09-funnel-freshness-policy-activation-envelope'],'node scripts/test-ana-a07-a09-funnel-freshness-policy-activation-envelope.js');

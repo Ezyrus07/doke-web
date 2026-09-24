@@ -9,7 +9,7 @@ let passed=0;
 function ok(name,fn){try{fn();passed++;}catch(error){error.message=name+': '+error.message;throw error;}}
 
 ok('contract is pending and non-authorizing',()=>{
-  assert.equal(c.status,'pending_explicit_activation_authorization');
+  assert.equal(c.status,'pending_explicit_activation_approval_repository_authorization');
   assert.equal(c.authority.activationAuthorizationAuthority,false);
   assert.equal(c.authority.activationInvocationAuthority,false);
   assert.equal(c.authority.policyPersistenceAuthority,false);
@@ -26,9 +26,13 @@ ok('runtime evidence is closed before activation contract',()=>{
   assert.equal(evidence.runtime.legacyActivationTombstoned,true);
   assert.equal(evidence.policyState.freshnessPolicyRowsPersisted,0);
 });
-ok('generic proceed cannot authorize activation',()=>{
-  assert.equal(c.activationAuthorization.genericProceedIsAuthorization,false);
-  assert.equal(c.activationAuthorization.valuesMayBeInferred,false);
+ok('generic proceed cannot authorize repository activation approval',()=>{
+  assert.equal(c.activationApprovalAuthorization.genericProceedIsAuthorization,false);
+  assert.equal(c.activationApprovalAuthorization.valuesMayBeInferred,false);
+  assert.equal(c.activationApprovalAuthorization.scope,'repository_only');
+  assert.equal(c.activationApprovalAuthorization.stagingMutationAuthorizedByCommand,false);
+  assert.equal(c.activationApprovalAuthorization.activationInvocationAuthorizedByCommand,false);
+  assert.equal(c.activationApprovalAuthorization.policyPersistenceAuthorizedByCommand,false);
 });
 ok('future successor name is safe for postgres identifiers',()=>{
   const unqualified=c.successorRequirements.canonicalFunctionName.split('.').pop();

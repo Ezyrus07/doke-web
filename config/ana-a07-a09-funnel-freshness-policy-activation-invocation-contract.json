@@ -3,7 +3,7 @@
   "activationApprovalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-evidence-v1",
   "domain": "ANA-001",
   "scope": "repository_only_authorization_contract",
-  "status": "pending_explicit_activation_authorization",
+  "status": "pending_explicit_activation_approval_repository_authorization",
   "createdAt": "2026-09-24T14:24:21.531026Z",
   "createdAgainst": {
     "repositoryHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
@@ -15,7 +15,7 @@
     "stagingRuntimeEnforcementMigrationVersion": "20260924141356",
     "validation044": "PASS"
   },
-  "objective": "Define a fail-closed, single-use authorization boundary for the future persistence of the eight approved A07/A09 funnel freshness policies. This contract grants no activation authority and performs no staging mutation.",
+  "objective": "Define a fail-closed authorization lifecycle for future persistence of the eight approved A07/A09 funnel freshness policies. The immediate gate is repository-only activation-approval materialization and successor-candidate preparation; this contract grants no staging mutation, activation invocation or policy persistence authority.",
   "rootCause": {
     "enforcementGapClosed": "The approved envelope is now enforced in staging and the legacy scalar-only activation path is tombstoned.",
     "remainingGap": "No explicit project-owner authorization exists for one policy-persistence invocation, and no activation-capable successor exists.",
@@ -33,23 +33,6 @@
     "runtimeEnforcementEvidenceBlobSha": "118ca5f948f93ca09c7a7305d1b230880fa98630",
     "runtimeEnforcementMigrationVersion": "20260924141356",
     "validation044Passed": true
-  },
-  "activationAuthorization": {
-    "commandName": "authorize-ana-a07-a09-funnel-freshness-policy-activation-staging",
-    "genericProceedIsAuthorization": false,
-    "valuesMayBeInferred": false,
-    "authorizationHeadMustMatchCurrentPrHead": true,
-    "requiredArguments": [
-      "head",
-      "matrix",
-      "activationContractId",
-      "policySetId",
-      "approvalEvidenceDigest",
-      "runtimeEvidenceBlobSha",
-      "effectiveFrom",
-      "effectiveUntil"
-    ],
-    "template": "authorize-ana-a07-a09-funnel-freshness-policy-activation-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 activationContractId=ana-a07-a09-funnel-freshness-policy-activation-invocation-v1 policySetId=ana-a07-a09-funnel-v1-r1 approvalEvidenceDigest=9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5 runtimeEvidenceBlobSha=118ca5f948f93ca09c7a7305d1b230880fa98630 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null"
   },
   "activationApprovalEvidenceSchema": {
     "exactTopLevelFields": [
@@ -145,7 +128,8 @@
     "snapshotPublicationAuthority": false,
     "productionAuthority": false,
     "mergeAuthority": false,
-    "readyForReviewAuthority": false
+    "readyForReviewAuthority": false,
+    "activationApprovalMaterializationAuthority": false
   },
   "prohibitedEffects": {
     "activationAuthorizationFabricated": false,
@@ -160,5 +144,26 @@
     "pullRequestMerged": false,
     "readyForReviewChanged": false
   },
-  "nextGate": "Obtain the exact explicit activation authorization described by activationAuthorization. Only after that authorization may a completed activation-approval evidence object and an approval-aware successor candidate be created; this contract itself must not activate or persist policies."
+  "nextGate": "Obtain the exact explicit repository-only activation-approval authorization described by activationApprovalAuthorization. Only after that command may completed activation-approval evidence and an approval-aware successor migration candidate be created. Applying that future migration and invoking activation each remain separately unauthorized.",
+  "activationApprovalAuthorization": {
+    "commandName": "authorize-ana-a07-a09-funnel-freshness-policy-activation-approval-repository-only",
+    "scope": "repository_only",
+    "genericProceedIsAuthorization": false,
+    "valuesMayBeInferred": false,
+    "authorizationHeadMustMatchCurrentPrHead": true,
+    "stagingMutationAuthorizedByCommand": false,
+    "activationInvocationAuthorizedByCommand": false,
+    "policyPersistenceAuthorizedByCommand": false,
+    "requiredArguments": [
+      "head",
+      "matrix",
+      "activationContractId",
+      "policySetId",
+      "approvalEvidenceDigest",
+      "runtimeEvidenceBlobSha",
+      "effectiveFrom",
+      "effectiveUntil"
+    ],
+    "template": "authorize-ana-a07-a09-funnel-freshness-policy-activation-approval-repository-only head=<CURRENT_PR_HEAD> matrix=v1.3.132 activationContractId=ana-a07-a09-funnel-freshness-policy-activation-invocation-v1 policySetId=ana-a07-a09-funnel-v1-r1 approvalEvidenceDigest=9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5 runtimeEvidenceBlobSha=118ca5f948f93ca09c7a7305d1b230880fa98630 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null"
+  }
 }

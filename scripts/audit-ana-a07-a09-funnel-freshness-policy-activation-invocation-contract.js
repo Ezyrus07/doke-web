@@ -18,7 +18,7 @@ const doc=read('docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-INVOCATION-C
 
 assert.equal(c.contractId,'ana-a07-a09-funnel-freshness-policy-activation-invocation-v1');
 assert.equal(c.scope,'repository_only_authorization_contract');
-assert.equal(c.status,'pending_explicit_activation_authorization');
+assert.equal(c.status,'pending_explicit_activation_approval_repository_authorization');
 assert.equal(c.createdAgainst.repositoryHead,'0a8d9cbcb49c68b250cec2b76180c50a02515202');
 assert.equal(c.createdAgainst.matrixVersion,'1.3.132');
 assert.equal(c.createdAgainst.runtimeEnforcementEvidenceBlobSha,'118ca5f948f93ca09c7a7305d1b230880fa98630');
@@ -38,12 +38,12 @@ assert.equal(envelope.authority.runtimeEnvelopeEnforcementAuthority,true);
 assert.equal(envelope.authority.activationInvocationAuthority,false);
 assert.equal(envelope.authority.policyPersistenceAuthority,false);
 
-assert.equal(c.activationAuthorization.genericProceedIsAuthorization,false);
-assert.equal(c.activationAuthorization.valuesMayBeInferred,false);
-assert.equal(c.activationAuthorization.authorizationHeadMustMatchCurrentPrHead,true);
-assert(c.activationAuthorization.template.includes('head=<CURRENT_PR_HEAD>'));
-assert(c.activationAuthorization.template.includes('approvalEvidenceDigest=9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5'));
-assert(c.activationAuthorization.template.includes('runtimeEvidenceBlobSha=118ca5f948f93ca09c7a7305d1b230880fa98630'));
+assert.equal(c.activationApprovalAuthorization.genericProceedIsAuthorization,false);
+assert.equal(c.activationApprovalAuthorization.valuesMayBeInferred,false);
+assert.equal(c.activationApprovalAuthorization.authorizationHeadMustMatchCurrentPrHead,true);
+assert(c.activationApprovalAuthorization.template.includes('head=<CURRENT_PR_HEAD>'));
+assert(c.activationApprovalAuthorization.template.includes('approvalEvidenceDigest=9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5'));
+assert(c.activationApprovalAuthorization.template.includes('runtimeEvidenceBlobSha=118ca5f948f93ca09c7a7305d1b230880fa98630'));
 
 assert(c.successorRequirements.canonicalFunctionName.length<=63);
 assert.equal(c.successorRequirements.canonicalFunctionName,'private.activate_a09_funnel_policy_approved_v1');
@@ -61,13 +61,13 @@ assert.equal(c.pendingTemplate.policyInsertAuthorized,false);
 assert.equal(c.pendingTemplate.activationInvocationLimit,0);
 
 assert.equal(candidate.activationInvocationContract.contractPath,'config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json');
-assert.equal(candidate.activationInvocationContract.status,'pending_explicit_activation_authorization');
+assert.equal(candidate.activationInvocationContract.status,'pending_explicit_activation_approval_repository_authorization');
 assert.equal(envelope.activationInvocationContract.contractPath,'config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json');
-assert.equal(envelope.activationInvocationContract.status,'pending_explicit_activation_authorization');
+assert.equal(envelope.activationInvocationContract.status,'pending_explicit_activation_approval_repository_authorization');
 
 const ana=matrix.domains.find((domain)=>domain.id==='ANA-001');
 assert(ana);
-assert(ana.nextActions.some((action)=>action.includes('Obtain explicit ANA-A07/A09 activation authorization')));
+assert(ana.nextActions.some((action)=>action.includes('Obtain explicit ANA-A07/A09 repository-only activation-approval authorization')));
 assert.equal(pkg.scripts['audit:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract'],'node scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js');
 assert.equal(pkg.scripts['test:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract'],'node scripts/test-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js');
 [
@@ -76,8 +76,9 @@ assert.equal(pkg.scripts['test:ana-a07-a09-funnel-freshness-policy-activation-in
   'npm run test:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract'
 ].forEach((fragment)=>assert(workflow.includes(fragment),'workflow missing '+fragment));
 [
-  'Generic `prossiga` is not activation authorization',
+  'Generic `prossiga` is not authorization',
   'No successor is created in this lot',
+  'It does **not** authorize applying that migration to staging',
   'freshnessPolicyRowsPersisted=0'
 ].forEach((fragment)=>assert(doc.includes(fragment),'docs missing '+fragment));
 
