@@ -14,7 +14,7 @@ const events=[
  {eventName:'service.detail_viewed',analyticsSessionId:'future',serviceId:svc,occurredAt:'2027-01-01T00:00:00Z'},
  {eventName:'service.detail_viewed',analyticsSessionId:'late-mat',serviceId:svc,occurredAt:'2026-01-01T00:00:03Z',receivedAt:'2027-01-01T00:00:00Z'}
 ];
-const orders=[{eventName:'order.requested',orderId:o,occurredAt:'2026-01-01T00:00:07Z'}];
+const orders=[{eventName:'order.requested',orderId:o,occurredAt:'2026-01-01T00:00:09Z'}];
 const out=f.projectCanonicalFunnel(events,orders,{dataThrough:'2026-01-02T00:00:00Z'});
 eq('ctr numerator',out.searchCtr.numerator,1);eq('ctr denominator',out.searchCtr.denominator,1);eq('ctr value',out.searchCtr.value,1);eq('orphan ctr click',out.searchCtr.orphanClicks,1);
 for(const stage of f.STAGES)eq('strict stage '+stage,out.strictSessionServiceFunnel.counts[stage],1);
