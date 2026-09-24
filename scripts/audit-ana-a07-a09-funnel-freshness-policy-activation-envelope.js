@@ -42,15 +42,19 @@ assert.equal(envelope.authority.repositoryContractAuthority,true);
 assert.equal(envelope.authority.completedApprovalEvidenceAuthority,true);
 assert.equal(envelope.authority.effectiveWindowSelectionAuthority,true);
 [
-  'activationInvocationAuthority','policyPersistenceAuthority','runtimeEnvelopeEnforcementAuthority','runtimeProjectionAuthority',
+  'activationInvocationAuthority','policyPersistenceAuthority','runtimeProjectionAuthority',
   'runtimeSnapshotAuthority','snapshotPublicationAuthority','cronOrSchedulerAuthority','stagingMutationAuthority',
   'productionAuthority','mergeAuthority','readyForReviewAuthority'
 ].forEach((key)=>assert.equal(envelope.authority[key],false,'authority false: '+key));
 Object.entries(envelope.prohibitedEffects).forEach(([key,value])=>assert.equal(value,false,'effect false: '+key));
 
 assert.equal(envelope.runtimeBoundary.currentActivationFunction,'private.activate_analytics_a09_funnel_freshness_policy_v1');
-assert.equal(envelope.runtimeBoundary.approvalEvidenceArgumentPresent,false);
-assert.equal(envelope.runtimeBoundary.runtimeEnforcementAuthority,false);
+assert.equal(envelope.runtimeBoundary.currentActivationBehavior,'fail_closed_tombstone');
+assert.equal(envelope.runtimeBoundary.legacyActivationTombstoned,true);
+assert.equal(envelope.runtimeBoundary.activationCapableSuccessorPresent,false);
+assert.equal(envelope.runtimeBoundary.validatorApprovalEvidenceArgumentPresent,true);
+assert.equal(envelope.runtimeBoundary.runtimeEnforcementAuthority,true);
+assert.equal(envelope.authority.runtimeEnvelopeEnforcementAuthority,true);
 assert(migration.includes('private.activate_analytics_a09_funnel_freshness_policy_v1'));
 assert(!migration.includes('p_approval_evidence'));
 assert(!migration.includes('authorizationDigestSha256'));
@@ -60,7 +64,7 @@ assert.equal(candidate.activationEnvelope.contractPath,'config/ana-a07-a09-funne
 assert.equal(candidate.activationEnvelope.evidenceDigestSha256,'9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5');
 assert.equal(candidate.activationEnvelope.approvedEffectiveFrom,'2026-09-24T14:00:00Z');
 assert.equal(candidate.activationEnvelope.approvedEffectiveUntil,null);
-assert.equal(candidate.activationEnvelope.runtimeEnforcementAuthority,false);
+assert.equal(candidate.activationEnvelope.runtimeEnforcementAuthority,true);
 assert.equal(candidate.authorization.policyActivationAuthorized,false);
 assert.equal(candidate.runtimeCandidate.activationInvoked,false);
 assert.equal(candidate.runtimeCandidate.policyRowsPersisted,0);

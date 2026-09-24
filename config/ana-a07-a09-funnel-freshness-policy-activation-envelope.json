@@ -178,16 +178,19 @@
       "effectiveFrom",
       "effectiveUntil"
     ],
-    "approvalEvidenceArgumentPresent": false,
+    "currentActivationBehavior": "fail_closed_tombstone",
+    "legacyActivationTombstoned": true,
+    "activationCapableSuccessorPresent": false,
+    "approvalEnvelopeValidatorFunction": "private.validate_analytics_a09_funnel_freshness_policy_approval_envelope_v1",
+    "runtimeStoredValidatorIdentifier": "validate_analytics_a09_funnel_freshness_policy_approval_envelop",
+    "validatorApprovalEvidenceArgumentPresent": true,
     "repositoryHeadBindingVerifiedByDatabase": true,
     "matrixVersionBindingVerifiedByDatabase": true,
     "authorizationDigestVerifiedByDatabase": true,
     "evidenceDigestVerifiedByDatabase": true,
     "exactApprovedWindowBindingVerifiedByDatabase": true,
-    "structuralWindowValidationPresent": true,
-    "overlapRejectionPresent": true,
     "runtimeEnforcementAuthority": true,
-    "note": "Runtime envelope validation is installed as a separate owner-only validator; the legacy scalar-only activation function is tombstoned. No activation-capable successor exists yet, and zero policy rows are persisted."
+    "note": "The owner-only validator enforces the approved envelope. The legacy scalar-only activation function is a tombstone, no activation-capable successor exists, and zero policy rows are persisted."
   },
   "authority": {
     "repositoryContractAuthority": true,
@@ -196,7 +199,7 @@
     "thresholdValueSelectionAuthority": true,
     "activationInvocationAuthority": false,
     "policyPersistenceAuthority": false,
-    "runtimeEnvelopeEnforcementAuthority": false,
+    "runtimeEnvelopeEnforcementAuthority": true,
     "runtimeProjectionAuthority": false,
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false,
@@ -256,5 +259,6 @@
     "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging-evidence.json",
     "runtimeStoredValidatorIdentifier": "validate_analytics_a09_funnel_freshness_policy_approval_envelop",
     "postgresIdentifierTruncationObserved": true
-  }
+  },
+  "prohibitedEffectsScope": "Initial repository-only activation-envelope lot. The later authorized staging runtime-enforcement mutation is recorded separately in runtimeEnforcementCandidate and its runtime evidence artifact."
 }
