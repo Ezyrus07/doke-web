@@ -34,7 +34,7 @@ function behaviorProjection(rows,through){
     if(!a||!b){missingJourney++;return null;}
     const k=a+'\u0000'+b;
     let j=journeys.get(k);
-    if(!j){j={key:k,impressionAt:null,clickAt:null,detailAt:null,budgetAt:null,quotes:new Map()};journeys.set(k,j);}
+    if(!j){j={key:k,impressionAt:null,clickAt:null,detailAt:null,budgetAt:null,quotes:new Map(),raw:{click:false,detail:false,budget:false,quoteStarted:false,quoteCompleted:false,quoteSubmitted:false}};journeys.set(k,j);}
     return j;
   }
 
@@ -48,10 +48,13 @@ function behaviorProjection(rows,through){
     if(!['search.result_impression','search.result_clicked','service.detail_viewed','service.budget_cta_clicked','quote.started','quote.completed','quote.submitted'].includes(n))continue;
     const j=journey(row);if(!j)continue;
     if(n==='search.result_impression'&&sid&&j.impressionAt===null)j.impressionAt=row.__at;
-    if(n==='search.result_clicked'&&sid&&j.impressionAt!==null&&row.__at>=j.impressionAt&&j.clickAt===null)j.clickAt=row.__at;
-    if(n==='service.detail_viewed'&&j.clickAt!==null&&row.__at>=j.clickAt&&j.detailAt===null)j.detailAt=row.__at;
-    if(n==='service.budget_cta_clicked'&&j.detailAt!==null&&row.__at>=j.detailAt&&j.budgetAt===null)j.budgetAt=row.__at;
+    if(n==='search.result_clicked'){j.raw.click=true;if(sid&&j.impressionAt!==null&&row.__at>=j.impressionAt&&j.clickAt===null)j.clickAt=row.__at;}
+    if(n==='service.detail_viewed'){j.raw.detail=true;if(j.clickAt!==null&&row.__at>=j.clickAt&&j.detailAt===null)j.detailAt=row.__at;}
+    if(n==='service.budget_cta_clicked'){j.raw.budget=true;if(j.detailAt!==null&&row.__at>=j.detailAt&&j.budgetAt===null)j.budgetAt=row.__at;}
     if(n.startsWith('quote.')){
+      if(n==='quote.started')j.raw.quoteStarted=true;
+      if(n==='quote.completed')j.raw.quoteCompleted=true;
+      if(n==='quote.submitted')j.raw.quoteSubmitted=true;
       const qid=quote(row);if(!qid)continue;
       const q=j.quotes.get(qid)||{startedAt:null,completedAt:null,submittedAt:null,orderId:null};
       if(n==='quote.started'&&j.budgetAt!==null&&row.__at>=j.budgetAt&&q.startedAt===null)q.startedAt=row.__at;
@@ -64,6 +67,7 @@ function behaviorProjection(rows,through){
   let validClicks=0,orphanClicks=0;
   for(const [k,t] of clicks){const i=exposures.get(k);if(i!==undefined&&t>=i)validClicks++;else orphanClicks++;}
   const counts={impression:0,click:0,detail:0,budget_cta:0,quote_started:0,quote_completed:0,quote_submitted:0};
+  const orphans={click_without_impression:0,detail_without_click:0,budget_cta_without_detail:0,quote_started_without_budget_cta:0,quote_completed_without_started:0,quote_submitted_without_completed_or_order:0};
   const submissions=[];
   for(const j of journeys.values()){
     if(j.impressionAt!==null)counts.impression++;
@@ -76,11 +80,14 @@ function behaviorProjection(rows,through){
       if(q.completedAt!==null)completed=true;
       if(q.submittedAt!==null&&q.orderId){submitted=true;submissions.push({journeyKey:j.key,orderId:q.orderId,submittedAt:q.submittedAt});}
     }
-    if(started)counts.quote_started++;
-    if(completed)counts.quote_completed++;
-    if(submitted)counts.quote_submitted++;
+    if(started)counts.quote_started++; else if(j.raw.quoteStarted)orphans.quote_started_without_budget_cta++;
+    if(completed)counts.quote_completed++; else if(j.raw.quoteCompleted)orphans.quote_completed_without_started++;
+    if(submitted)counts.quote_submitted++; else if(j.raw.quoteSubmitted)orphans.quote_submitted_without_completed_or_order++;
+    if(j.raw.click&&j.clickAt===null)orphans.click_without_impression++;
+    if(j.raw.detail&&j.detailAt===null)orphans.detail_without_click++;
+    if(j.raw.budget&&j.budgetAt===null)orphans.budget_cta_without_detail++;
   }
-  return {counts,submissions,searchCtr:{numerator:validClicks,denominator:exposures.size,value:rate(validClicks,exposures.size),orphanClicks},excluded:{futureEvent,futureMaterialization,missingJourney}};
+  return {counts,orphans,submissions,searchCtr:{numerator:validClicks,denominator:exposures.size,value:rate(validClicks,exposures.size),orphanClicks},excluded:{futureEvent,futureMaterialization,missingJourney}};
 }
 
 function projectCanonicalFunnel(behaviorEvents,orderEvents,input){
@@ -108,6 +115,7 @@ function projectCanonicalFunnel(behaviorEvents,orderEvents,input){
   const finalJourneys=new Set();
   for(const s of crossBehavior.submissions){const t=requested.get(s.orderId);if(t!==undefined&&t>=s.submittedAt)finalJourneys.add(s.journeyKey);}
   const counts={...behavior.counts,order_requested:finalJourneys.size};
+  const orphanStages=Object.freeze({...behavior.orphans,order_request_missing_for_submitted:Math.max(0,crossBehavior.counts.quote_submitted-finalJourneys.size)});
   const transitions={};
   for(let i=1;i<STAGES.length;i++){
     const from=STAGES[i-1],to=STAGES[i];
@@ -123,6 +131,7 @@ function projectCanonicalFunnel(behaviorEvents,orderEvents,input){
     crossDomainDataThrough:new Date(cross).toISOString(),
     searchCtr:Object.freeze(behavior.searchCtr),
     strictSessionServiceFunnel:Object.freeze({counts:Object.freeze(counts),transitions:Object.freeze(transitions)}),
+    orphanStages,
     excluded:Object.freeze({
       futureBehaviorEvents:behavior.excluded.futureEvent,
       futureBehaviorMaterializations:behavior.excluded.futureMaterialization,
