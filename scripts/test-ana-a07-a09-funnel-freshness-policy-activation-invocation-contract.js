@@ -25,6 +25,13 @@ ok('successor candidate exists only in repository',()=>{
   assert.equal(c.successorCandidate.stagingApplied,false);
   assert.equal(c.operationalState.successorInstalledInStaging,false);
 });
+ok('next staging command is structure-only',()=>{
+  assert.equal(c.successorStagingAuthorization.scope,'staging_structure_only');
+  assert.equal(c.successorStagingAuthorization.applySuccessorMigrationAuthorizedByCommand,true);
+  assert.equal(c.successorStagingAuthorization.executeValidation045RollbackOnlyAuthorizedByCommand,true);
+  assert.equal(c.successorStagingAuthorization.persistentActivationAuthorizedByCommand,false);
+  assert.equal(c.successorStagingAuthorization.persistentPolicyWriteAuthorizedByCommand,false);
+});
 ok('staging and persistence remain separate authorities',()=>{
   assert.equal(c.authority.stagingMutationAuthority,false);
   assert.equal(c.authority.activationInvocationAuthority,false);
@@ -36,5 +43,5 @@ ok('successor candidate remains narrow',()=>{
   assert.equal(c.successorCandidate.snapshotWriteAllowed,false);
   assert.equal(c.successorCandidate.cronCreationAllowed,false);
 });
-assert.equal(passed,5);
-console.log('ANA-A07/A09 activation-invocation lifecycle conformance passed: 5/5.');
+assert.equal(passed,6);
+console.log('ANA-A07/A09 activation-invocation lifecycle conformance passed: 6/6.');

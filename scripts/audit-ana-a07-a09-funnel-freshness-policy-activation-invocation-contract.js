@@ -43,6 +43,14 @@ assert.equal(c.successorRequirements.canonicalFunctionName,'private.activate_a09
 assert.equal(c.successorCandidate.status,'repository_ready_staging_unauthorized');
 assert.equal(c.successorCandidate.stagingApplied,false);
 assert.equal(c.successorCandidate.validation045Status,'NOT_RUN_STAGING');
+assert.equal(c.successorStagingAuthorization.scope,'staging_structure_only');
+assert.equal(c.successorStagingAuthorization.genericProceedIsAuthorization,false);
+assert.equal(c.successorStagingAuthorization.applySuccessorMigrationAuthorizedByCommand,true);
+assert.equal(c.successorStagingAuthorization.executeValidation045RollbackOnlyAuthorizedByCommand,true);
+assert.equal(c.successorStagingAuthorization.persistentActivationAuthorizedByCommand,false);
+assert.equal(c.successorStagingAuthorization.persistentPolicyWriteAuthorizedByCommand,false);
+assert(c.successorStagingAuthorization.template.includes('head=<CURRENT_PR_HEAD>'));
+assert(c.successorStagingAuthorization.template.includes('activationApprovalEvidenceDigest=ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603'));
 assert.equal(c.successorCandidate.createsRowsWhenApplied,false);
 assert.equal(c.successorCandidate.canPersistRowsOnlyWhenLaterInvoked,true);
 assert.equal(c.successorCandidate.exactPolicyInsertCardinality,8);

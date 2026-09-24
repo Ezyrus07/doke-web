@@ -58,3 +58,9 @@ Persistent policy rows remain `0`.
 ## Next gate
 
 A separate explicit staging authorization is required to apply only migration `20260924144500` and execute validation `045` rollback-only. Persistent activation remains a later, separate single-use authorization.
+
+The exact next command is defined by the contract as:
+
+`authorize-ana-a07-a09-funnel-freshness-policy-approved-successor-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 migration=20260924144500 validation=045 activationContractId=ana-a07-a09-funnel-freshness-policy-activation-invocation-v1 policySetId=ana-a07-a09-funnel-v1-r1 activationApprovalEvidenceDigest=ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603 approvalEnvelopeEvidenceDigest=9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5 runtimeEvidenceBlobSha=118ca5f948f93ca09c7a7305d1b230880fa98630`
+
+That command authorizes only successor installation plus rollback validation; it does not authorize persistent activation.
