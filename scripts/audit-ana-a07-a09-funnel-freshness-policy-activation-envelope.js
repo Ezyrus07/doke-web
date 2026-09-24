@@ -17,6 +17,7 @@ const doc=read('docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md'
 const lib=require('./lib/ana-a07-a09-funnel-freshness-policy-activation-envelope');
 const runtimeEnforcementMigration=read('supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql');
 const runtimeEnforcementValidation=read('supabase/tests/044_ana_a07_a09_funnel_policy_approval_runtime_enforcement_validation.sql');
+const runtimeEvidence=json('reports/generated/ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging-evidence.json');
 
 assert.equal(envelope.contractId,lib.CONTRACT_ID);
 assert.equal(envelope.approvalEvidenceSchemaId,lib.SCHEMA_ID);
@@ -130,5 +131,29 @@ assert(!runtimeEnforcementMigration.includes('activate_analytics_a09_funnel_fres
   'DOKE_ANALYTICS_A09_FUNNEL_APPROVAL_ENVELOPE_REQUIRED',
   'rollback;'
 ].forEach((fragment)=>assert(runtimeEnforcementValidation.includes(fragment),'validation 044 missing '+fragment));
+
+
+assert.equal(envelope.runtimeEnforcementCandidate.status,'staging_applied_validated_activation_unauthorized');
+assert.equal(envelope.runtimeEnforcementCandidate.stagingApplied,true);
+assert.equal(envelope.runtimeEnforcementCandidate.validation044Passed,true);
+assert.equal(envelope.runtimeEnforcementCandidate.runtimeEnforcementAuthority,true);
+assert.equal(envelope.runtimeEnforcementCandidate.legacyActivationTombstoned,true);
+assert.equal(envelope.authority.runtimeEnforcementAppliedAuthority,true);
+assert.equal(envelope.authority.activationInvocationAuthority,false);
+assert.equal(envelope.authority.policyPersistenceAuthority,false);
+assert.equal(runtimeEvidence.stagingMigrationVersion,'20260924141356');
+assert.equal(runtimeEvidence.validation,'044 PASS');
+assert.equal(runtimeEvidence.runtime.validatorOwner,'postgres');
+assert.equal(runtimeEvidence.runtime.validatorSecurityDefiner,true);
+assert.equal(runtimeEvidence.runtime.validatorAnonExecute,false);
+assert.equal(runtimeEvidence.runtime.validatorAuthenticatedExecute,false);
+assert.equal(runtimeEvidence.runtime.validatorServiceRoleExecute,false);
+assert.equal(runtimeEvidence.runtime.legacyActivationTombstoned,true);
+assert.equal(runtimeEvidence.policyState.freshnessPolicyRowsPersisted,0);
+assert.equal(runtimeEvidence.policyState.activationInvoked,false);
+assert.equal(runtimeEvidence.runtime.postgresIdentifierTruncationObserved,true);
+assert.equal(candidate.runtimeEnforcementCandidate.stagingApplied,true);
+assert.equal(candidate.runtimeEnforcementCandidate.validation044Passed,true);
+assert.equal(candidate.runtimeEnforcementCandidate.runtimeEnforcementAuthority,true);
 
 console.log('ANA-A07/A09 funnel freshness activation envelope audit passed.');

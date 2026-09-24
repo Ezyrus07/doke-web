@@ -204,7 +204,8 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "readyForReviewAuthority": false,
-    "runtimeEnforcementCandidateAuthority": true
+    "runtimeEnforcementCandidateAuthority": true,
+    "runtimeEnforcementAppliedAuthority": true
   },
   "prohibitedEffects": {
     "activationFunctionInvoked": false,
@@ -224,9 +225,9 @@
     "workflow": ".github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml"
   },
   "nextGates": [
-    "Apply the approval-envelope runtime-enforcement candidate in staging under a separate explicit authorization and execute validation 044.",
-    "After runtime validator/tombstone staging evidence is certified, create a separate activation-invocation authorization contract; do not infer activation authority from the repository-only envelope.",
-    "Only after explicit activation authority exists may an approval-aware activating successor be introduced and invoked.",
+    "Create a separate repository-only activation-invocation authorization contract that binds the already-approved envelope and staging runtime-enforcement evidence; do not activate in that lot.",
+    "Any activation-capable successor must use an explicit canonical PostgreSQL identifier of 63 bytes or fewer and must validate the exact approved envelope before inserting rows.",
+    "Only after a separate staging activation authorization may the eight freshness policies be persisted.",
     "Run complete/orphan/empty-window/late-fact canaries before any snapshot-publication authority."
   ],
   "runtimeEnforcementCandidate": {
@@ -235,7 +236,7 @@
     "validatorFunction": "private.validate_analytics_a09_funnel_freshness_policy_approval_envelope_v1",
     "legacyActivationFunction": "private.activate_analytics_a09_funnel_freshness_policy_v1",
     "canonicalJsonDependency": "private.canonicalize_analytics_json_v1",
-    "status": "repository_ready_staging_unauthorized",
+    "status": "staging_applied_validated_activation_unauthorized",
     "sourceHead": "e19457d1e099f65240ecb34999411590be3b4673",
     "matrixVersion": "1.3.132",
     "additiveMigration": true,
@@ -245,10 +246,14 @@
     "createsCron": false,
     "createsActivationCapableSuccessor": false,
     "tombstonesLegacyActivationWhenApplied": true,
-    "stagingApplied": false,
-    "validation044Passed": false,
-    "runtimeEnvelopeValidatorInstalled": false,
-    "legacyActivationTombstoned": false,
-    "runtimeEnforcementAuthority": false
+    "stagingApplied": true,
+    "validation044Passed": true,
+    "runtimeEnvelopeValidatorInstalled": true,
+    "legacyActivationTombstoned": true,
+    "runtimeEnforcementAuthority": true,
+    "stagingMigrationVersion": "20260924141356",
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging-evidence.json",
+    "runtimeStoredValidatorIdentifier": "validate_analytics_a09_funnel_freshness_policy_approval_envelop",
+    "postgresIdentifierTruncationObserved": true
   }
 }
