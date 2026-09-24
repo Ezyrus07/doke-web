@@ -1,0 +1,100 @@
+#!/usr/bin/env node
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
+const json=(p)=>JSON.parse(read(p));
+
+const envelope=json('config/ana-a07-a09-funnel-freshness-policy-activation-envelope.json');
+const candidate=json('config/ana-a07-a09-funnel-freshness-policy-candidate.json');
+const matrix=json('config/domain-completion-matrix.json');
+const pkg=json('package.json');
+const workflow=read('.github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml');
+const migration=read('supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql');
+const doc=read('docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md');
+const lib=require('./lib/ana-a07-a09-funnel-freshness-policy-activation-envelope');
+
+assert.equal(envelope.contractId,lib.CONTRACT_ID);
+assert.equal(envelope.approvalEvidenceSchemaId,lib.SCHEMA_ID);
+assert.equal(envelope.createdAgainst.repositoryHead,'0c45856b82b08fe5265c3e71b40c0d83fed871a7');
+assert.equal(envelope.createdAgainst.matrixVersion,'1.3.132');
+assert.equal(envelope.createdAgainst.authorization,'authorize-ana-a07-a09-funnel-freshness-policy-activation-envelope-repository-only head=0c45856b82b08fe5265c3e71b40c0d83fed871a7 matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null');
+assert.equal(envelope.authorization.digestSha256,lib.sha256(envelope.authorization.rawCommand));
+assert.equal(envelope.authorization.digestSha256,'4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a');
+assert.equal(envelope.status,'effective_window_approved_activation_uninvoked_runtime_binding_pending');
+
+lib.validateCompletedApprovalEvidence(envelope.approvalEvidence);
+assert.equal(envelope.approvalEvidence.evidenceDigestSha256,'9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5');
+assert.equal(envelope.policySet.policySetId,'ana-a07-a09-funnel-v1-r1');
+assert.equal(envelope.policySet.metricCount,8);
+assert.equal(envelope.policySet.maxLagSeconds,360);
+assert.equal(envelope.policySet.approvedEffectiveFrom,'2026-09-24T14:00:00Z');
+assert.equal(envelope.policySet.approvedEffectiveUntil,null);
+assert.equal(envelope.policySet.runtimeActivationState,'not_active');
+assert.equal(envelope.policySet.runtimePolicyRowsPersisted,0);
+
+assert.equal(envelope.authority.repositoryContractAuthority,true);
+assert.equal(envelope.authority.completedApprovalEvidenceAuthority,true);
+assert.equal(envelope.authority.effectiveWindowSelectionAuthority,true);
+[
+  'activationInvocationAuthority','policyPersistenceAuthority','runtimeEnvelopeEnforcementAuthority','runtimeProjectionAuthority',
+  'runtimeSnapshotAuthority','snapshotPublicationAuthority','cronOrSchedulerAuthority','stagingMutationAuthority',
+  'productionAuthority','mergeAuthority','readyForReviewAuthority'
+].forEach((key)=>assert.equal(envelope.authority[key],false,'authority false: '+key));
+Object.entries(envelope.prohibitedEffects).forEach(([key,value])=>assert.equal(value,false,'effect false: '+key));
+
+assert.equal(envelope.runtimeBoundary.currentActivationFunction,'private.activate_analytics_a09_funnel_freshness_policy_v1');
+assert.equal(envelope.runtimeBoundary.approvalEvidenceArgumentPresent,false);
+assert.equal(envelope.runtimeBoundary.runtimeEnforcementAuthority,false);
+assert(migration.includes('private.activate_analytics_a09_funnel_freshness_policy_v1'));
+assert(!migration.includes('p_approval_evidence'));
+assert(!migration.includes('authorizationDigestSha256'));
+assert(!migration.includes('evidenceDigestSha256'));
+
+assert.equal(candidate.activationEnvelope.contractPath,'config/ana-a07-a09-funnel-freshness-policy-activation-envelope.json');
+assert.equal(candidate.activationEnvelope.evidenceDigestSha256,'9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5');
+assert.equal(candidate.activationEnvelope.approvedEffectiveFrom,'2026-09-24T14:00:00Z');
+assert.equal(candidate.activationEnvelope.approvedEffectiveUntil,null);
+assert.equal(candidate.activationEnvelope.runtimeEnforcementAuthority,false);
+assert.equal(candidate.authorization.policyActivationAuthorized,false);
+assert.equal(candidate.runtimeCandidate.activationInvoked,false);
+assert.equal(candidate.runtimeCandidate.policyRowsPersisted,0);
+assert.equal(candidate.policySet.effectiveFrom,null);
+assert.equal(candidate.policySet.effectiveUntil,null);
+
+const ana=matrix.domains.find((domain)=>domain.id==='ANA-001');
+assert(ana);
+[
+  'config/ana-a07-a09-funnel-freshness-policy-activation-envelope.json',
+  'scripts/lib/ana-a07-a09-funnel-freshness-policy-activation-envelope.js',
+  'scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-envelope.js',
+  'scripts/test-ana-a07-a09-funnel-freshness-policy-activation-envelope.js',
+  'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md',
+  '.github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml'
+].forEach((file)=>assert(ana.requiredPaths.includes(file),'matrix missing '+file));
+assert(ana.nextActions.some((action)=>action.includes('approval-aware runtime-enforcement successor')));
+
+assert.equal(pkg.scripts['audit:ana-a07-a09-funnel-freshness-policy-activation-envelope'],'node scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-envelope.js');
+assert.equal(pkg.scripts['test:ana-a07-a09-funnel-freshness-policy-activation-envelope'],'node scripts/test-ana-a07-a09-funnel-freshness-policy-activation-envelope.js');
+
+[
+  'npm run audit:ana-a07-a09-funnel-freshness-policy-activation-envelope',
+  'npm run test:ana-a07-a09-funnel-freshness-policy-activation-envelope',
+  'npm run audit:domain-completion-matrix',
+  'npm run audit:agent-governance',
+  'git diff --check'
+].forEach((fragment)=>assert(workflow.includes(fragment),'workflow missing '+fragment));
+assert(workflow.includes('permissions:\n  contents: read'));
+['contents: write','pull-requests: write','git push','psql ','supabase db','cron.schedule(']
+  .forEach((fragment)=>assert(!workflow.includes(fragment),'workflow capability forbidden '+fragment));
+
+[
+  'repository-only approval envelope',
+  '2026-09-24T14:00:00Z',
+  'runtime binding is still pending',
+  'no policy row is persisted'
+].forEach((fragment)=>assert(doc.toLowerCase().includes(fragment.toLowerCase()),'docs missing '+fragment));
+
+console.log('ANA-A07/A09 funnel freshness activation envelope audit passed.');
