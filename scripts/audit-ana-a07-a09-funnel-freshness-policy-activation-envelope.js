@@ -26,7 +26,7 @@ assert.equal(envelope.createdAgainst.matrixVersion,'1.3.132');
 assert.equal(envelope.createdAgainst.authorization,'authorize-ana-a07-a09-funnel-freshness-policy-activation-envelope-repository-only head=0c45856b82b08fe5265c3e71b40c0d83fed871a7 matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null');
 assert.equal(envelope.authorization.digestSha256,lib.sha256(envelope.authorization.rawCommand));
 assert.equal(envelope.authorization.digestSha256,'4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a');
-assert.equal(envelope.status,'effective_window_approved_activation_uninvoked_runtime_binding_pending');
+assert.equal(envelope.status,'effective_window_approved_runtime_enforcement_staging_validated_activation_uninvoked');
 
 lib.validateCompletedApprovalEvidence(envelope.approvalEvidence);
 assert.equal(envelope.approvalEvidence.evidenceDigestSha256,'9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5');
@@ -94,21 +94,15 @@ assert(workflow.includes('permissions:\n  contents: read'));
   .forEach((fragment)=>assert(!workflow.includes(fragment),'workflow capability forbidden '+fragment));
 
 [
-  'repository-only approval envelope',
+  'repository approval envelope',
   '2026-09-24T14:00:00Z',
-  'runtime binding is still pending',
-  'no policy row is persisted'
+  'runtime enforcement — staging validated',
+  'persisted funnel policy rows: `0`',
+  'activation itself is still unauthorized'
 ].forEach((fragment)=>assert(doc.toLowerCase().includes(fragment.toLowerCase()),'docs missing '+fragment));
 
 
-assert.equal(envelope.runtimeEnforcementCandidate.status,'repository_ready_staging_unauthorized');
-assert.equal(envelope.runtimeEnforcementCandidate.stagingApplied,false);
-assert.equal(envelope.runtimeEnforcementCandidate.validation044Passed,false);
-assert.equal(envelope.runtimeEnforcementCandidate.runtimeEnforcementAuthority,false);
 assert.equal(envelope.runtimeEnforcementCandidate.createsActivationCapableSuccessor,false);
-assert.equal(candidate.runtimeEnforcementCandidate.status,'repository_ready_staging_unauthorized');
-assert.equal(candidate.runtimeEnforcementCandidate.stagingApplied,false);
-assert.equal(candidate.runtimeEnforcementCandidate.runtimeEnforcementAuthority,false);
 
 [
   'private.validate_analytics_a09_funnel_freshness_policy_approval_envelope_v1',

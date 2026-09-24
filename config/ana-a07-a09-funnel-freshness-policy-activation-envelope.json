@@ -3,7 +3,7 @@
   "approvalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-approval-evidence-v1",
   "domain": "ANA-001",
   "scope": "repository_only",
-  "status": "effective_window_approved_activation_uninvoked_runtime_binding_pending",
+  "status": "effective_window_approved_runtime_enforcement_staging_validated_activation_uninvoked",
   "createdAt": "2026-09-24T13:26:00Z",
   "createdAgainst": {
     "repositoryHead": "0c45856b82b08fe5265c3e71b40c0d83fed871a7",
@@ -13,9 +13,9 @@
   "objective": "Bind the explicit revision-1 funnel freshness effective window to immutable repository evidence without granting staging activation, policy persistence, snapshot publication, scheduler, production, merge or ready-for-review authority.",
   "rootCause": {
     "effectiveWindowDecisionGap": "Closed at repository level: the project owner explicitly approved effectiveFrom=2026-09-24T14:00:00Z and effectiveUntil=null for ana-a07-a09-funnel-v1-r1.",
-    "runtimeEvidenceBindingGap": "Still open: the installed activation function accepts only policySetId/effective dates and cannot validate repository HEAD, Matrix version, authorization digest or evidence digest.",
-    "consequence": "Invoking the current function would persist the correct scalar values but would not make the approval envelope cryptographically/runtime-bound at the database boundary.",
-    "requiredResolution": "Create a separately authorized approval-aware runtime-enforcement successor before any real policy activation."
+    "runtimeEvidenceBindingGap": "Closed in staging: validation 044 proves the approved repository envelope is accepted by the owner-only validator and tampered HEAD/authorization/boundary/digest variants are rejected.",
+    "consequence": "The prior scalar-only activation bypass is now tombstoned in staging. The remaining boundary is explicit activation-invocation authority plus an activation-capable successor that must validate this envelope before inserting rows.",
+    "requiredResolution": "Create a separate repository-only activation-invocation authorization contract, then introduce an approval-aware activation-capable successor only under that contract; real policy insertion still requires a later separate staging authorization."
   },
   "authorization": {
     "rawCommand": "authorize-ana-a07-a09-funnel-freshness-policy-activation-envelope-repository-only head=0c45856b82b08fe5265c3e71b40c0d83fed871a7 matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null",
@@ -179,14 +179,15 @@
       "effectiveUntil"
     ],
     "approvalEvidenceArgumentPresent": false,
-    "repositoryHeadBindingVerifiedByDatabase": false,
-    "matrixVersionBindingVerifiedByDatabase": false,
-    "authorizationDigestVerifiedByDatabase": false,
-    "evidenceDigestVerifiedByDatabase": false,
-    "exactApprovedWindowBindingVerifiedByDatabase": false,
+    "repositoryHeadBindingVerifiedByDatabase": true,
+    "matrixVersionBindingVerifiedByDatabase": true,
+    "authorizationDigestVerifiedByDatabase": true,
+    "evidenceDigestVerifiedByDatabase": true,
+    "exactApprovedWindowBindingVerifiedByDatabase": true,
     "structuralWindowValidationPresent": true,
     "overlapRejectionPresent": true,
-    "runtimeEnforcementAuthority": false
+    "runtimeEnforcementAuthority": true,
+    "note": "Runtime envelope validation is installed as a separate owner-only validator; the legacy scalar-only activation function is tombstoned. No activation-capable successor exists yet, and zero policy rows are persisted."
   },
   "authority": {
     "repositoryContractAuthority": true,
