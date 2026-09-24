@@ -1,6 +1,6 @@
 # ANA-A07/A09 — Funnel freshness policy candidate
 
-This repository-only lot defines revision 1 of the freshness policy for the eight canonical ANA-A09 funnel metrics. No policy is active, no policy row is persisted, no snapshot is published and no scheduler is created.
+Revision 1 of the freshness policy for the eight canonical ANA-A09 funnel metrics now has its activation structure installed and structurally validated in staging. No policy is active, no policy row is persisted, no snapshot is published and no scheduler is created.
 
 ## Candidate values
 
@@ -41,4 +41,10 @@ The repository includes:
 - `supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql`
 - `supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql`
 
-Applying the migration only installs the postgres-only activation function. Validation 043 is rollback-only and proves atomic insertion of exactly eight transient policies plus overlap rejection. A later explicit authorization is still required to invoke activation with an effective window.
+The migration is installed in staging as `20260924005631 / ana_a07_a09_funnel_freshness_policy_activation`. Validation 043 is **PASS** and rollback-only: it proved atomic insertion of exactly eight transient policies plus overlap rejection, then left zero policy rows. The activation function remains postgres-only. A later explicit authorization is still required to approve an effective window and invoke activation.
+
+## Runtime-state reconciliation
+
+Canonical evidence: `reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json`.
+
+Current state: activation structure installed, validation 043 passed, `policyRowsPersisted=0`, `effectiveFrom=null`, `effectiveUntil=null`, no publication-policy rows and no cron. Threshold value authority remains false until the exact effective window is separately approved and activation is explicitly authorized.

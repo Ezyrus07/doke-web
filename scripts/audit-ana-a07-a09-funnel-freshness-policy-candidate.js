@@ -7,9 +7,9 @@ const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260924004500_ana
 const validation=fs.readFileSync(path.join(root,'supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql'),'utf8');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('contract',c.contractId==='ana-a07-a09-funnel-freshness-policy-candidate-v1');
-check('repository only',c.scope==='repository_only'&&c.authorization?.stagingApplyAuthorized===false&&c.authorization?.policyActivationAuthorized===false);
+check('structure installed policy inactive',c.scope==='staging_activation_structure_installed_policy_inactive'&&c.authorization?.stagingApplyAuthorized===true&&c.authorization?.stagingApplyAuthorizationConsumed===true&&c.authorization?.policyActivationAuthorized===false);
 check('exact metric count',c.policySet?.metricCount===8&&c.policies?.length===8&&a09.metrics?.length===8);
-check('uniform r1 threshold',c.policies.every(p=>p.metricVersion==='v1'&&p.maxLagSeconds===360&&p.status==='candidate_unapplied'));
+check('uniform r1 threshold',c.policies.every(p=>p.metricVersion==='v1'&&p.maxLagSeconds===360&&p.status==='structure_installed_policy_inactive'));
 check('derivation exact',c.policySet?.proposedWindowStepSeconds===300&&c.policySet?.proposedProjectionDelayBudgetSeconds===60&&c.policySet?.proposedMaxLagSeconds===360&&c.derivation?.arithmetic==='300 + 60 = 360');
 check('no inherited authority',c.derivation?.a11AuthorityInherited===false&&c.derivation?.dependencyLagDoubleCounted===false);
 check('effective window unset',c.policySet?.effectiveFrom===null&&c.policySet?.effectiveUntil===null&&c.policySet?.activationState==='not_active');
@@ -23,7 +23,9 @@ check('overlap fail closed',sql.includes('DOKE_ANALYTICS_A09_FUNNEL_FRESHNESS_PO
 check('no snapshot/publication/cron mutation',!sql.match(/insert\s+into\s+private\.analytics_metric_snapshots/i)&&!sql.match(/insert\s+into\s+private\.analytics_metric_publication_policies/i)&&!sql.match(/cron\.schedule/i));
 check('owner only',sql.includes('owner to postgres')&&sql.includes('from public, anon, authenticated, service_role'));
 check('validation rollback',/^begin;/m.test(validation)&&/rollback;\s*$/m.test(validation));
-check('policy activation still absent',c.runtimeCandidate?.activationInvoked===false&&c.runtimeCandidate?.policyRowsPersisted===0);
+check('activation structure staging validated',c.runtimeCandidate?.migrationApplied===true&&c.runtimeCandidate?.stagingMigrationVersion==='20260924005631'&&c.runtimeCandidate?.validation043Status==='PASS'&&c.runtimeCandidate?.stagingValidated===true&&c.runtimeCandidate?.activationFunctionInstalled===true);
+check('policy activation still absent',c.runtimeCandidate?.activationInvoked===false&&c.runtimeCandidate?.policyRowsPersisted===0&&c.policySet?.effectiveFrom===null&&c.policySet?.effectiveUntil===null);
+check('runtime evidence bound',c.runtimeEvidence?.artifact==='reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json'&&c.runtimeEvidence?.validation043Passed===true&&c.runtimeEvidence?.policyRowsPersisted===0&&c.runtimeEvidence?.activationInvoked===false);
 check('ANA maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));

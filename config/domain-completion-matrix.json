@@ -1,6 +1,6 @@
 {
   "version": "1.3.132",
-  "updatedAt": "2026-09-24T00:45:00Z",
+  "updatedAt": "2026-09-24T00:57:37.595619Z",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -3444,7 +3444,8 @@
         "supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql",
         "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-CANDIDATE.md",
         "scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js",
-        "scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js"
+        "scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js",
+        "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json"
       ],
       "scanRoots": [
         "assets/js/repositories/quote-template-metrics-repository.js",
@@ -3621,7 +3622,8 @@
         "ANA-A07 behavior/ORD concurrent-writer staging canary passed using a transient pg_cron second session: writer xact_start=2026-09-23T23:31:34.252362Z, helper/behavior/ORD dataThrough=2026-09-23T23:31:34.252361Z (exactly 1 microsecond earlier), ACTIVE_TRANSACTION_FLOOR observed with activeTransactionCount=1, and all before-writer assertions passed. Job 9 was unscheduled immediately; its terminal failed/job canceled status is expected cleanup after evidence capture, with no residual job/session/prepared transaction/watermark cron and post-cleanup NO_ACTIVE_TRANSACTION recovery. The behavior/ORD runtime watermark mechanism is now certified; broader A07 staging authority and A09 projector/threshold/empty-window/late-fact evidence remain open. ANA stays 3/6.",
         "ANA-A09 server-side canonical funnel projector candidate is repository-ready and unapplied. Migration 20260923235500 defines a compute-only service-role RPC plus private chronological stage projector, consumes certified A07 behavior/ORD watermarks, filters behavior by received_at+occurred_at and ORD by created_at+occurred_at, recomputes the final quote-submitted->order-requested transition at the cross-domain watermark, preserves explicit-key-only linkage, and keeps snapshotPublicationAllowed=false while metric-specific A07 thresholds and complete/orphan/empty/late-fact staging evidence are pending. ANA remains 3/6.",
         "ANA-A09 compute-only funnel projector is installed in staging as migration 20260924002741 and validation 042 passes. Runtime postflight confirms postgres-owned private stage helper, service-role-only compute RPC, zero A09 cron jobs, eight computed funnel metrics, fresh A07 behavior/ORD watermarks, computeState=computed_policy_pending, freshnessPolicyState=threshold_pending, segmentation=global_only, runtimeAuthority=false and snapshotPublicationAllowed=false. Structural/runtime installation is closed; metric-specific freshness policy, complete/orphan/empty-window/late-fact evidence and append-only snapshot publication remain separate gates. ANA stays 3/6.",
-        "ANA-A07/A09 now has a repository-only revision-1 freshness-policy candidate for all eight canonical funnel metrics. The candidate proposes maxLagSeconds=360 for each metric, derived as the already-certified ANA 300-second window reference plus a 60-second projection-delay budget. The cross-domain final stage does not receive an extra ORD allowance because its dataThrough is already the minimum behavior/ORD watermark. No effectiveFrom is invented; missing policy remains unavailable, overlap is fail-closed, snapshotPublicationAllowed remains false, and the owner-only activation function is unapplied. ANA stays 3/6."
+        "ANA-A07/A09 now has a repository-only revision-1 freshness-policy candidate for all eight canonical funnel metrics. The candidate proposes maxLagSeconds=360 for each metric, derived as the already-certified ANA 300-second window reference plus a 60-second projection-delay budget. The cross-domain final stage does not receive an extra ORD allowance because its dataThrough is already the minimum behavior/ORD watermark. No effectiveFrom is invented; missing policy remains unavailable, overlap is fail-closed, snapshotPublicationAllowed remains false, and the owner-only activation function is unapplied. ANA stays 3/6.",
+        "ANA-A07/A09 funnel freshness activation structure is installed in staging as migration 20260924005631 and validation 043 passes rollback-only. The postgres-only function proved atomic insertion of exactly eight transient r1 policies at maxLagSeconds=360 plus overlap rejection, then rollback left policyRowsPersisted=0, publicationPolicyRows=0 and cronJobs=0. No effectiveFrom/effectiveUntil is selected, thresholdValueAuthority remains false, A09 runtimeProjectionAuthority/runtimeSnapshotAuthority remain false and ANA stays 3/6."
       ],
       "blockers": [
         {
@@ -3641,7 +3643,7 @@
       ],
       "nextActions": [
         "Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.",
-        "Apply only the repository-ready ANA-A07/A09 funnel freshness activation-function migration 20260924004500 to staging and run validation 043 after explicit authorization; do not invoke policy activation, select effectiveFrom, publish snapshots or run content canaries in that lot.",
+        "Create and approve a repository-only activation envelope for ana-a07-a09-funnel-v1-r1 with an explicit effectiveFrom/effectiveUntil and immutable evidence binding; do not invoke policy activation, publish snapshots or run content canaries in that lot.",
         "Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.",
         "Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.",
         "Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical."
