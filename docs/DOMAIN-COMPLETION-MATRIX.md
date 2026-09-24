@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1615 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1618 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -546,7 +546,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1515 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1517 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1063,7 +1063,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 70 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 73 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`, `private.analytics_metric_publication_policies_v1`.
 
@@ -1120,6 +1120,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A07/A09 revision-1 funnel freshness effective window is repository-approved and immutably bound: policySetId ana-a07-a09-funnel-v1-r1, eight v1 metrics at maxLagSeconds=360, effectiveFrom=2026-09-24T14:00:00Z, effectiveUntil=null, authorization SHA-256 4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a and evidence SHA-256 9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5. No activation occurred and policyRowsPersisted remains 0. The installed activation function cannot validate this envelope, so runtime envelope enforcement is the next gate and ANA remains 3/6.
 - ANA-A07/A09 now has a repository-only approval-envelope runtime-enforcement candidate. Migration 20260924140000 adds an exact envelope validator for repository HEAD, Matrix, raw authorization digest, the eight fixed funnel policies, effective window and evidence digest, and tombstones the legacy scalar-only activation path when applied. Validation 044 is rollback-only but has not run in staging. The candidate inserts no policy rows, writes no snapshots, creates no cron and intentionally creates no activation-capable successor because activationInvocationAuthorized and policyPersistenceAuthorized remain false. ANA stays 3/6.
 - ANA-A07/A09 approval-envelope runtime enforcement is applied and validated in staging: repository migration 20260924140000 registered as staging version 20260924141356; validation 044 PASS; validator owner postgres/security-definer with anon/authenticated/service_role EXECUTE revoked; legacy scalar-only activation path tombstoned; 0 funnel freshness policy rows persisted. PostgreSQL 63-byte identifier truncation is explicitly recorded for the long validator name. Activation remains separately unauthorized and ANA stays 3/6.
+- ANA-A07/A09 activation-invocation authorization contract is repository-defined and pending explicit project-owner activation authorization. It binds the approved envelope digest, staging runtime-enforcement evidence blob 118ca5f948f93ca09c7a7305d1b230880fa98630, migration version 20260924141356, validation 044 PASS, policySet ana-a07-a09-funnel-v1-r1, eight v1 policies at maxLagSeconds=360 and effectiveFrom=2026-09-24T14:00:00Z. No activation authority, successor, staging mutation or policy persistence is created by this contract; ANA remains 3/6.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1127,7 +1128,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
-- Create a separate repository-only ANA-A07/A09 activation-invocation authorization contract binding the approved envelope and staging runtime-enforcement evidence; do not persist policies in that contract lot.
+- Obtain explicit ANA-A07/A09 activation authorization using the exact activation-invocation contract command bound to the then-current PR HEAD; generic proceed is not authorization and no policy may be persisted before that explicit command.
 - Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.
 - Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
@@ -1144,7 +1145,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 336 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 337 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1204,7 +1205,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3588 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3592 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1265,4 +1266,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-24T14:14:36.564203Z._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-24T14:24:21.531026Z._
