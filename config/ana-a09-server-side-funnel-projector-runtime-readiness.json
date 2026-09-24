@@ -2,16 +2,17 @@
   "contractId": "ana-a09-server-side-funnel-projector-runtime-readiness-v1",
   "domain": "ANA-001",
   "sourceContract": "ana-a09-canonical-funnel-projection-v1",
-  "sourceHead": "3e94cbb848acc395437abad79d8076b2173985d8",
+  "sourceHead": "c179a88b0ff41d2bac778e8aacdb7b2c168776e6",
   "createdAt": "2026-09-23T23:55:00Z",
-  "scope": "repository_only",
+  "scope": "staging_runtime_installed_policy_pending",
   "authorization": {
     "token": "authorize-ana-a09-server-side-funnel-projector-candidate-repository-only head=3e94cbb848acc395437abad79d8076b2173985d8 matrix=v1.3.132",
     "received": true,
-    "stagingApplyAuthorized": false,
-    "productionAuthorized": false
+    "stagingApplyAuthorized": true,
+    "productionAuthorized": false,
+    "stagingApplyAuthorizationConsumed": true
   },
-  "status": "runtime_projector_candidate_repository_ready_staging_unapplied",
+  "status": "runtime_projector_installed_validation_042_pass_policy_canaries_pending",
   "migration": "supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql",
   "validationSql": "supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql",
   "runtime": {
@@ -22,7 +23,11 @@
     "snapshotMutationAllowed": false,
     "schedulerRequired": false,
     "serviceRoleComputeExecute": true,
-    "browserExecuteAllowed": false
+    "browserExecuteAllowed": false,
+    "runtimeProjectorInstalled": true,
+    "computeRuntimeHealthy": true,
+    "runtimeAuthority": false,
+    "snapshotPublicationAllowed": false
   },
   "watermarkHandoff": {
     "authority": "ANA-A07",
@@ -53,19 +58,32 @@
     "blockingReason": "A07_METRIC_SPECIFIC_THRESHOLD_POLICY_PENDING"
   },
   "validationPlan": {
-    "validation042Status": "not_run",
-    "migrationApplied": false,
-    "stagingValidated": false,
+    "validation042Status": "passed",
+    "migrationApplied": true,
+    "stagingValidated": true,
     "completePath": "pending_controlled_staging_canary",
     "orphanPath": "pending_controlled_staging_canary",
     "emptyWindowPath": "pending_controlled_staging_canary",
     "lateFactPath": "pending_controlled_staging_canary",
     "metricSpecificThresholds": "pending_separate_policy_lot",
-    "segmentationAuthority": "global_only"
+    "segmentationAuthority": "global_only",
+    "stagingMigrationVersion": "20260924002741",
+    "computeState": "computed_policy_pending",
+    "metricCount": 8
   },
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Repository-only compute projector candidate. Runtime application, validation 042, threshold policy and controlled complete/orphan/empty/late-fact staging evidence remain required."
+    "reason": "Migration 20260924002741 is installed and validation 042 passes. The compute RPC is healthy but explicitly policy-pending; thresholds and complete/orphan/empty/late-fact staging evidence remain required before runtime projection/snapshot authority. ANA remains 3/6."
+  },
+  "runtimeEvidence": {
+    "artifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json",
+    "observedAt": "2026-09-24T00:30:48.672523Z",
+    "validation042Passed": true,
+    "runtimeProjectorInstalled": true,
+    "computeRuntimeHealthy": true,
+    "runtimeAuthority": false,
+    "snapshotPublicationAllowed": false,
+    "a09CronJobs": 0
   }
 }

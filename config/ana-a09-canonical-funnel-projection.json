@@ -1,13 +1,13 @@
 {
   "contractId": "ana-a09-canonical-funnel-projection-v1",
   "domain": "ANA-001",
-  "sourceHead": "3e94cbb848acc395437abad79d8076b2173985d8",
+  "sourceHead": "c179a88b0ff41d2bac778e8aacdb7b2c168776e6",
   "createdAt": "2026-09-21T22:33:00-03:00",
-  "scope": "repository_only",
-  "status": "server_side_projector_candidate_repository_ready_staging_unapplied",
+  "scope": "staging_runtime_installed_policy_pending",
+  "status": "server_side_projector_staging_validated_policy_canaries_pending",
   "objective": "Define a deterministic canonical acquisition-to-order funnel from ANA behavioral events and ORD order.requested facts using only explicit linkage keys, without identity stitching or temporal heuristics.",
   "rootCause": {
-    "projectionGap": "A server-side compute projector candidate now exists repository-side, but it is unapplied and has no staging validation. Snapshot publication, thresholds and controlled path evidence remain separate gates.",
+    "projectionGap": "The server-side compute projector is installed and validation 042 passes in staging. Runtime projection authority remains false because metric-specific freshness thresholds, controlled complete/orphan/empty-window/late-fact evidence and snapshot publication policy remain open.",
     "authorityGap": "Legacy service/quote funnel events must remain shadow inputs and cannot become a second analytics authority.",
     "linkageRisk": "A funnel assembled by actor identity, timestamp proximity or cross-session heuristics would violate the A03 identity boundary and could falsely attribute anonymous behavior."
   },
@@ -132,11 +132,11 @@
     "productionAuthority": false
   },
   "activationRequirements": [
-    "apply and validate the repository-ready server-side funnel projector after explicit staging authorization",
-    "metric-specific A07 freshness threshold policies for the funnel metrics being activated",
-    "controlled staging evidence for complete, orphan, empty-window and late-materialized stage paths",
-    "append-only A04/A05 snapshot publication only after thresholds and path canaries pass",
-    "explicit immutable segmentation authority before category/state funnel claims"
+    "define and approve metric-specific A07 freshness threshold policies for the funnel metrics being activated",
+    "run controlled staging evidence for complete, orphan, empty-window and late-materialized stage paths",
+    "keep snapshotPublicationAllowed=false until thresholds and path canaries pass",
+    "wire append-only A04/A05 snapshot publication only after the publication policy gate closes",
+    "establish explicit immutable segmentation authority before category/state funnel claims"
   ],
   "catLiquidityBlocker": {
     "status": "liquidity_runtime_closed_outside_a09",
@@ -169,20 +169,35 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The A09 compute-only server-side projector candidate is repository-ready and consumes certified A07 watermarks, but it is unapplied. Validation 042, threshold policies, snapshot publication and complete/orphan/empty/late-fact staging evidence remain required. ANA stays 3/6."
+    "reason": "The A09 compute-only server-side projector is installed in staging and validation 042 passes, but the RPC remains policy-pending with runtimeAuthority=false and snapshotPublicationAllowed=false. Metric thresholds, controlled path evidence and snapshot publication remain open. ANA stays 3/6."
   },
   "runtimeCandidate": {
-    "status": "repository_ready_staging_unapplied",
+    "status": "staging_applied_validation_042_pass_policy_canaries_pending",
     "migration": "supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql",
     "validationSql": "supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql",
     "readinessContract": "config/ana-a09-server-side-funnel-projector-runtime-readiness.json",
     "stageFunction": "private.analytics_canonical_funnel_stage_rows_v1",
     "computeFunction": "public.compute_analytics_canonical_funnel_v1",
     "migrationCreated": true,
-    "migrationApplied": false,
-    "stagingValidated": false,
+    "migrationApplied": true,
+    "stagingValidated": true,
     "computeOnly": true,
     "snapshotPublicationAllowed": false,
-    "metricSpecificThresholdsApplied": false
+    "metricSpecificThresholdsApplied": false,
+    "stagingMigrationVersion": "20260924002741",
+    "validation042Status": "PASS",
+    "runtimeProjectorInstalled": true,
+    "computeRuntimeHealthy": true,
+    "runtimeEvidenceArtifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json"
+  },
+  "runtimeEvidence": {
+    "artifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json",
+    "status": "projector_installed_validation_042_pass_policy_pending",
+    "observedAt": "2026-09-24T00:30:48.672523Z",
+    "metricCount": 8,
+    "computeState": "computed_policy_pending",
+    "runtimeProjectorInstalled": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false
   }
 }
