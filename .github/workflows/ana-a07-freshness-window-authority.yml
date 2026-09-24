@@ -19,6 +19,12 @@ on:
       - 'docs/ANA-A07-FRESHNESS-WINDOW-AUTHORITY.md'
       - 'scripts/audit-ana-a07-freshness-window-authority.js'
       - 'scripts/test-ana-a07-freshness-window-authority.js'
+      - 'config/ana-a07-a09-funnel-freshness-policy-candidate.json'
+      - 'supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql'
+      - 'supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql'
+      - 'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-CANDIDATE.md'
+      - 'scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js'
+      - 'scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - 'reports/generated/domain-completion-matrix-report.json'
@@ -50,8 +56,14 @@ jobs:
           node --check backend/modules/analytics/dependency-watermark-authority.js
           node --check scripts/audit-ana-a07-freshness-window-authority.js
           node --check scripts/test-ana-a07-freshness-window-authority.js
+          node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
+          node --check scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js
       - name: ANA-A07 audit
         run: npm run audit:ana-a07-freshness-window-authority
+      - name: ANA-A07/A09 funnel freshness policy candidate audit
+        run: node scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
+      - name: ANA-A07/A09 funnel freshness policy candidate conformance
+        run: node scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js
       - name: ANA-A07 watermark runtime candidate audit
         run: node scripts/audit-ana-a07-behavior-ord-watermark-runtime-readiness.js
       - name: ANA-A07 watermark runtime candidate conformance

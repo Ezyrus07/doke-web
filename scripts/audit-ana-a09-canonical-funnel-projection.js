@@ -8,6 +8,7 @@ const a03=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a03-behavioral
 const a07=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-freshness-window-authority.json'),'utf8'));
 const watermark=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-behavior-ord-watermark-authority.json'),'utf8'));
 const readiness=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-server-side-funnel-projector-runtime-readiness.json'),'utf8'));
+const funnelPolicy=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a07-a09-funnel-freshness-policy-candidate.json'),'utf8'));
 const matrix=JSON.parse(fs.readFileSync(path.join(root,'config','domain-completion-matrix.json'),'utf8'));
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('contract id',f.CONTRACT_ID===c.contractId);
@@ -25,6 +26,7 @@ check('CAT liquidity handoff current',c.catLiquidityBlocker?.status==='liquidity
 check('runtime projector installed and policy pending',c.status==='server_side_projector_staging_validated_policy_canaries_pending'&&c.runtimeCandidate?.migration==='supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql'&&c.runtimeCandidate?.migrationApplied===true&&c.runtimeCandidate?.stagingMigrationVersion==='20260924002741'&&c.runtimeCandidate?.stagingValidated===true&&c.runtimeCandidate?.validation042Status==='PASS'&&c.runtimeCandidate?.runtimeProjectorInstalled===true);
 check('readiness bound',readiness.sourceContract===c.contractId&&readiness.status==='runtime_projector_installed_validation_042_pass_policy_canaries_pending'&&readiness.validationPlan?.validation042Status==='passed'&&readiness.validationPlan?.stagingMigrationVersion==='20260924002741');
 check('runtime authority remains policy gated',c.authority?.runtimeProjectionAuthority===false&&c.authority?.runtimeSnapshotAuthority===false&&c.authority?.stagingAuthority===false&&c.runtimeEvidence?.runtimeProjectorInstalled===true&&c.runtimeEvidence?.runtimeProjectionAuthority===false);
+check('funnel freshness candidate bound',funnelPolicy.policySet?.metricCount===8&&funnelPolicy.policySet?.proposedMaxLagSeconds===360&&c.funnelFreshnessPolicyCandidate?.policySetId==='ana-a07-a09-funnel-v1-r1'&&c.funnelFreshnessPolicyCandidate?.activationInvoked===false);
 check('maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
 Object.entries(c.prohibitedEffects||{}).forEach(([k,v])=>check('effect '+k,v===false));
 const ana=(matrix.domains||[]).find((d)=>d.id==='ANA-001');

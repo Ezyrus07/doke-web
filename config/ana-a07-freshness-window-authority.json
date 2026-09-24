@@ -1,14 +1,14 @@
 {
   "contractId": "ana-a07-freshness-window-authority-v1",
   "domain": "ANA-001",
-  "sourceHead": "94b7c0b825b8ba6f30953de6c187c2c28cbfa908",
+  "sourceHead": "fb0a8082b7eec9038348d6aee4065704d3ee30a5",
   "createdAt": "2026-09-21T22:00:00-03:00",
   "scope": "repository_only",
-  "status": "behavior_ord_runtime_watermark_certified_projection_validation_pending",
+  "status": "behavior_ord_watermark_certified_a09_funnel_policy_candidate_ready",
   "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
   "rootCause": {
     "helperGap": "ANA-A05 has an applyFreshness helper that accepts an ad hoc maxLagSeconds but there is no canonical policy registry, dependency-watermark contract or canonical latest-window selector.",
-    "runtimeGap": "CAT liquidity and behavior/ORD now have certified server-side runtime watermarks. Remaining A07 work is downstream metric-specific freshness policy plus projection/selection evidence, not watermark materialization.",
+    "runtimeGap": "Behavior/ORD watermarks and the A09 compute projector are installed. A versioned eight-metric funnel freshness-policy candidate now exists repository-side; activation, path canaries and snapshot publication remain open.",
     "evidenceGap": "ANA-A06 proved why selection cannot cherry-pick an older non-empty passing window when a newer canonical observation exists."
   },
   "freshnessStates": [
@@ -60,9 +60,9 @@
     "thresholdComparison": "stale when lagSeconds > maxLagSeconds; fresh otherwise after full window coverage"
   },
   "thresholdAuthority": {
-    "status": "metric_specific_policy_active_no_global_default",
+    "status": "metric_specific_policy_active_plus_a09_candidate",
     "defaultMaxLagSeconds": null,
-    "reason": "ANA-A07 still forbids any implicit global maxLagSeconds. liquidity.active_service_seconds v1 now has an explicit versioned revision-1 policy with maxLagSeconds=360; metrics without an approved metric-specific policy continue to fail closed.",
+    "reason": "ANA-A07 still forbids an implicit global maxLagSeconds. Liquidity retains its active r1 policy; the eight explicit ANA-A09 funnel metrics now have a repository-only r1 candidate at 360 seconds, but no funnel policy is effective until separately activated.",
     "requiredFields": [
       "policyId",
       "metricKey",
@@ -82,7 +82,23 @@
         "runtimeCertified": true,
         "evidenceArtifact": "reports/generated/ana-a11-post-effective-runtime-evidence.json"
       }
-    ]
+    ],
+    "candidateMetricPolicySet": {
+      "contractPath": "config/ana-a07-a09-funnel-freshness-policy-candidate.json",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "revision": 1,
+      "metricCount": 8,
+      "proposedWindowStepSeconds": 300,
+      "proposedProjectionDelayBudgetSeconds": 60,
+      "proposedMaxLagSeconds": 360,
+      "migration": "supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql",
+      "validationSql": "supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql",
+      "migrationApplied": false,
+      "validation043Status": "not_run",
+      "activationInvoked": false,
+      "effectiveFrom": null,
+      "effectiveUntil": null
+    }
   },
   "metricDependencies": [
     {
@@ -90,7 +106,11 @@
       "sourceDomains": [
         "ANA-001"
       ],
-      "thresholdStatus": "pending"
+      "thresholdStatus": "candidate_r1_unapplied",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-search-ctr-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": false
     },
     {
       "metricKey": "marketplace.time_to_first_quote_seconds",
@@ -186,6 +206,84 @@
         "PAY-001"
       ],
       "thresholdStatus": "blocked_until_revenue_margin_retention_authority"
+    },
+    {
+      "metricKey": "funnel.impression_to_click",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "candidate_r1_unapplied",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-impression-click-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": false
+    },
+    {
+      "metricKey": "funnel.click_to_detail",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "candidate_r1_unapplied",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-click-detail-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": false
+    },
+    {
+      "metricKey": "funnel.detail_to_budget_cta",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "candidate_r1_unapplied",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-detail-budget-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": false
+    },
+    {
+      "metricKey": "funnel.budget_cta_to_quote_started",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "candidate_r1_unapplied",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-budget-quote-start-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": false
+    },
+    {
+      "metricKey": "funnel.quote_started_to_completed",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "candidate_r1_unapplied",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-quote-start-complete-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": false
+    },
+    {
+      "metricKey": "funnel.quote_completed_to_submitted",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "candidate_r1_unapplied",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-quote-complete-submit-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": false
+    },
+    {
+      "metricKey": "funnel.quote_submitted_to_order_requested",
+      "sourceDomains": [
+        "ANA-001",
+        "ORD-001"
+      ],
+      "thresholdStatus": "candidate_r1_unapplied",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-submit-order-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": false
     }
   ],
   "invariants": [
@@ -208,13 +306,14 @@
     "runtimeProjectionAuthority": false,
     "alertDeliveryAuthority": false,
     "stagingAuthority": false,
-    "productionAuthority": false
+    "productionAuthority": false,
+    "candidateThresholdValueAuthority": true
   },
   "activationRequirements": [
-    "versioned metric-specific maxLagSeconds policies for each metric being activated",
-    "runtime projection path that derives dataThrough from certified dependency watermarks instead of assuming windowEnd",
-    "materialization-time filtering plus A05 append-only revision semantics for late facts",
-    "controlled staging projection tests for empty-window, late-fact, fresh, stale, unavailable and no-cherry-pick cases"
+    "apply the A07/A09 funnel freshness activation-function migration and validation 043 after separate staging authorization",
+    "activate the eight exact r1 policies only with an explicitly approved effectiveFrom/effectiveUntil under separate authorization",
+    "run controlled A09 complete/orphan/empty-window/late-fact canaries before snapshot publication",
+    "preserve A04/A05 append-only snapshot revision semantics and latest-window no-cherry-pick selection"
   ],
   "preservedBoundaries": [
     "Product Analytics remains distinct from operational observability.",
@@ -243,7 +342,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Behavior/ORD runtime watermark authority is now certified by validation 041 plus a real concurrent-writer canary. Full A07 staging authority remains open for metric-specific thresholds and downstream projection/selection evidence. ANA stays 3/6."
+    "reason": "Behavior/ORD watermark authority and the A09 compute projector are installed. The eight-metric funnel freshness policy is repository-ready only; no threshold row is active and downstream canaries/publication remain open. ANA stays 3/6."
   },
   "dependencyWatermarkAuthority": {
     "contractId": "ana-a07-behavior-ord-watermark-authority-v1",

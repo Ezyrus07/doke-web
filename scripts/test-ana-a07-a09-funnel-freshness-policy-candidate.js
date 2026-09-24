@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
+const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a07-a09-funnel-freshness-policy-candidate.json'),'utf8'));
+const a07=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-freshness-window-authority.json'),'utf8'));
+const metrics=c.policies.map(p=>p.metricKey);
+const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('unique metric keys',new Set(metrics).size===8);
+check('unique policy ids',new Set(c.policies.map(p=>p.policyId)).size===8);
+check('cross-domain only final',c.policies.filter(p=>p.sourceDomains.includes('ORD-001')).length===1&&c.policies.find(p=>p.sourceDomains.includes('ORD-001'))?.metricKey==='funnel.quote_submitted_to_order_requested');
+check('candidate dependencies represented',metrics.every(k=>a07.metricDependencies.some(d=>d.metricKey===k&&d.thresholdStatus==='candidate_r1_unapplied'&&d.proposedMaxLagSeconds===360)));
+check('no effective date invented',c.policies.every(p=>p.effectiveFrom===null&&p.effectiveUntil===null));
+check('publication remains blocked',c.failClosedSemantics.snapshotPublicationAllowed===false);
+check('activation needs explicit effectiveFrom',c.failClosedSemantics.activationRequiresExplicitEffectiveFrom===true);
+check('new revision required for cadence change',c.derivation.futureCadenceChangeRequiresNewRevision===true);
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);
+console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
+if(failed.length)process.exitCode=1;
