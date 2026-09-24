@@ -77,3 +77,17 @@ ANA-A10/A11 liquidity is operationally closed outside A09 and is no longer an A0
 The A07 behavior/ORD watermark runtime candidate is now repository-ready at `supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql`, but remains unapplied. A09 activation still requires validation 041 plus multi-session concurrency/late-fact staging evidence.
 
 A07 validation 041 now passes after the compatibility migration. A07 behavior/ORD runtime watermark authority is now certified and can be consumed by A09. A09 remains blocked on the server-side funnel projector, materialization-time filtering, metric-specific funnel thresholds, segmentation authority and controlled empty-window/late-fact projection evidence.
+
+## Server-side projector candidate
+
+The repository now contains the compute-only server-side projector candidate:
+
+- `supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql`
+- `supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql`
+- `config/ana-a09-server-side-funnel-projector-runtime-readiness.json`
+
+The candidate consumes the certified A07 behavior/ORD watermarks and separates event time from materialization time. Behavior rows require both `occurred_at` and `received_at` within the certified boundary; ORD rows require both `occurred_at` and `created_at`.
+
+The final `quote_submitted -> order_requested` transition is recomputed at the cross-domain minimum watermark, so an ORD lag cannot create a false missing-order denominator.
+
+The RPC is compute-only and keeps `snapshotPublicationAllowed=false`. A04 append-only snapshot publication, A07 metric-specific thresholds and complete/orphan/empty-window/late-fact staging canaries remain separate gates. The migration is **not applied** by this repository-only lot.
