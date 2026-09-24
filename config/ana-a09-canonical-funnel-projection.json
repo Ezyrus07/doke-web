@@ -102,7 +102,7 @@
     "dataThroughRequired": true,
     "watermarkContractId": "ana-a07-behavior-ord-watermark-authority-v1",
     "watermarkContractPath": "config/ana-a07-behavior-ord-watermark-authority.json",
-    "status": "watermark_runtime_certified_projector_pending",
+    "status": "watermark_runtime_certified_projector_installed_policy_pending",
     "behaviorMaterializationTime": "received_at",
     "orderMaterializationTime": "created_at",
     "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
@@ -120,7 +120,9 @@
     "compatibilityStagingMigrationVersion": "20260923231132",
     "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
     "concurrentWriterCertified": true,
-    "concurrentWriterCleanupPassed": true
+    "concurrentWriterCleanupPassed": true,
+    "runtimeProjectorInstalled": true,
+    "projectorValidation042Status": "passed"
   },
   "authority": {
     "contractAuthority": true,
@@ -141,7 +143,7 @@
   "catLiquidityBlocker": {
     "status": "liquidity_runtime_closed_outside_a09",
     "evidence": "ANA-A10/A11 now own and operationally certify CAT liquidity, publication cadence, freshness policy and scheduler runtime in staging.",
-    "consequence": "Liquidity is no longer an A09 blocker. A09 remains blocked on its own behavior/ORD dependency watermarks, server-side funnel projector, funnel freshness thresholds and controlled staging evidence.",
+    "consequence": "Liquidity is not an A09 blocker. The A09 projector is installed and structurally validated; remaining gates are funnel freshness thresholds, controlled complete/orphan/empty-window/late-fact evidence, snapshot publication policy and segmentation authority.",
     "requiredHandoff": "ANA-A07 behavior/ORD watermark runtime -> ANA-A09 funnel runtime"
   },
   "preservedBoundaries": [
