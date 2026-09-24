@@ -17,6 +17,13 @@ on:
       - 'scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js'
       - 'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-INVOCATION-CONTRACT.md'
       - 'config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json'
+      - 'supabase/tests/045_ana_a07_a09_funnel_policy_approved_activation_validation.sql'
+      - 'supabase/migrations/20260924144500_ana_a07_a09_funnel_policy_approved_activation.sql'
+      - 'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-APPROVAL.md'
+      - 'scripts/test-ana-a07-a09-funnel-freshness-policy-activation-approval.js'
+      - 'scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-approval.js'
+      - 'scripts/lib/ana-a07-a09-funnel-freshness-policy-activation-approval.js'
+      - 'reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json'
       - 'supabase/tests/044_ana_a07_a09_funnel_policy_approval_runtime_enforcement_validation.sql'
       - 'reports/generated/ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging-evidence.json'
       - 'supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql'
@@ -51,6 +58,9 @@ jobs:
           node --check scripts/test-ana-a07-a09-funnel-freshness-policy-activation-envelope.js
           node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js
           node --check scripts/test-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js
+          node --check scripts/lib/ana-a07-a09-funnel-freshness-policy-activation-approval.js
+          node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-approval.js
+          node --check scripts/test-ana-a07-a09-funnel-freshness-policy-activation-approval.js
       - name: Envelope audit
         run: npm run audit:ana-a07-a09-funnel-freshness-policy-activation-envelope
       - name: Envelope conformance
@@ -59,6 +69,10 @@ jobs:
         run: npm run audit:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract
       - name: Activation-invocation contract conformance
         run: npm run test:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract
+      - name: Activation approval audit
+        run: npm run audit:ana-a07-a09-funnel-freshness-policy-activation-approval
+      - name: Activation approval conformance
+        run: npm run test:ana-a07-a09-funnel-freshness-policy-activation-approval
       - name: Candidate regression
         run: |
           node scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js

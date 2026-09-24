@@ -1,48 +1,60 @@
-# ANA-A07/A09 — Activation-invocation authorization contract
+# ANA-A07/A09 — Activation-invocation lifecycle contract
 
-The approval envelope and runtime enforcement are certified in staging, but that does **not** authorize policy persistence.
+The A07/A09 freshness-policy activation lifecycle is split into independent authorities so repository approval, staging structure installation and persistent activation cannot be conflated.
 
-This contract governs the future activation lifecycle for `ana-a07-a09-funnel-v1-r1`. The immediate next gate is deliberately repository-only.
+## Completed repository-only activation approval
 
-## Immutable bindings
+The project owner explicitly authorized repository-only activation-approval materialization against HEAD `9c54828972aa2d745491baf0c11335c00700035b`.
 
-- policy set: `ana-a07-a09-funnel-v1-r1`
-- Matrix: `v1.3.132`
-- eight `v1` funnel metrics
+The completed evidence is stored at:
+
+`reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json`
+
+Bindings:
+
+- Matrix `v1.3.132`
+- policy set `ana-a07-a09-funnel-v1-r1`
+- eight `v1` policies
 - `maxLagSeconds=360`
 - `effectiveFrom=2026-09-24T14:00:00Z`
 - `effectiveUntil=null`
-- approval-envelope evidence digest: `9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5`
-- runtime-enforcement evidence blob: `118ca5f948f93ca09c7a7305d1b230880fa98630`
-- staging runtime-enforcement migration: `20260924141356`
-- validation `044=PASS`
+- original approval-envelope digest `9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5`
+- runtime-enforcement evidence blob `118ca5f948f93ca09c7a7305d1b230880fa98630`
+- activation authorization digest `d72f3930dffb8ba36d49c22eaebec4f20cf88121280c4201a6eb8a140a7dc494`
+- activation-approval evidence digest `ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603`
 
-## Future activation successor
+The evidence approves one future policy-insert invocation. It does not itself authorize a staging write or execute that invocation.
 
-Any later activation-capable function must use the canonical identifier `private.activate_a09_funnel_policy_approved_v1`, within PostgreSQL's 63-byte identifier limit. It must be owner-only, validate the original approval envelope plus a single-use activation approval evidence object, insert exactly eight freshness-policy rows, reject overlap/replay, and perform no snapshot, publication-policy or cron mutation.
+## Successor repository candidate
 
-No successor is created in this lot.
+The approved successor is now defined only as a repository candidate:
 
-## Immediate authorization boundary — repository only
+- `private.validate_a09_funnel_activation_approval_v1`
+- `private.activate_a09_funnel_policy_approved_v1`
+- migration `20260924144500_ana_a07_a09_funnel_policy_approved_activation.sql`
+- rollback validation `045_ana_a07_a09_funnel_policy_approved_activation_validation.sql`
 
-Generic `prossiga` is not authorization. No values may be inferred.
+Both new identifiers are safely below PostgreSQL's 63-byte identifier limit.
 
-The next command is **not** a staging or activation command. It may only authorize:
+Applying the migration only creates owner-only functions. It does not insert any freshness row. Validation 045, when later separately authorized in staging, performs a transient eight-row activation inside a transaction and rolls it back.
 
-1. materializing the completed activation-approval evidence in the repository; and
-2. preparing an approval-aware successor **migration candidate** in the repository.
+## Current authority
 
-It does **not** authorize applying that migration to staging, invoking the successor, or persisting any policy row.
+Repository approval evidence authority and successor-candidate authority are complete.
 
-The exact template is stored in `config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json`, with `head` equal to the then-current PR HEAD.
+The following remain false:
 
-Until that explicit repository-only command exists:
+- staging mutation authority
+- persistent activation invocation authority
+- policy persistence authority
+- runtime projection authority
+- runtime snapshot authority
+- snapshot publication authority
+- production authority
+- merge / Ready authority
 
-- `activationApprovalMaterializationAuthority=false`
-- `successorCandidateAuthority=false`
-- `stagingMutationAuthority=false`
-- `activationInvocationAuthority=false`
-- `policyPersistenceAuthority=false`
-- `freshnessPolicyRowsPersisted=0`
+Persistent policy rows remain `0`.
 
-Applying a future successor migration and invoking activation require separate later authorizations.
+## Next gate
+
+A separate explicit staging authorization is required to apply only migration `20260924144500` and execute validation `045` rollback-only. Persistent activation remains a later, separate single-use authorization.

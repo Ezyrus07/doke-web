@@ -3,7 +3,7 @@
   "activationApprovalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-evidence-v1",
   "domain": "ANA-001",
   "scope": "repository_only_authorization_contract",
-  "status": "pending_explicit_activation_approval_repository_authorization",
+  "status": "activation_approval_materialized_successor_candidate_ready_staging_unauthorized",
   "createdAt": "2026-09-24T14:24:21.531026Z",
   "createdAgainst": {
     "repositoryHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
@@ -113,13 +113,13 @@
     "overlapMustFailClosed": true,
     "secondInvocationMustFailClosed": true,
     "legacyTombstoneMustRemain": true,
-    "createdInThisLot": false
+    "createdInThisLot": true
   },
   "authority": {
     "repositoryContractAuthority": true,
     "activationAuthorizationAuthority": false,
-    "activationApprovalEvidenceAuthority": false,
-    "successorCandidateAuthority": false,
+    "activationApprovalEvidenceAuthority": true,
+    "successorCandidateAuthority": true,
     "stagingMutationAuthority": false,
     "activationInvocationAuthority": false,
     "policyPersistenceAuthority": false,
@@ -129,7 +129,8 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "readyForReviewAuthority": false,
-    "activationApprovalMaterializationAuthority": false
+    "activationApprovalMaterializationAuthority": true,
+    "repositoryActivationApprovalAuthority": true
   },
   "prohibitedEffects": {
     "activationAuthorizationFabricated": false,
@@ -144,7 +145,7 @@
     "pullRequestMerged": false,
     "readyForReviewChanged": false
   },
-  "nextGate": "Obtain the exact explicit repository-only activation-approval authorization described by activationApprovalAuthorization. Only after that command may completed activation-approval evidence and an approval-aware successor migration candidate be created. Applying that future migration and invoking activation each remain separately unauthorized.",
+  "nextGate": "Apply only the approved successor migration candidate in staging and execute validation 045 rollback-only under a separate explicit authorization. That staging-structure authorization must still not persist the eight policies outside rollback; persistent activation remains a later separate authorization.",
   "activationApprovalAuthorization": {
     "commandName": "authorize-ana-a07-a09-funnel-freshness-policy-activation-approval-repository-only",
     "scope": "repository_only",
@@ -165,5 +166,43 @@
       "effectiveUntil"
     ],
     "template": "authorize-ana-a07-a09-funnel-freshness-policy-activation-approval-repository-only head=<CURRENT_PR_HEAD> matrix=v1.3.132 activationContractId=ana-a07-a09-funnel-freshness-policy-activation-invocation-v1 policySetId=ana-a07-a09-funnel-v1-r1 approvalEvidenceDigest=9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5 runtimeEvidenceBlobSha=118ca5f948f93ca09c7a7305d1b230880fa98630 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null"
+  },
+  "repositoryActivationApproval": {
+    "authorizationReceived": true,
+    "authorizationConsumedForRepositoryArtifacts": true,
+    "rawAuthorization": "authorize-ana-a07-a09-funnel-freshness-policy-activation-approval-repository-only head=9c54828972aa2d745491baf0c11335c00700035b matrix=v1.3.132 activationContractId=ana-a07-a09-funnel-freshness-policy-activation-invocation-v1 policySetId=ana-a07-a09-funnel-v1-r1 approvalEvidenceDigest=9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5 runtimeEvidenceBlobSha=118ca5f948f93ca09c7a7305d1b230880fa98630 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null",
+    "authorizationDigestSha256": "d72f3930dffb8ba36d49c22eaebec4f20cf88121280c4201a6eb8a140a7dc494",
+    "approvedAt": "2026-09-24T14:43:00Z",
+    "evidencePath": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json",
+    "activationApprovalId": "ana-a07-a09-funnel-activation-approval-r1-d72f3930dffb",
+    "evidenceDigestSha256": "ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603",
+    "policyInsertApprovedForFutureInvocation": true,
+    "activationInvocationLimit": 1,
+    "stagingMutationAuthorized": false,
+    "activationInvocationAuthorized": false,
+    "persistentPolicyWriteAuthorizedNow": false
+  },
+  "successorCandidate": {
+    "migration": "supabase/migrations/20260924144500_ana_a07_a09_funnel_policy_approved_activation.sql",
+    "validation": "supabase/tests/045_ana_a07_a09_funnel_policy_approved_activation_validation.sql",
+    "validatorFunction": "private.validate_a09_funnel_activation_approval_v1",
+    "activationFunction": "private.activate_a09_funnel_policy_approved_v1",
+    "status": "repository_ready_staging_unauthorized",
+    "stagingApplied": false,
+    "validation045Status": "NOT_RUN_STAGING",
+    "createsRowsWhenApplied": false,
+    "canPersistRowsOnlyWhenLaterInvoked": true,
+    "exactPolicyInsertCardinality": 8,
+    "publicationPolicyInsertAllowed": false,
+    "snapshotWriteAllowed": false,
+    "cronCreationAllowed": false,
+    "legacyTombstonePreserved": true
+  },
+  "operationalState": {
+    "successorInstalledInStaging": false,
+    "activationInvoked": false,
+    "policyRowsPersisted": 0,
+    "snapshotsWritten": 0,
+    "cronCreated": false
   }
 }
