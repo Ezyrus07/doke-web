@@ -5,7 +5,7 @@ const STAGES=Object.freeze(['impression','click','detail','budget_cta','quote_st
 
 function text(v){return String(v||'').trim();}
 function ms(v,code){const n=Date.parse(v||'');if(!Number.isFinite(n))throw new Error(code);return n;}
-function iso(v,code){return new Date(ms(v,code)).toISOString();}
+function iso(v,code){const n=typeof v==='number'?v:ms(v,code);if(!Number.isFinite(n))throw new Error(code);return new Date(n).toISOString();}
 function rate(n,d){return d<=0?null:Number((n/d).toFixed(6));}
 function name(r){return text(r.eventName||r.event_name||r.eventType||r.event_type);}
 function ses(r){return text(r.analyticsSessionId||r.analytics_session_id);}
@@ -52,7 +52,7 @@ function behaviorProjection(rows,through){
     if(n==='service.detail_viewed'&&j.clickAt!==null&&row.__at>=j.clickAt&&j.detailAt===null)j.detailAt=row.__at;
     if(n==='service.budget_cta_clicked'&&j.detailAt!==null&&row.__at>=j.detailAt&&j.budgetAt===null)j.budgetAt=row.__at;
     if(n.startsWith('quote.')){
-      const qid=quote(row);if(!qid)return;
+      const qid=quote(row);if(!qid)continue;
       const q=j.quotes.get(qid)||{startedAt:null,completedAt:null,submittedAt:null,orderId:null};
       if(n==='quote.started'&&j.budgetAt!==null&&row.__at>=j.budgetAt&&q.startedAt===null)q.startedAt=row.__at;
       if(n==='quote.completed'&&q.startedAt!==null&&row.__at>=q.startedAt&&q.completedAt===null)q.completedAt=row.__at;
