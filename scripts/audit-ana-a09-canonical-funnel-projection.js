@@ -7,6 +7,7 @@ const a02=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a02-canonical-
 const a03=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a03-behavioral-ingestion-identity-boundary.json'),'utf8'));
 const a07=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-freshness-window-authority.json'),'utf8'));
 const watermark=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a07-behavior-ord-watermark-authority.json'),'utf8'));
+const readiness=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-server-side-funnel-projector-runtime-readiness.json'),'utf8'));
 const matrix=JSON.parse(fs.readFileSync(path.join(root,'config','domain-completion-matrix.json'),'utf8'));
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('contract id',f.CONTRACT_ID===c.contractId);
@@ -21,7 +22,9 @@ check('A07 dependency',c.freshnessDependency?.contract==='ANA-A07'&&a07.contract
 check('A03 identity boundary preserved',a03.sessionPolicy?.anonymousToAuthenticatedStitching===false);
 check('taxonomy baseline present',a02.contractId==='ana-a02-canonical-event-taxonomy-v1');
 check('CAT liquidity handoff current',c.catLiquidityBlocker?.status==='liquidity_runtime_closed_outside_a09');
-check('runtime authority false',c.authority?.runtimeProjectionAuthority===false);
+check('runtime candidate ready',c.status==='server_side_projector_candidate_repository_ready_staging_unapplied'&&c.runtimeCandidate?.migration==='supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql'&&c.runtimeCandidate?.migrationApplied===false&&c.runtimeCandidate?.stagingValidated===false);
+check('readiness bound',readiness.sourceContract===c.contractId&&readiness.status==='runtime_projector_candidate_repository_ready_staging_unapplied');
+check('runtime authority false',c.authority?.runtimeProjectionAuthority===false&&c.authority?.runtimeSnapshotAuthority===false);
 check('maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
 Object.entries(c.prohibitedEffects||{}).forEach(([k,v])=>check('effect '+k,v===false));
 const ana=(matrix.domains||[]).find((d)=>d.id==='ANA-001');

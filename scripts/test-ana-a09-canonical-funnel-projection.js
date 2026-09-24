@@ -11,7 +11,8 @@ const events=[
  {eventName:'quote.completed',analyticsSessionId:s,serviceId:svc,quoteSessionId:q,occurredAt:'2026-01-01T00:00:06Z'},
  {eventName:'quote.submitted',analyticsSessionId:s,serviceId:svc,quoteSessionId:q,orderId:o,occurredAt:'2026-01-01T00:00:08Z'},
  {eventName:'search.result_clicked',analyticsSessionId:'orphan-session',serviceId:'orphan-service',searchRequestId:'orphan-search',occurredAt:'2026-01-01T00:00:02Z'},
- {eventName:'service.detail_viewed',analyticsSessionId:'future',serviceId:svc,occurredAt:'2027-01-01T00:00:00Z'}
+ {eventName:'service.detail_viewed',analyticsSessionId:'future',serviceId:svc,occurredAt:'2027-01-01T00:00:00Z'},
+ {eventName:'service.detail_viewed',analyticsSessionId:'late-mat',serviceId:svc,occurredAt:'2026-01-01T00:00:03Z',receivedAt:'2027-01-01T00:00:00Z'}
 ];
 const orders=[{eventName:'order.requested',orderId:o,occurredAt:'2026-01-01T00:00:07Z'}];
 const out=f.projectCanonicalFunnel(events,orders,{dataThrough:'2026-01-02T00:00:00Z'});
@@ -19,11 +20,18 @@ eq('ctr numerator',out.searchCtr.numerator,1);eq('ctr denominator',out.searchCtr
 for(const stage of f.STAGES)eq('strict stage '+stage,out.strictSessionServiceFunnel.counts[stage],1);
 eq('submitted to order',out.strictSessionServiceFunnel.transitions.quote_submitted_to_order_requested.value,1);
 check('future behavior excluded',out.excluded.futureBehaviorEvents===1);
+check('late materialization excluded',out.excluded.futureBehaviorMaterializations===1);
 check('no stitching',out.anonymousIdentityStitching===false);
 check('no temporal heuristic',out.temporalHeuristicJoin===false);
 const noOrder=f.projectCanonicalFunnel(events,[],{dataThrough:'2026-01-02T00:00:00Z'});
 eq('missing order stops final stage',noOrder.strictSessionServiceFunnel.counts.order_requested,0);
 check('missing order recorded',noOrder.orphanStages.order_request_missing_for_submitted>=1);
+const chronology=f.projectCanonicalFunnel([
+ {eventName:'service.detail_viewed',analyticsSessionId:s,serviceId:svc,occurredAt:'2026-01-01T00:00:01Z'},
+ {eventName:'search.result_impression',analyticsSessionId:s,serviceId:svc,searchRequestId:search,occurredAt:'2026-01-01T00:00:02Z'},
+ {eventName:'search.result_clicked',analyticsSessionId:s,serviceId:svc,searchRequestId:search,occurredAt:'2026-01-01T00:00:03Z'}
+],[],{dataThrough:'2026-01-02T00:00:00Z'});
+eq('out-of-order detail rejected',chronology.strictSessionServiceFunnel.counts.detail,0);
 const zero=f.projectCanonicalFunnel([],[],{dataThrough:'2026-01-02T00:00:00Z'});
 eq('zero denominator null',zero.searchCtr.value,null);
 let bad=false;try{f.projectCanonicalFunnel([],[],{dataThrough:'bad'});}catch(e){bad=e.message==='ANA_FUNNEL_DATATHROUGH_INVALID';}check('invalid datathrough rejected',bad);

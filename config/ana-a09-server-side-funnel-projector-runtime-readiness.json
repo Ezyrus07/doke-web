@@ -1,0 +1,71 @@
+{
+  "contractId": "ana-a09-server-side-funnel-projector-runtime-readiness-v1",
+  "domain": "ANA-001",
+  "sourceContract": "ana-a09-canonical-funnel-projection-v1",
+  "sourceHead": "3e94cbb848acc395437abad79d8076b2173985d8",
+  "createdAt": "2026-09-23T23:55:00Z",
+  "scope": "repository_only",
+  "authorization": {
+    "token": "authorize-ana-a09-server-side-funnel-projector-candidate-repository-only head=3e94cbb848acc395437abad79d8076b2173985d8 matrix=v1.3.132",
+    "received": true,
+    "stagingApplyAuthorized": false,
+    "productionAuthorized": false
+  },
+  "status": "runtime_projector_candidate_repository_ready_staging_unapplied",
+  "migration": "supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql",
+  "validationSql": "supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql",
+  "runtime": {
+    "stageFunction": "private.analytics_canonical_funnel_stage_rows_v1",
+    "computeFunction": "public.compute_analytics_canonical_funnel_v1",
+    "computeOnly": true,
+    "sourceMutationAllowed": false,
+    "snapshotMutationAllowed": false,
+    "schedulerRequired": false,
+    "serviceRoleComputeExecute": true,
+    "browserExecuteAllowed": false
+  },
+  "watermarkHandoff": {
+    "authority": "ANA-A07",
+    "runtimeWatermarkCertified": true,
+    "behaviorMaterializationTime": "received_at",
+    "orderMaterializationTime": "created_at",
+    "behaviorEventTime": "occurred_at",
+    "orderEventTime": "occurred_at",
+    "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
+    "crossDomainDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough)"
+  },
+  "linkage": {
+    "searchExposure": "search_request_id + service_id",
+    "journey": "analytics_session_id + service_id",
+    "quote": "same quote_session_id",
+    "order": "quote.submitted.order_id -> order.requested.order_id",
+    "chronologicalProgressionRequired": true,
+    "actorJoinAllowed": false,
+    "temporalHeuristicJoinAllowed": false,
+    "identityStitchingAllowed": false
+  },
+  "snapshotHandoff": {
+    "appendRpc": "public.append_analytics_metric_snapshot_v1",
+    "appendInvokedByCandidate": false,
+    "appendOnlyRequired": true,
+    "lateFactRevisionAuthority": "ANA-A05",
+    "publicationAllowed": false,
+    "blockingReason": "A07_METRIC_SPECIFIC_THRESHOLD_POLICY_PENDING"
+  },
+  "validationPlan": {
+    "validation042Status": "not_run",
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "completePath": "pending_controlled_staging_canary",
+    "orphanPath": "pending_controlled_staging_canary",
+    "emptyWindowPath": "pending_controlled_staging_canary",
+    "lateFactPath": "pending_controlled_staging_canary",
+    "metricSpecificThresholds": "pending_separate_policy_lot",
+    "segmentationAuthority": "global_only"
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "Repository-only compute projector candidate. Runtime application, validation 042, threshold policy and controlled complete/orphan/empty/late-fact staging evidence remain required."
+  }
+}

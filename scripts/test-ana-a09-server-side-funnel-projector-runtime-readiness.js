@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
+const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql'),'utf8');
+const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-server-side-funnel-projector-runtime-readiness.json'),'utf8'));
+const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
+check('behavior-only watermark distinct from cross-domain',sql.includes('v_behavior_data_through')&&sql.includes('v_cross_data_through'));
+check('final handoff recomputes cross stages',sql.includes('cross_stages as')&&sql.includes('p_window_start,p_window_end,v_cross_data_through'));
+check('order cannot predate submitted',sql.includes('r.requested_at >= s.stage_at'));
+check('zero denominator null',((sql.match(/when [^\n]*=0 then null/g)||[]).length)>=8);
+check('global only segmentation',sql.includes("'segmentation','global_only'"));
+check('no identity stitching',sql.includes("'anonymousIdentityStitching',false")&&sql.includes("'temporalHeuristicJoin',false"));
+check('no snapshot write',c.runtime?.snapshotMutationAllowed===false&&c.snapshotHandoff?.appendInvokedByCandidate===false);
+check('threshold separately gated',c.validationPlan?.metricSpecificThresholds==='pending_separate_policy_lot'&&c.snapshotHandoff?.publicationAllowed===false);
+check('staging unapplied',c.validationPlan?.migrationApplied===false&&c.validationPlan?.validation042Status==='not_run');
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);
+console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
+if(failed.length)process.exitCode=1;

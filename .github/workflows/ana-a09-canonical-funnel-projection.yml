@@ -5,6 +5,12 @@ on:
   pull_request:
     paths:
       - 'backend/modules/analytics/canonical-funnel-projection.js'
+      - 'supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql'
+      - 'supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql'
+      - 'config/ana-a09-server-side-funnel-projector-runtime-readiness.json'
+      - 'docs/ANA-A09-SERVER-SIDE-FUNNEL-PROJECTOR-RUNTIME-READINESS.md'
+      - 'scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js'
+      - 'scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js'
       - 'backend/modules/analytics/dependency-watermark-authority.js'
       - 'config/ana-a07-behavior-ord-watermark-authority.json'
       - 'docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-AUTHORITY.md'
@@ -41,8 +47,14 @@ jobs:
           node --check backend/modules/analytics/canonical-funnel-projection.js
           node --check scripts/audit-ana-a09-canonical-funnel-projection.js
           node --check scripts/test-ana-a09-canonical-funnel-projection.js
+          node --check scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js
+          node --check scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
       - name: ANA-A09 audit
         run: npm run audit:ana-a09-canonical-funnel-projection
+      - name: ANA-A09 server projector candidate audit
+        run: node scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js
+      - name: ANA-A09 server projector candidate conformance
+        run: node scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
       - name: ANA-A09 conformance
         run: npm run test:ana-a09-canonical-funnel-projection
       - name: ANA-A03 regression
