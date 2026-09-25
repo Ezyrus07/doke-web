@@ -2,82 +2,51 @@
 
 ## Objective
 
-ANA-A07 defines the repository authority for `dataThrough`, dependency watermarks, canonical window selection and the states **fresh / stale / unavailable**. It does not invent a freshness SLA and does not promote ANA-001 beyond **3/6**.
+ANA-A07 defines the authority for `dataThrough`, dependency watermarks, canonical closed-window selection and the states **fresh / stale / unavailable**. It does not create an implicit global freshness SLA and does not promote ANA-001 beyond **3/6** by itself.
 
-## Root cause
+## Canonical freshness model
 
-A05 already contains a local `applyFreshness(...)` helper, but its `maxLagSeconds` was historically supplied ad hoc. ANA-A07 therefore established the versioned threshold/dependency-watermark authority. `liquidity.active_service_seconds` now consumes explicit revision-1 policy `ana-a11-liquidity-v1-r1`; no global default was introduced.
+`dataThrough` is the greatest timestamp through which every canonical dependency required by the selected metric observation is proven materialized. It is never inferred from `computedAt`, maximum event timestamp or requested window end.
 
-A04 also returns `dataThrough = windowEnd` from `compute_analytics_order_health_v1(...)`. That is acceptable as a calculation boundary only when every canonical dependency is actually proven materialized through the same point. The current runtime does not yet prove that watermark.
+For a closed window, canonical `dataThrough` is bounded by `windowEnd` and the minimum authoritative dependency watermark. An empty window may still be fresh when the source watermark proves processing through that window.
 
-A06 exposed a related selection problem: an older non-empty PASS cannot be chosen merely because a newer canonical observation is `no_data`.
+The latest canonical closed window is selected before freshness evaluation. Older non-empty, fresh or PASS windows are never used as fallback.
 
-## Canonical dataThrough
+## Active threshold authority
 
-`dataThrough` means the greatest timestamp through which **all required canonical dependencies** are proven materialized.
+No implicit default `maxLagSeconds` exists. Missing metric-specific policy remains fail-closed as **unavailable**.
 
-It is not:
+Two operational authorities are currently active:
 
-- `computedAt`;
-- the maximum event timestamp;
-- the end of a requested window by assumption.
+- `liquidity.active_service_seconds v1`: policy `ana-a11-liquidity-v1-r1`, `maxLagSeconds=360`, effective from `2026-09-23T16:00:00Z`;
+- the eight ANA-A09 funnel metrics: policy set `ana-a07-a09-funnel-v1-r1`, each at `maxLagSeconds=360`, effective from `2026-09-24T14:00:00Z`.
 
-For a closed window, the canonical value is bounded by `windowEnd` and the minimum authoritative dependency watermark. A declared `dataThrough` later than a dependency watermark fails closed as unavailable.
+The complete/orphan/empty-window/late-fact funnel canaries are certified in staging. Their evidence is bound to blob `3b7274a391a857f2de06538f3302f6be01b06734`.
 
-An empty window can still be fresh if the source watermark proves the pipeline processed through that window. This keeps **freshness** separate from **sample sufficiency/data quality**.
+## Behavior + ORD dependency watermarks
 
-## Canonical window selection
-
-Candidates must belong to one metric series: same metric key, metric version and dimensions.
-
-Only closed windows are eligible. The selector orders by:
-
-1. `windowEnd DESC`;
-2. `revision DESC`;
-3. `computedAt DESC`;
-4. deterministic id tiebreak.
-
-Freshness is evaluated **after** selecting that latest canonical window. There is no fallback to an older window simply because it is fresh, non-empty or PASS.
-
-## State rules
-
-- **unavailable** — missing versioned threshold, missing/unavailable dependency watermark, no eligible closed window, no coverage of the selected window, or a declared watermark that overclaims dependency coverage;
-- **stale** — the selected window is only partially covered, an upstream dependency is stale, the snapshot is already stale, or the policy lag is exceeded;
-- **fresh** — the selected closed window is fully covered, all dependencies are available, and `evaluatedAt - dataThrough <= maxLagSeconds`.
-
-`sample_count=0` alone does not determine freshness.
-
-## Threshold boundary
-
-ANA-A07 continues to forbid an implicit global default. Missing metric-specific threshold policy evaluates fail-closed as **unavailable**.
-
-For `liquidity.active_service_seconds v1`, revision-1 policy `ana-a11-liquidity-v1-r1` is active from `2026-09-23T16:00:00Z` with `maxLagSeconds=360`. Post-effective staging evidence confirms that the latest canonical closed window is evaluated directly against that threshold with no fallback to an older window. Other metrics remain independently pending until they receive their own versioned policies.
-
-## Boundaries
-
-This sublot is repository-only. It performs no database access, migration, staging mutation, deploy, browser activation, identity stitching, source-domain repair, payment mutation or production change.
-
-A06 structural data quality and A07 freshness remain distinct dimensions: a reconciliation can be structurally correct and still stale.
-
-ANA-001 remains **3/6**. For CAT liquidity, watermark materialization, threshold activation and post-effective staging proof are closed; remaining ANA metrics and broader maturity gates stay independently governed.
-
-## Behavior + ORD dependency watermark authority
-
-A07 now has a repository-only authority for the two non-CAT dependencies used by the canonical funnel. The detailed contract is `config/ana-a07-behavior-ord-watermark-authority.json`.
-
-The authority deliberately separates **event time** from **materialization time**:
+Behavior and ORD materialization times remain distinct from event times:
 
 - behavior: `occurred_at` is event time; server-owned `received_at` is materialization time;
-- ORD metrics: `occurred_at` is event time; DB-owned `created_at` on `private.order_metric_events` is materialization time.
+- ORD metrics: `occurred_at` is event time; DB-owned `created_at` is materialization time.
 
-The proposed runtime basis is `active_transaction_floor_v1`: use the current database's earliest active transaction start with an inclusive-boundary predecessor, and fail closed if any prepared transaction exists. This allows empty windows to advance without relying on `max(event timestamp)` and prevents a later commit from being silently counted below an already-published materialization watermark.
+The behavior/ORD watermark migration and forward-only compatibility migration are applied in staging. Validation 041 passes, and the multi-session concurrent-writer canary proved the active-transaction-floor boundary with the exact one-microsecond predecessor. `runtimeWatermarkAuthority=true`.
 
-The runtime implementation is **not applied** in this lot. A future forward-only migration and concurrency canary require separate authorization.
+## Repository runtime projection authority
 
-## Behavior/ORD runtime candidate
+The explicit repository-only grant bound to source HEAD `28960baecb1b495b16c3799c55a80305764db0ac`, Matrix `v1.3.132`, policy set `ana-a07-a09-funnel-v1-r1` and the certified canary evidence grants **runtime projection authority at the repository-contract layer**.
 
-The repository now contains `supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql` and rollback-only validation `supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql`. They remain unapplied in staging. No scheduler or source-data write is part of the candidate.
+This grant performs no staging mutation. The historical A09 staging compute observation still reports `runtimeAuthority=false`; a forward-only live runtime-flag alignment, if needed, requires separate authorization.
 
-## Watermark staging validation status
+Current boundaries:
 
-The behavior/ORD migration and forward-only compatibility migration are present in staging. Validation 041 now passes and the no-active-transaction envelopes/grants are healthy. The multi-session concurrent-writer canary now proves the transaction-floor behavior under a real in-flight writer, so behavior/ORD `runtimeWatermarkAuthority` is certified. Broader A07 `stagingAuthority` remains false until metric-specific thresholds and downstream projection/selection evidence—including empty-window and late-fact paths—are closed.
+- repository runtime projection authority: **true**
+- runtime watermark authority: **true**
+- runtime snapshot authority: **false**
+- snapshot publication authority: **false**
+- alert delivery authority: **false**
+- broader staging authority: **false**
+- production authority: **false**
+- ANA maturity: **3/6**
+
+A04/A05 append-only snapshot/revision semantics and latest-window no-cherry-pick selection remain mandatory for any later publication gate.
