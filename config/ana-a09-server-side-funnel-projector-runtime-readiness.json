@@ -66,7 +66,7 @@
     "emptyWindowPath": "staging_certified",
     "lateFactPath": "staging_certified",
     "metricSpecificThresholds": "active_r1_360_seconds",
-    "segmentationAuthority": "global_only",
+    "segmentationAuthority": "global_only_runtime; immutable category/state candidate prepared repository-only and unapplied",
     "stagingMigrationVersion": "20260924002741",
     "computeState": "computed_policy_pending",
     "metricCount": 8
@@ -74,7 +74,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Projector validation 042, active freshness policies and all four runtime canaries are certified in staging. Explicit repository-only runtime projection authority is granted; the historical live compute observation still reports runtimeAuthority=false and no staging mutation is authorized by this grant. Runtime snapshot/publication remain false; ANA stays 3/6."
+    "reason": "The global projector remains staging-certified with repository projection authority granted. A separate immutable category/state segmented runtime candidate is prepared but unapplied and validation 047 has not run. Runtime segmentation/snapshot/publication remain false; ANA stays 3/6."
   },
   "runtimeEvidence": {
     "artifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json",
@@ -128,5 +128,22 @@
     "stagingMutationAuthorized": false,
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false
+  },
+  "segmentationRuntimeCandidate": {
+    "sourceContract": "ana-a09-immutable-funnel-segmentation-v1",
+    "contractId": "ana-a09-immutable-funnel-segmentation-runtime-candidate-v1",
+    "migration": "supabase/migrations/20260925145500_ana_a09_immutable_funnel_segmentation_runtime.sql",
+    "validationSql": "supabase/tests/047_ana_a09_immutable_funnel_segmentation_runtime_validation.sql",
+    "resolverFunction": "private.analytics_a09_funnel_segment_for_anchor_v1",
+    "computeFunction": "public.compute_analytics_canonical_funnel_segmented_v1",
+    "migrationCreated": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "validation047Status": "pending",
+    "runtimeSegmentationAuthority": false,
+    "stagingMutationAuthorized": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "globalRuntimeUnchanged": true
   }
 }
