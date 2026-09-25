@@ -1,0 +1,1007 @@
+{
+  "contractId": "ana-a11-liquidity-freshness-policy-derivation-v1",
+  "domain": "ANA-001",
+  "metricKey": "liquidity.active_service_seconds",
+  "metricVersion": "v1",
+  "sourceHead": "1825c11544a19162438c2b63c099d9e6d2b4547f",
+  "createdAt": "2026-09-22T11:27:00-03:00",
+  "scope": "staging_structural_authorities",
+  "status": "post_effective_runtime_certified",
+  "objective": "Define how maxLagSeconds for liquidity.active_service_seconds must be derived from an approved analytics publication cadence and projection-delay SLO instead of selecting an arbitrary constant.",
+  "rootCause": {
+    "missingNumberIsNotRootCause": true,
+    "cadenceAuthorityMissing": "Resolved by persisted revision 1: windowStepSeconds=300 is now the approved cadence input for liquidity.active_service_seconds v1.",
+    "sourceWatermarkAvailable": "CAT-A06 transaction-snapshot watermark is active in staging through ANA-A10.",
+    "consequence": "Revision-1 publication/freshness values and the persistent pg_cron scheduler are authoritative in staging, and read-only post-effective evidence proves real canonical-window materialization, required-series coverage, reconciliation health, bounded publication delay and ANA-A07 latest-window freshness semantics. No ANA-A11 operational blocker remains.",
+    "windowGridAuthorityMissing": "Resolved by persisted revision 1: windowAnchor=1970-01-01T00:00:00Z with 300-second fixed-duration alignment.",
+    "dimensionSeriesAuthorityMissing": "resolved structurally in staging: owner-only CAT-fact-backed series enumeration and atomic per-window orchestration are installed and validated; scheduler activation remains separate.",
+    "publicationPolicyProvenanceGap": "Resolved by persisted revision 1: the publication policy stores the approved cadence/SLO/grid/catch-up/provenance and the matching freshness row stores the mechanically derived threshold.",
+    "currentFreshnessPolicyRows": "Staging has exactly one revision-1 freshness row paired with the publication policy, effective from 2026-09-23T16:00:00Z.",
+    "policyCouplingGap": "Resolved in staging: the approved activation inserted publication and freshness rows atomically with policyId ana-a11-liquidity-v1-r1 and derived maxLagSeconds=360.",
+    "approvalEvidenceSchemaGap": "Resolved in staging: the envelope-aware validator is installed and the legacy object-only activation is tombstoned.",
+    "policyIdentityEffectiveWindowGap": "Resolved at repository contract level for the first policy: policy identity is revision-derived, effectiveFrom must be explicitly approved and grid-aligned, initial effectiveUntil must be null, and replacement requires a separate transition contract.",
+    "runtimeApprovalBypassGap": "Resolved in staging by migration 20260923135957. The legacy activation now fails closed with DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED; only the approved activation path can reach policy inserts."
+  },
+  "thresholdDerivation": {
+    "formula": "maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds",
+    "windowStepSeconds": {
+      "status": "approved_and_persisted_revision_1",
+      "definition": "Seconds between successive canonical closed-window boundaries for this metric series.",
+      "value": 300
+    },
+    "projectionDelaySloSeconds": {
+      "status": "approved_and_persisted_revision_1",
+      "definition": "Maximum approved delay from a canonical window boundary until its snapshot is expected to be materialized and selectable.",
+      "value": 60
+    },
+    "extraGrace": {
+      "implicitGraceAllowed": false,
+      "recoveryBudgetMayBeAdded": false,
+      "reason": "An unversioned recovery cushion would hide missed publications and recreate an implicit threshold."
+    },
+    "sourceWatermarkLagAddedToThreshold": false,
+    "reason": "CAT freshness is proven independently by its dependency watermark; source delay must not be hidden inside the metric age threshold.",
+    "derivedMaxLagSeconds": 360
+  },
+  "activationPreconditions": [
+    "The staging-validated CAT-fact-backed global + category/state series authority remains installed and owner-only.",
+    "The approval-envelope runtime-enforcement migration is installed in staging as 20260923135957 and validation 039 plus rollback-only canaries passed.",
+    "The repository atomic policy-activation candidate is explicitly authorized and applied in staging; a later separately authorized invocation must supply the approved windowStepSeconds, projectionDelaySloSeconds, windowAnchor, catch-up bound, approval evidence and effective window.",
+    "A versioned projectionDelaySloSeconds is approved for the same metric/version.",
+    "A versioned canonical window-boundary anchor/alignment rule is approved.",
+    "The repository window-planner and catch-up-executor candidates are explicitly authorized, applied and validated in staging; both remain driven only by an approved publication-policy row.",
+    "A Supabase pg_cron job polls private.run_analytics_cat_liquidity_catch_up_v1 no slower than the approved projectionDelaySloSeconds; the policy-driven planner, not cron frequency, remains the authority for 300-second publication windows.",
+    "Controlled staging evidence proves the scheduler closes the intended windows, covers required dimension series, replays idempotently and remains within the approved delay budget.",
+    "ANA-A07 boundary tests prove fresh at <= maxLagSeconds and stale at > maxLagSeconds without older-window fallback.",
+    "The canonical activation call atomically creates the publication policy and matching freshness policy; no independent hand-entered freshness insert is permitted."
+  ],
+  "nonAuthorities": [
+    "ORD worker one-minute cron",
+    "REL daily SLO report",
+    "request freshness windows",
+    "retry backoff",
+    "browser refresh behavior"
+  ],
+  "policyShape": {
+    "publicationPolicyRegistry": {
+      "table": "private.analytics_metric_publication_policies_v1",
+      "required": [
+        "policyId",
+        "metricKey",
+        "metricVersion",
+        "windowStepSeconds",
+        "projectionDelaySloSeconds",
+        "windowAnchor",
+        "maxCatchUpWindowsPerInvocation",
+        "missedWindowOrder",
+        "schedulerMechanism",
+        "derivationContractId",
+        "seriesContractId",
+        "approvalEvidence",
+        "effectiveFrom"
+      ],
+      "derived": [
+        "derivedMaxLagSeconds"
+      ],
+      "effectiveUntilOptional": true
+    },
+    "freshnessPolicyRegistry": {
+      "table": "private.analytics_metric_freshness_policies_v1",
+      "required": [
+        "policyId",
+        "metricKey",
+        "metricVersion",
+        "maxLagSeconds",
+        "effectiveFrom"
+      ],
+      "effectiveUntilOptional": true
+    },
+    "couplingRule": "Canonical activation inserts publication and freshness policy rows atomically with the same policyId/effective window and derives maxLagSeconds mechanically from windowStepSeconds + projectionDelaySloSeconds. Overlap fails closed; hand-entered freshness thresholds are outside authority."
+  },
+  "currentDecision": {
+    "windowStepSeconds": 300,
+    "projectionDelaySloSeconds": 60,
+    "maxLagSeconds": 360,
+    "policyInsertAuthorized": false,
+    "runtimeBehavior": "SCHEDULER_ACTIVE_POLICY_EFFECTIVE_RUNTIME_CERTIFIED",
+    "windowBoundaryAnchor": "1970-01-01T00:00:00Z",
+    "windowBoundaryTimeZone": "not_applicable_fixed_duration_grid",
+    "maxCatchUpWindowsPerInvocation": 3,
+    "schedulerMechanism": "supabase_pg_cron_database_local",
+    "dimensionEnumeratorAuthorized": true,
+    "schedulerActivationAuthorized": false,
+    "policyRevision": 1,
+    "policyEffectiveFrom": "2026-09-23T16:00:00Z",
+    "policyEffectiveUntil": null,
+    "policyApprovalEnvelopeComplete": true,
+    "policyId": "ana-a11-liquidity-v1-r1",
+    "policyActivationCompleted": true,
+    "activationAuthorizationConsumed": true,
+    "schedulerActivationCompleted": true,
+    "schedulerActivated": true,
+    "schedulerJobId": 8,
+    "schedulerJobName": "doke-ana-liquidity-v1-r1",
+    "schedulerSchedule": "* * * * *",
+    "schedulerPollIntervalSeconds": 60
+  },
+  "authority": {
+    "derivationContractAuthority": true,
+    "thresholdValueAuthority": true,
+    "schedulerAuthority": true,
+    "stagingMutationAuthority": false,
+    "productionAuthority": false,
+    "schedulerTopologyAuthority": true,
+    "windowGridValueAuthority": true,
+    "dimensionEnumeratorAuthority": false,
+    "missedWindowBatchValueAuthority": true,
+    "schedulerActivationAuthority": false,
+    "dimensionEnumeratorContractAuthority": true,
+    "dimensionEnumeratorRuntimeAuthority": true,
+    "publicationPolicySchemaAuthority": true,
+    "publicationPolicyValueAuthority": true,
+    "freshnessPolicySyncAuthority": true,
+    "windowPlannerContractAuthority": true,
+    "windowPlannerRuntimeAuthority": true,
+    "catchUpExecutorContractAuthority": true,
+    "catchUpExecutorRuntimeAuthority": true,
+    "policyActivationContractAuthority": true,
+    "policyActivationRuntimeAuthority": true,
+    "policyApprovalEnvelopeContractAuthority": true,
+    "policyApprovalEnvelopeRuntimeEnforcementAuthority": true,
+    "policyApprovalEnvelopeRuntimeEnforcementCandidateAuthority": true,
+    "schedulerActivationCandidateAuthority": true,
+    "schedulerActivationCandidateRuntimeAuthority": true,
+    "schedulerRuntimeAuthority": true
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "cronChanges": false,
+    "policyInsert": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "historicalBackfill": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "ANA-A11 is operationally certified in staging: revision-1 policy and scheduler are active, the first and subsequent real 300-second windows materialized with all required series, zero duplicate snapshot keys, matched reconciliation and publication delay far inside the 60-second SLO, and ANA-A07 evaluated the latest canonical closed window within maxLagSeconds=360 without fallback. ANA-001 remains 3/6 because broader ANA maturity gates and LEGAL/PAY dependencies remain independent."
+  },
+  "sourceDomainWatermarkSemantics": {
+    "sourceDomain": "CAT-001",
+    "authorityContract": "cat-a06-listing-visibility-watermark-v1",
+    "runtimeFunction": "private.cat_listing_visibility_watermark_v1",
+    "basis": "transaction_snapshot_barrier_v1",
+    "meaning": "Greatest timestamp through which CAT listing-visibility facts are proven readable in the same database snapshot used by the ANA projection.",
+    "canonicalDataThrough": "min(windowEnd, sourceWatermark.dataThrough)",
+    "windowClosureRule": "A liquidity window is not closed for ANA when windowEnd is later than the authoritative CAT source watermark.",
+    "maxEventOccurredAtIsWatermark": false,
+    "computedAtIsWatermark": false,
+    "sourceLagFoldedIntoMaxLagSeconds": false,
+    "thresholdCouplingReason": "CAT dependency availability is evaluated independently from the ANA publication-age threshold; source lag must not be hidden inside maxLagSeconds."
+  },
+  "freshnessStateSemantics": {
+    "authorityContract": "ana-a07-freshness-window-authority-v1",
+    "selectionRule": "Evaluate only the latest canonical closed window; never fall back to an older healthy window.",
+    "unavailable": [
+      "metric freshness threshold is missing",
+      "authoritative dependency watermark is missing or unavailable",
+      "no canonical closed window exists",
+      "selected window lacks required coverage",
+      "declared dataThrough exceeds an authoritative dependency watermark",
+      "structural source/projection defects make the selected liquidity projection unavailable"
+    ],
+    "stale": [
+      "evaluatedAt minus canonical dataThrough exceeds the approved maxLagSeconds",
+      "an authoritative dependency is stale",
+      "selected liquidity coverage is partial"
+    ],
+    "fresh": [
+      "latest canonical window is closed and fully covered",
+      "required dependency watermarks are available",
+      "structural integrity gates pass",
+      "evaluatedAt minus canonical dataThrough is less than or equal to maxLagSeconds"
+    ],
+    "projectionStateMapping": {
+      "fresh": "authoritative",
+      "stale": "stale",
+      "unavailable": "unavailable"
+    },
+    "zeroSampleAloneDeterminesFreshness": false
+  },
+  "pendingAuthorityDecisions": {
+    "windowStepSeconds": {
+      "owner": "ANA-001",
+      "decision": "Resolved: revision 1 persists windowStepSeconds=300.",
+      "cannotBeInferredFrom": [
+        "canary window sizes",
+        "GitHub Actions timing",
+        "ORD worker cron",
+        "REL SLO jobs",
+        "browser refresh intervals"
+      ],
+      "resolved": true
+    },
+    "projectionDelaySloSeconds": {
+      "owner": "ANA-001 operational policy",
+      "decision": "Resolved: revision 1 persists projectionDelaySloSeconds=60; maxLagSeconds is mechanically derived as 360.",
+      "cannotBeInferredFrom": [
+        "single observed execution duration",
+        "retry backoff",
+        "another domain's SLO",
+        "computedAt timestamps"
+      ],
+      "resolved": true
+    },
+    "scheduler": {
+      "owner": "ANA-001",
+      "decision": "Resolved for activation: the persistent staging scheduler is active as job 8 with one-minute polling and bounded catch-up target. No further activation authorization is implied. Remaining requirement is post-effective scheduled-runtime evidence after 2026-09-23T16:05:00Z.",
+      "selectedTopology": "supabase_pg_cron_database_local",
+      "currentlyAuthorized": false,
+      "candidate": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
+      "validation": "supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql",
+      "jobName": "doke-ana-liquidity-v1-r1",
+      "pollSchedule": "* * * * *",
+      "pollIntervalSeconds": 60,
+      "publicationWindowStepSeconds": 300,
+      "activationFunction": "private.activate_analytics_cat_liquidity_scheduler_v1",
+      "stagingCandidateApplied": true,
+      "stagingMigrationVersion": "20260923144627",
+      "validation040": "PASS",
+      "resolved": true,
+      "schedulerActivated": true,
+      "jobId": 8,
+      "activationAuthorizationConsumed": true,
+      "remainingEvidence": "Resolved by read-only post-effective certification recorded in reports/generated/ana-a11-post-effective-runtime-evidence.json."
+    },
+    "windowBoundaryGrid": {
+      "owner": "ANA-001",
+      "decision": "Resolved: revision 1 persists windowAnchor=1970-01-01T00:00:00Z with a 300-second fixed-duration grid.",
+      "cannotBeInferredFrom": [
+        "canary window boundaries",
+        "clock_timestamp at execution",
+        "GitHub Actions timing",
+        "existing ORD cron boundaries"
+      ],
+      "resolved": true
+    },
+    "dimensionSeries": {
+      "owner": "ANA-001 consuming CAT-001 facts",
+      "resolved": true,
+      "decision": "Structural series authority is installed and validated in staging. No further dimension-enumerator implementation decision blocks scheduler readiness.",
+      "remainingBoundary": "Scheduler activation remains unauthorized until publication policy values and catch-up/window-grid decisions are approved."
+    },
+    "missedWindowRecovery": {
+      "owner": "ANA-001 operational policy",
+      "decision": "Resolved: revision 1 persists maxCatchUpWindowsPerInvocation=3 with oldest-first recovery.",
+      "cannotBeInferredFrom": [
+        "retry backoff",
+        "current backlog size",
+        "single canary execution"
+      ],
+      "resolved": true
+    },
+    "publicationPolicyActivation": {
+      "owner": "ANA-001 operational policy",
+      "decision": "Resolved: the single-use approved activation persisted ana-a11-liquidity-v1-r1 atomically into publication + freshness registries. The authorization is consumed.",
+      "unresolvedFields": [],
+      "structuralCandidate": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
+      "policyIdRule": "derived as ana-a11-liquidity-v1-r<revision>; not independently selected",
+      "approvalEnvelopeContract": "config/ana-a11-liquidity-policy-approval-envelope.json",
+      "runtimeEnvelopeEnforcement": true,
+      "runtimeEnforcementCandidate": "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
+      "runtimeEnforcementValidation": "039 PASS",
+      "runtimeEnforcementStagingMigrationVersion": "20260923135957",
+      "resolved": true,
+      "policyId": "ana-a11-liquidity-v1-r1",
+      "activationAuthorizationConsumed": true,
+      "effectiveFrom": "2026-09-23T16:00:00Z",
+      "effectiveUntil": null
+    }
+  },
+  "updatedAt": "2026-09-23T14:57:15.961250Z",
+  "schedulerTopology": {
+    "status": "staging_scheduler_active_policy_effective_runtime_certified",
+    "mechanism": "supabase_pg_cron_database_local",
+    "invocation": "direct_sql_private.run_analytics_cat_liquidity_catch_up_v1",
+    "edgeFunctionRequired": false,
+    "githubActionsSchedulerAllowed": false,
+    "rationale": [
+      "The future scheduler must invoke the bounded A11 catch-up executor, not bypass the planner by calling the A10 per-series runner directly.",
+      "The catch-up executor delegates to the policy-driven planner, which owns canonical grid alignment and bounded oldest-first recovery.",
+      "The executor delegates each planned window to the atomic A11 window orchestrator, which delegates each required series to the canonical A10 projection runner.",
+      "Existing Doke staging cron jobs execute as postgres in the postgres database; no Edge Function or GitHub Actions publisher is required."
+    ],
+    "runtimeEvidence": {
+      "runnerOwner": "postgres",
+      "runnerSecurityDefiner": true,
+      "postgresExecute": true,
+      "serviceRoleExecute": true,
+      "authenticatedExecute": false,
+      "anonExecute": false,
+      "activeAnaLiquidityCronFound": true,
+      "schedulerActivationFunction": "private.activate_analytics_cat_liquidity_scheduler_v1",
+      "schedulerActivationFunctionOwner": "postgres",
+      "schedulerActivationFunctionSecurityDefiner": true,
+      "schedulerActivationFunctionAnonExecute": false,
+      "schedulerActivationFunctionAuthenticatedExecute": false,
+      "schedulerActivationFunctionServiceRoleExecute": false,
+      "activeJobId": 8,
+      "activeJobName": "doke-ana-liquidity-v1-r1",
+      "activeSchedule": "* * * * *",
+      "activeDatabase": "postgres",
+      "activeUsername": "postgres",
+      "preEffectiveSuccessfulRuns": 2,
+      "postEffectiveWindowEvidencePending": true
+    },
+    "activationAuthorized": false,
+    "executionChain": [
+      "Supabase pg_cron (future separately authorized)",
+      "private.run_analytics_cat_liquidity_catch_up_v1",
+      "private.plan_analytics_cat_liquidity_windows_v1",
+      "private.run_analytics_cat_liquidity_window_v1",
+      "public.run_analytics_cat_liquidity_projection_v1"
+    ],
+    "futureCronTarget": "private.run_analytics_cat_liquidity_catch_up_v1",
+    "bypassPlannerAllowed": false,
+    "publicationCadenceSeconds": 300,
+    "schedulerPollIntervalSeconds": 60,
+    "schedulerPollCron": "* * * * *",
+    "pollingSemantics": {
+      "publicationCadenceAuthority": "windowStepSeconds=300 from persisted policy revision 1",
+      "pollIntervalDerivation": "projectionDelaySloSeconds=60 -> pg_cron minute polling",
+      "reason": "Polling every minute is intentionally more frequent than the 5-minute publication grid. The planner emits only canonical 300-second closed windows, while minute polling prevents a boundary/watermark race from waiting an additional full publication window.",
+      "subWindowPublicationAllowed": false,
+      "plannerRemainsWindowAuthority": true
+    },
+    "schedulerActivated": true
+  },
+  "canonicalWindowGrid": {
+    "status": "revision_1_effective_runtime_certified",
+    "windowStepSeconds": 300,
+    "boundaryAnchor": "1970-01-01T00:00:00Z",
+    "boundaryTimeZone": "not_applicable_fixed_duration_grid",
+    "invariants": [
+      "Every materialized window must belong to one versioned canonical grid.",
+      "Ad hoc canary window boundaries must never become production schedule authority.",
+      "Only canonical closed windows may be published.",
+      "A window is not publishable while windowEnd exceeds the authoritative CAT source watermark."
+    ],
+    "boundarySemantics": "fixed-duration absolute grid: windowAnchor + N * windowStepSeconds",
+    "timeZoneIsIndependentAuthority": false,
+    "plannerContract": "ana-a11-liquidity-window-planner-v1",
+    "alignmentRule": "first start boundary at or after max(policy effectiveFrom, CAT certified coverage epoch); each next boundary advances exactly windowStepSeconds from windowAnchor",
+    "upperClosureRule": "windowEnd must be <= min(evaluatedAt, CAT source watermark, policy effectiveUntil when present)"
+  },
+  "dimensionSeriesAuthority": {
+    "status": "staging_runtime_certified_scheduler_active",
+    "globalSeriesRequired": true,
+    "requiredSegmentation": [
+      "category identity",
+      "state"
+    ],
+    "enumeratorExists": true,
+    "mutableCurrentCatalogJoinAllowed": false,
+    "sourceAuthority": "CAT-A06 frozen dimension snapshots plus CAT-A07 forward coverage state",
+    "schedulerMayReuseExistingSnapshotDimensionsAsAuthority": false,
+    "activationBlockedUntilEnumerator": false,
+    "reason": "Existing snapshots contain only previously materialized series and cannot discover a new category/state pair. Mutable current catalog state is not historical dimension authority.",
+    "repositoryEnumeratorCandidateExists": true,
+    "stagingEnumeratorExists": true,
+    "repositoryCandidate": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
+    "validationSql": "supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql",
+    "enumerationRule": "global series plus every valid CAT-frozen category/state pair observed from the certified CAT-A07 coverage epoch through windowEnd",
+    "zeroSeriesContinuity": "The universe is monotonic from the certified epoch, so a previously observed pair remains enumerable and can materialize canonical zero supply after its active intervals disappear.",
+    "atomicWindowOrchestrator": "private.run_analytics_cat_liquidity_window_v1",
+    "atomicity": "All series for one window execute in one SQL statement/transaction; an uncaught series error prevents partial window publication.",
+    "categoryIdentityContinuity": {
+      "catFrozenTokenPriority": [
+        "categoryId",
+        "categorySlug",
+        "category"
+      ],
+      "a10FilterComparison": "case_insensitive",
+      "anaSeriesKeyNormalization": "lowercase frozen fallback token only",
+      "categoryIdEquivalentToSlugOrName": false,
+      "historicalRepresentationRewriteAllowed": false,
+      "existingSnapshotDimensionsAreEquivalenceAuthority": false,
+      "futureCanonicalRemapBehavior": "A future CAT transition from a legacy text/slug token to a canonical category UUID starts a distinct ANA series from that CAT fact forward; the historical token series remains enumerable and can publish zero supply.",
+      "equivalenceRegistryStatus": "absent",
+      "stagingEvidence": {
+        "certifiedEpochPairs": 2,
+        "examples": [
+          {
+            "state": "BA",
+            "categoryIdentityType": "categoryId",
+            "categoryIdentity": "17263173-c179-455f-bd43-2c3d9a55a8fd"
+          },
+          {
+            "state": "BA",
+            "categoryIdentityType": "category",
+            "categoryIdentity": "Limpeza"
+          }
+        ],
+        "legacyFreeformServiceHasCanonicalCategoryRow": false,
+        "conclusion": "mixed representation is valid under current CAT-A06/A07 fallback authority, not current-state drift"
+      }
+    },
+    "stagingMigrationVersion": "20260923021120",
+    "stagingValidation": "PASS"
+  },
+  "missedWindowRecovery": {
+    "status": "revision_1_batch_value_active_runtime_certified",
+    "processingOrder": "oldest missing canonical closed window first",
+    "skipDirectlyToLatestAllowed": false,
+    "exactReplayBehavior": "NO_CHANGE when source/projection fingerprints are unchanged",
+    "divergentConcurrentWriteBehavior": "DOKE_ANALYTICS_METRIC_REVISION_CONFLICT",
+    "maxCatchUpWindowsPerInvocation": 3,
+    "unboundedCatchUpAllowed": false,
+    "reason": "Planner and bounded catch-up executor are installed and validated in staging. Revision 1 persists a batch bound of 3 with oldest-first recovery; scheduled runtime is active and post-effective read-only evidence shows no backlog, no duplicate snapshot keys and a fully materialized canonical grid.",
+    "plannerContract": "ana-a11-liquidity-window-planner-v1",
+    "repositoryPlannerCandidate": "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
+    "validationSql": "supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql",
+    "plannerStagingApplied": true,
+    "completionRule": "A canonical window is complete only when every series returned by the CAT-backed series authority for that window has a matching liquidity snapshot.",
+    "materializedStateIndependent": true,
+    "executorContract": "ana-a11-liquidity-catch-up-executor-v1",
+    "repositoryExecutorCandidate": "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
+    "executorValidationSql": "supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql",
+    "executorStagingApplied": true,
+    "batchAtomicity": "One executor call is one PostgreSQL statement/transaction boundary; any uncaught planned-window failure aborts the invocation instead of committing a partial catch-up batch."
+  },
+  "seriesOrchestrationCandidate": {
+    "contractId": "ana-a11-liquidity-series-orchestration-v1",
+    "migration": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
+    "validationSql": "supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql",
+    "scope": "staging_structural_authority",
+    "stagingApplied": true,
+    "cronCreated": false,
+    "policyRowsWritten": false,
+    "functions": [
+      "private.list_analytics_cat_liquidity_series_v1(timestamptz,timestamptz)",
+      "private.run_analytics_cat_liquidity_window_v1(timestamptz,timestamptz)"
+    ],
+    "sourceFacts": "private.cat_listing_visibility_events_v1",
+    "coverageAuthority": "private.cat_listing_supply_coverage_epochs_v1",
+    "sourceWatermark": "private.cat_listing_visibility_watermark_v1",
+    "projectionDelegate": "public.run_analytics_cat_liquidity_projection_v1",
+    "mutableCatalogJoin": false,
+    "browserAuthority": false,
+    "serviceRoleAuthority": false,
+    "schedulerActivationAuthority": false,
+    "categorySeriesKey": "lower(coalesce(categoryId, categorySlug, category))",
+    "crossRepresentationMergeAllowed": false,
+    "stagingMigrationVersion": "20260923021120",
+    "stagingValidation": "PASS",
+    "canary": {
+      "rollbackOnly": true,
+      "windowStart": "2026-09-23T00:06:30.6835+00:00",
+      "windowEnd": "2026-09-23T02:14:26.560042+00:00",
+      "seriesCount": 3,
+      "series": [
+        {
+          "ordinal": 0,
+          "serviceCategory": null,
+          "serviceState": null
+        },
+        {
+          "ordinal": 1,
+          "serviceCategory": "17263173-c179-455f-bd43-2c3d9a55a8fd",
+          "serviceState": "BA"
+        },
+        {
+          "ordinal": 2,
+          "serviceCategory": "limpeza",
+          "serviceState": "BA"
+        }
+      ],
+      "firstRun": {
+        "appendedCount": 3,
+        "noChangeCount": 0
+      },
+      "replayRun": {
+        "appendedCount": 0,
+        "noChangeCount": 3
+      },
+      "persistentSnapshotRowsAfterRollback": 3
+    }
+  },
+  "publicationPolicyAuthority": {
+    "status": "revision_1_effective_runtime_certified",
+    "table": "private.analytics_metric_publication_policies_v1",
+    "selector": "private.current_analytics_metric_publication_policy_v1",
+    "migration": "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
+    "validationSql": "supabase/tests/035_ana_a11_liquidity_publication_policy_authority_validation.sql",
+    "stagingApplied": true,
+    "stagingRows": 1,
+    "freshnessRegistry": "private.analytics_metric_freshness_policies_v1",
+    "separation": "publication policy stores approved derivation inputs/provenance; freshness policy stores the derived threshold consumed by runtime",
+    "generatedDerivation": "derived_max_lag_seconds = window_step_seconds + projection_delay_slo_seconds",
+    "rowCreationAuthorized": false,
+    "schedulerActivationAuthorized": false,
+    "freshnessPolicySyncAuthorized": false,
+    "ownerBoundary": "postgres only",
+    "overlappingEffectivePolicies": "fail_closed_DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS",
+    "missingEffectivePolicy": "null_no_default",
+    "effectiveSelectionAuthority": "exactly zero or one policy may be effective for a metric/version at p_at; >1 is unavailable by exception",
+    "stagingMigrationVersion": "20260923021316",
+    "stagingValidation": "PASS",
+    "canary": {
+      "rollbackOnly": true,
+      "missingPolicyReturnsNull": true,
+      "syntheticInputs": {
+        "windowStepSeconds": 300,
+        "projectionDelaySloSeconds": 60
+      },
+      "derivedMaxLagSeconds": 360,
+      "overlapFailsClosed": true,
+      "overlapError": "DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS",
+      "persistentRowsAfterRollback": 0
+    },
+    "rowCreationCompleted": true,
+    "freshnessPolicySyncCompleted": true,
+    "activePolicyId": "ana-a11-liquidity-v1-r1",
+    "effectiveFrom": "2026-09-23T16:00:00Z",
+    "effectiveUntil": null
+  },
+  "stagingStructuralEvidence": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "authorization": "authorize-ana-a11-structural-authorities-staging",
+    "observedAt": "2026-09-23T13:08:17.16683+00:00",
+    "repositoryHeadAtExecution": "1825c11544a19162438c2b63c099d9e6d2b4547f",
+    "evidence": "reports/generated/ana-a11-staging-structural-authorities-evidence.json",
+    "migrations": [
+      {
+        "repositoryPath": "supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql",
+        "appliedVersion": "20260923021120",
+        "name": "ana_a11_liquidity_series_orchestration",
+        "validation": "034 PASS"
+      },
+      {
+        "repositoryPath": "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
+        "appliedVersion": "20260923021316",
+        "name": "ana_a11_liquidity_publication_policy_authority",
+        "validation": "035 PASS"
+      },
+      {
+        "repositoryPath": "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
+        "appliedVersion": "20260923130303",
+        "name": "ana_a11_liquidity_window_planner",
+        "validation": "036 PASS"
+      },
+      {
+        "repositoryPath": "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
+        "appliedVersion": "20260923130307",
+        "name": "ana_a11_liquidity_catch_up_executor",
+        "validation": "037 PASS"
+      },
+      {
+        "repositoryPath": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
+        "appliedVersion": "20260923130310",
+        "name": "ana_a11_liquidity_policy_activation",
+        "validation": "038 PASS"
+      }
+    ],
+    "postState": {
+      "publicationPolicyRows": 0,
+      "freshnessPolicyRows": 0,
+      "anaLiquidityCrons": 0,
+      "liquiditySnapshotRows": 3,
+      "securityDefinerTotal": 206
+    },
+    "followUpAuthorization": "authorize-ana-a11-planner-executor-activation-structures-staging head=1825c11544a19162438c2b63c099d9e6d2b4547f matrix=v1.3.132",
+    "plannerExecutorActivationCanaries": {
+      "rollbackOnly": true,
+      "syntheticOnly": true,
+      "plannerAllRequiredSeriesCompletion": true,
+      "boundedOldestFirstCatchUp": true,
+      "executorReplayNoOp": true,
+      "directWindowReplayNoChange": "3/3",
+      "missingPolicyRejected": true,
+      "invalidPolicyRejected": true,
+      "overlappingPolicyRejected": true,
+      "privileges": {
+        "owner": "postgres",
+        "securityDefiner": true,
+        "anonExecute": false,
+        "authenticatedExecute": false,
+        "serviceRoleExecute": false,
+        "postgresExecute": true
+      },
+      "zeroResidue": true
+    }
+  },
+  "windowPlannerCandidate": {
+    "contractId": "ana-a11-liquidity-window-planner-v1",
+    "migration": "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
+    "validationSql": "supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql",
+    "scope": "staging_structural_authority",
+    "stagingApplied": true,
+    "policyRowRequired": true,
+    "implicitPolicyAllowed": false,
+    "plannerInputs": [
+      "policyId",
+      "evaluatedAt"
+    ],
+    "policyDerivedInputs": [
+      "windowStepSeconds",
+      "windowAnchor",
+      "maxCatchUpWindowsPerInvocation",
+      "effectiveFrom",
+      "effectiveUntil"
+    ],
+    "sourceBounds": [
+      "CAT certified coverage epoch",
+      "CAT transaction-snapshot watermark"
+    ],
+    "completionAuthority": "all CAT-required series have exact-window ANA snapshots",
+    "ordering": "oldest missing canonical window first",
+    "writesSnapshots": false,
+    "createsCron": false,
+    "activatesScheduler": false,
+    "choosesNumericPolicy": false,
+    "stagingMigrationVersion": "20260923130303",
+    "stagingValidation": "PASS",
+    "canary": {
+      "result": "PASS",
+      "rollbackOnly": true,
+      "syntheticOnly": true,
+      "syntheticInputs": {
+        "windowStepSeconds": 37,
+        "projectionDelaySloSeconds": 11,
+        "maxCatchUpWindowsPerInvocation": 2
+      },
+      "derivedFreshnessSeconds": 48,
+      "initialPlannedWindowCount": 2,
+      "requiredSeriesFirstWindow": 3,
+      "partialMaterializedSeries": 1,
+      "partialMissingSeries": 2,
+      "completeOnlyAfterAllRequiredSeries": true,
+      "oldestFirstAdvanceAfterCompletion": true,
+      "persistentRowsAfterRollback": 0
+    }
+  },
+  "catchUpExecutorCandidate": {
+    "contractId": "ana-a11-liquidity-catch-up-executor-v1",
+    "migration": "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
+    "validationSql": "supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql",
+    "scope": "staging_structural_authority",
+    "stagingApplied": true,
+    "planner": "private.plan_analytics_cat_liquidity_windows_v1",
+    "windowOrchestrator": "private.run_analytics_cat_liquidity_window_v1",
+    "inputs": [
+      "policyId",
+      "evaluatedAt"
+    ],
+    "directPolicyRead": false,
+    "directFreshnessPolicyWrite": false,
+    "createsCron": false,
+    "choosesNumericPolicy": false,
+    "ownerBoundary": "postgres only",
+    "executionOrder": "planner windowOrdinal ascending",
+    "batchAtomicity": "uncaught failure aborts the executor invocation transaction",
+    "plannerOrdinalInvariant": "contiguous planner ordinals starting at 1",
+    "plannerBypassAllowed": false,
+    "stagingMigrationVersion": "20260923130307",
+    "stagingValidation": "PASS",
+    "canary": {
+      "result": "PASS",
+      "rollbackOnly": true,
+      "syntheticOnly": true,
+      "syntheticInputs": {
+        "windowStepSeconds": 43,
+        "projectionDelaySloSeconds": 17,
+        "maxCatchUpWindowsPerInvocation": 2
+      },
+      "firstBatch": {
+        "plannedWindowCount": 2,
+        "appendedSeriesCount": 6
+      },
+      "secondBatch": {
+        "plannedWindowCount": 2,
+        "appendedSeriesCount": 6
+      },
+      "thirdReplay": {
+        "plannedWindowCount": 0,
+        "appendedSeriesCount": 0
+      },
+      "directWindowReplay": {
+        "seriesCount": 3,
+        "appendedCount": 0,
+        "noChangeCount": 3
+      },
+      "boundedOldestFirst": true,
+      "persistentRowsAfterRollback": 0
+    }
+  },
+  "policyActivationCandidate": {
+    "contractId": "ana-a11-liquidity-policy-activation-v1",
+    "migration": "supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql",
+    "validationSql": "supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql",
+    "scope": "staging_structural_authority",
+    "stagingApplied": true,
+    "ownerBoundary": "postgres only",
+    "insertsPublicationPolicy": true,
+    "insertsFreshnessPolicy": true,
+    "derivesMaxLagMechanically": true,
+    "samePolicyId": true,
+    "sameEffectiveWindow": true,
+    "overlapPolicy": "fail_closed",
+    "createsCron": false,
+    "invokesCatchUp": false,
+    "numericDefaults": false,
+    "policyValuesChosen": false,
+    "stagingMigrationVersion": "20260923130310",
+    "stagingValidation": "PASS",
+    "canary": {
+      "result": "PASS",
+      "rollbackOnly": true,
+      "syntheticOnly": true,
+      "missingPolicyRejected": true,
+      "invalidPolicyRejected": true,
+      "overlappingPolicyRejected": true,
+      "activationInsertedPublicationInTransaction": true,
+      "activationInsertedFreshnessInTransaction": true,
+      "cronCreatedInTransaction": false,
+      "persistentPublicationRowsAfterRollback": 0,
+      "persistentFreshnessRowsAfterRollback": 0
+    }
+  },
+  "policyApprovalEnvelopeContract": {
+    "contractId": "ana-a11-liquidity-policy-approval-envelope-v1",
+    "approvalEvidenceSchemaId": "ana-a11-liquidity-policy-approval-evidence-v1",
+    "config": "config/ana-a11-liquidity-policy-approval-envelope.json",
+    "validationLibrary": "scripts/lib/ana-a11-liquidity-policy-approval-envelope.js",
+    "audit": "scripts/audit-ana-a11-liquidity-policy-approval-envelope.js",
+    "test": "scripts/test-ana-a11-liquidity-policy-approval-envelope.js",
+    "scope": "repository_only",
+    "status": "initial_policy_effective_scheduler_active_runtime_certified",
+    "policyIdDerived": true,
+    "initialPolicyRevision": 1,
+    "effectiveFromExplicit": true,
+    "initialEffectiveUntil": null,
+    "replacementRequiresSeparateTransitionContract": true,
+    "singleUseActivationLimit": 1,
+    "databaseRuntimeEnforcement": true,
+    "stagingMutationAuthorized": false,
+    "schedulerActivationAuthorized": false,
+    "productionAuthorized": false,
+    "runtimeEnforcementCandidate": {
+      "migration": "supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql",
+      "validation": "supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql",
+      "legacyActivationBehaviorWhenApplied": "DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED",
+      "approvedActivationFunction": "private.activate_analytics_cat_liquidity_policy_approved_v1",
+      "databaseEnvelopeValidationWhenApplied": true,
+      "currentStagingApplied": true,
+      "schedulerActivationAuthorized": false,
+      "policyInsertAuthorized": false,
+      "stagingMigrationVersion": "20260923135957",
+      "validation039Passed": true,
+      "legacyActivationTombstoned": true,
+      "canonicalDigestCompatibilityPassed": true
+    },
+    "stagingValidationEvidence": {
+      "sourceHead": "f3f7e20363a92ca7383e8df73bcb7b139dd85f83",
+      "matrixVersion": "1.3.132",
+      "stagingAuthorization": "authorize-ana-a11-policy-envelope-runtime-enforcement-staging head=f3f7e20363a92ca7383e8df73bcb7b139dd85f83 matrix=v1.3.132",
+      "migrationVersion": "20260923135957",
+      "validation039": "PASS",
+      "rollbackCanary": "PASS",
+      "persistentPolicyRows": 0,
+      "persistentCronJobs": 0
+    },
+    "completedApproval": {
+      "sourceHead": "889d99586c19d178bc08d9beec380e3aa1b5904e",
+      "matrixVersion": "1.3.132",
+      "authorization": "authorize-ana-a11-liquidity-policy-activation-staging head=889d99586c19d178bc08d9beec380e3aa1b5904e matrix=v1.3.132 revision=1 windowStepSeconds=300 projectionDelaySloSeconds=60 windowAnchor=1970-01-01T00:00:00Z maxCatchUpWindowsPerInvocation=3 effectiveFrom=2026-09-23T16:00:00Z effectiveUntil=null",
+      "approvalId": "ana-a11-liquidity-approval-r1-52ff083086f2",
+      "authorizationDigestSha256": "52ff083086f2748905f1ff75a5357d65b9c8c7403bac31f5fbead29795396ae7",
+      "evidenceDigestSha256": "f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d",
+      "approvedAt": "2026-09-23T14:14:42.814387Z",
+      "activatedAt": "2026-09-23T14:16:20.971548Z",
+      "policyId": "ana-a11-liquidity-v1-r1",
+      "revision": 1,
+      "effectiveFrom": "2026-09-23T16:00:00Z",
+      "effectiveUntil": null,
+      "activationAuthorizationConsumed": true
+    }
+  },
+  "schedulerActivationCandidate": {
+    "contractId": "ana-a11-liquidity-scheduler-activation-v1",
+    "migration": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
+    "validationSql": "supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql",
+    "status": "staging_scheduler_active_policy_effective_runtime_certified",
+    "sourcePolicyId": "ana-a11-liquidity-v1-r1",
+    "sourcePolicyEvidenceDigestSha256": "f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d",
+    "jobName": "doke-ana-liquidity-v1-r1",
+    "schedule": "* * * * *",
+    "pollIntervalSeconds": 60,
+    "publicationWindowStepSeconds": 300,
+    "projectionDelaySloSeconds": 60,
+    "target": "private.run_analytics_cat_liquidity_catch_up_v1",
+    "targetCommand": "select private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp());",
+    "plannerBypassAllowed": false,
+    "directA10InvocationAllowed": false,
+    "conflictPolicy": "fail_closed_DOKE_ANALYTICS_SCHEDULER_JOB_CONFLICT",
+    "replayBehavior": "NO_CHANGE_when_exact_active_job_already_exists",
+    "ownerBoundary": "postgres_only",
+    "migrationCreatesCronAtApplyTime": false,
+    "stagingApplied": true,
+    "validationExecutedInStaging": true,
+    "schedulerActivated": true,
+    "stagingMigrationVersion": "20260923144627",
+    "stagingAuthorization": "authorize-ana-a11-liquidity-scheduler-activation-candidate-staging head=794dc639f0bd7c597d28fbad572fc775f7b50307 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1",
+    "validation040Passed": true,
+    "privilegeBoundary": {
+      "owner": "postgres",
+      "securityDefiner": true,
+      "anonExecute": false,
+      "authenticatedExecute": false,
+      "serviceRoleExecute": false
+    },
+    "rollbackValidation": {
+      "firstActivationStatus": "APPENDED",
+      "exactCronRowVerified": true,
+      "replayStatus": "NO_CHANGE",
+      "duplicateCountAfterReplay": 1,
+      "rolledBack": true,
+      "persistentCronJobsAfterRollback": 0
+    },
+    "activationAuthorization": "authorize-ana-a11-liquidity-scheduler-activation-staging head=396c4bbb8fb40d75c81b2ab39210c6f9a8c06851 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1 jobName=doke-ana-liquidity-v1-r1 schedule=\"* * * * *\"",
+    "activationAuthorizationConsumed": true,
+    "activationResult": {
+      "status": "APPENDED",
+      "jobId": 8,
+      "jobName": "doke-ana-liquidity-v1-r1",
+      "schedule": "* * * * *",
+      "pollIntervalSeconds": 60,
+      "publicationWindowStepSeconds": 300,
+      "projectionDelaySloSeconds": 60,
+      "target": "private.run_analytics_cat_liquidity_catch_up_v1",
+      "plannerBypassed": false
+    },
+    "persistentRuntime": {
+      "relevantCronCount": 1,
+      "jobId": 8,
+      "active": true,
+      "database": "postgres",
+      "username": "postgres",
+      "command": "select private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp());",
+      "activationConfirmedAt": "2026-09-23T14:56:12.828818Z",
+      "policyEffectiveFrom": "2026-09-23T16:00:00Z",
+      "firstClosedWindowEligibleAfter": "2026-09-23T16:05:00Z",
+      "preEffectiveRuns": [
+        {
+          "runId": 147213,
+          "startTime": "2026-09-23T14:56:00.051145Z",
+          "endTime": "2026-09-23T14:56:00.056204Z",
+          "durationMs": 5.059,
+          "status": "succeeded"
+        },
+        {
+          "runId": 147215,
+          "startTime": "2026-09-23T14:57:00.032006Z",
+          "endTime": "2026-09-23T14:57:00.038737Z",
+          "durationMs": 6.731,
+          "status": "succeeded"
+        }
+      ],
+      "preEffectivePlannerReturnedNoWindows": true,
+      "preEffectivePostPolicySnapshotCount": 0,
+      "preEffectivePostPolicyReconciliationCount": 0
+    }
+  },
+  "pendingRuntimeEvidence": {
+    "schedulerPostEffective": {
+      "status": "certified_read_only",
+      "earliestEvidenceTime": "2026-09-23T16:05:00Z",
+      "certifiedObservationAt": "2026-09-23T19:23:51.047151Z",
+      "evidenceArtifact": "reports/generated/ana-a11-post-effective-runtime-evidence.json",
+      "result": "PASS",
+      "blockerFound": false,
+      "firstWindow": {
+        "windowStart": "2026-09-23T16:00:00Z",
+        "windowEnd": "2026-09-23T16:05:00Z",
+        "requiredSeries": 3,
+        "materializedSeries": 3,
+        "series": [
+          {
+            "serviceCategory": null,
+            "serviceState": null
+          },
+          {
+            "serviceCategory": "17263173-c179-455f-bd43-2c3d9a55a8fd",
+            "serviceState": "BA"
+          },
+          {
+            "serviceCategory": "limpeza",
+            "serviceState": "BA"
+          }
+        ],
+        "firstComputedAt": "2026-09-23T16:05:00.131624Z",
+        "fullyComputedAt": "2026-09-23T16:05:00.148650Z",
+        "completionDelaySeconds": 0.14865,
+        "allCoverageComplete": true,
+        "allAuthoritative": true,
+        "allReconciled": true,
+        "dataThrough": "2026-09-23T16:05:00Z",
+        "withinProjectionDelaySlo": true
+      },
+      "windowContinuity": {
+        "expectedClosedWindows": 40,
+        "materializedWindows": 40,
+        "firstWindowStart": "2026-09-23T16:00:00Z",
+        "lastWindowEnd": "2026-09-23T19:20:00Z",
+        "minDurationSeconds": 300,
+        "maxDurationSeconds": 300,
+        "minSeriesPerWindow": 3,
+        "maxSeriesPerWindow": 3,
+        "averageCompletionDelaySeconds": 0.143407725,
+        "maxCompletionDelaySeconds": 0.486772,
+        "windowsOverProjectionDelaySlo": 0,
+        "allAuthoritative": true,
+        "allCoverageComplete": true,
+        "allSnapshotReconciled": true,
+        "dataThroughEqualsWindowEnd": true
+      },
+      "reconciliation": {
+        "windows": 40,
+        "minRunsPerWindow": 3,
+        "maxRunsPerWindow": 3,
+        "allMatched": true,
+        "coreStructuralDivergences": 0
+      },
+      "latestCanonicalWindow": {
+        "windowStart": "2026-09-23T19:15:00Z",
+        "windowEnd": "2026-09-23T19:20:00Z",
+        "requiredSeries": 3,
+        "materializedSeries": 3,
+        "fullyComputedAt": "2026-09-23T19:20:00.135614Z",
+        "completionDelaySeconds": 0.135614,
+        "dataThrough": "2026-09-23T19:20:00Z",
+        "evaluatedAt": "2026-09-23T19:23:14.310840Z",
+        "ageSeconds": 194.31084,
+        "maxLagSeconds": 360,
+        "freshByAge": true,
+        "olderWindowFallbackUsed": false
+      },
+      "idempotencyAssessment": {
+        "manualReplayPerformed": false,
+        "reason": "Repository-evidence lot remained read-only; no manual runtime invocation was authorized.",
+        "priorRollbackReplayCanaryCertified": true,
+        "zeroDuplicateSnapshotKeys": true,
+        "repeatedMinutePollingCreatedNoExtraWindowSeries": true,
+        "plannerEmptyAfterCompleteMaterialization": true,
+        "classification": "consistent_with_certified_replay_idempotency"
+      }
+    }
+  },
+  "runtimeCertification": {
+    "status": "PASS",
+    "environment": "staging",
+    "verificationMode": "read_only",
+    "evidenceArtifact": "reports/generated/ana-a11-post-effective-runtime-evidence.json",
+    "sourceHead": "b6bc5a94569faf9e0aab0fa646a57e7b8ade28cf",
+    "matrixVersion": "1.3.132",
+    "observedAt": "2026-09-23T19:23:51.047151Z",
+    "continuityCorroboratedAt": "2026-09-23T22:08:09.686739Z",
+    "firstCanonicalWindowMaterialized": true,
+    "requiredSeriesCovered": true,
+    "duplicateSnapshotKeys": 0,
+    "reconciliationMatched": true,
+    "maxObservedCompletionDelaySeconds": 0.486772,
+    "projectionDelaySloSeconds": 60,
+    "latestCanonicalWindowEvaluated": true,
+    "olderWindowFallbackUsed": false,
+    "maxLagSeconds": 360,
+    "operationalBlocker": null,
+    "anaMaturityAfter": 3
+  }
+}

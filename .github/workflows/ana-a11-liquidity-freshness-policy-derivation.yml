@@ -1,0 +1,79 @@
+name: ANA-A11 Liquidity Freshness Policy Derivation
+# final repository certification after canonical matrix refresh
+# rerun after canonical matrix v1.3.132 sync
+on:
+  pull_request:
+    paths:
+      - 'config/ana-a11-liquidity-freshness-policy-derivation.json'
+      - 'config/ana-a11-liquidity-policy-approval-envelope.json'
+      - 'scripts/lib/ana-a11-liquidity-policy-approval-envelope.js'
+      - 'scripts/audit-ana-a11-liquidity-policy-approval-envelope.js'
+      - 'scripts/test-ana-a11-liquidity-policy-approval-envelope.js'
+      - 'docs/ANA-A11-LIQUIDITY-FRESHNESS-POLICY-DERIVATION.md'
+      - 'scripts/audit-ana-a11-liquidity-freshness-policy-derivation.js'
+      - 'scripts/test-ana-a11-liquidity-freshness-policy-derivation.js'
+      - 'config/cat-a07-supply-coverage-baseline.json'
+      - 'scripts/audit-cat-a07-supply-coverage-baseline.js'
+      - 'scripts/test-cat-a07-supply-coverage-baseline.js'
+      - 'config/ana-a07-freshness-window-authority.json'
+      - 'config/ana-a10-cat-liquidity-projection.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'reports/generated/ana-a11-post-effective-runtime-evidence.json'
+      - 'supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql'
+      - 'supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql'
+      - 'supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql'
+      - 'supabase/tests/035_ana_a11_liquidity_publication_policy_authority_validation.sql'
+      - 'supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql'
+      - 'supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql'
+      - 'supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql'
+      - 'supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql'
+      - 'supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql'
+      - 'supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql'
+      - 'supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql'
+      - 'supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql'
+      - 'supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql'
+      - 'supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql'
+      - 'package.json'
+      - '.github/workflows/ana-a11-liquidity-freshness-policy-derivation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repository-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: |
+          node --check scripts/audit-ana-a11-liquidity-freshness-policy-derivation.js
+          node --check scripts/test-ana-a11-liquidity-freshness-policy-derivation.js
+          node --check scripts/lib/ana-a11-liquidity-policy-approval-envelope.js
+          node --check scripts/audit-ana-a11-liquidity-policy-approval-envelope.js
+          node --check scripts/test-ana-a11-liquidity-policy-approval-envelope.js
+          node --check scripts/audit-cat-a07-supply-coverage-baseline.js
+          node --check scripts/test-cat-a07-supply-coverage-baseline.js
+      - run: |
+          npm run audit:ana-a11-liquidity-freshness-policy-derivation
+          npm run test:ana-a11-liquidity-freshness-policy-derivation
+          npm run audit:ana-a11-liquidity-policy-approval-envelope
+          npm run test:ana-a11-liquidity-policy-approval-envelope
+          npm run audit:cat-a07-supply-coverage-baseline
+          npm run test:cat-a07-supply-coverage-baseline
+      - run: |
+          npm run audit:ana-a07-freshness-window-authority
+          npm run test:ana-a07-freshness-window-authority
+          npm run audit:ana-a10-cat-liquidity-projection
+          npm run test:ana-a10-cat-liquidity-projection
+          npm run audit:cat-a06-listing-visibility-timeline
+          npm run test:cat-a06-listing-visibility-timeline
+      - run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+      - run: git diff --check

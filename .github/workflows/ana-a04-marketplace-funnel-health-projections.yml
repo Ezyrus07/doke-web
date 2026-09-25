@@ -1,0 +1,51 @@
+name: ANA-A04 Marketplace Funnel Health Projections
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/analytics/marketplace-health-projection.js'
+      - 'config/ana-a04-marketplace-funnel-health-projections.json'
+      - 'docs/ANA-A04-MARKETPLACE-FUNNEL-HEALTH-PROJECTIONS.md'
+      - 'scripts/audit-ana-a04-marketplace-funnel-health-projections.js'
+      - 'scripts/test-ana-a04-marketplace-funnel-health-projections.js'
+      - 'supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql'
+      - 'scripts/audit-ana-a04-runtime-readiness.js'
+      - 'scripts/test-ana-a04-runtime-readiness.js'
+      - '.github/workflows/ana-a04-marketplace-funnel-health-projections.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ana-a04-marketplace-funnel-health-projections:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/analytics/marketplace-health-projection.js
+          node --check scripts/audit-ana-a04-marketplace-funnel-health-projections.js
+          node --check scripts/test-ana-a04-marketplace-funnel-health-projections.js
+      - name: Audit
+        run: node scripts/audit-ana-a04-marketplace-funnel-health-projections.js
+      - name: Conformance
+        run: node scripts/test-ana-a04-marketplace-funnel-health-projections.js
+      - name: Runtime readiness
+        run: |
+          node scripts/audit-ana-a04-runtime-readiness.js
+          node scripts/test-ana-a04-runtime-readiness.js
+      - name: ANA-A03 regression
+        run: |
+          node scripts/audit-ana-a03-behavioral-ingestion-identity-boundary.js
+          node scripts/test-ana-a03-behavioral-ingestion-identity-boundary.js
+      - name: Domain matrix regression
+        run: node scripts/audit-domain-completion-matrix.js
+      - name: Diff hygiene
+        run: git diff --check

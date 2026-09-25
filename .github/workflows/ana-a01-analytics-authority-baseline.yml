@@ -1,0 +1,39 @@
+name: ANA-A01 Analytics Authority Baseline
+
+on:
+  pull_request:
+    paths:
+      - 'config/ana-a01-analytics-authority-baseline.json'
+      - 'docs/ANA-A01-ANALYTICS-AUTHORITY-BASELINE.md'
+      - 'scripts/audit-ana-a01-analytics-authority-baseline.js'
+      - 'scripts/test-ana-a01-analytics-authority-baseline.js'
+      - '.github/workflows/ana-a01-analytics-authority-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ana-a01-analytics-authority-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check scripts/audit-ana-a01-analytics-authority-baseline.js
+          node --check scripts/test-ana-a01-analytics-authority-baseline.js
+      - name: Audit
+        run: node scripts/audit-ana-a01-analytics-authority-baseline.js
+      - name: Conformance
+        run: node scripts/test-ana-a01-analytics-authority-baseline.js
+
+      - name: Domain matrix regression
+        run: node scripts/audit-domain-completion-matrix.js
+      - name: Diff hygiene
+        run: git diff --check

@@ -1,0 +1,202 @@
+{
+  "contractId": "ana-a01-analytics-authority-baseline-v1",
+  "domain": "ANA-001",
+  "sourceHead": "b10cdc514107c49ac8013a0054d51ceb6e7fb62d",
+  "createdAt": "2026-09-18T19:00:00-03:00",
+  "scope": "repository_only",
+  "status": "baseline_complete_runtime_blocked",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "currentAuthority": {
+    "registrationFact": {
+      "owner": "AUTH-001",
+      "trust": "canonical_domain_fact"
+    },
+    "serviceBehaviorMetrics": {
+      "owner": "ANA-001",
+      "trust": "browser_authored_behavior",
+      "legacy": true
+    },
+    "quoteFunnel": {
+      "owner": "ANA-001",
+      "trust": "server_canonicalized_behavior_with_browser_identity",
+      "legacy": true
+    },
+    "orderFacts": {
+      "owner": "ORD-001",
+      "trust": "canonical_domain_fact_projection"
+    },
+    "searchObservability": {
+      "owner": "SEARCH-001",
+      "trust": "operational_observability",
+      "behavioralFunnelEligible": false
+    },
+    "paymentFacts": {
+      "owner": "PAY-001",
+      "trust": "contract_only_non_production"
+    },
+    "rehireRetention": {
+      "owner": "REP-001",
+      "trust": "repository_contract_only"
+    },
+    "crossDomainTaxonomy": "absent",
+    "crossDomainIdentity": "absent",
+    "historicalMetricRevision": "absent",
+    "crossDomainReconciliation": "absent"
+  },
+  "findings": [
+    {
+      "id": "ANA-A01-F01",
+      "severity": "high",
+      "category": "taxonomy",
+      "description": "No canonical marketplace event taxonomy exists."
+    },
+    {
+      "id": "ANA-A01-F02",
+      "severity": "high",
+      "category": "semantic_authority",
+      "description": "Behavioral events and transactional facts are not governed by one semantic authority map."
+    },
+    {
+      "id": "ANA-A01-F03",
+      "severity": "high",
+      "category": "anonymous_identity",
+      "description": "Anonymous behavioral identity is browser-authored."
+    },
+    {
+      "id": "ANA-A01-F04",
+      "severity": "high",
+      "category": "identity_stitching",
+      "description": "Cross-domain anonymous/authenticated identity stitching is undefined."
+    },
+    {
+      "id": "ANA-A01-F05",
+      "severity": "high",
+      "category": "anti_abuse",
+      "description": "Current deduplication protects replay but not fabricated visitor/session identities."
+    },
+    {
+      "id": "ANA-A01-F06",
+      "severity": "high",
+      "category": "time_authority",
+      "description": "Behavioral sources use incompatible timestamp authorities."
+    },
+    {
+      "id": "ANA-A01-F07",
+      "severity": "medium",
+      "category": "late_events",
+      "description": "No canonical lateness, watermark or finalized-window contract exists."
+    },
+    {
+      "id": "ANA-A01-F08",
+      "severity": "medium",
+      "category": "historical_revision",
+      "description": "Current live aggregate views expose no immutable metric revision or source fingerprint."
+    },
+    {
+      "id": "ANA-A01-F09",
+      "severity": "high",
+      "category": "reconciliation",
+      "description": "No cross-domain analytics reconciliation authority exists."
+    },
+    {
+      "id": "ANA-A01-F10",
+      "severity": "high",
+      "category": "financial_metrics",
+      "description": "GMV, take rate and revenue cannot be production-authoritative while PAY remains contract_only."
+    },
+    {
+      "id": "ANA-A01-F11",
+      "severity": "high",
+      "category": "privacy_lifecycle",
+      "description": "Retention, deletion, anonymization and persistent anonymous identity depend on LEGAL-B03."
+    },
+    {
+      "id": "ANA-A01-F12",
+      "severity": "medium",
+      "category": "metric_governance",
+      "description": "Metric ownership, quality thresholds and business-alert semantics are not canonical."
+    }
+  ],
+  "mandatoryInvariants": [
+    "browser-generated visitor/session IDs never become human identity authority",
+    "client event IDs are idempotency hints and not proof of occurrence",
+    "behavioral events transactional facts and operational observability remain distinct",
+    "transactional outcomes are sourced from owning domains",
+    "order transaction facts are projected from ORD",
+    "payment outcomes remain unavailable until PAY has external authority",
+    "authenticated actor identity is resolved server-side",
+    "canonical subject dimensions are resolved from server authorities",
+    "server receipt time is never client-controlled",
+    "client timestamps are advisory unless a versioned policy says otherwise",
+    "semantic deduplication is separate from transport idempotency",
+    "anonymous to authenticated stitching remains disabled until privacy policy approval",
+    "cross-device anonymous stitching is disabled",
+    "analytics payloads minimize personal and payment data",
+    "metric definitions are versioned",
+    "historical metric snapshots are reproducible",
+    "same source definition and window produce the same fingerprint",
+    "finalized metric history is never silently overwritten",
+    "historical corrections create explicit revisions",
+    "reconciliation never edits a canonical source to make analytics agree",
+    "source-domain defects are owned by the source domain",
+    "missing authority returns unavailable rather than synthetic zero",
+    "data-quality alerts and business-performance signals are separate",
+    "every canonical metric declares source and projection ownership",
+    "fixtures browser caches and synthetic staging data never become production authority"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "baselineAuthority": true,
+    "taxonomyAuthority": false,
+    "identityStitchingAuthority": false,
+    "behavioralIngestionAuthority": false,
+    "funnelProjectionAuthority": false,
+    "businessMetricAuthority": false,
+    "financialMetricAuthority": false,
+    "reconciliationAuthority": false,
+    "lateEventPolicyAuthority": false,
+    "privacyDecisionAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "ANA-B01",
+    "ANA-B02",
+    "ANA-B03",
+    "LEGAL-B03",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04",
+    "REP-B02",
+    "REP-B03",
+    "REP-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realAnalyticsEventWritten": false,
+    "realMetricProjectionWritten": false,
+    "realMetricSnapshotWritten": false,
+    "realIdentityStitchCreated": false,
+    "realUserDataChanged": false,
+    "realOrderChanged": false,
+    "realPaymentChanged": false,
+    "realReputationChanged": false,
+    "productionChanges": false
+  },
+  "nextSublots": [
+    "ANA-A02 canonical event taxonomy",
+    "ANA-A03 behavioral ingestion and identity boundary",
+    "ANA-A04 marketplace funnel and health projections",
+    "ANA-A05 reconciliation and data quality"
+  ]
+}

@@ -1,0 +1,331 @@
+{
+  "contractId": "ana-a07-a09-funnel-freshness-policy-activation-envelope-v1",
+  "approvalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-approval-evidence-v1",
+  "domain": "ANA-001",
+  "scope": "repository_only",
+  "status": "effective_window_active_persistent_policy_rows_8_runtime_canaries_certified_repository_projection_authority_granted",
+  "createdAt": "2026-09-24T13:26:00Z",
+  "createdAgainst": {
+    "repositoryHead": "0c45856b82b08fe5265c3e71b40c0d83fed871a7",
+    "matrixVersion": "1.3.132",
+    "authorization": "authorize-ana-a07-a09-funnel-freshness-policy-activation-envelope-repository-only head=0c45856b82b08fe5265c3e71b40c0d83fed871a7 matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null"
+  },
+  "objective": "Bind the explicit revision-1 funnel freshness effective window to immutable repository evidence without granting staging activation, policy persistence, snapshot publication, scheduler, production, merge or ready-for-review authority.",
+  "rootCause": {
+    "effectiveWindowDecisionGap": "Closed at repository level: the project owner explicitly approved effectiveFrom=2026-09-24T14:00:00Z and effectiveUntil=null for ana-a07-a09-funnel-v1-r1.",
+    "runtimeEvidenceBindingGap": "Closed in staging: validation 044 proves the approved repository envelope is accepted by the owner-only validator and tampered HEAD/authorization/boundary/digest variants are rejected.",
+    "consequence": "The prior scalar-only activation bypass is now tombstoned in staging. The remaining boundary is explicit activation-invocation authority plus an activation-capable successor that must validate this envelope before inserting rows.",
+    "requiredResolution": "Create a separate repository-only activation-invocation authorization contract, then introduce an approval-aware activation-capable successor only under that contract; real policy insertion still requires a later separate staging authorization."
+  },
+  "authorization": {
+    "rawCommand": "authorize-ana-a07-a09-funnel-freshness-policy-activation-envelope-repository-only head=0c45856b82b08fe5265c3e71b40c0d83fed871a7 matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null",
+    "digestSha256": "4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a",
+    "received": true,
+    "consumedForRepositoryEnvelope": true,
+    "policyActivationInvocationAuthorized": false,
+    "stagingMutationAuthorized": false,
+    "snapshotPublicationAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false,
+    "readyForReviewAuthorized": false
+  },
+  "policySet": {
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "revision": 1,
+    "metricVersion": "v1",
+    "metricCount": 8,
+    "windowReferenceSeconds": 300,
+    "projectionDelayBudgetSeconds": 60,
+    "maxLagSeconds": 360,
+    "approvedEffectiveFrom": "2026-09-24T14:00:00Z",
+    "approvedEffectiveUntil": null,
+    "runtimeActivationState": "active",
+    "runtimeEffectiveFrom": "2026-09-24T14:00:00Z",
+    "runtimeEffectiveUntil": null,
+    "runtimePolicyRowsPersisted": 8
+  },
+  "approvalEvidence": {
+    "schemaId": "ana-a07-a09-funnel-freshness-policy-activation-approval-evidence-v1",
+    "approvalId": "ana-a07-a09-funnel-approval-r1-4a96845c6659",
+    "approvalChannel": "chat_explicit_authorization",
+    "approvalActorRole": "project_owner",
+    "authorizationDigestSha256": "4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a",
+    "approvedAt": "2026-09-24T13:26:00Z",
+    "environment": "staging",
+    "repositoryHead": "0c45856b82b08fe5265c3e71b40c0d83fed871a7",
+    "matrixVersion": "1.3.132",
+    "domain": "ANA-001",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "revision": 1,
+    "metricVersion": "v1",
+    "metricCount": 8,
+    "approvedParameters": {
+      "windowReferenceSeconds": 300,
+      "projectionDelayBudgetSeconds": 60,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    },
+    "policies": [
+      {
+        "policyId": "ana-a07-a09-funnel-search-ctr-v1-r1",
+        "metricKey": "funnel.search_ctr",
+        "metricVersion": "v1",
+        "sourceDomains": [
+          "ANA-001"
+        ],
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-24T14:00:00Z",
+        "effectiveUntil": null
+      },
+      {
+        "policyId": "ana-a07-a09-funnel-impression-click-v1-r1",
+        "metricKey": "funnel.impression_to_click",
+        "metricVersion": "v1",
+        "sourceDomains": [
+          "ANA-001"
+        ],
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-24T14:00:00Z",
+        "effectiveUntil": null
+      },
+      {
+        "policyId": "ana-a07-a09-funnel-click-detail-v1-r1",
+        "metricKey": "funnel.click_to_detail",
+        "metricVersion": "v1",
+        "sourceDomains": [
+          "ANA-001"
+        ],
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-24T14:00:00Z",
+        "effectiveUntil": null
+      },
+      {
+        "policyId": "ana-a07-a09-funnel-detail-budget-v1-r1",
+        "metricKey": "funnel.detail_to_budget_cta",
+        "metricVersion": "v1",
+        "sourceDomains": [
+          "ANA-001"
+        ],
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-24T14:00:00Z",
+        "effectiveUntil": null
+      },
+      {
+        "policyId": "ana-a07-a09-funnel-budget-quote-start-v1-r1",
+        "metricKey": "funnel.budget_cta_to_quote_started",
+        "metricVersion": "v1",
+        "sourceDomains": [
+          "ANA-001"
+        ],
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-24T14:00:00Z",
+        "effectiveUntil": null
+      },
+      {
+        "policyId": "ana-a07-a09-funnel-quote-start-complete-v1-r1",
+        "metricKey": "funnel.quote_started_to_completed",
+        "metricVersion": "v1",
+        "sourceDomains": [
+          "ANA-001"
+        ],
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-24T14:00:00Z",
+        "effectiveUntil": null
+      },
+      {
+        "policyId": "ana-a07-a09-funnel-quote-complete-submit-v1-r1",
+        "metricKey": "funnel.quote_completed_to_submitted",
+        "metricVersion": "v1",
+        "sourceDomains": [
+          "ANA-001"
+        ],
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-24T14:00:00Z",
+        "effectiveUntil": null
+      },
+      {
+        "policyId": "ana-a07-a09-funnel-submit-order-v1-r1",
+        "metricKey": "funnel.quote_submitted_to_order_requested",
+        "metricVersion": "v1",
+        "sourceDomains": [
+          "ANA-001",
+          "ORD-001"
+        ],
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-24T14:00:00Z",
+        "effectiveUntil": null
+      }
+    ],
+    "boundaries": {
+      "envelopeRepositoryWriteAuthorized": true,
+      "policyActivationInvocationAuthorized": false,
+      "policyPersistenceAuthorized": false,
+      "snapshotPublicationAuthorized": false,
+      "runtimeProjectionAuthorityAuthorized": false,
+      "runtimeSnapshotAuthorityAuthorized": false,
+      "cronOrSchedulerAuthorized": false,
+      "productionAuthorized": false,
+      "pullRequestMergeAuthorized": false,
+      "readyForReviewAuthorized": false
+    },
+    "evidenceDigestSha256": "9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5"
+  },
+  "runtimeBoundary": {
+    "currentActivationFunction": "private.activate_a09_funnel_policy_approved_v1",
+    "currentActivationBehavior": "approval_aware_single_use_consumed_policy_active",
+    "activationCapableSuccessorPresent": true,
+    "activationApprovalValidatorFunction": "private.validate_a09_funnel_activation_approval_v1",
+    "successorOwner": "postgres",
+    "successorSecurityDefiner": true,
+    "successorPublicExecuteAllowed": false,
+    "successorStagingValidated": true,
+    "successorStagingMigrationVersion": "20260925112930",
+    "validation045Passed": true,
+    "successorStagingEvidencePath": "reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json",
+    "successorStagingEvidenceBlobSha": "02a860c812eeb777519c7917bb5c31b3fb3dd5e2",
+    "legacyActivationFunction": "private.activate_analytics_a09_funnel_freshness_policy_v1",
+    "legacyActivationTombstoned": true,
+    "approvalEnvelopeValidatorFunction": "private.validate_analytics_a09_funnel_freshness_policy_approval_envelope_v1",
+    "runtimeStoredValidatorIdentifier": "validate_analytics_a09_funnel_freshness_policy_approval_envelop",
+    "validatorApprovalEvidenceArgumentPresent": true,
+    "repositoryHeadBindingVerifiedByDatabase": true,
+    "matrixVersionBindingVerifiedByDatabase": true,
+    "authorizationDigestVerifiedByDatabase": true,
+    "evidenceDigestVerifiedByDatabase": true,
+    "exactApprovedWindowBindingVerifiedByDatabase": true,
+    "runtimeEnforcementAuthority": true,
+    "note": "The approved freshness policy set is persistently active with eight rows. The four-path runtime canary contract is repository-ready; staging canary execution has not been authorized or executed."
+  },
+  "authority": {
+    "repositoryContractAuthority": true,
+    "completedApprovalEvidenceAuthority": true,
+    "effectiveWindowSelectionAuthority": true,
+    "thresholdValueSelectionAuthority": true,
+    "activationInvocationAuthority": false,
+    "policyPersistenceAuthority": false,
+    "runtimeEnvelopeEnforcementAuthority": true,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "cronOrSchedulerAuthority": false,
+    "stagingMutationAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "runtimeEnforcementCandidateAuthority": true,
+    "runtimeEnforcementAppliedAuthority": true,
+    "successorStagingAppliedAuthority": true,
+    "activeFreshnessPolicySetAuthority": true,
+    "repositoryRuntimeCanaryContractAuthority": true,
+    "stagingCanaryExecutionAuthority": false,
+    "runtimeCanaryEvidenceAuthority": true
+  },
+  "prohibitedEffects": {
+    "activationFunctionInvoked": false,
+    "freshnessPolicyRowsPersisted": false,
+    "publicationPolicyRowsPersisted": false,
+    "snapshotsWritten": false,
+    "cronCreated": false,
+    "stagingMutated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "validation": {
+    "library": "scripts/lib/ana-a07-a09-funnel-freshness-policy-activation-envelope.js",
+    "audit": "scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-envelope.js",
+    "test": "scripts/test-ana-a07-a09-funnel-freshness-policy-activation-envelope.js",
+    "workflow": ".github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml"
+  },
+  "nextGates": [
+    "Repository runtime projection authority is granted and bound to the certified canary evidence; do not infer a staging runtime flag mutation.",
+    "Keep runtimeSnapshotAuthority and snapshotPublicationAuthority false until separate later gates.",
+    "Keep persistent cron/scheduler, production, merge and Ready authority false."
+  ],
+  "runtimeEnforcementCandidate": {
+    "migration": "supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql",
+    "validationSql": "supabase/tests/044_ana_a07_a09_funnel_policy_approval_runtime_enforcement_validation.sql",
+    "validatorFunction": "private.validate_analytics_a09_funnel_freshness_policy_approval_envelope_v1",
+    "legacyActivationFunction": "private.activate_analytics_a09_funnel_freshness_policy_v1",
+    "canonicalJsonDependency": "private.canonicalize_analytics_json_v1",
+    "status": "staging_applied_validated_activation_unauthorized",
+    "sourceHead": "e19457d1e099f65240ecb34999411590be3b4673",
+    "matrixVersion": "1.3.132",
+    "additiveMigration": true,
+    "editsHistoricalMigration": false,
+    "createsPolicyRows": false,
+    "writesSnapshots": false,
+    "createsCron": false,
+    "createsActivationCapableSuccessor": false,
+    "tombstonesLegacyActivationWhenApplied": true,
+    "stagingApplied": true,
+    "validation044Passed": true,
+    "runtimeEnvelopeValidatorInstalled": true,
+    "legacyActivationTombstoned": true,
+    "runtimeEnforcementAuthority": true,
+    "stagingMigrationVersion": "20260924141356",
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging-evidence.json",
+    "runtimeStoredValidatorIdentifier": "validate_analytics_a09_funnel_freshness_policy_approval_envelop",
+    "postgresIdentifierTruncationObserved": true
+  },
+  "prohibitedEffectsScope": "Initial repository-only activation-envelope lot. The later authorized staging runtime-enforcement mutation is recorded separately in runtimeEnforcementCandidate and its runtime evidence artifact.",
+  "activationInvocationContract": {
+    "contractPath": "config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json",
+    "contractId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-v1",
+    "status": "staging_runtime_canaries_certified_repository_projection_authority_granted",
+    "sourceHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
+    "matrixVersion": "1.3.132",
+    "runtimeEvidenceBlobSha": "118ca5f948f93ca09c7a7305d1b230880fa98630",
+    "activationAuthorizationReceived": true,
+    "successorCreated": true,
+    "activationInvoked": true,
+    "policyRowsPersisted": 8,
+    "activationApprovalEvidencePath": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json",
+    "activationApprovalId": "ana-a07-a09-funnel-activation-approval-r1-d72f3930dffb",
+    "authorizationDigestSha256": "d72f3930dffb8ba36d49c22eaebec4f20cf88121280c4201a6eb8a140a7dc494",
+    "activationApprovalEvidenceDigestSha256": "ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603",
+    "successorMigration": "supabase/migrations/20260924144500_ana_a07_a09_funnel_policy_approved_activation.sql",
+    "successorValidation": "supabase/tests/045_ana_a07_a09_funnel_policy_approved_activation_validation.sql",
+    "successorStatus": "staging_applied_validated_activation_consumed_policy_active",
+    "successorStagingApplied": true,
+    "successorStagingMigrationVersion": "20260925112930",
+    "validation045Status": "PASS",
+    "successorStagingEvidencePath": "reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json",
+    "successorStagingEvidenceBlobSha": "02a860c812eeb777519c7917bb5c31b3fb3dd5e2",
+    "persistentActivationEvidencePath": "reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json",
+    "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+    "persistentActivationEvidenceDigestSha256": "b9f5f84a202a2472b2dca4e44b4696900b8f150d3520e2becead3d3cd4943605",
+    "activationInvocationCount": 1,
+    "activationInvocationLimit": 1,
+    "runtimeCanaryContractPath": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
+    "runtimeCanaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "runtimeCanaryContractStatus": "staging_certified_runtime_projection_authority_repository_granted",
+    "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
+    "stagingCanaryExecutionAuthorized": false,
+    "runtimeCanaryIdentityAuthority": "seed002-email-resolved",
+    "runtimeCanaryServiceEligibilityAuthority": "approved-service-version",
+    "runtimeCanaryFixtureMode": "synthetic-approved-version",
+    "runtimeCanaryServiceEligibilityRemediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json",
+    "runtimeCanaryStagingEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "runtimeCanaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "validation046Status": "PASS",
+    "lateFactStatus": "PASS",
+    "cleanupStatus": "PASS"
+  },
+  "runtimeProjectionAuthorityGrant": {
+    "sourceContract": "config/ana-a09-canonical-funnel-projection.json",
+    "authorizedRepositoryHead": "28960baecb1b495b16c3799c55a80305764db0ac",
+    "matrixVersion": "1.3.132",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "canaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "authorizationDigestSha256": "ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5",
+    "repositoryOnly": true,
+    "runtimeProjectionAuthority": true,
+    "stagingRuntimeFlagChanged": false,
+    "stagingMutationAuthorized": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false
+  }
+}

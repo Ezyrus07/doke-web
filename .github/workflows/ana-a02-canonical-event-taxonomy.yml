@@ -1,0 +1,44 @@
+name: ANA-A02 Canonical Event Taxonomy
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/analytics/canonical-event-taxonomy.js'
+      - 'config/ana-a02-canonical-event-taxonomy.json'
+      - 'docs/ANA-A02-CANONICAL-EVENT-TAXONOMY.md'
+      - 'scripts/audit-ana-a02-canonical-event-taxonomy.js'
+      - 'scripts/test-ana-a02-canonical-event-taxonomy.js'
+      - '.github/workflows/ana-a02-canonical-event-taxonomy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ana-a02-canonical-event-taxonomy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/analytics/canonical-event-taxonomy.js
+          node --check scripts/audit-ana-a02-canonical-event-taxonomy.js
+          node --check scripts/test-ana-a02-canonical-event-taxonomy.js
+      - name: Audit
+        run: node scripts/audit-ana-a02-canonical-event-taxonomy.js
+      - name: Conformance
+        run: node scripts/test-ana-a02-canonical-event-taxonomy.js
+      - name: ANA-A01 regression
+        run: |
+          node scripts/audit-ana-a01-analytics-authority-baseline.js
+          node scripts/test-ana-a01-analytics-authority-baseline.js
+      - name: Domain matrix regression
+        run: node scripts/audit-domain-completion-matrix.js
+      - name: Diff hygiene
+        run: git diff --check

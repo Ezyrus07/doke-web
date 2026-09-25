@@ -1,0 +1,248 @@
+name: ANA-001 Canonical Policy Canary Attempt 7
+
+on:
+  push:
+    branches:
+      - ana/ana-001-foundation
+    paths:
+      - 'config/ana-001-staging-canonical-policy-canary-attempt-7.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ana-001-canonical-policy-canary-attempt-7
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DOKE_ENVIRONMENT: staging
+      DOKE_SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      DOKE_STAGING_CLIENT_EMAIL: cliente@doke.local
+      DOKE_STAGING_PROFESSIONAL_EMAIL: profissional@doke.local
+      DOKE_STAGING_SUPPORT_EMAIL: suporte@doke.local
+      DOKE_STAGING_ADMIN_EMAIL: admin@doke.local
+      DOKE_STAGING_AUTH_PROVISION_CONFIRM: provision-staging-auth-canaries
+      DOKE_ANA_STAGING_CANARY_CONFIRM: execute-ana-staging-canary
+      DOKE_ANA_STAGING_SEARCH_QUERY: Pintura
+      DOKE_ANA_STAGING_SEARCH_SERVICE_ID: 55555555-5555-4555-8555-555555555555
+      DOKE_ANA_STAGING_SERVICE_ID: 55555555-5555-4555-8555-555555555555
+      DOKE_ANA_STAGING_OWNER_SERVICE_ID: 55555555-5555-4555-8555-555555555555
+      DOKE_ANA_STAGING_ORDER_ID: 66666666-6666-4666-8666-666666666666
+
+    steps:
+      - name: Checkout one-shot authorization
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Initialize sanitized stage receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "initialized" > .ana-attempt7-stage
+
+      - name: Validate attempt-7 authorization and exact target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          trigger='config/ana-001-staging-canonical-policy-canary-attempt-7.json'
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$trigger")"
+          test "$status" = $'A\t'"$trigger"
+          node <<'NODE'
+          const fs=require('fs');
+          const c=JSON.parse(fs.readFileSync('config/ana-001-staging-canonical-policy-canary-attempt-7.json','utf8'));
+          if(c.contractId!=='ana-001-staging-canonical-policy-canary-attempt-7-v1') throw new Error('ANA_ATTEMPT7_CONTRACT_MISMATCH');
+          if(c.environment!=='staging'||c.projectRef!=='zwkczgewzbsorbrjuzpb'||c.projectName!=='doke-web-staging') throw new Error('ANA_ATTEMPT7_TARGET_MISMATCH');
+          if(c.productionAllowed!==false||c.mergeAllowed!==false||c.reconfigureRuntimeSecrets!==false) throw new Error('ANA_ATTEMPT7_BOUNDARY_MISMATCH');
+          if(c.authorization!=='execute-ana-staging-canary') throw new Error('ANA_ATTEMPT7_AUTHORIZATION_MISMATCH');
+          NODE
+          echo "authorization_validated" > .ana-attempt7-stage
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify staging project and load API keys in memory
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}"
+          project_json="$(curl -fsS "https://api.supabase.com/v1/projects/${DOKE_SUPABASE_PROJECT_REF}" -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")"
+          test "$(jq -r '.id' <<<"$project_json")" = "${DOKE_SUPABASE_PROJECT_REF}"
+          test "$(jq -r '.name' <<<"$project_json")" = "doke-web-staging"
+          test "$(jq -r '.status' <<<"$project_json")" = "ACTIVE_HEALTHY"
+          keys_json="$(curl -fsS "https://api.supabase.com/v1/projects/${DOKE_SUPABASE_PROJECT_REF}/api-keys?reveal=true" -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")"
+          secret_key="$(jq -r '[.[] | select(.type=="secret" and .disabled!=true)][0].api_key // [.[] | select(.name=="service_role" and .disabled!=true)][0].api_key // empty' <<<"$keys_json")"
+          publishable_key="$(jq -r '[.[] | select(.type=="publishable" and .disabled!=true)][0].api_key // [.[] | select(.name=="anon" and .disabled!=true)][0].api_key // empty' <<<"$keys_json")"
+          test -n "$secret_key"
+          test -n "$publishable_key"
+          echo "::add-mask::$secret_key"
+          echo "::add-mask::$publishable_key"
+          echo "DOKE_SUPABASE_URL=https://${DOKE_SUPABASE_PROJECT_REF}.supabase.co" >> "$GITHUB_ENV"
+          echo "DOKE_SUPABASE_SECRET_KEY=$secret_key" >> "$GITHUB_ENV"
+          echo "DOKE_SUPABASE_ANON_KEY=$publishable_key" >> "$GITHUB_ENV"
+          echo "target_verified" > .ana-attempt7-stage
+
+      - name: Verify canonical ANA runtime secret names already exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          secrets_json="$(curl -fsS "https://api.supabase.com/v1/projects/${DOKE_SUPABASE_PROJECT_REF}/secrets" -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")"
+          expected=(
+            DOKE_ANALYTICS_SESSION_SECRET
+            DOKE_ANALYTICS_EXPOSURE_SECRET
+            DOKE_ANALYTICS_SESSION_TTL_SECONDS
+            DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS
+            DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS
+            DOKE_ANALYTICS_RATE_LIMIT
+            DOKE_ANALYTICS_RATE_WINDOW_SECONDS
+            DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS
+          )
+          for name in "${expected[@]}"; do
+            test "$(jq --arg n "$name" '[.[] | select(.name==$n)] | length' <<<"$secrets_json")" = "1"
+          done
+          echo "runtime_secret_names_verified" > .ana-attempt7-stage
+
+      - name: Generate masked synthetic Auth credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for role in CLIENT PROFESSIONAL SUPPORT ADMIN; do
+            password="$(node -e "const c=require('crypto');process.stdout.write('Dk!'+c.randomBytes(24).toString('base64url')+'9a')")"
+            echo "::add-mask::$password"
+            echo "DOKE_STAGING_${role}_PASSWORD=$password" >> "$GITHUB_ENV"
+          done
+
+      - name: Rotate and verify staging Auth canaries with exact password login
+        run: |
+          npm run provision:staging-auth-canaries
+          echo "password_login_verified" > .ana-attempt7-stage
+
+      - name: ANA static preflight
+        run: |
+          node scripts/audit-ana-a03-runtime-readiness.js
+          node scripts/test-ana-a03-runtime-readiness.js
+          node scripts/audit-ana-a04-runtime-readiness.js
+          node scripts/test-ana-a04-runtime-readiness.js
+          node scripts/audit-ana-a05-runtime-readiness.js
+          node scripts/test-ana-a05-runtime-readiness.js
+          node scripts/audit-ana-001-staging-canary.js
+          node scripts/test-ana-001-staging-canary.js
+          node scripts/audit-domain-completion-matrix.js
+          git diff --check
+          echo "static_preflight_passed" > .ana-attempt7-stage
+
+      - name: Verify controlled seed postconditions
+        shell: bash
+        run: |
+          node <<'NODE'
+          const {createClient}=require('@supabase/supabase-js');
+          (async()=>{
+            const s=createClient(process.env.DOKE_SUPABASE_URL,process.env.DOKE_SUPABASE_SECRET_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+            const svc=await s.from('services').select('id,status,moderation_status,approved_version_id,professional_id').eq('id',process.env.DOKE_ANA_STAGING_SERVICE_ID).single();
+            if(svc.error||!svc.data||svc.data.status!=='published'||svc.data.moderation_status!=='published'||!svc.data.approved_version_id) throw new Error('ANA_SEED_SERVICE_POSTCONDITION_FAILED');
+            const ver=await s.from('service_versions').select('id,review_status,snapshot').eq('id',svc.data.approved_version_id).single();
+            if(ver.error||!ver.data||ver.data.review_status!=='approved'||ver.data.snapshot?.category!=='Pintura') throw new Error('ANA_SEED_VERSION_POSTCONDITION_FAILED');
+            const ord=await s.from('orders').select('id,service_id,service_version_id,service_snapshot,metadata').eq('id',process.env.DOKE_ANA_STAGING_ORDER_ID).single();
+            if(ord.error||!ord.data||ord.data.service_id!==process.env.DOKE_ANA_STAGING_SERVICE_ID||!ord.data.service_version_id||ord.data.metadata?.serviceSnapshotAuthority!=='approved_service_version') throw new Error('ANA_SEED_ORDER_POSTCONDITION_FAILED');
+            console.log(JSON.stringify({service:'ready',approvedVersion:'ready',order:'ready'}));
+          })().catch((e)=>{console.error(e.message);process.exit(1)});
+          NODE
+          echo "seed_verified" > .ana-attempt7-stage
+
+      - name: Set bounded ANA reconciliation window
+        shell: bash
+        run: |
+          node <<'NODE' >> "$GITHUB_ENV"
+          const end=new Date(Date.now()+5*60_000);
+          const start=new Date(Date.now()-2*60*60_000);
+          console.log('DOKE_ANA_STAGING_WINDOW_START='+start.toISOString());
+          console.log('DOKE_ANA_STAGING_WINDOW_END='+end.toISOString());
+          NODE
+          echo "window_ready" > .ana-attempt7-stage
+
+      - name: Validate ANA canary environment
+        run: |
+          npm run execute:ana-001-staging-canary:check-env
+          echo "canary_environment_ready" > .ana-attempt7-stage
+
+      - name: Execute canonical authenticated ANA staging canary
+        run: |
+          npm run execute:ana-001-staging-canary
+          echo "canary_executed" > .ana-attempt7-stage
+
+      - name: Verify exact canonical canary result
+        run: |
+          node <<'NODE'
+          const r=require('./reports/generated/ana-001-staging-canary.json');
+          const names=new Map(r.cases.map(x=>[x.name,x.passed]));
+          if(r.status!=='passed'||r.summary.total!==15||r.summary.failed!==0||r.summary.passed!==15) process.exit(1);
+          for(const k of ['client_password_login','professional_owner_login','analytics_session_issued','search_exposure_proof_received','same_client_event_payload_drift_rejected','tampered_exposure_proof_rejected','ord_reconciliation_executes','metric_snapshot_append_then_no_change']) {
+            if(names.get(k)!==true) throw new Error('ANA_ATTEMPT7_CASE_FAILED:'+k);
+          }
+          if(r.authority?.productionChanged!==false||r.authority?.browserClientActivated!==false||r.authority?.anonymousIdentityStitching!==false) process.exit(1);
+          console.log(JSON.stringify({status:r.status,total:r.summary.total,passed:r.summary.passed,failed:r.summary.failed,exactPasswordCases:true,productionChanged:false,browserClientActivated:false}));
+          NODE
+          echo "canonical_canary_passed" > .ana-attempt7-stage
+
+      - name: Materialize sanitized attempt receipt
+        if: always()
+        env:
+          DOKE_JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="$(cat .ana-attempt7-stage 2>/dev/null || echo unknown)"
+          node <<'NODE'
+          const fs=require('fs');
+          const path='reports/generated/ana-001-staging-canonical-policy-canary-attempt-7.json';
+          let canary=null;
+          try { canary=JSON.parse(fs.readFileSync('reports/generated/ana-001-staging-canary.json','utf8')); } catch {}
+          const receipt={
+            contractId:'ana-001-staging-canonical-policy-canary-attempt-7-v1',
+            environment:'staging',
+            projectRef:'zwkczgewzbsorbrjuzpb',
+            jobStatus:process.env.DOKE_JOB_STATUS||'unknown',
+            stage:fs.readFileSync('.ana-attempt7-stage','utf8').trim(),
+            runtimeSecretNamesExpected:8,
+            runtimeSecretsReconfigured:false,
+            exactPasswordLoginPathAttempted:['password_login_verified','static_preflight_passed','seed_verified','window_ready','canary_environment_ready','canary_executed','canonical_canary_passed'].includes(fs.readFileSync('.ana-attempt7-stage','utf8').trim()),
+            canary:canary ? {
+              status:canary.status,
+              summary:canary.summary,
+              caseNames:Array.isArray(canary.cases)?canary.cases.map(x=>({name:x.name,passed:Boolean(x.passed)})):[],
+              authority:canary.authority||null
+            } : null,
+            productionTouched:false,
+            mergePerformed:false
+          };
+          fs.mkdirSync('reports/generated',{recursive:true});
+          fs.writeFileSync(path,JSON.stringify(receipt,null,2)+'\n');
+          NODE
+
+      - name: Commit sanitized attempt receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add reports/generated/ana-001-staging-canonical-policy-canary-attempt-7.json
+          if git diff --cached --quiet; then
+            echo "No receipt change to commit."
+            exit 0
+          fi
+          git commit -m "ANA-001: record canonical staging canary attempt 7"
+          git push origin HEAD:ana/ana-001-foundation

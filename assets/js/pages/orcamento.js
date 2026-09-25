@@ -80,13 +80,16 @@ const initBudgetPage = () => {
   let quoteMetricLastProgress = "";
 
   const getQuoteMetricsService = () => window.Doke?.services?.quoteTemplateMetrics || null;
+  const getAnalyticsRepository = () => window.Doke?.repositories?.analytics || null;
   const answerHasValue = (answer) => Array.isArray(answer)
     ? answer.length > 0
     : String(answer ?? "").trim().length > 0;
   const getQuoteProgress = () => {
-    const answered = collectCustomAnswers().filter((item) => answerHasValue(item.answer));
+    const allAnswers = collectCustomAnswers();
+    const answered = allAnswers.filter((item) => answerHasValue(item.answer));
     const last = answered[answered.length - 1] || null;
     return {
+      questionCount: allAnswers.length,
       answeredQuestionCount: answered.length,
       lastQuestionId: last?.questionId || "",
       lastQuestionLabel: last?.questionSnapshot?.label || ""
@@ -98,10 +101,12 @@ const initBudgetPage = () => {
   };
   const recordQuoteMetric = (eventType, detail = {}) => {
     const metrics = getQuoteMetricsService();
-    if (!metrics?.recordFunnelEvent || !selectedService) return Promise.resolve({ recorded: false, reason: "metrics-unavailable" });
-    return metrics.recordFunnelEvent({
+    const analytics = getAnalyticsRepository();
+    if (!selectedService) return Promise.resolve({ recorded: false, reason: "metrics-unavailable" });
+    const canonicalServiceId = selectedService.remoteId || selectedService.remote_id || selectedService.id || serviceId;
+    const legacyPromise = metrics?.recordFunnelEvent ? metrics.recordFunnelEvent({
       eventType,
-      serviceId: selectedService.remoteId || selectedService.remote_id || selectedService.id || serviceId,
+      serviceId: canonicalServiceId,
       serviceExternalId: selectedService.id || serviceId,
       sessionKey: quoteMetricState.sessionKey,
       visitorKey: quoteMetricState.visitorKey,
@@ -113,9 +118,33 @@ const initBudgetPage = () => {
       orderId: detail.orderId || "",
       orderExternalId: detail.orderExternalId || ""
     }).catch((error) => {
-      window.console?.warn?.("[Doke quote metrics] Não foi possível registrar o funil do formulário.", error);
-      return { recorded: false, reason: "metric-error" };
-    });
+      window.console?.warn?.("[Doke quote metrics] Não foi possível registrar o funil legado.", error);
+      return { recorded: false, reason: "legacy-metric-error" };
+    }) : Promise.resolve({ recorded: false, reason: "legacy-metrics-unavailable" });
+
+    const analyticsMethods = {
+      started: "trackQuoteStarted",
+      progress: "trackQuoteProgressed",
+      completed: "trackQuoteCompleted",
+      submitted: "trackQuoteSubmitted"
+    };
+    const method = analyticsMethods[eventType];
+    let analyticsPromise = Promise.resolve({ skipped: true, reason: "analytics-unavailable" });
+    if (canonicalServiceId && method && typeof analytics?.[method] === "function") {
+      const safeDetail = {
+        stepIndex: Number(detail.stepIndex || 0),
+        questionCount: Number(detail.questionCount || 0),
+        answeredQuestionCount: Number(detail.answeredQuestionCount || 0)
+      };
+      analyticsPromise = method === "trackQuoteSubmitted"
+        ? analytics[method](canonicalServiceId, detail.orderId || "")
+        : analytics[method](canonicalServiceId, safeDetail);
+      analyticsPromise = Promise.resolve(analyticsPromise).catch((error) => {
+        window.console?.warn?.("[Doke analytics] Não foi possível registrar o funil canônico.", error);
+        return { skipped: true, reason: "analytics-error" };
+      });
+    }
+    return Promise.all([legacyPromise, analyticsPromise]).then(([legacy, canonical]) => ({ legacy, canonical }));
   };
   const recordQuoteStarted = (stepIndex = 0) => {
     if (quoteMetricStarted) return;

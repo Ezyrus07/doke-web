@@ -1,17 +1,17 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.113",
-  "generatedAt": "2026-08-15T21:20:00-03:00",
+  "version": "1.3.132",
+  "generatedAt": "2026-09-25T15:03:07.000Z",
   "status": "passed",
   "summary": {
     "domains": 23,
     "criticalFlows": 15,
-    "averageMaturity": 2.9130434782608696,
+    "averageMaturity": 2.9565217391304346,
     "maturityCounts": {
       "0": 1,
       "1": 2,
-      "2": 4,
-      "3": 7,
+      "2": 3,
+      "3": 8,
       "4": 9
     },
     "productionGateCounts": {
@@ -24,17 +24,17 @@
       "passed": 1
     },
     "blockerCounts": {
-      "medium": 8,
+      "medium": 7,
       "high": 35,
       "critical": 12
     },
     "activeHtmlPages": 30,
-    "repositories": 27,
-    "backendModules": 17,
-    "migrations": 187,
-    "packageScripts": 1044,
+    "repositories": 28,
+    "backendModules": 18,
+    "migrations": 215,
+    "packageScripts": 1109,
     "staging": {
-      "publicTotal": 45,
+      "publicTotal": 48,
       "publicRlsDisabled": 0,
       "publicRlsNoPolicies": 0
     }
@@ -47,32 +47,24 @@
     "source": "assets/js/core/runtime-config.js for auth; assets/js/config/runtime-flags.js for legacy data flags"
   },
   "stagingSnapshot": {
-    "observedAt": "2026-07-23T13:29:46.102113+00:00",
+    "observedAt": "2026-09-23T02:15:47.312085+00:00",
     "projectRef": "zwkczgewzbsorbrjuzpb",
     "readOnlyEvidence": true,
     "tableSummary": {
-      "publicTotal": 45,
+      "publicTotal": 48,
       "publicRlsDisabled": 0,
       "publicRlsNoPolicies": 0
     },
     "rlsDisabledTables": [],
     "rlsEnabledNoPolicies": [],
     "securityDefinerSummary": {
-      "total": 134,
-      "anonExecutable": 0,
-      "authenticatedExecutable": 7,
-      "rawAnonExecuteGrants": 3,
-      "rawAuthenticatedExecuteGrants": 7
+      "total": 203,
+      "anonExecutable": 3,
+      "authenticatedExecutable": 10,
+      "rawAnonExecuteGrants": 4,
+      "rawAuthenticatedExecuteGrants": 11
     },
     "securityDefinerEvidence": [
-      {
-        "schema": "private",
-        "name": "audit_order_operational_incident_lifecycle",
-        "anonSchemaUsage": false,
-        "anonExecuteGrant": true,
-        "authenticatedSchemaUsage": true,
-        "authenticatedExecuteGrant": true
-      },
       {
         "schema": "private",
         "name": "can_access_transaction_attachment",
@@ -106,71 +98,122 @@
         "authenticatedExecuteGrant": true
       },
       {
-        "schema": "private",
-        "name": "materialize_order_operational_postmortem",
-        "anonSchemaUsage": false,
+        "schema": "public",
+        "name": "check_username_availability",
+        "anonSchemaUsage": true,
         "anonExecuteGrant": true,
         "authenticatedSchemaUsage": true,
         "authenticatedExecuteGrant": true
       },
       {
-        "schema": "private",
-        "name": "prepare_order_operational_incident",
-        "anonSchemaUsage": false,
+        "schema": "public",
+        "name": "create_order_command",
+        "anonSchemaUsage": true,
+        "anonExecuteGrant": false,
+        "authenticatedSchemaUsage": true,
+        "authenticatedExecuteGrant": true
+      },
+      {
+        "schema": "public",
+        "name": "search_public_services_v1",
+        "anonSchemaUsage": true,
         "anonExecuteGrant": true,
+        "authenticatedSchemaUsage": true,
+        "authenticatedExecuteGrant": true
+      },
+      {
+        "schema": "public",
+        "name": "search_public_services_v2",
+        "anonSchemaUsage": true,
+        "anonExecuteGrant": true,
+        "authenticatedSchemaUsage": true,
+        "authenticatedExecuteGrant": true
+      },
+      {
+        "schema": "public",
+        "name": "submit_order_quote_command",
+        "anonSchemaUsage": true,
+        "anonExecuteGrant": false,
+        "authenticatedSchemaUsage": true,
+        "authenticatedExecuteGrant": true
+      },
+      {
+        "schema": "public",
+        "name": "transition_order_status",
+        "anonSchemaUsage": true,
+        "anonExecuteGrant": false,
         "authenticatedSchemaUsage": true,
         "authenticatedExecuteGrant": true
       }
     ],
     "realtimeTables": [
+      "public.community_posts",
       "public.notifications"
     ],
     "edgeFunctions": [
       {
-        "slug": "quote-template-ai",
-        "version": 6,
+        "slug": "ana-staging-canary-operator",
+        "version": 5,
+        "status": "ACTIVE",
+        "verifyJwt": false
+      },
+      {
+        "slug": "analytics-behavior-v1",
+        "version": 7,
+        "status": "ACTIVE",
+        "verifyJwt": false
+      },
+      {
+        "slug": "financial-operations",
+        "version": 5,
+        "status": "ACTIVE",
+        "verifyJwt": true
+      },
+      {
+        "slug": "order-event-operations",
+        "version": 12,
         "status": "ACTIVE",
         "verifyJwt": true
       },
       {
         "slug": "order-event-worker",
+        "version": 13,
+        "status": "ACTIVE",
+        "verifyJwt": false
+      },
+      {
+        "slug": "professional-verification-operations",
+        "version": 5,
+        "status": "ACTIVE",
+        "verifyJwt": true
+      },
+      {
+        "slug": "quote-template-ai",
+        "version": 10,
+        "status": "ACTIVE",
+        "verifyJwt": true
+      },
+      {
+        "slug": "search-public-services-v2",
         "version": 9,
         "status": "ACTIVE",
         "verifyJwt": false
       },
       {
-        "slug": "order-event-operations",
-        "version": 8,
-        "status": "ACTIVE",
-        "verifyJwt": true
-      },
-      {
-        "slug": "professional-verification-operations",
-        "version": 1,
-        "status": "ACTIVE",
-        "verifyJwt": true
-      },
-      {
-        "slug": "financial-operations",
-        "version": 1,
+        "slug": "self-service-operations",
+        "version": 11,
         "status": "ACTIVE",
         "verifyJwt": true
       },
       {
         "slug": "service-moderation-operations",
-        "version": 2,
-        "status": "ACTIVE",
-        "verifyJwt": true
-      },
-      {
-        "slug": "self-service-operations",
-        "version": 3,
+        "version": 7,
         "status": "ACTIVE",
         "verifyJwt": true
       },
       {
         "slug": "staging-finance-sandbox",
-        "version": 1,
+        "version": 5,
         "status": "ACTIVE",
         "verifyJwt": true
       }
@@ -209,9 +252,31 @@
     ],
     "securityAdvisors": [
       {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "title": "RLS Enabled No Policy",
+        "count": 24,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN",
+        "title": "Public Can Execute SECURITY DEFINER Function",
+        "count": 3,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+        "count": 6,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      },
+      {
         "name": "auth_leaked_password_protection",
         "level": "WARN",
         "title": "Leaked Password Protection Disabled",
+        "count": 1,
         "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
       }
     ]
@@ -221,47 +286,51 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1531,
+      "filesMatched": 1628,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
-        "docs/API-ADAPTER-CONTRACT.md",
-        "docs/API-ENDPOINT-READINESS.md",
-        "docs/ARCHITECTURE-DECISIONS.md",
-        "docs/ARCHITECTURE.md",
-        "docs/AUTH-IDENTITY-CANARY-RUNBOOK.md",
-        "docs/AUTH-INTEGRATION-CONTRACT.md",
-        "docs/BACKEND-INTEGRATION-PLAN.md",
-        "docs/BACKEND-REAL-COMPLETE-READINESS-RUNBOOK.md",
-        "docs/BACKEND-REAL-E2E-RUNBOOK.md",
-        "docs/BACKEND-REAL-MULTIDOMAIN-STAGING-RUNBOOK.md",
-        "docs/BACKEND-REAL-OBSERVABILITY-RUNBOOK.md",
-        "docs/BACKEND-REAL-STAGING-PREFLIGHT-RUNBOOK.md",
-        "docs/BASELINE-VISUAL-APPROVED.md",
-        "docs/BETA-BROWSER-QUALITY-EVIDENCE-RUNBOOK.md",
-        "docs/BETA-CLOSED-BACKEND-REAL-READINESS-RUNBOOK.md",
-        "docs/BETA-CLOSED-LAUNCH-READINESS-RUNBOOK.md",
-        "docs/BETA-CLOSED-PRODUCT-READINESS-RUNBOOK.md",
-        "docs/BETA-LAUNCH-E2E-RUNBOOK.md",
-        "docs/BETA-LAUNCH-FRONTEND-RUNTIME-RUNBOOK.md",
-        "docs/BETA-LAUNCH-STAGING-RUNBOOK.md",
-        "docs/BETA-QA-MATRIX-RUNBOOK.md",
-        "docs/BETA-QUALITY-GATES-RUNBOOK.md",
-        "docs/BETA-VISUAL-HARDENING-RUNBOOK.md",
-        "docs/BROWSER-QUALITY-A11Y-EVIDENCE-RUNBOOK.md"
+        "docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md",
+        "docs/ANA-001-STAGING-ACTIVATION-READINESS.md",
+        "docs/ANA-001-STAGING-CANARY.md",
+        "docs/ANA-A01-ANALYTICS-AUTHORITY-BASELINE.md",
+        "docs/ANA-A02-CANONICAL-EVENT-TAXONOMY.md",
+        "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
+        "docs/ANA-A04-MARKETPLACE-FUNNEL-HEALTH-PROJECTIONS.md",
+        "docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md",
+        "docs/ANA-A06-DATA-QUALITY-OWNERSHIP-GATES.md",
+        "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-APPROVAL.md",
+        "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md",
+        "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-INVOCATION-CONTRACT.md",
+        "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-CANDIDATE.md",
+        "docs/ANA-A07-A09-FUNNEL-RUNTIME-CANARY-CONTRACT.md",
+        "docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-AUTHORITY.md",
+        "docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-RUNTIME-READINESS.md",
+        "docs/ANA-A07-FRESHNESS-WINDOW-AUTHORITY.md",
+        "docs/ANA-A08-RETENTION-COHORT-PROJECTION.md",
+        "docs/ANA-A09-CANONICAL-FUNNEL-PROJECTION.md",
+        "docs/ANA-A09-IMMUTABLE-FUNNEL-SEGMENTATION.md",
+        "docs/ANA-A09-SERVER-SIDE-FUNNEL-PROJECTOR-RUNTIME-READINESS.md",
+        "docs/ANA-A10-CAT-LIQUIDITY-PROJECTION.md",
+        "docs/ANA-A10-CAT-LIQUIDITY-RUNTIME-READINESS.md",
+        "docs/ANA-A11-LIQUIDITY-FRESHNESS-POLICY-DERIVATION.md"
       ],
       "missingRequiredPaths": [],
       "signals": {
-        "localStorage": 298,
-        "sessionStorage": 81,
+        "localStorage": 301,
+        "sessionStorage": 85,
         "mock": 595,
-        "network": 376,
-        "directSupabase": 276,
+        "network": 384,
+        "directSupabase": 283,
         "todo": 38
       },
       "signalFiles": {
         "localStorage": [
           {
             "file": "docs/ACTIVE-CONTRACTS-INDEX.md",
+            "count": 1
+          },
+          {
+            "file": "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
             "count": 1
           },
           {
@@ -398,6 +467,10 @@
           },
           {
             "file": "docs/WAL-A02-BANK-ACCOUNT-SENSITIVE-DATA-BOUNDARY.md",
+            "count": 2
+          },
+          {
+            "file": "scripts/audit-ana-a03-client-wiring.js",
             "count": 2
           },
           {
@@ -811,6 +884,10 @@
         ],
         "sessionStorage": [
           {
+            "file": "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
+            "count": 1
+          },
+          {
             "file": "docs/DOKE-ENGINEERING-JOURNAL.md",
             "count": 4
           },
@@ -825,6 +902,10 @@
           {
             "file": "docs/ORD-001-A06-VISUAL-SETTLEMENT-PREFLIGHT.md",
             "count": 1
+          },
+          {
+            "file": "scripts/audit-ana-a03-client-wiring.js",
+            "count": 2
           },
           {
             "file": "scripts/audit-auth-session-contracts.js",
@@ -944,6 +1025,10 @@
           },
           {
             "file": "scripts/audit-service-media-upload-authority.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/test-ana-a03-client-wiring.js",
             "count": 1
           },
           {
@@ -2239,8 +2324,16 @@
             "count": 1
           },
           {
+            "file": "scripts/plan-ana-001-staging-activation.js",
+            "count": 1
+          },
+          {
             "file": "scripts/provision-staging-auth-canaries.js",
             "count": 2
+          },
+          {
+            "file": "scripts/run-ana-001-staging-canary.js",
+            "count": 7
           },
           {
             "file": "scripts/test-admin-navigation-lifecycle-contract.js",
@@ -2861,8 +2954,16 @@
             "count": 1
           },
           {
+            "file": "scripts/plan-ana-001-staging-activation.js",
+            "count": 1
+          },
+          {
             "file": "scripts/provision-staging-auth-canaries.js",
             "count": 2
+          },
+          {
+            "file": "scripts/run-ana-001-staging-canary.js",
+            "count": 6
           },
           {
             "file": "scripts/test-admin-navigation-lifecycle-contract.js",
@@ -3200,7 +3301,7 @@
       "id": "SEC-001",
       "name": "Segurança, RLS, grants e autoridade dos dados",
       "maturity": 4,
-      "filesMatched": 226,
+      "filesMatched": 272,
       "sampleFiles": [
         "backend/shared/auth/supabase-actor-resolver.js",
         "backend/shared/security/audit-event-contract.js",
@@ -3727,7 +3828,7 @@
       "id": "CAT-001",
       "name": "Catálogo, publicação e moderação de serviços",
       "maturity": 4,
-      "filesMatched": 17,
+      "filesMatched": 21,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/detalhe-anuncio-data-controller.js",
@@ -3745,7 +3846,11 @@
         "assets/js/pages/home/workers.js",
         "assets/js/repositories/service-moderation-repository.js",
         "assets/js/repositories/services-repository.js",
-        "supabase/migrations/030_service_catalog_sync_metrics.sql"
+        "config/cat-a07-supply-coverage-baseline-readiness.json",
+        "config/cat-a07-supply-coverage-baseline.json",
+        "supabase/migrations/030_service_catalog_sync_metrics.sql",
+        "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql",
+        "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql"
       ],
       "missingRequiredPaths": [],
       "signals": {
@@ -3833,14 +3938,23 @@
         "test:public-service-catalog-contract",
         "test:services-supabase-repository-contract",
         "test:service-moderation-flow-contract",
-        "test:admin-service-review-page-contract"
+        "test:admin-service-review-page-contract",
+        "audit:cat-a06-listing-visibility-timeline",
+        "test:cat-a06-listing-visibility-timeline",
+        "audit:cat-a07-supply-coverage-baseline",
+        "test:cat-a07-supply-coverage-baseline",
+        "audit:cat-a07-supply-coverage-baseline-readiness",
+        "test:cat-a07-supply-coverage-baseline-readiness",
+        "test:service-moderation-operator-authority-contract",
+        "test:service-moderation-operations-runtime",
+        "test:service-moderation-audit-history-contract"
       ]
     },
     {
       "id": "SEARCH-001",
       "name": "Busca, descoberta, favoritos e ranking",
       "maturity": 4,
-      "filesMatched": 229,
+      "filesMatched": 275,
       "sampleFiles": [
         "assets/js/components/service-favorites-controller.js",
         "assets/js/pages/resultados-data-controller.js",
@@ -3873,8 +3987,8 @@
         "localStorage": 0,
         "sessionStorage": 0,
         "mock": 3,
-        "network": 19,
-        "directSupabase": 18,
+        "network": 20,
+        "directSupabase": 19,
         "todo": 9
       },
       "signalFiles": {
@@ -3901,7 +4015,7 @@
           },
           {
             "file": "supabase/functions/search-public-services-v2/index.ts",
-            "count": 4
+            "count": 5
           }
         ],
         "directSupabase": [
@@ -3919,7 +4033,7 @@
           },
           {
             "file": "supabase/functions/search-public-services-v2/index.ts",
-            "count": 4
+            "count": 5
           }
         ],
         "todo": [
@@ -4223,7 +4337,7 @@
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1429,
+      "filesMatched": 1526,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -4253,11 +4367,11 @@
       ],
       "missingRequiredPaths": [],
       "signals": {
-        "localStorage": 221,
-        "sessionStorage": 73,
+        "localStorage": 223,
+        "sessionStorage": 76,
         "mock": 331,
-        "network": 374,
-        "directSupabase": 281,
+        "network": 382,
+        "directSupabase": 288,
         "todo": 19
       },
       "signalFiles": {
@@ -4269,6 +4383,10 @@
           {
             "file": "assets/js/pages/pedidos/orders-render.js",
             "count": 1
+          },
+          {
+            "file": "scripts/audit-ana-a03-client-wiring.js",
+            "count": 2
           },
           {
             "file": "scripts/audit-auth-session-contracts.js",
@@ -4681,6 +4799,10 @@
         ],
         "sessionStorage": [
           {
+            "file": "scripts/audit-ana-a03-client-wiring.js",
+            "count": 2
+          },
+          {
             "file": "scripts/audit-auth-session-contracts.js",
             "count": 2
           },
@@ -4798,6 +4920,10 @@
           },
           {
             "file": "scripts/audit-service-media-upload-authority.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/test-ana-a03-client-wiring.js",
             "count": 1
           },
           {
@@ -5833,8 +5959,16 @@
             "count": 1
           },
           {
+            "file": "scripts/plan-ana-001-staging-activation.js",
+            "count": 1
+          },
+          {
             "file": "scripts/provision-staging-auth-canaries.js",
             "count": 2
+          },
+          {
+            "file": "scripts/run-ana-001-staging-canary.js",
+            "count": 7
           },
           {
             "file": "scripts/test-admin-navigation-lifecycle-contract.js",
@@ -6463,8 +6597,16 @@
             "count": 1
           },
           {
+            "file": "scripts/plan-ana-001-staging-activation.js",
+            "count": 1
+          },
+          {
             "file": "scripts/provision-staging-auth-canaries.js",
             "count": 2
+          },
+          {
+            "file": "scripts/run-ana-001-staging-canary.js",
+            "count": 6
           },
           {
             "file": "scripts/test-admin-navigation-lifecycle-contract.js",
@@ -7968,37 +8110,132 @@
     {
       "id": "ANA-001",
       "name": "Analytics, funil e economia do marketplace",
-      "maturity": 2,
-      "filesMatched": 4,
+      "maturity": 3,
+      "filesMatched": 82,
       "sampleFiles": [
+        "assets/js/pages/detalhe-anuncio.js",
+        "assets/js/pages/orcamento.js",
         "assets/js/pages/profile/profile-quote-template-metrics.js",
+        "assets/js/pages/search/server-results-surface.js",
+        "assets/js/repositories/analytics-repository.js",
         "assets/js/repositories/quote-template-metrics-repository.js",
-        "supabase/migrations/030_service_catalog_sync_metrics.sql",
-        "supabase/migrations/039_quote_template_conversion_metrics.sql"
+        "backend/modules/analytics/analytics-reconciliation.js",
+        "backend/modules/analytics/behavioral-ingestion-boundary.js",
+        "backend/modules/analytics/canonical-event-taxonomy.js",
+        "backend/modules/analytics/canonical-funnel-projection.js",
+        "backend/modules/analytics/data-quality-gate.js",
+        "backend/modules/analytics/dependency-watermark-authority.js",
+        "backend/modules/analytics/freshness-window-authority.js",
+        "backend/modules/analytics/immutable-funnel-segmentation.js",
+        "backend/modules/analytics/marketplace-health-projection.js",
+        "backend/modules/analytics/retention-cohort-projection.js",
+        "config/ana-001-staging-activation-evidence.json",
+        "config/ana-001-staging-activation-readiness.json",
+        "config/ana-001-staging-canary-readiness.json",
+        "config/ana-a01-analytics-authority-baseline.json",
+        "config/ana-a02-canonical-event-taxonomy.json",
+        "config/ana-a03-behavioral-ingestion-identity-boundary.json",
+        "config/ana-a04-marketplace-funnel-health-projections.json",
+        "config/ana-a05-reconciliation-data-quality.json",
+        "config/ana-a06-data-quality-ownership-gates.json"
       ],
       "missingRequiredPaths": [],
       "signals": {
-        "localStorage": 0,
-        "sessionStorage": 0,
+        "localStorage": 4,
+        "sessionStorage": 10,
         "mock": 0,
-        "network": 7,
-        "directSupabase": 7,
+        "network": 30,
+        "directSupabase": 28,
         "todo": 0
       },
       "signalFiles": {
-        "localStorage": [],
-        "sessionStorage": [],
+        "localStorage": [
+          {
+            "file": "assets/js/pages/orcamento.js",
+            "count": 4
+          }
+        ],
+        "sessionStorage": [
+          {
+            "file": "assets/js/pages/orcamento.js",
+            "count": 6
+          },
+          {
+            "file": "assets/js/repositories/analytics-repository.js",
+            "count": 4
+          }
+        ],
         "mock": [],
         "network": [
           {
+            "file": "assets/js/pages/detalhe-anuncio.js",
+            "count": 3
+          },
+          {
+            "file": "assets/js/pages/orcamento.js",
+            "count": 1
+          },
+          {
+            "file": "assets/js/repositories/analytics-repository.js",
+            "count": 1
+          },
+          {
             "file": "assets/js/repositories/quote-template-metrics-repository.js",
             "count": 7
+          },
+          {
+            "file": "backend/modules/analytics/behavioral-ingestion-boundary.js",
+            "count": 4
+          },
+          {
+            "file": "scripts/plan-ana-001-staging-activation.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/run-ana-001-staging-canary.js",
+            "count": 7
+          },
+          {
+            "file": "supabase/functions/_shared/analytics-proof.ts",
+            "count": 1
+          },
+          {
+            "file": "supabase/functions/analytics-behavior-v1/index.ts",
+            "count": 5
           }
         ],
         "directSupabase": [
           {
+            "file": "assets/js/pages/detalhe-anuncio.js",
+            "count": 3
+          },
+          {
+            "file": "assets/js/pages/orcamento.js",
+            "count": 1
+          },
+          {
             "file": "assets/js/repositories/quote-template-metrics-repository.js",
             "count": 7
+          },
+          {
+            "file": "backend/modules/analytics/behavioral-ingestion-boundary.js",
+            "count": 4
+          },
+          {
+            "file": "scripts/plan-ana-001-staging-activation.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/run-ana-001-staging-canary.js",
+            "count": 6
+          },
+          {
+            "file": "supabase/functions/_shared/analytics-proof.ts",
+            "count": 1
+          },
+          {
+            "file": "supabase/functions/analytics-behavior-v1/index.ts",
+            "count": 5
           }
         ],
         "todo": []
@@ -8008,65 +8245,108 @@
           "id": "ANA-B01",
           "severity": "high",
           "category": "event_model",
-          "description": "Product event taxonomy, identity stitching and consent rules are incomplete.",
+          "description": "Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03.",
           "targetPhase": "Fase 15"
         },
         {
           "id": "ANA-B02",
           "severity": "high",
           "category": "business_metrics",
-          "description": "GMV, take rate, liquidity, retention, CAC and LTV are not consolidated.",
-          "targetPhase": "Fase 15"
-        },
-        {
-          "id": "ANA-B03",
-          "severity": "medium",
-          "category": "data_quality",
-          "description": "No metric reconciliation or late-event policy is defined.",
+          "description": "Core ORD-derived marketplace projections are applied and functionally exercised in staging, but PAY-backed GMV/take rate and downstream CAC/LTV remain unavailable until PAY becomes canonical.",
           "targetPhase": "Fase 15"
         }
       ],
       "tests": [
         "test:quote-template-conversion-metrics-contract",
-        "test:service-metrics-sync-contract"
+        "test:service-metrics-sync-contract",
+        "audit:ana-a01-analytics-authority-baseline",
+        "test:ana-a01-analytics-authority-baseline",
+        "audit:ana-a02-canonical-event-taxonomy",
+        "test:ana-a02-canonical-event-taxonomy",
+        "audit:ana-a03-behavioral-ingestion-identity-boundary",
+        "test:ana-a03-behavioral-ingestion-identity-boundary",
+        "audit:ana-a04-marketplace-funnel-health-projections",
+        "test:ana-a04-marketplace-funnel-health-projections",
+        "audit:ana-a05-reconciliation-data-quality",
+        "test:ana-a05-reconciliation-data-quality",
+        "audit:ana-a03-runtime-readiness",
+        "test:ana-a03-runtime-readiness",
+        "audit:ana-a04-runtime-readiness",
+        "test:ana-a04-runtime-readiness",
+        "audit:ana-a05-runtime-readiness",
+        "test:ana-a05-runtime-readiness",
+        "audit:ana-a03-client-wiring",
+        "test:ana-a03-client-wiring",
+        "audit:ana-001-staging-activation-readiness",
+        "test:ana-001-staging-activation-readiness",
+        "plan:ana-001-staging-activation:dry-run",
+        "audit:ana-001-staging-canary",
+        "test:ana-001-staging-canary",
+        "run:ana-001-staging-canary:dry-run",
+        "audit:ana-001-defense-in-depth-hardening-readiness",
+        "test:ana-001-defense-in-depth-hardening-readiness",
+        "audit:ana-a06-data-quality-ownership-gates",
+        "test:ana-a06-data-quality-ownership-gates",
+        "audit:ana-a07-freshness-window-authority",
+        "test:ana-a07-freshness-window-authority",
+        "audit:ana-a08-retention-cohort-projection",
+        "test:ana-a08-retention-cohort-projection",
+        "audit:ana-a09-canonical-funnel-projection",
+        "test:ana-a09-canonical-funnel-projection",
+        "audit:ana-a10-cat-liquidity-projection",
+        "test:ana-a10-cat-liquidity-projection",
+        "audit:ana-a10-cat-liquidity-runtime-readiness",
+        "test:ana-a10-cat-liquidity-runtime-readiness",
+        "audit:ana-a11-liquidity-freshness-policy-derivation",
+        "test:ana-a11-liquidity-freshness-policy-derivation",
+        "audit:ana-a11-liquidity-policy-approval-envelope",
+        "test:ana-a11-liquidity-policy-approval-envelope",
+        "audit:ana-a07-a09-funnel-freshness-policy-activation-envelope",
+        "test:ana-a07-a09-funnel-freshness-policy-activation-envelope",
+        "audit:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract",
+        "test:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract",
+        "audit:ana-a07-a09-funnel-freshness-policy-activation-approval",
+        "test:ana-a07-a09-funnel-freshness-policy-activation-approval",
+        "audit:ana-a07-a09-funnel-runtime-canary-contract",
+        "test:ana-a07-a09-funnel-runtime-canary-contract"
       ]
     },
     {
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 312,
+      "filesMatched": 340,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
-        "docs/API-ADAPTER-CONTRACT.md",
-        "docs/API-ENDPOINT-READINESS.md",
-        "docs/ARCHITECTURE-DECISIONS.md",
-        "docs/ARCHITECTURE.md",
-        "docs/AUTH-IDENTITY-CANARY-RUNBOOK.md",
-        "docs/AUTH-INTEGRATION-CONTRACT.md",
-        "docs/BACKEND-INTEGRATION-PLAN.md",
-        "docs/BACKEND-REAL-COMPLETE-READINESS-RUNBOOK.md",
-        "docs/BACKEND-REAL-E2E-RUNBOOK.md",
-        "docs/BACKEND-REAL-MULTIDOMAIN-STAGING-RUNBOOK.md",
-        "docs/BACKEND-REAL-OBSERVABILITY-RUNBOOK.md",
-        "docs/BACKEND-REAL-STAGING-PREFLIGHT-RUNBOOK.md",
-        "docs/BASELINE-VISUAL-APPROVED.md",
-        "docs/BETA-BROWSER-QUALITY-EVIDENCE-RUNBOOK.md",
-        "docs/BETA-CLOSED-BACKEND-REAL-READINESS-RUNBOOK.md",
-        "docs/BETA-CLOSED-LAUNCH-READINESS-RUNBOOK.md",
-        "docs/BETA-CLOSED-PRODUCT-READINESS-RUNBOOK.md",
-        "docs/BETA-LAUNCH-E2E-RUNBOOK.md",
-        "docs/BETA-LAUNCH-FRONTEND-RUNTIME-RUNBOOK.md",
-        "docs/BETA-LAUNCH-STAGING-RUNBOOK.md",
-        "docs/BETA-QA-MATRIX-RUNBOOK.md",
-        "docs/BETA-QUALITY-GATES-RUNBOOK.md",
-        "docs/BETA-VISUAL-HARDENING-RUNBOOK.md",
-        "docs/BROWSER-QUALITY-A11Y-EVIDENCE-RUNBOOK.md"
+        "docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md",
+        "docs/ANA-001-STAGING-ACTIVATION-READINESS.md",
+        "docs/ANA-001-STAGING-CANARY.md",
+        "docs/ANA-A01-ANALYTICS-AUTHORITY-BASELINE.md",
+        "docs/ANA-A02-CANONICAL-EVENT-TAXONOMY.md",
+        "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
+        "docs/ANA-A04-MARKETPLACE-FUNNEL-HEALTH-PROJECTIONS.md",
+        "docs/ANA-A05-RECONCILIATION-DATA-QUALITY.md",
+        "docs/ANA-A06-DATA-QUALITY-OWNERSHIP-GATES.md",
+        "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-APPROVAL.md",
+        "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md",
+        "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-INVOCATION-CONTRACT.md",
+        "docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-CANDIDATE.md",
+        "docs/ANA-A07-A09-FUNNEL-RUNTIME-CANARY-CONTRACT.md",
+        "docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-AUTHORITY.md",
+        "docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-RUNTIME-READINESS.md",
+        "docs/ANA-A07-FRESHNESS-WINDOW-AUTHORITY.md",
+        "docs/ANA-A08-RETENTION-COHORT-PROJECTION.md",
+        "docs/ANA-A09-CANONICAL-FUNNEL-PROJECTION.md",
+        "docs/ANA-A09-IMMUTABLE-FUNNEL-SEGMENTATION.md",
+        "docs/ANA-A09-SERVER-SIDE-FUNNEL-PROJECTOR-RUNTIME-READINESS.md",
+        "docs/ANA-A10-CAT-LIQUIDITY-PROJECTION.md",
+        "docs/ANA-A10-CAT-LIQUIDITY-RUNTIME-READINESS.md",
+        "docs/ANA-A11-LIQUIDITY-FRESHNESS-POLICY-DERIVATION.md"
       ],
       "missingRequiredPaths": [],
       "signals": {
-        "localStorage": 79,
-        "sessionStorage": 8,
+        "localStorage": 80,
+        "sessionStorage": 9,
         "mock": 277,
         "network": 9,
         "directSupabase": 2,
@@ -8076,6 +8356,10 @@
         "localStorage": [
           {
             "file": "docs/ACTIVE-CONTRACTS-INDEX.md",
+            "count": 1
+          },
+          {
+            "file": "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
             "count": 1
           },
           {
@@ -8216,6 +8500,10 @@
           }
         ],
         "sessionStorage": [
+          {
+            "file": "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
+            "count": 1
+          },
           {
             "file": "docs/DOKE-ENGINEERING-JOURNAL.md",
             "count": 4
@@ -8658,7 +8946,7 @@
       "id": "WEB-001",
       "name": "Fechamento do web, acessibilidade e performance",
       "maturity": 3,
-      "filesMatched": 855,
+      "filesMatched": 856,
       "sampleFiles": [
         "assets/css/components/README.md",
         "assets/css/components/actions/action-button.css",
@@ -8689,9 +8977,9 @@
       "missingRequiredPaths": [],
       "signals": {
         "localStorage": 230,
-        "sessionStorage": 71,
+        "sessionStorage": 75,
         "mock": 241,
-        "network": 257,
+        "network": 259,
         "directSupabase": 234,
         "todo": 9
       },
@@ -8970,6 +9258,10 @@
           {
             "file": "assets/js/pages/orcamento.js",
             "count": 6
+          },
+          {
+            "file": "assets/js/repositories/analytics-repository.js",
+            "count": 4
           },
           {
             "file": "assets/js/repositories/services-repository.js",
@@ -9285,7 +9577,7 @@
           },
           {
             "file": "assets/js/core/supabase-config.js",
-            "count": 2
+            "count": 3
           },
           {
             "file": "assets/js/dev/flow-state-tools.js",
@@ -9398,6 +9690,10 @@
           {
             "file": "assets/js/pages/verificacao-profissional.js",
             "count": 7
+          },
+          {
+            "file": "assets/js/repositories/analytics-repository.js",
+            "count": 1
           },
           {
             "file": "assets/js/repositories/attachments-repository.js",
@@ -9851,7 +10147,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 3416,
+      "filesMatched": 3610,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -9881,11 +10177,11 @@
       ],
       "missingRequiredPaths": [],
       "signals": {
-        "localStorage": 567,
-        "sessionStorage": 154,
+        "localStorage": 570,
+        "sessionStorage": 162,
         "mock": 926,
-        "network": 812,
-        "directSupabase": 688,
+        "network": 833,
+        "directSupabase": 706,
         "todo": 92
       },
       "signalFiles": {
@@ -10139,6 +10435,10 @@
             "count": 1
           },
           {
+            "file": "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
+            "count": 1
+          },
+          {
             "file": "docs/API-ADAPTER-CONTRACT.md",
             "count": 4
           },
@@ -10272,6 +10572,10 @@
           },
           {
             "file": "docs/WAL-A02-BANK-ACCOUNT-SENSITIVE-DATA-BOUNDARY.md",
+            "count": 2
+          },
+          {
+            "file": "scripts/audit-ana-a03-client-wiring.js",
             "count": 2
           },
           {
@@ -10789,8 +11093,16 @@
             "count": 6
           },
           {
+            "file": "assets/js/repositories/analytics-repository.js",
+            "count": 4
+          },
+          {
             "file": "assets/js/repositories/services-repository.js",
             "count": 4
+          },
+          {
+            "file": "docs/ANA-A03-BEHAVIORAL-INGESTION-IDENTITY-BOUNDARY.md",
+            "count": 1
           },
           {
             "file": "docs/DOKE-ENGINEERING-JOURNAL.md",
@@ -10807,6 +11119,10 @@
           {
             "file": "docs/ORD-001-A06-VISUAL-SETTLEMENT-PREFLIGHT.md",
             "count": 1
+          },
+          {
+            "file": "scripts/audit-ana-a03-client-wiring.js",
+            "count": 2
           },
           {
             "file": "scripts/audit-auth-session-contracts.js",
@@ -10926,6 +11242,10 @@
           },
           {
             "file": "scripts/audit-service-media-upload-authority.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/test-ana-a03-client-wiring.js",
             "count": 1
           },
           {
@@ -12162,7 +12482,7 @@
           },
           {
             "file": "assets/js/core/supabase-config.js",
-            "count": 2
+            "count": 3
           },
           {
             "file": "assets/js/dev/flow-state-tools.js",
@@ -12275,6 +12595,10 @@
           {
             "file": "assets/js/pages/verificacao-profissional.js",
             "count": 7
+          },
+          {
+            "file": "assets/js/repositories/analytics-repository.js",
+            "count": 1
           },
           {
             "file": "assets/js/repositories/attachments-repository.js",
@@ -12391,6 +12715,10 @@
           {
             "file": "assets/js/services/service-media-upload-service.js",
             "count": 1
+          },
+          {
+            "file": "backend/modules/analytics/behavioral-ingestion-boundary.js",
+            "count": 4
           },
           {
             "file": "backend/modules/auth/identity-service.js",
@@ -13057,8 +13385,16 @@
             "count": 1
           },
           {
+            "file": "scripts/plan-ana-001-staging-activation.js",
+            "count": 1
+          },
+          {
             "file": "scripts/provision-staging-auth-canaries.js",
             "count": 2
+          },
+          {
+            "file": "scripts/run-ana-001-staging-canary.js",
+            "count": 7
           },
           {
             "file": "scripts/test-admin-navigation-lifecycle-contract.js",
@@ -13317,8 +13653,16 @@
             "count": 1
           },
           {
+            "file": "supabase/functions/_shared/analytics-proof.ts",
+            "count": 1
+          },
+          {
             "file": "supabase/functions/_shared/http-security.ts",
             "count": 1
+          },
+          {
+            "file": "supabase/functions/analytics-behavior-v1/index.ts",
+            "count": 5
           },
           {
             "file": "supabase/functions/financial-operations/index.ts",
@@ -13354,7 +13698,7 @@
           },
           {
             "file": "supabase/functions/search-public-services-v2/index.ts",
-            "count": 4
+            "count": 5
           },
           {
             "file": "supabase/functions/self-service-operations/index.ts",
@@ -13641,6 +13985,10 @@
           {
             "file": "assets/js/services/service-media-upload-service.js",
             "count": 1
+          },
+          {
+            "file": "backend/modules/analytics/behavioral-ingestion-boundary.js",
+            "count": 4
           },
           {
             "file": "backend/modules/auth/identity-service.js",
@@ -14119,8 +14467,16 @@
             "count": 1
           },
           {
+            "file": "scripts/plan-ana-001-staging-activation.js",
+            "count": 1
+          },
+          {
             "file": "scripts/provision-staging-auth-canaries.js",
             "count": 2
+          },
+          {
+            "file": "scripts/run-ana-001-staging-canary.js",
+            "count": 6
           },
           {
             "file": "scripts/test-admin-navigation-lifecycle-contract.js",
@@ -14323,8 +14679,16 @@
             "count": 1
           },
           {
+            "file": "supabase/functions/_shared/analytics-proof.ts",
+            "count": 1
+          },
+          {
             "file": "supabase/functions/_shared/http-security.ts",
             "count": 1
+          },
+          {
+            "file": "supabase/functions/analytics-behavior-v1/index.ts",
+            "count": 5
           },
           {
             "file": "supabase/functions/financial-operations/index.ts",
@@ -14356,7 +14720,7 @@
           },
           {
             "file": "supabase/functions/search-public-services-v2/index.ts",
-            "count": 4
+            "count": 5
           },
           {
             "file": "supabase/functions/self-service-operations/index.ts",

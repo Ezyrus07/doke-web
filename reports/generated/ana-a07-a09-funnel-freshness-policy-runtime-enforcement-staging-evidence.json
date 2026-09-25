@@ -1,0 +1,59 @@
+{
+  "contractId": "ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging-evidence-v1",
+  "domain": "ANA-001",
+  "subLot": "ANA-A07/A09",
+  "environment": "staging",
+  "authorization": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging head=3c9d75e4a436b8095963634b9f5b511b0b067b28 matrix=v1.3.132 migration=20260924140000 validation=044 policySetId=ana-a07-a09-funnel-v1-r1",
+  "authorizedRepositoryHead": "3c9d75e4a436b8095963634b9f5b511b0b067b28",
+  "matrixVersion": "1.3.132",
+  "policySetId": "ana-a07-a09-funnel-v1-r1",
+  "repositoryMigration": "supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql",
+  "stagingMigrationVersion": "20260924141356",
+  "stagingMigrationName": "ana_a07_a09_funnel_policy_approval_runtime_enforcement",
+  "validation": "044 PASS",
+  "validationMode": "rollback_only",
+  "observedAt": "2026-09-24T14:14:36.564203Z",
+  "runtime": {
+    "declaredValidatorFunction": "private.validate_analytics_a09_funnel_freshness_policy_approval_envelope_v1",
+    "storedValidatorIdentifier": "validate_analytics_a09_funnel_freshness_policy_approval_envelop",
+    "postgresIdentifierTruncationObserved": true,
+    "validatorInstalled": true,
+    "validatorOwner": "postgres",
+    "validatorSecurityDefiner": true,
+    "validatorAnonExecute": false,
+    "validatorAuthenticatedExecute": false,
+    "validatorServiceRoleExecute": false,
+    "legacyActivationFunction": "private.activate_analytics_a09_funnel_freshness_policy_v1",
+    "legacyActivationTombstoned": true,
+    "legacyOwner": "postgres",
+    "legacySecurityDefiner": true,
+    "legacyAnonExecute": false,
+    "legacyAuthenticatedExecute": false,
+    "legacyServiceRoleExecute": false
+  },
+  "policyState": {
+    "freshnessPolicyRowsPersisted": 0,
+    "activationInvoked": false,
+    "snapshotPublicationAuthorized": false,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false
+  },
+  "validationCoverage": {
+    "canonicalEnvelopeAccepted": true,
+    "repositoryHeadMismatchRejected": true,
+    "authorizationMismatchRejected": true,
+    "boundaryEscalationRejected": true,
+    "evidenceDigestMismatchRejected": true,
+    "legacyActivationRejected": true,
+    "policyRowDriftDetected": false
+  },
+  "prohibitedEffects": {
+    "policyRowsInserted": false,
+    "snapshotsWritten": false,
+    "cronCreated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "note": "PostgreSQL stores identifiers at a maximum of 63 bytes; the long validator identifier is therefore stored truncated. SQL references using the declared long identifier resolve to that stored identifier. Future activation-capable successors should use an explicit canonical identifier within 63 bytes to avoid collision risk."
+}

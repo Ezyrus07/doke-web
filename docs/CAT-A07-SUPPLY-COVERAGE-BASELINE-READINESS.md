@@ -1,0 +1,45 @@
+# CAT-A07 — Supply coverage baseline readiness
+
+This repository-only readiness lot prepares the forward baseline and the ANA-A10 coverage handoff. It performs no database access and does not consume the staging authorization token.
+
+## Serialization
+
+The future baseline is one transaction. It locks `public.services`, `public.service_versions`, `public.service_categories`, the CAT-A06 ledger and the coverage-epoch table before comparing current state to the ledger. This prevents a "complete" epoch from being certified across moving source rows.
+
+## Fail-closed baseline
+
+Before any baseline event is appended, the runner rejects sequence gaps, eligibility-chain mismatches, time regressions, missing dimensions for visible states, open ledger services missing from the source, current eligibility drift and visible-version/dimension drift.
+
+It then appends exactly one `activation_baseline` fact for every current service, including `false -> false` rows, and requires inserted-event count to equal current-service count. A post-write structural check must still be zero before the epoch is certified.
+
+The CAT-A06 activation row is never updated.
+
+## ANA handoff
+
+A separate migration candidate teaches ANA-A10 to use a certified CAT-A07 `coverage_complete_from`. A window can be complete only when its `windowStart` is at or after a certified epoch. Pre-epoch windows remain partial permanently.
+
+This handoff does not solve freshness. With ANA-A11 still lacking an approved policy, post-epoch projections remain `POLICY_THRESHOLD_MISSING`.
+
+## Execution boundary
+
+No staging read, staging mutation, applied migration, deploy or production action occurs in this lot. Staging execution still requires the exact CAT-A07 authorization.
+
+## Staging blocker CAT-A07-B01
+
+The CAT-A07 schema is applied in staging, but no coverage epoch was certified. The first baseline attempt rolled back atomically during post-write structural validation. Investigation found one currently eligible published service with no canonical `state` in the service row or approved snapshot.
+
+An append-only follow-up now checks dimension completeness before any ledger insert. The second baseline attempt therefore fails earlier with `DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE` and persists **zero** baseline events and **zero** epochs.
+
+This is a CAT authority/data-completeness issue: current public eligibility does not require `state`, while ANA liquidity requires category/state segmentation. CAT-A07 will not infer state from free-text city/location and will not mutate the listing under baseline authorization. The ANA-A10 coverage handoff remains unapplied until a certified CAT-A07 epoch exists.
+
+## Staging closure
+
+CAT-A07-B01 is closed. The affected published listing was remediated through the versioned CAT authority with explicit `state=BA`, using retain-only media intents. The previously approved content was preserved except for the state/media-intent identifiers, and the pre-existing pending edit was recreated as a new pending version rather than being discarded or implicitly approved.
+
+The successful baseline run `04566ad6-8bc8-0c93-4205-7f9134e8d65f` reconciled 2 current services to 2 `activation_baseline` facts, produced zero structural defects and certified `coverageCompleteFrom=2026-09-23T00:06:30.6835Z`. Replay returned `idempotentReplay=true` with unchanged fingerprints.
+
+ANA-A10 handoff migration `20260923000720` is active. A window ending at the epoch remains partial; a window beginning at the epoch becomes complete. Both remain `projectionState=unavailable` with `POLICY_THRESHOLD_MISSING` because no ANA-A11 freshness threshold exists.
+
+### Incidental CAT-B06
+
+The staging wrapper `approve_service_version_internal` sets `request.jwt.claims` but not `request.jwt.claim.sub`. Its downstream `approve_service_version()` resolves `auth.uid()` through `current_user_role()`, so the wrapper returned `ADMIN_REQUIRED`. For this explicitly authorized remediation, the canonical approval function was invoked with a transaction-local authenticated context for an existing active admin after rollback-only verification. The wrapper itself was **not** changed and remains a separate CAT blocker.

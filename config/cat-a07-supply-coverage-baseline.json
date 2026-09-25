@@ -1,0 +1,128 @@
+{
+  "contractId": "cat-a07-supply-coverage-baseline-v1",
+  "domain": "CAT-001",
+  "consumerDomain": "ANA-001",
+  "sourceContract": "cat-a06-listing-visibility-timeline-v1",
+  "sourceHead": "2b6b9425a40027802aaec4204e1c98e73477be5f",
+  "createdAt": "2026-09-22T11:27:00-03:00",
+  "scope": "repository_and_staging",
+  "status": "staging_coverage_epoch_certified_handoff_active",
+  "objective": "Define a CAT-owned forward-only coverage epoch that can make future supply windows complete without reconstructing or rewriting pre-ledger visibility history.",
+  "rootCause": {
+    "activationStateImmutable": "CAT-A06 correctly records that no non-synthetic baseline was performed at activation.",
+    "persistentCoverageGap": "Listings already visible before CAT-A06 can remain active without a ledger opening event, so partial coverage can persist indefinitely.",
+    "forbiddenShortcut": "Changing the original activation timestamp/policy or inferring publish time from mutable current rows would fabricate history."
+  },
+  "strategy": {
+    "type": "forward_observation_coverage_epoch",
+    "historicalInferenceAllowed": false,
+    "originalActivationStateMutationAllowed": false,
+    "lifecycleMutationAllowed": false,
+    "analyticsOwnedWriterAllowed": false,
+    "owner": "CAT-001",
+    "observationTimestampAuthority": "server transaction timestamp inside one consistent database transaction"
+  },
+  "preflight": {
+    "requireCatA06StructuralPass": true,
+    "compareCurrentCatalogToLatestLedgerState": true,
+    "rules": [
+      "For a service with prior ledger facts, current eligibility must equal the latest eligible_after; mismatch aborts rather than repairs.",
+      "For a currently eligible service with prior facts, current visible version and frozen dimensions must be compatible with the latest ledger state; unexplained drift aborts.",
+      "A deleted/missing service whose latest ledger fact is eligible_after=true aborts because an unrecorded close would exist.",
+      "No source row or ledger row may be mutated to make preflight pass."
+    ]
+  },
+  "baselineWriteContract": {
+    "futureSchemaAuthority": "CAT-001 migration required",
+    "baselineRunIdRequired": true,
+    "sourceTransitionKey": "cat-a07:baseline:<baselineRunId>:<serviceId>",
+    "oneEventPerCurrentService": true,
+    "sequenceRule": "next monotonic sequence_no for each service",
+    "coverageKind": "activation_baseline",
+    "eligibleBeforeRule": "latest eligible_after when a prior fact exists; false when no prior fact exists",
+    "eligibleAfterRule": "current CAT public-visibility eligibility at baseline timestamp",
+    "visibleVersionAfterRule": "current approved visible version when eligible_after=true; null otherwise",
+    "dimensionAfterRule": "freeze current CAT category/state snapshot when eligible_after=true; null otherwise",
+    "retryRule": "same baselineRunId+serviceId is idempotent; a distinct authorized baseline run is a distinct occurrence",
+    "allWritesAtomic": true
+  },
+  "coverageEpoch": {
+    "futureAuthority": "private CAT-owned append-only coverage epoch record",
+    "mutateCatA06ActivationRow": false,
+    "certifiedOnlyAfter": [
+      "full current-service scan completed in the same baseline transaction",
+      "one baseline occurrence exists for every current service",
+      "all preflight state comparisons passed",
+      "event counts and service counts reconcile",
+      "source and ledger fingerprints are recorded",
+      "no CAT lifecycle row was mutated"
+    ],
+    "completenessRule": "windows with windowStart before coverageCompleteFrom remain partial; windows with windowStart at or after a certified coverageCompleteFrom may be complete if all later ledger events are structurally valid and ANA freshness is satisfied"
+  },
+  "deletedServiceRule": {
+    "priorClosedServiceAllowed": true,
+    "priorOpenMissingSource": "abort",
+    "historicalDeletionTimeInferenceAllowed": false
+  },
+  "anaHandoff": {
+    "A10RuntimeChangeRequired": true,
+    "currentA10ActivationPolicyCheckRemainsPartialUntilThen": true,
+    "noHistoricalValuePromotion": true
+  },
+  "authority": {
+    "coverageStrategyAuthority": true,
+    "coverageEpochValueAuthority": true,
+    "stagingMutationAuthority": true,
+    "runtimeWriterAuthority": true,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": true,
+    "stagingReads": true,
+    "stagingMutations": true,
+    "migrations": true,
+    "deployments": false,
+    "sourceLifecycleMutation": true,
+    "ledgerMutation": true,
+    "activationStateMutation": false,
+    "historicalBackfill": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "catBefore": 4,
+    "catAfter": 4,
+    "anaBefore": 3,
+    "anaAfter": 3,
+    "reason": "CAT-A07 forward baseline and certified coverage epoch are active in staging and ANA-A10 consumes the epoch. CAT remains 4/6; ANA remains 3/6 because freshness policy/cadence is still unset and broader domain blockers remain."
+  },
+  "implementation": {
+    "baselineMigration": "supabase/migrations/20260922153000_cat_a07_supply_coverage_baseline.sql",
+    "validationSql": "supabase/tests/033_cat_a07_supply_coverage_baseline_validation.sql",
+    "anaCoverageHandoffMigration": "supabase/migrations/20260922154000_ana_a10_cat_a07_coverage_epoch_handoff.sql",
+    "readiness": "config/cat-a07-supply-coverage-baseline-readiness.json",
+    "repositoryMigrationPrepared": true,
+    "stagingApplied": true,
+    "baselineExecuted": true,
+    "coverageEpochCertified": true,
+    "dimensionPreflightFollowup": "supabase/migrations/20260922153500_cat_a07_supply_coverage_dimension_preflight.sql",
+    "dimensionPreflightApplied": true,
+    "stagingEvidence": "reports/generated/cat-a07-staging-coverage-epoch-evidence.json",
+    "coverageCompleteFrom": "2026-09-23T00:06:30.6835Z",
+    "baselineRunId": "04566ad6-8bc8-0c93-4205-7f9134e8d65f",
+    "baselineAppliedVersion": "20260922145541",
+    "dimensionPreflightAppliedVersion": "20260922145917",
+    "anaCoverageHandoffApplied": true,
+    "anaCoverageHandoffAppliedVersion": "20260923000720",
+    "attemptEvidence": "reports/generated/cat-a07-staging-baseline-attempt-evidence.json"
+  },
+  "nextAuthorization": null,
+  "authorization": {
+    "requiredToken": "authorize-cat-a07-supply-coverage-baseline-staging",
+    "received": true,
+    "dimensionRemediationToken": "authorize-cat-a07-b01-canonical-dimension-remediation-staging state=BA",
+    "dimensionRemediationReceived": true
+  },
+  "blockers": []
+}

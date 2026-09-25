@@ -1,0 +1,680 @@
+# ANA-A11 — Liquidity freshness policy derivation
+
+## Root cause
+
+The remaining freshness blocker is not merely a missing number. There is no canonical ANA publication cadence for `liquidity.active_service_seconds`. The ANA domain currently owns no cron, and the repository has no metric-specific `maxLagSeconds` authority.
+
+Using the ORD one-minute worker cron, REL daily SLO report, request-freshness windows, retry backoff or browser refresh behavior would cross domain boundaries and manufacture an analytics SLA.
+
+## Derivation rule
+
+For the latest canonical closed-window series:
+
+`maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds`
+
+- `windowStepSeconds` is the distance between successive canonical closed-window boundaries.
+- `projectionDelaySloSeconds` is the approved maximum delay after a boundary before its snapshot should exist and be selectable.
+
+No implicit recovery grace is added. CAT source-watermark delay is evaluated independently by ANA-A07 and must not be hidden inside the age threshold.
+
+This rule reflects the worst healthy age of the latest published closed window immediately before the next expected publication.
+
+## Source-domain watermark semantics
+
+For liquidity v1, CAT remains the source authority. ANA consumes the server-side `private.cat_listing_visibility_watermark_v1()` contract with basis `transaction_snapshot_barrier_v1`.
+
+- The watermark means CAT listing-visibility facts are proven readable through that point in the same database snapshot used by ANA.
+- Canonical `dataThrough` is bounded by `min(windowEnd, CAT source watermark)`.
+- A window whose `windowEnd` is later than the CAT watermark is not closed for ANA.
+- `max(event.occurred_at)` is not a watermark.
+- Snapshot `computedAt` is not a watermark.
+- CAT dependency lag is not added to `maxLagSeconds`; dependency availability and ANA publication age remain separate gates.
+
+## Fresh / stale / unavailable
+
+ANA-A11 inherits the canonical state semantics from ANA-A07 and does not create a second freshness model.
+
+- **unavailable:** threshold missing, authoritative dependency watermark missing/unavailable, no canonical closed window, required coverage missing, overclaimed `dataThrough`, or a structural defect that makes the selected liquidity projection unavailable;
+- **stale:** the selected canonical window exceeds the approved lag threshold, an authoritative dependency is stale, or supply coverage is partial;
+- **fresh:** the latest canonical closed window is fully covered, dependency watermarks are available, structural integrity passes, and `evaluatedAt - dataThrough <= maxLagSeconds`.
+
+Freshness is evaluated only after selecting the latest canonical closed window. Falling back to an older healthy window is forbidden. A zero-sample window is not stale merely because it is empty.
+
+## Pending authority decisions
+
+The missing values remain policy decisions, not constants to infer from existing timings:
+
+1. ANA-001 must approve and version the canonical closed-window cadence (`windowStepSeconds`).
+2. ANA-001 operational policy must approve and version the healthy post-boundary materialization delay (`projectionDelaySloSeconds`).
+3. ANA-001 must choose a server-side publisher/scheduler with deterministic missed-window handling.
+
+Read-only staging inspection found the liquidity runner present but no active `cron.job` matching ANA/analytics/liquidity. GitHub Actions are repository gates, not the publication scheduler. Therefore no existing runtime authority justifies a numeric cadence or delay SLO.
+
+## What remains unset
+
+The repository currently has neither a versioned window step nor a projection-delay SLO for this metric. Therefore:
+
+- `windowStepSeconds = null`;
+- `projectionDelaySloSeconds = null`;
+- `maxLagSeconds = null`;
+- the staging registry remains empty for this metric;
+- ANA-A10 must continue returning `POLICY_THRESHOLD_MISSING`.
+
+## Activation gate
+
+A future activation requires a versioned publication schedule, a versioned delay SLO, a server-side trigger/scheduler, controlled staging evidence of that cadence, the mechanically derived threshold, and a separately authorized insert into the freshness-policy registry.
+
+ANA-A11 structural planner/executor/activation functions are now installed in staging, but no publication/freshness policy row or scheduler is active. Production remains untouched and ANA-001 remains **3/6**.
+
+## Scheduler topology readiness
+
+Read-only reconciliation now closes the mechanism question without creating a schedule. The selected future topology is **Supabase `pg_cron` invoking `private.run_analytics_cat_liquidity_catch_up_v1`**, which must pass through the canonical planner before window orchestration and the A10 per-series runner.
+
+This is an architectural selection, not scheduler activation:
+
+- the A11 catch-up executor is database-local, `SECURITY DEFINER` and owned by `postgres`, and delegates to the planner/window/A10 chain;
+- existing Doke cron jobs in staging run as `postgres`;
+- planner, catch-up executor and activation boundary are not executable by `anon`, `authenticated` or `service_role`;
+- no ANA/liquidity cron exists today;
+- introducing an Edge Function or GitHub Actions publisher would create a second authority without a runtime requirement.
+
+Therefore `pg_cron` is the selected topology, while `schedulerActivationAuthorized=false`.
+
+## Additional root-cause gaps
+
+Cadence and delay SLO are necessary but not sufficient. Two structural authorities are also missing.
+
+### Canonical window grid
+
+The runner accepts arbitrary `windowStart/windowEnd`. A numeric `windowStepSeconds` alone does not identify which boundaries belong to the canonical series. Before activation, ANA must version the boundary anchor/alignment rule (and time-zone semantics if applicable).
+
+Canary windows, execution time and another domain's cron boundaries are not valid substitutes.
+
+### Canonical dimension-series enumeration
+
+ANA-A10 requires liquidity segmentation by **category identity + state**, but the runtime exposes only a per-series runner:
+
+`run_analytics_cat_liquidity_projection_v1(windowStart, windowEnd, serviceCategory, serviceState)`
+
+No staging function currently enumerates the required liquidity dimension series. Existing ANA snapshots cannot be used as the enumerator because they only represent series that were already materialized and would miss a newly appearing CAT category/state pair. Mutable current catalog rows are also forbidden as historical dimension authority.
+
+The future enumerator must derive the global series plus required category/state series from CAT-owned frozen dimension facts and the CAT-A07 forward-coverage state.
+
+## Missed-window recovery
+
+The existing append-only snapshot writer already supplies the necessary replay primitive:
+
+- exact replay with unchanged source/projection fingerprints returns `NO_CHANGE`;
+- divergent concurrent writes fail closed with `DOKE_ANALYTICS_METRIC_REVISION_CONFLICT`.
+
+The scheduler contract therefore requires **oldest missing canonical closed window first** and forbids silently jumping to the latest window. The per-invocation catch-up bound remains unset; unbounded backlog processing is not authorized.
+
+## Values still intentionally unset
+
+The following remain `null`/unauthorized:
+
+- `windowStepSeconds`;
+- `projectionDelaySloSeconds`;
+- `maxLagSeconds`;
+- canonical window-boundary anchor/time-zone semantics;
+- `maxCatchUpWindowsPerInvocation`;
+- dimension-series enumerator activation;
+- scheduler activation;
+- freshness-policy insert.
+
+The structural runtime is now present in staging, but operational policy values and scheduler activation remain unset; this does not promote ANA above **3/6**.
+
+## Repository candidate — dimension-series orchestration
+
+The remaining dimension-series gap now has a repository-only candidate:
+
+- `supabase/migrations/20260923011500_ana_a11_liquidity_series_orchestration.sql`
+- `supabase/tests/034_ana_a11_liquidity_series_orchestration_validation.sql`
+
+It defines two private, owner-only helpers:
+
+1. `private.list_analytics_cat_liquidity_series_v1(windowStart, windowEnd)`
+   - emits the global series first;
+   - then emits every valid category/state pair frozen in CAT-A06 facts from the certified CAT-A07 coverage epoch through `windowEnd`;
+   - validates the same certified epoch and CAT transaction-snapshot watermark used by A10;
+   - never joins `public.services`, `service_versions`, or another mutable catalog projection.
+
+2. `private.run_analytics_cat_liquidity_window_v1(windowStart, windowEnd)`
+   - delegates every series to the existing canonical `public.run_analytics_cat_liquidity_projection_v1`;
+   - treats only `APPENDED` and `NO_CHANGE` as valid append outcomes;
+   - executes all series for one window inside one SQL statement/transaction, so an uncaught series failure cannot commit a partially published window.
+
+The category/state universe is intentionally monotonic from the certified coverage epoch. If a pair previously had supply and later reaches zero, it remains enumerable, allowing the canonical series to publish zero rather than silently disappearing.
+
+This candidate **does not** create a cron, choose a window grid, choose a catch-up bound, insert a freshness policy, or mutate staging. Explicit staging migration authorization is still required before these functions exist remotely.
+
+## Category identity continuity
+
+The certified CAT-A07 epoch currently contains two valid BA category identities with different representation classes:
+
+- canonical category UUID: `17263173-c179-455f-bd43-2c3d9a55a8fd`;
+- legacy freeform category: `Limpeza`.
+
+Read-only staging reconciliation proved that the `Limpeza` service has no `service_categories` row, no `category_id`, and no approved-version `categoryId/categorySlug`. Therefore CAT did not lose a canonical ID: the textual fallback is the frozen historical identity explicitly allowed by CAT-A06/A07.
+
+ANA must preserve that boundary. The series candidate now lowercases the frozen fallback token because A10 category filtering is already case-insensitive, preventing casing-only duplicates such as `Limpeza` vs `limpeza`. This normalization **does not** equate a name or slug with a UUID.
+
+If CAT later maps that legacy service to a canonical category UUID, that CAT transition starts a new UUID-backed analytical series from that point forward. The historical text-backed series is not rewritten or merged and remains enumerable so it can correctly publish zero supply. A cross-representation merge would require a separate versioned category-equivalence authority; none exists today.
+
+## Publication policy authority
+
+Read-only staging inspection confirmed that `private.analytics_metric_freshness_policies_v1` currently has **0 rows** and stores only the derived threshold shape: `policy_id`, metric identity, `max_lag_seconds`, and effective dates. It cannot prove how a threshold was derived.
+
+ANA-A11 therefore separates two authorities:
+
+- **publication policy** — approved inputs and provenance: cadence, projection-delay SLO, absolute window anchor, bounded oldest-first catch-up, selected scheduler mechanism and approval evidence;
+- **freshness policy** — the derived `maxLagSeconds` consumed by the A10/A07 runtime.
+
+The repository-only candidate `supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql` introduces `private.analytics_metric_publication_policies_v1` with a generated `derived_max_lag_seconds = window_step_seconds + projection_delay_slo_seconds`. No row is inserted. The owner-only selector has no implicit/default policy.
+
+Because the window model uses a fixed number of seconds, the canonical grid is mathematically defined by:
+
+`windowAnchor + N × windowStepSeconds`
+
+The `timestamptz` anchor fixes absolute boundaries; timezone is therefore **not an independent grid input** for this fixed-duration model. Presentation timezone may exist elsewhere, but cannot move canonical boundaries.
+
+A later activation must atomically preserve provenance: an approved publication-policy row is the cause, and any freshness-policy row must copy its mechanically derived threshold. A hand-entered `maxLagSeconds` that cannot be traced to the effective publication policy is forbidden.
+
+This candidate remains repository-only: no table/function exists in staging yet, no publication-policy row exists, no freshness-policy row exists, and no cron is activated.
+
+### Effective-policy ambiguity
+
+The publication-policy selector is intentionally fail-closed. If zero rows are effective for a metric/version at the requested instant, it returns no policy; there is no default. If more than one row is effective, it raises `DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS` rather than silently selecting the newest row.
+
+This keeps versioned effective windows auditable even if a future operator accidentally creates overlap.
+
+## Staging structural-authority closure
+
+Authorization `authorize-ana-a11-structural-authorities-staging` was executed only against `doke-web-staging`.
+
+Applied migrations:
+
+- `20260923021120 / ana_a11_liquidity_series_orchestration`;
+- `20260923021316 / ana_a11_liquidity_publication_policy_authority`.
+
+Validation SQL `034` and `035` passed.
+
+The series canary was rollback-only. It enumerated exactly three series for the certified CAT window: global, the canonical UUID/BA series, and the legacy `limpeza`/BA series. The first orchestration appended all three snapshots inside the transaction; exact replay returned `NO_CHANGE` for all three; rollback restored the persistent liquidity snapshot count to the original three rows.
+
+The publication-policy canary was also rollback-only. With synthetic, explicitly non-authoritative values, `windowStepSeconds=300` and `projectionDelaySloSeconds=60` produced generated `derivedMaxLagSeconds=360`. A missing policy returned `null`; overlapping policies failed closed with `DOKE_ANALYTICS_PUBLICATION_POLICY_AMBIGUOUS`. Rollback left the publication-policy table empty.
+
+Post-validation staging state remains:
+
+- publication policy rows: **0**;
+- freshness policy rows: **0**;
+- ANA/liquidity cron jobs: **0**;
+- persistent liquidity snapshots: **3**;
+- browser analytics: unchanged/disabled;
+- anonymous identity stitching: unchanged/disabled.
+
+The structural authorities are now real staging runtime, but no cadence, delay SLO, window anchor, catch-up bound, freshness threshold, publication row, or scheduler has been approved. ANA therefore remains **3/6** and `POLICY_THRESHOLD_MISSING` remains the correct runtime behavior.
+
+## Repository candidate — canonical window planner
+
+The remaining scheduling mechanics now have a repository-only planner candidate:
+
+- `supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql`
+- `supabase/tests/036_ana_a11_liquidity_window_planner_validation.sql`
+
+`private.plan_analytics_cat_liquidity_windows_v1(policyId, evaluatedAt)` is intentionally policy-driven. It contains no cadence, anchor, SLO or catch-up default.
+
+For the supplied versioned policy it:
+
+1. reads `windowStepSeconds`, `windowAnchor`, effective dates and `maxCatchUpWindowsPerInvocation`;
+2. bounds the grid below by the later of policy activation and the certified CAT-A07 coverage epoch;
+3. bounds closed windows above by the earliest of `evaluatedAt`, the CAT transaction-snapshot watermark and policy expiry;
+4. aligns every window to `windowAnchor + N × windowStepSeconds`;
+5. asks the staging-validated CAT-backed series authority which global/category/state series belong to each window;
+6. treats a window as materialized only when **every required series** has an exact-window ANA snapshot;
+7. returns only missing windows, oldest first, capped by the policy catch-up bound.
+
+This deliberately does not rely on the global snapshot as a completion marker, because historical A10 canaries could have materialized only a subset of the required dimension series.
+
+The candidate is read-only and owner-only. It inserts no snapshots, creates no cron and cannot choose policy values. Missing/unknown policy fails closed with `DOKE_ANALYTICS_PUBLICATION_POLICY_REQUIRED`.
+
+The planner is applied to staging as migration `20260923130303 / ana_a11_liquidity_window_planner`; validation `036` passed. No concrete publication-policy row is present.
+
+## Repository candidate — bounded catch-up executor
+
+The execution bridge after the window planner is now explicit:
+
+- `supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql`
+- `supabase/tests/037_ana_a11_liquidity_catch_up_executor_validation.sql`
+
+`private.run_analytics_cat_liquidity_catch_up_v1(policyId, evaluatedAt)` does not calculate policy, select arbitrary windows or schedule itself. It consumes the already-bounded, oldest-first windows from `private.plan_analytics_cat_liquidity_windows_v1` and delegates each window to `private.run_analytics_cat_liquidity_window_v1`.
+
+This has three important properties:
+
+- **single planning authority:** the executor cannot bypass the policy-driven planner;
+- **single projection authority:** every planned window still uses the staging-validated A11 series/window orchestrator and A10 projection runtime;
+- **batch atomicity:** an uncaught failure in any window aborts the executor call/transaction instead of committing only part of the catch-up batch.
+
+The executor reads no publication-policy table directly, writes no freshness-policy row and creates no `pg_cron` job. Its only inputs are `policyId` and `evaluatedAt`; therefore it has no numeric defaults or hidden schedule authority.
+
+The executor is applied to staging as migration `20260923130307 / ana_a11_liquidity_catch_up_executor`; validation `037` passed. It remains owner-only and unscheduled.
+
+## Repository candidate — atomic policy activation
+
+The final registry-coupling gap now has a repository-only candidate:
+
+- `supabase/migrations/20260923025000_ana_a11_liquidity_policy_activation.sql`
+- `supabase/tests/038_ana_a11_liquidity_policy_activation_validation.sql`
+
+`private.activate_analytics_cat_liquidity_policy_v1(...)` is the only proposed canonical write path for the first liquidity publication policy. It accepts every operational value explicitly; it contains no cadence, SLO, anchor or catch-up default.
+
+Within one transaction it:
+
+- validates the explicit publication-policy inputs;
+- computes `maxLagSeconds = windowStepSeconds + projectionDelaySloSeconds`;
+- rejects overlapping publication-policy effective windows;
+- rejects overlapping freshness-policy effective windows;
+- inserts the publication policy;
+- inserts the matching freshness policy with the same `policyId`, metric/version and effective window.
+
+This closes a real integrity gap: A10 consumes the freshness registry directly, while A11 owns richer publication provenance. Independent inserts could otherwise leave the two registries inconsistent.
+
+The activation boundary is owner-only, creates no cron and invokes no catch-up executor. It is applied to staging as migration `20260923130310 / ana_a11_liquidity_policy_activation`; validation `038` passed. The migration itself inserted **zero rows**, and no activation call with real policy values has been authorized.
+
+Concrete policy values remain unset and unauthorized.
+
+## Scheduler target reconciliation
+
+The future scheduler target is:
+
+`pg_cron → private.run_analytics_cat_liquidity_catch_up_v1 → private.plan_analytics_cat_liquidity_windows_v1 → private.run_analytics_cat_liquidity_window_v1 → public.run_analytics_cat_liquidity_projection_v1`
+
+Direct cron invocation of the A10 per-series runner is forbidden because it would bypass canonical window planning and bounded oldest-first recovery.
+
+The catch-up executor also fails closed when planner ordinals are not contiguous from `1`, preventing execution against a structurally corrupted planner result.
+
+The topology remains unactivated: the structural functions now exist in staging, but there is still no cron, publication-policy row or freshness-policy row.
+
+
+
+## Staging planner/executor/activation closure
+
+Authorization `authorize-ana-a11-planner-executor-activation-structures-staging head=1825c11544a19162438c2b63c099d9e6d2b4547f matrix=v1.3.132` was executed only against `doke-web-staging` (`zwkczgewzbsorbrjuzpb`).
+
+Applied migrations:
+
+- `20260923130303 / ana_a11_liquidity_window_planner`;
+- `20260923130307 / ana_a11_liquidity_catch_up_executor`;
+- `20260923130310 / ana_a11_liquidity_policy_activation`.
+
+Validations `036`, `037` and `038` passed.
+
+All behavioral canaries were transactional and rollback-only. Synthetic values were used only as test fixtures and are not policy authority.
+
+Planner evidence:
+
+- bounded selection returned exactly 2 oldest missing windows;
+- the first window required 3 CAT-backed series;
+- after materializing only 1 series, the window remained incomplete with 2 series missing;
+- only after all required series existed did the planner advance to the next oldest missing window.
+
+Executor evidence:
+
+- first catch-up invocation processed 2 windows / 6 series;
+- second invocation processed the next 2 windows / 6 series;
+- third replay planned 0 windows;
+- direct replay of a completed window returned `NO_CHANGE 3/3`.
+
+Fail-closed activation evidence:
+
+- missing policy was rejected by the planner;
+- invalid activation input was rejected;
+- an overlapping second publication policy was rejected;
+- publication + freshness rows existed only inside the rollback transaction;
+- no cron was created.
+
+Privilege boundaries for planner, executor and activation are identical: owner `postgres`, `SECURITY DEFINER`, `postgres EXECUTE=true`, and `anon/authenticated/service_role EXECUTE=false`.
+
+Persistent post-rollback state:
+
+- publication policy rows: **0**;
+- freshness policy rows: **0**;
+- ANA/liquidity cron jobs: **0**;
+- liquidity snapshots: **3** (baseline restored);
+- canary-window snapshots: **0**.
+
+No `windowStepSeconds`, `projectionDelaySloSeconds`, `windowAnchor`, `maxCatchUpWindowsPerInvocation` or `maxLagSeconds` has been selected as an operational value. Scheduler activation remains separately unauthorized. ANA remains **3/6**.
+
+
+## Policy approval evidence envelope
+
+The remaining activation decision now has a repository-only approval evidence envelope:
+
+- `config/ana-a11-liquidity-policy-approval-envelope.json`
+- `scripts/lib/ana-a11-liquidity-policy-approval-envelope.js`
+- `scripts/audit-ana-a11-liquidity-policy-approval-envelope.js`
+- `scripts/test-ana-a11-liquidity-policy-approval-envelope.js`
+
+The root cause was provenance, not another missing number. The staging activation function accepts any JSON object as `approval_evidence`; therefore an empty object could satisfy the current database shape without proving which values were approved, against which repository state, or for which effective window.
+
+The envelope contract closes that ambiguity at repository level without selecting any operational value.
+
+### Policy identity
+
+For the first liquidity v1 policy, `policyId` is derived rather than freely selected:
+
+`ana-a11-liquidity-v1-r<revision>`
+
+The v1 envelope supports only lifecycle mode `initial`, and the initial revision must be `1`. A future replacement policy is outside this contract and requires a separate transition authority.
+
+### Effective window
+
+A completed approval must bind an explicit `effectiveFrom`. It must be UTC, not precede the recorded approval time, fall exactly on the approved `windowAnchor + N × windowStepSeconds` grid, and use `effectiveUntil=null` for the initial policy.
+
+No timestamp is inferred from canaries, GitHub Actions, another domain's cron, or execution time.
+
+### Approval evidence envelope
+
+A completed envelope binds the full repository HEAD, Domain Completion Matrix version, SHA-256 of the exact explicit authorization command, approval timestamp, staging environment, metric identity, derivation/series contract IDs, policy revision and derived `policyId`, every approved operational value, and a canonical SHA-256 digest of the evidence itself.
+
+The envelope is single-use: at most one activation invocation. It explicitly does **not** authorize scheduler activation, production, browser analytics, anonymous identity stitching or PR merge.
+
+A generic `prossiga` is not approval and no policy value may be inferred.
+
+### Future explicit activation command
+
+`authorize-ana-a11-liquidity-policy-activation-staging head=<40hex> matrix=v<version> revision=1 windowStepSeconds=<int> projectionDelaySloSeconds=<int> windowAnchor=<UTC> maxCatchUpWindowsPerInvocation=<int> effectiveFrom=<UTC> effectiveUntil=null`
+
+This defines the fields only. It does not supply real values.
+
+### Historical pre-enforcement runtime boundary
+
+At approval-envelope contract creation time, the database boundary still accepted only object shape for `approval_evidence`. That historical gap is superseded by the staging runtime-enforcement closure below; the historical migration remains immutable.
+
+No publication policy, freshness policy or scheduler is created by this contract. ANA remains **3/6**.
+
+
+## Repository candidate — approval-envelope runtime enforcement
+
+Authorization: `authorize-ana-a11-policy-envelope-runtime-enforcement-candidate-repository-only head=ce1d49bae29f92f4cb31c38849fb8292b71a6a85 matrix=v1.3.132`.
+
+The remaining bypass is now represented by an additive repository candidate:
+
+- `supabase/migrations/20260923030000_ana_a11_liquidity_policy_approval_runtime_enforcement.sql`
+- `supabase/tests/039_ana_a11_liquidity_policy_approval_runtime_enforcement_validation.sql`
+
+This candidate does **not** edit the historical `20260923025000` migration. At candidate creation time it was not applied; it was later applied under the separate staging authorization recorded below.
+
+When separately applied, it changes the current runtime boundary in three steps:
+
+1. `private.canonicalize_analytics_json_v1(jsonb)` reproduces the contract's recursively key-sorted compact JSON representation for SHA-256 verification.
+2. `private.validate_analytics_cat_liquidity_policy_approval_envelope_v1(...)` validates exact envelope keys, metric/contract identity, expected repository HEAD + Matrix version, SHA-256 of the raw explicit authorization command, policy identity, every scalar policy value, effective-window/grid rules, boundary flags and the canonical evidence digest.
+3. `private.activate_analytics_cat_liquidity_policy_approved_v1(...)` calls that validator before the publication/freshness inserts. The previously applied `private.activate_analytics_cat_liquidity_policy_v1(...)` becomes a fail-closed tombstone raising `DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED`.
+
+This is required because merely adding a second 'approved' function would leave the object-only activation function as a bypass.
+
+`039` is the successor current-state validation after this candidate is eventually applied. It checks the validator/canonicalizer/approved activation, verifies the legacy path is tombstoned, preserves owner-only grants, rejects an empty envelope and confirms policy-row counts do not change in fail-closed canaries. Historical validation `038` remains evidence for the earlier activation structure and must not be interpreted as current-state validation after the successor migration is applied.
+
+The candidate contains no operational cadence, SLO, anchor or catch-up value; the only numbers in its structural rules are schema/lifecycle invariants such as initial revision `1`, digest lengths and key counts. Synthetic values in validation `039` are rollback-only fail-closed fixtures and are not policy authority.
+
+State at repository-candidate creation time, before the later staging authorization:
+
+- runtime envelope enforcement applied: **false**;
+- publication policy rows created by this lot: **0**;
+- freshness policy rows created by this lot: **0**;
+- scheduler/cron activation: **false**;
+- production changes: **false**;
+- ANA maturity: **3/6**.
+
+
+## Staging closure — approval-envelope runtime enforcement
+
+Authorization:
+
+`authorize-ana-a11-policy-envelope-runtime-enforcement-staging head=f3f7e20363a92ca7383e8df73bcb7b139dd85f83 matrix=v1.3.132`
+
+The additive candidate was applied only to `doke-web-staging` and registered in the migration ledger as:
+
+- `20260923135957 / ana_a11_liquidity_policy_approval_runtime_enforcement`.
+
+Validation `039` passed after application.
+
+Current staging runtime boundary:
+
+- legacy `private.activate_analytics_cat_liquidity_policy_v1(...)` is a fail-closed tombstone returning `DOKE_ANALYTICS_POLICY_APPROVAL_ENVELOPE_REQUIRED`;
+- canonical write path is `private.activate_analytics_cat_liquidity_policy_approved_v1(...)`;
+- envelope validator and approved activation are owned by `postgres`, use `SECURITY DEFINER`, and expose no EXECUTE privilege to `anon`, `authenticated` or `service_role`;
+- envelope structure, HEAD/Matrix binding, raw authorization SHA-256, scalar values, effective-window rules, boundaries and canonical evidence SHA-256 are enforced before any insert.
+
+A rollback-only runtime canary used synthetic values only: step `47s`, projection-delay `14s`, catch-up bound `2`, with mechanically derived lag `61s`. These are test fixtures, not operational policy values.
+
+The canary proved:
+
+- the canonical evidence digest expected by the repository contract matched PostgreSQL;
+- the raw authorization digest matched PostgreSQL;
+- legacy activation failed closed;
+- repository HEAD mismatch failed closed;
+- Matrix mismatch failed closed;
+- authorization-command mismatch failed closed;
+- scalar mismatch failed closed;
+- evidence-digest mismatch failed closed;
+- one approved activation transiently inserted exactly one publication row and one matching freshness row;
+- a second activation of the same policy failed closed on overlap;
+- no cron was created.
+
+After rollback, persistent staging state is:
+
+- publication-policy rows for liquidity v1: **0**;
+- freshness-policy rows for liquidity v1: **0**;
+- canary policy rows: **0**;
+- ANA/liquidity cron jobs: **0**.
+
+No operational `windowStepSeconds`, `projectionDelaySloSeconds`, `windowAnchor`, `maxCatchUpWindowsPerInvocation`, `effectiveFrom` or `maxLagSeconds` has been selected. Real policy activation and scheduler activation remain separately unauthorized. ANA remains **3/6**.
+
+
+## Initial liquidity policy activation — staging
+
+Explicit authorization:
+
+`authorize-ana-a11-liquidity-policy-activation-staging head=889d99586c19d178bc08d9beec380e3aa1b5904e matrix=v1.3.132 revision=1 windowStepSeconds=300 projectionDelaySloSeconds=60 windowAnchor=1970-01-01T00:00:00Z maxCatchUpWindowsPerInvocation=3 effectiveFrom=2026-09-23T16:00:00Z effectiveUntil=null`
+
+The completed approval envelope was validated by PostgreSQL before mutation and then consumed exactly once by `private.activate_analytics_cat_liquidity_policy_approved_v1(...)`.
+
+Persistent revision-1 policy:
+
+- `policyId = ana-a11-liquidity-v1-r1`;
+- `windowStepSeconds = 300`;
+- `projectionDelaySloSeconds = 60`;
+- `maxLagSeconds = 360` (mechanically derived);
+- `windowAnchor = 1970-01-01T00:00:00Z`;
+- `maxCatchUpWindowsPerInvocation = 3`;
+- missed-window order = `oldest_first`;
+- `effectiveFrom = 2026-09-23T16:00:00Z`;
+- `effectiveUntil = null`;
+- scheduler mechanism metadata = `supabase_pg_cron_database_local`.
+
+Approval provenance:
+
+- source HEAD: `889d99586c19d178bc08d9beec380e3aa1b5904e`;
+- Matrix: `v1.3.132`;
+- approval ID: `ana-a11-liquidity-approval-r1-52ff083086f2`;
+- authorization SHA-256: `52ff083086f2748905f1ff75a5357d65b9c8c7403bac31f5fbead29795396ae7`;
+- evidence SHA-256: `f87d6f3286bd1b790deef55e32deae10290fc18e51a9d1d7d416ac428d78c14d`;
+- approval timestamp: `2026-09-23T14:14:42.814387Z`;
+- atomic publication/freshness creation timestamp: `2026-09-23T14:16:20.971548Z`.
+
+Post-write verification proved exactly one publication row and one matching freshness row. Before `16:00Z`, `current_analytics_metric_publication_policy_v1(...)` returns no active policy and the planner returns no windows. At the exact effective boundary, revision 1 resolves as the active publication policy; the first closed 5-minute window can only exist after `16:05Z`.
+
+The single-use activation authorization is now consumed. `policyInsertAuthorized=false` and no second activation is implied.
+
+Scheduler remains separate and **not authorized**:
+
+- ANA/liquidity cron jobs: **0**;
+- `schedulerActivationAuthorized=false`;
+- production: unchanged;
+- browser analytics: unchanged;
+- anonymous identity stitching: unchanged;
+- PR merge/ready-for-review: unchanged.
+
+This section supersedes earlier statements that operational policy values were unset. ANA remains **3/6** until scheduled runtime behavior is activated and evidenced.
+
+
+## Scheduler activation candidate — repository only
+
+The persisted revision-1 policy separates two time concepts that must not be conflated:
+
+- **publication cadence:** `windowStepSeconds=300`; only the planner may emit these canonical five-minute windows;
+- **scheduler poll interval:** **60 seconds**, mechanically constrained by `projectionDelaySloSeconds=60`.
+
+A cron expression of `*/5 * * * *` would poll only once per publication window. If that invocation races the CAT watermark at a boundary, the next opportunity would be a full five minutes later. The repository candidate therefore uses:
+
+`* * * * *`
+
+This does **not** create one-minute liquidity windows. Every invocation still enters:
+
+`pg_cron → private.run_analytics_cat_liquidity_catch_up_v1 → private.plan_analytics_cat_liquidity_windows_v1 → private.run_analytics_cat_liquidity_window_v1 → A10`
+
+and the planner continues to emit only the persisted 300-second grid.
+
+Repository candidate:
+
+- `supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql`;
+- `supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql`;
+- activation function: `private.activate_analytics_cat_liquidity_scheduler_v1(text)`;
+- job name: `doke-ana-liquidity-v1-r1`;
+- target: `private.run_analytics_cat_liquidity_catch_up_v1`;
+- schedule: `* * * * *`.
+
+The activation function is bound to the exact persisted r1 policy/evidence digest, rejects unsupported policy identity or binding drift, fails closed if any conflicting ANA/liquidity cron exists, and is idempotent only when the exact active job already exists (`NO_CHANGE`). It is owner-only and grants no execute privilege to `anon`, `authenticated` or `service_role`.
+
+Applying this migration **does not schedule anything**. It only installs the activation boundary.
+
+Validation `040` is designed for a later separately authorized staging application. Inside a transaction it will create the job, verify schedule/command/database/postgres owner, replay the activation as `NO_CHANGE`, assert a single job, and then rollback. Persistent scheduler activation remains a separate authorization after that validation.
+
+Current state:
+
+- candidate applied in staging: **false**;
+- scheduler activated: **false**;
+- ANA/liquidity cron jobs: **0**;
+- production: unchanged;
+- ANA maturity: **3/6**.
+
+
+## Scheduler activation candidate — staging validation closure
+
+Explicit authorization:
+
+`authorize-ana-a11-liquidity-scheduler-activation-candidate-staging head=794dc639f0bd7c597d28fbad572fc775f7b50307 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1`
+
+The repository candidate was applied only to `doke-web-staging` and registered as:
+
+- `20260923144627 / ana_a11_liquidity_scheduler_activation`.
+
+Applying the migration installed only:
+
+`private.activate_analytics_cat_liquidity_scheduler_v1(text)`
+
+and created **no persistent cron job**.
+
+Privilege verification:
+
+- owner: `postgres`;
+- `SECURITY DEFINER=true`;
+- `anon EXECUTE=false`;
+- `authenticated EXECUTE=false`;
+- `service_role EXECUTE=false`.
+
+Validation `040` passed in staging. Its transaction proved:
+
+1. precondition: zero ANA/liquidity cron jobs;
+2. first activation: `APPENDED`;
+3. exact job name `doke-ana-liquidity-v1-r1`;
+4. schedule `* * * * *`;
+5. command targets only `private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp())`;
+6. database = current staging database and username = `postgres`;
+7. exact replay: `NO_CHANGE`;
+8. relevant cron count after replay: exactly one;
+9. transaction rollback completed.
+
+Persistent state after rollback:
+
+- revision-1 publication policy rows: **1**;
+- revision-1 freshness policy rows: **1**;
+- ANA/liquidity cron jobs: **0**.
+
+The validation proves the scheduler activation boundary, not scheduled runtime. Persistent invocation of the activation function remains **unauthorized**. Production, browser analytics, anonymous identity stitching, merge and Ready for review remain untouched. ANA remains **3/6**.
+
+
+## Scheduler activation — staging
+
+Explicit authorization:
+
+`authorize-ana-a11-liquidity-scheduler-activation-staging head=396c4bbb8fb40d75c81b2ab39210c6f9a8c06851 matrix=v1.3.132 policyId=ana-a11-liquidity-v1-r1 jobName=doke-ana-liquidity-v1-r1 schedule="* * * * *"`
+
+The scheduler activation boundary was invoked exactly once after a final drift check.
+
+Activation result:
+
+- status: `APPENDED`;
+- job ID: `8`;
+- job name: `doke-ana-liquidity-v1-r1`;
+- schedule: `* * * * *`;
+- poll interval: `60s`;
+- publication window: `300s`;
+- target: `private.run_analytics_cat_liquidity_catch_up_v1`;
+- `plannerBypassed=false`.
+
+Persistent cron row:
+
+- database: `postgres`;
+- username: `postgres`;
+- active: `true`;
+- command: `select private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp());`.
+
+At scheduler activation time, the policy was future-effective until `2026-09-23T16:00:00Z`. The planner correctly returned no windows before that boundary, proving that enabling the cron early did not force premature publication.
+
+Observed real pg_cron executions before policy effectiveness:
+
+- run `147213`: `2026-09-23T14:56:00.051145Z → 14:56:00.056204Z`, **succeeded**, ~`5.059 ms`;
+- run `147215`: `2026-09-23T14:57:00.032006Z → 14:57:00.038737Z`, **succeeded**, ~`6.731 ms`.
+
+At `2026-09-23T14:57:15.961250Z`:
+
+- planner output: `[]`;
+- total historical liquidity snapshots: `3`;
+- snapshots with `window_start >= 2026-09-23T16:00:00Z`: **0**;
+- CAT→ANA reconciliation rows after that boundary: **0**.
+
+This is the expected pre-effective behavior. The first canonical five-minute window cannot close until `2026-09-23T16:05:00Z`.
+
+The activation authorization is consumed. The pre-effective observation above remains historical evidence; the time gate has now closed.
+
+## Post-effective scheduled-runtime certification — read-only
+
+Authorized repository-evidence scope:
+
+`authorize-ana-a11-post-effective-runtime-evidence-repository-only head=b6bc5a94569faf9e0aab0fa646a57e7b8ade28cf matrix=v1.3.132`
+
+Canonical read-only observation at `2026-09-23T19:23:51.047151Z` proved:
+
+- job `8` remained the single relevant active ANA/liquidity cron;
+- the first canonical window `16:00Z → 16:05Z` materialized exactly **3/3** required series: global, UUID-category/BA and `limpeza`/BA;
+- the first window was fully materialized at `16:05:00.148650Z`, approximately **0.149s** after close versus the approved **60s** projection-delay SLO;
+- **40/40** canonical closed windows from `16:00Z` through `19:20Z` were present, each exactly **300s** and exactly **3** series;
+- maximum observed completion delay was approximately **0.487s**; windows over the 60s SLO: **0**;
+- all observed post-effective snapshots were `coverageState=complete`, `projectionState=authoritative` and snapshot-reconciled;
+- all 40 reconciliation windows were matched with zero core structural divergences;
+- duplicate snapshot keys: **0**;
+- planner at observation: `[]`, so there was no closed-window backlog;
+- the latest canonical closed window was `19:15Z → 19:20Z`, fully materialized **3/3**, with `dataThrough=19:20Z`;
+- at `19:23:14.310840Z`, that latest window age was approximately **194.31s**, below `maxLagSeconds=360`;
+- ANA-A07 therefore evaluated the latest canonical window directly with **no fallback** to an older window.
+
+The lot intentionally performed no manual replay because the scope was read-only. Idempotency remains supported by the already-certified rollback replay canary plus the real scheduler evidence: repeated one-minute polls created no duplicate snapshot keys or extra revisions for completed windows, and the planner was empty after full materialization.
+
+A later read-only drift check at `2026-09-23T22:08:09.686739Z` corroborated continuity: publication policy count **1**, freshness policy count **1**, relevant cron count **1**, failed runs since effective **0**, planner `[]`, duplicate snapshot keys **0**, and the latest snapshot window had advanced to `22:05Z`.
+
+Canonical evidence is persisted at `reports/generated/ana-a11-post-effective-runtime-evidence.json`.
+
+**ANA-A11 is operationally certified in staging.** This does not promote ANA-001 by itself: ANA remains **3/6** because broader funnel/retention/data-quality ownership gates plus LEGAL/PAY dependencies remain separately governed.
+
+No staging mutation was performed by this evidence lot. No policy or scheduler value changed. Production, browser analytics, anonymous identity stitching, merge and Ready for review remain untouched.

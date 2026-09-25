@@ -6,7 +6,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
-- Maturidade média atual: **2.91/6**.
+- Maturidade média atual: **2.96/6**.
 - Bloqueadores críticos explícitos: **12**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
@@ -15,18 +15,18 @@ A leitura correta é: a Doke possui fundações e canários avançados, especial
 
 ## Snapshot real do staging
 
-Observado em `2026-07-23T13:29:46.102113+00:00` no projeto `zwkczgewzbsorbrjuzpb`.
+Observado em `2026-09-23T02:15:47.312085+00:00` no projeto `zwkczgewzbsorbrjuzpb`.
 
 | Indicador | Valor |
 | --- | ---: |
-| Tabelas públicas | 45 |
+| Tabelas públicas | 48 |
 | Tabelas públicas sem RLS | 0 |
 | Tabelas com RLS sem policies | 0 |
-| Funções SECURITY DEFINER | 134 |
-| SECURITY DEFINER executáveis por anon | 0 |
-| SECURITY DEFINER executáveis por authenticated | 7 |
-| Tabelas no Realtime | 1 |
-| Edge Functions ativas | 8 |
+| Funções SECURITY DEFINER | 203 |
+| SECURITY DEFINER executáveis por anon | 3 |
+| SECURITY DEFINER executáveis por authenticated | 10 |
+| Tabelas no Realtime | 2 |
+| Edge Functions ativas | 11 |
 | Crons operacionais ativos | 5 |
 
 ### Dívida de RLS que bloqueia produção
@@ -41,8 +41,8 @@ RLS habilitado, mas sem policy: .
 | ---: | --- | ---: |
 | 0 | not started | 1 |
 | 1 | foundation only | 2 |
-| 2 | local functional | 4 |
-| 3 | staging canary or hybrid | 7 |
+| 2 | local functional | 3 |
+| 3 | staging canary or hybrid | 8 |
 | 4 | staging operational | 9 |
 | 5 | private beta ready | 0 |
 | 6 | production ready | 0 |
@@ -69,7 +69,7 @@ RLS habilitado, mas sem policy: .
 | 16 | CONTENT-001 | Workers, publicações, mídia e feed social | 2/6 | local | contract only | local e2e | blocked | blocked |
 | 17 | ADM-001 | Administração, suporte e moderação | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 18 | REL-001 | Observabilidade, incidentes, SLOs e proteção de mudanças | 4/6 | remote | canonical | staging operational | passed | candidate |
-| 19 | ANA-001 | Analytics, funil e economia do marketplace | 2/6 | hybrid | partial | local e2e | partial | blocked |
+| 19 | ANA-001 | Analytics, funil e economia do marketplace | 3/6 | hybrid | partial | staging canary | partial | blocked |
 | 20 | LEGAL-001 | Jurídico, privacidade, confiança e políticas comerciais | 1/6 | local | none | absent | blocked | blocked |
 | 21 | WEB-001 | Fechamento do web, acessibilidade e performance | 3/6 | hybrid | partial | local e2e | partial | blocked |
 | 22 | APP-001 | Aplicativos Android e iOS | 0/6 | local | none | absent | blocked | blocked |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1531 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 376 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1628 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 226 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 272 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -176,7 +176,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Four self-service financial RPCs remain explicitly authenticated and revalidate active canonical roles from public.users; forged JWT metadata cannot elevate financial authority.
 - Support/admin financial decisions now pass through financial-operations version 1 with verify_jwt enabled and service-role-only internal RPCs that revalidate the canonical actor.
 - Twenty-six remote financial persona and mutation canaries passed in one rolled-back transaction, including withdrawal idempotency, dispute lifecycle, direct-DML denial and operator separation.
-- All 45 public tables now have RLS enabled; the security advisor reports zero rls_disabled_in_public findings.
+- All 48 public tables currently observed in staging have RLS enabled and all 48 have at least one public-schema RLS policy; zero public tables are RLS-disabled.
 - Notifications are authenticated-only with recipient RLS, column-scoped state updates, safe search_path and immutable idempotency context.
 - audit_logs, categories, favorites, availability, reviews, budgets, message attachments, reports and community tables now use explicit least-privilege grants and persona RLS.
 - service-media no longer exposes a broad storage listing policy; owner operations are folder- and identity-scoped while public object delivery remains bucket-native.
@@ -190,7 +190,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The JWT-protected self-service-operations Edge Function derives the actor from auth.getUser and invokes a service-role-only dispatcher; actor identity is never accepted from the request body.
 - The dispatcher reconstructs auth.uid for the existing hardened domain implementations and rejects operations outside a fourteen-action allowlist.
 - Five new remote dispatcher assertions passed with rollback; the cumulative SEC-001 remote assertion count is 121.
-- The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.
+- The current staging security advisor reports the intentionally public SECURITY DEFINER surfaces for username availability/public search, authenticated canonical order-command surfaces, and leaked-password protection disabled; CAT-B06 moderation wrappers remain service-role-only and are not among those findings.
 - Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.
 - Source files for migrations 110-134, the service-moderation-operations Edge Function, SQL validations and contract tests were recovered byte-for-byte from the prior validated public-data-authority delivery; the published SHA-256 manifest was verified. This recovery is packaged for review but is not Git-authoritative until committed and validated in CI.
 - SEC-B08 was closed after the checksum-proven migrations 110-134 and service-moderation sources were committed at d0ae2657, the GitHub quality gates passed on that SHA, and the matching migration names plus service-moderation-operations v2 were observed read-only in staging.
@@ -300,11 +300,11 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI remote; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 17 arquivos no escopo; 2 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 21 arquivos no escopo; 2 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `detalhe-anuncio.html`, `admin-anuncio-revisao.html`, `index.html`, `resultados.html`.
 
-**Tabelas/autoridades de dados:** `services`, `service_versions`, `service_media`, `service_categories`, `service_moderation_events`, `service_quote_templates`, `service_quote_questions`.
+**Tabelas/autoridades de dados:** `services`, `service_versions`, `service_media`, `service_categories`, `service_moderation_events`, `service_quote_templates`, `service_quote_questions`, `private.cat_listing_visibility_events_v1`, `private.cat_listing_visibility_ledger_state_v1`.
 
 **Edge Functions:** `quote-template-ai`, `service-moderation-operations`, `self-service-operations`.
 
@@ -323,14 +323,21 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-A04 complete: immutable signed uploads and reference-safe cleanup validated on 09e77e5236d2bc0c820d73768f0161f326adeefe.
 - CAT-B04 complete: approved service versions and historical order snapshots are immutable on 09e77e5236d2bc0c820d73768f0161f326adeefe.
 - CAT-A05 complete: Quality #1237, blocking E2E, 105 guards, Canary #806 and Diagnostic #901 converged on one stable head.
+- CAT-A06 is active in staging as a CAT-owned append-only listing visibility/version ledger. Synthetic canary preserved two repeated pause/restore cycles, a BA->SP visible-version dimension split, and history after source deletion; no existing non-synthetic listing baseline or historical backfill was written.
+- CAT-A07 defines a forward-only CAT-owned coverage epoch: a future authorized baseline must atomically snapshot every current service, append activation_baseline facts without rewriting CAT-A06 activation/history, and abort on any current-state/ledger drift. No baseline is executed by this contract.
+- CAT-A07 staging readiness now includes a serialized forward-baseline migration candidate, fail-closed current-state/ledger preflight, one activation_baseline fact per current service, append-only certified coverage epoch, and no CAT-A06 activation rewrite; nothing is applied to staging without the exact CAT-A07 authorization.
+- CAT-A07 schema is applied in staging, but baseline certification is fail-closed on CAT-A07-B01: one currently eligible published service lacks canonical state. Two baseline attempts persisted zero baseline facts and zero coverage epochs; the second aborts before writes via DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE.
+- CAT-A07 staging coverage is certified from 2026-09-23T00:06:30.6835Z: 2 current services reconciled to 2 activation_baseline facts, replay is idempotent, the CAT-A06 activation row remains immutable, and ANA-A10 consumes the certified epoch.
+- CAT-B06 is closed in staging by migration 20260923003844: all six service-role moderation wrappers revalidate the canonical active operator, reconstruct request.jwt.claim.sub/role/claims before delegating to auth.uid/current_user_role authorities, remain non-executable by anon/authenticated, and passed read, approve, request-changes, reject and negative-role canaries with mutation paths rolled back and zero persistent residue.
 
 **Bloqueadores:**
 - Nenhum.
 
 **Próximas ações:**
-- Proceed with SEARCH-001 as the next mandatory engineering domain.
-- Keep all CAT-001 authority and lifecycle audits cumulative in Quality.
-- Keep production blocked until the global security and launch gates are satisfied.
+- Keep all CAT-001 authority, lifecycle and CAT-A06 visibility-ledger audits cumulative in Quality.
+- Expose CAT-A06 only as a server-side source dependency for ANA liquidity; do not create a second lifecycle writer.
+- Preserve the certified CAT-A07 coverage epoch and keep all pre-epoch history partial; do not backfill or rewrite the CAT-A06 activation row.
+- Keep the CAT-B06 operator-context regression gate cumulative for all six service-role moderation wrappers.
 
 **Gate de saída:**
 - Create, submit, moderate, publish, edit, pause and archive work remotely.
@@ -344,7 +351,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 229 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 275 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +546,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1429 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 374 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1526 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1054,25 +1061,88 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Measure liquidity, conversion, retention, GMV and unit economics using trustworthy events.
 
-**Estado:** maturidade 2/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
+**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 4 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 7 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 82 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
-**Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`.
+**Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`, `private.analytics_metric_publication_policies_v1`.
+
+**Edge Functions:** `analytics-behavior-v1`.
+**Crons:** `doke-ana-liquidity-v1-r1`.
 
 **Evidências:**
 - Service and quote-template metric events exist.
 - No complete canonical funnel from acquisition through repeat transaction exists.
+- ANA-A01 freezes the repository-only authority baseline without granting runtime, staging or production analytics authority.
+- ANA-A02 materializes a versioned event taxonomy separating browser behavior, canonical domain facts, operational observability and derived projections.
+- ANA-A03 materializes server-owned session, exposure-proof, semantic-dedup and privacy boundaries while anonymous identity stitching remains disabled behind LEGAL-B03.
+- ANA-A04 defines deterministic funnel, liquidity, outcome and retention projections; financial metrics remain explicitly unavailable while PAY is non-canonical.
+- ANA-A05 defines source/projection fingerprints, reconciliation, freshness, append-only revisions, backfill contracts and objective maturity gates.
+- ANA-A03 server runtime is deployed in staging with a service-role-only ledger, signed session/exposure envelopes, rate limiting and server-owned subject validation; canonical runtime policy secrets and values are configured.
+- ANA-A04 server projection runtime and append-only metric snapshot schema are applied in staging and were exercised by the functional synthetic canary.
+- ANA-A05 ORD reconciliation and low-cardinality data-quality rollups are applied in staging; reconciliation and unchanged-fingerprint no-op behavior passed the functional synthetic canary.
+- ANA-A03 web client wiring is materialized behind analyticsEnabled=false: search exposure tracking, service-detail CTA tracking and quote funnel tracking are present but produce no canonical analytics traffic by default.
+- ANA staging activation now has a repository-only, fingerprint-pinned dry-run/check-env gate that rejects execution and production targets and requires explicit staging authorization.
+- ANA now has a staging-only synthetic canary runner covering signed exposure, replay conflict, tamper rejection, owner exclusion, quote linkage, A04 projection and A05 reconciliation; CI is restricted to dry-run and never executes remote mutations.
+- Staging activation is present on doke-web-staging: five ANA migrations/follow-ups are applied and the current Search and analytics Edge runtimes are active.
+- ANA canonical staging canary run 35481347306 passed 15/15 without a policy shim, proving exact password login, signed exposure, replay/idempotency, tamper rejection, owner exclusion, quote linkage, ORD reconciliation and metric no-change behavior.
+- ANA-B01 canonical technical runtime policy is versioned in the staging-readiness contract: session TTL 1800s, quote TTL 3600s, exposure TTL 300s, rate limit 120/60s and semantic dedup 60s. These are security/integrity controls, not LEGAL-B03 data-retention authority.
+- The canonical canary kept production unchanged, browser analytics disabled and anonymous identity stitching disabled; a read-only event-window check found no prohibited PII dimension keys.
+- ANA defense-in-depth hardening has a repository-only fail-closed preflight: four private ANA tables are targeted for ENABLE ROW LEVEL SECURITY without FORCE RLS or new policies, and three advisor-reported FK columns are targeted for idempotent covering indexes; no migration file or staging mutation is authorized yet.
+- ANA defense-in-depth hardening is closed in staging: RLS is enabled on the four private ANA runtime tables without FORCE RLS or policies, grants/RPC authority are preserved, the three target FK advisor findings are cleared, and post-hardening canonical canary run 35628667088 passed 15/15.
+- ANA-A06 defines repository-only ownership, zero-tolerance structural-integrity thresholds and a fail-closed maturity-promotion gate for the two A05 data-quality rollups currently emitted in staging; it adds no alert delivery, runtime mutation, browser analytics, staging authority or production authority.
+- ANA-A06 authorized read-only staging evidence inspected all seven A05 reconciliation runs and fourteen rollups. The latest coherent run is hold because both required metrics are no_data with sample_count=0; two earlier non-empty synthetic runs passed with both ratios at zero, but historical pass evidence is not cherry-picked to override the latest no-data observation.
+- ANA-A06 controlled non-empty staging reconciliation canary passed: one existing synthetic ORD fact reconciled 1:1 with its ANA projection, both structural defect ratios were zero with sample_count=1, source/projection facts were unchanged, and the new run reproduced the historical fingerprints exactly.
+- ANA-A07 defines fail-closed repository authority for dataThrough, dependency watermarks, latest closed-window selection and fresh/stale/unavailable propagation. It explicitly forbids computedAt/max-event-time freshness and older-window cherry-picking; no maxLagSeconds default is invented.
+- ANA-A08 defines deterministic 30-day repeat-request and 90-day repeat-completion cohorts from canonical ORD client_id, anchored on first completion, matured by dataThrough and segmented by immutable first-completion category/state without inferring rehire or identity stitching.
+- ANA-A09 defines an explicit-key-only canonical funnel from ANA behavior to ORD order.requested: search_request_id+service_id, analytics_session_id+service_id, quote_session_id and submitted order_id are the only allowed joins; actor/time-proximity and anonymous stitching are forbidden.
+- CAT-A06 now provides a server-owned append-only listing visibility/version ledger in staging with deterministic per-service sequencing and synthetic canary evidence. Existing pre-activation listing history remains partial; ANA liquidity runtime has not yet consumed the ledger.
+- ANA-A10 defines deterministic repository liquidity projection from CAT-A06 service_id+sequence_no facts, keeps partial/unbaselined supply as a diagnostic lower bound rather than an authoritative metric, segments only by frozen CAT category/state dimensions, and delegates dataThrough to ANA-A07.
+- ANA-A10 server runtime is applied in staging with a CAT transaction-snapshot watermark, A04 append-only liquidity snapshots, A05 CAT→ANA reconciliation and technical DQ. Global/BA/SP synthetic canary appended 3 snapshots, 3 matched reconciliation runs and 6 healthy rollups while the 7-row CAT source/fingerprint stayed unchanged; no maxLag policy was invented, so freshness remains fail-closed and supply coverage remains partial.
+- ANA-A10 has a repository-only CAT-A07 handoff migration candidate: only windows beginning at/after a certified coverage_complete_from may become complete; pre-epoch history stays partial and freshness remains fail-closed until ANA-A11 policy activation.
+- ANA-A11 category-identity reconciliation proved that the certified CAT epoch legitimately mixes a canonical UUID category and a legacy freeform category with no canonical category row. The series candidate normalizes only casing to match A10 comparison semantics, forbids UUID/name/slug equivalence inference and preserves historical representation changes as distinct forward series.
+- ANA-A11 publication-policy selector now fails closed on overlapping effective policies and returns no implicit/default policy when none is effective; future operator overlap cannot silently become analytics authority.
+- CAT-A07 forward coverage is certified in staging and the ANA-A10 handoff preserves pre-epoch history as partial while allowing post-epoch windows to become complete when CAT watermark and required-series coverage permit.
+- ANA-A11 series orchestration, canonical-window planner, bounded catch-up executor and atomic policy-activation structures are applied and validated in staging; validations 034-038 and rollback canaries proved required-series enumeration, 300-second grid planning, oldest-first bounded recovery and replay/idempotency behavior without bypassing the planner.
+- ANA-A11 approval-envelope runtime enforcement is applied in staging as migration 20260923135957; validation 039 passed, the legacy object-only activation path is tombstoned, and policy activation is bound to exact repository/matrix/authorization/value/effective-window evidence.
+- ANA-A11 revision-1 operational policy is persistently active for liquidity.active_service_seconds: policyId ana-a11-liquidity-v1-r1, windowStepSeconds=300, projectionDelaySloSeconds=60, derived maxLagSeconds=360, windowAnchor=1970-01-01T00:00:00Z, maxCatchUpWindowsPerInvocation=3, oldest-first recovery, effectiveFrom=2026-09-23T16:00:00Z, effectiveUntil=null; publication and freshness registries each contain the single coupled revision-1 policy.
+- ANA-A11 scheduler activation candidate is applied and validation 040 passed; the persistent staging scheduler is job 8 named doke-ana-liquidity-v1-r1, active on * * * * * as postgres/postgres, and invokes only private.run_analytics_cat_liquidity_catch_up_v1('ana-a11-liquidity-v1-r1', clock_timestamp()), preserving the canonical planner -> window orchestrator -> A10 projection chain.
+- ANA-A11 post-effective read-only runtime certification passed: the first 16:00Z-16:05Z canonical window materialized 3/3 required series by 16:05:00.148650Z; 40/40 observed closed windows through 19:20Z were 300-second, complete, authoritative and reconciled; max publication delay was ~0.487s against the 60s SLO; duplicate snapshot keys and cron failures were zero; planner was empty; and ANA-A07 evaluated the latest 19:15Z-19:20Z canonical window at ~194.31s age against maxLagSeconds=360 with no older-window fallback. ANA-A11 is operationally certified in staging while ANA remains 3/6.
+- ANA-A07 now defines repository-only behavior/ORD dependency watermark authority using active_transaction_floor_v1: behavior completeness is fenced by server-owned received_at, ORD metric completeness by DB-owned created_at, max(event timestamp)/computedAt/windowEnd shortcuts are forbidden, prepared transactions fail closed, empty windows may advance, and late materialized facts must use A05 append-only revisions. Runtime watermark functions and migration remain unapplied; ANA stays 3/6.
+- ANA-A07 behavior/ORD watermark runtime candidate is repository-ready but unapplied: migration 20260923224000 defines a postgres-owned active_transaction_floor_v1 helper plus service-role-only behavior/ORD wrappers, scans active transactions before prepared transactions, uses a 1-microsecond inclusive predecessor, never derives watermarks from source maxima, and ships rollback-only validation 041. Staging application and multi-session concurrent-writer/late-fact evidence remain pending; ANA stays 3/6.
+- ANA-A07 staging migration 20260923230106 applied, but validation 041 failed at runtime with PostgreSQL 42883 because pg_catalog.least(timestamptz,timestamptz) does not exist. The historical migration remains immutable. Forward-only compatibility candidate 20260923231000 redefines only private.analytics_transaction_floor_watermark_v1() with an explicit CASE while preserving active-before-prepared scan order, prepared fail-closed behavior, the 1-microsecond predecessor and server-only grants. Candidate is repository-ready but unapplied; ANA remains 3/6.
+- ANA-A07 forward-only compatibility migration is applied in staging as 20260923231132 and validation 041 now passes. Read-only post-validation evidence confirms explicit-CASE helper execution, postgres owners, helper denied to service_role, behavior/ORD wrappers service-role-only, fresh NO_ACTIVE_TRANSACTION envelopes, preparedTransactionCount=0 and zero watermark cron jobs. This is structural/runtime-envelope certification only: multi-session concurrent-writer and downstream late-fact evidence remain pending, runtimeWatermarkAuthority stays false and ANA remains 3/6.
+- ANA-A07 behavior/ORD concurrent-writer staging canary passed using a transient pg_cron second session: writer xact_start=2026-09-23T23:31:34.252362Z, helper/behavior/ORD dataThrough=2026-09-23T23:31:34.252361Z (exactly 1 microsecond earlier), ACTIVE_TRANSACTION_FLOOR observed with activeTransactionCount=1, and all before-writer assertions passed. Job 9 was unscheduled immediately; its terminal failed/job canceled status is expected cleanup after evidence capture, with no residual job/session/prepared transaction/watermark cron and post-cleanup NO_ACTIVE_TRANSACTION recovery. The behavior/ORD runtime watermark mechanism is now certified; broader A07 staging authority and A09 projector/threshold/empty-window/late-fact evidence remain open. ANA stays 3/6.
+- ANA-A09 server-side canonical funnel projector candidate is repository-ready and unapplied. Migration 20260923235500 defines a compute-only service-role RPC plus private chronological stage projector, consumes certified A07 behavior/ORD watermarks, filters behavior by received_at+occurred_at and ORD by created_at+occurred_at, recomputes the final quote-submitted->order-requested transition at the cross-domain watermark, preserves explicit-key-only linkage, and keeps snapshotPublicationAllowed=false while metric-specific A07 thresholds and complete/orphan/empty/late-fact staging evidence are pending. ANA remains 3/6.
+- ANA-A09 compute-only funnel projector is installed in staging as migration 20260924002741 and validation 042 passes. Runtime postflight confirms postgres-owned private stage helper, service-role-only compute RPC, zero A09 cron jobs, eight computed funnel metrics, fresh A07 behavior/ORD watermarks, computeState=computed_policy_pending, freshnessPolicyState=threshold_pending, segmentation=global_only, runtimeAuthority=false and snapshotPublicationAllowed=false. Structural/runtime installation is closed; metric-specific freshness policy, complete/orphan/empty-window/late-fact evidence and append-only snapshot publication remain separate gates. ANA stays 3/6.
+- ANA-A07/A09 now has a repository-only revision-1 freshness-policy candidate for all eight canonical funnel metrics. The candidate proposes maxLagSeconds=360 for each metric, derived as the already-certified ANA 300-second window reference plus a 60-second projection-delay budget. The cross-domain final stage does not receive an extra ORD allowance because its dataThrough is already the minimum behavior/ORD watermark. No effectiveFrom is invented; missing policy remains unavailable, overlap is fail-closed, snapshotPublicationAllowed remains false, and the owner-only activation function is unapplied. ANA stays 3/6.
+- ANA-A07/A09 funnel freshness activation structure is installed in staging as migration 20260924005631 and validation 043 passes rollback-only. The postgres-only function proved atomic insertion of exactly eight transient r1 policies at maxLagSeconds=360 plus overlap rejection, then rollback left policyRowsPersisted=0, publicationPolicyRows=0 and cronJobs=0. No effectiveFrom/effectiveUntil is selected, thresholdValueAuthority remains false, A09 runtimeProjectionAuthority/runtimeSnapshotAuthority remain false and ANA stays 3/6.
+- ANA-A07/A09 revision-1 funnel freshness effective window is repository-approved and immutably bound: policySetId ana-a07-a09-funnel-v1-r1, eight v1 metrics at maxLagSeconds=360, effectiveFrom=2026-09-24T14:00:00Z, effectiveUntil=null, authorization SHA-256 4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a and evidence SHA-256 9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5. No activation occurred and policyRowsPersisted remains 0. The installed activation function cannot validate this envelope, so runtime envelope enforcement is the next gate and ANA remains 3/6.
+- ANA-A07/A09 now has a repository-only approval-envelope runtime-enforcement candidate. Migration 20260924140000 adds an exact envelope validator for repository HEAD, Matrix, raw authorization digest, the eight fixed funnel policies, effective window and evidence digest, and tombstones the legacy scalar-only activation path when applied. Validation 044 is rollback-only but has not run in staging. The candidate inserts no policy rows, writes no snapshots, creates no cron and intentionally creates no activation-capable successor because activationInvocationAuthorized and policyPersistenceAuthorized remain false. ANA stays 3/6.
+- ANA-A07/A09 approval-envelope runtime enforcement is applied and validated in staging: repository migration 20260924140000 registered as staging version 20260924141356; validation 044 PASS; validator owner postgres/security-definer with anon/authenticated/service_role EXECUTE revoked; legacy scalar-only activation path tombstoned; 0 funnel freshness policy rows persisted. PostgreSQL 63-byte identifier truncation is explicitly recorded for the long validator name. Activation remains separately unauthorized and ANA stays 3/6.
+- ANA-A07/A09 activation-invocation lifecycle contract is repository-defined and pending an explicit repository-only activation-approval authorization. The immediate command may only materialize completed activation-approval evidence and prepare an approval-aware successor migration candidate; it does not authorize staging application, activation invocation or policy persistence. The contract remains bound to the approved envelope digest, runtime-enforcement evidence blob 118ca5f948f93ca09c7a7305d1b230880fa98630, staging migration 20260924141356, validation 044 PASS, eight v1 policies at maxLagSeconds=360 and effectiveFrom=2026-09-24T14:00:00Z. ANA remains 3/6.
+- ANA-A07/A09 repository-only activation approval is materialized at authorized HEAD 9c54828972aa2d745491baf0c11335c00700035b. Authorization digest d72f3930dffb8ba36d49c22eaebec4f20cf88121280c4201a6eb8a140a7dc494 and activation-approval evidence digest ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603 bind the approved envelope digest, runtime-enforcement evidence blob, effective window and single-use future policy insertion. Migration 20260924144500 and validation 045 define the approval-aware successor candidate repository-only; staging application, persistent activation and policy persistence remain unauthorized. ANA stays 3/6.
+- ANA-A07/A09 approval-aware successor is installed and staging-validated: repository migration 20260924144500 registered as staging migration 20260925112930; validation 045 PASS rollback-only; validator and successor are postgres-owned SECURITY DEFINER functions with anon/authenticated/service_role EXECUTE revoked; transient eight-row activation and replay rejection passed; legacy tombstone remains active; persistent A07/A09 freshness-policy rows remain 0. Persistent activation remains separately unauthorized and ANA stays 3/6.
+- ANA-A07/A09 persistent freshness activation is closed in staging: the single-use authorization bound to HEAD e93da2286dfdafca34b7223e4ccd4f0b5a25e579 was consumed exactly once; private.activate_a09_funnel_policy_approved_v1 validated both approval layers and inserted exactly eight v1 freshness-policy rows at maxLagSeconds=360 with effectiveFrom=2026-09-24T14:00:00Z and effectiveUntil=null. Direct post-check confirmed 8/8 exact bindings, 0 publication-policy rows, 0 post-activation snapshots and 0 matching cron jobs. Persistent activation evidence blob 24ddfedcb29b465f510130befe61d4e4a283e2d2; runtime canaries remain pending and ANA stays 3/6.
+- ANA-A07/A09 four-path funnel runtime canary contract is repository-ready and staging-execution unauthorized. Validation 046 defines rollback-only complete/orphan/empty-window coverage; late-fact requires the certified active-transaction-floor pattern with a transient pg_cron second session, pre/post projection assertions and mandatory exact-marker cleanup. The contract is bound to active policy set ana-a07-a09-funnel-v1-r1 and persistent-activation evidence blob 24ddfedcb29b465f510130befe61d4e4a283e2d2. No canary was executed, no snapshot/cron authority was granted and ANA remains 3/6.
+- ANA-A07/A09 runtime-canary identity blocker was root-caused to retired fixed UUIDs in validation 046. Canonical staging Auth canaries and public projections exist under seed 002's email-resolved authority. Repository remediation now resolves cliente@doke.local/profissional@doke.local through auth.users joined to public.users, requires matching UUID/role/status, retires the legacy fixed IDs, and requires a fresh staging execution token on the new HEAD. The failed pre-remediation 046 left zero services/orders/behavior rows/cron/snapshots; no Auth reprovisioning or seed replay is required. ANA remains 3/6.
+- ANA-A07/A09 validation 046 service-eligibility blocker was root-caused to an invalid draft-only synthetic service fixture. Canonical ORD requires a published service with an approved service_versions row bound through approved_version_id and eligible moderation status. Repository remediation now builds an approved synthetic version, promotes the service under transaction-local doke.service_moderation_apply=on, asserts service/version/professional eligibility before order creation, and remains rollback-only. The failed pre-remediation attempt left zero services, service versions, orders, behavior rows, order metric rows and canary cron jobs; no runtime defect was found. ANA remains 3/6.
+- ANA-A07/A09 complete/orphan/empty-window/late-fact runtime canaries are certified in staging. Validation 046 PASS covered complete/orphan/empty-window rollback-only. Certified late-fact writer job 11/run 154490 proved the active transaction floor at writer xact_start 2026-09-25T13:33:12.644938Z with dataThrough exactly 1 microsecond earlier, pre-commit final funnel metric 0/1, and post-commit same-window metric 1/1. Cleanup PASS left zero synthetic services/orders/events/cron/writers/prepared transactions and zero canary-window snapshots while preserving 8 active freshness policies. Evidence blob 3b7274a391a857f2de06538f3302f6be01b06734. Runtime projection, runtime snapshot and snapshot publication authority remain false; ANA stays 3/6.
+- ANA-A07/A09 explicit repository-only runtime projection authority is granted at source HEAD 28960baecb1b495b16c3799c55a80305764db0ac, bound to policy set ana-a07-a09-funnel-v1-r1, canary contract ana-a07-a09-funnel-runtime-canary-contract-v1 and certified staging-evidence blob 3b7274a391a857f2de06538f3302f6be01b06734. This grant performs no staging mutation: the historical live compute observation still reports runtimeAuthority=false, while runtime snapshot and snapshot publication authority remain false. ANA stays 3/6.
+- ANA-A09 immutable category/state funnel segmentation is now repository-defined from CAT-A06 frozen listing visibility dimensions plus the CAT-A07 forward coverage epoch. Journeys are anchored to the canonical impression, UUID/name/slug category identities are never inferred equivalent, mutable current-service joins are forbidden, and CAT becomes an additional dependency for segmented dataThrough. Runtime segmentation, staging evidence and snapshot publication remain false; ANA stays 3/6.
+- ANA-A09 immutable category/state funnel segmentation now has a separately authorized repository-only runtime candidate: forward migration 20260925145500 plus rollback-only validation 047. The candidate resolves CAT-A06 frozen dimensions at the canonical impression, requires a CAT-A07 certified coverage epoch, adds the CAT watermark to segmented dataThrough, preserves UUID/slug/name identity separation, leaves the global A09 projector unchanged and contains no snapshot write or scheduler. The migration is not applied, validation 047 has not run, runtime segmentation/snapshot/publication authority remain false, and ANA stays 3/6.
 
 **Bloqueadores:**
-- **ANA-B01 · HIGH · event_model:** Product event taxonomy, identity stitching and consent rules are incomplete. _(Fase 15)_
-- **ANA-B02 · HIGH · business_metrics:** GMV, take rate, liquidity, retention, CAC and LTV are not consolidated. _(Fase 15)_
-- **ANA-B03 · MEDIUM · data_quality:** No metric reconciliation or late-event policy is defined. _(Fase 15)_
+- **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
+- **ANA-B02 · HIGH · business_metrics:** Core ORD-derived marketplace projections are applied and functionally exercised in staging, but PAY-backed GMV/take rate and downstream CAC/LTV remain unavailable until PAY becomes canonical. _(Fase 15)_
 
 **Próximas ações:**
-- Define canonical marketplace event taxonomy.
-- Build server-side funnel and marketplace health projections.
-- Add data quality checks and privacy controls.
+- Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
+- Treat ANA-A09 runtime projection authority as repository-granted. Any forward-only live runtimeAuthority alignment, runtime snapshot authority or append-only snapshot publication requires a separate explicit authorization; do not infer staging mutation or maturity promotion from this repository grant.
+- Under a new explicit staging-only authorization bound to the then-current PR HEAD, apply ANA-A09 segmentation migration 20260925145500 and execute rollback-only validation 047; keep runtime segmentation authority, runtime snapshot/publication, production, merge and Ready false until staging evidence is certified.
+- Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.
+- Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.
+- Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
 
 **Gate de saída:**
 - Core funnel metrics reconcile with transactional tables.
@@ -1086,7 +1156,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 312 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 340 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1115,7 +1185,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 855 arquivos no escopo; 230 referências a localStorage; 71 a sessionStorage; 241 referências mock; 257 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 856 arquivos no escopo; 230 referências a localStorage; 75 a sessionStorage; 241 referências mock; 259 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -1146,7 +1216,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3416 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 812 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3610 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1207,4 +1277,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-15T21:20:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-25T15:03:07.000Z._

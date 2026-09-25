@@ -1,0 +1,239 @@
+{
+  "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
+  "domain": "ANA-001",
+  "sourceHead": "94b7c0b825b8ba6f30953de6c187c2c28cbfa908",
+  "createdAt": "2026-09-23T22:38:52.389634Z",
+  "scope": "repository_only",
+  "status": "staging_runtime_watermark_certified_downstream_projection_canaries_certified",
+  "objective": "Define fail-closed server-side materialization watermarks for ANA behavioral facts and ORD metric facts so A07/A09 can derive dataThrough without max(event timestamp), computedAt, or assumed windowEnd authority.",
+  "rootCause": {
+    "behaviorGap": "private.analytics_behavior_events_v1 has server-owned received_at/occurred_at facts but no server-authoritative watermark proving the ledger is materialized through an empty or non-empty time boundary.",
+    "orderGap": "private.order_metric_events is an atomic ORD projection but no watermark proves which committed projection facts are materialized through a boundary; occurred_at is event time and cannot itself prove materialization completeness.",
+    "concurrencyRisk": "A transaction can be in flight while a projection reads. A max event timestamp or clock-only watermark could overclaim completeness if that transaction commits later with a materialization timestamp at or before the claimed boundary.",
+    "rejectedShortcuts": [
+      "max(occurred_at)",
+      "max(received_at)",
+      "max(created_at)",
+      "computedAt",
+      "windowEnd by assumption",
+      "track_commit_timestamp dependency"
+    ]
+  },
+  "platformObservation": {
+    "environment": "staging",
+    "observedAt": "2026-09-23T22:38:52.389634Z",
+    "postgresVersion": "17.6",
+    "defaultTransactionIsolation": "read committed",
+    "trackCommitTimestamp": "off",
+    "maxPreparedTransactions": 0,
+    "preparedTransactionCount": 0,
+    "behaviorCommitSequencePresent": false,
+    "orderMetricCommitSequencePresent": false,
+    "mutationPerformed": false
+  },
+  "watermarkBasis": {
+    "id": "active_transaction_floor_v1",
+    "observationClock": "pg_catalog.clock_timestamp()",
+    "activeTransactionSource": "pg_catalog.pg_stat_activity.xact_start",
+    "activeTransactionScope": "all backends in current_database() with xact_start not null, excluding pg_backend_pid()",
+    "preparedTransactionPolicy": "fail_closed_when_any_current_database_prepared_transaction_exists",
+    "noActiveTransactionBoundary": "observationClock",
+    "activeTransactionBoundary": "least(observationClock, earliestActiveXactStart - interval '1 microsecond')",
+    "boundarySemantics": "inclusive materialization boundary",
+    "rationale": "Any transaction already in flight has a transaction start strictly after the predecessor boundary; any transaction starting later is also after it. Therefore a later commit cannot introduce a source row whose server-owned materialization timestamp is <= the published watermark. Prepared transactions are separately fail-closed.",
+    "maxEventTimestampDefinesWatermark": false,
+    "eventTimeDefinesMaterialization": false,
+    "computedAtDefinesWatermark": false,
+    "emptyWindowCanAdvance": true,
+    "globalTransactionFloorIsConservative": true
+  },
+  "dependencies": [
+    {
+      "dependencyId": "behavior",
+      "sourceDomain": "ANA-001",
+      "sourceRelation": "private.analytics_behavior_events_v1",
+      "canonicalEventTime": "occurred_at",
+      "materializationTime": "received_at",
+      "materializationTimeAuthority": "server-owned clock_timestamp assigned by public.record_analytics_behavior_event_v1",
+      "proposedWatermarkFunction": "private.analytics_behavior_watermark_v1()",
+      "requiredFunctionResult": {
+        "contractId": "ana-a07-behavior-watermark-v1",
+        "sourceDomain": "ANA-001",
+        "sourceRelation": "private.analytics_behavior_events_v1",
+        "dataThrough": "timestamptz|null",
+        "freshnessState": "fresh|unavailable",
+        "basis": "active_transaction_floor_v1",
+        "materializationTime": "received_at"
+      }
+    },
+    {
+      "dependencyId": "order_metric",
+      "sourceDomain": "ORD-001",
+      "sourceRelation": "private.order_metric_events",
+      "canonicalEventTime": "occurred_at",
+      "materializationTime": "created_at",
+      "materializationTimeAuthority": "database default now() on private ORD metric projection inserted atomically by private.project_order_domain_event",
+      "proposedWatermarkFunction": "private.order_metric_watermark_v1()",
+      "requiredFunctionResult": {
+        "contractId": "ana-a07-order-metric-watermark-v1",
+        "sourceDomain": "ORD-001",
+        "sourceRelation": "private.order_metric_events",
+        "dataThrough": "timestamptz|null",
+        "freshnessState": "fresh|unavailable",
+        "basis": "active_transaction_floor_v1",
+        "materializationTime": "created_at"
+      }
+    }
+  ],
+  "projectionRules": {
+    "behaviorRowEligibility": "received_at <= behaviorWatermark.dataThrough AND occurred_at <= metricDataThrough",
+    "orderRowEligibility": "created_at <= orderWatermark.dataThrough AND occurred_at <= metricDataThrough",
+    "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
+    "behaviorAndOrderDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough)",
+    "lateFactPolicy": "A source fact whose event time belongs to an older metric period but whose materialization time is after a prior dataThrough is excluded from that prior read and must enter through A05 append-only revision/backfill semantics when recomputed; prior finalized snapshots are never silently overwritten.",
+    "emptyWindowRule": "A watermark may advance with zero source rows because completeness is proven by the transaction floor rather than by event presence.",
+    "missingWatermark": "unavailable",
+    "preparedTransactionPresent": "unavailable",
+    "futureWatermark": "fail_closed"
+  },
+  "funnelDependencySets": {
+    "behaviorOnly": [
+      "funnel.search_ctr",
+      "funnel.impression_to_click",
+      "funnel.click_to_detail",
+      "funnel.detail_to_budget_cta",
+      "funnel.budget_cta_to_quote_started",
+      "funnel.quote_started_to_completed",
+      "funnel.quote_completed_to_submitted"
+    ],
+    "behaviorAndOrder": [
+      "funnel.quote_submitted_to_order_requested"
+    ]
+  },
+  "runtimeCandidate": {
+    "migrationCreated": true,
+    "migrationApplied": true,
+    "stagingValidated": true,
+    "helperFunction": "private.analytics_transaction_floor_watermark_v1()",
+    "behaviorFunction": "private.analytics_behavior_watermark_v1()",
+    "orderFunction": "private.order_metric_watermark_v1()",
+    "functionOwner": "postgres",
+    "securityDefinerRequired": true,
+    "browserExecuteAllowed": false,
+    "serviceRoleExecuteCandidate": true,
+    "schedulerRequired": false,
+    "sourceMutationRequired": false,
+    "migration": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
+    "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+    "readinessContract": "config/ana-a07-behavior-ord-watermark-runtime-readiness.json",
+    "stagingMigrationVersion": "20260923230106",
+    "validation041": {
+      "status": "passed",
+      "path": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+      "previousFailure": {
+        "status": "failed",
+        "errorCode": "42883",
+        "rootCause": "invalid pg_catalog.least qualification"
+      },
+      "remediation": "compatibility migration 20260923231132",
+      "concurrentWriterCovered": true,
+      "lateFactCovered": false
+    },
+    "compatibilityCandidate": {
+      "migration": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
+      "migrationCreated": true,
+      "migrationApplied": true,
+      "stagingValidated": false,
+      "strategy": "forward_only_create_or_replace_helper",
+      "helperOnly": true,
+      "originalMigrationEdited": false,
+      "replacementExpression": "explicit CASE over observedAt and active-predecessor",
+      "preservesActiveBeforePreparedScan": true,
+      "preservesPreparedFailClosed": true,
+      "preservesOneMicrosecondPredecessor": true,
+      "changesWrappers": false,
+      "changesGrants": false,
+      "changesScheduler": false,
+      "sourceMutationRequired": false,
+      "stagingMigrationVersion": "20260923231132",
+      "stagingValidated041": true,
+      "validation041Status": "PASS",
+      "appliedAuthorization": "authorize-ana-a07-watermark-compatibility-staging head=612348f0695c7cf8d573ff1e330c872ef5eedc70 matrix=v1.3.132 migration=20260923231000 validation=041"
+    },
+    "structuralValidation041Passed": true,
+    "concurrentWriterCanary": {
+      "status": "PASS",
+      "evidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+      "executor": "transient_pg_cron_second_session",
+      "transientCronJobId": 9,
+      "cleanup": "PASS",
+      "activeTransactionFloorProven": true,
+      "oneMicrosecondPredecessorProven": true
+    }
+  },
+  "activationRequirements": [
+    "make A09 runtime filter source rows by materialization time as well as canonical event time",
+    "preserve A05 append-only revision semantics for late materialized facts",
+    "execute the repository-defined complete/orphan/empty-window/late-fact staging canary set under separate explicit staging authorization",
+    "require explicit staging authorization before executing downstream mutating canaries"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "materializationTimeAuthority": true,
+    "watermarkAlgorithmAuthority": true,
+    "funnelDependencySetAuthority": true,
+    "runtimeWatermarkAuthority": true,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "runtimeCanaryEvidenceAuthority": true
+  },
+  "prohibitedEffects": {
+    "databaseMutation": false,
+    "migrationCreated": false,
+    "migrationApplied": false,
+    "edgeDeployment": false,
+    "schedulerCreated": false,
+    "browserAnalyticsActivated": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "Behavior/ORD watermark runtime is certified, and downstream complete/orphan/empty-window/late-fact projection canaries now pass in staging with cleanup complete. Runtime projection authority remains a separate explicit ANA-A09 gate; ANA stays 3/6."
+  },
+  "runtimeEvidence": {
+    "artifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "priorArtifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
+    "status": "runtime_watermark_certified",
+    "observedAt": "2026-09-23T23:32:33.778851Z",
+    "helperExecutionHealthy": true,
+    "wrappersHealthy": true,
+    "concurrentWriterCertified": true,
+    "lateFactCertified": false,
+    "cleanupPassed": true
+  },
+  "runtimeWatermarkCertification": {
+    "status": "certified",
+    "basis": "active_transaction_floor_v1",
+    "validation041Passed": true,
+    "noActiveTransactionObserved": true,
+    "concurrentWriterPassed": true,
+    "grantsValidated": true,
+    "preparedTransactionPolicy": "static_fail_closed_runtime_branch_unexercisable_while_max_prepared_transactions_0",
+    "emptyWindowSemantics": "algorithmic_property_no_source_max_dependency",
+    "evidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "downstreamRuntimeCanaryContract": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
+    "emptyWindowProjectionCertified": true,
+    "lateFactCertified": true,
+    "stagingCanaryExecutionAuthorized": false,
+    "completeProjectionCertified": true,
+    "orphanProjectionCertified": true,
+    "downstreamRuntimeCanaryEvidence": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "downstreamRuntimeCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "cleanupStatus": "PASS"
+  }
+}

@@ -1,0 +1,136 @@
+name: ANA-001 Domain Matrix Refresh Evidence
+# CAT-A06 listing visibility ledger matrix refresh
+# ANA-A10 CAT liquidity projection matrix refresh
+# ANA-A10 runtime staging evidence matrix refresh
+# ANA-A11 and CAT-A07 policy/coverage contracts matrix refresh
+# ANA-A11 atomic policy activation matrix refresh
+# ANA-A11 policy approval envelope matrix refresh
+# ANA-A11 policy approval envelope runtime enforcement matrix refresh
+# ANA-A11 scheduler activation candidate matrix refresh
+# ANA-A11 scheduler candidate staging evidence matrix refresh
+# ANA-A11 scheduler persistent activation matrix refresh
+# ANA-A11 runtime-state matrix reconciliation refresh
+# ANA-A11 post-effective runtime evidence certification refresh
+# ANA-A07 behavior/ORD watermark authority matrix refresh
+# ANA-A07 behavior/ORD watermark runtime candidate matrix refresh
+# ANA-A07 watermark compatibility candidate matrix refresh
+# ANA-A07 watermark compatibility runtime-state reconciliation refresh
+# ANA-A07 concurrent-writer runtime-state reconciliation refresh
+# ANA-A09 server-side funnel projector candidate matrix refresh
+# ANA-A09 projector staging validation runtime-state reconciliation refresh
+# ANA-A07/A09 funnel freshness policy candidate matrix refresh
+# ANA-A07/A09 funnel freshness activation structure runtime-state reconciliation refresh
+# ANA-A07/A09 funnel freshness activation envelope matrix refresh
+# ANA-A07/A09 approval-envelope runtime-enforcement candidate matrix refresh
+# ANA-A07/A09 runtime-enforcement staging evidence matrix refresh
+# ANA-A07/A09 activation-invocation authorization contract matrix refresh
+# ANA-A07/A09 activation-approval authorization scope correction matrix refresh
+# ANA-A07/A09 activation approval + successor candidate matrix refresh
+# ANA-A07/A09 approved successor staging validation matrix refresh
+# ANA-A07/A09 persistent freshness activation matrix refresh
+# ANA-A07/A09 funnel runtime canary contract matrix refresh
+# ANA-A07/A09 runtime canary identity remediation matrix refresh
+# ANA-A07/A09 runtime canary service eligibility remediation matrix refresh
+# ANA-A07/A09 runtime canary staging evidence reconciliation matrix refresh
+# CAT-A07 staging blocker evidence matrix refresh
+# CAT-A07 certified coverage epoch matrix refresh
+# CAT-A07 staging readiness matrix refresh
+# ANA-A09 canonical funnel projection matrix refresh
+# ANA-A09 immutable funnel segmentation runtime candidate matrix refresh
+# ANA-A09 immutable funnel segmentation runtime candidate final matrix refresh
+# ANA-A08 retention cohort projection matrix refresh
+# ANA-A06 repository governance refresh trigger
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+    paths:
+      - '.github/workflows/ana-001-domain-matrix-refresh-evidence.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ana-001-domain-matrix-refresh-apply
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+
+      - name: Gate single-use generated matrix apply
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow='.github/workflows/ana-001-domain-matrix-refresh-evidence.yml'
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$workflow")"
+          expected="$(printf 'M\t%s' "$workflow")"
+          if [ "$status" = "$expected" ]; then
+            echo "active=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "Generated-matrix apply already consumed or unrelated synchronize event; write skipped."
+          fi
+
+      - name: Setup Node
+        if: steps.gate.outputs.active == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install pinned dependencies
+        if: steps.gate.outputs.active == 'true'
+        run: npm ci --ignore-scripts
+
+      - name: Generate canonical domain matrix
+        if: steps.gate.outputs.active == 'true'
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate generated matrix
+        if: steps.gate.outputs.active == 'true'
+        run: |
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Commit generated matrix only
+        if: steps.gate.outputs.active == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "Generated matrix already canonical."
+            exit 0
+          fi
+          changed="$(git diff --cached --name-only)"
+          while IFS= read -r file; do
+            case "$file" in
+              docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json) ;;
+              *) echo "Unexpected generated file: $file" >&2; exit 1 ;;
+            esac
+          done <<< "$changed"
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git commit -m "ANA-001: sync generated matrix after analytics authority refresh"
+          git push origin HEAD:ana/ana-001-foundation
+
+      - name: Upload generated matrix evidence
+        if: always() && steps.gate.outputs.active == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ana-001-domain-matrix-refresh-${{ github.run_id }}
+          path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
+          if-no-files-found: error
+          retention-days: 7

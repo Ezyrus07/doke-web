@@ -1,0 +1,78 @@
+{
+  "contractId": "cat-a07-supply-coverage-baseline-staging-attempt-v1",
+  "sourceContract": "cat-a07-supply-coverage-baseline-v1",
+  "repositoryHeadAtAttempt": "2c2f975b3c721670bca8c5adaa4bdf6540955c3d",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "authorization": "authorize-cat-a07-supply-coverage-baseline-staging",
+  "migrations": [
+    {
+      "name": "cat_a07_supply_coverage_baseline",
+      "version": "20260922145541",
+      "applied": true
+    },
+    {
+      "name": "cat_a07_supply_coverage_dimension_preflight",
+      "version": "20260922145917",
+      "applied": true
+    }
+  ],
+  "structuralValidation": "pass",
+  "initialReadOnlyPreflight": {
+    "sourceServiceCount": 2,
+    "eligibleServiceCount": 2,
+    "sourceLedgerRows": 7,
+    "structuralDefects": 0,
+    "eligibilityDrift": 0,
+    "visibleSnapshotDrift": 0,
+    "openMissingSource": 0,
+    "servicesWithoutLedger": 2
+  },
+  "baselineRunId": "04566ad6-8bc8-0c93-4205-7f9134e8d65f",
+  "attempts": [
+    {
+      "result": "rolled_back_atomically",
+      "error": "DOKE_CAT_A07_POST_BASELINE_STRUCTURAL_FAILED",
+      "cause": "An eligible current service lacked the required state dimension; the first runner detected this only in post-write structural validation.",
+      "persistedBaselineEvents": 0,
+      "persistedCoverageEpochs": 0
+    },
+    {
+      "result": "blocked_pre_write",
+      "error": "DOKE_CAT_A07_CURRENT_DIMENSIONS_INCOMPLETE",
+      "detail": "eligible_services_with_incomplete_dimensions=1",
+      "persistedBaselineEvents": 0,
+      "persistedCoverageEpochs": 0
+    }
+  ],
+  "blocker": {
+    "id": "CAT-A07-B01",
+    "severity": "high",
+    "category": "canonical_dimension_completeness",
+    "affectedEligibleServiceCount": 1,
+    "missingCanonicalDimension": "state",
+    "rootCause": "CAT public eligibility currently does not require canonical state, while ANA liquidity category/state segmentation does.",
+    "forbiddenResolution": [
+      "infer state from free-text city/location",
+      "mutate the service under CAT-A07 baseline authorization",
+      "certify a global coverage epoch while regional dimensions are incomplete",
+      "apply the ANA-A10 coverage handoff without a certified CAT-A07 epoch"
+    ],
+    "requiredResolution": "Resolve canonical service-region data through CAT-owned service/version authority under a separately authorized remediation, then rerun the same baseline run id or a new authorized run."
+  },
+  "postConditions": {
+    "ledgerRows": 7,
+    "baselineEvents": 0,
+    "coverageEpochs": 0,
+    "freshnessPolicyRows": 0,
+    "anaCoverageHandoffApplied": false,
+    "productionChanged": false
+  },
+  "maturity": {
+    "catBefore": 4,
+    "catAfter": 4,
+    "anaBefore": 3,
+    "anaAfter": 3
+  },
+  "result": "blocked_fail_closed_no_epoch_certified"
+}

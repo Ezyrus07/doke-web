@@ -1,0 +1,135 @@
+{
+  "contractId": "ana-a07-a09-funnel-runtime-canary-staging-evidence-v1",
+  "domain": "ANA-001",
+  "environment": "staging",
+  "authorization": {
+    "command": "authorize-ana-a07-a09-funnel-runtime-canary-staging-evidence-reconciliation-repository-only head=5ba0bc5d23cd24a916c296797cde6adc0d0b8f87 matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 validation=046 validation046=PASS canarySet=complete-orphan-empty-window-late-fact lateFact=PASS certifiedWriterJobId=11 certifiedWriterRunId=154490 windowStart=2026-09-25T13:28:49.777920Z windowEnd=2026-09-25T13:33:49.777920Z writerXactStart=2026-09-25T13:33:12.644938Z floorDataThrough=2026-09-25T13:33:12.644937Z predecessorDeltaMicroseconds=1 preCommitRequested=0/1 postCommitRequested=1/1 snapshotWrites=0 cleanup=PASS",
+    "digestSha256": "b29a1c0058b9669c2054185cb5aea9704d4903b2d3caa28aa5e6408a92be68cf",
+    "authorizedRepositoryHead": "5ba0bc5d23cd24a916c296797cde6adc0d0b8f87",
+    "matrixVersion": "1.3.132",
+    "repositoryOnlyReconciliation": true
+  },
+  "bindings": {
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+    "validation": "046",
+    "identityAuthority": "seed002-email-resolved",
+    "serviceEligibilityAuthority": "approved-service-version",
+    "fixtureMode": "synthetic-approved-version",
+    "lateFactExecutor": "transient_pg_cron_second_session"
+  },
+  "validation046": {
+    "status": "PASS",
+    "cases": {
+      "complete": "PASS",
+      "orphan": "PASS",
+      "emptyWindow": "PASS"
+    },
+    "rollbackOnly": true,
+    "persistentMutation": false
+  },
+  "lateFact": {
+    "status": "PASS",
+    "windowStart": "2026-09-25T13:28:49.777920Z",
+    "windowEnd": "2026-09-25T13:33:49.777920Z",
+    "inconclusiveAttempt": {
+      "jobId": 10,
+      "runId": 154483,
+      "status": "succeeded",
+      "startedAt": "2026-09-25T13:30:55.282492Z",
+      "endedAt": "2026-09-25T13:31:25.331682Z",
+      "observationStatus": "inconclusive",
+      "reason": "writer was observed active, but the follow-up floor/projector query arrived after commit; no certification impact",
+      "persistentSideEffectAfterRetryCleanup": false
+    },
+    "certifiedWriter": {
+      "jobId": 11,
+      "runId": 154490,
+      "status": "succeeded",
+      "startedAt": "2026-09-25T13:33:12.644886Z",
+      "endedAt": "2026-09-25T13:33:57.740946Z",
+      "writerPid": 3411072,
+      "writerXactStart": "2026-09-25T13:33:12.644938Z",
+      "writerState": "active",
+      "allOtherActiveTransactions": 1,
+      "writerIsFloorTransaction": true,
+      "floorReason": "ACTIVE_TRANSACTION_FLOOR",
+      "floorActiveTransactionCount": 1,
+      "floorEarliestActiveXactStart": "2026-09-25T13:33:12.644938Z",
+      "floorDataThrough": "2026-09-25T13:33:12.644937Z",
+      "predecessorDeltaMicroseconds": 1
+    },
+    "preCommitProjection": {
+      "state": "computed_policy_pending",
+      "behaviorDataThrough": "2026-09-25T13:33:12.644937Z",
+      "crossDomainDataThrough": "2026-09-25T13:33:12.644937Z",
+      "requestedNumerator": 0,
+      "requestedDenominator": 1,
+      "requestedSampleCount": 1,
+      "snapshotPublicationAllowed": false,
+      "runtimeAuthority": false
+    },
+    "postCommitProjection": {
+      "state": "computed_policy_pending",
+      "behaviorDataThrough": "2026-09-25T13:33:49.777920Z",
+      "crossDomainDataThrough": "2026-09-25T13:33:49.777920Z",
+      "requestedNumerator": 1,
+      "requestedDenominator": 1,
+      "requestedSampleCount": 1,
+      "snapshotPublicationAllowed": false,
+      "runtimeAuthority": false,
+      "orderMetricRows": 1
+    }
+  },
+  "cleanup": {
+    "status": "PASS",
+    "behaviorRows": 0,
+    "metricRows": 0,
+    "domainRows": 0,
+    "historyRows": 0,
+    "notificationRows": 0,
+    "orderRows": 0,
+    "serviceVersionRows": 0,
+    "serviceRows": 0,
+    "cronJobs": 0,
+    "writerSessions": 0,
+    "preparedTransactions": 0,
+    "canaryWindowSnapshots": 0
+  },
+  "finalIntegrity": {
+    "activePolicyRows": 8,
+    "snapshotWrites": 0,
+    "canaryServices": 0,
+    "canaryOrders": 0,
+    "canaryBehaviorRows": 0,
+    "canaryCronJobs": 0,
+    "writerSessions": 0,
+    "preparedTransactions": 0
+  },
+  "certification": {
+    "canarySet": "complete-orphan-empty-window-late-fact",
+    "complete": "PASS",
+    "orphan": "PASS",
+    "emptyWindow": "PASS",
+    "lateFact": "PASS",
+    "cleanup": "PASS",
+    "runtimeCanaryEvidenceAuthority": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "maturityBefore": 3,
+    "maturityAfter": 3
+  },
+  "boundaries": {
+    "stagingMutationInThisReconciliation": false,
+    "newCanaryExecutionInThisReconciliation": false,
+    "runtimeProjectionAuthorityGranted": false,
+    "runtimeSnapshotAuthorityGranted": false,
+    "snapshotPublicationAuthorityGranted": false,
+    "persistentCronAuthorityGranted": false,
+    "productionAuthorityGranted": false,
+    "mergeAuthorityGranted": false,
+    "readyForReviewAuthorityGranted": false
+  }
+}

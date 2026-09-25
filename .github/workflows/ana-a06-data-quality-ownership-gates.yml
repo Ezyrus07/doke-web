@@ -1,0 +1,54 @@
+name: ANA-A06 Data Quality Ownership Gates
+# ANA-A06 non-empty staging reconciliation canary final certification
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/analytics/data-quality-gate.js'
+      - 'config/ana-a06-data-quality-ownership-gates.json'
+      - 'docs/ANA-A06-DATA-QUALITY-OWNERSHIP-GATES.md'
+      - 'scripts/audit-ana-a06-data-quality-ownership-gates.js'
+      - 'scripts/test-ana-a06-data-quality-ownership-gates.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/ana-a06-data-quality-ownership-gates.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/analytics/data-quality-gate.js
+          node --check scripts/audit-ana-a06-data-quality-ownership-gates.js
+          node --check scripts/test-ana-a06-data-quality-ownership-gates.js
+      - name: ANA-A06 audit
+        run: npm run audit:ana-a06-data-quality-ownership-gates
+      - name: ANA-A06 conformance
+        run: npm run test:ana-a06-data-quality-ownership-gates
+      - name: ANA-A05 regression
+        run: |
+          npm run audit:ana-a05-reconciliation-data-quality
+          npm run test:ana-a05-reconciliation-data-quality
+          npm run audit:ana-a05-runtime-readiness
+          npm run test:ana-a05-runtime-readiness
+      - name: Domain matrix regression
+        run: npm run audit:domain-completion-matrix
+      - name: Diff hygiene
+        run: git diff --check

@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
+const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a07-a09-funnel-freshness-policy-candidate.json'),'utf8'));
+const metrics=c.policies.map(p=>p.metricKey);
+const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('unique metric keys',new Set(metrics).size===8);
+check('unique policy ids',new Set(c.policies.map(p=>p.policyId)).size===8);
+check('cross-domain only final',c.policies.filter(p=>p.sourceDomains.includes('ORD-001')).length===1&&c.policies.find(p=>p.sourceDomains.includes('ORD-001'))?.metricKey==='funnel.quote_submitted_to_order_requested');
+check('all active same window',c.policies.every(p=>p.effectiveFrom==='2026-09-24T14:00:00Z'&&p.effectiveUntil===null&&p.status==='active_runtime_canaries_certified_repository_projection_authority_granted'));
+check('persistent activation consumed once',c.persistentActivation?.invocationConsumed===true&&c.persistentActivation?.invocationCount===1&&c.persistentActivation?.invocationLimit===1);
+check('eight persistent rows',c.persistentActivation?.policyRowsPersisted===8);
+check('projection grant preserves publication block',c.failClosedSemantics.runtimeProjectionAuthorityAllowed===true&&c.failClosedSemantics.snapshotPublicationAllowed===false);
+check('maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);
+console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
+if(failed.length)process.exitCode=1;

@@ -1,0 +1,113 @@
+{
+  "contractId": "ana-a08-retention-cohort-projection-v1",
+  "domain": "ANA-001",
+  "sourceHead": "21991cb360513234bca51003070acb329606c0d7",
+  "createdAt": "2026-09-21T22:15:00-03:00",
+  "scope": "repository_only",
+  "status": "repository_contract_ready_runtime_projection_blocked",
+  "objective": "Materialize deterministic client-retention cohort semantics for repeat_request_30d and repeat_completion_90d from canonical ORD analytics projections without identity stitching or rehire inference.",
+  "rootCause": {
+    "missingMetric": "ANA-A04 declares retention.repeat_request_30d but has no corresponding projection helper.",
+    "segmentationGap": "The existing repeatCompletionRate helper aggregates by client but does not carry immutable category/state cohort dimensions required by the ANA maturity-4 segmentation criterion.",
+    "semanticGap": "Repeat orders must not be interpreted as rehire, and cohort maturity must be evaluated against dataThrough rather than computedAt."
+  },
+  "sourceAuthority": {
+    "domain": "ORD-001",
+    "runtimeProjection": "private.order_metric_events",
+    "clientIdentity": "client_id from canonical ORD projection",
+    "eventTime": "occurred_at",
+    "dimensions": [
+      "serviceCategory",
+      "serviceState"
+    ],
+    "anonymousIdentityStitchingAllowed": false
+  },
+  "metrics": [
+    {
+      "metricKey": "retention.repeat_request_30d",
+      "cohortAnchor": "first order.completed per canonical client_id",
+      "maturity": "first_completion_at + 30d <= dataThrough",
+      "numerator": "mature cohort clients with order.requested on a different order after first completion and within 30 days",
+      "denominator": "mature first-completion clients",
+      "repeatEventType": "order.requested",
+      "windowDays": 30
+    },
+    {
+      "metricKey": "retention.repeat_completion_90d",
+      "cohortAnchor": "first order.completed per canonical client_id",
+      "maturity": "first_completion_at + 90d <= dataThrough",
+      "numerator": "mature cohort clients with order.completed on a different order after first completion and within 90 days",
+      "denominator": "mature first-completion clients",
+      "repeatEventType": "order.completed",
+      "windowDays": 90
+    }
+  ],
+  "segmentation": {
+    "cohortAnchor": "immutable serviceCategory/serviceState on the first completed order",
+    "supported": [
+      "serviceCategory",
+      "serviceState"
+    ],
+    "repeatMustMatchInitialSegment": false,
+    "rationale": "The metric measures client retention of an acquisition/first-completion cohort. A later order in another category still represents retained marketplace demand.",
+    "missingDimensionCoverage": "partial"
+  },
+  "invariants": [
+    "Only canonical ORD client_id is used; anonymous or cross-device identity stitching is prohibited.",
+    "The cohort anchor is the first canonical order.completed event for the client.",
+    "The repeat event must belong to a different order from the first completion.",
+    "Cohort maturity is evaluated against dataThrough, never computedAt.",
+    "Events after dataThrough are excluded.",
+    "A repeat in another category or state still counts for the initial cohort segment.",
+    "Repeat order activity is retention evidence and does not imply REP-001 rehire.",
+    "Zero denominator returns null rather than zero.",
+    "Missing cohort dimensions yield partial coverage instead of fabricated segmentation."
+  ],
+  "freshnessDependency": {
+    "contract": "ANA-A07",
+    "thresholdAuthorityInherited": true,
+    "runtimeFreshnessActivationStillBlocked": true
+  },
+  "authority": {
+    "contractAuthority": true,
+    "retentionMetricAuthority": true,
+    "cohortDefinitionAuthority": true,
+    "segmentationContractAuthority": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "activationRequirements": [
+    "server-side retention projection over private.order_metric_events",
+    "append-only metric snapshots through ANA-A04/A05 revision semantics",
+    "A07 dataThrough/watermark enforcement",
+    "controlled staging cohorts covering mature/no-repeat/repeat/cross-segment/missing-dimension cases"
+  ],
+  "preservedBoundaries": [
+    "ORD-001 remains canonical for order facts and client_id.",
+    "ANA owns only derived retention projections.",
+    "REP-001 remains authoritative for explicit rehire/reputation semantics.",
+    "LEGAL-B03 remains authoritative for privacy and identity lifecycle.",
+    "Browser analytics remains disabled by default."
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "reputationMutation": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "A08 closes repository retention semantics only. Runtime projection/staging evidence, funnel, CAT liquidity and A07 runtime freshness remain required for ANA maturity 4."
+  }
+}

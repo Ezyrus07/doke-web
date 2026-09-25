@@ -1,0 +1,156 @@
+{
+  "contractId": "ana-a03-behavioral-ingestion-identity-boundary-v1",
+  "domain": "ANA-001",
+  "sourceHead": "3b5d03a7252facc385148a1d3ff95c6c8beb3df6",
+  "createdAt": "2026-09-18T19:10:00-03:00",
+  "scope": "repository_only",
+  "status": "staging_runtime_active_browser_client_disabled",
+  "runtimeIntegrated": true,
+  "migrationPrepared": true,
+  "migrationApplied": true,
+  "stagingValidated": true,
+  "sessionPolicy": {
+    "anonymousSession": "server_issued_ephemeral_session_storage",
+    "authenticatedActor": "server_auth_uid",
+    "persistentAnonymousIdentity": false,
+    "crossSessionAnonymousStitching": false,
+    "crossDeviceStitching": false,
+    "anonymousToAuthenticatedStitching": false,
+    "securityPseudonymMayBecomeAnalyticsIdentity": false
+  },
+  "ingestion": {
+    "edgeProxyRequired": true,
+    "serverActorResolution": true,
+    "serviceRoleWriter": true,
+    "payloadAllowlist": true,
+    "transportIdempotency": true,
+    "semanticDeduplication": true,
+    "rateLimitRequired": true,
+    "piiRejection": true,
+    "browserDirectCanonicalInsert": false,
+    "serverOriginatedIdempotencyDriftDetection": true
+  },
+  "searchExposure": {
+    "signedProofRequired": true,
+    "separateSigningAuthorityFromSearchCursor": true,
+    "canonicalPositionServerOwned": true,
+    "canonicalServiceServerOwned": true
+  },
+  "temporalAuthority": {
+    "behaviorCanonicalOccurredAt": "server_received_at",
+    "clientOccurredAt": "advisory_only"
+  },
+  "prohibitedPayloadFields": [
+    "actor_id",
+    "professional_id",
+    "owner_id",
+    "email",
+    "phone",
+    "cpf",
+    "cnpj",
+    "raw_query",
+    "answer_text",
+    "message",
+    "address",
+    "card_number",
+    "bank_account"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "ingestionContractAuthority": true,
+    "identityBoundaryContractAuthority": true,
+    "semanticDedupContractAuthority": true,
+    "searchExposureContractAuthority": true,
+    "runtimeIngestionAuthority": true,
+    "anonymousStitchingAuthority": false,
+    "consentPolicyAuthority": false,
+    "stagingAuthority": true,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "ANA-B01",
+    "ANA-B03",
+    "LEGAL-B03"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realAnalyticsEventWritten": false,
+    "realMetricProjectionWritten": false,
+    "realMetricSnapshotWritten": false,
+    "realIdentityStitchCreated": false,
+    "realUserDataChanged": false,
+    "realOrderChanged": false,
+    "realPaymentChanged": false,
+    "realReputationChanged": false,
+    "productionChanges": false
+  },
+  "runtimeImplemented": true,
+  "runtimeImplementation": {
+    "edgeFunction": "analytics-behavior-v1",
+    "ledger": "private.analytics_behavior_events_v1",
+    "recorderRpc": "public.record_analytics_behavior_event_v1",
+    "searchProofHelper": "supabase/functions/_shared/analytics-proof.ts",
+    "searchRuntimeIntegration": "search-public-services-v2 optional proof emission and search.executed projection",
+    "migration": "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
+    "requiredEnvironment": [
+      "DOKE_ANALYTICS_SESSION_SECRET",
+      "DOKE_ANALYTICS_EXPOSURE_SECRET",
+      "DOKE_ANALYTICS_SESSION_TTL_SECONDS",
+      "DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS",
+      "DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS",
+      "DOKE_ANALYTICS_RATE_LIMIT",
+      "DOKE_ANALYTICS_RATE_WINDOW_SECONDS",
+      "DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS"
+    ],
+    "activationRequires": [
+      "migration_applied",
+      "edge_deployed",
+      "runtime_policy_environment_configured",
+      "controlled_staging_canary"
+    ],
+    "searchRemainsAvailableWithoutAnalyticsProofSecret": true,
+    "clientRepository": "assets/js/repositories/analytics-repository.js",
+    "clientActivationDefault": false,
+    "clientTransport": "edge-v1",
+    "clientSurfaces": [
+      "resultados.html",
+      "detalhe-anuncio.html",
+      "orcamento.html"
+    ],
+    "clientStorage": "sessionStorage_only",
+    "legacyMetricsCoexistence": "shadow_migration_only_until_controlled_browser_activation",
+    "edgeGatewayVerifyJwt": false,
+    "platformApiKeyModel": "publishable_secret",
+    "platformKeyEnvironment": [
+      "SUPABASE_PUBLISHABLE_KEYS",
+      "SUPABASE_SECRET_KEYS"
+    ],
+    "browserEdgeInvocation": "DokeSupabase.invokeEdgeFunction",
+    "authenticatedActorResolution": "auth.getUser on user JWT; publishable-key bearer degrades to anon",
+    "legacyGlobalClientPreserved": true,
+    "activationRequirementsSatisfied": true,
+    "stagingActivation": {
+      "environment": "staging",
+      "projectRef": "zwkczgewzbsorbrjuzpb",
+      "migrationVersion": "20260919000818",
+      "hardeningMigrationVersion": "20260919003220",
+      "edgeFunction": "analytics-behavior-v1",
+      "edgeFunctionStatus": "ACTIVE",
+      "edgeFunctionObservedVersion": 7,
+      "canonicalCanaryRunId": 35481347306,
+      "postHardeningCanaryRunId": 35628667088,
+      "activationEvidence": "config/ana-001-staging-activation-evidence.json",
+      "canaryEvidence": "reports/generated/ana-001-staging-canary.json",
+      "browserClientActivated": false,
+      "anonymousIdentityStitching": false,
+      "productionTouched": false,
+      "reconciledAt": "2026-09-23T22:28:56.674297Z"
+    }
+  }
+}

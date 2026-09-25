@@ -1,0 +1,13 @@
+'use strict';
+const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
+const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a04-marketplace-funnel-health-projections.json'),'utf8'));
+const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260918233000_ana_a04_metric_projection_runtime.sql'),'utf8');
+const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration applied',c.migrationApplied===true);check('staging validated',c.stagingValidated===true);
+['enrich_order_metric_dimensions_for_analytics_v1','analytics_metric_snapshots_v1','append_analytics_metric_snapshot_v1','compute_analytics_order_health_v1'].forEach(x=>check('runtime '+x,migration.includes(x)));
+check('service snapshot category',migration.includes("service_snapshot ->> 'category'"));check('service snapshot state',migration.includes("service_snapshot ->> 'state'"));
+check('requested demand freeze',migration.includes("when new.event_type = 'order.requested' then nullif(v_order.city, '')"));
+check('no historical demand backfill',migration.includes('Demand region is intentionally not backfilled'));
+check('append no-change',migration.includes("'state','NO_CHANGE'"));check('append revision',migration.includes("v_revision := coalesce(v_current.revision, 0) + 1"));check('append concurrency guard',migration.includes('DOKE_ANALYTICS_METRIC_REVISION_CONFLICT')&&migration.includes('exception when unique_violation'));
+check('financial metrics absent',!migration.includes('gmv')&&!migration.includes('take_rate'));
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));if(failed.length)process.exitCode=1;

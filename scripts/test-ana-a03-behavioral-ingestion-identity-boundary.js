@@ -1,0 +1,11 @@
+'use strict';
+const a=require('../backend/modules/analytics/behavioral-ingestion-boundary');const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+const secret='synthetic-ana-secret-0001';const now='2026-09-18T22:00:00.000Z';const token=a.buildSessionToken({analyticsSessionId:'sess-1',actorClass:'authenticated',actorId:'user-1',issuedAt:'2026-09-18T21:55:00Z',expiresAt:'2026-09-18T23:00:00Z'},secret);
+check('session verify',a.verifySessionToken(token,secret,{actorId:'user-1',now}).actorId==='user-1');try{a.verifySessionToken(token,secret,{actorId:'user-2',now});check('actor mismatch rejected',false);}catch(e){check('actor mismatch rejected',e.code==='ANA_SESSION_ACTOR_MISMATCH');}
+const proof=a.buildExposureProof({searchRequestId:'search-1',serviceId:'service-1',resultPosition:2,rankingVersion:'search-rank-v0',asOf:'2026-09-18T21:59:00Z',surface:'search',expiresAt:'2026-09-18T23:00:00Z'},secret);check('proof service',a.verifyExposureProof(proof,secret,{now}).serviceId==='service-1');
+const tampered=proof.slice(0,-1)+(proof.endsWith('a')?'b':'a');try{a.verifyExposureProof(tampered,secret,{now});check('tamper rejected',false);}catch{check('tamper rejected',true);}
+check('PII detector',a.containsForbiddenRawData({nested:{email:'x@y.com'}}));
+const normalized=a.normalizeBehaviorSubmission({eventName:'service.detail_viewed',clientEventId:'evt-1',payload:{},sourceSurface:'direct'},{actorId:'user-1',analyticsSessionId:'sess-1',receivedAt:now,serviceProfessionalId:'user-2'});check('server actor',normalized.actorId==='user-1');check('server time',normalized.canonicalOccurredAt===now);
+try{a.normalizeBehaviorSubmission({eventName:'service.detail_viewed',clientEventId:'evt-2',payload:{}},{actorId:'user-1',analyticsSessionId:'sess-1',receivedAt:now,serviceProfessionalId:'user-1'});check('owner excluded',false);}catch(e){check('owner excluded',e.code==='ANA_OWNER_TRAFFIC_EXCLUDED');}
+check('semantic key stable',a.semanticKey('search.result_clicked',{searchRequestId:'s',serviceId:'x'})==='search.result_clicked:s:x');
+const failed=checks.filter((x)=>!x.passed).map((x)=>x.name);console.log(JSON.stringify({contractId:a.CONTRACT_ID,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));if(failed.length)process.exitCode=1;

@@ -1,0 +1,307 @@
+{
+  "contractId": "ana-a09-canonical-funnel-projection-v1",
+  "domain": "ANA-001",
+  "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
+  "createdAt": "2026-09-21T22:33:00-03:00",
+  "scope": "staging_runtime_installed_policy_active_canaries_certified_repository_projection_authority_granted",
+  "status": "server_side_projector_validated_freshness_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
+  "objective": "Define a deterministic canonical acquisition-to-order funnel from ANA behavioral events and ORD order.requested facts using only explicit linkage keys, without identity stitching or temporal heuristics.",
+  "rootCause": {
+    "projectionGap": "The global server-side compute projector is installed, validation 042 passes in staging, the eight r1 freshness policies are active and the four runtime canaries are certified. Repository runtime projection authority is granted. Immutable category/state semantics are repository-defined and the forward-only segmented runtime candidate is prepared but unapplied; runtime segmentation, snapshot and publication remain separate gates.",
+    "authorityGap": "Legacy service/quote funnel events must remain shadow inputs and cannot become a second analytics authority.",
+    "linkageRisk": "A funnel assembled by actor identity, timestamp proximity or cross-session heuristics would violate the A03 identity boundary and could falsely attribute anonymous behavior."
+  },
+  "stages": [
+    "impression",
+    "click",
+    "detail",
+    "budget_cta",
+    "quote_started",
+    "quote_completed",
+    "quote_submitted",
+    "order_requested"
+  ],
+  "linkageAuthority": {
+    "searchExposure": "search_request_id + service_id",
+    "sessionServiceJourney": "analytics_session_id + service_id",
+    "quoteJourney": "quote_session_id within the same session/service journey",
+    "transactionalHandoff": "quote.submitted.order_id joined to canonical ORD order.requested",
+    "temporalHeuristicJoinAllowed": false,
+    "actorIdJoinAllowed": false,
+    "anonymousCrossSessionJoinAllowed": false,
+    "anonymousToAuthenticatedJoinAllowed": false
+  },
+  "metrics": [
+    {
+      "metricKey": "funnel.search_ctr",
+      "numerator": "unique search_request_id+service_id clicks with matching impression",
+      "denominator": "unique search_request_id+service_id impressions"
+    },
+    {
+      "metricKey": "funnel.impression_to_click",
+      "numerator": "strict session/service journeys reaching click",
+      "denominator": "strict session/service journeys reaching impression"
+    },
+    {
+      "metricKey": "funnel.click_to_detail",
+      "numerator": "strict session/service journeys reaching detail after click",
+      "denominator": "strict journeys reaching click"
+    },
+    {
+      "metricKey": "funnel.detail_to_budget_cta",
+      "numerator": "strict journeys reaching budget CTA after detail",
+      "denominator": "strict journeys reaching detail"
+    },
+    {
+      "metricKey": "funnel.budget_cta_to_quote_started",
+      "numerator": "strict journeys with explicit quote_session_id started",
+      "denominator": "strict journeys reaching budget CTA"
+    },
+    {
+      "metricKey": "funnel.quote_started_to_completed",
+      "numerator": "strict journeys with same quote session completed",
+      "denominator": "strict journeys reaching quote started"
+    },
+    {
+      "metricKey": "funnel.quote_completed_to_submitted",
+      "numerator": "strict journeys with same quote session submitted and explicit order_id",
+      "denominator": "strict journeys reaching quote completed"
+    },
+    {
+      "metricKey": "funnel.quote_submitted_to_order_requested",
+      "numerator": "strict submitted journeys whose order_id exists as canonical ORD order.requested",
+      "denominator": "strict journeys reaching quote submitted"
+    }
+  ],
+  "eventSources": {
+    "behaviorLedger": "private.analytics_behavior_events_v1",
+    "orderProjection": "private.order_metric_events",
+    "behaviorCanonicalTime": "occurred_at event time; received_at materialization fence",
+    "orderCanonicalTime": "occurred_at event time; created_at materialization fence",
+    "legacySourcesAuthority": false
+  },
+  "invariants": [
+    "All events after dataThrough are excluded.",
+    "Search CTR deduplicates on explicit search_request_id + service_id exposure identity.",
+    "Strict funnel progression is scoped to analytics_session_id + service_id only; no cross-session reconstruction is allowed.",
+    "Quote progression requires the same explicit quote_session_id.",
+    "The behavior-to-transaction handoff requires quote.submitted.order_id and canonical ORD order.requested; order linkage is never inferred from actor or time proximity.",
+    "A later stage missing an earlier explicit stage is recorded as orphan evidence rather than backfilling the missing stage.",
+    "Zero denominator returns null, never zero percent.",
+    "Behavioral and transactional source authorities remain distinct.",
+    "Anonymous identity stitching remains prohibited.",
+    "Current behavior ledger does not carry immutable category/state cohort dimensions, so category/state funnel segmentation is not fabricated."
+  ],
+  "segmentation": {
+    "currentAuthority": "global_only_for_behavioral_stages",
+    "categoryStateStatus": "repository_runtime_candidate_prepared_unapplied",
+    "mutableCurrentServiceJoinAllowed": false,
+    "immutableSegmentationContract": {
+      "path": "config/ana-a09-immutable-funnel-segmentation.json",
+      "contractId": "ana-a09-immutable-funnel-segmentation-v1",
+      "sourceAuthority": "CAT-A06 frozen dimension snapshots + CAT-A07 coverage epoch",
+      "journeyAnchor": "canonical impression",
+      "categoryIdentityRule": "categoryId > categorySlug > category; no UUID/name/slug equivalence inference",
+      "catDependencyRequiredForSegmentedDataThrough": true,
+      "repositoryContractAuthority": true,
+      "runtimeSegmentationAuthority": false,
+      "stagingAuthority": false,
+      "runtimeCandidate": {
+        "contractId": "ana-a09-immutable-funnel-segmentation-runtime-candidate-v1",
+        "migration": "supabase/migrations/20260925145500_ana_a09_immutable_funnel_segmentation_runtime.sql",
+        "validationSql": "supabase/tests/047_ana_a09_immutable_funnel_segmentation_runtime_validation.sql",
+        "migrationCreated": true,
+        "migrationApplied": false,
+        "stagingValidated": false,
+        "validation047Status": "pending",
+        "runtimeSegmentationAuthority": false,
+        "snapshotPublicationAuthority": false
+      }
+    }
+  },
+  "freshnessDependency": {
+    "contract": "ANA-A07",
+    "dataThroughRequired": true,
+    "watermarkContractId": "ana-a07-behavior-ord-watermark-authority-v1",
+    "watermarkContractPath": "config/ana-a07-behavior-ord-watermark-authority.json",
+    "status": "watermark_projector_certified_funnel_policy_active_canaries_certified_repository_projection_authority_granted",
+    "behaviorMaterializationTime": "received_at",
+    "orderMaterializationTime": "created_at",
+    "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
+    "behaviorAndOrderDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough)",
+    "lateFactRevisionAuthority": "ANA-A05",
+    "runtimeFreshnessActivationStillBlocked": false,
+    "runtimeCandidatePath": "config/ana-a07-behavior-ord-watermark-runtime-readiness.json",
+    "migrationPath": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
+    "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+    "runtimeMigrationApplied": true,
+    "runtimeWatermarkCertified": true,
+    "validation041Status": "passed",
+    "compatibilityMigrationPath": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
+    "compatibilityMigrationApplied": true,
+    "compatibilityStagingMigrationVersion": "20260923231132",
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "concurrentWriterCertified": true,
+    "concurrentWriterCleanupPassed": true,
+    "runtimeProjectorInstalled": true,
+    "projectorValidation042Status": "passed",
+    "runtimeProjectionStillBlockedUntilCanaries": false,
+    "runtimeProjectionStillBlockedUntilExplicitAuthority": false
+  },
+  "authority": {
+    "contractAuthority": true,
+    "funnelDefinitionAuthority": true,
+    "linkageContractAuthority": true,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "activeFreshnessPolicyAuthority": true,
+    "snapshotPublicationAuthority": false,
+    "repositoryRuntimeCanaryContractAuthority": true,
+    "runtimeCanaryEvidenceAuthority": true
+  },
+  "activationRequirements": [
+    "keep runtime snapshot and snapshot publication authority false until a separately authorized append-only publication gate closes",
+    "materialize any live global runtimeAuthority=true alignment only through a forward-only staging change under separate authorization",
+    "apply and validate the prepared immutable CAT-A06/CAT-A07 segmentation runtime candidate only under a separate explicit staging authorization before category/state funnel claims"
+  ],
+  "catLiquidityBlocker": {
+    "status": "liquidity_runtime_closed_outside_a09",
+    "evidence": "ANA-A10/A11 now own and operationally certify CAT liquidity, publication cadence, freshness policy and scheduler runtime in staging.",
+    "consequence": "Liquidity is not an A09 blocker. Global A09 projection is installed/certified and repository projection authority is granted. Immutable category/state semantics and a forward-only runtime candidate now exist in the repository, but that candidate is unapplied; remaining A09 gates are segmented staging validation/runtime authority, live global runtimeAuthority alignment if required, and append-only snapshot publication authority.",
+    "requiredHandoff": "ANA-A07 behavior/ORD watermark runtime -> ANA-A09 funnel runtime"
+  },
+  "preservedBoundaries": [
+    "Product Analytics remains distinct from operational observability.",
+    "ORD remains canonical for order.requested facts.",
+    "CAT remains canonical for service visibility facts.",
+    "Browser analytics remains disabled by default.",
+    "LEGAL-B03 remains authoritative for privacy and identity lifecycle.",
+    "PAY-backed metrics remain unavailable until PAY authority is canonical."
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "paymentMutation": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "Global A09 runtime, active freshness policies and four-path canaries are certified, repository runtime projection authority is granted, and immutable category/state segmentation now has a repository-only forward runtime candidate. The segmented candidate is unapplied/unvalidated and snapshot publication remains false, so ANA stays 3/6."
+  },
+  "runtimeCandidate": {
+    "status": "staging_applied_validation_042_pass_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
+    "migration": "supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql",
+    "validationSql": "supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql",
+    "readinessContract": "config/ana-a09-server-side-funnel-projector-runtime-readiness.json",
+    "stageFunction": "private.analytics_canonical_funnel_stage_rows_v1",
+    "computeFunction": "public.compute_analytics_canonical_funnel_v1",
+    "migrationCreated": true,
+    "migrationApplied": true,
+    "stagingValidated": true,
+    "computeOnly": true,
+    "snapshotPublicationAllowed": false,
+    "metricSpecificThresholdsApplied": true,
+    "stagingMigrationVersion": "20260924002741",
+    "validation042Status": "PASS",
+    "runtimeProjectorInstalled": true,
+    "computeRuntimeHealthy": true,
+    "runtimeEvidenceArtifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json",
+    "runtimeCanariesCertified": true,
+    "runtimeCanaryEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "runtimeCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734"
+  },
+  "runtimeEvidence": {
+    "artifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json",
+    "status": "historical_projector_installation_observation_pre_policy_and_canary_closure",
+    "observedAt": "2026-09-24T00:30:48.672523Z",
+    "metricCount": 8,
+    "computeState": "computed_policy_pending",
+    "runtimeProjectorInstalled": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "observedBeforeRepositoryProjectionAuthorityGrant": true
+  },
+  "funnelFreshnessPolicyCandidate": {
+    "contractPath": "config/ana-a07-a09-funnel-freshness-policy-candidate.json",
+    "contractId": "ana-a07-a09-funnel-freshness-policy-candidate-v1",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "revision": 1,
+    "metricCount": 8,
+    "proposedMaxLagSeconds": 360,
+    "migration": "supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql",
+    "validationSql": "supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql",
+    "migrationApplied": true,
+    "validation043Status": "PASS",
+    "activationInvoked": true,
+    "effectiveFrom": "2026-09-24T14:00:00Z",
+    "effectiveUntil": null,
+    "snapshotPublicationAllowed": false,
+    "stagingMigrationVersion": "20260924005631",
+    "stagingValidated": true,
+    "activationFunctionInstalled": true,
+    "policyRowsPersisted": 8,
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json",
+    "successorActivationFunction": "private.activate_a09_funnel_policy_approved_v1",
+    "persistentActivationEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json",
+    "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+    "runtimeCanariesPending": false,
+    "runtimeCanariesCertified": true,
+    "runtimeCanaryEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "runtimeCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734"
+  },
+  "runtimeCanaryContract": {
+    "path": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
+    "contractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "status": "staging_certified_runtime_projection_authority_repository_granted",
+    "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
+    "canarySet": [
+      "complete",
+      "orphan",
+      "empty-window",
+      "late-fact"
+    ],
+    "lateFactExecutor": "transient_pg_cron_second_session",
+    "stagingExecutionAuthorized": false,
+    "emptyWindowCertified": true,
+    "lateFactCertified": true,
+    "identityAuthority": "seed002-email-resolved",
+    "legacyFixedUserIdsRetired": true,
+    "serviceEligibilityAuthority": "approved-service-version",
+    "fixtureMode": "synthetic-approved-version",
+    "serviceEligibilityRemediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json",
+    "stagingEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "stagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "validation046Status": "PASS",
+    "completeCertified": true,
+    "orphanCertified": true,
+    "cleanupStatus": "PASS"
+  },
+  "runtimeProjectionAuthorityGrant": {
+    "authorizationCommand": "authorize-ana-a07-a09-funnel-runtime-projection-authority-repository-only head=28960baecb1b495b16c3799c55a80305764db0ac matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 canaryStagingEvidenceBlobSha=3b7274a391a857f2de06538f3302f6be01b06734 runtimeProjectionAuthority=true",
+    "authorizationDigestSha256": "ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5",
+    "authorizedRepositoryHead": "28960baecb1b495b16c3799c55a80305764db0ac",
+    "matrixVersion": "1.3.132",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "canaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "repositoryOnly": true,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "stagingMutationAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false,
+    "readyForReviewAuthorized": false
+  }
+}

@@ -1,0 +1,14 @@
+'use strict';
+const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
+const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a05-reconciliation-data-quality.json'),'utf8'));
+const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260918234000_ana_a05_reconciliation_runtime.sql'),'utf8');
+const hardening=fs.readFileSync(path.join(root,'supabase','migrations','20260919002100_ana_a05_reconciliation_dimension_hardening.sql'),'utf8');
+const runtimeSql=sql+'\n'+hardening;
+const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('runtime implemented',c.runtimeImplemented===true);check('migration prepared',c.migrationPrepared===true);check('migration applied',c.migrationApplied===true);check('staging validated',c.stagingValidated===true);
+['analytics_reconciliation_runs_v1','analytics_data_quality_rollups_v1','run_analytics_order_reconciliation_v1','analytics_projection_missing_rate','analytics_reconciliation_mismatch_rate'].forEach(x=>check('runtime '+x,runtimeSql.includes(x)));
+check('source uses created_at',runtimeSql.includes('from private.order_domain_events e')&&runtimeSql.includes('where e.created_at >= p_window_start'));
+check('projection uses occurred_at',runtimeSql.includes('from private.order_metric_events e')&&runtimeSql.includes('where e.occurred_at >= p_window_start'));
+check('timestamp compare correct',runtimeSql.includes('s.created_at is distinct from p.occurred_at'));check('event key compare implemented',runtimeSql.includes('s.event_key is distinct from p.event_key')&&runtimeSql.includes('v_event_key_mismatch'));check('dimension compare implemented',runtimeSql.includes("s.payload ->> 'serviceId'")&&runtimeSql.includes("o.service_snapshot ->> 'category'")&&runtimeSql.includes("p.dimensions ->> 'serviceCategory'")&&runtimeSql.includes('v_dimension_mismatch'));check('mismatch incidence uses event universe',runtimeSql.includes('v_reconciliation_universe_count')&&runtimeSql.includes('v_mismatch_subject_count'));
+check('comparison fingerprint',runtimeSql.includes('v_comparison_hash'));check('source mutation forbidden contract',c.runtimeImplementation&&c.runtimeImplementation.sourceMutationAllowed===false);
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));if(failed.length)process.exitCode=1;
