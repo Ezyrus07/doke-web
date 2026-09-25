@@ -4,8 +4,8 @@
   "sourceDomain": "CAT-001",
   "sourceHead": "a673c9647884d1042ddd879515876c9874533230",
   "matrixVersion": "1.3.132",
-  "scope": "repository_only_candidate",
-  "status": "repository_contract_defined_runtime_unapplied",
+  "scope": "repository_only_runtime_candidate",
+  "status": "repository_runtime_candidate_prepared_unapplied",
   "objective": "Define deterministic category/state funnel segmentation from CAT-owned immutable visibility dimension snapshots without joining mutable current catalog state or changing A09 identity/linkage authority.",
   "rootCause": {
     "currentGap": "A09 behavioral stages carry service_id but not an immutable category/state snapshot, so joining public.services at query time would rewrite historical funnel dimensions.",
@@ -82,22 +82,62 @@
     "productionAuthority": false
   },
   "prohibitedEffects": {
-    "migrationCreated": false,
     "stagingRead": false,
     "stagingMutation": false,
+    "migrationApplied": false,
     "deployment": false,
     "browserAnalyticsActivation": false,
     "anonymousIdentityStitching": false,
     "sourceDomainMutation": false,
     "snapshotWrite": false,
+    "snapshotPublication": false,
+    "schedulerCreation": false,
     "productionChange": false,
     "pullRequestMerge": false,
     "readyForReview": false
   },
-  "nextGate": "Prepare a separately authorized forward-only A09 segmentation runtime candidate that reads CAT-A06/A07 facts server-side, adds CAT to segmented dataThrough, and proves coverage/version-split/category-identity behavior in staging before any segmented snapshot publication.",
+  "nextGate": "Apply migration 20260925145500 and execute rollback-only validation 047 in staging only under a new explicit staging authorization bound to the then-current PR HEAD. That gate must keep runtime snapshot/publication, production, merge and Ready authority false.",
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Repository-only immutable segmentation semantics close the design ambiguity but add no runtime/staging evidence; ANA remains 3/6."
+    "reason": "Immutable segmentation semantics and a forward-only server-side runtime candidate are now repository-defined, but the candidate is unapplied and validation 047 has not run in staging. Runtime segmentation/snapshot/publication authority remain false; ANA stays 3/6."
+  },
+  "authorization": {
+    "token": "authorize-ana-a09-immutable-funnel-segmentation-runtime-candidate-repository-only head=1d652625a7944edd102d79d4b61e1dbc787b28a0 matrix=v1.3.132 contractId=ana-a09-immutable-funnel-segmentation-v1",
+    "digestSha256": "3a4e39631306e34efb43a9f626f13a26c2528a229a8778e9e33e486d82ed2ff6",
+    "authorizedRepositoryHead": "1d652625a7944edd102d79d4b61e1dbc787b28a0",
+    "matrixVersion": "1.3.132",
+    "contractId": "ana-a09-immutable-funnel-segmentation-v1",
+    "received": true,
+    "consumedForRepositoryCandidate": true,
+    "stagingApplyAuthorized": false,
+    "stagingReadAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false,
+    "readyForReviewAuthorized": false
+  },
+  "repositoryRuntimeCandidate": {
+    "contractId": "ana-a09-immutable-funnel-segmentation-runtime-candidate-v1",
+    "migration": "supabase/migrations/20260925145500_ana_a09_immutable_funnel_segmentation_runtime.sql",
+    "validationSql": "supabase/tests/047_ana_a09_immutable_funnel_segmentation_runtime_validation.sql",
+    "resolverFunction": "private.analytics_a09_funnel_segment_for_anchor_v1",
+    "computeFunction": "public.compute_analytics_canonical_funnel_segmented_v1",
+    "migrationCreated": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "validation047Status": "pending",
+    "computeOnly": true,
+    "sourceMutationAllowed": false,
+    "snapshotMutationAllowed": false,
+    "schedulerCreated": false,
+    "browserExecuteAllowed": false,
+    "serviceRoleComputeExecuteCandidate": true,
+    "currentServiceJoinAllowed": false,
+    "catWatermarkRequired": true,
+    "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, catWatermark.dataThrough)",
+    "crossDomainDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough, catWatermark.dataThrough)",
+    "coverageEpochRequired": true,
+    "journeyAnchor": "canonical_impression",
+    "globalProjectionUnaffected": true
   }
 }
