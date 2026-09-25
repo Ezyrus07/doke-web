@@ -17,7 +17,7 @@ check('helper hidden from service role',!sql.includes('grant execute on function
 check('validation read only',!v.match(/insert\s+into|update\s+|delete\s+from|truncate\s+|cron\.schedule/i));
 check('validation invokes wrappers',v.includes('private.analytics_behavior_watermark_v1()')&&v.includes('private.order_metric_watermark_v1()'));
 check('concurrent canary certified',c.validationPlan?.concurrentWriterCase==='staging_transient_cron_canary_pass'&&c.repositoryEvidence?.concurrentWriterCanaryPassed===true);
-check('late fact remains downstream',c.validationPlan?.lateFactCase==='requires_A09_projection_canary_after_watermark_certification');
+check('late fact downstream canary certified',c.validationPlan?.lateFactCase==='A09_projection_late_fact_canary_certified'&&c.validationPlan?.emptyWindowCase==='A09_projection_canary_certified'&&c.runtimeEvidence?.lateFactCertified===true&&c.runtimeEvidence?.emptyWindowProjectionCertified===true);
 check('watermark runtime staging certified',c.repositoryEvidence?.migrationApplied===true&&c.repositoryEvidence?.compatibilityMigrationApplied===true&&c.repositoryEvidence?.stagingValidated===true&&c.validationPlan?.validation041Status==='passed'&&c.validationPlan?.concurrentWriterCase==='staging_transient_cron_canary_pass');
 check('compatibility uses explicit CASE',compatibility.includes('v_data_through := case')&&!compatibility.includes('pg_catalog.least('));
 check('compatibility preserves active/prepared order',compatibility.indexOf('from pg_catalog.pg_stat_activity')>=0&&compatibility.indexOf('from pg_catalog.pg_prepared_xacts')>compatibility.indexOf('from pg_catalog.pg_stat_activity'));

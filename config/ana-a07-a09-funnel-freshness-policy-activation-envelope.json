@@ -3,7 +3,7 @@
   "approvalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-approval-evidence-v1",
   "domain": "ANA-001",
   "scope": "repository_only",
-  "status": "effective_window_active_persistent_policy_rows_8_runtime_canary_identity_and_service_eligibility_remediated_staging_unauthorized",
+  "status": "effective_window_active_persistent_policy_rows_8_runtime_canaries_certified_projection_authority_pending",
   "createdAt": "2026-09-24T13:26:00Z",
   "createdAgainst": {
     "repositoryHead": "0c45856b82b08fe5265c3e71b40c0d83fed871a7",
@@ -218,7 +218,8 @@
     "successorStagingAppliedAuthority": true,
     "activeFreshnessPolicySetAuthority": true,
     "repositoryRuntimeCanaryContractAuthority": true,
-    "stagingCanaryExecutionAuthority": false
+    "stagingCanaryExecutionAuthority": false,
+    "runtimeCanaryEvidenceAuthority": true
   },
   "prohibitedEffects": {
     "activationFunctionInvoked": false,
@@ -238,9 +239,8 @@
     "workflow": ".github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml"
   },
   "nextGates": [
-    "Obtain a fresh controlled staging canary authorization against the post-service-eligibility-remediation PR HEAD with identityAuthority=seed002-email-resolved, serviceEligibilityAuthority=approved-service-version and fixtureMode=synthetic-approved-version.",
-    "Under that later authorization execute validation 046 rollback-only for complete/orphan/empty-window and the transient second-session late-fact protocol with mandatory cleanup.",
-    "Keep runtimeProjectionAuthority, runtimeSnapshotAuthority and snapshotPublicationAuthority false until all four canaries close and evidence is reconciled.",
+    "Obtain the exact repository-only runtime projection authority authorization bound to the current PR HEAD and certified canary staging evidence.",
+    "Keep runtimeSnapshotAuthority and snapshotPublicationAuthority false until separate later gates.",
     "Keep persistent cron/scheduler, production, merge and Ready authority false."
   ],
   "runtimeEnforcementCandidate": {
@@ -273,7 +273,7 @@
   "activationInvocationContract": {
     "contractPath": "config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json",
     "contractId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-v1",
-    "status": "runtime_canary_identity_and_service_eligibility_remediated_staging_execution_unauthorized",
+    "status": "staging_runtime_canaries_certified_projection_authority_pending",
     "sourceHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
     "matrixVersion": "1.3.132",
     "runtimeEvidenceBlobSha": "118ca5f948f93ca09c7a7305d1b230880fa98630",
@@ -300,12 +300,17 @@
     "activationInvocationLimit": 1,
     "runtimeCanaryContractPath": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
     "runtimeCanaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
-    "runtimeCanaryContractStatus": "repository_ready_identity_and_service_eligibility_remediated_staging_execution_unauthorized",
+    "runtimeCanaryContractStatus": "staging_certified_runtime_projection_authority_pending",
     "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
     "stagingCanaryExecutionAuthorized": false,
     "runtimeCanaryIdentityAuthority": "seed002-email-resolved",
     "runtimeCanaryServiceEligibilityAuthority": "approved-service-version",
     "runtimeCanaryFixtureMode": "synthetic-approved-version",
-    "runtimeCanaryServiceEligibilityRemediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json"
+    "runtimeCanaryServiceEligibilityRemediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json",
+    "runtimeCanaryStagingEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "runtimeCanaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "validation046Status": "PASS",
+    "lateFactStatus": "PASS",
+    "cleanupStatus": "PASS"
   }
 }

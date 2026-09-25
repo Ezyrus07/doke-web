@@ -2,7 +2,7 @@
 
 The A07/A09 freshness policy set is active in staging with eight persistent `v1` policies at `maxLagSeconds=360`. This document defines the runtime evidence required before projection/snapshot authority can advance.
 
-This lot is **repository-only**. No staging canary is executed here.
+The contract originated repository-only. The complete/orphan/empty-window/late-fact staging canaries are now certified; this reconciliation lot is repository-only and grants no runtime projection, snapshot, publication, scheduler, production, merge or Ready authority.
 
 ## Canary identity authority
 
@@ -74,6 +74,30 @@ Validation 046 covers complete, orphan and empty-window in one transaction and e
 
 The late-fact case is a separately orchestrated second-session protocol under the same future staging authorization because a serialized connector call cannot prove concurrent transaction-floor behavior.
 
+## Certified staging evidence
+
+The four-path staging canary set is certified in `reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json` (blob `3b7274a391a857f2de06538f3302f6be01b06734`).
+
+- validation 046: **PASS**
+- complete: **PASS**
+- orphan: **PASS**
+- empty-window: **PASS**
+- late-fact: **PASS**
+- certified writer: job `11`, run `154490`
+- window: `2026-09-25T13:28:49.777920Z` → `2026-09-25T13:33:49.777920Z`
+- writer xact start: `2026-09-25T13:33:12.644938Z`
+- transaction floor: `2026-09-25T13:33:12.644937Z`
+- predecessor delta: **1µs**
+- pre-commit final metric: **0/1**
+- post-commit same-window final metric: **1/1**
+- snapshot writes: **0**
+- cleanup: **PASS**
+- persistent active policies after cleanup: **8**
+
+Writer job `10` / run `154483` succeeded but its observer arrived after commit; it is retained as an inconclusive observation with no certification impact. Job `11` is the certified concurrent-writer proof.
+
+Runtime projection authority remains **false**. Runtime snapshot authority and snapshot publication authority also remain **false**.
+
 ## Current authority
 
 - repository canary contract: **true**
@@ -89,8 +113,8 @@ The late-fact case is a separately orchestrated second-session protocol under th
 
 Generic `prossiga` is not authorization.
 
-The future staging command is:
+The next command is repository-only:
 
-`authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved serviceEligibilityAuthority=approved-service-version fixtureMode=synthetic-approved-version lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact`
+`authorize-ana-a07-a09-funnel-runtime-projection-authority-repository-only head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 canaryStagingEvidenceBlobSha=3b7274a391a857f2de06538f3302f6be01b06734 runtimeProjectionAuthority=true`
 
-That command may execute only the synthetic staging canaries and mandatory cleanup. It does not grant runtime projection, snapshot publication, cron persistence, production, merge or Ready authority.
+That command may grant only runtime projection authority at the repository-contract layer. It does not grant runtime snapshot authority, snapshot publication, persistent cron, production, merge or Ready authority.

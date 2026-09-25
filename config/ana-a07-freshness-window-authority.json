@@ -3,8 +3,8 @@
   "domain": "ANA-001",
   "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
   "createdAt": "2026-09-21T22:00:00-03:00",
-  "scope": "staging_policy_active_runtime_canaries_pending",
-  "status": "behavior_ord_watermark_certified_a09_policy_structure_installed_inactive",
+  "scope": "staging_policy_active_runtime_canaries_certified_projection_authority_pending",
+  "status": "behavior_ord_watermark_certified_a09_policy_active_runtime_canaries_certified_projection_authority_pending",
   "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
   "rootCause": {
     "helperGap": "ANA-A05 has an applyFreshness helper that accepts an ad hoc maxLagSeconds but there is no canonical policy registry, dependency-watermark contract or canonical latest-window selector.",
@@ -60,9 +60,9 @@
     "thresholdComparison": "stale when lagSeconds > maxLagSeconds; fresh otherwise after full window coverage"
   },
   "thresholdAuthority": {
-    "status": "metric_specific_policy_active_a09_funnel_active_canaries_pending",
+    "status": "metric_specific_policy_active_a09_funnel_canaries_certified_projection_authority_pending",
     "defaultMaxLagSeconds": null,
-    "reason": "Liquidity retains its active r1 policy and the eight ANA-A09 funnel freshness policies are now persistently active at 360 seconds. Runtime projection/snapshot authority remains blocked until complete/orphan/empty-window/late-fact canaries close.",
+    "reason": "Liquidity retains its active r1 policy and the eight ANA-A09 funnel freshness policies remain active at 360 seconds. Complete/orphan/empty-window/late-fact staging canaries are certified; runtime projection authority remains a separate explicit gate.",
     "requiredFields": [
       "policyId",
       "metricKey",
@@ -106,9 +106,13 @@
       "successorActivationFunction": "private.activate_a09_funnel_policy_approved_v1",
       "persistentActivationEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json",
       "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
-      "runtimeCanariesPending": true
+      "runtimeCanariesPending": false,
+      "runtimeCanariesCertified": true,
+      "runtimeCanaryEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+      "runtimeCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734"
     },
-    "runtimeProjectionBlockedUntilCanaries": true
+    "runtimeProjectionBlockedUntilCanaries": false,
+    "runtimeProjectionBlockedUntilExplicitAuthority": true
   },
   "metricDependencies": [
     {
@@ -321,7 +325,8 @@
     "activeFunnelFreshnessPolicyAuthority": true,
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false,
-    "repositoryRuntimeCanaryContractAuthority": true
+    "repositoryRuntimeCanaryContractAuthority": true,
+    "runtimeCanaryEvidenceAuthority": true
   },
   "activationRequirements": [
     "approve an explicit effectiveFrom/effectiveUntil activation envelope for ana-a07-a09-funnel-v1-r1 under separate authorization",
@@ -356,7 +361,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The active A09 funnel freshness policy set is bound to a repository-ready four-path runtime canary contract. Complete/orphan/empty-window/late-fact staging evidence remains unexecuted, so runtime projection/snapshot/publication authority remains false and ANA stays 3/6."
+    "reason": "A07 watermarks, active A09 freshness policies, and complete/orphan/empty-window/late-fact projection canaries are certified in staging. Runtime projection authority remains an explicit separate gate; ANA stays 3/6."
   },
   "dependencyWatermarkAuthority": {
     "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
@@ -395,7 +400,7 @@
   "runtimeCanaryContract": {
     "path": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
     "contractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
-    "status": "repository_ready_identity_and_service_eligibility_remediated_staging_execution_unauthorized",
+    "status": "staging_certified_runtime_projection_authority_pending",
     "canarySet": [
       "complete",
       "orphan",
@@ -404,13 +409,19 @@
     ],
     "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
     "lateFactExecutor": "transient_pg_cron_second_session",
-    "emptyWindowCertified": false,
-    "lateFactCertified": false,
+    "emptyWindowCertified": true,
+    "lateFactCertified": true,
     "stagingExecutionAuthorized": false,
     "identityAuthority": "seed002-email-resolved",
     "legacyFixedUserIdsRetired": true,
     "serviceEligibilityAuthority": "approved-service-version",
     "fixtureMode": "synthetic-approved-version",
-    "serviceEligibilityRemediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json"
+    "serviceEligibilityRemediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json",
+    "stagingEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "stagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "validation046Status": "PASS",
+    "completeCertified": true,
+    "orphanCertified": true,
+    "cleanupStatus": "PASS"
   }
 }

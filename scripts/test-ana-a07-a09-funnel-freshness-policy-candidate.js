@@ -6,7 +6,7 @@ const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('unique metric keys',new Set(metrics).size===8);
 check('unique policy ids',new Set(c.policies.map(p=>p.policyId)).size===8);
 check('cross-domain only final',c.policies.filter(p=>p.sourceDomains.includes('ORD-001')).length===1&&c.policies.find(p=>p.sourceDomains.includes('ORD-001'))?.metricKey==='funnel.quote_submitted_to_order_requested');
-check('all active same window',c.policies.every(p=>p.effectiveFrom==='2026-09-24T14:00:00Z'&&p.effectiveUntil===null&&p.status==='active_runtime_canaries_pending'));
+check('all active same window',c.policies.every(p=>p.effectiveFrom==='2026-09-24T14:00:00Z'&&p.effectiveUntil===null&&p.status==='active_runtime_canaries_certified_projection_authority_pending'));
 check('persistent activation consumed once',c.persistentActivation?.invocationConsumed===true&&c.persistentActivation?.invocationCount===1&&c.persistentActivation?.invocationLimit===1);
 check('eight persistent rows',c.persistentActivation?.policyRowsPersisted===8);
 check('publication remains blocked',c.failClosedSemantics.snapshotPublicationAllowed===false);

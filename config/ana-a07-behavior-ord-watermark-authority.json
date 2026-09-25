@@ -4,7 +4,7 @@
   "sourceHead": "94b7c0b825b8ba6f30953de6c187c2c28cbfa908",
   "createdAt": "2026-09-23T22:38:52.389634Z",
   "scope": "repository_only",
-  "status": "staging_runtime_watermark_certified_downstream_projection_evidence_pending",
+  "status": "staging_runtime_watermark_certified_downstream_projection_canaries_certified",
   "objective": "Define fail-closed server-side materialization watermarks for ANA behavioral facts and ORD metric facts so A07/A09 can derive dataThrough without max(event timestamp), computedAt, or assumed windowEnd authority.",
   "rootCause": {
     "behaviorGap": "private.analytics_behavior_events_v1 has server-owned received_at/occurred_at facts but no server-authoritative watermark proving the ledger is materialized through an empty or non-empty time boundary.",
@@ -184,7 +184,8 @@
     "funnelDependencySetAuthority": true,
     "runtimeWatermarkAuthority": true,
     "stagingAuthority": false,
-    "productionAuthority": false
+    "productionAuthority": false,
+    "runtimeCanaryEvidenceAuthority": true
   },
   "prohibitedEffects": {
     "databaseMutation": false,
@@ -202,7 +203,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Behavior/ORD watermark runtime is certified in staging: validation 041 passes and a real concurrent writer proved dataThrough=xact_start-1us with cleanup complete. Full A07 staging authority remains false because downstream projection/empty-window/late-fact and metric-policy evidence are separate gates. ANA stays 3/6."
+    "reason": "Behavior/ORD watermark runtime is certified, and downstream complete/orphan/empty-window/late-fact projection canaries now pass in staging with cleanup complete. Runtime projection authority remains a separate explicit ANA-A09 gate; ANA stays 3/6."
   },
   "runtimeEvidence": {
     "artifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
@@ -226,8 +227,13 @@
     "emptyWindowSemantics": "algorithmic_property_no_source_max_dependency",
     "evidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
     "downstreamRuntimeCanaryContract": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
-    "emptyWindowProjectionCertified": false,
-    "lateFactCertified": false,
-    "stagingCanaryExecutionAuthorized": false
+    "emptyWindowProjectionCertified": true,
+    "lateFactCertified": true,
+    "stagingCanaryExecutionAuthorized": false,
+    "completeProjectionCertified": true,
+    "orphanProjectionCertified": true,
+    "downstreamRuntimeCanaryEvidence": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "downstreamRuntimeCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "cleanupStatus": "PASS"
   }
 }

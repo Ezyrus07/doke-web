@@ -11,7 +11,7 @@
     "stagingApplyAuthorized": false,
     "productionAuthorized": false
   },
-  "status": "runtime_watermark_certified_downstream_projection_canaries_pending",
+  "status": "runtime_watermark_certified_downstream_projection_canaries_certified_projection_authority_pending",
   "migration": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
   "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
   "runtime": {
@@ -50,10 +50,10 @@
     "structuralSqlCandidate": true,
     "structuralSqlExecutedInStaging": true,
     "noActiveTransactionCase": "read_only_runtime_observed_pass",
-    "emptyWindowCase": "downstream_projection_validation_pending",
+    "emptyWindowCase": "A09_projection_canary_certified",
     "concurrentWriterCase": "staging_transient_cron_canary_pass",
     "preparedTransactionCase": "static fail-closed branch; staging runtime branch unavailable while max_prepared_transactions=0",
-    "lateFactCase": "requires_A09_projection_canary_after_watermark_certification",
+    "lateFactCase": "A09_projection_late_fact_canary_certified",
     "grantBoundaryCase": "validation_041_pass",
     "validation041Status": "passed"
   },
@@ -69,7 +69,10 @@
     "compatibilityStagingMigrationVersion": "20260923231132",
     "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json",
     "concurrentWriterCanaryPassed": true,
-    "concurrentWriterEvidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json"
+    "concurrentWriterEvidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "downstreamProjectionCanariesCertified": true,
+    "downstreamProjectionCanaryEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "downstreamProjectionCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734"
   },
   "preservedBoundaries": {
     "browserAnalyticsActivated": false,
@@ -85,7 +88,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The A07 behavior/ORD watermark mechanism is staging-certified after validation 041 and the real concurrent-writer canary. Downstream empty-window/late-fact projection evidence remains with A09/A05, so ANA stays 3/6."
+    "reason": "The A07 behavior/ORD watermark mechanism is staging-certified, and downstream empty-window/late-fact A09 projection canaries are now certified with cleanup PASS. Runtime projection authority remains a separate explicit gate, so ANA stays 3/6."
   },
   "compatibilityCandidate": {
     "migration": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
@@ -107,8 +110,11 @@
     "noActiveTransactionObserved": true,
     "grantsValidated": true,
     "concurrentWriterCertified": true,
-    "lateFactCertified": false,
-    "cleanupPassed": true
+    "lateFactCertified": true,
+    "cleanupPassed": true,
+    "emptyWindowProjectionCertified": true,
+    "downstreamProjectionCanaryEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "downstreamProjectionCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734"
   },
   "concurrentWriterCanary": {
     "status": "PASS",
