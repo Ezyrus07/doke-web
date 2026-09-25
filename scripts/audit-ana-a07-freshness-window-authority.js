@@ -11,14 +11,14 @@ const evidence=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-
 const matrix=JSON.parse(fs.readFileSync(path.join(root,'config/domain-completion-matrix.json'),'utf8'));
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('contract id',f.CONTRACT_ID===c.contractId);
-check('active scope',c.scope==='staging_policy_active_runtime_canaries_certified_projection_authority_pending');
+check('active scope',c.scope==='staging_policy_active_runtime_canaries_certified_repository_projection_authority_granted');
 check('states',JSON.stringify(f.FRESHNESS_STATES)===JSON.stringify(c.freshnessStates));
 check('no implicit threshold',c.thresholdAuthority?.defaultMaxLagSeconds===null&&c.evaluation?.implicitDefaultMaxLagForbidden===true);
 check('dependency watermark certified',w.CONTRACT_ID===wc.contractId&&c.dependencyWatermarkAuthority?.status==='runtime_watermark_certified'&&c.authority?.runtimeWatermarkAuthority===true);
 check('funnel policy active',funnel.policySet?.activationState==='active'&&funnel.persistentActivation?.policyRowsPersisted===8&&c.thresholdAuthority?.candidateMetricPolicySet?.activationInvoked===true&&c.thresholdAuthority?.candidateMetricPolicySet?.policyRowsPersisted===8);
 check('effective window exact',c.thresholdAuthority?.candidateMetricPolicySet?.effectiveFrom==='2026-09-24T14:00:00Z'&&c.thresholdAuthority?.candidateMetricPolicySet?.effectiveUntil===null);
 check('threshold activation unblocked',c.thresholdAuthority?.runtimeActivationBlockedUntilThresholds===false);
-check('projection now explicit-authority gated',c.thresholdAuthority?.runtimeProjectionBlockedUntilCanaries===false&&c.thresholdAuthority?.runtimeProjectionBlockedUntilExplicitAuthority===true&&c.thresholdAuthority?.candidateMetricPolicySet?.runtimeCanariesCertified===true&&c.authority?.runtimeProjectionAuthority===false&&c.authority?.runtimeSnapshotAuthority===false&&c.authority?.snapshotPublicationAuthority===false);
+check('repository projection authority granted',c.thresholdAuthority?.runtimeProjectionBlockedUntilCanaries===false&&c.thresholdAuthority?.runtimeProjectionBlockedUntilExplicitAuthority===false&&c.thresholdAuthority?.candidateMetricPolicySet?.runtimeCanariesCertified===true&&c.authority?.runtimeProjectionAuthority===true&&c.authority?.runtimeSnapshotAuthority===false&&c.authority?.snapshotPublicationAuthority===false&&c.runtimeProjectionAuthorityGrant?.stagingMutationAuthorized===false);
 check('A09 same active policy',a09.funnelFreshnessPolicyCandidate?.policyRowsPersisted===8&&a09.funnelFreshnessPolicyCandidate?.effectiveFrom==='2026-09-24T14:00:00Z');
 check('evidence exact',evidence.persistentState?.exactPolicyRows===8&&evidence.persistentState?.exactBindingRows===8);
 check('runtime canary evidence bound',c.runtimeCanaryContract?.stagingEvidenceBlobSha==='3b7274a391a857f2de06538f3302f6be01b06734'&&c.runtimeCanaryContract?.emptyWindowCertified===true&&c.runtimeCanaryContract?.lateFactCertified===true&&c.runtimeCanaryContract?.cleanupStatus==='PASS');
