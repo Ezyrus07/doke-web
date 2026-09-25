@@ -1,0 +1,103 @@
+{
+  "contractId": "ana-a09-immutable-funnel-segmentation-v1",
+  "domain": "ANA-001",
+  "sourceDomain": "CAT-001",
+  "sourceHead": "a673c9647884d1042ddd879515876c9874533230",
+  "matrixVersion": "1.3.132",
+  "scope": "repository_only_candidate",
+  "status": "repository_contract_defined_runtime_unapplied",
+  "objective": "Define deterministic category/state funnel segmentation from CAT-owned immutable visibility dimension snapshots without joining mutable current catalog state or changing A09 identity/linkage authority.",
+  "rootCause": {
+    "currentGap": "A09 behavioral stages carry service_id but not an immutable category/state snapshot, so joining public.services at query time would rewrite historical funnel dimensions.",
+    "canonicalSource": "CAT-A06 already freezes category/state dimensions on append-only listing visibility/version transitions and CAT-A07 provides the forward complete-coverage epoch.",
+    "identityBoundary": "Segmentation enriches an already explicit service_id journey; it must not create actor, anonymous, cross-session or temporal-heuristic identity linkage."
+  },
+  "sourceAuthority": {
+    "ledgerTable": "private.cat_listing_visibility_events_v1",
+    "ledgerContractId": "cat-a06-listing-visibility-timeline-v1",
+    "coverageContractId": "cat-a07-supply-coverage-baseline-v1",
+    "owner": "CAT-001",
+    "analyticsConsumer": "ANA-001",
+    "mutableCurrentServiceJoinAllowed": false,
+    "moderationAuditAsDimensionHistoryAllowed": false,
+    "requiredOrder": [
+      "service_id",
+      "sequence_no"
+    ],
+    "sameTimestampTieBreak": "sequence_no",
+    "frozenDimensionField": "dimension_snapshot_after",
+    "categoryPrecedence": [
+      "categoryId",
+      "categorySlug",
+      "category"
+    ],
+    "categoryFallbackNormalization": "lowercase_frozen_token_only",
+    "categoryIdEquivalentToSlugOrName": false,
+    "stateNormalization": "uppercase_frozen_state"
+  },
+  "anchorSemantics": {
+    "searchCtr": "dimension snapshot resolved for the canonical impression identified by search_request_id + service_id",
+    "strictJourney": "dimension snapshot resolved for the first canonical impression in analytics_session_id + service_id",
+    "downstreamStages": "inherit the impression anchor segment for the whole strict journey even if CAT dimensions change later",
+    "finalOrderStage": "inherits the journey anchor; order_id remains the only behavior-to-ORD linkage and ORD/current service dimensions never remap the segment",
+    "orphanWithoutCanonicalImpression": "unsegmented_orphan_only"
+  },
+  "resolution": {
+    "key": "explicit service_id plus CAT-A06 visibility interval containing impression occurred_at",
+    "intervalState": "latest structurally valid per-service sequence whose occurred_at is <= anchor occurred_at",
+    "requiresEligibleAfter": true,
+    "requiresFrozenCategory": true,
+    "requiresFrozenState": true,
+    "ambiguousOrMissing": "unavailable",
+    "currentStateFallbackAllowed": false,
+    "historicalInferenceAllowed": false
+  },
+  "coverageAndFreshness": {
+    "authoritativeSegmentedWindowRequires": [
+      "windowStart >= CAT-A07 certified coverage_complete_from",
+      "CAT ledger structural validity is preserved",
+      "CAT dependency watermark covers the selected window",
+      "every authoritative strict journey anchor resolves exactly one eligible CAT frozen segment"
+    ],
+    "stagingCertifiedCoverageCompleteFrom": "2026-09-23T00:06:30.6835Z",
+    "behaviorOnlySegmentedDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, catWatermark.dataThrough)",
+    "crossDomainSegmentedDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough, catWatermark.dataThrough)",
+    "unresolvedSegmentEffect": "segmented projection unavailable; global A09 projection remains independently governed",
+    "olderHealthyFallbackAllowed": false
+  },
+  "categoryIdentityContinuity": {
+    "authoritySource": "ANA-A11 already-certified CAT-frozen category identity semantics",
+    "categoryIdEquivalentToSlugOrName": false,
+    "legacyFreeformMayRemainDistinct": true,
+    "futureCanonicalRemapStartsNewSeries": true,
+    "historicalSeriesRewriteAllowed": false
+  },
+  "authority": {
+    "repositoryContractAuthority": true,
+    "segmentationDefinitionAuthority": true,
+    "runtimeSegmentationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "migrationCreated": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "deployment": false,
+    "browserAnalyticsActivation": false,
+    "anonymousIdentityStitching": false,
+    "sourceDomainMutation": false,
+    "snapshotWrite": false,
+    "productionChange": false,
+    "pullRequestMerge": false,
+    "readyForReview": false
+  },
+  "nextGate": "Prepare a separately authorized forward-only A09 segmentation runtime candidate that reads CAT-A06/A07 facts server-side, adds CAT to segmented dataThrough, and proves coverage/version-split/category-identity behavior in staging before any segmented snapshot publication.",
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "Repository-only immutable segmentation semantics close the design ambiguity but add no runtime/staging evidence; ANA remains 3/6."
+  }
+}
