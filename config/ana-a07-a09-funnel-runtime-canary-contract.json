@@ -4,7 +4,7 @@
   "sourceHead": "88e753c4dbda6dd2485c22306c5f05cc5edfd49c",
   "matrixVersion": "1.3.132",
   "scope": "repository_only",
-  "status": "repository_ready_identity_remediated_staging_execution_unauthorized",
+  "status": "repository_ready_identity_and_service_eligibility_remediated_staging_execution_unauthorized",
   "objective": "Define controlled staging canaries for the active ANA-A07/A09 funnel freshness policy set without granting runtime projection, snapshot publication, scheduler, production, merge or Ready authority.",
   "authorization": {
     "command": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canary-contract-repository-only head=88e753c4dbda6dd2485c22306c5f05cc5edfd49c matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canarySet=complete-orphan-empty-window-late-fact",
@@ -23,6 +23,20 @@
       "clientEmail": "cliente@doke.local",
       "professionalEmail": "profissional@doke.local",
       "remediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-identity-remediation-evidence.json",
+      "stagingExecutionAuthorized": false
+    },
+    "serviceEligibilityRemediation": {
+      "received": true,
+      "consumedForRepositoryArtifacts": true,
+      "command": "authorize-ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-repository-only head=a7cac83368fca981d84b2f7e93274f8744ed9299 matrix=v1.3.132 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved serviceEligibilityAuthority=approved-service-version fixtureMode=synthetic-approved-version failure=DOKE_ORDER_SERVICE_NOT_ELIGIBLE persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2",
+      "digestSha256": "fe20d6d120050bde718784a6a4bcd68c4296af17cdbb068d02a544e024b2864a",
+      "sourceHead": "a7cac83368fca981d84b2f7e93274f8744ed9299",
+      "matrixVersion": "1.3.132",
+      "identityAuthority": "seed002-email-resolved",
+      "serviceEligibilityAuthority": "approved-service-version",
+      "fixtureMode": "synthetic-approved-version",
+      "priorFailure": "DOKE_ORDER_SERVICE_NOT_ELIGIBLE",
+      "remediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json",
       "stagingExecutionAuthorized": false
     }
   },
@@ -56,7 +70,18 @@
     "markerPrefix": "ana-a07-a09-runtime-canary-v1",
     "sourceDataOnlySynthetic": true,
     "productionDataUseForbidden": true,
-    "cleanupRequired": true
+    "cleanupRequired": true,
+    "serviceEligibilityAuthority": "approved-service-version",
+    "serviceFixtureMode": "synthetic-approved-version",
+    "serviceVersionId": "a7a90000-0000-4000-8000-000000000746",
+    "serviceModerationApplySetting": "doke.service_moderation_apply=on",
+    "serviceEligibilityRequirements": {
+      "serviceStatus": "published",
+      "moderationStatus": "published",
+      "approvedVersionRequired": true,
+      "approvedVersionReviewStatus": "approved",
+      "serviceAndVersionProfessionalMustMatch": true
+    }
   },
   "validation046": {
     "path": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
@@ -73,24 +98,42 @@
     "cronMutationAllowed": false,
     "identityAuthority": "seed002-email-resolved",
     "legacyFixedUserIdsRetired": true,
-    "previousFailure": {
-      "code": "VALIDATION_046_CANARY_USERS_MISSING",
-      "rootCause": "validation referenced retired fixed UUIDs while canonical seed 002 resolves Auth canaries by email",
-      "residueAfterAbort": {
-        "canaryServices": 0,
-        "canaryOrders": 0,
-        "canaryBehaviorRows": 0,
-        "canaryCrons": 0,
-        "recentFunnelSnapshots": 0
+    "serviceEligibilityAuthority": "approved-service-version",
+    "serviceFixtureMode": "synthetic-approved-version",
+    "previousFailures": [
+      {
+        "code": "VALIDATION_046_CANARY_USERS_MISSING",
+        "rootCause": "validation referenced retired fixed UUIDs while canonical seed 002 resolves Auth canaries by email",
+        "residueAfterAbort": {
+          "canaryServices": 0,
+          "canaryOrders": 0,
+          "canaryBehaviorRows": 0,
+          "canaryCrons": 0,
+          "recentFunnelSnapshots": 0
+        },
+        "stagingRemediationRequired": false
       },
-      "stagingRemediationRequired": false
-    }
+      {
+        "code": "DOKE_ORDER_SERVICE_NOT_ELIGIBLE",
+        "rootCause": "rollback-only fixture created the service as draft without an approved service_versions row or approved_version_id, so canonical ORD snapshot enforcement rejected the requested order",
+        "residueAfterAbort": {
+          "canaryServices": 0,
+          "canaryServiceVersions": 0,
+          "canaryOrders": 0,
+          "canaryBehaviorRows": 0,
+          "canaryOrderMetricRows": 0,
+          "canaryCrons": 0
+        },
+        "runtimeDefect": false,
+        "stagingRemediationRequired": false
+      }
+    ]
   },
   "canaries": {
     "complete": {
       "caseId": "complete",
       "objective": "Prove a fully linked synthetic acquisition-to-order journey produces the eight expected v1 funnel metrics with exact chronology and policy-bound dataThrough.",
-      "fixtureStrategy": "Create a synthetic service and requested order using staging canary users, normalize the synthetic order metric timestamp into the reserved closed window, insert seven canonical behavior stages, compute, then rollback.",
+      "fixtureStrategy": "Resolve canonical canary users by email, create a synthetic draft service, insert one synthetic approved service_versions row, promote the service to published via doke.service_moderation_apply=on with approved_version_id bound to that row, assert ORD eligibility, create the requested order, normalize the synthetic order metric timestamp into the reserved closed window, insert seven canonical behavior stages, compute, then rollback.",
       "assertions": [
         "one valid search impression and one valid click",
         "one strict session+service path through quote_submitted",
@@ -195,10 +238,12 @@
       "canaryContractId",
       "validation",
       "identityAuthority",
+      "serviceEligibilityAuthority",
+      "fixtureMode",
       "lateFactExecutor",
       "canarySet"
     ],
-    "template": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact",
+    "template": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved serviceEligibilityAuthority=approved-service-version fixtureMode=synthetic-approved-version lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact",
     "executeValidation046AuthorizedByCommand": true,
     "executeLateFactProtocolAuthorizedByCommand": true,
     "syntheticStagingMutationAuthorizedByCommand": true,
@@ -211,6 +256,8 @@
     "mergeAuthorizedByCommand": false,
     "readyForReviewAuthorizedByCommand": false,
     "previousHeadAuthorizationReusable": false,
-    "identityAuthority": "seed002-email-resolved"
+    "identityAuthority": "seed002-email-resolved",
+    "serviceEligibilityAuthority": "approved-service-version",
+    "fixtureMode": "synthetic-approved-version"
   }
 }

@@ -17,6 +17,21 @@ Resolution is fail-closed: the e-mail must exist in `auth.users`, the same UUID 
 
 The previous staging attempt failed before fixtures because validation 046 referenced retired UUIDs. Post-failure reconciliation proved zero canary services, orders, behavior rows, cron jobs and funnel snapshots. No Auth reprovisioning or seed replay is required.
 
+## Canary service eligibility authority
+
+The complete-path fixture must satisfy canonical ORD service eligibility; directly inserting a draft service is invalid.
+
+Validation 046 now follows `approved-service-version` authority inside the rollback transaction:
+
+1. create the synthetic service in draft state;
+2. create one synthetic `public.service_versions` row with `review_status='approved'`;
+3. set `doke.service_moderation_apply=on` locally for the transaction;
+4. promote the synthetic service to `status='published'`, `moderation_status='published'` and bind `approved_version_id` to the approved version;
+5. assert service/version/professional linkage and eligibility;
+6. only then create the requested order.
+
+The previous attempt failed with `DOKE_ORDER_SERVICE_NOT_ELIGIBLE` before the order was created. Rollback reconciliation proved zero residual services, service versions, orders, behavior rows, order metric rows and canary cron jobs. This was a fixture defect, not an ORD runtime defect.
+
 ## Canary set
 
 ### Complete
@@ -76,6 +91,6 @@ Generic `prossiga` is not authorization.
 
 The future staging command is:
 
-`authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact`
+`authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved serviceEligibilityAuthority=approved-service-version fixtureMode=synthetic-approved-version lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact`
 
 That command may execute only the synthetic staging canaries and mandatory cleanup. It does not grant runtime projection, snapshot publication, cron persistence, production, merge or Ready authority.

@@ -13,6 +13,8 @@ declare
   v_client_email constant text := 'cliente@doke.local';
   v_professional_email constant text := 'profissional@doke.local';
   v_service constant uuid := 'a7a90000-0000-4000-8000-000000000046';
+  v_service_version constant uuid := 'a7a90000-0000-4000-8000-000000000746';
+  v_service_snapshot jsonb;
   v_order constant uuid := 'a7a90000-0000-4000-8000-000000000146';
   v_session constant uuid := 'a7a90000-0000-4000-8000-000000000246';
   v_search constant uuid := 'a7a90000-0000-4000-8000-000000000346';
@@ -68,9 +70,66 @@ begin
     raise exception 'VALIDATION_046_RESERVED_WINDOW_NOT_EMPTY';
   end if;
 
-  insert into public.services(id,professional_id,title,slug,description,status,created_at,updated_at)
-  values(v_service,v_professional,'ANA A07/A09 runtime canary','ana-a07-a09-runtime-canary-v1-046',
-    'Synthetic rollback-only analytics runtime canary fixture.','draft',pg_catalog.clock_timestamp(),pg_catalog.clock_timestamp());
+  v_service_snapshot:=pg_catalog.jsonb_build_object(
+    'id',v_service::text,
+    'externalId',v_service::text,
+    'title','ANA A07/A09 runtime canary',
+    'category','Analytics',
+    'shortDescription','Synthetic rollback-only service used exclusively by the ANA runtime canary.',
+    'description','Synthetic rollback-only analytics runtime canary service fixture with an approved version for canonical order eligibility.',
+    'fullDescription','Synthetic rollback-only analytics runtime canary service fixture with an approved version for canonical order eligibility.',
+    'quoteMode','default',
+    'images',pg_catalog.jsonb_build_array('https://example.invalid/ana-a07-a09-canary.png'),
+    'status','active',
+    'moderationStatus','published'
+  );
+
+  perform pg_catalog.set_config('doke.service_moderation_apply','on',true);
+
+  insert into public.services(
+    id,professional_id,title,slug,description,status,moderation_status,metadata,created_at,updated_at
+  ) values(
+    v_service,v_professional,'ANA A07/A09 runtime canary','ana-a07-a09-runtime-canary-v1-046',
+    'Synthetic rollback-only analytics runtime canary fixture.','draft','draft',v_service_snapshot,
+    pg_catalog.clock_timestamp(),pg_catalog.clock_timestamp()
+  );
+
+  insert into public.service_versions(
+    id,service_id,professional_id,version_number,source,change_class,review_status,
+    snapshot,change_summary,submitted_at,reviewed_at
+  ) values(
+    v_service_version,v_service,v_professional,1,'create','major','approved',
+    v_service_snapshot,pg_catalog.jsonb_build_object('runtimeCanary',true),
+    pg_catalog.clock_timestamp(),pg_catalog.clock_timestamp()
+  );
+
+  perform pg_catalog.set_config('doke.service_moderation_apply','on',true);
+  update public.services
+     set status='published',
+         moderation_status='published',
+         approved_version_id=v_service_version,
+         pending_version_id=null,
+         review_reason=null,
+         reviewed_at=pg_catalog.clock_timestamp(),
+         updated_at=pg_catalog.clock_timestamp()
+   where id=v_service;
+
+  if not exists(
+    select 1
+      from public.services s
+      join public.service_versions sv
+        on sv.id=s.approved_version_id
+       and sv.service_id=s.id
+       and sv.professional_id=s.professional_id
+     where s.id=v_service
+       and s.professional_id=v_professional
+       and s.status='published'
+       and s.moderation_status='published'
+       and sv.id=v_service_version
+       and sv.review_status='approved'
+  ) then
+    raise exception 'VALIDATION_046_SERVICE_ELIGIBILITY_FIXTURE_INVALID';
+  end if;
 
   insert into public.orders(id,client_id,professional_id,service_id,title,description,status,created_at,updated_at)
   values(v_order,v_client,v_professional,v_service,'ANA A07/A09 runtime canary order',
