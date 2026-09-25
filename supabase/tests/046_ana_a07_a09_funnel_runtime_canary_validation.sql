@@ -1,4 +1,5 @@
 -- ANA-A07/A09 validation 046: complete + orphan + empty-window runtime canary candidate.
+-- Post-matrix repository certification marker: service eligibility remediation; no runtime semantic change.
 -- Repository-only candidate. Execution in staging requires separate explicit authorization.
 -- All source mutations are synthetic and this file MUST end in ROLLBACK.
 -- The late-fact case is intentionally excluded: it requires the separately orchestrated
