@@ -4,8 +4,8 @@
   "sourceHead": "88e753c4dbda6dd2485c22306c5f05cc5edfd49c",
   "matrixVersion": "1.3.132",
   "scope": "repository_only",
-  "status": "staging_certified_runtime_projection_authority_pending",
-  "objective": "Define controlled staging canaries for the active ANA-A07/A09 funnel freshness policy set without granting runtime projection, snapshot publication, scheduler, production, merge or Ready authority.",
+  "status": "staging_certified_runtime_projection_authority_repository_granted",
+  "objective": "Define controlled staging canaries for the active ANA-A07/A09 funnel freshness policy set and bind the subsequent explicit repository-only runtime projection authority without granting runtime snapshot, snapshot publication, scheduler, production, merge or Ready authority.",
   "authorization": {
     "command": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canary-contract-repository-only head=88e753c4dbda6dd2485c22306c5f05cc5edfd49c matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canarySet=complete-orphan-empty-window-late-fact",
     "digestSha256": "e1e8ed5b85e4aa62e473b46244f6278e3236c79491be83f2b4c7acdd5052a6a5",
@@ -200,7 +200,7 @@
     "repositoryCanaryContractAuthority": true,
     "canaryCandidateAuthority": true,
     "stagingCanaryExecutionAuthority": false,
-    "runtimeProjectionAuthority": false,
+    "runtimeProjectionAuthority": true,
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false,
     "schedulerAuthority": false,
@@ -223,7 +223,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Complete, orphan, empty-window and late-fact runtime canaries are certified in staging with cleanup PASS and zero snapshot writes. Repository reconciliation does not itself grant runtime projection/snapshot/publication authority, so ANA remains 3/6."
+    "reason": "Complete, orphan, empty-window and late-fact runtime canaries are certified in staging with cleanup PASS and zero snapshot writes. The explicit repository-only gate now grants runtime projection authority, while runtime snapshot and snapshot publication authority remain false; ANA remains 3/6."
   },
   "stagingExecutionAuthorization": {
     "commandName": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging",
@@ -321,6 +321,17 @@
     "persistentCronAuthorizedByCommand": false,
     "productionAuthorizedByCommand": false,
     "mergeAuthorizedByCommand": false,
-    "readyForReviewAuthorizedByCommand": false
+    "readyForReviewAuthorizedByCommand": false,
+    "authorizationConsumed": true,
+    "authorizedRepositoryHead": "28960baecb1b495b16c3799c55a80305764db0ac",
+    "matrixVersion": "1.3.132",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "canaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "authorizationCommand": "authorize-ana-a07-a09-funnel-runtime-projection-authority-repository-only head=28960baecb1b495b16c3799c55a80305764db0ac matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 canaryStagingEvidenceBlobSha=3b7274a391a857f2de06538f3302f6be01b06734 runtimeProjectionAuthority=true",
+    "authorizationDigestSha256": "ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5",
+    "repositoryOnly": true,
+    "previousHeadAuthorizationReusable": false,
+    "currentRuntimeProjectionAuthority": true
   }
 }
