@@ -14,7 +14,7 @@ const serviceEligibilityRemediation=json('reports/generated/ana-a07-a09-funnel-r
 const stagingEvidence=json('reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json');
 
 assert.equal(c.contractId,'ana-a07-a09-funnel-runtime-canary-contract-v1');
-assert.equal(c.status,'staging_certified_runtime_projection_authority_pending');
+assert.equal(c.status,'staging_certified_runtime_projection_authority_repository_granted');
 assert.equal(c.authorization.digestSha256,'e1e8ed5b85e4aa62e473b46244f6278e3236c79491be83f2b4c7acdd5052a6a5');
 assert.equal(c.bindings.policySetId,'ana-a07-a09-funnel-v1-r1');
 assert.equal(c.bindings.persistentActivationEvidenceBlobSha,'24ddfedcb29b465f510130befe61d4e4a283e2d2');
@@ -35,7 +35,7 @@ assert.equal(c.canaries['late-fact'].executionMode,'two_session_transient_pg_cro
 assert(c.canaries['late-fact'].protocol.some(x=>x.includes('one microsecond')));
 assert(c.canaries['late-fact'].protocol.some(x=>x.includes('After writer commit')));
 assert.equal(c.authority.repositoryCanaryContractAuthority,true);
-['stagingCanaryExecutionAuthority','runtimeProjectionAuthority','runtimeSnapshotAuthority','snapshotPublicationAuthority','schedulerAuthority','productionAuthority','mergeAuthority','readyForReviewAuthority'].forEach(k=>assert.equal(c.authority[k],false,k));
+assert.equal(c.authority.runtimeProjectionAuthority,true); ['stagingCanaryExecutionAuthority','runtimeSnapshotAuthority','snapshotPublicationAuthority','schedulerAuthority','productionAuthority','mergeAuthority','readyForReviewAuthority'].forEach(k=>assert.equal(c.authority[k],false,k));
 assert.equal(c.stagingExecutionAuthorization.executeValidation046AuthorizedByCommand,true);
 assert.equal(c.stagingExecutionAuthorization.executeLateFactProtocolAuthorizedByCommand,true);
 assert.equal(c.stagingExecutionAuthorization.cleanupMandatory,true);
@@ -55,6 +55,11 @@ assert.equal(c.authority.runtimeCanaryEvidenceAuthority,true);
 assert.equal(c.stagingEvidence.blobSha,'3b7274a391a857f2de06538f3302f6be01b06734');
 assert.equal(c.stagingEvidence.snapshotWrites,0);
 assert.equal(c.runtimeProjectionAuthorityGate.scope,'repository_only');
+assert.equal(c.runtimeProjectionAuthorityGate.authorizationConsumed,true);
+assert.equal(c.runtimeProjectionAuthorityGate.authorizedRepositoryHead,'28960baecb1b495b16c3799c55a80305764db0ac');
+assert.equal(c.runtimeProjectionAuthorityGate.authorizationDigestSha256,'ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5');
+assert.equal(c.runtimeProjectionAuthorityGate.canaryStagingEvidenceBlobSha,'3b7274a391a857f2de06538f3302f6be01b06734');
+assert.equal(c.runtimeProjectionAuthorityGate.currentRuntimeProjectionAuthority,true);
 assert.equal(c.runtimeProjectionAuthorityGate.runtimeProjectionAuthorityAuthorizedByCommand,true);
 assert.equal(c.runtimeProjectionAuthorityGate.runtimeSnapshotAuthorityAuthorizedByCommand,false);
 assert.equal(c.runtimeProjectionAuthorityGate.snapshotPublicationAuthorizedByCommand,false);
