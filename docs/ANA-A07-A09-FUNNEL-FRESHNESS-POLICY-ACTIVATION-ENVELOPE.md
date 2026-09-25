@@ -1,10 +1,10 @@
 # ANA-A07/A09 — Funnel freshness policy activation envelope
 
-This document records the approved revision-1 effective window for `ana-a07-a09-funnel-v1-r1` and its current staging enforcement state.
+This document records the revision-1 approval chain for `ana-a07-a09-funnel-v1-r1` and its current authority state.
 
 ## Approved binding
 
-- source HEAD: `0c45856b82b08fe5265c3e71b40c0d83fed871a7`
+- approval source HEAD: `0c45856b82b08fe5265c3e71b40c0d83fed871a7`
 - Matrix: `v1.3.132`
 - policy set: `ana-a07-a09-funnel-v1-r1`
 - revision: `1`
@@ -15,37 +15,46 @@ This document records the approved revision-1 effective window for `ana-a07-a09-
 - max lag: `360s`
 - effectiveFrom: `2026-09-24T14:00:00Z`
 - effectiveUntil: `null`
-- authorization SHA-256: `4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a`
-- evidence SHA-256: `9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5`
+- approval authorization SHA-256: `4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a`
+- approval evidence SHA-256: `9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5`
 
-## Repository approval envelope
+## Runtime enforcement and persistent activation
 
-The authorization is bound to the exact repository HEAD, Matrix version, policy set, eight policy identities, fixed threshold and effective window. The evidence digest is deterministic and repository-tested.
+Approval-envelope runtime enforcement is installed in staging and validation 044 passes. The legacy scalar-only activation path remains tombstoned.
 
-## Runtime enforcement — staging validated
+The approved successor `private.activate_a09_funnel_policy_approved_v1` is installed and validation 045 passes. Its single-use persistent activation authorization was consumed exactly once and inserted exactly eight freshness-policy rows.
 
-The approval-envelope runtime enforcement is now installed and validation `044` passes in staging.
+Persistent activation evidence:
 
-- repository migration: `20260924140000`
-- staging migration version: `20260924141356`
-- validator: owner `postgres`, `SECURITY DEFINER`
-- `anon/authenticated/service_role EXECUTE = false`
-- canonical envelope accepted
-- HEAD mismatch rejected
-- authorization mismatch rejected
-- boundary escalation rejected
-- evidence-digest mismatch rejected
-- legacy scalar-only activation rejected
-- persisted funnel policy rows: `0`
+- artifact: `reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json`
+- blob: `24ddfedcb29b465f510130befe61d4e4a283e2d2`
+- persistent policy rows: **8**
+- publication-policy rows created by activation: **0**
+- post-activation snapshots: **0**
+- matching A09 cron jobs: **0**
 
-The legacy function `private.activate_analytics_a09_funnel_freshness_policy_v1(...)` is now a fail-closed tombstone. Runtime envelope enforcement is therefore active, but activation itself is still unauthorized and no activation-capable successor exists.
+## Runtime canary evidence
 
-PostgreSQL truncates identifiers to 63 bytes, so the long validator identifier is stored internally as `validate_analytics_a09_funnel_freshness_policy_approval_envelop`. Existing SQL references resolve correctly, but any future activation-capable successor must use an explicit canonical identifier of 63 bytes or fewer to avoid collision risk.
+Validation 046 plus the second-session late-fact protocol certify complete, orphan, empty-window and late-fact behavior. Cleanup left zero synthetic residue and zero canary-window snapshots.
+
+Canonical canary evidence blob: `3b7274a391a857f2de06538f3302f6be01b06734`.
+
+## Repository projection authority
+
+A later explicit repository-only gate bound to source HEAD `28960baecb1b495b16c3799c55a80305764db0ac` grants runtime projection authority at the contract layer. Authorization digest: `ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5`.
+
+That grant does not mutate staging. Runtime snapshot authority and snapshot publication authority remain false.
 
 ## Boundaries preserved
 
-No freshness-policy row has been persisted, no snapshot has been published, no cron has been created, production is unchanged, and PR #488 remains draft/unmerged.
+- no second activation invocation is authorized;
+- no additional policy persistence is authorized;
+- runtime projection authority: **true** at repository-contract layer;
+- live staging runtime flag was not changed by this grant;
+- runtime snapshot authority: **false**;
+- snapshot publication authority: **false**;
+- A09 cron/scheduler authority: **false**;
+- production, merge and Ready: **false**;
+- ANA remains **3/6**.
 
-## Next gate
-
-Create a separate repository-only activation-invocation authorization contract that binds this approved envelope and the staging runtime-enforcement evidence. That contract must not itself activate or persist the eight policies. A later separate staging authorization is required for real activation.
+The next runtime-changing gate, if pursued, must be separately authorized and forward-only.
