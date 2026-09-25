@@ -8,7 +8,7 @@ const envelope=json('config/ana-a07-a09-funnel-freshness-policy-activation-envel
 const candidate=json('config/ana-a07-a09-funnel-freshness-policy-candidate.json');
 const evidence=json('reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json');
 const matrix=json('config/domain-completion-matrix.json');
-assert.equal(c.status,'staging_runtime_canaries_certified_projection_authority_pending');
+assert.equal(c.status,'staging_runtime_canaries_certified_repository_projection_authority_granted');
 assert.equal(c.operationalState.successorInstalledInStaging,true);
 assert.equal(c.operationalState.activationInvoked,true);
 assert.equal(c.operationalState.activationInvocationCount,1);
@@ -24,7 +24,8 @@ assert.equal(c.persistentActivationAuthorization.persistentActivationEvidenceBlo
 assert.equal(c.persistentActivationAuthorization.activationInvocationAuthorizedNow,false);
 assert.equal(c.persistentActivationAuthorization.persistentPolicyWriteAuthorizedNow,false);
 assert.equal(c.authority.activeFreshnessPolicySetAuthority,true);
-['activationInvocationAuthority','policyPersistenceAuthority','runtimeProjectionAuthority','runtimeSnapshotAuthority','snapshotPublicationAuthority','productionAuthority','mergeAuthority','readyForReviewAuthority']
+assert.equal(c.authority.runtimeProjectionAuthority,true);
+['activationInvocationAuthority','policyPersistenceAuthority','runtimeSnapshotAuthority','snapshotPublicationAuthority','productionAuthority','mergeAuthority','readyForReviewAuthority']
  .forEach(k=>assert.equal(c.authority[k],false,k));
 assert.equal(evidence.invocationConsumed,true);
 assert.equal(evidence.result.rowsInserted,8);
@@ -39,7 +40,7 @@ assert.equal(c.runtimeCanaryContractAuthorization.scope,'repository_only');
 assert.equal(c.runtimeCanaryContractAuthorization.authorizationReceived,true);
 assert.equal(c.runtimeCanaryContractAuthorization.authorizationConsumedForRepositoryArtifacts,true);
 assert.equal(c.runtimeCanaryContractAuthorization.contractPath,'config/ana-a07-a09-funnel-runtime-canary-contract.json');
-assert.equal(c.runtimeCanaryContractAuthorization.contractStatus,'staging_certified_runtime_projection_authority_pending');
+assert.equal(c.runtimeCanaryContractAuthorization.contractStatus,'staging_certified_runtime_projection_authority_repository_granted');
 assert.equal(c.runtimeCanaryContractAuthorization.serviceEligibilityAuthority,'approved-service-version');
 assert.equal(c.runtimeCanaryContractAuthorization.fixtureMode,'synthetic-approved-version');
 assert.equal(c.runtimeCanaryContractAuthorization.identityAuthority,'seed002-email-resolved');
