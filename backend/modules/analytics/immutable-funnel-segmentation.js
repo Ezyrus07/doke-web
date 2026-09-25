@@ -35,14 +35,14 @@ function normalizeState(snapshot){
 function validateServiceLedger(rows,serviceId){
   const filtered=(rows||[]).filter(r=>String(r.serviceId??r.service_id)===String(serviceId));
   filtered.sort((a,b)=>Number(a.sequenceNo??a.sequence_no)-Number(b.sequenceNo??b.sequence_no));
-  let prevSeq=0;
+  let expectedSeq=1;
   let prevTime=-Infinity;
   for(const row of filtered){
     const seq=Number(row.sequenceNo??row.sequence_no);
-    if(!Number.isInteger(seq)||seq<=prevSeq) throw new Error('ANA_A09_SEGMENT_LEDGER_SEQUENCE_INVALID');
+    if(!Number.isInteger(seq)||seq!==expectedSeq) throw new Error('ANA_A09_SEGMENT_LEDGER_SEQUENCE_INVALID');
     const t=toTime(row.occurredAt??row.occurred_at,'ANA_A09_SEGMENT_LEDGER_TIME_INVALID');
     if(t<prevTime) throw new Error('ANA_A09_SEGMENT_LEDGER_TIME_ORDER_INVALID');
-    prevSeq=seq;
+    expectedSeq+=1;
     prevTime=t;
   }
   return filtered;
