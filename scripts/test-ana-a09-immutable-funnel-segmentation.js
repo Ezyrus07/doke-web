@@ -30,6 +30,11 @@ let bad=false;try{s.resolveFrozenSegment([
  {serviceId:service,sequenceNo:2,occurredAt:'2026-09-23T00:07:00Z',eligibleAfter:true,dimensionSnapshotAfter:{category:'B',state:'BA'}}
 ],{serviceId,occurredAt:'2026-09-23T00:09:00Z',coverageCompleteFrom:coverage});}catch(e){bad=e.message==='ANA_A09_SEGMENT_LEDGER_TIME_ORDER_INVALID';}
 check('nonmonotonic ledger fails closed',bad);
+bad=false;try{s.validateServiceLedger([
+ {serviceId:service,sequenceNo:1,occurredAt:'2026-09-23T00:07:00Z',eligibleAfter:true,dimensionSnapshotAfter:{category:'A',state:'BA'}},
+ {serviceId:service,sequenceNo:3,occurredAt:'2026-09-23T00:08:00Z',eligibleAfter:true,dimensionSnapshotAfter:{category:'B',state:'BA'}}
+],service);}catch(e){bad=e.message==='ANA_A09_SEGMENT_LEDGER_SEQUENCE_INVALID';}
+check('sequence gap fails closed',bad);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:s.CONTRACT_ID,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;
