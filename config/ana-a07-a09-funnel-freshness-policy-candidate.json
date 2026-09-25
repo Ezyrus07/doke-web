@@ -3,8 +3,8 @@
   "domain": "ANA-001",
   "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
   "matrixVersion": "1.3.132",
-  "scope": "staging_policy_active_runtime_canaries_certified_projection_authority_pending",
-  "status": "persistent_activation_applied_policy_active_runtime_canaries_certified_projection_authority_pending",
+  "scope": "staging_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
+  "status": "persistent_activation_applied_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
   "authorization": {
     "token": "authorize-ana-a07-a09-funnel-freshness-policy-candidate-repository-only head=fb0a8082b7eec9038348d6aee4065704d3ee30a5 matrix=v1.3.132 metricCount=8",
     "received": true,
@@ -53,7 +53,7 @@
       "maxLagSeconds": 360,
       "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
-      "status": "active_runtime_canaries_certified_projection_authority_pending"
+      "status": "active_runtime_canaries_certified_repository_projection_authority_granted"
     },
     {
       "policyId": "ana-a07-a09-funnel-impression-click-v1-r1",
@@ -65,7 +65,7 @@
       "maxLagSeconds": 360,
       "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
-      "status": "active_runtime_canaries_certified_projection_authority_pending"
+      "status": "active_runtime_canaries_certified_repository_projection_authority_granted"
     },
     {
       "policyId": "ana-a07-a09-funnel-click-detail-v1-r1",
@@ -77,7 +77,7 @@
       "maxLagSeconds": 360,
       "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
-      "status": "active_runtime_canaries_certified_projection_authority_pending"
+      "status": "active_runtime_canaries_certified_repository_projection_authority_granted"
     },
     {
       "policyId": "ana-a07-a09-funnel-detail-budget-v1-r1",
@@ -89,7 +89,7 @@
       "maxLagSeconds": 360,
       "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
-      "status": "active_runtime_canaries_certified_projection_authority_pending"
+      "status": "active_runtime_canaries_certified_repository_projection_authority_granted"
     },
     {
       "policyId": "ana-a07-a09-funnel-budget-quote-start-v1-r1",
@@ -101,7 +101,7 @@
       "maxLagSeconds": 360,
       "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
-      "status": "active_runtime_canaries_certified_projection_authority_pending"
+      "status": "active_runtime_canaries_certified_repository_projection_authority_granted"
     },
     {
       "policyId": "ana-a07-a09-funnel-quote-start-complete-v1-r1",
@@ -113,7 +113,7 @@
       "maxLagSeconds": 360,
       "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
-      "status": "active_runtime_canaries_certified_projection_authority_pending"
+      "status": "active_runtime_canaries_certified_repository_projection_authority_granted"
     },
     {
       "policyId": "ana-a07-a09-funnel-quote-complete-submit-v1-r1",
@@ -125,7 +125,7 @@
       "maxLagSeconds": 360,
       "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
-      "status": "active_runtime_canaries_certified_projection_authority_pending"
+      "status": "active_runtime_canaries_certified_repository_projection_authority_granted"
     },
     {
       "policyId": "ana-a07-a09-funnel-submit-order-v1-r1",
@@ -138,7 +138,7 @@
       "maxLagSeconds": 360,
       "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
-      "status": "active_runtime_canaries_certified_projection_authority_pending"
+      "status": "active_runtime_canaries_certified_repository_projection_authority_granted"
     }
   ],
   "failClosedSemantics": {
@@ -152,7 +152,7 @@
     "overlapAtActivation": "reject",
     "olderHealthyFallbackAllowed": false,
     "snapshotPublicationAllowed": false,
-    "runtimeProjectionAuthorityAllowed": false,
+    "runtimeProjectionAuthorityAllowed": true,
     "activationRequiresExplicitEffectiveFrom": true
   },
   "runtimeCandidate": {
@@ -175,14 +175,14 @@
     "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json"
   },
   "nextGates": [
-    "obtain the exact repository-only ANA-A07/A09 runtime projection authority authorization bound to the current PR HEAD and certified canary staging evidence",
+    "keep the repository runtime projection authority grant bound to canary evidence blob 3b7274a391a857f2de06538f3302f6be01b06734 without inferring a staging runtime flag mutation",
     "keep runtimeSnapshotAuthority and snapshotPublicationAuthority false until separate later gates",
     "keep persistent cron/scheduler, production, merge and Ready authority false"
   ],
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The eight-policy freshness set is active and complete/orphan/empty-window/late-fact runtime canaries are certified in staging with cleanup PASS. Runtime projection authority remains a separate explicit repository gate; ANA stays 3/6."
+    "reason": "The eight-policy freshness set is active and complete/orphan/empty-window/late-fact runtime canaries are certified in staging with cleanup PASS. Explicit repository-only runtime projection authority is now granted; runtime snapshot/publication remain separate gates, so ANA stays 3/6."
   },
   "runtimeEvidence": {
     "artifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json",
@@ -271,7 +271,7 @@
     "successorStagingEvidenceBlobSha": "02a860c812eeb777519c7917bb5c31b3fb3dd5e2"
   },
   "persistentActivation": {
-    "status": "active_runtime_canaries_pending",
+    "status": "active_runtime_canaries_certified_repository_projection_authority_granted",
     "activationFunction": "private.activate_a09_funnel_policy_approved_v1",
     "invocationConsumed": true,
     "invocationCount": 1,
@@ -292,7 +292,7 @@
   "runtimeCanaryContract": {
     "path": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
     "contractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
-    "status": "staging_certified_runtime_projection_authority_pending",
+    "status": "staging_certified_runtime_projection_authority_repository_granted",
     "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
     "canarySet": [
       "complete",
@@ -316,5 +316,20 @@
     "emptyWindowCertified": true,
     "lateFactCertified": true,
     "cleanupStatus": "PASS"
+  },
+  "runtimeProjectionAuthorityGrant": {
+    "sourceContract": "config/ana-a09-canonical-funnel-projection.json",
+    "authorizedRepositoryHead": "28960baecb1b495b16c3799c55a80305764db0ac",
+    "matrixVersion": "1.3.132",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "canaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "authorizationDigestSha256": "ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5",
+    "repositoryOnly": true,
+    "runtimeProjectionAuthority": true,
+    "stagingRuntimeFlagChanged": false,
+    "stagingMutationAuthorized": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false
   }
 }
