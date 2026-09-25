@@ -23,6 +23,11 @@ on:
       - 'docs/ANA-A09-CANONICAL-FUNNEL-PROJECTION.md'
       - 'scripts/audit-ana-a09-canonical-funnel-projection.js'
       - 'scripts/test-ana-a09-canonical-funnel-projection.js'
+      - 'backend/modules/analytics/immutable-funnel-segmentation.js'
+      - 'config/ana-a09-immutable-funnel-segmentation.json'
+      - 'docs/ANA-A09-IMMUTABLE-FUNNEL-SEGMENTATION.md'
+      - 'scripts/audit-ana-a09-immutable-funnel-segmentation.js'
+      - 'scripts/test-ana-a09-immutable-funnel-segmentation.js'
       - 'config/ana-a07-a09-funnel-freshness-policy-candidate.json'
       - 'supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql'
       - 'supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql'
@@ -66,6 +71,9 @@ jobs:
           node --check backend/modules/analytics/canonical-funnel-projection.js
           node --check scripts/audit-ana-a09-canonical-funnel-projection.js
           node --check scripts/test-ana-a09-canonical-funnel-projection.js
+          node --check backend/modules/analytics/immutable-funnel-segmentation.js
+          node --check scripts/audit-ana-a09-immutable-funnel-segmentation.js
+          node --check scripts/test-ana-a09-immutable-funnel-segmentation.js
           node --check scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
@@ -74,6 +82,10 @@ jobs:
           node --check scripts/test-ana-a07-a09-funnel-runtime-canary-contract.js
       - name: ANA-A09 audit
         run: npm run audit:ana-a09-canonical-funnel-projection
+      - name: Immutable funnel segmentation audit
+        run: npm run audit:ana-a09-immutable-funnel-segmentation
+      - name: Immutable funnel segmentation conformance
+        run: npm run test:ana-a09-immutable-funnel-segmentation
       - name: Runtime canary contract audit
         run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
       - name: Runtime canary contract conformance
