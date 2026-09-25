@@ -10,8 +10,9 @@ check('zero denominator null',((sql.match(/when [^\n]*=0 then null/g)||[]).lengt
 check('global only segmentation',sql.includes("'segmentation','global_only'"));
 check('no identity stitching',sql.includes("'anonymousIdentityStitching',false")&&sql.includes("'temporalHeuristicJoin',false"));
 check('no snapshot write',c.runtime?.snapshotMutationAllowed===false&&c.snapshotHandoff?.appendInvokedByCandidate===false);
-check('threshold separately gated',c.validationPlan?.metricSpecificThresholds==='pending_separate_policy_lot'&&c.snapshotHandoff?.publicationAllowed===false&&c.runtime?.runtimeAuthority===false&&c.runtime?.snapshotPublicationAllowed===false);
+check('threshold active but canary gated',c.validationPlan?.metricSpecificThresholds==='active_r1_360_seconds'&&c.snapshotHandoff?.blockingReason==='A07_A09_RUNTIME_CANARIES_PENDING'&&c.snapshotHandoff?.publicationAllowed===false&&c.runtime?.runtimeAuthority===false&&c.runtime?.snapshotPublicationAllowed===false);
 check('staging installed and structurally validated',c.validationPlan?.migrationApplied===true&&c.validationPlan?.stagingValidated===true&&c.validationPlan?.stagingMigrationVersion==='20260924002741'&&c.validationPlan?.validation042Status==='passed');
+check('runtime canary contract ready only',c.runtimeCanaryContract?.contractId==='ana-a07-a09-funnel-runtime-canary-contract-v1'&&c.runtimeCanaryContract?.stagingExecutionAuthorized===false&&c.validationPlan?.completePath==='contract_ready_staging_execution_unauthorized'&&c.validationPlan?.lateFactPath==='contract_ready_staging_execution_unauthorized');
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;

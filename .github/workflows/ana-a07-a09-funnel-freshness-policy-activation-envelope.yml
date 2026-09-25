@@ -1,4 +1,5 @@
 # Persistent activation post-matrix final certification
+# Runtime canary contract repository-only certification
 name: ANA-A07/A09 Funnel Freshness Activation Envelope
 # Final generated-matrix state certification
 # Runtime-enforcement candidate final generated-matrix certification
@@ -30,6 +31,11 @@ on:
       - 'reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json'
       - 'reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json'
       - 'reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json'
+      - 'scripts/test-ana-a07-a09-funnel-runtime-canary-contract.js'
+      - 'scripts/audit-ana-a07-a09-funnel-runtime-canary-contract.js'
+      - 'supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql'
+      - 'docs/ANA-A07-A09-FUNNEL-RUNTIME-CANARY-CONTRACT.md'
+      - 'config/ana-a07-a09-funnel-runtime-canary-contract.json'
       - 'supabase/tests/044_ana_a07_a09_funnel_policy_approval_runtime_enforcement_validation.sql'
       - 'reports/generated/ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging-evidence.json'
       - 'supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql'
@@ -79,6 +85,10 @@ jobs:
         run: npm run audit:ana-a07-a09-funnel-freshness-policy-activation-approval
       - name: Activation approval conformance
         run: npm run test:ana-a07-a09-funnel-freshness-policy-activation-approval
+      - name: Runtime canary contract audit
+        run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
+      - name: Runtime canary contract conformance
+        run: npm run test:ana-a07-a09-funnel-runtime-canary-contract
       - name: Candidate regression
         run: |
           node scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js

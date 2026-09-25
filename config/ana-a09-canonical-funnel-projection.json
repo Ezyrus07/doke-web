@@ -4,7 +4,7 @@
   "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
   "createdAt": "2026-09-21T22:33:00-03:00",
   "scope": "staging_runtime_installed_policy_active_canaries_pending",
-  "status": "server_side_projector_validated_freshness_policy_active_runtime_canaries_pending",
+  "status": "server_side_projector_validated_freshness_policy_active_runtime_canary_contract_ready",
   "objective": "Define a deterministic canonical acquisition-to-order funnel from ANA behavioral events and ORD order.requested facts using only explicit linkage keys, without identity stitching or temporal heuristics.",
   "rootCause": {
     "projectionGap": "The server-side compute projector is installed and validation 042 passes in staging. Runtime projection authority remains false because metric-specific freshness thresholds, controlled complete/orphan/empty-window/late-fact evidence and snapshot publication policy remain open.",
@@ -134,7 +134,8 @@
     "stagingAuthority": false,
     "productionAuthority": false,
     "activeFreshnessPolicyAuthority": true,
-    "snapshotPublicationAuthority": false
+    "snapshotPublicationAuthority": false,
+    "repositoryRuntimeCanaryContractAuthority": true
   },
   "activationRequirements": [
     "approve an explicit effectiveFrom/effectiveUntil for the exact eight r1 funnel freshness policies under separate authorization",
@@ -175,7 +176,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The A09 projector and the funnel freshness activation structure are installed and structurally validated, but the eight r1 policies remain inactive with no effective window. Runtime projection/snapshot authority stays false and ANA remains 3/6."
+    "reason": "The server-side projector and active freshness policy are installed, and the exact four-path runtime canary contract is repository-ready. Staging canary execution remains unauthorized, so runtime projection/snapshot authority remains false and ANA stays 3/6."
   },
   "runtimeCandidate": {
     "status": "staging_applied_validation_042_pass_policy_canaries_pending",
@@ -230,5 +231,21 @@
     "persistentActivationEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json",
     "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
     "runtimeCanariesPending": true
+  },
+  "runtimeCanaryContract": {
+    "path": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
+    "contractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "status": "repository_ready_staging_execution_unauthorized",
+    "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
+    "canarySet": [
+      "complete",
+      "orphan",
+      "empty-window",
+      "late-fact"
+    ],
+    "lateFactExecutor": "transient_pg_cron_second_session",
+    "stagingExecutionAuthorized": false,
+    "emptyWindowCertified": false,
+    "lateFactCertified": false
   }
 }

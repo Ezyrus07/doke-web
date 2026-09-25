@@ -25,6 +25,11 @@ on:
       - 'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-CANDIDATE.md'
       - 'scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js'
       - 'scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js'
+      - 'config/ana-a07-a09-funnel-runtime-canary-contract.json'
+      - 'docs/ANA-A07-A09-FUNNEL-RUNTIME-CANARY-CONTRACT.md'
+      - 'supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql'
+      - 'scripts/audit-ana-a07-a09-funnel-runtime-canary-contract.js'
+      - 'scripts/test-ana-a07-a09-funnel-runtime-canary-contract.js'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - 'reports/generated/domain-completion-matrix-report.json'
@@ -60,8 +65,14 @@ jobs:
           node --check scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
           node --check scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js
+          node --check scripts/audit-ana-a07-a09-funnel-runtime-canary-contract.js
+          node --check scripts/test-ana-a07-a09-funnel-runtime-canary-contract.js
       - name: ANA-A09 audit
         run: npm run audit:ana-a09-canonical-funnel-projection
+      - name: Runtime canary contract audit
+        run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
+      - name: Runtime canary contract conformance
+        run: npm run test:ana-a07-a09-funnel-runtime-canary-contract
       - name: ANA-A07/A09 funnel freshness policy candidate audit
         run: node scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
       - name: ANA-A07/A09 funnel freshness policy candidate conformance

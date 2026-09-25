@@ -320,7 +320,8 @@
     "candidateThresholdValueAuthority": true,
     "activeFunnelFreshnessPolicyAuthority": true,
     "runtimeSnapshotAuthority": false,
-    "snapshotPublicationAuthority": false
+    "snapshotPublicationAuthority": false,
+    "repositoryRuntimeCanaryContractAuthority": true
   },
   "activationRequirements": [
     "approve an explicit effectiveFrom/effectiveUntil activation envelope for ana-a07-a09-funnel-v1-r1 under separate authorization",
@@ -355,7 +356,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The eight-metric A09 freshness activation structure is installed and validation 043 passes, but no policy is effective. Threshold authority and downstream A09 publication canaries remain open. ANA stays 3/6."
+    "reason": "The active A09 funnel freshness policy set is bound to a repository-ready four-path runtime canary contract. Complete/orphan/empty-window/late-fact staging evidence remains unexecuted, so runtime projection/snapshot/publication authority remains false and ANA stays 3/6."
   },
   "dependencyWatermarkAuthority": {
     "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
@@ -390,5 +391,21 @@
     "concurrentWriterCertified": true,
     "lateFactCertified": false,
     "concurrentWriterCleanupPassed": true
+  },
+  "runtimeCanaryContract": {
+    "path": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
+    "contractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "status": "repository_ready_staging_execution_unauthorized",
+    "canarySet": [
+      "complete",
+      "orphan",
+      "empty-window",
+      "late-fact"
+    ],
+    "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
+    "lateFactExecutor": "transient_pg_cron_second_session",
+    "emptyWindowCertified": false,
+    "lateFactCertified": false,
+    "stagingExecutionAuthorized": false
   }
 }

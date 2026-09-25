@@ -174,7 +174,7 @@
   "activationRequirements": [
     "make A09 runtime filter source rows by materialization time as well as canonical event time",
     "preserve A05 append-only revision semantics for late materialized facts",
-    "validate empty-window and late-fact projection behavior in staging after the A09 projector exists",
+    "execute the repository-defined complete/orphan/empty-window/late-fact staging canary set under separate explicit staging authorization",
     "require explicit staging authorization before executing downstream mutating canaries"
   ],
   "authority": {
@@ -224,6 +224,10 @@
     "grantsValidated": true,
     "preparedTransactionPolicy": "static_fail_closed_runtime_branch_unexercisable_while_max_prepared_transactions_0",
     "emptyWindowSemantics": "algorithmic_property_no_source_max_dependency",
-    "evidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json"
+    "evidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "downstreamRuntimeCanaryContract": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
+    "emptyWindowProjectionCertified": false,
+    "lateFactCertified": false,
+    "stagingCanaryExecutionAuthorized": false
   }
 }

@@ -3,7 +3,7 @@
   "approvalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-approval-evidence-v1",
   "domain": "ANA-001",
   "scope": "repository_only",
-  "status": "effective_window_active_persistent_policy_rows_8_runtime_canaries_pending",
+  "status": "effective_window_active_persistent_policy_rows_8_runtime_canary_contract_ready_staging_unauthorized",
   "createdAt": "2026-09-24T13:26:00Z",
   "createdAgainst": {
     "repositoryHead": "0c45856b82b08fe5265c3e71b40c0d83fed871a7",
@@ -173,7 +173,7 @@
   },
   "runtimeBoundary": {
     "currentActivationFunction": "private.activate_a09_funnel_policy_approved_v1",
-    "currentActivationBehavior": "approval_aware_single_use_ready_uninvoked",
+    "currentActivationBehavior": "approval_aware_single_use_consumed_policy_active",
     "activationCapableSuccessorPresent": true,
     "activationApprovalValidatorFunction": "private.validate_a09_funnel_activation_approval_v1",
     "successorOwner": "postgres",
@@ -195,7 +195,7 @@
     "evidenceDigestVerifiedByDatabase": true,
     "exactApprovedWindowBindingVerifiedByDatabase": true,
     "runtimeEnforcementAuthority": true,
-    "note": "The approval-aware successor is installed and validation 045 passes in staging, but persistent activation has not been invoked and zero A07/A09 freshness-policy rows are persisted."
+    "note": "The approved freshness policy set is persistently active with eight rows. The four-path runtime canary contract is repository-ready; staging canary execution has not been authorized or executed."
   },
   "authority": {
     "repositoryContractAuthority": true,
@@ -216,7 +216,9 @@
     "runtimeEnforcementCandidateAuthority": true,
     "runtimeEnforcementAppliedAuthority": true,
     "successorStagingAppliedAuthority": true,
-    "activeFreshnessPolicySetAuthority": true
+    "activeFreshnessPolicySetAuthority": true,
+    "repositoryRuntimeCanaryContractAuthority": true,
+    "stagingCanaryExecutionAuthority": false
   },
   "prohibitedEffects": {
     "activationFunctionInvoked": false,
@@ -236,10 +238,10 @@
     "workflow": ".github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml"
   },
   "nextGates": [
-    "Obtain the exact repository-only ANA-A07/A09 runtime-canary contract authorization for complete/orphan/empty-window/late-fact behavior.",
-    "Do not execute runtime canary mutations until a later canary execution authorization is explicitly granted.",
-    "Keep runtimeProjectionAuthority, runtimeSnapshotAuthority and snapshotPublicationAuthority false until the canary set closes.",
-    "Keep cron/scheduler, production, merge and Ready authority false."
+    "Obtain the exact controlled staging canary authorization defined by config/ana-a07-a09-funnel-runtime-canary-contract.json.",
+    "Under that later authorization execute validation 046 rollback-only for complete/orphan/empty-window and the transient second-session late-fact protocol with mandatory cleanup.",
+    "Keep runtimeProjectionAuthority, runtimeSnapshotAuthority and snapshotPublicationAuthority false until all four canaries close and evidence is reconciled.",
+    "Keep persistent cron/scheduler, production, merge and Ready authority false."
   ],
   "runtimeEnforcementCandidate": {
     "migration": "supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql",
@@ -271,7 +273,7 @@
   "activationInvocationContract": {
     "contractPath": "config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json",
     "contractId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-v1",
-    "status": "persistent_activation_applied_runtime_canaries_pending",
+    "status": "runtime_canary_contract_repository_ready_staging_execution_unauthorized",
     "sourceHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
     "matrixVersion": "1.3.132",
     "runtimeEvidenceBlobSha": "118ca5f948f93ca09c7a7305d1b230880fa98630",
@@ -285,7 +287,7 @@
     "activationApprovalEvidenceDigestSha256": "ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603",
     "successorMigration": "supabase/migrations/20260924144500_ana_a07_a09_funnel_policy_approved_activation.sql",
     "successorValidation": "supabase/tests/045_ana_a07_a09_funnel_policy_approved_activation_validation.sql",
-    "successorStatus": "staging_applied_validated_persistent_activation_unauthorized",
+    "successorStatus": "staging_applied_validated_activation_consumed_policy_active",
     "successorStagingApplied": true,
     "successorStagingMigrationVersion": "20260925112930",
     "validation045Status": "PASS",
@@ -295,6 +297,11 @@
     "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
     "persistentActivationEvidenceDigestSha256": "b9f5f84a202a2472b2dca4e44b4696900b8f150d3520e2becead3d3cd4943605",
     "activationInvocationCount": 1,
-    "activationInvocationLimit": 1
+    "activationInvocationLimit": 1,
+    "runtimeCanaryContractPath": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
+    "runtimeCanaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "runtimeCanaryContractStatus": "repository_ready_staging_execution_unauthorized",
+    "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
+    "stagingCanaryExecutionAuthorized": false
   }
 }

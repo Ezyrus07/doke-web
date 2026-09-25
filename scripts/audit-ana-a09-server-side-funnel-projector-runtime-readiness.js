@@ -7,8 +7,8 @@ const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260923235500_ana
 const v=fs.readFileSync(path.join(root,'supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql'),'utf8');
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('contract',c.contractId==='ana-a09-server-side-funnel-projector-runtime-readiness-v1'&&c.sourceContract===a09.contractId);
-check('staging reconciliation scope',c.scope==='staging_runtime_installed_policy_pending'&&c.authorization?.stagingApplyAuthorized===true&&c.authorization?.stagingApplyAuthorizationConsumed===true&&c.authorization?.productionAuthorized===false);
-check('projector installed 042 pass',c.status==='runtime_projector_installed_validation_042_pass_policy_canaries_pending'&&c.validationPlan?.migrationApplied===true&&c.validationPlan?.stagingValidated===true&&c.validationPlan?.stagingMigrationVersion==='20260924002741'&&c.validationPlan?.validation042Status==='passed');
+check('staging reconciliation scope',c.scope==='staging_runtime_installed_policy_active_canary_contract_ready'&&c.authorization?.stagingApplyAuthorized===true&&c.authorization?.stagingApplyAuthorizationConsumed===true&&c.authorization?.productionAuthorized===false);
+check('projector installed 042 pass',c.status==='runtime_projector_installed_validation_042_pass_policy_active_canary_contract_ready_staging_unauthorized'&&c.validationPlan?.migrationApplied===true&&c.validationPlan?.stagingValidated===true&&c.validationPlan?.stagingMigrationVersion==='20260924002741'&&c.validationPlan?.validation042Status==='passed');
 check('A07 watermark certified',a07.authority?.runtimeWatermarkAuthority===true&&c.watermarkHandoff?.runtimeWatermarkCertified===true);
 check('stage function',sql.includes('private.analytics_canonical_funnel_stage_rows_v1'));
 check('compute function',sql.includes('public.compute_analytics_canonical_funnel_v1'));
@@ -23,8 +23,9 @@ check('snapshot fail closed',sql.includes("'snapshotPublicationAllowed',false")&
 check('A04 handoff',sql.includes("'appendRpc','public.append_analytics_metric_snapshot_v1'"));
 check('service boundary',sql.includes('grant execute on function public.compute_analytics_canonical_funnel_v1(timestamptz,timestamptz) to service_role')&&!sql.match(/grant execute on function public\.compute_analytics_canonical_funnel_v1[^;]+to\s+(anon|authenticated)/i));
 check('validation rollback',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v));
-check('runtime authority remains false',a09.authority?.runtimeProjectionAuthority===false&&a09.authority?.runtimeSnapshotAuthority===false&&c.runtime?.runtimeAuthority===false&&c.runtime?.snapshotPublicationAllowed===false);
+check('runtime authority remains false',a09.authority?.runtimeProjectionAuthority===false&&a09.authority?.runtimeSnapshotAuthority===false&&c.runtime?.runtimeAuthority===false&&c.runtime?.snapshotPublicationAllowed===false&&c.runtimeCanaryContract?.stagingExecutionAuthorized===false);
 check('runtime evidence bound',c.runtimeEvidence?.artifact==='reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json'&&c.runtimeEvidence?.validation042Passed===true&&c.runtimeEvidence?.runtimeProjectorInstalled===true&&c.runtimeEvidence?.runtimeAuthority===false&&c.runtimeEvidence?.snapshotPublicationAllowed===false);
+check('canary contract bound',c.runtimeCanaryContract?.contractId==='ana-a07-a09-funnel-runtime-canary-contract-v1'&&c.runtimeCanaryContract?.validation046==='supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql'&&c.runtimeCanaryContract?.lateFactExecutor==='transient_pg_cron_second_session');
 check('maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));
