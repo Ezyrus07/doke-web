@@ -1,27 +1,26 @@
-# ANA-A07/A09 — Funnel freshness policy candidate
+# ANA-A07/A09 — Funnel freshness policy r1
 
-Revision 1 of the freshness policy for the eight canonical ANA-A09 funnel metrics now has its activation structure installed and structurally validated in staging. No policy is active, no policy row is persisted, no snapshot is published and no scheduler is created.
+## Current state
 
-## Candidate values
+Revision 1 for the eight canonical ANA-A09 funnel metrics is no longer merely a candidate. Its activation structure is installed, the approval-envelope enforcement and approved successor are installed, the policy set is persistently active in staging, and the four runtime canaries are certified.
+
+Canonical policy set:
 
 - policy set: `ana-a07-a09-funnel-v1-r1`
 - metric version: `v1`
 - metrics: **8**
-- candidate window reference: **300 seconds**
-- candidate projection-delay budget: **60 seconds**
-- proposed `maxLagSeconds`: **360 seconds**
-- effectiveFrom: **unset until explicit activation authorization**
-- effectiveUntil: **unset until explicit activation authorization**
+- window reference: **300 seconds**
+- projection-delay budget: **60 seconds**
+- `maxLagSeconds`: **360 seconds**
+- effectiveFrom: `2026-09-24T14:00:00Z`
+- effectiveUntil: `null`
+- persistent freshness rows: **8**
+- snapshot publication rows created by activation: **0**
+- cron created by activation: **0**
 
-The value is derived as `300 + 60 = 360`. The five-minute + one-minute budget is the only already-certified operational ANA cadence. It is reused as a candidate baseline to avoid inventing a second arbitrary cadence, but ANA-A11 authority is not inherited by A09.
-
-All eight metrics are computed by the same A09 RPC. The cross-domain final transition already uses the minimum behavior/ORD watermark, so dependency lag is represented by `dataThrough`; adding an extra ORD allowance would double-count lag.
+The threshold derivation remains `300 + 60 = 360`. The final ORD-linked metric does not receive an additional lag allowance because cross-domain completeness is already bounded by the minimum behavior/ORD watermark.
 
 ## Fail-closed semantics
-
-No implicit default exists. Before activation, the eight metrics still have no effective threshold and therefore remain unavailable for authoritative publication.
-
-After a future separately authorized activation:
 
 - lag > 360 seconds => stale;
 - missing policy => unavailable;
@@ -32,19 +31,34 @@ After a future separately authorized activation:
 - overlapping policy windows => activation rejected;
 - older healthy snapshots cannot replace the latest canonical closed window.
 
-Policy activation alone will **not** authorize snapshot publication. Complete/orphan/empty-window/late-fact staging canaries remain separate gates.
+Policy activation does not authorize snapshot publication.
 
-## Runtime candidate
+## Runtime closure
 
-The repository includes:
+Repository migration `20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql` is installed in staging and validation 043 passes. Approval-envelope enforcement, the approved activation successor, persistent activation and validations 044/045 are also closed.
 
-- `supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql`
-- `supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql`
+The four-path runtime canary set is certified:
 
-The migration is installed in staging as `20260924005631 / ana_a07_a09_funnel_freshness_policy_activation`. Validation 043 is **PASS** and rollback-only: it proved atomic insertion of exactly eight transient policies plus overlap rejection, then left zero policy rows. The activation function remains postgres-only. A later explicit authorization is still required to approve an effective window and invoke activation.
+- complete: PASS
+- orphan: PASS
+- empty-window: PASS
+- late-fact: PASS
+- cleanup: PASS
+- canary-window snapshots written: 0
+- evidence blob: `3b7274a391a857f2de06538f3302f6be01b06734`
 
-## Runtime-state reconciliation
+## Projection authority boundary
 
-Canonical evidence: `reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json`.
+Explicit repository-only runtime projection authority is now granted. This is not a staging mutation and does not rewrite the historical live compute observation.
 
-Current state: activation structure installed, validation 043 passed, `policyRowsPersisted=0`, `effectiveFrom=null`, `effectiveUntil=null`, no publication-policy rows and no cron. Threshold value authority remains false until the exact effective window is separately approved and activation is explicitly authorized.
+Current authority:
+
+- repository runtime projection authority: **true**
+- live staging `runtimeAuthority` historical observation: **false**
+- runtime snapshot authority: **false**
+- snapshot publication authority: **false**
+- persistent scheduler authority for A09: **false**
+- production / merge / Ready: **false**
+- ANA maturity: **3/6**
+
+Any live runtime-flag alignment or snapshot publication requires a separate explicit gate.
