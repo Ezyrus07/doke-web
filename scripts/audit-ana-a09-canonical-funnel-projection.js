@@ -8,6 +8,7 @@ const a07=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a07-freshness-wi
 const watermark=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a07-behavior-ord-watermark-authority.json'),'utf8'));
 const readiness=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-server-side-funnel-projector-runtime-readiness.json'),'utf8'));
 const funnel=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a07-a09-funnel-freshness-policy-candidate.json'),'utf8'));
+const segmentation=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-immutable-funnel-segmentation.json'),'utf8'));
 const evidence=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json'),'utf8'));
 const matrix=JSON.parse(fs.readFileSync(path.join(root,'config/domain-completion-matrix.json'),'utf8'));
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
@@ -25,6 +26,7 @@ check('threshold no longer blocker',c.freshnessDependency?.runtimeFreshnessActiv
 check('projector remains installed',c.runtimeCandidate?.migrationApplied===true&&c.runtimeCandidate?.stagingValidated===true&&c.runtimeCandidate?.validation042Status==='PASS'&&c.runtimeCandidate?.runtimeProjectorInstalled===true);
 check('readiness contract ready',readiness.status==='runtime_projector_installed_validation_042_pass_policy_active_runtime_canaries_certified_repository_projection_authority_granted'&&readiness.runtimeCanaryContract?.contractId==='ana-a07-a09-funnel-runtime-canary-contract-v1'&&readiness.authority?.runtimeProjectionAuthority===true&&readiness.runtime?.runtimeAuthority===false&&readiness.runtimeProjectionAuthorityGrant?.stagingMutationAuthorized===false);
 check('repository runtime projection authority granted',c.authority?.runtimeProjectionAuthority===true&&c.authority?.runtimeSnapshotAuthority===false&&c.authority?.snapshotPublicationAuthority===false&&c.runtimeProjectionAuthorityGrant?.authorizedRepositoryHead==='28960baecb1b495b16c3799c55a80305764db0ac'&&c.runtimeProjectionAuthorityGrant?.canaryStagingEvidenceBlobSha==='3b7274a391a857f2de06538f3302f6be01b06734'&&c.runtimeProjectionAuthorityGrant?.stagingMutationAuthorized===false);
+check('immutable segmentation contract bound',segmentation.contractId==='ana-a09-immutable-funnel-segmentation-v1'&&segmentation.scope==='repository_only_candidate'&&segmentation.authority?.repositoryContractAuthority===true&&segmentation.authority?.runtimeSegmentationAuthority===false&&c.segmentation?.immutableSegmentationContract?.contractId===segmentation.contractId&&c.segmentation?.currentAuthority==='global_only_for_behavioral_stages'&&c.segmentation?.mutableCurrentServiceJoinAllowed===false);
 check('evidence exact',evidence.result?.rowsInserted===8&&evidence.persistentState?.exactBindingRows===8);
 check('maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
 const ana=(matrix.domains||[]).find(d=>d.id==='ANA-001');check('ANA stays 3/6',ana?.maturity===3);
