@@ -3,7 +3,7 @@
   "approvalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-approval-evidence-v1",
   "domain": "ANA-001",
   "scope": "repository_only",
-  "status": "effective_window_active_persistent_policy_rows_8_runtime_canary_contract_ready_staging_unauthorized",
+  "status": "effective_window_active_persistent_policy_rows_8_runtime_canary_identity_remediated_staging_unauthorized",
   "createdAt": "2026-09-24T13:26:00Z",
   "createdAgainst": {
     "repositoryHead": "0c45856b82b08fe5265c3e71b40c0d83fed871a7",
@@ -238,7 +238,7 @@
     "workflow": ".github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml"
   },
   "nextGates": [
-    "Obtain the exact controlled staging canary authorization defined by config/ana-a07-a09-funnel-runtime-canary-contract.json.",
+    "Obtain a fresh controlled staging canary authorization against the post-remediation PR HEAD with identityAuthority=seed002-email-resolved.",
     "Under that later authorization execute validation 046 rollback-only for complete/orphan/empty-window and the transient second-session late-fact protocol with mandatory cleanup.",
     "Keep runtimeProjectionAuthority, runtimeSnapshotAuthority and snapshotPublicationAuthority false until all four canaries close and evidence is reconciled.",
     "Keep persistent cron/scheduler, production, merge and Ready authority false."
@@ -273,7 +273,7 @@
   "activationInvocationContract": {
     "contractPath": "config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json",
     "contractId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-v1",
-    "status": "runtime_canary_contract_repository_ready_staging_execution_unauthorized",
+    "status": "runtime_canary_identity_remediated_staging_execution_unauthorized",
     "sourceHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
     "matrixVersion": "1.3.132",
     "runtimeEvidenceBlobSha": "118ca5f948f93ca09c7a7305d1b230880fa98630",
@@ -300,8 +300,9 @@
     "activationInvocationLimit": 1,
     "runtimeCanaryContractPath": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
     "runtimeCanaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
-    "runtimeCanaryContractStatus": "repository_ready_staging_execution_unauthorized",
+    "runtimeCanaryContractStatus": "repository_ready_identity_remediated_staging_execution_unauthorized",
     "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
-    "stagingCanaryExecutionAuthorized": false
+    "stagingCanaryExecutionAuthorized": false,
+    "runtimeCanaryIdentityAuthority": "seed002-email-resolved"
   }
 }

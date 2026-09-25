@@ -6,8 +6,10 @@ let passed=0;const ok=(n,f)=>{try{f();passed++;}catch(e){e.message=n+': '+e.mess
 ok('exact canary set',()=>assert.deepEqual(Object.keys(c.canaries),['complete','orphan','empty-window','late-fact']));
 ok('046 is rollback-only',()=>{assert.equal(c.validation046.executionMode,'single_transaction_rollback_only');assert.equal(c.validation046.persistentMutationAllowed,false);});
 ok('late fact requires real concurrency',()=>{assert.equal(c.canaries['late-fact'].executionMode,'two_session_transient_pg_cron');assert(c.canaries['late-fact'].assertions.includes('oneMicrosecondPredecessorProven=true'));});
+ok('identity follows seed 002 authority',()=>{assert.equal(c.syntheticFixtures.identityAuthority,'seed002-email-resolved');assert.equal(c.syntheticFixtures.clientEmail,'cliente@doke.local');assert.equal(c.syntheticFixtures.professionalEmail,'profissional@doke.local');assert.equal(c.syntheticFixtures.legacyFixedUserIdsRetired,true);});
 ok('cleanup is mandatory',()=>{assert.equal(c.syntheticFixtures.cleanupRequired,true);assert.equal(c.stagingExecutionAuthorization.cleanupMandatory,true);});
 ok('staging is still unauthorized',()=>assert.equal(c.authority.stagingCanaryExecutionAuthority,false));
 ok('projection authority remains false',()=>{assert.equal(c.authority.runtimeProjectionAuthority,false);assert.equal(c.authority.runtimeSnapshotAuthority,false);assert.equal(c.authority.snapshotPublicationAuthority,false);});
 ok('future execution stays narrow',()=>{assert.equal(c.stagingExecutionAuthorization.persistentCronAuthorizedByCommand,false);assert.equal(c.stagingExecutionAuthorization.productionAuthorizedByCommand,false);assert.equal(c.stagingExecutionAuthorization.mergeAuthorizedByCommand,false);});
-assert.equal(passed,7);console.log('ANA-A07/A09 funnel runtime canary contract conformance passed: 7/7.');
+ok('old staging token cannot be reused',()=>{assert.equal(c.stagingExecutionAuthorization.previousHeadAuthorizationReusable,false);assert.equal(c.stagingExecutionAuthorization.identityAuthority,'seed002-email-resolved');});
+assert.equal(passed,9);console.log('ANA-A07/A09 funnel runtime canary contract conformance passed: 9/9.');

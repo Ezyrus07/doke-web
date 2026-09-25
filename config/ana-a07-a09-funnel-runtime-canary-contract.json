@@ -4,14 +4,27 @@
   "sourceHead": "88e753c4dbda6dd2485c22306c5f05cc5edfd49c",
   "matrixVersion": "1.3.132",
   "scope": "repository_only",
-  "status": "repository_ready_staging_execution_unauthorized",
+  "status": "repository_ready_identity_remediated_staging_execution_unauthorized",
   "objective": "Define controlled staging canaries for the active ANA-A07/A09 funnel freshness policy set without granting runtime projection, snapshot publication, scheduler, production, merge or Ready authority.",
   "authorization": {
     "command": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canary-contract-repository-only head=88e753c4dbda6dd2485c22306c5f05cc5edfd49c matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canarySet=complete-orphan-empty-window-late-fact",
     "digestSha256": "e1e8ed5b85e4aa62e473b46244f6278e3236c79491be83f2b4c7acdd5052a6a5",
     "received": true,
     "consumedForRepositoryArtifacts": true,
-    "stagingExecutionAuthorized": false
+    "stagingExecutionAuthorized": false,
+    "identityRemediation": {
+      "received": true,
+      "consumedForRepositoryArtifacts": true,
+      "command": "authorize-ana-a07-a09-funnel-runtime-canary-identity-remediation-repository-only head=da9d6fa8c562ee241f7cea1beb1bd66dc9a2d9fb matrix=v1.3.132 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved clientEmail=cliente@doke.local professionalEmail=profissional@doke.local persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2",
+      "digestSha256": "1c86aa9638db87ada226e4fb585051da703c3735c87e2f199ac263129b857ada",
+      "sourceHead": "da9d6fa8c562ee241f7cea1beb1bd66dc9a2d9fb",
+      "matrixVersion": "1.3.132",
+      "identityAuthority": "seed002-email-resolved",
+      "clientEmail": "cliente@doke.local",
+      "professionalEmail": "profissional@doke.local",
+      "remediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-identity-remediation-evidence.json",
+      "stagingExecutionAuthorized": false
+    }
   },
   "bindings": {
     "policySetId": "ana-a07-a09-funnel-v1-r1",
@@ -30,9 +43,16 @@
     "lateFactRevisionAuthority": "ANA-A05"
   },
   "syntheticFixtures": {
-    "clientUserId": "826dde36-c959-4ab6-a26f-586bf82cdb7a",
-    "professionalUserId": "3fd0113d-dc9b-4cc3-b67e-e7f611f352c4",
-    "userExistenceRequired": true,
+    "identityAuthority": "seed002-email-resolved",
+    "clientEmail": "cliente@doke.local",
+    "professionalEmail": "profissional@doke.local",
+    "resolution": "resolve auth.users by lowercase email, require matching public.users id/email/role/status, then use resolved UUIDs for synthetic fixtures",
+    "authIdentityRequired": true,
+    "publicProjectionRequired": true,
+    "expectedClientRole": "client",
+    "expectedProfessionalRole": "professional",
+    "expectedStatus": "active",
+    "legacyFixedUserIdsRetired": true,
     "markerPrefix": "ana-a07-a09-runtime-canary-v1",
     "sourceDataOnlySynthetic": true,
     "productionDataUseForbidden": true,
@@ -50,7 +70,21 @@
     "persistentMutationAllowed": false,
     "snapshotMutationAllowed": false,
     "publicationPolicyMutationAllowed": false,
-    "cronMutationAllowed": false
+    "cronMutationAllowed": false,
+    "identityAuthority": "seed002-email-resolved",
+    "legacyFixedUserIdsRetired": true,
+    "previousFailure": {
+      "code": "VALIDATION_046_CANARY_USERS_MISSING",
+      "rootCause": "validation referenced retired fixed UUIDs while canonical seed 002 resolves Auth canaries by email",
+      "residueAfterAbort": {
+        "canaryServices": 0,
+        "canaryOrders": 0,
+        "canaryBehaviorRows": 0,
+        "canaryCrons": 0,
+        "recentFunnelSnapshots": 0
+      },
+      "stagingRemediationRequired": false
+    }
   },
   "canaries": {
     "complete": {
@@ -160,10 +194,11 @@
       "persistentActivationEvidenceBlobSha",
       "canaryContractId",
       "validation",
+      "identityAuthority",
       "lateFactExecutor",
       "canarySet"
     ],
-    "template": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact",
+    "template": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact",
     "executeValidation046AuthorizedByCommand": true,
     "executeLateFactProtocolAuthorizedByCommand": true,
     "syntheticStagingMutationAuthorizedByCommand": true,
@@ -174,6 +209,8 @@
     "persistentCronAuthorizedByCommand": false,
     "productionAuthorizedByCommand": false,
     "mergeAuthorizedByCommand": false,
-    "readyForReviewAuthorizedByCommand": false
+    "readyForReviewAuthorizedByCommand": false,
+    "previousHeadAuthorizationReusable": false,
+    "identityAuthority": "seed002-email-resolved"
   }
 }

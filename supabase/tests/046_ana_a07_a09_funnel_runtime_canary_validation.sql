@@ -8,8 +8,10 @@ begin;
 
 do $canary$
 declare
-  v_client constant uuid := '826dde36-c959-4ab6-a26f-586bf82cdb7a';
-  v_professional constant uuid := '3fd0113d-dc9b-4cc3-b67e-e7f611f352c4';
+  v_client uuid;
+  v_professional uuid;
+  v_client_email constant text := 'cliente@doke.local';
+  v_professional_email constant text := 'profissional@doke.local';
   v_service constant uuid := 'a7a90000-0000-4000-8000-000000000046';
   v_order constant uuid := 'a7a90000-0000-4000-8000-000000000146';
   v_session constant uuid := 'a7a90000-0000-4000-8000-000000000246';
@@ -33,9 +35,30 @@ declare
   ];
   v_offset integer := 0;
 begin
-  if not exists(select 1 from public.users where id=v_client)
-     or not exists(select 1 from public.users where id=v_professional) then
-    raise exception 'VALIDATION_046_CANARY_USERS_MISSING';
+  select au.id
+    into v_client
+    from auth.users au
+    join public.users pu on pu.id=au.id
+   where lower(au.email)=v_client_email
+     and lower(pu.email)=v_client_email
+     and pu.role='client'
+     and pu.status='active';
+
+  select au.id
+    into v_professional
+    from auth.users au
+    join public.users pu on pu.id=au.id
+   where lower(au.email)=v_professional_email
+     and lower(pu.email)=v_professional_email
+     and pu.role='professional'
+     and pu.status='active';
+
+  if v_client is null or v_professional is null then
+    raise exception 'VALIDATION_046_CANARY_IDENTITY_RESOLUTION_FAILED';
+  end if;
+
+  if v_client=v_professional then
+    raise exception 'VALIDATION_046_CANARY_IDENTITY_COLLISION';
   end if;
 
   if exists(select 1 from private.analytics_behavior_events_v1 where occurred_at>=v_window_start and occurred_at<v_window_end)

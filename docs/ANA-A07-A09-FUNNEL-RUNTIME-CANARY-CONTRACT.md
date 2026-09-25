@@ -4,6 +4,19 @@ The A07/A09 freshness policy set is active in staging with eight persistent `v1`
 
 This lot is **repository-only**. No staging canary is executed here.
 
+## Canary identity authority
+
+Validation 046 no longer binds to legacy fixed UUIDs. The canonical authority is `seed002-email-resolved`, matching `supabase/seed/002_mvp_controlled_seed.sql`.
+
+At execution time the validation resolves:
+
+- client: `cliente@doke.local`
+- professional: `profissional@doke.local`
+
+Resolution is fail-closed: the e-mail must exist in `auth.users`, the same UUID must exist in `public.users`, and the public projection must have the expected role plus `status=active`. The resolved UUID is then used only for synthetic canary fixtures.
+
+The previous staging attempt failed before fixtures because validation 046 referenced retired UUIDs. Post-failure reconciliation proved zero canary services, orders, behavior rows, cron jobs and funnel snapshots. No Auth reprovisioning or seed replay is required.
+
 ## Canary set
 
 ### Complete
@@ -63,6 +76,6 @@ Generic `prossiga` is not authorization.
 
 The future staging command is:
 
-`authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact`
+`authorize-ana-a07-a09-funnel-freshness-policy-runtime-canaries-staging head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved lateFactExecutor=transient_pg_cron_second_session canarySet=complete-orphan-empty-window-late-fact`
 
 That command may execute only the synthetic staging canaries and mandatory cleanup. It does not grant runtime projection, snapshot publication, cron persistence, production, merge or Ready authority.
