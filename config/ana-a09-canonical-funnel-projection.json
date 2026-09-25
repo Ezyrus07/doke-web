@@ -94,8 +94,19 @@
   ],
   "segmentation": {
     "currentAuthority": "global_only_for_behavioral_stages",
-    "categoryStateStatus": "blocked_until_immutable_behavior_or_explicit_service_snapshot_dimension_authority",
-    "mutableCurrentServiceJoinAllowed": false
+    "categoryStateStatus": "repository_immutable_segmentation_contract_defined_runtime_unapplied",
+    "mutableCurrentServiceJoinAllowed": false,
+    "immutableSegmentationContract": {
+      "path": "config/ana-a09-immutable-funnel-segmentation.json",
+      "contractId": "ana-a09-immutable-funnel-segmentation-v1",
+      "sourceAuthority": "CAT-A06 frozen dimension snapshots + CAT-A07 coverage epoch",
+      "journeyAnchor": "canonical impression",
+      "categoryIdentityRule": "categoryId > categorySlug > category; no UUID/name/slug equivalence inference",
+      "catDependencyRequiredForSegmentedDataThrough": true,
+      "repositoryContractAuthority": true,
+      "runtimeSegmentationAuthority": false,
+      "stagingAuthority": false
+    }
   },
   "freshnessDependency": {
     "contract": "ANA-A07",
@@ -142,7 +153,7 @@
   "activationRequirements": [
     "keep runtime snapshot and snapshot publication authority false until a separately authorized append-only publication gate closes",
     "materialize any live runtimeAuthority=true alignment only through a forward-only staging change under separate authorization",
-    "establish explicit immutable segmentation authority before category/state funnel claims"
+    "apply the repository-defined immutable CAT-A06/CAT-A07 segmentation contract only through a separately authorized forward-only runtime candidate before category/state funnel claims"
   ],
   "catLiquidityBlocker": {
     "status": "liquidity_runtime_closed_outside_a09",
@@ -175,7 +186,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The server-side projector, active freshness policies and four-path staging runtime canaries are certified, and explicit repository-only runtime projection authority is granted. Runtime snapshot/publication and immutable segmentation authority remain open, so ANA stays 3/6."
+    "reason": "The server-side projector, active freshness policies and four-path staging runtime canaries are certified, explicit repository-only runtime projection authority is granted, and immutable category/state segmentation semantics are now repository-defined from CAT-A06/A07. Runtime segmentation, snapshot/publication and segmented staging evidence remain open, so ANA stays 3/6."
   },
   "runtimeCandidate": {
     "status": "staging_applied_validation_042_pass_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
