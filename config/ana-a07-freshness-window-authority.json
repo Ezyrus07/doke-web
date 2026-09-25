@@ -3,12 +3,12 @@
   "domain": "ANA-001",
   "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
   "createdAt": "2026-09-21T22:00:00-03:00",
-  "scope": "staging_policy_active_runtime_canaries_certified_projection_authority_pending",
-  "status": "behavior_ord_watermark_certified_a09_policy_active_runtime_canaries_certified_projection_authority_pending",
+  "scope": "staging_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
+  "status": "behavior_ord_watermark_certified_a09_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
   "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
   "rootCause": {
     "helperGap": "ANA-A05 has an applyFreshness helper that accepts an ad hoc maxLagSeconds but there is no canonical policy registry, dependency-watermark contract or canonical latest-window selector.",
-    "runtimeGap": "Behavior/ORD watermarks and the A09 compute projector are installed. The eight-metric freshness activation structure is also installed and validation 043 passes, but no funnel policy row is active; an explicit effective window plus later path canaries remain open.",
+    "runtimeGap": "Behavior/ORD watermarks and the A09 compute projector are installed, the eight r1 funnel freshness policies are active, and complete/orphan/empty-window/late-fact canaries are certified. Explicit repository-only runtime projection authority is now granted; live runtime flag alignment, runtime snapshot and snapshot publication remain separate gates.",
     "evidenceGap": "ANA-A06 proved why selection cannot cherry-pick an older non-empty passing window when a newer canonical observation exists."
   },
   "freshnessStates": [
@@ -60,9 +60,9 @@
     "thresholdComparison": "stale when lagSeconds > maxLagSeconds; fresh otherwise after full window coverage"
   },
   "thresholdAuthority": {
-    "status": "metric_specific_policy_active_a09_funnel_canaries_certified_projection_authority_pending",
+    "status": "metric_specific_policy_active_a09_funnel_canaries_certified_repository_projection_authority_granted",
     "defaultMaxLagSeconds": null,
-    "reason": "Liquidity retains its active r1 policy and the eight ANA-A09 funnel freshness policies remain active at 360 seconds. Complete/orphan/empty-window/late-fact staging canaries are certified; runtime projection authority remains a separate explicit gate.",
+    "reason": "Liquidity retains its active r1 policy and the eight ANA-A09 funnel freshness policies remain active at 360 seconds. Complete/orphan/empty-window/late-fact staging canaries are certified and explicit repository-only runtime projection authority is granted.",
     "requiredFields": [
       "policyId",
       "metricKey",
@@ -112,7 +112,7 @@
       "runtimeCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734"
     },
     "runtimeProjectionBlockedUntilCanaries": false,
-    "runtimeProjectionBlockedUntilExplicitAuthority": true
+    "runtimeProjectionBlockedUntilExplicitAuthority": false
   },
   "metricDependencies": [
     {
@@ -317,7 +317,7 @@
     "freshnessStateContractAuthority": true,
     "thresholdValueAuthority": false,
     "runtimeWatermarkAuthority": true,
-    "runtimeProjectionAuthority": false,
+    "runtimeProjectionAuthority": true,
     "alertDeliveryAuthority": false,
     "stagingAuthority": false,
     "productionAuthority": false,
@@ -329,9 +329,8 @@
     "runtimeCanaryEvidenceAuthority": true
   },
   "activationRequirements": [
-    "approve an explicit effectiveFrom/effectiveUntil activation envelope for ana-a07-a09-funnel-v1-r1 under separate authorization",
-    "invoke the installed owner-only activation function only after the effective window is explicitly authorized",
-    "run controlled A09 complete/orphan/empty-window/late-fact canaries before snapshot publication",
+    "preserve the active ana-a07-a09-funnel-v1-r1 effective window and certified canary evidence without inferring a staging runtime flag mutation",
+    "keep runtime snapshot and snapshot publication authority false until separately authorized append-only publication gates close",
     "preserve A04/A05 append-only snapshot revision semantics and latest-window no-cherry-pick selection"
   ],
   "preservedBoundaries": [
@@ -361,7 +360,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A07 watermarks, active A09 freshness policies, and complete/orphan/empty-window/late-fact projection canaries are certified in staging. Runtime projection authority remains an explicit separate gate; ANA stays 3/6."
+    "reason": "A07 watermarks, active A09 freshness policies and complete/orphan/empty-window/late-fact projection canaries are certified in staging. Explicit repository-only runtime projection authority is granted, while runtime snapshot/publication remain separate gates; ANA stays 3/6."
   },
   "dependencyWatermarkAuthority": {
     "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
@@ -400,7 +399,7 @@
   "runtimeCanaryContract": {
     "path": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
     "contractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
-    "status": "staging_certified_runtime_projection_authority_pending",
+    "status": "staging_certified_runtime_projection_authority_repository_granted",
     "canarySet": [
       "complete",
       "orphan",
@@ -423,5 +422,20 @@
     "completeCertified": true,
     "orphanCertified": true,
     "cleanupStatus": "PASS"
+  },
+  "runtimeProjectionAuthorityGrant": {
+    "sourceContract": "config/ana-a09-canonical-funnel-projection.json",
+    "authorizedRepositoryHead": "28960baecb1b495b16c3799c55a80305764db0ac",
+    "matrixVersion": "1.3.132",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "canaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "authorizationDigestSha256": "ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5",
+    "repositoryOnly": true,
+    "runtimeProjectionAuthority": true,
+    "stagingRuntimeFlagChanged": false,
+    "stagingMutationAuthorized": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false
   }
 }
