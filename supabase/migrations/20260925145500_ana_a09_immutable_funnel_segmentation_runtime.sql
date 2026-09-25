@@ -243,6 +243,22 @@ begin
     into v_cross_data_through
   from (values (p_window_end),(v_behavior_watermark_at),(v_order_watermark_at),(v_cat_watermark_at)) x(value_at);
 
+  if v_behavior_data_through < p_window_start or v_cross_data_through < p_window_start then
+    return pg_catalog.jsonb_build_object(
+      'contractId','ana-a09-immutable-funnel-segmentation-runtime-candidate-v1',
+      'state','unavailable_dependency_coverage',
+      'windowStart',p_window_start,
+      'windowEnd',p_window_end,
+      'behaviorDataThrough',v_behavior_data_through,
+      'crossDomainDataThrough',v_cross_data_through,
+      'behaviorWatermark',v_behavior_watermark,
+      'orderWatermark',v_order_watermark,
+      'catWatermark',v_cat_watermark,
+      'runtimeSegmentationAuthority',false,
+      'snapshotPublicationAllowed',false
+    );
+  end if;
+
   with behavior_source as (
     select e.*
     from private.analytics_behavior_events_v1 e
