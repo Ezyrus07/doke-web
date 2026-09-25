@@ -3,7 +3,7 @@
   "activationApprovalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-evidence-v1",
   "domain": "ANA-001",
   "scope": "repository_only_authorization_contract",
-  "status": "staging_runtime_canaries_certified_projection_authority_pending",
+  "status": "staging_runtime_canaries_certified_repository_projection_authority_granted",
   "createdAt": "2026-09-24T14:24:21.531026Z",
   "createdAgainst": {
     "repositoryHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
@@ -123,7 +123,7 @@
     "stagingMutationAuthority": false,
     "activationInvocationAuthority": false,
     "policyPersistenceAuthority": false,
-    "runtimeProjectionAuthority": false,
+    "runtimeProjectionAuthority": true,
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false,
     "productionAuthority": false,
@@ -150,7 +150,7 @@
     "pullRequestMerged": false,
     "readyForReviewChanged": false
   },
-  "nextGate": "Obtain the exact repository-only runtime projection authority authorization bound to the current PR HEAD and certified canary staging evidence. This next gate must not grant runtime snapshot or snapshot publication authority.",
+  "nextGate": "Repository runtime projection authority is granted. Any live staging runtimeAuthority alignment, runtime snapshot authority or snapshot publication requires a separate explicit authorization; production, merge and Ready remain unauthorized.",
   "activationApprovalAuthorization": {
     "commandName": "authorize-ana-a07-a09-funnel-freshness-policy-activation-approval-repository-only",
     "scope": "repository_only",
@@ -318,7 +318,7 @@
     "sourceHead": "88e753c4dbda6dd2485c22306c5f05cc5edfd49c",
     "contractPath": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
     "contractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
-    "contractStatus": "staging_certified_runtime_projection_authority_pending",
+    "contractStatus": "staging_certified_runtime_projection_authority_repository_granted",
     "validation046Path": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
     "identityAuthority": "seed002-email-resolved",
     "identityRemediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-identity-remediation-evidence.json",
@@ -330,5 +330,20 @@
     "validation046Status": "PASS",
     "lateFactStatus": "PASS",
     "cleanupStatus": "PASS"
+  },
+  "runtimeProjectionAuthorityGrant": {
+    "sourceContract": "config/ana-a09-canonical-funnel-projection.json",
+    "authorizedRepositoryHead": "28960baecb1b495b16c3799c55a80305764db0ac",
+    "matrixVersion": "1.3.132",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "canaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "authorizationDigestSha256": "ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5",
+    "repositoryOnly": true,
+    "runtimeProjectionAuthority": true,
+    "stagingRuntimeFlagChanged": false,
+    "stagingMutationAuthorized": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false
   }
 }
