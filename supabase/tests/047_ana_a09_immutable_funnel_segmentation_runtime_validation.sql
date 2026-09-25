@@ -11,6 +11,7 @@ declare
   v_helper_def text;
   v_compute_def text;
   v_service constant uuid := 'a9a90000-0000-4000-8000-000000000047';
+  v_gap_service constant uuid := 'a9a90000-0000-4000-8000-000000000048';
   v_version_1 constant uuid := 'a9a90000-0000-4000-8000-000000000147';
   v_version_2 constant uuid := 'a9a90000-0000-4000-8000-000000000247';
   v_baseline constant uuid := 'a9a90000-0000-4000-8000-000000000347';
@@ -70,7 +71,10 @@ begin
     where baseline_run_id=v_baseline or coverage_complete_from=v_coverage
   ) or exists(
     select 1 from private.cat_listing_visibility_events_v1
-    where service_id=v_service
+    where service_id in (v_service,v_gap_service)
+  ) or exists(
+    select 1 from public.services
+    where id in (v_service,v_gap_service)
   ) then
     raise exception 'VALIDATION_047_SYNTHETIC_KEYS_NOT_EMPTY';
   end if;
@@ -118,6 +122,32 @@ begin
         'categoryId',v_category_2,'categorySlug','reparos','category','Reparos','state','sp'
       ),null,'observed_transition'
     );
+
+  insert into private.cat_listing_visibility_events_v1(
+    service_id,sequence_no,occurred_at,transaction_id,source_authority,source_transition_key,
+    eligible_before,eligible_after,visible_version_id_before,visible_version_id_after,
+    dimension_snapshot_before,dimension_snapshot_after,coverage_kind
+  ) values
+    (
+      v_gap_service,1,v_coverage,47011,'ANA-A09/validation-047','ana-a09-v047-gap-seq-1',
+      false,true,null,v_version_1,null,
+      pg_catalog.jsonb_build_object('category','GapTest','state','BA'),'activation_baseline'
+    ),
+    (
+      v_gap_service,3,v_coverage+interval '1 minute',47013,'ANA-A09/validation-047','ana-a09-v047-gap-seq-3',
+      true,true,v_version_1,v_version_2,
+      pg_catalog.jsonb_build_object('category','GapTest','state','BA'),
+      pg_catalog.jsonb_build_object('category','GapTest2','state','BA'),'observed_transition'
+    );
+
+  select * into v_resolution
+  from private.analytics_a09_funnel_segment_for_anchor_v1(
+    v_gap_service,v_coverage+interval '2 minutes',v_coverage
+  );
+  if v_resolution.resolution_state is distinct from 'unavailable'
+     or v_resolution.reason_code is distinct from 'cat_ledger_invalid' then
+    raise exception 'VALIDATION_047_SEQUENCE_GAP_NOT_FAIL_CLOSED';
+  end if;
 
   select * into v_resolution
   from private.analytics_a09_funnel_segment_for_anchor_v1(
