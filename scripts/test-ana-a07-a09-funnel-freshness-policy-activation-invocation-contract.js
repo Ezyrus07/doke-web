@@ -2,46 +2,50 @@
 'use strict';
 const assert=require('node:assert/strict');
 const c=require('../config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json');
-const approval=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json');
+const staging=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json');
 
 let passed=0;
 function ok(name,fn){try{fn();passed++;}catch(error){error.message=name+': '+error.message;throw error;}}
 
-ok('repository activation approval is materialized',()=>{
-  assert.equal(c.status,'activation_approval_materialized_successor_candidate_ready_staging_unauthorized');
-  assert.equal(c.authority.repositoryActivationApprovalAuthority,true);
-  assert.equal(c.authority.activationApprovalEvidenceAuthority,true);
-  assert.equal(c.repositoryActivationApproval.evidenceDigestSha256,approval.evidenceDigestSha256);
+ok('successor is staging validated',()=>{
+  assert.equal(c.status,'successor_staging_applied_validated_persistent_activation_unauthorized');
+  assert.equal(c.successorCandidate.stagingApplied,true);
+  assert.equal(c.successorCandidate.validation045Status,'PASS');
+  assert.equal(c.operationalState.successorInstalledInStaging,true);
 });
-ok('future insert approval is single-use but not invoked',()=>{
-  assert.equal(approval.boundaries.policyInsertAuthorized,true);
-  assert.equal(approval.boundaries.activationInvocationLimit,1);
+ok('validation was rollback-only',()=>{
+  assert.equal(staging.validation,'045 PASS');
+  assert.equal(staging.validationMode,'rollback_only');
+  assert.equal(staging.validationCoverage.transientEightRowActivationPassed,true);
+  assert.equal(staging.validationCoverage.transactionRolledBack,true);
+});
+ok('persistent state is still zero',()=>{
   assert.equal(c.operationalState.activationInvoked,false);
   assert.equal(c.operationalState.policyRowsPersisted,0);
+  assert.equal(staging.persistentState.freshnessPolicyRowsPersisted,0);
 });
-ok('successor candidate exists only in repository',()=>{
-  assert.equal(c.authority.successorCandidateAuthority,true);
-  assert.equal(c.successorCandidate.status,'repository_ready_staging_unauthorized');
-  assert.equal(c.successorCandidate.stagingApplied,false);
-  assert.equal(c.operationalState.successorInstalledInStaging,false);
+ok('runtime privilege boundary is closed',()=>{
+  assert.equal(staging.runtime.validatorAnonExecute,false);
+  assert.equal(staging.runtime.validatorAuthenticatedExecute,false);
+  assert.equal(staging.runtime.validatorServiceRoleExecute,false);
+  assert.equal(staging.runtime.activationAnonExecute,false);
+  assert.equal(staging.runtime.activationAuthenticatedExecute,false);
+  assert.equal(staging.runtime.activationServiceRoleExecute,false);
 });
-ok('next staging command is structure-only',()=>{
-  assert.equal(c.successorStagingAuthorization.scope,'staging_structure_only');
-  assert.equal(c.successorStagingAuthorization.applySuccessorMigrationAuthorizedByCommand,true);
-  assert.equal(c.successorStagingAuthorization.executeValidation045RollbackOnlyAuthorizedByCommand,true);
-  assert.equal(c.successorStagingAuthorization.persistentActivationAuthorizedByCommand,false);
-  assert.equal(c.successorStagingAuthorization.persistentPolicyWriteAuthorizedByCommand,false);
-});
-ok('staging and persistence remain separate authorities',()=>{
-  assert.equal(c.authority.stagingMutationAuthority,false);
+ok('persistent activation remains separately gated',()=>{
   assert.equal(c.authority.activationInvocationAuthority,false);
   assert.equal(c.authority.policyPersistenceAuthority,false);
+  assert.equal(c.persistentActivationAuthorization.genericProceedIsAuthorization,false);
+  assert.equal(c.persistentActivationAuthorization.activationInvocationLimit,1);
+  assert.equal(c.persistentActivationAuthorization.exactPolicyRows,8);
 });
-ok('successor candidate remains narrow',()=>{
-  assert.equal(c.successorCandidate.exactPolicyInsertCardinality,8);
-  assert.equal(c.successorCandidate.publicationPolicyInsertAllowed,false);
-  assert.equal(c.successorCandidate.snapshotWriteAllowed,false);
-  assert.equal(c.successorCandidate.cronCreationAllowed,false);
+ok('non-policy authorities remain denied',()=>{
+  assert.equal(c.persistentActivationAuthorization.snapshotPublicationAuthorizedByCommand,false);
+  assert.equal(c.persistentActivationAuthorization.cronAuthorizedByCommand,false);
+  assert.equal(c.persistentActivationAuthorization.productionAuthorizedByCommand,false);
+  assert.equal(c.persistentActivationAuthorization.mergeAuthorizedByCommand,false);
+  assert.equal(c.persistentActivationAuthorization.readyForReviewAuthorizedByCommand,false);
 });
+
 assert.equal(passed,6);
 console.log('ANA-A07/A09 activation-invocation lifecycle conformance passed: 6/6.');

@@ -2,43 +2,43 @@
 'use strict';
 const assert=require('node:assert/strict');
 const contract=require('../config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json');
-const evidence=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json');
+const approval=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json');
+const staging=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json');
 const lib=require('./lib/ana-a07-a09-funnel-freshness-policy-activation-approval');
 
 let passed=0;
 function ok(name,fn){try{fn();passed++;}catch(error){error.message=name+': '+error.message;throw error;}}
 
-ok('authorization digest binds exact command',()=>{
-  assert.equal(lib.sha256(contract.repositoryActivationApproval.rawAuthorization),evidence.authorizationDigestSha256);
+ok('activation approval remains valid',()=>{
+  lib.validateCompletedActivationApprovalEvidence(approval,contract.repositoryActivationApproval.rawAuthorization);
+  assert.equal(lib.evidenceDigest(approval),approval.evidenceDigestSha256);
 });
-ok('evidence digest is canonical and valid',()=>{
-  lib.validateCompletedActivationApprovalEvidence(evidence,contract.repositoryActivationApproval.rawAuthorization);
-  assert.equal(lib.evidenceDigest(evidence),evidence.evidenceDigestSha256);
+ok('successor is installed and validated',()=>{
+  assert.equal(contract.successorCandidate.stagingApplied,true);
+  assert.equal(contract.successorCandidate.validation045Status,'PASS');
+  assert.equal(staging.validation,'045 PASS');
 });
-ok('future insertion approval is single-use',()=>{
-  assert.equal(evidence.boundaries.policyInsertAuthorized,true);
-  assert.equal(evidence.boundaries.activationInvocationLimit,1);
+ok('rollback preserved zero persistent rows',()=>{
+  assert.equal(staging.validationCoverage.transientEightRowActivationPassed,true);
+  assert.equal(staging.validationCoverage.transactionRolledBack,true);
+  assert.equal(staging.persistentState.freshnessPolicyRowsPersisted,0);
 });
-ok('staging remains unauthorized',()=>{
-  assert.equal(contract.authority.stagingMutationAuthority,false);
+ok('replay and legacy bypass fail closed',()=>{
+  assert.equal(staging.validationCoverage.replayRejectedByOverlap,true);
+  assert.equal(staging.validationCoverage.legacyTombstoneRejected,true);
+});
+ok('persistent activation is still not consumed',()=>{
+  assert.equal(contract.operationalState.activationInvoked,false);
+  assert.equal(contract.operationalState.policyRowsPersisted,0);
   assert.equal(contract.authority.activationInvocationAuthority,false);
   assert.equal(contract.authority.policyPersistenceAuthority,false);
 });
-ok('successor candidate is repository only',()=>{
-  assert.equal(contract.successorCandidate.status,'repository_ready_staging_unauthorized');
-  assert.equal(contract.successorCandidate.stagingApplied,false);
-  assert.equal(contract.successorCandidate.validation045Status,'NOT_RUN_STAGING');
-});
-ok('successor names are postgres safe',()=>{
-  assert(contract.successorCandidate.activationFunction.split('.').pop().length<=63);
-  assert(contract.successorCandidate.validatorFunction.split('.').pop().length<=63);
-});
-ok('operational side effects remain zero',()=>{
-  assert.equal(contract.operationalState.activationInvoked,false);
-  assert.equal(contract.operationalState.policyRowsPersisted,0);
-  assert.equal(contract.operationalState.snapshotsWritten,0);
-  assert.equal(contract.operationalState.cronCreated,false);
+ok('single-use future activation remains narrow',()=>{
+  assert.equal(contract.persistentActivationAuthorization.activationInvocationLimit,1);
+  assert.equal(contract.persistentActivationAuthorization.exactPolicyRows,8);
+  assert.equal(contract.persistentActivationAuthorization.snapshotPublicationAuthorizedByCommand,false);
+  assert.equal(contract.persistentActivationAuthorization.cronAuthorizedByCommand,false);
 });
 
-assert.equal(passed,7);
-console.log('ANA-A07/A09 activation approval conformance passed: 7/7.');
+assert.equal(passed,6);
+console.log('ANA-A07/A09 activation approval conformance passed: 6/6.');

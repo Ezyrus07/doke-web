@@ -26,7 +26,7 @@ assert.equal(envelope.createdAgainst.matrixVersion,'1.3.132');
 assert.equal(envelope.createdAgainst.authorization,'authorize-ana-a07-a09-funnel-freshness-policy-activation-envelope-repository-only head=0c45856b82b08fe5265c3e71b40c0d83fed871a7 matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 effectiveFrom=2026-09-24T14:00:00Z effectiveUntil=null');
 assert.equal(envelope.authorization.digestSha256,lib.sha256(envelope.authorization.rawCommand));
 assert.equal(envelope.authorization.digestSha256,'4a96845c66599a0092e34d0bf02c41684c8eaccf8768c403b648159bc53ddc2a');
-assert.equal(envelope.status,'effective_window_approved_runtime_enforcement_staging_validated_activation_uninvoked');
+assert.equal(envelope.status,'effective_window_approved_successor_staging_validated_activation_uninvoked');
 
 lib.validateCompletedApprovalEvidence(envelope.approvalEvidence);
 assert.equal(envelope.approvalEvidence.evidenceDigestSha256,'9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5');
@@ -35,7 +35,7 @@ assert.equal(envelope.policySet.metricCount,8);
 assert.equal(envelope.policySet.maxLagSeconds,360);
 assert.equal(envelope.policySet.approvedEffectiveFrom,'2026-09-24T14:00:00Z');
 assert.equal(envelope.policySet.approvedEffectiveUntil,null);
-assert.equal(envelope.policySet.runtimeActivationState,'not_active');
+assert.equal(envelope.policySet.runtimeActivationState,'successor_staging_validated_not_active');
 assert.equal(envelope.policySet.runtimePolicyRowsPersisted,0);
 
 assert.equal(envelope.authority.repositoryContractAuthority,true);
@@ -48,10 +48,13 @@ assert.equal(envelope.authority.effectiveWindowSelectionAuthority,true);
 ].forEach((key)=>assert.equal(envelope.authority[key],false,'authority false: '+key));
 Object.entries(envelope.prohibitedEffects).forEach(([key,value])=>assert.equal(value,false,'effect false: '+key));
 
-assert.equal(envelope.runtimeBoundary.currentActivationFunction,'private.activate_analytics_a09_funnel_freshness_policy_v1');
-assert.equal(envelope.runtimeBoundary.currentActivationBehavior,'fail_closed_tombstone');
+assert.equal(envelope.runtimeBoundary.currentActivationFunction,'private.activate_a09_funnel_policy_approved_v1');
+assert.equal(envelope.runtimeBoundary.currentActivationBehavior,'approval_aware_single_use_ready_uninvoked');
 assert.equal(envelope.runtimeBoundary.legacyActivationTombstoned,true);
-assert.equal(envelope.runtimeBoundary.activationCapableSuccessorPresent,false);
+assert.equal(envelope.runtimeBoundary.activationCapableSuccessorPresent,true);
+assert.equal(envelope.runtimeBoundary.successorStagingValidated,true);
+assert.equal(envelope.runtimeBoundary.successorStagingMigrationVersion,'20260925112930');
+assert.equal(envelope.runtimeBoundary.validation045Passed,true);
 assert.equal(envelope.runtimeBoundary.validatorApprovalEvidenceArgumentPresent,true);
 assert.equal(envelope.runtimeBoundary.runtimeEnforcementAuthority,true);
 assert.equal(envelope.authority.runtimeEnvelopeEnforcementAuthority,true);
@@ -81,7 +84,7 @@ assert(ana);
   'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md',
   '.github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml'
 ].forEach((file)=>assert(ana.requiredPaths.includes(file),'matrix missing '+file));
-assert(ana.nextActions.some((action)=>action.includes('Apply the ANA-A07/A09 approved activation successor candidate in staging')));
+assert(ana.nextActions.some((action)=>action.includes('Obtain the exact single-use ANA-A07/A09 persistent-activation staging authorization')));
 
 assert.equal(pkg.scripts['audit:ana-a07-a09-funnel-freshness-policy-activation-envelope'],'node scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-envelope.js');
 assert.equal(pkg.scripts['test:ana-a07-a09-funnel-freshness-policy-activation-envelope'],'node scripts/test-ana-a07-a09-funnel-freshness-policy-activation-envelope.js');

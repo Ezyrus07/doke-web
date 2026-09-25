@@ -4,7 +4,7 @@
   "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
   "matrixVersion": "1.3.132",
   "scope": "staging_activation_structure_installed_policy_inactive",
-  "status": "activation_approval_materialized_successor_candidate_ready_staging_unauthorized_policy_inactive",
+  "status": "successor_staging_applied_validated_persistent_activation_unauthorized_policy_inactive",
   "authorization": {
     "token": "authorize-ana-a07-a09-funnel-freshness-policy-candidate-repository-only head=fb0a8082b7eec9038348d6aee4065704d3ee30a5 matrix=v1.3.132 metricCount=8",
     "received": true,
@@ -175,16 +175,15 @@
     "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json"
   },
   "nextGates": [
-    "apply the ANA-A07/A09 approved activation successor candidate in staging under a separate explicit authorization and execute validation 045 rollback-only",
-    "do not persist the eight policies during the staging-structure lot; persistent activation remains a later separate authorization",
-    "after successor staging validation, obtain one explicit single-use activation invocation authorization",
-    "prove complete/orphan/empty-window/late-fact paths before enabling snapshot publication",
-    "keep A09 runtimeProjectionAuthority and runtimeSnapshotAuthority false until policy activation and canaries close"
+    "obtain the exact single-use ANA-A07/A09 persistent-activation staging authorization bound to the current PR HEAD and successor staging evidence",
+    "invoke private.activate_a09_funnel_policy_approved_v1 exactly once only under that later authorization and require exactly eight persisted freshness-policy rows",
+    "prove complete/orphan/empty-window/late-fact paths after persistence before enabling runtime projection or snapshot publication",
+    "keep cron/scheduler, production, merge and Ready authority false"
   ],
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The activation approval is repository-materialized and an approval-aware successor migration candidate is repository-ready. The successor is not applied in staging, validation 045 has not run remotely, activation has not been invoked and zero policy rows are persisted. ANA remains 3/6."
+    "reason": "The approval-aware successor is applied and validation 045 passes in staging. The validation transiently inserted eight rows and rolled them back; persistent activation has not been invoked and zero A07/A09 policy rows are persisted. ANA remains 3/6."
   },
   "runtimeEvidence": {
     "artifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json",
@@ -232,7 +231,7 @@
   "activationInvocationContract": {
     "contractPath": "config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json",
     "contractId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-v1",
-    "status": "activation_approval_materialized_successor_candidate_ready_staging_unauthorized",
+    "status": "successor_staging_applied_validated_persistent_activation_unauthorized",
     "sourceHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
     "matrixVersion": "1.3.132",
     "runtimeEvidenceBlobSha": "118ca5f948f93ca09c7a7305d1b230880fa98630",
@@ -244,8 +243,12 @@
     "activationApprovalEvidenceDigestSha256": "ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603",
     "successorMigration": "supabase/migrations/20260924144500_ana_a07_a09_funnel_policy_approved_activation.sql",
     "successorValidation": "supabase/tests/045_ana_a07_a09_funnel_policy_approved_activation_validation.sql",
-    "successorStatus": "repository_ready_staging_unauthorized",
-    "successorStagingApplied": false
+    "successorStatus": "staging_applied_validated_persistent_activation_unauthorized",
+    "successorStagingApplied": true,
+    "successorStagingMigrationVersion": "20260925112930",
+    "validation045Status": "PASS",
+    "successorStagingEvidencePath": "reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json",
+    "successorStagingEvidenceBlobSha": "02a860c812eeb777519c7917bb5c31b3fb3dd5e2"
   },
   "activationApproval": {
     "repositoryAuthorizationReceived": true,
@@ -256,6 +259,11 @@
     "activationInvocationLimit": 1,
     "stagingMutationAuthorized": false,
     "activationInvocationAuthorized": false,
-    "policyPersistenceAuthorizedNow": false
+    "policyPersistenceAuthorizedNow": false,
+    "successorStagingApplied": true,
+    "successorStagingMigrationVersion": "20260925112930",
+    "validation045Status": "PASS",
+    "successorStagingEvidencePath": "reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json",
+    "successorStagingEvidenceBlobSha": "02a860c812eeb777519c7917bb5c31b3fb3dd5e2"
   }
 }
