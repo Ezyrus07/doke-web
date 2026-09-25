@@ -78,7 +78,7 @@ assert(ana.requiredPaths.includes('reports/generated/ana-a07-a09-funnel-freshnes
 
 [
   'Successor staging closure',
-  'Persistent policy rows remain `0`',
+  'persistent policy rows remain `0`',
   'Next gate — single-use persistent activation',
   'Generic `prossiga` is not authorization'
 ].forEach((fragment)=>assert(doc.includes(fragment),'docs missing '+fragment));
