@@ -3,7 +3,7 @@
   "activationApprovalEvidenceSchemaId": "ana-a07-a09-funnel-freshness-policy-activation-invocation-evidence-v1",
   "domain": "ANA-001",
   "scope": "repository_only_authorization_contract",
-  "status": "successor_staging_applied_validated_persistent_activation_unauthorized",
+  "status": "persistent_activation_applied_runtime_canaries_pending",
   "createdAt": "2026-09-24T14:24:21.531026Z",
   "createdAgainst": {
     "repositoryHead": "0a8d9cbcb49c68b250cec2b76180c50a02515202",
@@ -131,7 +131,8 @@
     "readyForReviewAuthority": false,
     "activationApprovalMaterializationAuthority": true,
     "repositoryActivationApprovalAuthority": true,
-    "successorStagingAppliedAuthority": true
+    "successorStagingAppliedAuthority": true,
+    "activeFreshnessPolicySetAuthority": true
   },
   "prohibitedEffects": {
     "activationAuthorizationFabricated": false,
@@ -146,7 +147,7 @@
     "pullRequestMerged": false,
     "readyForReviewChanged": false
   },
-  "nextGate": "Obtain the exact single-use persistent-activation staging authorization defined by persistentActivationAuthorization. Only that later command may invoke private.activate_a09_funnel_policy_approved_v1 once and persist exactly eight freshness-policy rows; snapshot publication, cron, production, merge and Ready remain unauthorized.",
+  "nextGate": "Obtain the exact repository-only runtime-canary contract authorization. Only after that gate may a canary contract/candidate be prepared for complete/orphan/empty-window/late-fact behavior; no runtime canary mutation or maturity promotion is authorized by this persistent-activation lot.",
   "activationApprovalAuthorization": {
     "commandName": "authorize-ana-a07-a09-funnel-freshness-policy-activation-approval-repository-only",
     "scope": "repository_only",
@@ -204,9 +205,12 @@
   },
   "operationalState": {
     "successorInstalledInStaging": true,
-    "activationInvoked": false,
-    "policyRowsPersisted": 0,
+    "activationInvoked": true,
+    "activationInvocationCount": 1,
+    "activationInvocationLimit": 1,
+    "policyRowsPersisted": 8,
     "snapshotsWritten": 0,
+    "publicationPolicyRowsInserted": 0,
     "cronCreated": false
   },
   "successorStagingAuthorization": {
@@ -262,6 +266,40 @@
     "persistentPolicyWriteAuthorizedByCommand": true,
     "exactPolicyRows": 8,
     "activationInvocationLimit": 1,
+    "snapshotPublicationAuthorizedByCommand": false,
+    "runtimeProjectionAuthorityAuthorizedByCommand": false,
+    "runtimeSnapshotAuthorityAuthorizedByCommand": false,
+    "cronAuthorizedByCommand": false,
+    "productionAuthorizedByCommand": false,
+    "mergeAuthorizedByCommand": false,
+    "readyForReviewAuthorizedByCommand": false,
+    "authorizationReceived": true,
+    "authorizationConsumed": true,
+    "authorizationDigestSha256": "f9a198287b75bdaba2e38aa3a2447dab1dcb154a63c7aa8bfc28b9a55081b525",
+    "authorizedRepositoryHead": "e93da2286dfdafca34b7223e4ccd4f0b5a25e579",
+    "consumedAt": "2026-09-25T11:42:10.960887Z",
+    "persistentActivationEvidencePath": "reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json",
+    "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+    "persistentActivationEvidenceDigestSha256": "b9f5f84a202a2472b2dca4e44b4696900b8f150d3520e2becead3d3cd4943605",
+    "activationInvocationAuthorizedNow": false,
+    "persistentPolicyWriteAuthorizedNow": false
+  },
+  "runtimeCanaryContractAuthorization": {
+    "commandName": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canary-contract-repository-only",
+    "scope": "repository_only",
+    "genericProceedIsAuthorization": false,
+    "valuesMayBeInferred": false,
+    "headMustMatchCurrentPrHead": true,
+    "canarySet": "complete-orphan-empty-window-late-fact",
+    "requiredArguments": [
+      "head",
+      "matrix",
+      "policySetId",
+      "persistentActivationEvidenceBlobSha",
+      "canarySet"
+    ],
+    "template": "authorize-ana-a07-a09-funnel-freshness-policy-runtime-canary-contract-repository-only head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 canarySet=complete-orphan-empty-window-late-fact",
+    "stagingMutationAuthorizedByCommand": false,
     "snapshotPublicationAuthorizedByCommand": false,
     "runtimeProjectionAuthorityAuthorizedByCommand": false,
     "runtimeSnapshotAuthorityAuthorizedByCommand": false,

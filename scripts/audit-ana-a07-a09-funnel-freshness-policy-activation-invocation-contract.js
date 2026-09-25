@@ -1,86 +1,49 @@
 #!/usr/bin/env node
 'use strict';
 const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const path=require('node:path');
-const root=path.resolve(__dirname,'..');
-const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
-const json=(p)=>JSON.parse(read(p));
-
+const fs=require('node:fs');const path=require('node:path');const root=path.resolve(__dirname,'..');
+const json=(p)=>JSON.parse(fs.readFileSync(path.join(root,p),'utf8'));
 const c=json('config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json');
 const envelope=json('config/ana-a07-a09-funnel-freshness-policy-activation-envelope.json');
 const candidate=json('config/ana-a07-a09-funnel-freshness-policy-candidate.json');
-const approval=json('reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json');
-const staging=json('reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json');
+const evidence=json('reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json');
 const matrix=json('config/domain-completion-matrix.json');
-const doc=read('docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-INVOCATION-CONTRACT.md');
-
-assert.equal(c.contractId,'ana-a07-a09-funnel-freshness-policy-activation-invocation-v1');
-assert.equal(c.status,'successor_staging_applied_validated_persistent_activation_unauthorized');
-assert.equal(c.createdAgainst.matrixVersion,'1.3.132');
-assert.equal(c.fixedBindings.policySetId,'ana-a07-a09-funnel-v1-r1');
-assert.equal(c.fixedBindings.metricCount,8);
-assert.equal(c.fixedBindings.maxLagSeconds,360);
-assert.equal(c.fixedBindings.effectiveFrom,'2026-09-24T14:00:00Z');
-assert.equal(c.fixedBindings.effectiveUntil,null);
-
-assert.equal(c.repositoryActivationApproval.evidenceDigestSha256,approval.evidenceDigestSha256);
-assert.equal(c.repositoryActivationApproval.activationInvocationLimit,1);
-assert.equal(c.successorCandidate.status,'staging_applied_validated_persistent_activation_unauthorized');
-assert.equal(c.successorCandidate.stagingApplied,true);
-assert.equal(c.successorCandidate.stagingMigrationVersion,'20260925112930');
-assert.equal(c.successorCandidate.validation045Status,'PASS');
-assert.equal(c.successorCandidate.stagingEvidencePath,'reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json');
-assert.equal(c.successorCandidate.stagingEvidenceBlobSha,'02a860c812eeb777519c7917bb5c31b3fb3dd5e2');
+assert.equal(c.status,'persistent_activation_applied_runtime_canaries_pending');
 assert.equal(c.operationalState.successorInstalledInStaging,true);
-assert.equal(c.operationalState.activationInvoked,false);
-assert.equal(c.operationalState.policyRowsPersisted,0);
-
-assert.equal(staging.validation,'045 PASS');
-assert.equal(staging.validationMode,'rollback_only');
-assert.equal(staging.stagingMigrationVersion,'20260925112930');
-assert.equal(staging.runtime.validatorOwner,'postgres');
-assert.equal(staging.runtime.activationFunctionOwner,'postgres');
-assert.equal(staging.runtime.validatorSecurityDefiner,true);
-assert.equal(staging.runtime.activationFunctionSecurityDefiner,true);
-assert.equal(staging.runtime.validatorAnonExecute,false);
-assert.equal(staging.runtime.validatorAuthenticatedExecute,false);
-assert.equal(staging.runtime.validatorServiceRoleExecute,false);
-assert.equal(staging.runtime.activationAnonExecute,false);
-assert.equal(staging.runtime.activationAuthenticatedExecute,false);
-assert.equal(staging.runtime.activationServiceRoleExecute,false);
-assert.equal(staging.runtime.legacyActivationTombstoned,true);
-assert.equal(staging.validationCoverage.transientEightRowActivationPassed,true);
-assert.equal(staging.validationCoverage.replayRejectedByOverlap,true);
-assert.equal(staging.validationCoverage.transactionRolledBack,true);
-assert.equal(staging.persistentState.freshnessPolicyRowsPersisted,0);
-
-assert.equal(c.authority.successorStagingAppliedAuthority,true);
-['stagingMutationAuthority','activationInvocationAuthority','policyPersistenceAuthority','runtimeProjectionAuthority','runtimeSnapshotAuthority','snapshotPublicationAuthority','productionAuthority','mergeAuthority','readyForReviewAuthority']
-  .forEach((key)=>assert.equal(c.authority[key],false,'authority false: '+key));
-
-assert.equal(c.persistentActivationAuthorization.scope,'single_use_persistent_activation');
-assert.equal(c.persistentActivationAuthorization.genericProceedIsAuthorization,false);
-assert.equal(c.persistentActivationAuthorization.activationInvocationAuthorizedByCommand,true);
-assert.equal(c.persistentActivationAuthorization.persistentPolicyWriteAuthorizedByCommand,true);
-assert.equal(c.persistentActivationAuthorization.exactPolicyRows,8);
-assert.equal(c.persistentActivationAuthorization.activationInvocationLimit,1);
-assert.equal(c.persistentActivationAuthorization.snapshotPublicationAuthorizedByCommand,false);
-assert.equal(c.persistentActivationAuthorization.cronAuthorizedByCommand,false);
-assert(c.persistentActivationAuthorization.template.includes('head=<CURRENT_PR_HEAD>'));
-assert(c.persistentActivationAuthorization.template.includes('successorStagingEvidenceBlobSha=02a860c812eeb777519c7917bb5c31b3fb3dd5e2'));
-
-assert.equal(candidate.activationInvocationContract.status,c.status);
-assert.equal(envelope.activationInvocationContract.status,c.status);
-const ana=matrix.domains.find((domain)=>domain.id==='ANA-001');
-assert(ana.nextActions.some((action)=>action.includes('Obtain the exact single-use ANA-A07/A09 persistent-activation staging authorization')));
-assert(ana.requiredPaths.includes('reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json'));
-
-[
-  'Successor staging closure',
-  'persistent policy rows remain `0`',
-  'Next gate — single-use persistent activation',
-  'Generic `prossiga` is not authorization'
-].forEach((fragment)=>assert(doc.includes(fragment),'docs missing '+fragment));
-
-console.log('ANA-A07/A09 activation-invocation lifecycle contract audit passed.');
+assert.equal(c.operationalState.activationInvoked,true);
+assert.equal(c.operationalState.activationInvocationCount,1);
+assert.equal(c.operationalState.activationInvocationLimit,1);
+assert.equal(c.operationalState.policyRowsPersisted,8);
+assert.equal(c.operationalState.snapshotsWritten,0);
+assert.equal(c.operationalState.publicationPolicyRowsInserted,0);
+assert.equal(c.operationalState.cronCreated,false);
+assert.equal(c.persistentActivationAuthorization.authorizationReceived,true);
+assert.equal(c.persistentActivationAuthorization.authorizationConsumed,true);
+assert.equal(c.persistentActivationAuthorization.authorizationDigestSha256,'f9a198287b75bdaba2e38aa3a2447dab1dcb154a63c7aa8bfc28b9a55081b525');
+assert.equal(c.persistentActivationAuthorization.persistentActivationEvidenceBlobSha,'24ddfedcb29b465f510130befe61d4e4a283e2d2');
+assert.equal(c.persistentActivationAuthorization.activationInvocationAuthorizedNow,false);
+assert.equal(c.persistentActivationAuthorization.persistentPolicyWriteAuthorizedNow,false);
+assert.equal(c.authority.activeFreshnessPolicySetAuthority,true);
+['activationInvocationAuthority','policyPersistenceAuthority','runtimeProjectionAuthority','runtimeSnapshotAuthority','snapshotPublicationAuthority','productionAuthority','mergeAuthority','readyForReviewAuthority']
+ .forEach(k=>assert.equal(c.authority[k],false,k));
+assert.equal(evidence.invocationConsumed,true);
+assert.equal(evidence.result.rowsInserted,8);
+assert.equal(evidence.persistentState.exactPolicyRows,8);
+assert.equal(evidence.persistentState.exactBindingRows,8);
+assert.equal(evidence.persistentState.publicationPolicyRowsForActivation,0);
+assert.equal(evidence.persistentState.postActivationSnapshotRows,0);
+assert.equal(evidence.persistentState.matchingCronJobs,0);
+assert.equal(evidence.policies.length,8);
+assert(evidence.policies.every(p=>p.metricVersion==='v1'&&p.maxLagSeconds===360&&p.effectiveFrom==='2026-09-24T14:00:00Z'&&p.effectiveUntil===null));
+assert.equal(c.runtimeCanaryContractAuthorization.scope,'repository_only');
+assert.equal(c.runtimeCanaryContractAuthorization.genericProceedIsAuthorization,false);
+assert.equal(c.runtimeCanaryContractAuthorization.stagingMutationAuthorizedByCommand,false);
+assert.equal(c.runtimeCanaryContractAuthorization.canarySet,'complete-orphan-empty-window-late-fact');
+assert.equal(envelope.policySet.runtimeActivationState,'active');
+assert.equal(envelope.policySet.runtimePolicyRowsPersisted,8);
+assert.equal(candidate.policySet.activationState,'active');
+assert.equal(candidate.persistentActivation.policyRowsPersisted,8);
+const ana=matrix.domains.find(d=>d.id==='ANA-001');assert(ana);
+assert.equal(ana.maturity,3);
+assert(ana.nextActions.some(a=>a.includes('runtime-canary contract authorization')));
+console.log('ANA-A07/A09 activation lifecycle audit passed.');

@@ -2,50 +2,12 @@
 'use strict';
 const assert=require('node:assert/strict');
 const c=require('../config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json');
-const staging=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json');
-
-let passed=0;
-function ok(name,fn){try{fn();passed++;}catch(error){error.message=name+': '+error.message;throw error;}}
-
-ok('successor is staging validated',()=>{
-  assert.equal(c.status,'successor_staging_applied_validated_persistent_activation_unauthorized');
-  assert.equal(c.successorCandidate.stagingApplied,true);
-  assert.equal(c.successorCandidate.validation045Status,'PASS');
-  assert.equal(c.operationalState.successorInstalledInStaging,true);
-});
-ok('validation was rollback-only',()=>{
-  assert.equal(staging.validation,'045 PASS');
-  assert.equal(staging.validationMode,'rollback_only');
-  assert.equal(staging.validationCoverage.transientEightRowActivationPassed,true);
-  assert.equal(staging.validationCoverage.transactionRolledBack,true);
-});
-ok('persistent state is still zero',()=>{
-  assert.equal(c.operationalState.activationInvoked,false);
-  assert.equal(c.operationalState.policyRowsPersisted,0);
-  assert.equal(staging.persistentState.freshnessPolicyRowsPersisted,0);
-});
-ok('runtime privilege boundary is closed',()=>{
-  assert.equal(staging.runtime.validatorAnonExecute,false);
-  assert.equal(staging.runtime.validatorAuthenticatedExecute,false);
-  assert.equal(staging.runtime.validatorServiceRoleExecute,false);
-  assert.equal(staging.runtime.activationAnonExecute,false);
-  assert.equal(staging.runtime.activationAuthenticatedExecute,false);
-  assert.equal(staging.runtime.activationServiceRoleExecute,false);
-});
-ok('persistent activation remains separately gated',()=>{
-  assert.equal(c.authority.activationInvocationAuthority,false);
-  assert.equal(c.authority.policyPersistenceAuthority,false);
-  assert.equal(c.persistentActivationAuthorization.genericProceedIsAuthorization,false);
-  assert.equal(c.persistentActivationAuthorization.activationInvocationLimit,1);
-  assert.equal(c.persistentActivationAuthorization.exactPolicyRows,8);
-});
-ok('non-policy authorities remain denied',()=>{
-  assert.equal(c.persistentActivationAuthorization.snapshotPublicationAuthorizedByCommand,false);
-  assert.equal(c.persistentActivationAuthorization.cronAuthorizedByCommand,false);
-  assert.equal(c.persistentActivationAuthorization.productionAuthorizedByCommand,false);
-  assert.equal(c.persistentActivationAuthorization.mergeAuthorizedByCommand,false);
-  assert.equal(c.persistentActivationAuthorization.readyForReviewAuthorizedByCommand,false);
-});
-
-assert.equal(passed,6);
-console.log('ANA-A07/A09 activation-invocation lifecycle conformance passed: 6/6.');
+const e=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json');
+let passed=0;const ok=(n,f)=>{try{f();passed++;}catch(x){x.message=n+': '+x.message;throw x;}};
+ok('single-use activation consumed',()=>{assert.equal(c.persistentActivationAuthorization.authorizationConsumed,true);assert.equal(c.operationalState.activationInvocationCount,1);assert.equal(c.operationalState.activationInvocationLimit,1);});
+ok('eight policies persist',()=>{assert.equal(c.operationalState.policyRowsPersisted,8);assert.equal(e.persistentState.exactPolicyRows,8);assert.equal(e.policies.length,8);});
+ok('no auxiliary effects',()=>{assert.equal(e.persistentState.publicationPolicyRowsForActivation,0);assert.equal(e.persistentState.postActivationSnapshotRows,0);assert.equal(e.persistentState.matchingCronJobs,0);});
+ok('second invocation not authorized',()=>{assert.equal(c.authority.activationInvocationAuthority,false);assert.equal(c.authority.policyPersistenceAuthority,false);assert.equal(e.boundaries.secondActivationInvocationAuthorized,false);});
+ok('projection remains canary gated',()=>{assert.equal(c.authority.runtimeProjectionAuthority,false);assert.equal(c.authority.runtimeSnapshotAuthority,false);assert.equal(c.authority.snapshotPublicationAuthority,false);});
+ok('next canary contract is repository only',()=>{assert.equal(c.runtimeCanaryContractAuthorization.scope,'repository_only');assert.equal(c.runtimeCanaryContractAuthorization.stagingMutationAuthorizedByCommand,false);});
+assert.equal(passed,6);console.log('ANA-A07/A09 activation lifecycle conformance passed: 6/6.');

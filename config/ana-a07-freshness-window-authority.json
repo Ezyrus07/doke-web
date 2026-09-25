@@ -3,7 +3,7 @@
   "domain": "ANA-001",
   "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
   "createdAt": "2026-09-21T22:00:00-03:00",
-  "scope": "staging_policy_structure_installed_policy_inactive",
+  "scope": "staging_policy_active_runtime_canaries_pending",
   "status": "behavior_ord_watermark_certified_a09_policy_structure_installed_inactive",
   "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
   "rootCause": {
@@ -60,9 +60,9 @@
     "thresholdComparison": "stale when lagSeconds > maxLagSeconds; fresh otherwise after full window coverage"
   },
   "thresholdAuthority": {
-    "status": "metric_specific_policy_active_plus_a09_structure_installed_inactive",
+    "status": "metric_specific_policy_active_a09_funnel_active_canaries_pending",
     "defaultMaxLagSeconds": null,
-    "reason": "Liquidity retains its active r1 policy. The eight ANA-A09 funnel policies have a validated activation structure at 360 seconds, but remain inactive because no effectiveFrom/effectiveUntil has been authorized.",
+    "reason": "Liquidity retains its active r1 policy and the eight ANA-A09 funnel freshness policies are now persistently active at 360 seconds. Runtime projection/snapshot authority remains blocked until complete/orphan/empty-window/late-fact canaries close.",
     "requiredFields": [
       "policyId",
       "metricKey",
@@ -70,7 +70,7 @@
       "maxLagSeconds",
       "effectiveFrom"
     ],
-    "runtimeActivationBlockedUntilThresholds": true,
+    "runtimeActivationBlockedUntilThresholds": false,
     "activeMetricPolicies": [
       {
         "policyId": "ana-a11-liquidity-v1-r1",
@@ -95,15 +95,20 @@
       "validationSql": "supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql",
       "migrationApplied": true,
       "validation043Status": "PASS",
-      "activationInvoked": false,
-      "effectiveFrom": null,
+      "activationInvoked": true,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
       "effectiveUntil": null,
       "stagingMigrationVersion": "20260924005631",
       "stagingValidated": true,
       "activationFunctionInstalled": true,
-      "policyRowsPersisted": 0,
-      "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json"
-    }
+      "policyRowsPersisted": 8,
+      "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json",
+      "successorActivationFunction": "private.activate_a09_funnel_policy_approved_v1",
+      "persistentActivationEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json",
+      "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+      "runtimeCanariesPending": true
+    },
+    "runtimeProjectionBlockedUntilCanaries": true
   },
   "metricDependencies": [
     {
@@ -312,7 +317,10 @@
     "alertDeliveryAuthority": false,
     "stagingAuthority": false,
     "productionAuthority": false,
-    "candidateThresholdValueAuthority": true
+    "candidateThresholdValueAuthority": true,
+    "activeFunnelFreshnessPolicyAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false
   },
   "activationRequirements": [
     "approve an explicit effectiveFrom/effectiveUntil activation envelope for ana-a07-a09-funnel-v1-r1 under separate authorization",

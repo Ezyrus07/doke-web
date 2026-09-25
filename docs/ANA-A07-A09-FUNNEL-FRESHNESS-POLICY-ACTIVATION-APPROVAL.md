@@ -1,40 +1,32 @@
-# ANA-A07/A09 — Activation approval and successor
+# ANA-A07/A09 — Activation approval and persistent policy state
 
-The activation approval is materialized and the approval-aware successor is now staging-validated.
+The repository approval, successor staging validation and single-use persistent activation have all closed.
 
-## Approval binding
+## Persistent state
 
-- authorization SHA-256: `d72f3930dffb8ba36d49c22eaebec4f20cf88121280c4201a6eb8a140a7dc494`
-- activation-approval evidence SHA-256: `ca2bc22dcf252f0b1924c24ba522252cab37312ff5f436435723c0b1ceacb603`
-- approval-envelope evidence SHA-256: `9b4db03b33bdb7084899225fa2d08b78fdf4f87687b55e077b3a956a0aa981a5`
-- runtime-enforcement evidence blob: `118ca5f948f93ca09c7a7305d1b230880fa98630`
+Staging contains exactly eight approved A07/A09 freshness-policy rows:
+
+- policy set: `ana-a07-a09-funnel-v1-r1`
+- metric version: `v1`
+- max lag: `360s`
 - effectiveFrom: `2026-09-24T14:00:00Z`
 - effectiveUntil: `null`
-- approved future insert cardinality: `8`
-- activation invocation limit: `1`
 
-## Staging validation
+The activation function returned `rowsInserted=8` after validating both the original approval envelope and the activation-approval evidence.
 
-The successor migration is applied in staging as version `20260925112930`, and validation `045` passes in rollback-only mode.
+Post-activation checks found:
 
-The validation proves:
+- exact policy rows: **8**
+- exact binding rows: **8**
+- publication-policy rows created by activation: **0**
+- post-activation snapshot rows: **0**
+- matching A07/A09/funnel cron jobs: **0**
 
-1. activation-approval evidence acceptance;
-2. repository-head mismatch rejection;
-3. transient insertion of exactly eight freshness rows;
-4. replay/overlap rejection;
-5. legacy tombstone rejection;
-6. full transaction rollback.
+The single-use activation authorization has been consumed and is no longer an open write authority.
 
-Post-validation state remains:
+Persistent activation evidence: `reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json`  
+Evidence blob: `24ddfedcb29b465f510130befe61d4e4a283e2d2`
 
-- persistent freshness-policy rows: **0**
-- activation invoked persistently: **false**
-- snapshots written: **0**
-- cron created: **false**
+## Remaining maturity gate
 
-The validator and successor are postgres-owned `SECURITY DEFINER` functions with EXECUTE revoked from `anon`, `authenticated` and `service_role`. No new Security Advisor finding is attributable to these functions.
-
-## Next gate
-
-Persistent activation requires a new explicit single-use staging authorization bound to the current PR HEAD and staging evidence blob `02a860c812eeb777519c7917bb5c31b3fb3dd5e2`. That later activation may insert exactly eight policies and nothing else.
+Complete/orphan/empty-window/late-fact runtime canaries remain pending. Until they close, runtime projection, runtime snapshot and snapshot publication authority remain false, and ANA remains `3/6`.

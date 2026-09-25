@@ -1,44 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 const assert=require('node:assert/strict');
-const contract=require('../config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json');
-const approval=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json');
-const staging=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json');
+const c=require('../config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json');
+const a=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json');
+const p=require('../reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json');
 const lib=require('./lib/ana-a07-a09-funnel-freshness-policy-activation-approval');
-
-let passed=0;
-function ok(name,fn){try{fn();passed++;}catch(error){error.message=name+': '+error.message;throw error;}}
-
-ok('activation approval remains valid',()=>{
-  lib.validateCompletedActivationApprovalEvidence(approval,contract.repositoryActivationApproval.rawAuthorization);
-  assert.equal(lib.evidenceDigest(approval),approval.evidenceDigestSha256);
-});
-ok('successor is installed and validated',()=>{
-  assert.equal(contract.successorCandidate.stagingApplied,true);
-  assert.equal(contract.successorCandidate.validation045Status,'PASS');
-  assert.equal(staging.validation,'045 PASS');
-});
-ok('rollback preserved zero persistent rows',()=>{
-  assert.equal(staging.validationCoverage.transientEightRowActivationPassed,true);
-  assert.equal(staging.validationCoverage.transactionRolledBack,true);
-  assert.equal(staging.persistentState.freshnessPolicyRowsPersisted,0);
-});
-ok('replay and legacy bypass fail closed',()=>{
-  assert.equal(staging.validationCoverage.replayRejectedByOverlap,true);
-  assert.equal(staging.validationCoverage.legacyTombstoneRejected,true);
-});
-ok('persistent activation is still not consumed',()=>{
-  assert.equal(contract.operationalState.activationInvoked,false);
-  assert.equal(contract.operationalState.policyRowsPersisted,0);
-  assert.equal(contract.authority.activationInvocationAuthority,false);
-  assert.equal(contract.authority.policyPersistenceAuthority,false);
-});
-ok('single-use future activation remains narrow',()=>{
-  assert.equal(contract.persistentActivationAuthorization.activationInvocationLimit,1);
-  assert.equal(contract.persistentActivationAuthorization.exactPolicyRows,8);
-  assert.equal(contract.persistentActivationAuthorization.snapshotPublicationAuthorizedByCommand,false);
-  assert.equal(contract.persistentActivationAuthorization.cronAuthorizedByCommand,false);
-});
-
-assert.equal(passed,6);
-console.log('ANA-A07/A09 activation approval conformance passed: 6/6.');
+let passed=0;const ok=(n,f)=>{try{f();passed++;}catch(e){e.message=n+': '+e.message;throw e;}};
+ok('approval remains canonical',()=>lib.validateCompletedActivationApprovalEvidence(a,c.repositoryActivationApproval.rawAuthorization));
+ok('approved invocation consumed once',()=>{assert.equal(a.boundaries.activationInvocationLimit,1);assert.equal(p.invocationConsumed,true);assert.equal(c.operationalState.activationInvocationCount,1);});
+ok('persistent rows exact',()=>{assert.equal(p.result.rowsInserted,8);assert.equal(p.persistentState.exactPolicyRows,8);assert.equal(p.persistentState.exactBindingRows,8);});
+ok('no publication snapshot cron',()=>{assert.equal(p.result.publicationPolicyInserted,false);assert.equal(p.result.snapshotWritten,false);assert.equal(p.result.cronCreated,false);});
+ok('future writes closed',()=>{assert.equal(c.authority.activationInvocationAuthority,false);assert.equal(c.authority.policyPersistenceAuthority,false);});
+assert.equal(passed,5);console.log('ANA-A07/A09 activation approval conformance passed: 5/5.');

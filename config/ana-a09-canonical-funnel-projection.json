@@ -3,8 +3,8 @@
   "domain": "ANA-001",
   "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
   "createdAt": "2026-09-21T22:33:00-03:00",
-  "scope": "staging_runtime_installed_policy_pending",
-  "status": "server_side_projector_validated_freshness_policy_structure_installed_inactive",
+  "scope": "staging_runtime_installed_policy_active_canaries_pending",
+  "status": "server_side_projector_validated_freshness_policy_active_runtime_canaries_pending",
   "objective": "Define a deterministic canonical acquisition-to-order funnel from ANA behavioral events and ORD order.requested facts using only explicit linkage keys, without identity stitching or temporal heuristics.",
   "rootCause": {
     "projectionGap": "The server-side compute projector is installed and validation 042 passes in staging. Runtime projection authority remains false because metric-specific freshness thresholds, controlled complete/orphan/empty-window/late-fact evidence and snapshot publication policy remain open.",
@@ -102,13 +102,13 @@
     "dataThroughRequired": true,
     "watermarkContractId": "ana-a07-behavior-ord-watermark-authority-v1",
     "watermarkContractPath": "config/ana-a07-behavior-ord-watermark-authority.json",
-    "status": "watermark_projector_certified_funnel_policy_structure_installed_inactive",
+    "status": "watermark_projector_certified_funnel_policy_active_canaries_pending",
     "behaviorMaterializationTime": "received_at",
     "orderMaterializationTime": "created_at",
     "behaviorOnlyDataThrough": "min(windowEnd, behaviorWatermark.dataThrough)",
     "behaviorAndOrderDataThrough": "min(windowEnd, behaviorWatermark.dataThrough, orderWatermark.dataThrough)",
     "lateFactRevisionAuthority": "ANA-A05",
-    "runtimeFreshnessActivationStillBlocked": true,
+    "runtimeFreshnessActivationStillBlocked": false,
     "runtimeCandidatePath": "config/ana-a07-behavior-ord-watermark-runtime-readiness.json",
     "migrationPath": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
     "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
@@ -122,7 +122,8 @@
     "concurrentWriterCertified": true,
     "concurrentWriterCleanupPassed": true,
     "runtimeProjectorInstalled": true,
-    "projectorValidation042Status": "passed"
+    "projectorValidation042Status": "passed",
+    "runtimeProjectionStillBlockedUntilCanaries": true
   },
   "authority": {
     "contractAuthority": true,
@@ -131,7 +132,9 @@
     "runtimeProjectionAuthority": false,
     "runtimeSnapshotAuthority": false,
     "stagingAuthority": false,
-    "productionAuthority": false
+    "productionAuthority": false,
+    "activeFreshnessPolicyAuthority": true,
+    "snapshotPublicationAuthority": false
   },
   "activationRequirements": [
     "approve an explicit effectiveFrom/effectiveUntil for the exact eight r1 funnel freshness policies under separate authorization",
@@ -214,14 +217,18 @@
     "validationSql": "supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql",
     "migrationApplied": true,
     "validation043Status": "PASS",
-    "activationInvoked": false,
-    "effectiveFrom": null,
+    "activationInvoked": true,
+    "effectiveFrom": "2026-09-24T14:00:00Z",
     "effectiveUntil": null,
     "snapshotPublicationAllowed": false,
     "stagingMigrationVersion": "20260924005631",
     "stagingValidated": true,
     "activationFunctionInstalled": true,
-    "policyRowsPersisted": 0,
-    "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json"
+    "policyRowsPersisted": 8,
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json",
+    "successorActivationFunction": "private.activate_a09_funnel_policy_approved_v1",
+    "persistentActivationEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json",
+    "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+    "runtimeCanariesPending": true
   }
 }
