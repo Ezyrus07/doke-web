@@ -46,7 +46,7 @@ A zero denominator produces `null`, never a synthetic zero-percent conversion ra
 
 ## Segmentation boundary
 
-The current behavioral ledger does not contain immutable service category/state dimensions suitable for canonical funnel segmentation. ANA-A09 therefore keeps behavioral funnel projection global and forbids joining mutable current service state to manufacture historical segmentation.
+The behavioral ledger still does not carry immutable category/state dimensions directly, so the **currently installed A09 runtime remains global-only**. Immutable segmentation is now repository-defined through CAT-A06 frozen dimensions + the CAT-A07 coverage epoch, and a separate forward-only segmented compute candidate is prepared but unapplied. Mutable current service state remains forbidden as historical dimension authority.
 
 ## CAT liquidity handoff
 
@@ -58,25 +58,25 @@ Liquidity remains outside A09's ownership. ANA-A10 now defines the repository-on
 
 This lot is repository-only. It creates no migration, staging read/write, deploy, browser activation, identity stitching, source-domain mutation or production change.
 
-Runtime closure still requires a server-side projector, A04/A05 append-only snapshot/revision semantics, A07 watermarks, controlled staging evidence, and explicit immutable segmentation authority.
+Global runtime projection, A07 watermarks, freshness policy activation and four-path canaries are closed at their current authorities. Remaining A09 runtime gates are the unapplied immutable segmentation candidate/validation 047, any separately authorized live global runtimeAuthority alignment, and append-only snapshot publication authority.
 
 ANA-001 remains **3/6**.
 
 ## A07 dependency-watermark handoff
 
-The funnel now has a repository-defined watermark dependency contract, but no runtime watermark functions are applied yet.
+The A07 behavior/ORD watermark runtime is certified in staging. Segmented A09 projection additionally requires the existing CAT visibility watermark and CAT-A07 coverage epoch; the segmented candidate is repository-only and unapplied.
 
 Behavioral rows must be bounded by server-owned `received_at`; ORD metric rows must be bounded by DB-owned `created_at`. `occurred_at` remains the canonical event-time dimension for funnel chronology and never becomes a completeness watermark.
 
-Behavior-only funnel metrics use `min(windowEnd, behaviorWatermark)`. The final `quote_submitted → order_requested` handoff requires `min(windowEnd, behaviorWatermark, orderWatermark)`.
+Global behavior-only funnel metrics use `min(windowEnd, behaviorWatermark)` and the global final handoff uses `min(windowEnd, behaviorWatermark, orderWatermark)`. The prepared segmented candidate tightens these to include `catWatermark` for both behavior-only and cross-domain segmented series.
 
 A fact materialized after a prior watermark but carrying an older `occurred_at` is a late fact and must enter via A05 append-only revision/backfill semantics. It is never retroactively injected by mutating a finalized snapshot.
 
-ANA-A10/A11 liquidity is operationally closed outside A09 and is no longer an A09 blocker. The remaining A09 blockers are its own runtime watermarks, projector, metric-specific freshness thresholds and controlled staging evidence.
+ANA-A10/A11 liquidity is operationally closed outside A09 and is no longer an A09 blocker. A09's global projector/watermarks/policies/canaries are closed at their current authorities; the outstanding category/state gate is the prepared but unapplied immutable segmentation runtime candidate plus its staging validation.
 
-The A07 behavior/ORD watermark runtime candidate is now repository-ready at `supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql`, but remains unapplied. A09 activation still requires validation 041 plus multi-session concurrency/late-fact staging evidence.
+A07 behavior/ORD watermark migration `20260923224000` and compatibility migration are applied and validation 041 plus concurrent-writer evidence are certified. This history is now an upstream dependency, not an open A09 gate.
 
-A07 validation 041 now passes after the compatibility migration. A07 behavior/ORD runtime watermark authority is now certified and can be consumed by A09. A09 remains blocked on the server-side funnel projector, materialization-time filtering, metric-specific funnel thresholds, segmentation authority and controlled empty-window/late-fact projection evidence.
+A07 validation 041 passes, the global A09 projector is installed, r1 funnel freshness policies are active, and complete/orphan/empty-window/late-fact canaries are certified. Immutable segmentation semantics and a forward runtime candidate now exist in the repository, but runtime segmentation remains unauthorized/unapplied until validation 047 is separately executed in staging.
 
 ## Server-side projector candidate
 
@@ -90,7 +90,7 @@ The candidate consumes the certified A07 behavior/ORD watermarks and separates e
 
 The final `quote_submitted -> order_requested` transition is recomputed at the cross-domain minimum watermark, so an ORD lag cannot create a false missing-order denominator.
 
-The RPC remains compute-only and keeps `snapshotPublicationAllowed=false`. The migration is now installed in staging as `20260924002741 / ana_a09_canonical_funnel_projector`, and validation 042 passes. The live compute result is `computed_policy_pending` with eight metrics, `runtimeAuthority=false`, `freshnessPolicyState=threshold_pending`, and `segmentation=global_only`. A04 append-only snapshot publication, A07 metric-specific thresholds and complete/orphan/empty-window/late-fact staging canaries remain separate gates.
+The global RPC remains compute-only and keeps `snapshotPublicationAllowed=false`. Migration `20260924002741 / ana_a09_canonical_funnel_projector` is installed and validation 042 passes. The historical live compute observation remains `runtimeAuthority=false` and `segmentation=global_only`; later policy/canary closure and repository projection authority do not rewrite that evidence. The separate segmented runtime candidate is `20260925145500` with validation `047`, both still unapplied/unexecuted.
 
 Runtime evidence: `reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json`.
 
