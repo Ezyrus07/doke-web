@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1625 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1628 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 270 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 272 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -351,7 +351,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 273 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 275 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -546,7 +546,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1523 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1526 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1063,7 +1063,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 81 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 82 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`, `private.analytics_metric_publication_policies_v1`.
 
@@ -1129,6 +1129,8 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A07/A09 validation 046 service-eligibility blocker was root-caused to an invalid draft-only synthetic service fixture. Canonical ORD requires a published service with an approved service_versions row bound through approved_version_id and eligible moderation status. Repository remediation now builds an approved synthetic version, promotes the service under transaction-local doke.service_moderation_apply=on, asserts service/version/professional eligibility before order creation, and remains rollback-only. The failed pre-remediation attempt left zero services, service versions, orders, behavior rows, order metric rows and canary cron jobs; no runtime defect was found. ANA remains 3/6.
 - ANA-A07/A09 complete/orphan/empty-window/late-fact runtime canaries are certified in staging. Validation 046 PASS covered complete/orphan/empty-window rollback-only. Certified late-fact writer job 11/run 154490 proved the active transaction floor at writer xact_start 2026-09-25T13:33:12.644938Z with dataThrough exactly 1 microsecond earlier, pre-commit final funnel metric 0/1, and post-commit same-window metric 1/1. Cleanup PASS left zero synthetic services/orders/events/cron/writers/prepared transactions and zero canary-window snapshots while preserving 8 active freshness policies. Evidence blob 3b7274a391a857f2de06538f3302f6be01b06734. Runtime projection, runtime snapshot and snapshot publication authority remain false; ANA stays 3/6.
 - ANA-A07/A09 explicit repository-only runtime projection authority is granted at source HEAD 28960baecb1b495b16c3799c55a80305764db0ac, bound to policy set ana-a07-a09-funnel-v1-r1, canary contract ana-a07-a09-funnel-runtime-canary-contract-v1 and certified staging-evidence blob 3b7274a391a857f2de06538f3302f6be01b06734. This grant performs no staging mutation: the historical live compute observation still reports runtimeAuthority=false, while runtime snapshot and snapshot publication authority remain false. ANA stays 3/6.
+- ANA-A09 immutable category/state funnel segmentation is now repository-defined from CAT-A06 frozen listing visibility dimensions plus the CAT-A07 forward coverage epoch. Journeys are anchored to the canonical impression, UUID/name/slug category identities are never inferred equivalent, mutable current-service joins are forbidden, and CAT becomes an additional dependency for segmented dataThrough. Runtime segmentation, staging evidence and snapshot publication remain false; ANA stays 3/6.
+- ANA-A09 immutable category/state funnel segmentation now has a separately authorized repository-only runtime candidate: forward migration 20260925145500 plus rollback-only validation 047. The candidate resolves CAT-A06 frozen dimensions at the canonical impression, requires a CAT-A07 certified coverage epoch, adds the CAT watermark to segmented dataThrough, preserves UUID/slug/name identity separation, leaves the global A09 projector unchanged and contains no snapshot write or scheduler. The migration is not applied, validation 047 has not run, runtime segmentation/snapshot/publication authority remain false, and ANA stays 3/6.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1137,6 +1139,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - Treat ANA-A09 runtime projection authority as repository-granted. Any forward-only live runtimeAuthority alignment, runtime snapshot authority or append-only snapshot publication requires a separate explicit authorization; do not infer staging mutation or maturity promotion from this repository grant.
+- Under a new explicit staging-only authorization bound to the then-current PR HEAD, apply ANA-A09 segmentation migration 20260925145500 and execute rollback-only validation 047; keep runtime segmentation authority, runtime snapshot/publication, production, merge and Ready false until staging evidence is certified.
 - Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.
 - Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.
 - Keep PAY-backed GMV/take rate and downstream CAC/LTV unavailable until PAY becomes canonical.
@@ -1153,7 +1156,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 339 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 340 arquivos no escopo; 80 referências a localStorage; 9 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1213,7 +1216,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3603 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3610 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1274,4 +1277,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-25T14:03:00.000Z._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-25T15:03:07.000Z._
