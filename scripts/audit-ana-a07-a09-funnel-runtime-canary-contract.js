@@ -72,7 +72,7 @@ assert(sql.includes("set_config('doke.service_moderation_apply','on',true)"));
 assert(!/cron\.schedule/i.test(sql));
 assert(!/append_analytics_metric_snapshot/i.test(sql));
 assert(doc.includes('transient `pg_cron` writer'));
-assert(doc.includes('This lot is **repository-only**'));
+assert(doc.includes('this reconciliation lot is repository-only'));
 assert(doc.includes('seed002-email-resolved'));
 assert.equal(remediation.identityAuthority,'seed002-email-resolved');
 assert.equal(remediation.repositoryRemediation.authReprovisionRequired,false);
