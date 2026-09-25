@@ -7,7 +7,7 @@
   "status": "server_side_projector_validated_freshness_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
   "objective": "Define a deterministic canonical acquisition-to-order funnel from ANA behavioral events and ORD order.requested facts using only explicit linkage keys, without identity stitching or temporal heuristics.",
   "rootCause": {
-    "projectionGap": "The server-side compute projector is installed, validation 042 passes in staging, the eight r1 freshness policies are active and the four runtime canaries are certified. Explicit repository-only runtime projection authority is now granted; runtime snapshot, snapshot publication and immutable segmentation authority remain separate gates.",
+    "projectionGap": "The global server-side compute projector is installed, validation 042 passes in staging, the eight r1 freshness policies are active and the four runtime canaries are certified. Repository runtime projection authority is granted. Immutable category/state semantics are repository-defined and the forward-only segmented runtime candidate is prepared but unapplied; runtime segmentation, snapshot and publication remain separate gates.",
     "authorityGap": "Legacy service/quote funnel events must remain shadow inputs and cannot become a second analytics authority.",
     "linkageRisk": "A funnel assembled by actor identity, timestamp proximity or cross-session heuristics would violate the A03 identity boundary and could falsely attribute anonymous behavior."
   },
@@ -94,7 +94,7 @@
   ],
   "segmentation": {
     "currentAuthority": "global_only_for_behavioral_stages",
-    "categoryStateStatus": "repository_immutable_segmentation_contract_defined_runtime_unapplied",
+    "categoryStateStatus": "repository_runtime_candidate_prepared_unapplied",
     "mutableCurrentServiceJoinAllowed": false,
     "immutableSegmentationContract": {
       "path": "config/ana-a09-immutable-funnel-segmentation.json",
@@ -105,7 +105,18 @@
       "catDependencyRequiredForSegmentedDataThrough": true,
       "repositoryContractAuthority": true,
       "runtimeSegmentationAuthority": false,
-      "stagingAuthority": false
+      "stagingAuthority": false,
+      "runtimeCandidate": {
+        "contractId": "ana-a09-immutable-funnel-segmentation-runtime-candidate-v1",
+        "migration": "supabase/migrations/20260925145500_ana_a09_immutable_funnel_segmentation_runtime.sql",
+        "validationSql": "supabase/tests/047_ana_a09_immutable_funnel_segmentation_runtime_validation.sql",
+        "migrationCreated": true,
+        "migrationApplied": false,
+        "stagingValidated": false,
+        "validation047Status": "pending",
+        "runtimeSegmentationAuthority": false,
+        "snapshotPublicationAuthority": false
+      }
     }
   },
   "freshnessDependency": {
@@ -152,13 +163,13 @@
   },
   "activationRequirements": [
     "keep runtime snapshot and snapshot publication authority false until a separately authorized append-only publication gate closes",
-    "materialize any live runtimeAuthority=true alignment only through a forward-only staging change under separate authorization",
-    "apply the repository-defined immutable CAT-A06/CAT-A07 segmentation contract only through a separately authorized forward-only runtime candidate before category/state funnel claims"
+    "materialize any live global runtimeAuthority=true alignment only through a forward-only staging change under separate authorization",
+    "apply and validate the prepared immutable CAT-A06/CAT-A07 segmentation runtime candidate only under a separate explicit staging authorization before category/state funnel claims"
   ],
   "catLiquidityBlocker": {
     "status": "liquidity_runtime_closed_outside_a09",
     "evidence": "ANA-A10/A11 now own and operationally certify CAT liquidity, publication cadence, freshness policy and scheduler runtime in staging.",
-    "consequence": "Liquidity is not an A09 blocker. The A09 projector is installed and structurally validated, the r1 funnel freshness policy is active, four-path canaries are certified and repository runtime projection authority is granted. Remaining A09 gates are live runtimeAuthority alignment if required, append-only snapshot publication authority and immutable segmentation authority.",
+    "consequence": "Liquidity is not an A09 blocker. Global A09 projection is installed/certified and repository projection authority is granted. Immutable category/state semantics and a forward-only runtime candidate now exist in the repository, but that candidate is unapplied; remaining A09 gates are segmented staging validation/runtime authority, live global runtimeAuthority alignment if required, and append-only snapshot publication authority.",
     "requiredHandoff": "ANA-A07 behavior/ORD watermark runtime -> ANA-A09 funnel runtime"
   },
   "preservedBoundaries": [
@@ -186,7 +197,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The server-side projector, active freshness policies and four-path staging runtime canaries are certified, explicit repository-only runtime projection authority is granted, and immutable category/state segmentation semantics are now repository-defined from CAT-A06/A07. Runtime segmentation, snapshot/publication and segmented staging evidence remain open, so ANA stays 3/6."
+    "reason": "Global A09 runtime, active freshness policies and four-path canaries are certified, repository runtime projection authority is granted, and immutable category/state segmentation now has a repository-only forward runtime candidate. The segmented candidate is unapplied/unvalidated and snapshot publication remains false, so ANA stays 3/6."
   },
   "runtimeCandidate": {
     "status": "staging_applied_validation_042_pass_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
