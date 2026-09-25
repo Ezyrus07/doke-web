@@ -15,6 +15,7 @@ check('evidence exact',evidence.result?.rowsInserted===8&&evidence.persistentSta
 check('A07 active handoff',a07.thresholdAuthority?.candidateMetricPolicySet?.activationInvoked===true&&a07.thresholdAuthority?.candidateMetricPolicySet?.policyRowsPersisted===8&&a07.thresholdAuthority?.runtimeProjectionBlockedUntilCanaries===false&&a07.thresholdAuthority?.runtimeProjectionBlockedUntilExplicitAuthority===false);
 check('A09 active handoff',a09.funnelFreshnessPolicyCandidate?.activationInvoked===true&&a09.funnelFreshnessPolicyCandidate?.policyRowsPersisted===8&&a09.funnelFreshnessPolicyCandidate?.runtimeCanariesPending===false&&a09.funnelFreshnessPolicyCandidate?.runtimeCanariesCertified===true);
 check('certified canaries bound',c.runtimeCanaryContract?.stagingEvidenceBlobSha==='3b7274a391a857f2de06538f3302f6be01b06734'&&c.runtimeCanaryContract?.lateFactCertified===true&&c.runtimeCanaryContract?.cleanupStatus==='PASS');
+check('invocation lifecycle status reconciled',c.activationInvocationContract?.status==='staging_runtime_canaries_certified_repository_projection_authority_granted');
 check('projection granted publication blocked',c.failClosedSemantics?.runtimeProjectionAuthorityAllowed===true&&c.failClosedSemantics?.snapshotPublicationAllowed===false&&a09.authority?.runtimeProjectionAuthority===true&&a09.authority?.runtimeSnapshotAuthority===false&&a09.authority?.snapshotPublicationAuthority===false);
 check('maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
