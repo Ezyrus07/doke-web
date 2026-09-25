@@ -93,3 +93,10 @@ The final `quote_submitted -> order_requested` transition is recomputed at the c
 The RPC remains compute-only and keeps `snapshotPublicationAllowed=false`. The migration is now installed in staging as `20260924002741 / ana_a09_canonical_funnel_projector`, and validation 042 passes. The live compute result is `computed_policy_pending` with eight metrics, `runtimeAuthority=false`, `freshnessPolicyState=threshold_pending`, and `segmentation=global_only`. A04 append-only snapshot publication, A07 metric-specific thresholds and complete/orphan/empty-window/late-fact staging canaries remain separate gates.
 
 Runtime evidence: `reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json`.
+
+
+## Repository runtime projection authority
+
+The four-path A07/A09 runtime canary evidence is certified at blob `3b7274a391a857f2de06538f3302f6be01b06734`. The explicit repository-only authorization bound to HEAD `28960baecb1b495b16c3799c55a80305764db0ac` now grants A09 runtime projection authority at the contract layer.
+
+This does **not** mutate staging. The historical staging compute observation still returns `runtimeAuthority=false`; `runtimeSnapshotAuthority=false` and `snapshotPublicationAllowed=false` remain authoritative boundaries. Any forward-only live runtime flag alignment or snapshot publication requires a separate explicit authorization. ANA remains **3/6**.
