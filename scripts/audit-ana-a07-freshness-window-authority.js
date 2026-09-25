@@ -22,6 +22,7 @@ check('repository projection authority granted',c.thresholdAuthority?.runtimePro
 check('A09 same active policy',a09.funnelFreshnessPolicyCandidate?.policyRowsPersisted===8&&a09.funnelFreshnessPolicyCandidate?.effectiveFrom==='2026-09-24T14:00:00Z');
 check('evidence exact',evidence.persistentState?.exactPolicyRows===8&&evidence.persistentState?.exactBindingRows===8);
 check('runtime canary evidence bound',c.runtimeCanaryContract?.stagingEvidenceBlobSha==='3b7274a391a857f2de06538f3302f6be01b06734'&&c.runtimeCanaryContract?.emptyWindowCertified===true&&c.runtimeCanaryContract?.lateFactCertified===true&&c.runtimeCanaryContract?.cleanupStatus==='PASS');
+check('eight funnel dependency thresholds active',c.metricDependencies?.filter(d=>d.metricKey?.startsWith('funnel.')).length===8&&c.metricDependencies.filter(d=>d.metricKey?.startsWith('funnel.')).every(d=>d.thresholdStatus==='active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted'&&d.maxLagSeconds===360&&d.effectiveFrom==='2026-09-24T14:00:00Z'&&d.effectiveUntil===null&&d.runtimeCertified===true));
 check('maturity unchanged',c.maturity?.before===3&&c.maturity?.after===3);
 const ana=(matrix.domains||[]).find(d=>d.id==='ANA-001');check('ANA stays 3/6',ana?.maturity===3);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
