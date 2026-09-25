@@ -2,7 +2,7 @@
 
 The A07/A09 freshness policy set is active in staging with eight persistent `v1` policies at `maxLagSeconds=360`. This document defines the runtime evidence required before projection/snapshot authority can advance.
 
-The contract originated repository-only. The complete/orphan/empty-window/late-fact staging canaries are now certified; this reconciliation lot is repository-only and grants no runtime projection, snapshot, publication, scheduler, production, merge or Ready authority.
+The contract originated repository-only. The complete/orphan/empty-window/late-fact staging canaries are certified. Their evidence reconciliation granted no projection authority by itself; the later explicit repository-only gate now grants runtime projection authority at the contract layer only. Runtime snapshot, snapshot publication, scheduler, production, merge and Ready authority remain false.
 
 ## Canary identity authority
 
@@ -96,13 +96,13 @@ The four-path staging canary set is certified in `reports/generated/ana-a07-a09-
 
 Writer job `10` / run `154483` succeeded but its observer arrived after commit; it is retained as an inconclusive observation with no certification impact. Job `11` is the certified concurrent-writer proof.
 
-Runtime projection authority remains **false**. Runtime snapshot authority and snapshot publication authority also remain **false**.
+Repository runtime projection authority is now **true**, bound to the certified canary evidence blob. The historical live staging compute observation still reports `runtimeAuthority=false` because this authorization performs no staging mutation. Runtime snapshot authority and snapshot publication authority remain **false**.
 
 ## Current authority
 
 - repository canary contract: **true**
 - staging canary execution: **false**
-- runtime projection authority: **false**
+- repository runtime projection authority: **true**
 - runtime snapshot authority: **false**
 - snapshot publication authority: **false**
 - persistent scheduler authority: **false**
@@ -113,8 +113,10 @@ Runtime projection authority remains **false**. Runtime snapshot authority and s
 
 Generic `prossiga` is not authorization.
 
-The next command is repository-only:
+The repository-only runtime projection gate was consumed by:
 
-`authorize-ana-a07-a09-funnel-runtime-projection-authority-repository-only head=<CURRENT_PR_HEAD> matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 canaryStagingEvidenceBlobSha=3b7274a391a857f2de06538f3302f6be01b06734 runtimeProjectionAuthority=true`
+`authorize-ana-a07-a09-funnel-runtime-projection-authority-repository-only head=28960baecb1b495b16c3799c55a80305764db0ac matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 canaryStagingEvidenceBlobSha=3b7274a391a857f2de06538f3302f6be01b06734 runtimeProjectionAuthority=true`
 
-That command may grant only runtime projection authority at the repository-contract layer. It does not grant runtime snapshot authority, snapshot publication, persistent cron, production, merge or Ready authority.
+Authorization digest: `ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5`.
+
+No staging write is authorized by that command. Any forward-only live `runtimeAuthority=true` alignment, runtime snapshot authority, snapshot publication, persistent cron, production, merge or Ready transition requires a separate explicit gate.
