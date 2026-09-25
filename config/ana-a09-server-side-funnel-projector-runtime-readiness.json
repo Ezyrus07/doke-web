@@ -4,7 +4,7 @@
   "sourceContract": "ana-a09-canonical-funnel-projection-v1",
   "sourceHead": "c179a88b0ff41d2bac778e8aacdb7b2c168776e6",
   "createdAt": "2026-09-23T23:55:00Z",
-  "scope": "staging_runtime_installed_policy_active_runtime_canaries_certified_projection_authority_pending",
+  "scope": "staging_runtime_installed_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
   "authorization": {
     "token": "authorize-ana-a09-server-side-funnel-projector-candidate-repository-only head=3e94cbb848acc395437abad79d8076b2173985d8 matrix=v1.3.132",
     "received": true,
@@ -12,7 +12,7 @@
     "productionAuthorized": false,
     "stagingApplyAuthorizationConsumed": true
   },
-  "status": "runtime_projector_installed_validation_042_pass_policy_active_runtime_canaries_certified_projection_authority_pending",
+  "status": "runtime_projector_installed_validation_042_pass_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
   "migration": "supabase/migrations/20260923235500_ana_a09_canonical_funnel_projector.sql",
   "validationSql": "supabase/tests/042_ana_a09_canonical_funnel_projector_validation.sql",
   "runtime": {
@@ -55,7 +55,7 @@
     "appendOnlyRequired": true,
     "lateFactRevisionAuthority": "ANA-A05",
     "publicationAllowed": false,
-    "blockingReason": "RUNTIME_PROJECTION_AUTHORITY_PENDING"
+    "blockingReason": "RUNTIME_SNAPSHOT_PUBLICATION_AUTHORITY_PENDING"
   },
   "validationPlan": {
     "validation042Status": "passed",
@@ -74,7 +74,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Projector validation 042, active freshness policies, and all four runtime canaries are certified in staging with cleanup PASS. Runtime projection authority remains a separate explicit repository gate; ANA stays 3/6."
+    "reason": "Projector validation 042, active freshness policies and all four runtime canaries are certified in staging. Explicit repository-only runtime projection authority is granted; the historical live compute observation still reports runtimeAuthority=false and no staging mutation is authorized by this grant. Runtime snapshot/publication remain false; ANA stays 3/6."
   },
   "runtimeEvidence": {
     "artifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json",
@@ -93,7 +93,7 @@
     "lateFactExecutor": "transient_pg_cron_second_session",
     "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
     "stagingExecutionAuthorized": false,
-    "status": "staging_certified_runtime_projection_authority_pending",
+    "status": "staging_certified_runtime_projection_authority_repository_granted",
     "identityAuthority": "seed002-email-resolved",
     "legacyFixedUserIdsRetired": true,
     "serviceEligibilityAuthority": "approved-service-version",
@@ -110,7 +110,22 @@
   },
   "authority": {
     "runtimeCanaryEvidenceAuthority": true,
-    "runtimeProjectionAuthority": false,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false
+  },
+  "runtimeProjectionAuthorityGrant": {
+    "authorizationCommand": "authorize-ana-a07-a09-funnel-runtime-projection-authority-repository-only head=28960baecb1b495b16c3799c55a80305764db0ac matrix=v1.3.132 policySetId=ana-a07-a09-funnel-v1-r1 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 canaryStagingEvidenceBlobSha=3b7274a391a857f2de06538f3302f6be01b06734 runtimeProjectionAuthority=true",
+    "authorizationDigestSha256": "ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5",
+    "authorizedRepositoryHead": "28960baecb1b495b16c3799c55a80305764db0ac",
+    "matrixVersion": "1.3.132",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "canaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "repositoryOnly": true,
+    "runtimeProjectionAuthority": true,
+    "stagingRuntimeFlagChanged": false,
+    "stagingMutationAuthorized": false,
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false
   }
