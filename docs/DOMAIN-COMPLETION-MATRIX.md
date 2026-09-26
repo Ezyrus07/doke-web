@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1264 arquivos no escopo; 316 referências a localStorage; 83 a sessionStorage; 582 referências mock; 245 referências de rede/Supabase; 39 marcadores de implementação pendente.
+**Evidência estática observada:** 1267 arquivos no escopo; 316 referências a localStorage; 83 a sessionStorage; 582 referências mock; 248 referências de rede/Supabase; 39 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,11 +151,11 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 222 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 226 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
-**Edge Functions:** `financial-operations`, `service-moderation-operations`, `self-service-operations`.
+**Edge Functions:** `financial-operations`, `service-moderation-operations`, `self-service-operations`, `professional-verification-operations`, `staging-finance-sandbox`, `order-event-operations`, `quote-template-ai`.
 
 **Evidências:**
 - Private operational tables are not readable by anon or authenticated.
@@ -196,16 +196,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SEC-B08 was closed after the checksum-proven migrations 110-134 and service-moderation sources were committed at d0ae2657, the GitHub quality gates passed on that SHA, and the matching migration names plus service-moderation-operations v2 were observed read-only in staging.
 - The platform-default ACL validation passed remotely: 45 public tables, zero without RLS, zero without policies, zero supabase_admin-owned public relations or sequences, and zero browser sequence grants. SEC-B07 is now an operational post-creation control rather than an existing-object exposure.
 - The deployed quote-template-ai v6 contained shared.ts and recommendations.ts that were absent from Git; both sources were recovered from the active deployment and audit:edge-function-source-closure now fails on missing or boundary-escaping relative imports.
+- SEC-B09 is closed: one shared HTTP security boundary is deployed across all seven authenticated browser-facing Edge Functions with explicit origin allowlisting, controlled loopback support, payload/content-type validation, no-store/security headers, correlation IDs and durable actor/action rate limiting.
+- Migration 145 and SQL validation 014 proved the private rate-limit authority, restricted grants, safe search_path and threshold enforcement; the real staging HTTP canary passed 49 of 49 boundary cases across the seven hardened functions.
+- SEC-B05 remains the only SEC-001 blocker: leaked-password protection is unavailable on the current Supabase plan and remains tracked as a paid-plan launch dependency rather than a falsely completed control.
 
 **Bloqueadores:**
 - **SEC-B05 · HIGH · auth:** Leaked password protection is disabled in Supabase Auth. _(Fase 1)_
-- **SEC-B09 · HIGH · edge_http_boundary:** Seven Edge Functions still use wildcard CORS; only quote-template-ai has explicit application rate limiting and body-size enforcement, and authenticated HTTP/browser persona evidence is incomplete. _(Fase 1)_
 
 **Próximas ações:**
-- Publish the recovered quote-template-ai sources and Edge Function source-closure audit in the reviewed PR, then rerun the deterministic CI gates on the resulting SHA.
-- Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.
-- Define a canonical Edge Function HTTP boundary with an origin allowlist, preflight contract, payload limits and rate limits per action/persona; do not deploy until local and CI contracts pass.
-- Run browser-authenticated HTTP evidence for self-service-operations, service moderation and the signed Storage lifecycle.
+- Keep SEC-B05 tracked under the paid-plan launch dependency and enable leaked-password protection only after an authorized Supabase plan upgrade.
+- Keep the shared HTTP security boundary, migration 145, validation 014, source-closure audit and seven-function staging HTTP canary cumulative in security regression gates.
 - Run supabase/tests/013_platform_default_acl_validation.sql after any migration or platform feature creates a public object.
 
 **Gate de saída:**
@@ -220,7 +220,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI remote; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 32 arquivos no escopo; 33 referências a localStorage; 2 a sessionStorage; 33 referências mock; 25 referências de rede/Supabase; 3 marcadores de implementação pendente.
+**Evidência estática observada:** 32 arquivos no escopo; 33 referências a localStorage; 2 a sessionStorage; 33 referências mock; 27 referências de rede/Supabase; 3 marcadores de implementação pendente.
 
 **Páginas:** `auth/login.html`, `auth/cadastro.html`, `auth/esqueci-senha.html`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 225 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 11 marcadores de implementação pendente.
+**Evidência estática observada:** 229 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 11 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1171 arquivos no escopo; 244 referências a localStorage; 73 a sessionStorage; 321 referências mock; 244 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1174 arquivos no escopo; 244 referências a localStorage; 73 a sessionStorage; 321 referências mock; 247 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1048,7 +1048,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 299 arquivos no escopo; 74 referências a localStorage; 10 a sessionStorage; 274 referências mock; 8 referências de rede/Supabase; 29 marcadores de implementação pendente.
+**Evidência estática observada:** 301 arquivos no escopo; 74 referências a localStorage; 10 a sessionStorage; 274 referências mock; 8 referências de rede/Supabase; 29 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1077,7 +1077,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 881 arquivos no escopo; 232 referências a localStorage; 79 a sessionStorage; 242 referências mock; 280 referências de rede/Supabase; 11 marcadores de implementação pendente.
+**Evidência estática observada:** 899 arquivos no escopo; 230 referências a localStorage; 79 a sessionStorage; 242 referências mock; 282 referências de rede/Supabase; 11 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -1108,7 +1108,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2697 arquivos no escopo; 576 referências a localStorage; 164 a sessionStorage; 908 referências mock; 677 referências de rede/Supabase; 95 marcadores de implementação pendente.
+**Evidência estática observada:** 2722 arquivos no escopo; 574 referências a localStorage; 164 a sessionStorage; 908 referências mock; 682 referências de rede/Supabase; 95 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1169,4 +1169,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-04T13:50:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-09-21T22:01:28-03:00._
