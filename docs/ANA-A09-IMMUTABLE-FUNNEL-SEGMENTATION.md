@@ -96,13 +96,17 @@ The candidate is compute-only. It resolves the CAT interval at the canonical imp
 Current candidate state:
 
 - migration created in repository: **true**
-- migration applied in staging: **false**
-- validation 047 executed: **false**
+- migration applied in staging: **true**
+- staging migration version: `20260926222750`
+- validation 047: **PASS**
+- validation mode: **rollback-only**
+- synthetic residue after validation: **0**
+- A09 segmentation cron jobs: **0**
 - runtime segmentation authority: **false**
 - snapshot write/publication authority: **false**
 - scheduler creation: **false**
 
-Validation 047 is designed to prove owner/grant boundaries, no mutable-current-service fallback, legacy category resolution, same-timestamp `sequence_no` ordering, version/category/state split behavior, pre-coverage fail-closed behavior and the continued runtime/publication deny boundary. It must run only after a separate staging authorization.
+Canonical staging evidence is stored at `reports/generated/ana-a09-immutable-funnel-segmentation-runtime-staging-evidence.json` with blob `48ce9933a209232ab5619fdbd1f28b1fff223a4e`. The smoke compute returned `computed_candidate`, retained `journeySegmentAnchor=canonical_impression`, and kept runtime segmentation/snapshot/publication authority false.
 
 ## Current authority
 
@@ -116,4 +120,4 @@ Validation 047 is designed to prove owner/grant boundaries, no mutable-current-s
 
 ## Next gate
 
-The runtime candidate is now prepared but unapplied. The next gate is a separate explicit **staging-only** authorization to apply migration `20260925145500` and execute rollback-only validation `047`. That gate must keep runtime snapshot/publication, production, merge and Ready authority false.
+The staging installation/validation gate is closed. The next gate is a separate explicit **repository-only runtime segmentation authority grant** bound to evidence blob `48ce9933a209232ab5619fdbd1f28b1fff223a4e`. That grant must not imply a live runtime flag change, snapshot publication, scheduler, production, merge or Ready.
