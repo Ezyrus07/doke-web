@@ -1,0 +1,25 @@
+/* Neutral surface chrome contract.
+ *
+ * Purpose: keep neutral application cards/panels visually consistent by removing
+ * purely decorative full-width top rails. Brand color remains available for
+ * identity, primary actions and semantic state/progress indicators.
+ *
+ * Important: this contract intentionally does NOT target step progress tracks,
+ * selected/current-location markers, bottom navigation indicators, loading
+ * progress, charts or any other line that communicates actual state.
+ *
+ * These selectors cover the decorative rails introduced during Visual Product
+ * Evolution before this shared surface-chrome policy was established. The file
+ * is loaded after the corresponding page authority so the cross-page rule wins
+ * without !important or selector escalation.
+ */
+
+body.auth-page .auth-card::before,
+body[data-page="detalhe-anuncio"] .ad-action-card::before,
+body[data-page="pagamento-profissional"] .payment-summary__card::before,
+body[data-page="tornar-profissional"] .become-pro-form-card::before,
+body[data-page="anunciar-servico"] .post-service-form-card::before,
+body[data-page="verificacao-profissional"] .professional-verification-form-card::before,
+body[data-page="verificacao-profissional"] .professional-verification-status::before {
+  content: none;
+}

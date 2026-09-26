@@ -1,0 +1,196 @@
+/* UX-VISUAL-023 — service listing editor hierarchy.
+ * Narrow late owner for the five-step service-listing creation/review experience.
+ * Runtime/HTML remain authoritative for step, price, upload, availability,
+ * quote-builder, review, validation and submit state.
+ */
+body[data-page="anunciar-servico"] {
+  --listing-ink: #123b62;
+  --listing-muted: #6a8198;
+  --listing-border: rgba(24, 75, 118, 0.14);
+  --listing-divider: rgba(24, 75, 118, 0.10);
+  --listing-subtle: #f7fafc;
+  --listing-soft: #eef6fb;
+  --listing-accent: #236392;
+  --listing-accent-soft: #eaf4fb;
+  --listing-success: #16745f;
+  --listing-success-soft: #edf9f5;
+  --listing-warning: #8a641f;
+  --listing-warning-soft: #fff8e8;
+  --listing-danger: #a33a32;
+  --listing-danger-soft: #fff5f4;
+}
+
+body[data-page="anunciar-servico"] .doke-form-page-rail { max-width: 1240px; }
+body[data-page="anunciar-servico"] .post-service-screen { display: grid; gap: var(--doke-space-5, 20px); }
+body[data-page="anunciar-servico"] .post-service-intro { max-width: 780px; margin-inline: auto; text-align: center; }
+body[data-page="anunciar-servico"] .post-service-intro .doke-form-page-title { margin: 0; color: var(--listing-ink); font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1.03; font-weight: 900; letter-spacing: -0.05em; }
+body[data-page="anunciar-servico"] .post-service-intro .doke-form-page-description { max-width: 66ch; margin: 10px auto 0; color: var(--listing-muted); font-size: 0.92rem; line-height: 1.6; font-weight: 560; }
+body[data-page="anunciar-servico"] .post-service-layout.doke-form-page-grid { grid-template-columns: minmax(0, 1fr) minmax(268px, 310px); gap: clamp(20px, 2.5vw, 30px); align-items: start; }
+body[data-page="anunciar-servico"] .post-service-form-card { position: relative; overflow: hidden; padding: 0; border: 1px solid var(--listing-border); border-radius: 24px; background: #fff; box-shadow: 0 20px 56px rgba(19, 63, 99, 0.10); }
+body[data-page="anunciar-servico"] .post-service-form-card::before { content: ""; position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #2a5f90 0%, #239b84 100%); pointer-events: none; }
+
+/* Five-step progress is navigation/progress, not five elevated cards. */
+body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 0; padding: 22px 24px 0; border-bottom: 1px solid var(--listing-divider); background: #fff; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step { position: relative; min-width: 0; min-height: 64px; display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; justify-items: start; gap: 9px; padding: 0 10px 17px; border: 0; border-radius: 0; background: transparent; color: #7890a5; box-shadow: none; text-align: left; transform: none; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step::after { content: ""; position: absolute; inset-inline: 10px; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0; background: transparent; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step > span { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid rgba(24, 75, 118, 0.16); border-radius: 999px; background: var(--listing-subtle); color: #70879c; box-shadow: none; font-size: 0.74rem; font-weight: 850; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step > div { min-width: 0; display: grid; gap: 2px; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step strong { min-width: 0; color: inherit; font-size: 0.76rem; line-height: 1.25; font-weight: 800; white-space: normal; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step small { display: block; max-width: 18ch; color: #9aabba; font-size: 0.64rem; line-height: 1.25; font-weight: 600; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step:is(:hover, :focus-visible) { background: transparent; color: var(--listing-accent); box-shadow: none; transform: none; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step:focus-visible { outline: 2px solid var(--listing-accent); outline-offset: -3px; border-radius: 10px 10px 0 0; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step.is-active { color: var(--listing-ink); background: transparent; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step.is-active::after { background: var(--listing-accent); }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step.is-active > span { border-color: rgba(35, 99, 146, 0.22); background: var(--listing-accent-soft); color: var(--listing-accent); box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step.is-complete { color: #456e65; }
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step.is-complete > span { border-color: rgba(22, 116, 95, 0.20); background: var(--listing-success-soft); color: var(--listing-success); }
+
+/* Step workspace. */
+body[data-page="anunciar-servico"] .post-service-form { display: grid; }
+body[data-page="anunciar-servico"] .post-service-step-panel { padding: clamp(26px, 3.7vw, 42px); }
+body[data-page="anunciar-servico"] .post-service-step-panel:not([hidden]) { display: grid; gap: 24px; }
+body[data-page="anunciar-servico"] .post-service-section-head { max-width: 760px; margin: 0; }
+body[data-page="anunciar-servico"] .post-service-section-head--compact { margin-top: 8px; }
+body[data-page="anunciar-servico"] .post-service-section-head h2 { margin: 0; color: var(--listing-ink); font-size: clamp(1.28rem, 2vw, 1.7rem); line-height: 1.12; font-weight: 900; letter-spacing: -0.032em; }
+body[data-page="anunciar-servico"] .post-service-section-head p { max-width: 70ch; margin: 8px 0 0; color: var(--listing-muted); font-size: 0.86rem; line-height: 1.58; font-weight: 560; }
+
+/* Persistent labels outrank placeholders and helper counters. */
+body[data-page="anunciar-servico"] .post-service-grid { gap: 18px; }
+body[data-page="anunciar-servico"] .post-service-field { display: grid; gap: 7px; }
+body[data-page="anunciar-servico"] .post-service-field > span,
+body[data-page="anunciar-servico"] .post-service-availability > legend,
+body[data-page="anunciar-servico"] .post-service-availability__toolbar label > span { color: var(--listing-ink); font-size: 0.79rem; line-height: 1.3; font-weight: 800; }
+body[data-page="anunciar-servico"] .post-service-field :is(.doke-input, .doke-select, .doke-textarea, .ui-select__trigger),
+body[data-page="anunciar-servico"] .post-service-availability :is(.doke-input, .doke-select, .ui-select__trigger) { min-height: 48px; border: 1px solid var(--listing-border); border-radius: 13px; background: #fff; box-shadow: inset 0 1px 2px rgba(15, 55, 90, 0.025); color: var(--listing-ink); }
+body[data-page="anunciar-servico"] .post-service-field .doke-textarea { min-height: 116px; resize: vertical; }
+body[data-page="anunciar-servico"] .post-service-field .post-service-textarea--large { min-height: 168px; }
+body[data-page="anunciar-servico"] .post-service-field :is(.doke-input, .doke-select, .doke-textarea, .ui-select__trigger):not(:disabled):hover,
+body[data-page="anunciar-servico"] .post-service-availability :is(.doke-input, .doke-select, .ui-select__trigger):not(:disabled):hover { border-color: rgba(35, 99, 146, 0.28); background: #fff; box-shadow: inset 0 1px 2px rgba(15, 55, 90, 0.025); }
+body[data-page="anunciar-servico"] .post-service-field :is(.doke-input, .doke-select, .doke-textarea, .ui-select__trigger):is(:focus, :focus-visible),
+body[data-page="anunciar-servico"] .post-service-field .ui-select.is-open .ui-select__trigger,
+body[data-page="anunciar-servico"] .post-service-availability :is(.doke-input, .doke-select, .ui-select__trigger):is(:focus, :focus-visible) { border-color: rgba(35, 99, 146, 0.50); outline: 0; box-shadow: 0 0 0 3px rgba(35, 99, 146, 0.10); }
+body[data-page="anunciar-servico"] .post-service-field :is(.doke-input, .doke-textarea)::placeholder { color: #9aabba; opacity: 1; }
+body[data-page="anunciar-servico"] .post-service-field small,
+body[data-page="anunciar-servico"] .post-service-field .doke-form-hint,
+body[data-page="anunciar-servico"] .post-service-availability > .doke-form-hint { color: #7c90a3; font-size: 0.71rem; line-height: 1.4; font-weight: 600; }
+body[data-page="anunciar-servico"] [data-count-value] { font-variant-numeric: tabular-nums; }
+
+/* Price is a commercial decision: type first, amount second. */
+body[data-page="anunciar-servico"] .post-service-segmented { display: inline-grid; grid-template-columns: repeat(3, minmax(116px, auto)); gap: 3px; width: fit-content; max-width: 100%; margin: 0; padding: 4px; border: 1px solid var(--listing-divider); border-radius: 999px; background: var(--listing-subtle); box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-segment { min-height: 38px; padding-inline: 13px; border: 0; border-radius: 999px; background: transparent; color: #6b8198; box-shadow: none; font-size: 0.76rem; font-weight: 780; transform: none; }
+body[data-page="anunciar-servico"] .post-service-segment:is(.is-active, [aria-pressed="true"]) { background: #fff; color: var(--listing-ink); box-shadow: 0 1px 4px rgba(15, 55, 90, 0.08); }
+body[data-page="anunciar-servico"] .post-service-segment:focus-visible { outline: 2px solid var(--listing-accent); outline-offset: 2px; }
+body[data-page="anunciar-servico"] .post-service-field--currency b { left: 11px; bottom: 10px; min-width: 34px; height: 28px; border-radius: 9px; background: var(--listing-accent-soft); color: var(--listing-accent); font-size: 0.74rem; font-weight: 850; }
+
+/* Availability is schedule data, not a stack of promotional cards. */
+body[data-page="anunciar-servico"] .post-service-availability { display: grid; gap: 12px; padding-top: 4px; }
+body[data-page="anunciar-servico"] .post-service-availability__list { display: grid; gap: 0; border: 1px solid var(--listing-divider); border-radius: 14px; overflow: hidden; background: #fff; }
+body[data-page="anunciar-servico"] .post-service-availability__row { display: grid; grid-template-columns: minmax(130px, 0.8fr) repeat(2, minmax(118px, 0.55fr)); align-items: end; gap: 12px; padding: 12px 14px; border-radius: 0; background: #fff; }
+body[data-page="anunciar-servico"] .post-service-availability__row + .post-service-availability__row { border-top: 1px solid var(--listing-divider); }
+body[data-page="anunciar-servico"] .post-service-availability__row.is-active { background: #fbfdff; }
+body[data-page="anunciar-servico"] .post-service-availability__row:not(.is-active) { color: #8a9baa; background: #fafcfd; }
+
+/* Media is evidence that improves listing confidence. Primary image clearly leads. */
+body[data-page="anunciar-servico"] .post-service-upload-layout { grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.75fr); gap: 12px; }
+body[data-page="anunciar-servico"] .post-service-upload-card { min-height: 96px; gap: 6px; padding: 16px; border: 1px dashed rgba(35, 99, 146, 0.28); border-radius: 14px; background: var(--listing-subtle); box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-upload-card--main { min-height: 208px; align-content: end; padding: 22px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(234, 244, 251, 0.88)), var(--listing-subtle); }
+body[data-page="anunciar-servico"] .post-service-upload-card > span { color: var(--listing-ink); font-size: 0.86rem; line-height: 1.35; font-weight: 850; }
+body[data-page="anunciar-servico"] .post-service-upload-card > small:not(.post-service-upload-card__status) { max-width: 50ch; color: var(--listing-muted); font-size: 0.72rem; line-height: 1.45; font-weight: 560; }
+body[data-page="anunciar-servico"] .post-service-upload-card__status { margin-top: 3px; color: var(--listing-accent); font-size: 0.73rem; font-weight: 800; }
+body[data-page="anunciar-servico"] .post-service-upload-card:is(:hover, :focus-within) { border-color: rgba(35, 99, 146, 0.48); background-color: #fff; box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-upload-card:has(input:focus-visible) { outline: 2px solid var(--listing-accent); outline-offset: 2px; }
+body[data-page="anunciar-servico"] .post-service-upload-card.has-file { border-style: solid; border-color: rgba(22, 116, 95, 0.26); background: var(--listing-success-soft); box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-more-media { border: 1px solid var(--listing-divider); border-radius: 14px; background: #fff; box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-more-media > summary { min-height: 48px; padding-inline: 14px; color: var(--listing-ink); font-size: 0.78rem; font-weight: 780; }
+
+/* Differentials are compact selectable attributes; selected state remains runtime-owned. */
+body[data-page="anunciar-servico"] .post-service-check-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+body[data-page="anunciar-servico"] .post-service-check,
+body[data-page="anunciar-servico"] .post-service-confirm-check { min-height: 48px; padding: 9px 12px; border: 1px solid var(--listing-border); border-radius: 12px; background: #fff; color: #496780; box-shadow: none; font-size: 0.76rem; font-weight: 760; }
+body[data-page="anunciar-servico"] :is(.post-service-check, .post-service-confirm-check):is(.is-active, [aria-pressed="true"]) { border-color: rgba(35, 99, 146, 0.30); background: var(--listing-accent-soft); color: var(--listing-ink); box-shadow: none; }
+body[data-page="anunciar-servico"] :is(.post-service-check, .post-service-confirm-check):focus-visible { outline: 2px solid var(--listing-accent); outline-offset: 2px; }
+
+/* Quote/request builder is the primary workspace of step 4; secondary automation stays quiet. */
+body[data-page="anunciar-servico"] :is(.quote-builder, .quote-builder__questions, .quote-builder__settings, [data-quote-mode-panel]) { box-shadow: none; }
+body[data-page="anunciar-servico"] .quote-builder__questions { border-color: var(--listing-divider); background: #fff; }
+body[data-page="anunciar-servico"] :is([data-quote-template-recommendation], [data-quote-template-selection], [data-personal-template-list]) { border-color: var(--listing-divider); background: var(--listing-subtle); box-shadow: none; }
+
+/* Review step resembles the listing customers will evaluate. */
+body[data-page="anunciar-servico"] .post-service-review-preview { overflow: hidden; border: 1px solid var(--listing-divider); border-radius: 18px; background: #fff; box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-review-preview__media { min-height: 230px; background: linear-gradient(135deg, #edf4fa 0%, #f1f8f5 100%); }
+body[data-page="anunciar-servico"] .post-service-review-preview__category { color: #5f7890; font-size: 0.67rem; font-weight: 820; letter-spacing: 0.075em; }
+body[data-page="anunciar-servico"] .post-service-review-preview h3 { color: var(--listing-ink); font-size: clamp(1.35rem, 2.3vw, 1.85rem); line-height: 1.12; font-weight: 900; letter-spacing: -0.035em; }
+body[data-page="anunciar-servico"] .post-service-review-preview p { color: var(--listing-muted); font-size: 0.84rem; line-height: 1.55; }
+body[data-page="anunciar-servico"] .post-service-review-preview__facts { gap: 6px; margin-top: 8px; }
+body[data-page="anunciar-servico"] .post-service-review-preview__facts span { min-height: 30px; display: inline-flex; align-items: center; padding: 6px 10px; border: 1px solid var(--listing-divider); border-radius: 999px; background: var(--listing-subtle); color: #486881; font-size: 0.7rem; font-weight: 760; }
+body[data-page="anunciar-servico"] .post-service-review-list { margin: 16px 0 0; border-block: 1px solid var(--listing-divider); }
+body[data-page="anunciar-servico"] .post-service-review-list :is(li, > div) { min-height: 48px; grid-template-columns: minmax(128px, 0.27fr) minmax(0, 1fr); gap: 18px; padding: 13px 0; }
+body[data-page="anunciar-servico"] .post-service-review-list :is(li + li, > div + div) { border-top: 1px solid var(--listing-divider); }
+body[data-page="anunciar-servico"] .post-service-review-list :is(strong, dt) { color: #6b8197; font-size: 0.73rem; line-height: 1.35; font-weight: 760; }
+body[data-page="anunciar-servico"] .post-service-review-list :is(span, dd, p) { color: var(--listing-ink); font-size: 0.82rem; line-height: 1.5; font-weight: 650; }
+body[data-page="anunciar-servico"] .post-service-confirm { gap: 8px; margin-top: 0; padding: 16px; border: 1px solid rgba(138, 100, 31, 0.14); border-radius: 14px; background: var(--listing-warning-soft); }
+
+/* Error and decision zones. */
+body[data-page="anunciar-servico"] .post-service-step-error:not([hidden]) { margin: 0; padding: 12px 14px; border: 1px solid rgba(163, 58, 50, 0.20); border-inline-start-width: 3px; border-radius: 12px; background: var(--listing-danger-soft); color: var(--listing-danger); box-shadow: none; font-size: 0.78rem; line-height: 1.5; font-weight: 700; }
+body[data-page="anunciar-servico"] .post-service-actions { position: sticky; z-index: 4; bottom: 0; display: grid; grid-template-columns: auto auto minmax(180px, 1fr); align-items: center; gap: 10px; margin: 0; padding: 16px clamp(26px, 3.7vw, 42px) calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--listing-divider); background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); }
+body[data-page="anunciar-servico"] .post-service-actions .post-service-btn { min-height: 46px; }
+body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost { padding-inline: 14px; border: 0; background: transparent; color: #657d94; box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-actions .doke-btn--primary { justify-self: end; min-width: min(240px, 100%); box-shadow: 0 10px 24px rgba(35, 99, 146, 0.16); }
+body[data-page="anunciar-servico"] .post-service-actions .post-service-btn:focus-visible { outline: 2px solid var(--listing-accent); outline-offset: 2px; }
+
+/* Guidance rail stays quieter than the editor. */
+body[data-page="anunciar-servico"] .post-service-tips-card { position: sticky; top: calc(var(--app-header-height, 72px) + 20px); padding: 20px; border: 1px solid var(--listing-divider); border-radius: 18px; background: rgba(255, 255, 255, 0.90); box-shadow: none; }
+body[data-page="anunciar-servico"] .post-service-tips-card__eyebrow { margin-bottom: 6px; color: #6e8a84; font-size: 0.64rem; letter-spacing: 0.075em; }
+body[data-page="anunciar-servico"] .post-service-tips-card h2 { color: var(--listing-ink); font-size: 1rem; line-height: 1.25; font-weight: 850; letter-spacing: -0.02em; }
+body[data-page="anunciar-servico"] .post-service-tips-card ul { gap: 0; margin-top: 14px; border-top: 1px solid var(--listing-divider); }
+body[data-page="anunciar-servico"] .post-service-tips-card li { padding: 11px 0; align-items: start; }
+body[data-page="anunciar-servico"] .post-service-tips-card li + li { border-top: 1px solid var(--listing-divider); }
+body[data-page="anunciar-servico"] .post-service-tips-card li > span { width: 22px; height: 22px; border: 0; background: var(--listing-success-soft); color: var(--listing-success); }
+body[data-page="anunciar-servico"] .post-service-tips-card :is(strong, p) { line-height: 1.45; }
+body[data-page="anunciar-servico"] .post-service-tips-card strong { color: #486780; font-size: 0.76rem; font-weight: 780; }
+body[data-page="anunciar-servico"] .post-service-tips-card p { color: #7c90a3; font-size: 0.7rem; font-weight: 560; }
+body[data-page="anunciar-servico"] .post-service-guard-error { max-width: 720px; margin-inline: auto; padding: 24px; border: 1px solid rgba(163, 58, 50, 0.14); border-radius: 18px; background: #fff; box-shadow: none; }
+
+@media (max-width: 1080px) {
+  body[data-page="anunciar-servico"] .post-service-layout.doke-form-page-grid { grid-template-columns: minmax(0, 1fr); }
+  body[data-page="anunciar-servico"] .post-service-tips-card { position: static; order: 2; }
+}
+
+@media (max-width: 860px) {
+  body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps { grid-template-columns: repeat(5, minmax(112px, 1fr)); overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
+  body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps::-webkit-scrollbar { display: none; }
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step small { display: none; }
+  body[data-page="anunciar-servico"] .post-service-upload-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  body[data-page="anunciar-servico"] .doke-form-page-rail { width: 100%; max-width: none; padding-inline: 0; }
+  body[data-page="anunciar-servico"] .post-service-screen { gap: 14px; }
+  body[data-page="anunciar-servico"] .post-service-intro { padding-inline: 18px; text-align: left; }
+  body[data-page="anunciar-servico"] .post-service-intro .doke-form-page-title { font-size: clamp(1.65rem, 8vw, 2.1rem); }
+  body[data-page="anunciar-servico"] .post-service-intro .doke-form-page-description { margin-inline: 0; font-size: 0.84rem; }
+  body[data-page="anunciar-servico"] .post-service-form-card { border-inline: 0; border-radius: 0; box-shadow: none; }
+  body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps { padding: 16px 12px 0; }
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step { min-height: 54px; grid-template-columns: 26px minmax(0, 1fr); padding-inline: 8px; }
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step > span { width: 26px; height: 26px; }
+  body[data-page="anunciar-servico"] .post-service-step-panel { padding: 22px 18px 28px; }
+  body[data-page="anunciar-servico"] .post-service-grid,
+  body[data-page="anunciar-servico"] .post-service-check-grid { grid-template-columns: 1fr; }
+  body[data-page="anunciar-servico"] .post-service-segmented { width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 14px; }
+  body[data-page="anunciar-servico"] .post-service-segment { padding-inline: 7px; border-radius: 10px; font-size: 0.7rem; }
+  body[data-page="anunciar-servico"] .post-service-availability__row { grid-template-columns: 1fr 1fr; }
+  body[data-page="anunciar-servico"] .post-service-availability__day { grid-column: 1 / -1; }
+  body[data-page="anunciar-servico"] .post-service-review-preview { grid-template-columns: 1fr; border-radius: 14px; }
+  body[data-page="anunciar-servico"] .post-service-review-preview__media { min-height: 210px; }
+  body[data-page="anunciar-servico"] .post-service-review-preview__body { padding: 18px; }
+  body[data-page="anunciar-servico"] .post-service-review-list :is(li, > div) { grid-template-columns: 1fr; gap: 4px; }
+  body[data-page="anunciar-servico"] .post-service-actions,
+  body[data-page="anunciar-servico"] .post-service-actions.has-back-action { grid-template-columns: 1fr; padding: 12px 18px calc(12px + env(safe-area-inset-bottom)); }
+  body[data-page="anunciar-servico"] .post-service-actions .doke-btn--primary { grid-row: 1; justify-self: stretch; min-width: 0; min-height: 52px; }
+  body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost { min-height: 44px; }
+  body[data-page="anunciar-servico"] .post-service-tips-card { margin-inline: 14px; border-radius: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="anunciar-servico"] :is(.post-service-step, .post-service-segment, .post-service-upload-card, .post-service-check, .post-service-confirm-check) { transition: none; transform: none; }
+}
