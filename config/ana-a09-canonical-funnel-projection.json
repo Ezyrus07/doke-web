@@ -94,7 +94,7 @@
   ],
   "segmentation": {
     "currentAuthority": "global_only_for_behavioral_stages",
-    "categoryStateStatus": "repository_runtime_candidate_prepared_unapplied",
+    "categoryStateStatus": "staging_runtime_installed_validation_047_pass_runtime_segmentation_authority_pending",
     "mutableCurrentServiceJoinAllowed": false,
     "immutableSegmentationContract": {
       "path": "config/ana-a09-immutable-funnel-segmentation.json",
@@ -111,11 +111,22 @@
         "migration": "supabase/migrations/20260925145500_ana_a09_immutable_funnel_segmentation_runtime.sql",
         "validationSql": "supabase/tests/047_ana_a09_immutable_funnel_segmentation_runtime_validation.sql",
         "migrationCreated": true,
-        "migrationApplied": false,
-        "stagingValidated": false,
-        "validation047Status": "pending",
+        "migrationApplied": true,
+        "stagingValidated": true,
+        "validation047Status": "PASS",
         "runtimeSegmentationAuthority": false,
-        "snapshotPublicationAuthority": false
+        "snapshotPublicationAuthority": false,
+        "stagingMigrationVersion": "20260926222750",
+        "stagingEvidenceArtifact": "reports/generated/ana-a09-immutable-funnel-segmentation-runtime-staging-evidence.json",
+        "stagingEvidenceBlobSha": "48ce9933a209232ab5619fdbd1f28b1fff223a4e"
+      },
+      "stagingEvidence": {
+        "blobSha": "48ce9933a209232ab5619fdbd1f28b1fff223a4e",
+        "validation047": "PASS",
+        "smokeState": "computed_candidate",
+        "syntheticResidueZero": true,
+        "a09SegmentationCronJobs": 0,
+        "runtimeSegmentationAuthority": false
       }
     }
   },
@@ -164,7 +175,7 @@
   "activationRequirements": [
     "keep runtime snapshot and snapshot publication authority false until a separately authorized append-only publication gate closes",
     "materialize any live global runtimeAuthority=true alignment only through a forward-only staging change under separate authorization",
-    "apply and validate the prepared immutable CAT-A06/CAT-A07 segmentation runtime candidate only under a separate explicit staging authorization before category/state funnel claims"
+    "treat immutable category/state segmentation as staging-installed and validation-047-certified, but keep runtimeSegmentationAuthority=false until a separate explicit repository-only authority grant closes"
   ],
   "catLiquidityBlocker": {
     "status": "liquidity_runtime_closed_outside_a09",
@@ -197,7 +208,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Global A09 runtime, active freshness policies and four-path canaries are certified, repository runtime projection authority is granted, and immutable category/state segmentation now has a repository-only forward runtime candidate. The segmented candidate is unapplied/unvalidated and snapshot publication remains false, so ANA stays 3/6."
+    "reason": "Global A09 runtime/policies/canaries remain certified and repository runtime projection authority is granted. Immutable category/state segmentation is now installed in staging and validation 047 passes with evidence blob 48ce9933a209232ab5619fdbd1f28b1fff223a4e, but runtime segmentation/snapshot/publication authority remain false. ANA stays 3/6."
   },
   "runtimeCandidate": {
     "status": "staging_applied_validation_042_pass_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
