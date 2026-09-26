@@ -102,7 +102,8 @@ Current candidate state:
 - validation mode: **rollback-only**
 - synthetic residue after validation: **0**
 - A09 segmentation cron jobs: **0**
-- runtime segmentation authority: **false**
+- repository runtime segmentation authority: **true**
+- live segmented runtime authority marker: **false**
 - snapshot write/publication authority: **false**
 - scheduler creation: **false**
 
@@ -111,7 +112,8 @@ Canonical staging evidence is stored at `reports/generated/ana-a09-immutable-fun
 ## Current authority
 
 - repository segmentation definition: **true**
-- runtime segmentation authority: **false**
+- repository runtime segmentation authority: **true**
+- live segmented runtime authority marker: **false**
 - runtime snapshot authority: **false**
 - snapshot publication authority: **false**
 - staging authority: **false**
@@ -120,4 +122,4 @@ Canonical staging evidence is stored at `reports/generated/ana-a09-immutable-fun
 
 ## Next gate
 
-The staging installation/validation gate is closed. The next gate is a separate explicit **repository-only runtime segmentation authority grant** bound to evidence blob `48ce9933a209232ab5619fdbd1f28b1fff223a4e`. That grant must not imply a live runtime flag change, snapshot publication, scheduler, production, merge or Ready.
+The repository runtime segmentation authority grant is now closed, bound to evidence blob `48ce9933a209232ab5619fdbd1f28b1fff223a4e` and authorization digest `6ff5743671c83727656744c820a848ce2a57fcd6ecf11bcb208df92f081d7741`. The live segmented compute still reports `runtimeSegmentationAuthority=false`. The next gate is a **repository-only forward alignment candidate** for that live marker; staging application, snapshot publication, scheduler, production, merge and Ready remain separately authorized.
