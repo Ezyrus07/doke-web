@@ -1,0 +1,83 @@
+{
+  "contractId": "ana-a09-immutable-funnel-segmentation-runtime-staging-evidence-v1",
+  "sourceContractId": "ana-a09-immutable-funnel-segmentation-v1",
+  "sourceRepositoryHead": "906ba92f7f1542fcc7b668d94c47f9559fdd5eb3",
+  "matrixVersion": "1.3.132",
+  "observedAt": "2026-09-26T22:28:29.58114Z",
+  "environment": "staging",
+  "migration": {
+    "repositoryMigration": "20260925145500",
+    "repositoryPath": "supabase/migrations/20260925145500_ana_a09_immutable_funnel_segmentation_runtime.sql",
+    "repositoryBlobSha": "ca0eaf78be5c7530dd9deabecc3294943f703dfc",
+    "stagingMigrationVersion": "20260926222750",
+    "stagingMigrationName": "ana_a09_immutable_funnel_segmentation_runtime",
+    "applied": true
+  },
+  "validation047": {
+    "repositoryPath": "supabase/tests/047_ana_a09_immutable_funnel_segmentation_runtime_validation.sql",
+    "repositoryBlobSha": "c512611c753a3fa51aef3ec59dc200d0352d1761",
+    "status": "PASS",
+    "transactionMode": "rollback_only",
+    "syntheticResidue": {
+      "services": 0,
+      "catVisibilityRows": 0,
+      "coverageRows": 0
+    }
+  },
+  "runtimePostconditions": {
+    "resolver": {
+      "function": "private.analytics_a09_funnel_segment_for_anchor_v1",
+      "installed": true,
+      "securityDefiner": true,
+      "owner": "postgres",
+      "anonExecute": false,
+      "authenticatedExecute": false,
+      "serviceRoleExecute": false
+    },
+    "compute": {
+      "function": "public.compute_analytics_canonical_funnel_segmented_v1",
+      "installed": true,
+      "securityDefiner": true,
+      "owner": "postgres",
+      "anonExecute": false,
+      "authenticatedExecute": false,
+      "serviceRoleExecute": true
+    },
+    "smoke": {
+      "state": "computed_candidate",
+      "metricCount": 8,
+      "coverageCompleteFrom": "2026-09-23T00:06:30.6835Z",
+      "journeySegmentAnchor": "canonical_impression",
+      "runtimeSegmentationAuthority": false,
+      "runtimeSnapshotAuthority": false,
+      "snapshotPublicationAllowed": false,
+      "globalProjectionUnaffected": true
+    },
+    "a09SegmentationCronJobs": 0
+  },
+  "advisorReconciliation": {
+    "newA09SegmentationSecurityFindingObserved": false,
+    "newA09SegmentationPerformanceFindingObserved": false,
+    "note": "Post-DDL advisors returned pre-existing platform findings; neither newly installed A09 segmentation function appeared as a new advisor finding."
+  },
+  "authorityBoundary": {
+    "runtimeSegmentationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "authorization": {
+    "token": "authorize-ana-a09-immutable-funnel-segmentation-runtime-staging-evidence-reconciliation-repository-only head=906ba92f7f1542fcc7b668d94c47f9559fdd5eb3 matrix=v1.3.132 contractId=ana-a09-immutable-funnel-segmentation-v1 migration=20260925145500 stagingMigrationVersion=20260926222750 validation=047 validation047=PASS",
+    "digestSha256": "5945c8073b2f2c5877b9f132d4e37a311054404c842d6debae9d484f47d24cd7",
+    "repositoryOnly": true,
+    "stagingWriteAuthorized": false,
+    "runtimeAuthorityGrantAuthorized": false,
+    "snapshotPublicationAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false,
+    "readyForReviewAuthorized": false
+  }
+}
