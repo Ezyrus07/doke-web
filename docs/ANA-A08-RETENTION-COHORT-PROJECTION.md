@@ -48,9 +48,9 @@ Cohort maturity uses `dataThrough`, not `computedAt`. ANA-A07 remains the author
 
 ## Runtime boundary
 
-This sublot is repository-only. It creates no SQL projection, migration, staging row, deploy or browser activation.
+The compute-only projector is now installed in staging and validation 049 passes. This does not grant runtime projection authority or snapshot publication authority.
 
-Runtime closure still requires server-side projection, append-only A04/A05 snapshot/revision semantics, A07 watermark enforcement and controlled staging cohort evidence.
+Runtime closure still requires an explicit runtimeProjectionAuthority decision and, separately, append-only A04/A05 snapshot/revision publication authority. A07 watermark enforcement remains mandatory.
 
 ANA-001 remains **3/6**.
 
@@ -70,12 +70,15 @@ The projector:
 
 The candidate does **not** join mutable `public.services`, publish metric snapshots, mutate ORD/CAT, create cron jobs, activate browser analytics or grant runtime projection authority.
 
-Current candidate state remains:
-- `migrationApplied=false`;
-- `stagingValidated=false`;
-- `validation049Status=pending`;
+Current staging-certified state:
+- `migrationApplied=true`;
+- `stagingMigrationVersion=20260927015155`;
+- `stagingValidated=true`;
+- `validation049Status=PASS`;
+- `runtimeProjectorInstalled=true`;
 - `runtimeProjectionAuthority=false`;
 - `runtimeSnapshotAuthority=false`;
-- `snapshotPublicationAuthority=false`.
+- `snapshotPublicationAuthority=false`;
+- `schedulerAuthority=false`.
 
-Applying the migration or executing validation 049 in staging requires a separate exact-head authorization.
+The staging evidence is recorded in `reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json`. Installation and validation do not authorize runtime projection, snapshot publication, scheduler activation, production, merge or Ready.

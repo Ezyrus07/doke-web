@@ -11,7 +11,17 @@
     "stagingConnection": "NOT_CONNECTED",
     "productionConnection": "NOT_CONNECTED",
     "observedHead": "6434e980c08d8c9dbc9e0fa44943590f31f926f2",
-    "collision": "ANA / Analytics ↔ QA / Certification shares canonical Matrix artifacts; generated Matrix files must remain generator-owned."
+    "collision": "ANA / Analytics ↔ QA / Certification shares canonical Matrix artifacts; generated Matrix files must remain generator-owned.",
+    "latestObservation": {
+      "observedAt": "2026-09-27T01:06:22.981Z",
+      "repositoryState": "LIVE_STALE_HEAD",
+      "matrixState": "LIVE_STALE_HEAD",
+      "workstreamRegistry": "FALLBACK_STALE",
+      "stagingConnection": "NOT_CONNECTED",
+      "productionConnection": "NOT_CONNECTED",
+      "observedHead": "6434e980c08d8c9dbc9e0fa44943590f31f926f2",
+      "canonicalRepositoryHeadAtReconciliation": "2c3a64589ea9ae3155f28c0b4ac917768c987e54"
+    }
   },
   "sourceCheckpoint": {
     "pr": 488,
@@ -69,10 +79,39 @@
     "production": false
   },
   "blockers": [
-    "Candidate is unapplied; validation 049 is pending.",
     "Runtime projection authority remains false.",
-    "Runtime snapshot/publication authority remains false."
+    "Runtime snapshot authority remains false.",
+    "Snapshot publication authority remains false.",
+    "Scheduler authority remains false."
   ],
-  "nextSafeAction": "After exact-head A08 CI and deterministic Matrix refresh are green, request explicit staging-only authorization to apply migration 20260927010000 and execute rollback-only validation 049.",
-  "authorizationRequirement": "Next Safe Action is not authorization. Any staging apply/read, runtime projection authority, snapshot/publication, production, merge or Ready requires a separate explicit authorization bound to the then-current PR HEAD."
+  "nextSafeAction": "Treat ANA-A08 staging installation and validation 049 as closed unless drift appears. Reconcile the next explicit runtimeProjectionAuthority gate without inferring snapshot/publication, scheduler, production, merge, Ready or maturity authority.",
+  "authorizationRequirement": "Next Safe Action is not authorization. Any runtimeProjectionAuthority grant, snapshot/publication, scheduler, production, merge or Ready requires a separate explicit authorization bound to the then-current PR HEAD.",
+  "stagingClosure": {
+    "authorizationToken": "authorize-ana-a08-retention-runtime-projector-staging head=2c3a64589ea9ae3155f28c0b4ac917768c987e54 matrix=v1.3.132 contractId=ana-a08-retention-runtime-projector-candidate-v1 candidateConfigBlobSha=0bf87181f0b26555d60471b402c48c99ca92db0c migration=20260927010000 migrationBlobSha=ca524d68760b9c3ef6e81392425e8ec3f1668de9 validation=049 validationBlobSha=6259f5000404ca842acaeded594d6078f24143d9 handoffBlobSha=cf5bb2a7d80b54aa7d497fe235b3cd009c44fb20 runtimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "repositoryHead": "2c3a64589ea9ae3155f28c0b4ac917768c987e54",
+    "repositoryMigration": "20260927010000",
+    "stagingMigrationVersion": "20260927015155",
+    "validation049": "PASS",
+    "evidenceArtifact": "reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json",
+    "evidenceBlobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c",
+    "runtimeProjectorInstalled": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "retentionCronJobs": 0,
+    "productionTouched": false,
+    "mergePerformed": false,
+    "readyForReviewPerformed": false
+  },
+  "evidenceReconciliationAuthorization": {
+    "token": "authorize-ana-a08-retention-runtime-projector-staging-evidence-reconciliation-repository-only head=2c3a64589ea9ae3155f28c0b4ac917768c987e54 matrix=v1.3.132 contractId=ana-a08-retention-runtime-projector-candidate-v1 repositoryMigration=20260927010000 stagingMigrationVersion=20260927015155 validation=049 validation049=PASS runtimeProjectorInstalled=true runtimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "authorizedRepositoryHead": "2c3a64589ea9ae3155f28c0b4ac917768c987e54",
+    "matrixVersion": "1.3.132",
+    "repositoryOnly": true,
+    "stagingWriteAuthorized": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  }
 }

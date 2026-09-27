@@ -3,8 +3,8 @@
   "domain": "ANA-001",
   "sourceHead": "6434e980c08d8c9dbc9e0fa44943590f31f926f2",
   "createdAt": "2026-09-21T22:15:00-03:00",
-  "scope": "repository_runtime_projector_candidate",
-  "status": "repository_runtime_projector_candidate_ready_staging_unvalidated",
+  "scope": "staging_runtime_projector_installed_validation_049_pass_repository_reconciled",
+  "status": "staging_runtime_projector_installed_validation_049_pass_runtime_projection_authority_false",
   "objective": "Materialize deterministic client-retention cohort semantics for repeat_request_30d and repeat_completion_90d from canonical ORD analytics projections without identity stitching or rehire inference.",
   "rootCause": {
     "missingMetric": "ANA-A04 declares retention.repeat_request_30d but has no corresponding projection helper.",
@@ -86,11 +86,11 @@
     "runtimeProjectorCandidateAuthority": true
   },
   "activationRequirements": [
-    "apply the compute-only ANA-A08 projector migration only under a separate exact-head staging authorization",
-    "execute rollback-only validation 049 and controlled staging cohort cases before any runtime projection authority grant",
+    "treat migration 20260927010000 and rollback-only validation 049 as staging-installed/certified unless drift appears",
+    "require a separate exact-head authorization before granting runtimeProjectionAuthority=true",
     "keep append-only ANA-A04/A05 snapshot publication disabled until a separate snapshot/publication gate",
     "preserve A07 order watermark enforcement and immutable A04 serviceCategory/serviceState dimensions",
-    "do not infer identity stitching, rehire, mutable current-service joins, scheduler authority or maturity promotion"
+    "do not infer identity stitching, rehire, mutable current-service joins, scheduler authority, production authority or maturity promotion"
   ],
   "preservedBoundaries": [
     "ORD-001 remains canonical for order facts and client_id.",
@@ -116,7 +116,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A08 repository semantics now have a compute-only SQL projector candidate bound to immutable A04-enriched ORD dimensions and the A07 ORD watermark. The candidate is unapplied and validation 049 is pending; runtime projection and snapshot/publication authorities remain false, so ANA stays 3/6."
+    "reason": "The ANA-A08 compute-only retention projector is installed in staging and rollback-only validation 049 passes. Runtime projection authority remains false and snapshot/publication/scheduler remain false, so ANA stays 3/6."
   },
   "runtimeCandidate": {
     "contractId": "ana-a08-retention-runtime-projector-candidate-v1",
@@ -124,9 +124,9 @@
     "validationSql": "supabase/tests/049_ana_a08_retention_cohort_projector_validation.sql",
     "computeFunction": "public.compute_analytics_retention_cohort_v1",
     "candidatePrepared": true,
-    "migrationApplied": false,
-    "stagingValidated": false,
-    "validation049Status": "pending",
+    "migrationApplied": true,
+    "stagingValidated": true,
+    "validation049Status": "PASS",
     "sourceRelation": "private.order_metric_events",
     "dimensionAuthority": "ANA-A04_ORDER_SERVICE_SNAPSHOT_ENRICHMENT",
     "watermarkFunction": "private.order_metric_watermark_v1()",
@@ -144,7 +144,12 @@
     "snapshotPublicationAuthority": false,
     "schedulerAuthority": false,
     "browserExecuteAllowed": false,
-    "serviceRoleComputeExecuteCandidate": true
+    "serviceRoleComputeExecuteCandidate": true,
+    "stagingMigrationVersion": "20260927015155",
+    "stagingMigrationName": "ana_a08_retention_cohort_projector",
+    "stagingEvidenceArtifact": "reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json",
+    "stagingEvidenceBlobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c",
+    "runtimeProjectorInstalled": true
   },
   "repositoryCandidateAuthorization": {
     "token": "authorize-ana-a08-retention-runtime-projector-candidate-repository-only head=6434e980c08d8c9dbc9e0fa44943590f31f926f2 matrix=v1.3.132 contractId=ana-a08-retention-cohort-projection-v1 a08ContractBlobSha=fe86cc919cf224a0c7008a3cea3aaa03af5402b2 a04RuntimeBlobSha=64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5 a07WatermarkBlobSha=9c2be354b5a0e5640ad7753257a3ca2308687e42 runtimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
@@ -166,5 +171,44 @@
     "mergeAuthority": false,
     "readyForReviewAuthority": false
   },
-  "nextGate": "After exact-head repository CI and canonical Matrix refresh pass, request separate staging-only authorization to apply migration 20260927010000 and execute rollback-only validation 049. Runtime projection, snapshot/publication, scheduler, production, merge and Ready remain unauthorized."
+  "nextGate": "Staging installation and validation 049 are certified. The next gate is a separate repository/runtime authority decision for ANA-A08; runtimeProjectionAuthority, runtimeSnapshotAuthority, snapshotPublicationAuthority and schedulerAuthority remain false. Do not infer authority from installation.",
+  "stagingEvidence": {
+    "artifact": "reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json",
+    "blobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c",
+    "stagingMigrationVersion": "20260927015155",
+    "validation049": "PASS",
+    "runtimeProjectorInstalled": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "retentionCronJobs": 0
+  },
+  "stagingAuthorization": {
+    "token": "authorize-ana-a08-retention-runtime-projector-staging head=2c3a64589ea9ae3155f28c0b4ac917768c987e54 matrix=v1.3.132 contractId=ana-a08-retention-runtime-projector-candidate-v1 candidateConfigBlobSha=0bf87181f0b26555d60471b402c48c99ca92db0c migration=20260927010000 migrationBlobSha=ca524d68760b9c3ef6e81392425e8ec3f1668de9 validation=049 validationBlobSha=6259f5000404ca842acaeded594d6078f24143d9 handoffBlobSha=cf5bb2a7d80b54aa7d497fe235b3cd009c44fb20 runtimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "authorizedRepositoryHead": "2c3a64589ea9ae3155f28c0b4ac917768c987e54",
+    "matrixVersion": "1.3.132",
+    "contractId": "ana-a08-retention-runtime-projector-candidate-v1",
+    "repositoryMigration": "20260927010000",
+    "validation": "049",
+    "consumed": true,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "stagingEvidenceReconciliationAuthorization": {
+    "token": "authorize-ana-a08-retention-runtime-projector-staging-evidence-reconciliation-repository-only head=2c3a64589ea9ae3155f28c0b4ac917768c987e54 matrix=v1.3.132 contractId=ana-a08-retention-runtime-projector-candidate-v1 repositoryMigration=20260927010000 stagingMigrationVersion=20260927015155 validation=049 validation049=PASS runtimeProjectorInstalled=true runtimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "authorizedRepositoryHead": "2c3a64589ea9ae3155f28c0b4ac917768c987e54",
+    "matrixVersion": "1.3.132",
+    "contractId": "ana-a08-retention-runtime-projector-candidate-v1",
+    "repositoryOnly": true,
+    "stagingMutationAuthorized": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  }
 }
