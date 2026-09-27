@@ -53,3 +53,29 @@ This sublot is repository-only. It creates no SQL projection, migration, staging
 Runtime closure still requires server-side projection, append-only A04/A05 snapshot/revision semantics, A07 watermark enforcement and controlled staging cohort evidence.
 
 ANA-001 remains **3/6**.
+
+
+## Repository runtime projector candidate
+
+A compute-only runtime candidate is prepared at `supabase/migrations/20260927010000_ana_a08_retention_cohort_projector.sql` with rollback-only validation `supabase/tests/049_ana_a08_retention_cohort_projector_validation.sql`.
+
+The projector:
+- reads only `private.order_metric_events`;
+- consumes `serviceCategory` and `serviceState` already enriched by ANA-A04 from the immutable order service snapshot;
+- clamps requested `dataThrough` to `private.order_metric_watermark_v1()` from ANA-A07;
+- preserves the first-completion cohort anchor and different-order repeat requirement;
+- allows a repeat in another category/state while retaining the initial cohort segment;
+- returns partial coverage when mature cohort dimensions are missing;
+- is executable only by `service_role`.
+
+The candidate does **not** join mutable `public.services`, publish metric snapshots, mutate ORD/CAT, create cron jobs, activate browser analytics or grant runtime projection authority.
+
+Current candidate state remains:
+- `migrationApplied=false`;
+- `stagingValidated=false`;
+- `validation049Status=pending`;
+- `runtimeProjectionAuthority=false`;
+- `runtimeSnapshotAuthority=false`;
+- `snapshotPublicationAuthority=false`.
+
+Applying the migration or executing validation 049 in staging requires a separate exact-head authorization.

@@ -1,0 +1,78 @@
+{
+  "handoffId": "ana-a08-retention-runtime-projector-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A08",
+  "controlCenter": {
+    "url": "https://doke-control-view.vercel.app",
+    "observedAt": "2026-09-27T01:06:22.981Z",
+    "repositoryState": "LIVE",
+    "matrixState": "LIVE",
+    "workstreamRegistry": "FALLBACK_STALE",
+    "stagingConnection": "NOT_CONNECTED",
+    "productionConnection": "NOT_CONNECTED",
+    "observedHead": "6434e980c08d8c9dbc9e0fa44943590f31f926f2",
+    "collision": "ANA / Analytics ↔ QA / Certification shares canonical Matrix artifacts; generated Matrix files must remain generator-owned."
+  },
+  "sourceCheckpoint": {
+    "pr": 488,
+    "branch": "ana/ana-001-foundation",
+    "head": "6434e980c08d8c9dbc9e0fa44943590f31f926f2",
+    "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+    "matrixVersion": "1.3.132",
+    "anaMaturity": "3/6",
+    "a08ContractBlobSha": "fe86cc919cf224a0c7008a3cea3aaa03af5402b2",
+    "a04RuntimeBlobSha": "64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5",
+    "a07WatermarkBlobSha": "9c2be354b5a0e5640ad7753257a3ca2308687e42"
+  },
+  "authorization": {
+    "token": "authorize-ana-a08-retention-runtime-projector-candidate-repository-only head=6434e980c08d8c9dbc9e0fa44943590f31f926f2 matrix=v1.3.132 contractId=ana-a08-retention-cohort-projection-v1 a08ContractBlobSha=fe86cc919cf224a0c7008a3cea3aaa03af5402b2 a04RuntimeBlobSha=64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5 a07WatermarkBlobSha=9c2be354b5a0e5640ad7753257a3ca2308687e42 runtimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "065287f0f6ca67e482ef6518c8a80a854e699d0d2f21eee8bb7994eab1a42d17",
+    "scope": "repository_only_candidate",
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "stagingApplyAuthorized": false,
+    "stagingReadAuthorized": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "lot": {
+    "objective": "Prepare a compute-only server-side ANA-A08 retention cohort projector candidate without granting runtime projection or publication authority.",
+    "rootCause": "A08 semantics existed only as repository JS. A04 already provides immutable serviceCategory/serviceState enrichment on ORD metric events and A07 provides the certified ORD watermark, so no ORD/CAT redesign is required.",
+    "migration": "supabase/migrations/20260927010000_ana_a08_retention_cohort_projector.sql",
+    "validation": "supabase/tests/049_ana_a08_retention_cohort_projector_validation.sql",
+    "computeFunction": "public.compute_analytics_retention_cohort_v1",
+    "metrics": [
+      "retention.repeat_request_30d",
+      "retention.repeat_completion_90d"
+    ],
+    "sourceRelation": "private.order_metric_events",
+    "watermarkFunction": "private.order_metric_watermark_v1()",
+    "preservedBoundaries": [
+      "canonical client_id only",
+      "first completed order cohort anchor",
+      "different-order repeat",
+      "cross-segment repeat counts",
+      "immutable A04 service dimensions",
+      "no current-service join",
+      "compute-only",
+      "runtimeProjectionAuthority=false",
+      "runtimeSnapshotAuthority=false",
+      "snapshotPublicationAuthority=false",
+      "schedulerAuthority=false"
+    ]
+  },
+  "writesPerformed": {
+    "repository": true,
+    "staging": false,
+    "production": false
+  },
+  "blockers": [
+    "Candidate is unapplied; validation 049 is pending.",
+    "Runtime projection authority remains false.",
+    "Runtime snapshot/publication authority remains false."
+  ],
+  "nextSafeAction": "After exact-head A08 CI and deterministic Matrix refresh are green, request explicit staging-only authorization to apply migration 20260927010000 and execute rollback-only validation 049.",
+  "authorizationRequirement": "Next Safe Action is not authorization. Any staging apply/read, runtime projection authority, snapshot/publication, production, merge or Ready requires a separate explicit authorization bound to the then-current PR HEAD."
+}

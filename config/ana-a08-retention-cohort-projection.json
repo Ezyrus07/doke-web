@@ -1,15 +1,16 @@
 {
   "contractId": "ana-a08-retention-cohort-projection-v1",
   "domain": "ANA-001",
-  "sourceHead": "21991cb360513234bca51003070acb329606c0d7",
+  "sourceHead": "6434e980c08d8c9dbc9e0fa44943590f31f926f2",
   "createdAt": "2026-09-21T22:15:00-03:00",
-  "scope": "repository_only",
-  "status": "repository_contract_ready_runtime_projection_blocked",
+  "scope": "repository_runtime_projector_candidate",
+  "status": "repository_runtime_projector_candidate_ready_staging_unvalidated",
   "objective": "Materialize deterministic client-retention cohort semantics for repeat_request_30d and repeat_completion_90d from canonical ORD analytics projections without identity stitching or rehire inference.",
   "rootCause": {
     "missingMetric": "ANA-A04 declares retention.repeat_request_30d but has no corresponding projection helper.",
     "segmentationGap": "The existing repeatCompletionRate helper aggregates by client but does not carry immutable category/state cohort dimensions required by the ANA maturity-4 segmentation criterion.",
-    "semanticGap": "Repeat orders must not be interpreted as rehire, and cohort maturity must be evaluated against dataThrough rather than computedAt."
+    "semanticGap": "Repeat orders must not be interpreted as rehire, and cohort maturity must be evaluated against dataThrough rather than computedAt.",
+    "runtimeGap": "Repository retention semantics are complete, but no server-side SQL projector exists yet. A04 already enriches order_metric_events from immutable orders.service_snapshot and A07 already provides the certified ORD watermark, so A08 can materialize a compute-only projector without joining mutable current service state."
   },
   "sourceAuthority": {
     "domain": "ORD-001",
@@ -20,7 +21,10 @@
       "serviceCategory",
       "serviceState"
     ],
-    "anonymousIdentityStitchingAllowed": false
+    "anonymousIdentityStitchingAllowed": false,
+    "dimensionRuntimeAuthority": "ANA-A04 private.enrich_order_metric_dimensions_for_analytics_v1",
+    "dimensionSource": "orders.service_snapshot frozen from approved service version",
+    "currentServiceJoinAllowed": false
   },
   "metrics": [
     {
@@ -66,7 +70,9 @@
   "freshnessDependency": {
     "contract": "ANA-A07",
     "thresholdAuthorityInherited": true,
-    "runtimeFreshnessActivationStillBlocked": true
+    "runtimeFreshnessActivationStillBlocked": false,
+    "runtimeWatermarkAuthority": true,
+    "watermarkFunction": "private.order_metric_watermark_v1()"
   },
   "authority": {
     "contractAuthority": true,
@@ -76,13 +82,15 @@
     "runtimeProjectionAuthority": false,
     "runtimeSnapshotAuthority": false,
     "stagingAuthority": false,
-    "productionAuthority": false
+    "productionAuthority": false,
+    "runtimeProjectorCandidateAuthority": true
   },
   "activationRequirements": [
-    "server-side retention projection over private.order_metric_events",
-    "append-only metric snapshots through ANA-A04/A05 revision semantics",
-    "A07 dataThrough/watermark enforcement",
-    "controlled staging cohorts covering mature/no-repeat/repeat/cross-segment/missing-dimension cases"
+    "apply the compute-only ANA-A08 projector migration only under a separate exact-head staging authorization",
+    "execute rollback-only validation 049 and controlled staging cohort cases before any runtime projection authority grant",
+    "keep append-only ANA-A04/A05 snapshot publication disabled until a separate snapshot/publication gate",
+    "preserve A07 order watermark enforcement and immutable A04 serviceCategory/serviceState dimensions",
+    "do not infer identity stitching, rehire, mutable current-service joins, scheduler authority or maturity promotion"
   ],
   "preservedBoundaries": [
     "ORD-001 remains canonical for order facts and client_id.",
@@ -108,6 +116,55 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "A08 closes repository retention semantics only. Runtime projection/staging evidence, funnel, CAT liquidity and A07 runtime freshness remain required for ANA maturity 4."
-  }
+    "reason": "A08 repository semantics now have a compute-only SQL projector candidate bound to immutable A04-enriched ORD dimensions and the A07 ORD watermark. The candidate is unapplied and validation 049 is pending; runtime projection and snapshot/publication authorities remain false, so ANA stays 3/6."
+  },
+  "runtimeCandidate": {
+    "contractId": "ana-a08-retention-runtime-projector-candidate-v1",
+    "migration": "supabase/migrations/20260927010000_ana_a08_retention_cohort_projector.sql",
+    "validationSql": "supabase/tests/049_ana_a08_retention_cohort_projector_validation.sql",
+    "computeFunction": "public.compute_analytics_retention_cohort_v1",
+    "candidatePrepared": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "validation049Status": "pending",
+    "sourceRelation": "private.order_metric_events",
+    "dimensionAuthority": "ANA-A04_ORDER_SERVICE_SNAPSHOT_ENRICHMENT",
+    "watermarkFunction": "private.order_metric_watermark_v1()",
+    "metrics": [
+      "retention.repeat_request_30d",
+      "retention.repeat_completion_90d"
+    ],
+    "computeOnly": true,
+    "sourceMutationAllowed": false,
+    "currentServiceJoinAllowed": false,
+    "anonymousIdentityStitchingAllowed": false,
+    "snapshotMutationAllowed": false,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "browserExecuteAllowed": false,
+    "serviceRoleComputeExecuteCandidate": true
+  },
+  "repositoryCandidateAuthorization": {
+    "token": "authorize-ana-a08-retention-runtime-projector-candidate-repository-only head=6434e980c08d8c9dbc9e0fa44943590f31f926f2 matrix=v1.3.132 contractId=ana-a08-retention-cohort-projection-v1 a08ContractBlobSha=fe86cc919cf224a0c7008a3cea3aaa03af5402b2 a04RuntimeBlobSha=64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5 a07WatermarkBlobSha=9c2be354b5a0e5640ad7753257a3ca2308687e42 runtimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "065287f0f6ca67e482ef6518c8a80a854e699d0d2f21eee8bb7994eab1a42d17",
+    "authorizedRepositoryHead": "6434e980c08d8c9dbc9e0fa44943590f31f926f2",
+    "matrixVersion": "1.3.132",
+    "contractId": "ana-a08-retention-cohort-projection-v1",
+    "a08ContractBlobSha": "fe86cc919cf224a0c7008a3cea3aaa03af5402b2",
+    "a04RuntimeBlobSha": "64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5",
+    "a07WatermarkBlobSha": "9c2be354b5a0e5640ad7753257a3ca2308687e42",
+    "repositoryOnly": true,
+    "stagingApplyAuthorized": false,
+    "stagingReadAuthorized": false,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "nextGate": "After exact-head repository CI and canonical Matrix refresh pass, request separate staging-only authorization to apply migration 20260927010000 and execute rollback-only validation 049. Runtime projection, snapshot/publication, scheduler, production, merge and Ready remain unauthorized."
 }
