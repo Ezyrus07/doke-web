@@ -8,7 +8,16 @@
     "sourceHead": "8ff3c263c88c38259928f89ec0b54f9cc36a5efa",
     "snapshotBlobSha": "de35987ae165a0b0f72ad8ef7aa26d120eb27867",
     "snapshotAssessment": "STALE_OR_UNKNOWN_FOR_EXACT_WRITE_CHECKPOINT",
-    "reconciliation": "Canonical state reconciled against GitHub PR #488, Matrix v1.3.132, A09 contracts, certified staging evidence and exact-head CI before write."
+    "reconciliation": "Canonical state reconciled against GitHub PR #488, Matrix v1.3.132, A09 contracts, certified staging evidence and exact-head CI before write.",
+    "latestObservation": {
+      "observedAt": "2026-09-27T00:25:56.489Z",
+      "repositoryState": "LIVE",
+      "matrixState": "LIVE",
+      "workstreamRegistry": "FALLBACK_STALE",
+      "stagingConnection": "NOT_CONNECTED",
+      "productionConnection": "NOT_CONNECTED",
+      "observedHead": "27785ae3ff8a587eb4bc5411eddb87a057995cfe"
+    }
   },
   "sourceCheckpoint": {
     "pr": 488,
@@ -52,10 +61,39 @@
     "production": false
   },
   "blockers": [
-    "Candidate is unapplied; live runtime marker remains false until separately authorized staging application.",
     "Runtime snapshot authority remains false.",
-    "Snapshot publication authority remains false."
+    "Snapshot publication authority remains false.",
+    "Any live global runtimeAuthority alignment, if still required, remains a separate gate."
   ],
-  "nextSafeAction": "After exact-head CI and deterministic Matrix refresh are green, request explicit staging-only authorization to apply migration 20260926235900 and execute validation 048.",
-  "authorizationRequirement": "Next Safe Action is not authorization. Bind the next staging token to the then-current PR HEAD."
+  "nextSafeAction": "Treat the segmented live runtime authority alignment as closed unless drift appears. Advance the next unresolved ANA maturity gate without granting runtime snapshot/publication, production, merge or Ready authority.",
+  "authorizationRequirement": "Next Safe Action is not authorization. Any new runtime snapshot/publication or other mutable staging gate requires a separate explicit authorization bound to the then-current PR HEAD.",
+  "stagingClosure": {
+    "authorizationToken": "authorize-ana-a09-live-segmentation-runtime-authority-alignment-staging head=27785ae3ff8a587eb4bc5411eddb87a057995cfe matrix=v1.3.132 contractId=ana-a09-live-segmentation-runtime-authority-alignment-candidate-v1 migration=20260926235900 validation=048 stagingEvidenceBlobSha=48ce9933a209232ab5619fdbd1f28b1fff223a4e expectedLiveObservedRuntimeSegmentationAuthority=false runtimeSegmentationAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "authorizationDigestSha256": "50b9e3e65f7cca9b3c67b45fa61f283c855c9cbcc167554aea718e51b8104a38",
+    "repositoryHead": "27785ae3ff8a587eb4bc5411eddb87a057995cfe",
+    "repositoryMigration": "20260926235900",
+    "stagingMigrationVersion": "20260927003122",
+    "validation048": "PASS",
+    "evidenceArtifact": "reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence.json",
+    "evidenceBlobSha": "2b7bc29528a6302c678bffe16059cde32f8c1028",
+    "runtimeSegmentationAuthority": true,
+    "liveObservedRuntimeSegmentationAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "a09SegmentationCronJobs": 0,
+    "productionTouched": false,
+    "mergePerformed": false,
+    "readyForReviewPerformed": false
+  },
+  "evidenceReconciliationAuthorization": {
+    "token": "authorize-ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence-reconciliation-repository-only head=27785ae3ff8a587eb4bc5411eddb87a057995cfe matrix=v1.3.132 contractId=ana-a09-live-segmentation-runtime-authority-alignment-candidate-v1 repositoryMigration=20260926235900 stagingMigrationVersion=20260927003122 validation=048 validation048=PASS runtimeSegmentationAuthority=true liveObservedRuntimeSegmentationAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "7ceb2b5b4b7025ae1e99802983a88d4e118ade3139b4d72c60ec0d72b83bac2b",
+    "authorizedRepositoryHead": "27785ae3ff8a587eb4bc5411eddb87a057995cfe",
+    "matrixVersion": "1.3.132",
+    "repositoryOnly": true,
+    "stagingWriteAuthorized": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  }
 }

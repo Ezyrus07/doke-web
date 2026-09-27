@@ -7,7 +7,7 @@
   "status": "server_side_projector_validated_freshness_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
   "objective": "Define a deterministic canonical acquisition-to-order funnel from ANA behavioral events and ORD order.requested facts using only explicit linkage keys, without identity stitching or temporal heuristics.",
   "rootCause": {
-    "projectionGap": "The global server-side compute projector is installed, validation 042 passes in staging, the eight r1 freshness policies are active and the four runtime canaries are certified. Repository runtime projection authority is granted. Immutable category/state semantics are repository-defined and the forward-only segmented runtime candidate is prepared but unapplied; runtime segmentation, snapshot and publication remain separate gates.",
+    "projectionGap": "The global server-side compute projector is installed, validation 042 passes in staging, the eight r1 freshness policies are active and the four runtime canaries are certified. Repository runtime projection authority is granted. Immutable category/state semantics are staging-installed and validation-047-certified; the forward-only segmented live authority marker alignment is now applied in staging and validation 048 passes. Runtime snapshot and publication remain separate gates.",
     "authorityGap": "Legacy service/quote funnel events must remain shadow inputs and cannot become a second analytics authority.",
     "linkageRisk": "A funnel assembled by actor identity, timestamp proximity or cross-session heuristics would violate the A03 identity boundary and could falsely attribute anonymous behavior."
   },
@@ -93,8 +93,8 @@
     "Current behavior ledger does not carry immutable category/state cohort dimensions, so category/state funnel segmentation is not fabricated."
   ],
   "segmentation": {
-    "currentAuthority": "global_only_for_behavioral_stages",
-    "categoryStateStatus": "staging_runtime_installed_validation_047_pass_repository_runtime_segmentation_authority_granted_live_flag_unaligned",
+    "currentAuthority": "global_plus_immutable_category_state_segmented_compute",
+    "categoryStateStatus": "staging_runtime_installed_validation_048_pass_repository_runtime_segmentation_authority_granted_live_flag_aligned",
     "mutableCurrentServiceJoinAllowed": false,
     "immutableSegmentationContract": {
       "path": "config/ana-a09-immutable-funnel-segmentation.json",
@@ -119,8 +119,8 @@
         "stagingMigrationVersion": "20260926222750",
         "stagingEvidenceArtifact": "reports/generated/ana-a09-immutable-funnel-segmentation-runtime-staging-evidence.json",
         "stagingEvidenceBlobSha": "48ce9933a209232ab5619fdbd1f28b1fff223a4e",
-        "liveRuntimeFlagAligned": false,
-        "liveObservedRuntimeSegmentationAuthority": false
+        "liveRuntimeFlagAligned": true,
+        "liveObservedRuntimeSegmentationAuthority": true
       },
       "stagingEvidence": {
         "blobSha": "48ce9933a209232ab5619fdbd1f28b1fff223a4e",
@@ -131,8 +131,8 @@
         "runtimeSegmentationAuthority": false,
         "repositoryRuntimeSegmentationAuthorityNow": true
       },
-      "liveRuntimeFlagAligned": false,
-      "liveObservedRuntimeSegmentationAuthority": false,
+      "liveRuntimeFlagAligned": true,
+      "liveObservedRuntimeSegmentationAuthority": true,
       "runtimeSegmentationAuthorityGrant": {
         "authorizedRepositoryHead": "cb756b14e29a3ce1faa74710fbe3fca0fbe804e2",
         "digestSha256": "6ff5743671c83727656744c820a848ce2a57fcd6ecf11bcb208df92f081d7741",
@@ -148,15 +148,31 @@
         "migration": "supabase/migrations/20260926235900_ana_a09_live_segmentation_runtime_authority_alignment.sql",
         "validationSql": "supabase/tests/048_ana_a09_live_segmentation_runtime_authority_alignment_validation.sql",
         "candidatePrepared": true,
-        "migrationApplied": false,
-        "stagingValidated": false,
-        "validation048Status": "pending",
+        "migrationApplied": true,
+        "stagingValidated": true,
+        "validation048Status": "PASS",
         "markerFrom": false,
         "markerTo": true,
         "markerOccurrences": 5,
         "runtimeSnapshotAuthority": false,
         "snapshotPublicationAuthority": false,
-        "stagingApplyAuthorized": false
+        "stagingApplyAuthorized": true,
+        "stagingMigrationVersion": "20260927003122",
+        "stagingEvidenceArtifact": "reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence.json",
+        "stagingEvidenceBlobSha": "2b7bc29528a6302c678bffe16059cde32f8c1028",
+        "liveRuntimeFlagAligned": true,
+        "liveObservedRuntimeSegmentationAuthority": true,
+        "stagingApplyAuthorizationConsumed": true
+      },
+      "liveRuntimeAuthorityAlignmentEvidence": {
+        "artifact": "reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence.json",
+        "blobSha": "2b7bc29528a6302c678bffe16059cde32f8c1028",
+        "validation048": "PASS",
+        "stagingMigrationVersion": "20260927003122",
+        "runtimeSegmentationAuthority": true,
+        "runtimeSnapshotAuthority": false,
+        "snapshotPublicationAuthority": false,
+        "a09SegmentationCronJobs": 0
       }
     }
   },
@@ -205,12 +221,12 @@
   "activationRequirements": [
     "keep runtime snapshot and snapshot publication authority false until a separately authorized append-only publication gate closes",
     "materialize any live global runtimeAuthority=true alignment only through a forward-only staging change under separate authorization",
-    "treat immutable category/state segmentation as staging-installed, validation-047-certified and repository runtime segmentation authority granted; align the live segmented runtime authority marker only through a separate forward-only candidate and staging authorization"
+    "treat immutable category/state segmented compute runtime authority as staging-aligned and validation-048-certified; do not reopen without drift, and keep runtime snapshot/publication authority behind separate explicit gates"
   ],
   "catLiquidityBlocker": {
     "status": "liquidity_runtime_closed_outside_a09",
     "evidence": "ANA-A10/A11 now own and operationally certify CAT liquidity, publication cadence, freshness policy and scheduler runtime in staging.",
-    "consequence": "Liquidity is not an A09 blocker. Global A09 projection is installed/certified and repository projection authority is granted. Immutable category/state semantics and a forward-only runtime candidate now exist in the repository, but that candidate is unapplied; remaining A09 gates are segmented staging validation/runtime authority, live global runtimeAuthority alignment if required, and append-only snapshot publication authority.",
+    "consequence": "Liquidity is not an A09 blocker. Global A09 projection is installed/certified and repository projection authority is granted. Immutable category/state segmented compute is now staging-installed, validation-047-certified, live-marker-aligned and validation-048-certified. Remaining A09 gates are live global runtimeAuthority alignment if required and append-only snapshot publication authority.",
     "requiredHandoff": "ANA-A07 behavior/ORD watermark runtime -> ANA-A09 funnel runtime"
   },
   "preservedBoundaries": [
@@ -238,7 +254,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Global A09 runtime/policies/canaries remain certified. Immutable category/state segmentation is staging-certified and repository runtime segmentation authority is granted. The forward-only live marker alignment candidate is repository-ready but unapplied; snapshot/publication remain false, so ANA stays 3/6."
+    "reason": "Global A09 runtime/policies/canaries remain certified. Immutable category/state segmentation is staging-certified, repository runtime segmentation authority is granted, and live segmented runtime authority-marker alignment now passes validation 048 in staging. Runtime snapshot/publication remain false, so ANA stays 3/6."
   },
   "runtimeCandidate": {
     "status": "staging_applied_validation_042_pass_policy_active_runtime_canaries_certified_repository_projection_authority_granted",

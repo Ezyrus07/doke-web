@@ -4,8 +4,8 @@
   "sourceDomain": "CAT-001",
   "sourceHead": "a673c9647884d1042ddd879515876c9874533230",
   "matrixVersion": "1.3.132",
-  "scope": "staging_runtime_installed_validation_047_pass_repository_segmentation_authority_granted",
-  "status": "staging_runtime_installed_validation_047_pass_repository_runtime_segmentation_authority_granted_live_flag_unaligned",
+  "scope": "staging_runtime_installed_validation_048_pass_repository_segmentation_authority_granted_live_flag_aligned",
+  "status": "staging_runtime_installed_validation_048_pass_repository_runtime_segmentation_authority_granted_live_flag_aligned",
   "objective": "Define deterministic category/state funnel segmentation from CAT-owned immutable visibility dimension snapshots without joining mutable current catalog state or changing A09 identity/linkage authority.",
   "rootCause": {
     "currentGap": "A09 behavioral stages carry service_id but not an immutable category/state snapshot, so joining public.services at query time would rewrite historical funnel dimensions.",
@@ -93,11 +93,11 @@
     "pullRequestMerge": false,
     "readyForReview": false
   },
-  "nextGate": "Apply migration 20260926235900 and execute rollback-only/read-only validation 048 in staging only under a new explicit staging authorization bound to the then-current PR HEAD. Do not grant runtime snapshot/publication authority, scheduler, production, merge or Ready.",
+  "nextGate": "Treat ANA-A09 live segmented runtime authority-marker alignment as staging-certified and repository-reconciled. Do not reopen it without drift. Runtime snapshot authority and append-only snapshot publication remain false and require separate explicit authorization; ANA remains 3/6.",
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Immutable category/state segmentation is staging-certified and repository runtime segmentation authority is granted. A forward-only repository-only candidate now exists to align the live runtimeSegmentationAuthority marker from false to true without changing compute semantics. The candidate is unapplied and validation 048 is pending; runtime snapshot/publication remain false, so ANA stays 3/6."
+    "reason": "Immutable category/state segmentation is staging-certified, repository runtime segmentation authority is granted, and the forward-only live runtimeSegmentationAuthority marker alignment is applied and validation 048 passed in staging. Historical validation-047 evidence remains preserved as the pre-alignment observation. Runtime snapshot/publication remain false, so ANA stays 3/6."
   },
   "authorization": {
     "token": "authorize-ana-a09-immutable-funnel-segmentation-runtime-candidate-repository-only head=1d652625a7944edd102d79d4b61e1dbc787b28a0 matrix=v1.3.132 contractId=ana-a09-immutable-funnel-segmentation-v1",
@@ -151,8 +151,8 @@
     "runtimeSegmentationAuthority": true,
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false,
-    "liveRuntimeFlagAligned": false,
-    "liveObservedRuntimeSegmentationAuthority": false
+    "liveRuntimeFlagAligned": true,
+    "liveObservedRuntimeSegmentationAuthority": true
   },
   "stagingEvidence": {
     "artifact": "reports/generated/ana-a09-immutable-funnel-segmentation-runtime-staging-evidence.json",
@@ -228,9 +228,9 @@
     "migration": "supabase/migrations/20260926235900_ana_a09_live_segmentation_runtime_authority_alignment.sql",
     "validationSql": "supabase/tests/048_ana_a09_live_segmentation_runtime_authority_alignment_validation.sql",
     "candidatePrepared": true,
-    "migrationApplied": false,
-    "stagingValidated": false,
-    "validation048Status": "pending",
+    "migrationApplied": true,
+    "stagingValidated": true,
+    "validation048Status": "PASS",
     "sourceFunction": "public.compute_analytics_canonical_funnel_segmented_v1",
     "expectedMarkerChange": {
       "key": "runtimeSegmentationAuthority",
@@ -247,6 +247,52 @@
       "snapshotPublicationAuthority": false,
       "schedulerAuthority": false,
       "globalProjectionUnaffected": true
-    }
+    },
+    "stagingMigrationVersion": "20260927003122",
+    "stagingMigrationName": "ana_a09_live_segmentation_runtime_authority_alignment",
+    "stagingEvidenceArtifact": "reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence.json",
+    "stagingEvidenceBlobSha": "2b7bc29528a6302c678bffe16059cde32f8c1028",
+    "liveRuntimeFlagAligned": true,
+    "liveObservedRuntimeSegmentationAuthority": true
+  },
+  "liveRuntimeAuthorityAlignmentStagingAuthorization": {
+    "token": "authorize-ana-a09-live-segmentation-runtime-authority-alignment-staging head=27785ae3ff8a587eb4bc5411eddb87a057995cfe matrix=v1.3.132 contractId=ana-a09-live-segmentation-runtime-authority-alignment-candidate-v1 migration=20260926235900 validation=048 stagingEvidenceBlobSha=48ce9933a209232ab5619fdbd1f28b1fff223a4e expectedLiveObservedRuntimeSegmentationAuthority=false runtimeSegmentationAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "50b9e3e65f7cca9b3c67b45fa61f283c855c9cbcc167554aea718e51b8104a38",
+    "authorizedRepositoryHead": "27785ae3ff8a587eb4bc5411eddb87a057995cfe",
+    "matrixVersion": "1.3.132",
+    "contractId": "ana-a09-live-segmentation-runtime-authority-alignment-candidate-v1",
+    "repositoryMigration": "20260926235900",
+    "validation": "048",
+    "stagingOnly": true,
+    "runtimeSegmentationAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "consumed": true
+  },
+  "liveRuntimeAuthorityAlignmentEvidence": {
+    "artifact": "reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence.json",
+    "blobSha": "2b7bc29528a6302c678bffe16059cde32f8c1028",
+    "stagingMigrationVersion": "20260927003122",
+    "validation048": "PASS",
+    "liveObservedRuntimeSegmentationAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "a09SegmentationCronJobs": 0
+  },
+  "liveRuntimeAuthorityAlignmentEvidenceReconciliationAuthorization": {
+    "token": "authorize-ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence-reconciliation-repository-only head=27785ae3ff8a587eb4bc5411eddb87a057995cfe matrix=v1.3.132 contractId=ana-a09-live-segmentation-runtime-authority-alignment-candidate-v1 repositoryMigration=20260926235900 stagingMigrationVersion=20260927003122 validation=048 validation048=PASS runtimeSegmentationAuthority=true liveObservedRuntimeSegmentationAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "7ceb2b5b4b7025ae1e99802983a88d4e118ade3139b4d72c60ec0d72b83bac2b",
+    "authorizedRepositoryHead": "27785ae3ff8a587eb4bc5411eddb87a057995cfe",
+    "matrixVersion": "1.3.132",
+    "contractId": "ana-a09-live-segmentation-runtime-authority-alignment-candidate-v1",
+    "repositoryOnly": true,
+    "stagingMutationAuthorized": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
   }
 }
