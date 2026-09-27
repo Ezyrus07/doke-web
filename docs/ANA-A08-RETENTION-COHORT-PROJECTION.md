@@ -76,9 +76,20 @@ Current staging-certified state:
 - `stagingValidated=true`;
 - `validation049Status=PASS`;
 - `runtimeProjectorInstalled=true`;
-- `runtimeProjectionAuthority=false`;
+- repository `runtimeProjectionAuthority=true`;
+- certified live observation `runtimeProjectionAuthority=false`;
+- `liveRuntimeFlagAligned=false`;
 - `runtimeSnapshotAuthority=false`;
 - `snapshotPublicationAuthority=false`;
 - `schedulerAuthority=false`.
 
 The staging evidence is recorded in `reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json`. Installation and validation do not authorize runtime projection, snapshot publication, scheduler activation, production, merge or Ready.
+
+
+## Repository runtime projection authority
+
+The repository-only authority grant is bound to staging evidence blob `3249080dec64c1aeec1119309dbf1db9992fb85c` and validation 049 PASS.
+
+This grant changes **contract-layer authority only**. It performs no staging mutation and does not edit the installed SQL function. The last certified live observation remains `runtimeProjectionAuthority=false`.
+
+A separate forward-only candidate is required before any live marker can change to true. Snapshot publication, scheduler, production, merge, Ready and ANA maturity remain unchanged.
