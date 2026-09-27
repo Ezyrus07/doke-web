@@ -3,6 +3,7 @@ const fs=require('fs');const path=require('path');const root=path.resolve(__dirn
 const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260926235900_ana_a09_live_segmentation_runtime_authority_alignment.sql'),'utf8');
 const v=fs.readFileSync(path.join(root,'supabase/tests/048_ana_a09_live_segmentation_runtime_authority_alignment_validation.sql'),'utf8');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-immutable-funnel-segmentation.json'),'utf8'));
+const e=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence.json'),'utf8'));
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('five true live markers',(sql.match(/'runtimeSegmentationAuthority',true/g)||[]).length===5);
 check('zero false live markers',(sql.match(/'runtimeSegmentationAuthority',false/g)||[]).length===0);
@@ -13,7 +14,8 @@ check('canonical impression preserved',sql.includes("'journeySegmentAnchor','can
 check('no source mutation',!sql.match(/insert\s+into\s+/i)&&!sql.match(/delete\s+from\s+/i));
 check('no scheduler',!sql.includes('cron.schedule'));
 check('validation read-only rollback',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v)&&!v.match(/insert\s+into\s+/i)&&!v.match(/delete\s+from\s+/i));
-check('next gate staging-only',c.nextGate?.includes('20260926235900')&&c.nextGate?.includes('validation 048')&&c.liveRuntimeAuthorityAlignmentCandidate?.authorization?.stagingApplyAuthorized===false);
+check('staging closure aligned',c.liveRuntimeAuthorityAlignmentCandidate?.migrationApplied===true&&c.liveRuntimeAuthorityAlignmentCandidate?.stagingValidated===true&&c.liveRuntimeAuthorityAlignmentCandidate?.validation048Status==='PASS'&&c.liveRuntimeAuthorityAlignmentCandidate?.liveRuntimeFlagAligned===true&&c.liveRuntimeAuthorityAlignmentCandidate?.liveObservedRuntimeSegmentationAuthority===true);
+check('evidence keeps publication gated',e.validation048?.status==='PASS'&&e.runtimePostconditions?.runtimeSegmentationAuthority===true&&e.runtimePostconditions?.runtimeSnapshotAuthority===false&&e.runtimePostconditions?.snapshotPublicationAllowed===false&&e.runtimePostconditions?.a09SegmentationCronJobs===0);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:'ana-a09-live-segmentation-runtime-authority-alignment-candidate-v1',total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;
