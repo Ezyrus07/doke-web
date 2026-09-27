@@ -28,11 +28,11 @@
     'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
     'novidades.html': { key: 'novidades', active: 'notifications', search: false, title: 'Novidades', bottomNav: false },
     'ajuda.html': { key: 'ajuda', active: 'settings', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'tornar-profissional.html': { key: 'tornar-profissional', active: 'profile', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'verificacao-profissional.html': { key: 'verificacao-profissional', active: 'profile', search: false, title: 'Verificação profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'orcamento.html': { key: 'orcamento', active: 'orders', search: false, title: 'Orçamento' },
-    'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'pagamento-profissional.html': { key: 'pagamento-profissional', active: 'orders', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'orders', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
