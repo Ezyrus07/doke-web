@@ -93,3 +93,12 @@ The repository-only authority grant is bound to staging evidence blob `3249080de
 This grant changes **contract-layer authority only**. It performs no staging mutation and does not edit the installed SQL function. The last certified live observation remains `runtimeProjectionAuthority=false`.
 
 A separate forward-only candidate is required before any live marker can change to true. Snapshot publication, scheduler, production, merge, Ready and ANA maturity remain unchanged.
+
+
+## Live runtime projection authority alignment candidate
+
+Repository runtime projection authority is granted, while the certified live function still reports `runtimeProjectionAuthority=false`. A forward-only candidate is prepared at `supabase/migrations/20260927021000_ana_a08_live_retention_runtime_projection_authority_alignment.sql` with rollback-only validation `supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql`.
+
+The candidate changes exactly **2** `runtimeProjectionAuthority` markers from `false` to `true` in `public.compute_analytics_retention_cohort_v1`. Its function body must otherwise remain byte-equivalent to the installed candidate definition for audit purposes. It preserves service-role-only execution, immutable A04 dimensions, A07 watermark enforcement, compute-only behavior, `runtimeSnapshotAuthority=false`, `snapshotPublicationAllowed=false` and `schedulerAuthority=false`.
+
+Current state remains `migrationApplied=false`, `stagingValidated=false`, `validation050Status=pending`. Applying this migration requires a separate exact-head staging authorization.
