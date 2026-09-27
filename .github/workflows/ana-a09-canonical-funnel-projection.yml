@@ -9,6 +9,7 @@ name: ANA-A09 Canonical Funnel Projection
 # ANA-A09 immutable segmentation staging evidence reconciliation certification
 # ANA-A09 immutable segmentation staging evidence post-matrix certification
 # ANA-A09 repository segmentation authority post-matrix certification
+# ANA-A09 live segmentation authority alignment candidate certification
 
 on:
   pull_request:
@@ -34,6 +35,11 @@ on:
       - 'scripts/test-ana-a09-immutable-funnel-segmentation.js'
       - 'supabase/migrations/20260925145500_ana_a09_immutable_funnel_segmentation_runtime.sql'
       - 'supabase/tests/047_ana_a09_immutable_funnel_segmentation_runtime_validation.sql'
+      - 'supabase/migrations/20260926235900_ana_a09_live_segmentation_runtime_authority_alignment.sql'
+      - 'supabase/tests/048_ana_a09_live_segmentation_runtime_authority_alignment_validation.sql'
+      - 'scripts/audit-ana-a09-live-segmentation-runtime-authority-alignment-candidate.js'
+      - 'scripts/test-ana-a09-live-segmentation-runtime-authority-alignment-candidate.js'
+      - 'reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-candidate-handoff.json'
       - 'reports/generated/ana-a09-immutable-funnel-segmentation-runtime-staging-evidence.json'
       - 'config/ana-a07-a09-funnel-freshness-policy-candidate.json'
       - 'supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql'
@@ -81,6 +87,8 @@ jobs:
           node --check backend/modules/analytics/immutable-funnel-segmentation.js
           node --check scripts/audit-ana-a09-immutable-funnel-segmentation.js
           node --check scripts/test-ana-a09-immutable-funnel-segmentation.js
+          node --check scripts/audit-ana-a09-live-segmentation-runtime-authority-alignment-candidate.js
+          node --check scripts/test-ana-a09-live-segmentation-runtime-authority-alignment-candidate.js
           node --check scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
@@ -93,6 +101,10 @@ jobs:
         run: npm run audit:ana-a09-immutable-funnel-segmentation
       - name: Immutable funnel segmentation conformance
         run: npm run test:ana-a09-immutable-funnel-segmentation
+      - name: Live segmentation authority alignment candidate audit
+        run: node scripts/audit-ana-a09-live-segmentation-runtime-authority-alignment-candidate.js
+      - name: Live segmentation authority alignment candidate conformance
+        run: node scripts/test-ana-a09-live-segmentation-runtime-authority-alignment-candidate.js
       - name: Runtime canary contract audit
         run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
       - name: Runtime canary contract conformance

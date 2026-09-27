@@ -93,11 +93,11 @@
     "pullRequestMerge": false,
     "readyForReview": false
   },
-  "nextGate": "Prepare a forward-only repository-only live runtime segmentation flag alignment candidate that changes only the segmented compute runtime authority marker from false to true while preserving compute-only behavior, service-role execution, zero snapshot/publication authority, zero scheduler authority and the certified CAT-A06/A07 segmentation semantics. Any staging application requires separate explicit authorization.",
+  "nextGate": "Apply migration 20260926235900 and execute rollback-only/read-only validation 048 in staging only under a new explicit staging authorization bound to the then-current PR HEAD. Do not grant runtime snapshot/publication authority, scheduler, production, merge or Ready.",
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Immutable category/state segmentation is installed and validation 047 is PASS in staging, and explicit repository-only runtime segmentation authority is now granted using certified evidence blob 48ce9933a209232ab5619fdbd1f28b1fff223a4e. The live segmented compute observation still reports runtimeSegmentationAuthority=false and has not been mutated; runtime snapshot/publication remain false, so ANA stays 3/6."
+    "reason": "Immutable category/state segmentation is staging-certified and repository runtime segmentation authority is granted. A forward-only repository-only candidate now exists to align the live runtimeSegmentationAuthority marker from false to true without changing compute semantics. The candidate is unapplied and validation 048 is pending; runtime snapshot/publication remain false, so ANA stays 3/6."
   },
   "authorization": {
     "token": "authorize-ana-a09-immutable-funnel-segmentation-runtime-candidate-repository-only head=1d652625a7944edd102d79d4b61e1dbc787b28a0 matrix=v1.3.132 contractId=ana-a09-immutable-funnel-segmentation-v1",
@@ -203,5 +203,50 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "readyForReviewAuthority": false
+  },
+  "liveRuntimeAuthorityAlignmentCandidate": {
+    "contractId": "ana-a09-live-segmentation-runtime-authority-alignment-candidate-v1",
+    "authorization": {
+      "token": "authorize-ana-a09-live-segmentation-runtime-authority-alignment-candidate-repository-only head=d1e8e781e78ca5d7271fc77b1d8f476e32c0f196 matrix=v1.3.132 contractId=ana-a09-immutable-funnel-segmentation-v1 stagingEvidenceBlobSha=48ce9933a209232ab5619fdbd1f28b1fff223a4e runtimeSegmentationAuthority=true liveObservedRuntimeSegmentationAuthority=false",
+      "digestSha256": "187618de07b8477b83702a36e0e68c856eb603c3bc96277515f4355ca17c2cd7",
+      "authorizedRepositoryHead": "d1e8e781e78ca5d7271fc77b1d8f476e32c0f196",
+      "matrixVersion": "1.3.132",
+      "sourceContractId": "ana-a09-immutable-funnel-segmentation-v1",
+      "stagingEvidenceBlobSha": "48ce9933a209232ab5619fdbd1f28b1fff223a4e",
+      "repositoryOnly": true,
+      "candidatePreparationAuthorized": true,
+      "stagingApplyAuthorized": false,
+      "stagingReadAuthorized": false,
+      "liveRuntimeFlagMutationAuthorized": false,
+      "runtimeSnapshotAuthority": false,
+      "snapshotPublicationAuthority": false,
+      "schedulerAuthority": false,
+      "productionAuthority": false,
+      "mergeAuthority": false,
+      "readyForReviewAuthority": false
+    },
+    "migration": "supabase/migrations/20260926235900_ana_a09_live_segmentation_runtime_authority_alignment.sql",
+    "validationSql": "supabase/tests/048_ana_a09_live_segmentation_runtime_authority_alignment_validation.sql",
+    "candidatePrepared": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "validation048Status": "pending",
+    "sourceFunction": "public.compute_analytics_canonical_funnel_segmented_v1",
+    "expectedMarkerChange": {
+      "key": "runtimeSegmentationAuthority",
+      "from": false,
+      "to": true,
+      "occurrences": 5
+    },
+    "preservedBoundaries": {
+      "computeOnly": true,
+      "catA06A07Semantics": true,
+      "canonicalImpressionAnchor": true,
+      "serviceRoleOnlyExecution": true,
+      "runtimeSnapshotAuthority": false,
+      "snapshotPublicationAuthority": false,
+      "schedulerAuthority": false,
+      "globalProjectionUnaffected": true
+    }
   }
 }
