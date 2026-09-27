@@ -220,8 +220,10 @@
   },
   "activationRequirements": [
     "keep runtime snapshot and snapshot publication authority false until a separately authorized append-only publication gate closes",
-    "materialize any live global runtimeAuthority=true alignment only through a forward-only staging change under separate authorization",
-    "treat immutable category/state segmented compute runtime authority as staging-aligned and validation-048-certified; do not reopen without drift, and keep runtime snapshot/publication authority behind separate explicit gates"
+    "treat the A09 global snapshot payload adapter as repository-only and unapplied until a separate exact-head staging authorization applies migration 20260927230000 and validation 051 passes",
+    "do not infer append execution, snapshot mutation, scheduler authority or maturity promotion from payload-shape readiness",
+    "materialize any live global runtimeAuthority=true alignment only through a separate forward-only staging change under separate authorization",
+    "treat immutable category/state segmented compute runtime authority as staging-aligned and validation-048-certified; do not reopen without drift"
   ],
   "catLiquidityBlocker": {
     "status": "liquidity_runtime_closed_outside_a09",
@@ -254,7 +256,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "Global A09 runtime/policies/canaries remain certified. Immutable category/state segmentation is staging-certified, repository runtime segmentation authority is granted, and live segmented runtime authority-marker alignment now passes validation 048 in staging. Runtime snapshot/publication remain false, so ANA stays 3/6."
+    "reason": "Global and segmented compute authorities remain certified at their current gates. The global funnel snapshot payload adapter is repository-prepared but unapplied; runtime snapshot/publication remain false, so ANA stays 3/6."
   },
   "runtimeCandidate": {
     "status": "staging_applied_validation_042_pass_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
@@ -360,5 +362,38 @@
     "productionAuthorized": false,
     "mergeAuthorized": false,
     "readyForReviewAuthorized": false
+  },
+  "snapshotPayloadAdapterCandidate": {
+    "contractId": "ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1",
+    "configPath": "config/ana-a09-canonical-funnel-snapshot-payload-adapter.json",
+    "migration": "supabase/migrations/20260927230000_ana_a09_canonical_funnel_snapshot_payload_adapter.sql",
+    "validationSql": "supabase/tests/051_ana_a09_canonical_funnel_snapshot_payload_adapter_validation.sql",
+    "adapterFunction": "public.compute_analytics_canonical_funnel_snapshot_payloads_v1",
+    "scope": "global_funnel_only",
+    "metricCount": 8,
+    "candidatePrepared": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "validation051Status": "pending",
+    "appendInvoked": false,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "migrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
+    "configBlobSha": "a800e169d0d22ef9e0e9b864079af62fe044c920"
+  },
+  "snapshotPublicationReadiness": {
+    "payloadAdapterContractId": "ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1",
+    "payloadAdapterCandidatePrepared": true,
+    "payloadAdapterStagingValidated": false,
+    "payloadSchemaAuthority": "ANA-A04 append_analytics_metric_snapshot_v1",
+    "revisionAuthority": "ANA-A05",
+    "activeFreshnessPolicyAuthority": "ANA-A07/A09 r1",
+    "globalPayloadScopeOnly": true,
+    "segmentedPayloadPublicationCovered": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false
   }
 }
