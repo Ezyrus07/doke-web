@@ -53,9 +53,13 @@
     "appendRpc": "public.append_analytics_metric_snapshot_v1",
     "appendInvokedByCandidate": false,
     "appendOnlyRequired": true,
+    "payloadAdapterContractId": "ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1",
+    "payloadAdapterCandidatePrepared": true,
+    "payloadAdapterStagingValidated": false,
     "lateFactRevisionAuthority": "ANA-A05",
     "publicationAllowed": false,
-    "blockingReason": "RUNTIME_SNAPSHOT_PUBLICATION_AUTHORITY_PENDING"
+    "runtimeSnapshotAuthority": false,
+    "blockingReason": "SNAPSHOT_PAYLOAD_ADAPTER_STAGING_VALIDATION_AND_PUBLICATION_AUTHORITY_PENDING"
   },
   "validationPlan": {
     "validation042Status": "passed",
@@ -74,7 +78,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The global projector remains staging-certified. Immutable category/state segmentation is staging-certified with repository runtime segmentation authority granted, and the live segmented runtime authority marker is now aligned in staging with validation 048 PASS. Runtime snapshot/publication remain false, so ANA stays 3/6."
+    "reason": "The global projector remains staging-certified and repository runtime projection authority remains granted. The global snapshot payload adapter is repository-ready but not applied or staging-validated; snapshot/publication remain false, so ANA stays 3/6."
   },
   "runtimeEvidence": {
     "artifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json",
@@ -188,5 +192,26 @@
     "stagingEvidenceBlobSha": "2b7bc29528a6302c678bffe16059cde32f8c1028",
     "stagingApplyAuthorizationConsumed": true,
     "globalRuntimeUnaffectedByAlignment": true
+  },
+  "snapshotPayloadAdapterCandidate": {
+    "contractId": "ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1",
+    "configPath": "config/ana-a09-canonical-funnel-snapshot-payload-adapter.json",
+    "migration": "supabase/migrations/20260927230000_ana_a09_canonical_funnel_snapshot_payload_adapter.sql",
+    "validationSql": "supabase/tests/051_ana_a09_canonical_funnel_snapshot_payload_adapter_validation.sql",
+    "adapterFunction": "public.compute_analytics_canonical_funnel_snapshot_payloads_v1",
+    "scope": "global_funnel_only",
+    "metricCount": 8,
+    "candidatePrepared": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "validation051Status": "pending",
+    "appendInvoked": false,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "migrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
+    "configBlobSha": "a800e169d0d22ef9e0e9b864079af62fe044c920"
   }
 }
