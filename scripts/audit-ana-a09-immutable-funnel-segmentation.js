@@ -11,7 +11,7 @@ const a11=read('config/ana-a11-liquidity-freshness-policy-derivation.json');
 const sql=textFile('supabase/migrations/20260925145500_ana_a09_immutable_funnel_segmentation_runtime.sql');
 const validation=textFile('supabase/tests/047_ana_a09_immutable_funnel_segmentation_runtime_validation.sql');
 const stagingEvidence=read('reports/generated/ana-a09-immutable-funnel-segmentation-runtime-staging-evidence.json');
-const alignmentEvidence=JSON.parse(read('reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence.json'));
+const alignmentEvidence=read('reports/generated/ana-a09-live-segmentation-runtime-authority-alignment-staging-evidence.json');
 const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
 check('contract id',seg.CONTRACT_ID===c.contractId);
 check('repository segmentation authority live flag aligned',c.scope==='staging_runtime_installed_validation_048_pass_repository_segmentation_authority_granted_live_flag_aligned'&&c.status==='staging_runtime_installed_validation_048_pass_repository_runtime_segmentation_authority_granted_live_flag_aligned'&&c.runtimeSegmentationAuthorityGrant?.authorizedRepositoryHead==='cb756b14e29a3ce1faa74710fbe3fca0fbe804e2'&&c.runtimeSegmentationAuthorityGrant?.digestSha256==='6ff5743671c83727656744c820a848ce2a57fcd6ecf11bcb208df92f081d7741'&&c.runtimeSegmentationAuthorityGrant?.stagingEvidenceBlobSha==='48ce9933a209232ab5619fdbd1f28b1fff223a4e'&&c.runtimeSegmentationAuthorityGrant?.repositoryOnly===true&&c.runtimeSegmentationAuthorityGrant?.runtimeSegmentationAuthority===true&&c.runtimeSegmentationAuthorityGrant?.liveRuntimeFlagMutationAuthorized===false);
