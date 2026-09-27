@@ -174,7 +174,7 @@
     "mergeAuthority": false,
     "readyForReviewAuthority": false
   },
-  "nextGate": "Repository runtime projection authority is granted, but the certified live observation remains runtimeProjectionAuthority=false. The next safe gate is a separate repository-only forward candidate to align only the live marker false→true; snapshot/publication, scheduler, production, merge, Ready and maturity remain unauthorized.",
+  "nextGate": "Forward-only ANA-A08 live runtimeProjectionAuthority alignment candidate is repository-ready but unapplied. After exact-head CI and canonical Matrix refresh are green, request separate staging-only authorization to apply migration 20260927021000 and execute rollback-only validation 050. Snapshot/publication, scheduler, production, merge, Ready and maturity remain unauthorized.",
   "stagingEvidence": {
     "artifact": "reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json",
     "blobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c",
@@ -235,5 +235,58 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "readyForReviewAuthority": false
+  },
+  "liveRuntimeProjectionAuthorityAlignmentCandidate": {
+    "contractId": "ana-a08-live-retention-runtime-projection-authority-alignment-candidate-v1",
+    "authorization": {
+      "token": "authorize-ana-a08-live-retention-runtime-projection-authority-alignment-candidate-repository-only head=e74eee9ddccd8b358e6555dec326cfdcdb429679 matrix=v1.3.132 contractId=ana-a08-retention-cohort-projection-v1 stagingEvidenceBlobSha=3249080dec64c1aeec1119309dbf1db9992fb85c validation049=PASS runtimeProjectorInstalled=true runtimeProjectionAuthority=true liveObservedRuntimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+      "digestSha256": "51d4e232c8acc71acdfe03b6d72d5addb551976aa05e043f64b58b0fb7851b8d",
+      "authorizedRepositoryHead": "e74eee9ddccd8b358e6555dec326cfdcdb429679",
+      "matrixVersion": "1.3.132",
+      "sourceContractId": "ana-a08-retention-cohort-projection-v1",
+      "stagingEvidenceBlobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c",
+      "validation049": "PASS",
+      "repositoryOnly": true,
+      "candidatePreparationAuthorized": true,
+      "stagingApplyAuthorized": false,
+      "stagingReadAuthorized": false,
+      "liveRuntimeFlagMutationAuthorized": false,
+      "runtimeSnapshotAuthority": false,
+      "snapshotPublicationAuthority": false,
+      "schedulerAuthority": false,
+      "productionAuthority": false,
+      "mergeAuthority": false,
+      "readyForReviewAuthority": false
+    },
+    "migration": "supabase/migrations/20260927021000_ana_a08_live_retention_runtime_projection_authority_alignment.sql",
+    "validationSql": "supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql",
+    "candidatePrepared": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "validation050Status": "pending",
+    "sourceFunction": "public.compute_analytics_retention_cohort_v1",
+    "expectedMarkerChange": {
+      "key": "runtimeProjectionAuthority",
+      "from": false,
+      "to": true,
+      "occurrences": 2
+    },
+    "sourceLiveObservedRuntimeProjectionAuthority": false,
+    "targetRuntimeProjectionAuthority": true,
+    "preservedBoundaries": {
+      "computeOnly": true,
+      "serviceRoleOnlyExecution": true,
+      "immutableA04Dimensions": true,
+      "a07Watermark": true,
+      "canonicalClientIdOnly": true,
+      "firstCompletedOrderCohortAnchor": true,
+      "differentOrderRepeat": true,
+      "crossSegmentRepeatCounts": true,
+      "currentServiceJoinAllowed": false,
+      "rehireInferred": false,
+      "runtimeSnapshotAuthority": false,
+      "snapshotPublicationAuthority": false,
+      "schedulerAuthority": false
+    }
   }
 }
