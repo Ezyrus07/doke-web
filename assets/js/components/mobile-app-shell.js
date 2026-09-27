@@ -37,6 +37,23 @@
     'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'orders', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
 
+  var SHELL_PRESENTATION = {
+    pedidos: { leading: 'profile', actions: ['search'] },
+    mensagens: { leading: 'profile', actions: ['search', 'notifications'] },
+    notificacoes: { leading: 'profile', actions: ['search', 'filters'] },
+    comunidade: { leading: 'profile', actions: ['search', 'community-create'] },
+    'comunidade-interna': { leading: 'back', backHref: 'comunidade.html', actions: ['search'] },
+    carteira: { leading: 'profile', actions: ['wallet-search', 'wallet-withdraw'] },
+    perfil: { leading: 'profile', actions: ['search-link', 'notifications'] },
+    'detalhe-anuncio': { leading: 'back', backHref: 'resultados.html', actions: [] },
+    configuracoes: { leading: 'profile', actions: ['search-link'] },
+    'anunciar-servico': { leading: 'back', backHref: 'owner-profile', actions: [] },
+    'pagamento-profissional': { leading: 'back', backHref: 'pedidos.html', actions: [] },
+    'avaliacao-profissional': { leading: 'back', backHref: 'pedidos.html', actions: [] },
+    'tornar-profissional': { leading: 'back', backHref: 'owner-profile', actions: [] },
+    'verificacao-profissional': { leading: 'back', backHref: 'owner-profile', actions: [] }
+  };
+
   var ICONS = {
     bell: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg>',
     back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>',
@@ -167,6 +184,27 @@
 
   function usesContextActions(cfg) {
     return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'comunidade-interna', 'carteira', 'notificacoes', 'perfil'].indexOf(cfg.key) !== -1);
+  }
+
+  function shellPresentation(cfg) {
+    return cfg && SHELL_PRESENTATION[cfg.key] ? SHELL_PRESENTATION[cfg.key] : null;
+  }
+
+  function shellBackHref(presentation) {
+    if (!presentation || !presentation.backHref) return 'index.html';
+    return presentation.backHref === 'owner-profile' ? ownerProfileHref() : presentation.backHref;
+  }
+
+  function createShellLeading(cfg) {
+    var presentation = shellPresentation(cfg);
+    if (presentation && presentation.leading === 'back') {
+      return '<a class="doke-mobile-shell__leading doke-mobile-shell__back" href="' + shellBackHref(presentation) + '" aria-label="Voltar">' + ICONS.back + '</a>';
+    }
+    return [
+      '<button class="doke-mobile-shell__leading doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta">',
+      '  <span class="doke-mobile-shell__avatar">' + accountState().initials + '</span>',
+      '</button>'
+    ].join('');
   }
 
   function queryValue() {
@@ -337,7 +375,25 @@
     return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Focar busca">' + ICONS.search + '</button>';
   }
 
+  function createShellAction(name, cfg) {
+    if (name === 'search') return createShellSearchButton();
+    if (name === 'search-link') return '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>';
+    if (name === 'notifications') return '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>';
+    if (name === 'filters') return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>';
+    if (name === 'community-create') return '<button class="doke-mobile-shell__quick-action" type="button" data-community-create-shell aria-label="Criar comunidade">' + ICONS.plus + '</button>';
+    if (name === 'wallet-search') return '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-search aria-label="Buscar no extrato">' + ICONS.search + '</button>';
+    if (name === 'wallet-withdraw') return '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-withdraw aria-label="Sacar saldo">' + ICONS.withdraw + '</button>';
+    return '';
+  }
+
   function createQuickActions(cfg) {
+    var presentation = shellPresentation(cfg);
+    if (presentation) {
+      return presentation.actions.map(function (name) {
+        return createShellAction(name, cfg);
+      }).join('');
+    }
+
     if (!usesContextActions(cfg)) {
       var baseActions = [];
 
@@ -361,65 +417,34 @@
       return baseActions.join('');
     }
 
-    if (cfg.key === 'comunidade') {
-      return [
-        createShellSearchDisclosure(),
-        '<button class="doke-mobile-shell__quick-action" type="button" data-community-code-shell aria-label="Entrar por código">' + ICONS.communityCode + '</button>',
-        '<button class="doke-mobile-shell__quick-action" type="button" data-community-create-shell aria-label="Criar comunidade">' + ICONS.plus + '</button>',
-        '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>'
-      ].join('');
-    }
-
-    if (cfg.key === 'comunidade-interna') {
-      return [
-        '<a class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--back" href="comunidade.html" aria-label="Voltar para comunidades">' + ICONS.back + '</a>',
-        createShellSearchButton(),
-        '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar canais">' + ICONS.check + '</button>',
-        '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Filtrar canais">' + ICONS.sliders + '</button>'
-      ].join('');
-    }
-
-    if (cfg.key === 'carteira') {
-      return [
-        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-search aria-label="Buscar no extrato">' + ICONS.search + '</button>',
-        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-withdraw aria-label="Sacar saldo">' + ICONS.withdraw + '</button>',
-        '<button class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--active" type="button" data-wallet-shell-view="overview" data-wallet-mobile-view="overview" aria-label="Ver extrato">' + ICONS.orders + '</button>',
-        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-view="statistics" data-wallet-mobile-view="statistics" aria-label="Ver estatísticas">' + ICONS.chart + '</button>'
-      ].join('');
-    }
-
-    var buttons = [
-      ((cfg.key === 'pedidos' || cfg.key === 'notificacoes' || cfg.key === 'mensagens')
-        ? createShellSearchDisclosure()
-        : '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>'),
-      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',
-      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar">' + ICONS.check + '</button>'
-    ];
-
-    if (cfg.key === 'pedidos') {
-      buttons.push('<button class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--active" type="button" data-shell-agenda aria-label="Abrir agenda">' + ICONS.calendar + '</button>');
-    } else {
-      buttons.push('<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>');
-    }
-
-    return buttons.join('');
+    return '';
   }
 
-  function hasCompactHeaderActions(cfg) {
-    return Boolean(cfg && cfg.compactSearchButton && cfg.hideLocation && !usesContextActions(cfg));
+  function shellActionCount(cfg) {
+    var presentation = shellPresentation(cfg);
+    if (presentation) return presentation.actions.length;
+    if (cfg && cfg.compactSearchButton && cfg.hideLocation && !usesContextActions(cfg)) return 2;
+    return null;
+  }
+
+  function shellActionsClass(cfg) {
+    var count = shellActionCount(cfg);
+    var className = 'doke-mobile-shell__actions';
+    if (count === 0) return className + ' doke-mobile-shell__actions--empty';
+    if (count === 1) return className + ' doke-mobile-shell__actions--single';
+    if (count === 2) return className + ' doke-mobile-shell__actions--compact';
+    return className;
   }
 
   function createShell(cfg) {
     var shell = document.createElement('div');
-    var actionsClass = 'doke-mobile-shell__actions' + (hasCompactHeaderActions(cfg) ? ' doke-mobile-shell__actions--compact' : '');
+    var actionsClass = shellActionsClass(cfg);
     shell.className = 'doke-mobile-shell';
     shell.setAttribute('data-doke-mobile-shell', '');
     shell.innerHTML = [
       '<header class="doke-mobile-shell__topbar" aria-label="Cabeçalho mobile global">',
-      '  <button class="doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta">',
-      '    <span class="doke-mobile-shell__avatar">' + accountState().initials + '</span>',
-      '    <span class="doke-mobile-shell__hello">' + shellProfileTitle(cfg) + '</span>',
-      '  </button>',
+      createShellLeading(cfg),
+      '  <span class="doke-mobile-shell__title doke-mobile-shell__hello" data-shell-title>' + shellProfileTitle(cfg) + '</span>',
       '  <div class="' + actionsClass + '" data-shell-context-actions>',
       createQuickActions(cfg),
       '  </div>',
@@ -455,12 +480,15 @@
       if (!event || event.key === SESSION_KEY) syncAccountSurface();
     });
 
-    shell.querySelector('[data-shell-profile]').addEventListener('click', function (event) {
-      if (openMobileDrawerDirect()) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    });
+    var profileTrigger = shell.querySelector('[data-shell-profile]');
+    if (profileTrigger) {
+      profileTrigger.addEventListener('click', function (event) {
+        if (openMobileDrawerDirect()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      });
+    }
     var locationButton = shell.querySelector('[data-shell-location]');
     if (locationButton) {
       locationButton.addEventListener('click', function () {
