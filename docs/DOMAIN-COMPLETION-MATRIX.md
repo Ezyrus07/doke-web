@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1630 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1632 arquivos no escopo; 301 referências a localStorage; 85 a sessionStorage; 595 referências mock; 384 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 276 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 278 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -351,7 +351,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 279 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 281 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 20 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -546,7 +546,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1530 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1533 arquivos no escopo; 223 referências a localStorage; 76 a sessionStorage; 331 referências mock; 382 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1063,7 +1063,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 82 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 84 arquivos no escopo; 4 referências a localStorage; 10 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `service_metric_events`, `quote_template_application_events`, `quote_template_funnel_events`, `private.order_metric_events`, `private.analytics_behavior_events_v1`, `private.analytics_metric_snapshots_v1`, `private.analytics_reconciliation_runs_v1`, `private.analytics_data_quality_rollups_v1`, `private.analytics_metric_freshness_policies_v1`, `private.analytics_metric_publication_policies_v1`.
 
@@ -1136,6 +1136,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ANA-A09 live segmented runtime authority-marker alignment is closed in staging: repository migration 20260926235900 is recorded as staging migration 20260927003122; rollback-only validation 048 PASS; the live segmented compute exposes exactly 5 runtimeSegmentationAuthority=true markers and 0 false markers; anon/authenticated EXECUTE remain false, service_role EXECUTE remains true, runtimeSnapshotAuthority=false, snapshotPublicationAllowed=false and matching A09 segmentation cron jobs remain 0. Historical validation-047 evidence remains preserved as the pre-alignment observation. ANA stays 3/6.
 - ANA-A08 compute-only retention projector is installed in staging: repository migration 20260927010000 is recorded as staging migration 20260927015155 and rollback-only validation 049 PASS. The live function is service_role-only, reads canonical ORD metric events, uses the certified ANA-A07 ORD watermark, preserves immutable ANA-A04 service dimensions, performs no source mutation or snapshot append, and has zero retention cron jobs. runtimeProjectionAuthority=false, runtimeSnapshotAuthority=false, snapshotPublicationAuthority=false and schedulerAuthority=false remain explicit. ANA stays 3/6.
 - ANA-A08 explicit repository-only runtime projection authority is granted at source HEAD 1cb9d69e7e9e9e38aff64137a503571b6d0c83a9, bound to validation 049 PASS and certified staging-evidence blob 3249080dec64c1aeec1119309dbf1db9992fb85c. This grant changes contract-layer authority only: the historical live projector observation still reports runtimeProjectionAuthority=false and liveRuntimeFlagAligned=false, while runtime snapshot/publication, scheduler, production, merge and Ready remain false. ANA stays 3/6.
+- ANA-A08 live runtime projection authority alignment now has a separately authorized repository-only forward candidate: migration 20260927021000 plus rollback-only validation 050. The candidate changes exactly 2 runtimeProjectionAuthority markers false→true in public.compute_analytics_retention_cohort_v1 while the function body otherwise remains equivalent, preserves immutable A04 dimensions, ANA-A07 watermark, service-role-only execution, compute-only behavior, runtimeSnapshotAuthority=false, snapshotPublicationAuthority=false and schedulerAuthority=false. The candidate is unapplied, validation 050 is pending, the certified live observation remains runtimeProjectionAuthority=false and ANA stays 3/6.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Canonical taxonomy, server-side ingestion and technical TTL/rate/dedup policy are validated in staging; consent, retention, anonymization, holder-rights lifecycle and any broader client activation remain blocked by LEGAL-B03. _(Fase 15)_
@@ -1144,7 +1145,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Keep the browser analytics client disabled by default until the LEGAL-B03 consent/privacy lifecycle boundary and a controlled client-activation sublot are approved.
 - Treat ANA-A09 runtime projection authority as repository-granted. Any forward-only live runtimeAuthority alignment, runtime snapshot authority or append-only snapshot publication requires a separate explicit authorization; do not infer staging mutation or maturity promotion from this repository grant.
-- Treat ANA-A08 runtime projection authority as repository-granted. The live projector marker remains false; any forward-only live marker alignment requires a separate exact-head repository candidate authorization and a later separate staging authorization. Keep runtimeSnapshotAuthority=false, snapshotPublicationAuthority=false and schedulerAuthority=false.
+- Treat ANA-A08 runtime projection authority as repository-granted and the live-marker alignment candidate as repository-ready but unapplied. After exact-head CI/Matrix certification, require a separate exact-head staging authorization before applying migration 20260927021000 or executing validation 050. Keep runtimeSnapshotAuthority=false, snapshotPublicationAuthority=false and schedulerAuthority=false.
 - Treat ANA-A09 live segmented runtime authority-marker alignment as staging-certified and closed unless drift appears. Keep runtime snapshot/publication authority=false and require a separate explicit authorization for any publication or other mutable staging gate.
 - Treat ANA-A11 liquidity freshness/scheduler runtime as operationally closed in staging unless drift or a failed health condition is observed. Advance the next unresolved ANA maturity gate without reopening A11 or inferring a maturity promotion from this subgate alone.
 - Do not reactivate or duplicate the ANA-A11 scheduler, do not alter revision-1 policy values, and do not promote ANA above 3/6 from repository/CI evidence alone; any maturity change requires runtime evidence and the remaining domain gates.
@@ -1222,7 +1223,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3616 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3620 arquivos no escopo; 570 referências a localStorage; 162 a sessionStorage; 926 referências mock; 833 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
