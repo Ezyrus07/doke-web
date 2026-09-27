@@ -1,0 +1,90 @@
+{
+  "handoffId": "ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "sourceCheckpoint": {
+    "pr": 488,
+    "branch": "ana/ana-001-foundation",
+    "authorizedHead": "280914721b6da495b1f3cbc146f272a7d88e31bd",
+    "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+    "matrixVersion": "1.3.132",
+    "anaMaturity": "3/6"
+  },
+  "authorization": {
+    "token": "authorize-ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-repository-only head=280914721b6da495b1f3cbc146f272a7d88e31bd matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1 a09CanonicalConfigBlobSha=c46f08d5214ef41e7eca8f9694a810fb18fcaafa a09RuntimeReadinessBlobSha=3e4cb903e60adaf26ca3d237446b36659d9f9a0f a04SnapshotRuntimeBlobSha=64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5 a05ReconciliationRuntimeBlobSha=3bc753fe72a9a031ca43664ac28c8a659920c7ac freshnessPolicyConfigBlobSha=8b9ef1b01de43852101a9021da2423c4269079ba freshnessPolicyEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2 a09LiveEvidenceBlobSha=2b7bc29528a6302c678bffe16059cde32f8c1028 runtimeProjectionAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "6348b64c4c5e465b0ef62213eb6bc079a5c1bd314faa648f2dd0403453f3475d",
+    "repositoryOnly": true,
+    "stagingApplyAuthorized": false,
+    "stagingReadAuthorized": false,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "sourceBindings": {
+    "a09CanonicalConfigBlobSha": "c46f08d5214ef41e7eca8f9694a810fb18fcaafa",
+    "a09RuntimeReadinessBlobSha": "3e4cb903e60adaf26ca3d237446b36659d9f9a0f",
+    "a04SnapshotRuntimeBlobSha": "64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5",
+    "a05ReconciliationRuntimeBlobSha": "3bc753fe72a9a031ca43664ac28c8a659920c7ac",
+    "freshnessPolicyConfigBlobSha": "8b9ef1b01de43852101a9021da2423c4269079ba",
+    "freshnessPolicyEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+    "a09LiveEvidenceBlobSha": "2b7bc29528a6302c678bffe16059cde32f8c1028"
+  },
+  "candidate": {
+    "contractId": "ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1",
+    "configPath": "config/ana-a09-canonical-funnel-snapshot-payload-adapter.json",
+    "migration": "supabase/migrations/20260927230000_ana_a09_canonical_funnel_snapshot_payload_adapter.sql",
+    "validationSql": "supabase/tests/051_ana_a09_canonical_funnel_snapshot_payload_adapter_validation.sql",
+    "adapterFunction": "public.compute_analytics_canonical_funnel_snapshot_payloads_v1",
+    "scope": "global_funnel_only",
+    "metricCount": 8,
+    "candidatePrepared": true,
+    "migrationApplied": false,
+    "stagingValidated": false,
+    "validation051Status": "pending",
+    "appendInvoked": false,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "migrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
+    "configBlobSha": "a800e169d0d22ef9e0e9b864079af62fe044c920",
+    "auditScript": "scripts/audit-ana-a09-canonical-funnel-snapshot-payload-adapter.js",
+    "auditBlobSha": "9c0ce6292676293467211f062cafa7d4fcb9aa7c",
+    "conformanceScript": "scripts/test-ana-a09-canonical-funnel-snapshot-payload-adapter.js",
+    "conformanceBlobSha": "1b0274e87eec8dc16002076815ff161c99fe9261",
+    "docsPath": "docs/ANA-A09-CANONICAL-FUNNEL-SNAPSHOT-PAYLOAD-ADAPTER.md",
+    "docsBlobSha": "c12ebbc720aba1dc2d68ccafac2d303533383443"
+  },
+  "preservedBoundaries": [
+    "global-funnel-only",
+    "compute-only",
+    "no append invocation",
+    "no source mutation",
+    "service-role-only",
+    "reconciliationState=not_applicable",
+    "runtimeSnapshotAuthority=false",
+    "snapshotPublicationAuthority=false",
+    "schedulerAuthority=false",
+    "production=false",
+    "merge=false",
+    "Ready=false"
+  ],
+  "writesPerformed": {
+    "repository": true,
+    "staging": false,
+    "production": false
+  },
+  "blockers": [
+    "Candidate is unapplied; validation 051 is pending.",
+    "Global live runtimeAuthority alignment remains a separate gate if required before publication.",
+    "Runtime snapshot and snapshot publication authority remain false."
+  ],
+  "nextSafeAction": "After exact-head CI and canonical Matrix refresh pass, request separate staging-only authorization to apply migration 20260927230000 and execute rollback-only validation 051.",
+  "authorizationRequirement": "Next Safe Action is not authorization. Adapter staging apply/read, snapshot mutation/publication, scheduler, production, merge or Ready require separate explicit authorization."
+}
