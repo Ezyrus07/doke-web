@@ -1,0 +1,66 @@
+{
+  "handoffId": "ana-a08-live-retention-runtime-projection-authority-alignment-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A08",
+  "sourceCheckpoint": {
+    "pr": 488,
+    "branch": "ana/ana-001-foundation",
+    "head": "e74eee9ddccd8b358e6555dec326cfdcdb429679",
+    "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+    "matrixVersion": "1.3.132",
+    "anaMaturity": "3/6",
+    "stagingEvidenceBlobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c"
+  },
+  "authorization": {
+    "token": "authorize-ana-a08-live-retention-runtime-projection-authority-alignment-candidate-repository-only head=e74eee9ddccd8b358e6555dec326cfdcdb429679 matrix=v1.3.132 contractId=ana-a08-retention-cohort-projection-v1 stagingEvidenceBlobSha=3249080dec64c1aeec1119309dbf1db9992fb85c validation049=PASS runtimeProjectorInstalled=true runtimeProjectionAuthority=true liveObservedRuntimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "51d4e232c8acc71acdfe03b6d72d5addb551976aa05e043f64b58b0fb7851b8d",
+    "scope": "repository_only_candidate",
+    "repositoryOnly": true,
+    "stagingApplyAuthorized": false,
+    "stagingReadAuthorized": false,
+    "liveRuntimeFlagMutationAuthorized": false,
+    "runtimeProjectionAuthority": true,
+    "sourceLiveObservedRuntimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "lot": {
+    "objective": "Prepare a forward-only candidate that aligns only the live ANA-A08 runtimeProjectionAuthority marker false→true.",
+    "migration": "supabase/migrations/20260927021000_ana_a08_live_retention_runtime_projection_authority_alignment.sql",
+    "validation": "supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql",
+    "sourceFunction": "public.compute_analytics_retention_cohort_v1",
+    "expectedMarkerChange": {
+      "from": false,
+      "to": true,
+      "occurrences": 2
+    },
+    "preservedBoundaries": [
+      "compute-only",
+      "service-role-only",
+      "immutable A04 dimensions",
+      "A07 watermark",
+      "canonical client_id",
+      "first-completion cohort",
+      "different-order repeat",
+      "cross-segment repeat",
+      "snapshot/publication=false",
+      "scheduler=false"
+    ]
+  },
+  "writesPerformed": {
+    "repository": true,
+    "staging": false,
+    "production": false
+  },
+  "blockers": [
+    "Candidate is unapplied; validation 050 is pending.",
+    "Live observed runtimeProjectionAuthority remains false until separately authorized staging alignment.",
+    "Runtime snapshot/publication and scheduler authority remain false."
+  ],
+  "nextSafeAction": "After exact-head CI and Matrix refresh are green, request explicit staging-only authorization to apply migration 20260927021000 and execute rollback-only validation 050.",
+  "authorizationRequirement": "Next Safe Action is not authorization. Staging application requires a separate exact-head token."
+}
