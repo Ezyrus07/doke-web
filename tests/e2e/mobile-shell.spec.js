@@ -9,10 +9,11 @@ const pages = [
   { path: 'comunidade-interna.html', leading: 'back', actions: 1, bottomNav: true },
   { path: 'perfil.html', leading: 'profile', actions: 2, bottomNav: true },
   { path: 'detalhe-anuncio.html', leading: 'back', actions: 0, bottomNav: true },
+  { path: 'orcamento.html', leading: 'back', actions: 0, bottomNav: true },
   { path: 'carteira.html', leading: 'profile', actions: 2, bottomNav: true },
   { path: 'notificacoes.html', leading: 'profile', actions: 2, bottomNav: false },
-  { path: 'configuracoes.html', leading: 'profile', actions: 1, bottomNav: true },
-  { path: 'anunciar-servico.html', leading: 'back', actions: 0, bottomNav: true },
+  { path: 'configuracoes.html', leading: 'profile', actions: 1, bottomNav: false },
+  { path: 'anunciar-servico.html', leading: 'back', actions: 0, bottomNav: false },
 ];
 
 test.describe('PD-SHELL-001 mobile app shell', () => {
@@ -73,5 +74,80 @@ test.describe('PD-SHELL-001 mobile app shell', () => {
     await expect(actions.locator('a[href="notificacoes.html"]')).toHaveCount(0);
     await expect(actions.locator('[data-shell-search-trigger]')).toHaveCount(1);
     await expect(actions.locator('[data-shell-filter]')).toHaveCount(1);
+  });
+
+  test('compact search opens as a full-width second shell region and restores focus on Escape', async ({ page }) => {
+    await page.goto('/ajuda.html');
+    const shell = page.locator('.doke-mobile-shell');
+    const topbar = shell.locator('.doke-mobile-shell__topbar');
+    const trigger = shell.locator('[data-shell-search-trigger]');
+    const search = shell.locator('[data-shell-inline-search]');
+
+    await expect(search).toBeHidden();
+    await trigger.click();
+    await expect(search).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    const topbarBox = await topbar.boundingBox();
+    const searchBox = await search.boundingBox();
+    expect(topbarBox).not.toBeNull();
+    expect(searchBox).not.toBeNull();
+    expect(searchBox.y).toBeGreaterThanOrEqual(topbarBox.y + topbarBox.height);
+    expect(Math.abs(searchBox.width - topbarBox.width)).toBeLessThanOrEqual(1);
+
+    await search.locator('input').press('Escape');
+    await expect(search).toBeHidden();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toBeFocused();
+  });
+
+  test('long titles stay on one line without pushing actions out of the topbar', async ({ page }) => {
+    await page.goto('/configuracoes.html');
+    const title = page.locator('.doke-mobile-shell [data-shell-title]');
+    await title.evaluate((node) => {
+      node.textContent = 'Verificação profissional e configurações avançadas';
+    });
+    const style = await title.evaluate((node) => {
+      const computed = getComputedStyle(node);
+      return {
+        whiteSpace: computed.whiteSpace,
+        overflow: computed.overflow,
+        textOverflow: computed.textOverflow,
+      };
+    });
+    expect(style.whiteSpace).toBe('nowrap');
+    expect(style.overflow).toBe('hidden');
+    expect(style.textOverflow).toBe('ellipsis');
+  });
+});
+
+test.describe('PD-SHELL-001 tablet boundary', () => {
+  for (const viewport of [
+    { width: 608, height: 926 },
+    { width: 820, height: 1180 },
+  ]) {
+    test(`${viewport.width}x${viewport.height} keeps phone shell disabled`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.goto('/configuracoes.html');
+      await expect(page.locator('.doke-mobile-shell')).toHaveCount(0);
+      await expect(page.locator('.doke-mobile-bottom-nav')).toHaveCount(0);
+      const state = await page.evaluate(() => ({
+        mounted: document.body.classList.contains('doke-mobile-shell-mounted'),
+        overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+      }));
+      expect(state.mounted).toBe(false);
+      expect(state.overflow).toBe(false);
+    });
+  }
+});
+
+test.describe('PD-SHELL-001 desktop regression boundary', () => {
+  test.use({ viewport: { width: 1366, height: 768 } });
+
+  test('desktop does not mount the phone shell', async ({ page }) => {
+    await page.goto('/index.html');
+    await expect(page.locator('.doke-mobile-shell')).toHaveCount(0);
+    await expect(page.locator('.doke-mobile-bottom-nav')).toHaveCount(0);
+    await expect(page.locator('.app-header')).toBeVisible();
   });
 });
