@@ -3,8 +3,8 @@
   "domain": "ANA-001",
   "sourceHead": "6434e980c08d8c9dbc9e0fa44943590f31f926f2",
   "createdAt": "2026-09-21T22:15:00-03:00",
-  "scope": "staging_runtime_projector_installed_validation_049_pass_repository_runtime_projection_authority_granted_live_flag_unaligned",
-  "status": "staging_runtime_projector_installed_validation_049_pass_repository_runtime_projection_authority_granted_live_flag_unaligned",
+  "scope": "staging_runtime_projector_installed_validation_050_pass_repository_runtime_projection_authority_granted_live_flag_aligned",
+  "status": "staging_runtime_projector_installed_validation_050_pass_repository_runtime_projection_authority_granted_live_flag_aligned",
   "objective": "Materialize deterministic client-retention cohort semantics for repeat_request_30d and repeat_completion_90d from canonical ORD analytics projections without identity stitching or rehire inference.",
   "rootCause": {
     "missingMetric": "ANA-A04 declares retention.repeat_request_30d but has no corresponding projection helper.",
@@ -117,7 +117,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The ANA-A08 compute-only retention projector is installed and validation 049 passes in staging. Repository runtime projection authority is now explicitly granted, while the last certified live projector marker remains false. Runtime snapshot/publication/scheduler remain false, so ANA stays 3/6."
+    "reason": "The ANA-A08 compute-only retention projector is installed, validation 049 and 050 pass in staging, repository runtime projection authority is granted, and the live runtimeProjectionAuthority marker is aligned true. Runtime snapshot/publication/scheduler remain false, so ANA stays 3/6."
   },
   "runtimeCandidate": {
     "contractId": "ana-a08-retention-runtime-projector-candidate-v1",
@@ -151,8 +151,8 @@
     "stagingEvidenceArtifact": "reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json",
     "stagingEvidenceBlobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c",
     "runtimeProjectorInstalled": true,
-    "liveRuntimeFlagAligned": false,
-    "liveObservedRuntimeProjectionAuthority": false
+    "liveRuntimeFlagAligned": true,
+    "liveObservedRuntimeProjectionAuthority": true
   },
   "repositoryCandidateAuthorization": {
     "token": "authorize-ana-a08-retention-runtime-projector-candidate-repository-only head=6434e980c08d8c9dbc9e0fa44943590f31f926f2 matrix=v1.3.132 contractId=ana-a08-retention-cohort-projection-v1 a08ContractBlobSha=fe86cc919cf224a0c7008a3cea3aaa03af5402b2 a04RuntimeBlobSha=64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5 a07WatermarkBlobSha=9c2be354b5a0e5640ad7753257a3ca2308687e42 runtimeProjectionAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
@@ -174,7 +174,7 @@
     "mergeAuthority": false,
     "readyForReviewAuthority": false
   },
-  "nextGate": "Forward-only ANA-A08 live runtimeProjectionAuthority alignment candidate is repository-ready but unapplied. After exact-head CI and canonical Matrix refresh are green, request separate staging-only authorization to apply migration 20260927021000 and execute rollback-only validation 050. Snapshot/publication, scheduler, production, merge, Ready and maturity remain unauthorized.",
+  "nextGate": "Treat ANA-A08 live runtime projection authority-marker alignment as staging-certified and repository-reconciled. Do not reopen it without drift. Runtime snapshot authority and snapshot publication remain false and require separate explicit authorization; ANA remains 3/6.",
   "stagingEvidence": {
     "artifact": "reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json",
     "blobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c",
@@ -261,9 +261,9 @@
     "migration": "supabase/migrations/20260927021000_ana_a08_live_retention_runtime_projection_authority_alignment.sql",
     "validationSql": "supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql",
     "candidatePrepared": true,
-    "migrationApplied": false,
-    "stagingValidated": false,
-    "validation050Status": "pending",
+    "migrationApplied": true,
+    "stagingValidated": true,
+    "validation050Status": "PASS",
     "sourceFunction": "public.compute_analytics_retention_cohort_v1",
     "expectedMarkerChange": {
       "key": "runtimeProjectionAuthority",
@@ -287,6 +287,53 @@
       "runtimeSnapshotAuthority": false,
       "snapshotPublicationAuthority": false,
       "schedulerAuthority": false
-    }
+    },
+    "stagingMigrationVersion": "20260927223828",
+    "stagingMigrationName": "ana_a08_live_retention_runtime_projection_authority_alignment",
+    "stagingEvidenceArtifact": "reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence.json",
+    "stagingEvidenceBlobSha": "203f2471bb9fceb5b5f7438e540fae8676174171",
+    "liveRuntimeFlagAligned": true,
+    "liveObservedRuntimeProjectionAuthority": true
+  },
+  "liveRuntimeProjectionAuthorityAlignmentStagingAuthorization": {
+    "token": "authorize-ana-a08-live-retention-runtime-projection-authority-alignment-staging head=6486813764fc4f14811fd1b9a21f4f8402995503 matrix=v1.3.132 contractId=ana-a08-live-retention-runtime-projection-authority-alignment-candidate-v1 candidateConfigBlobSha=2611b9b16f8847f61bbbaf5f4b77df0c7352f378 sourceStagingEvidenceBlobSha=3249080dec64c1aeec1119309dbf1db9992fb85c migration=20260927021000 migrationBlobSha=40e1018a8f35e6eb7e47205af2af90757318ba3a validation=050 validationBlobSha=1fb3f472eab723284eada6f775b50a51d91a3c4c handoffBlobSha=3b16bfc5fe2cb2a2ac158b373f96fef80a1e7a42 expectedLiveObservedRuntimeProjectionAuthority=false runtimeProjectionAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "7256ff90f725b05ae3e6975340dfefba6204097315678f8fb625a7d3be0e5c33",
+    "authorizedRepositoryHead": "6486813764fc4f14811fd1b9a21f4f8402995503",
+    "matrixVersion": "1.3.132",
+    "contractId": "ana-a08-live-retention-runtime-projection-authority-alignment-candidate-v1",
+    "repositoryMigration": "20260927021000",
+    "validation": "050",
+    "consumed": true,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "liveRuntimeProjectionAuthorityAlignmentEvidence": {
+    "artifact": "reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence.json",
+    "blobSha": "203f2471bb9fceb5b5f7438e540fae8676174171",
+    "stagingMigrationVersion": "20260927223828",
+    "validation050": "PASS",
+    "runtimeProjectionAuthority": true,
+    "liveObservedRuntimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "retentionCronJobs": 0
+  },
+  "liveRuntimeProjectionAuthorityAlignmentEvidenceReconciliationAuthorization": {
+    "token": "authorize-ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence-reconciliation-repository-only head=6486813764fc4f14811fd1b9a21f4f8402995503 matrix=v1.3.132 contractId=ana-a08-live-retention-runtime-projection-authority-alignment-candidate-v1 repositoryMigration=20260927021000 stagingMigrationVersion=20260927223828 validation=050 validation050=PASS runtimeProjectionAuthority=true liveObservedRuntimeProjectionAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "digestSha256": "8021bf8a0743a3a36d601b1d510882b60d03cac6c237fa98d2098cd81db04f50",
+    "authorizedRepositoryHead": "6486813764fc4f14811fd1b9a21f4f8402995503",
+    "matrixVersion": "1.3.132",
+    "contractId": "ana-a08-live-retention-runtime-projection-authority-alignment-candidate-v1",
+    "repositoryOnly": true,
+    "stagingMutationAuthorized": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
   }
 }
