@@ -37,7 +37,8 @@
     'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'orders', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
 
-  var SHELL_PRESENTATION = {
+  /* Fallback-only presentation map. The navigation registry is the canonical runtime owner. */
+  var FALLBACK_SHELL_PRESENTATION = {
     pedidos: { leading: 'profile', actions: ['search'] },
     mensagens: { leading: 'profile', actions: ['search', 'notifications'] },
     notificacoes: { leading: 'profile', actions: ['search', 'filters'] },
@@ -45,7 +46,9 @@
     'comunidade-interna': { leading: 'back', backHref: 'comunidade.html', actions: ['search'] },
     carteira: { leading: 'profile', actions: ['wallet-search', 'wallet-withdraw'] },
     perfil: { leading: 'profile', actions: ['search-link', 'notifications'] },
+    'meu-perfil': { leading: 'profile', actions: ['search-link', 'notifications'] },
     'detalhe-anuncio': { leading: 'back', backHref: 'resultados.html', actions: [] },
+    orcamento: { leading: 'back', backHref: 'pedidos.html', actions: [] },
     configuracoes: { leading: 'profile', actions: ['search-link'] },
     'anunciar-servico': { leading: 'back', backHref: 'owner-profile', actions: [] },
     'pagamento-profissional': { leading: 'back', backHref: 'pedidos.html', actions: [] },
@@ -187,7 +190,9 @@
   }
 
   function shellPresentation(cfg) {
-    return cfg && SHELL_PRESENTATION[cfg.key] ? SHELL_PRESENTATION[cfg.key] : null;
+    if (!cfg) return null;
+    if (cfg.mobileShell && typeof cfg.mobileShell === 'object') return cfg.mobileShell;
+    return FALLBACK_SHELL_PRESENTATION[cfg.key] || null;
   }
 
   function shellBackHref(presentation) {
@@ -201,7 +206,7 @@
       return '<a class="doke-mobile-shell__leading doke-mobile-shell__back" href="' + shellBackHref(presentation) + '" aria-label="Voltar">' + ICONS.back + '</a>';
     }
     return [
-      '<button class="doke-mobile-shell__leading doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta">',
+      '<button class="doke-mobile-shell__leading doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta" aria-expanded="false">',
       '  <span class="doke-mobile-shell__avatar">' + accountState().initials + '</span>',
       '</button>'
     ].join('');
@@ -360,9 +365,13 @@
   }
 
   function createShellSearchDisclosure() {
+    return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-expanded="false" aria-controls="doke-shell-inline-search" aria-label="Abrir busca">' + ICONS.search + '</button>';
+  }
+
+  function createShellInlineSearch(cfg) {
+    if (!cfg || !cfg.compactSearchButton || shellPresentation(cfg)) return '';
     return [
-      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-expanded="false" aria-controls="doke-shell-inline-search-input" aria-label="Abrir busca">' + ICONS.search + '</button>',
-      '<form class="doke-mobile-shell__inline-search" action="resultados.html" role="search" data-shell-inline-search autocomplete="off">',
+      '<form id="doke-shell-inline-search" class="doke-mobile-shell__inline-search" action="resultados.html" role="search" data-shell-inline-search autocomplete="off" hidden>',
       '  <label class="doke-mobile-shell__inline-field" for="doke-shell-inline-search-input">',
       '    <span class="doke-mobile-shell__inline-label">Buscar</span>',
       '    <input id="doke-shell-inline-search-input" class="doke-mobile-shell__inline-input" type="search" name="q" placeholder="Buscar" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
@@ -449,6 +458,7 @@
       createQuickActions(cfg),
       '  </div>',
       '</header>',
+      createShellInlineSearch(cfg),
       (cfg.hideSearchBar ? '' : [
         '<form class="doke-mobile-shell__search" action="resultados.html" role="search" data-shell-search autocomplete="off">',
         '  <button class="doke-mobile-shell__search-button" type="submit" aria-label="Buscar serviço">' + ICONS.search + '</button>',
@@ -597,14 +607,18 @@
     var shellInlineSearchInput = shell.querySelector('.doke-mobile-shell__inline-input');
     var shellSearchButton = shell.querySelector('[data-shell-search-trigger]');
 
-    function setShellInlineSearchExpanded(expanded) {
+    function setShellInlineSearchExpanded(expanded, restoreFocus) {
       if (!shellInlineSearch || !shellSearchButton) return;
       shell.classList.toggle('is-search-expanded', expanded);
       shellInlineSearch.classList.toggle('is-expanded', expanded);
-      shellInlineSearch.hidden = false;
+      shellInlineSearch.hidden = !expanded;
       shellSearchButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       if (expanded) {
+        document.body.setAttribute('data-shell-inline-search-expanded', 'true');
         window.setTimeout(function () { shellInlineSearchInput && shellInlineSearchInput.focus(); }, 0);
+      } else {
+        document.body.removeAttribute('data-shell-inline-search-expanded');
+        if (restoreFocus && typeof shellSearchButton.focus === 'function') shellSearchButton.focus();
       }
     }
 
@@ -634,6 +648,11 @@
         var value = shellInlineSearchInput.value.trim();
         if (!value) return;
         navigateTo('resultados.html?q=' + encodeURIComponent(value));
+      });
+      shellInlineSearchInput.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        event.preventDefault();
+        setShellInlineSearchExpanded(false, true);
       });
       document.addEventListener('click', function (event) {
         if (!shell.contains(event.target)) return;
@@ -805,6 +824,7 @@
     document.body.removeAttribute('data-shell-page');
     document.body.removeAttribute('data-shell-search');
     document.body.removeAttribute('data-shell-bottom-nav');
+    document.body.removeAttribute('data-shell-inline-search-expanded');
     document.documentElement.classList.remove('doke-mobile-shell-pending', 'doke-mobile-shell-ready');
     document.documentElement.setAttribute('data-doke-mobile-shell', 'viewport-disabled');
   }
@@ -820,6 +840,7 @@
     document.body.setAttribute('data-shell-page', cfg.key);
     document.body.setAttribute('data-shell-search', cfg.search ? 'true' : 'false');
     document.body.setAttribute('data-shell-bottom-nav', hasBottomNav(cfg) ? 'true' : 'false');
+    document.body.removeAttribute('data-shell-inline-search-expanded');
     document.body.classList.add('doke-mobile-shell-mounted');
     document.documentElement.removeAttribute('data-doke-mobile-shell');
     document.body.prepend(createShell(cfg));
