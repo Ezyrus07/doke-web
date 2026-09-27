@@ -97,8 +97,13 @@ A separate forward-only candidate is required before any live marker can change 
 
 ## Live runtime projection authority alignment candidate
 
-Repository runtime projection authority is granted, while the certified live function still reports `runtimeProjectionAuthority=false`. A forward-only candidate is prepared at `supabase/migrations/20260927021000_ana_a08_live_retention_runtime_projection_authority_alignment.sql` with rollback-only validation `supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql`.
+Repository runtime projection authority is granted and the live function is now aligned to `runtimeProjectionAuthority=true`. The forward-only migration `supabase/migrations/20260927021000_ana_a08_live_retention_runtime_projection_authority_alignment.sql` is installed in staging and rollback-only validation `supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql` passes.
 
 The candidate changes exactly **2** `runtimeProjectionAuthority` markers from `false` to `true` in `public.compute_analytics_retention_cohort_v1`. Its function body must otherwise remain byte-equivalent to the installed candidate definition for audit purposes. It preserves service-role-only execution, immutable A04 dimensions, A07 watermark enforcement, compute-only behavior, `runtimeSnapshotAuthority=false`, `snapshotPublicationAllowed=false` and `schedulerAuthority=false`.
 
-Current state remains `migrationApplied=false`, `stagingValidated=false`, `validation050Status=pending`. Applying this migration requires a separate exact-head staging authorization.
+Current staging-certified state is `migrationApplied=true`, `stagingValidated=true`, `validation050Status=PASS`, `liveRuntimeFlagAligned=true` and `liveObservedRuntimeProjectionAuthority=true`. Runtime snapshot authority, snapshot publication and scheduler authority remain false.
+
+
+## Live alignment staging evidence
+
+The canonical post-alignment staging evidence is `reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence.json` (blob `203f2471bb9fceb5b5f7438e540fae8676174171`). Staging migration version `20260927223828` and validation 050 PASS prove exactly 2 `runtimeProjectionAuthority=true` markers and 0 false markers, service-role-only execution, zero retention cron jobs, zero source mutation and zero snapshot append. The earlier validation-049 evidence is preserved as the pre-alignment historical observation.
