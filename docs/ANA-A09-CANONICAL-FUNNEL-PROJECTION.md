@@ -100,3 +100,12 @@ Runtime evidence: `reports/generated/ana-a09-server-side-funnel-projector-runtim
 The four-path A07/A09 runtime canary evidence is certified at blob `3b7274a391a857f2de06538f3302f6be01b06734`. The explicit repository-only authorization bound to HEAD `28960baecb1b495b16c3799c55a80305764db0ac` now grants A09 runtime projection authority at the contract layer.
 
 This does **not** mutate staging. The historical staging compute observation still returns `runtimeAuthority=false`; `runtimeSnapshotAuthority=false` and `snapshotPublicationAllowed=false` remain authoritative boundaries. Any forward-only live runtime flag alignment or snapshot publication requires a separate explicit authorization. ANA remains **3/6**.
+
+
+## Canonical funnel snapshot payload adapter candidate
+
+The repository now contains a compute-only global funnel snapshot payload adapter candidate at `supabase/migrations/20260927230000_ana_a09_canonical_funnel_snapshot_payload_adapter.sql` with rollback-only validation `051`.
+
+The adapter converts the eight global A09 metrics into the existing A04/A05 append schema, binds each metric to the active A07/A09 freshness policy, emits deterministic source/projection fingerprints, uses `reconciliationState=not_applicable` rather than inventing reconciliation success, and never invokes the append RPC.
+
+This candidate remains unapplied and staging-unvalidated. `runtimeSnapshotAuthority=false`, `snapshotPublicationAuthority=false` and scheduler authority remain closed. Segmented snapshot publication is not covered by this candidate.
