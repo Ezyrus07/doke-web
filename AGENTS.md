@@ -2,6 +2,24 @@
 
 This file is the required entry point for automated agents working on Doke.
 
+## Mandatory Doke Control Center preflight
+
+Before any write or other substantial Doke work, consult the read-only Doke Control Center at `https://doke-control-view.vercel.app` and use it as the initial coordination surface for the current workstream.
+
+Reconfirm, at minimum, the current repository, PR, branch, HEAD, base, checkpoint, blockers, dependencies, source health, drift, next safe action, authorization requirement, collisions, and any available Execution Packet or handoff.
+
+Control Center semantics are strict:
+
+- The Control Center is an observer/coordinator, not a write authority and not a replacement for canonical sources.
+- `Next Safe Action != Authorized Action`.
+- A generated context or Execution Packet is guidance, not authorization.
+- If a relevant checkpoint, packet, source, or required field is `STALE`, `UNKNOWN`, conflicting, or unavailable, stop before write and reconcile against the canonical authority for that claim.
+- If the Control Center itself is unavailable, do not infer state. Verify the required state directly from canonical sources, report the outage, and proceed only when the same execution-critical facts are independently verified.
+- Never collapse repository/docs, CI, staging/runtime, and production into one evidence class.
+- Dynamic PR/HEAD/checkpoint state must come from current project evidence, not chat memory or an old prompt.
+
+After completing a technical lot, leave a structured handoff containing at least: workstream/domain, PR, branch, resulting HEAD/base, completed scope, files changed, tests/evidence, unresolved blockers/risks, current checkpoint validity, next safe action, authorization required for that next action, and explicit forbidden scope. The next agent must preflight that handoff before using it.
+
 Before making changes, read and follow these authority documents:
 
 1. `docs/DOKE_AGENT_CONSTITUTION.md`
