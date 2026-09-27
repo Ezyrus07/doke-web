@@ -3,6 +3,7 @@ const fs=require('fs');const path=require('path');const root=path.resolve(__dirn
 const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260927021000_ana_a08_live_retention_runtime_projection_authority_alignment.sql'),'utf8');
 const v=fs.readFileSync(path.join(root,'supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql'),'utf8');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a08-retention-cohort-projection.json'),'utf8'));
+const e=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence.json'),'utf8'));
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('two true live markers',(sql.match(/'runtimeProjectionAuthority',true/g)||[]).length===2);
 check('zero false live markers',(sql.match(/'runtimeProjectionAuthority',false/g)||[]).length===0);
@@ -14,8 +15,9 @@ check('immutable dimension source preserved',sql.includes('private.order_metric_
 check('no source mutation',!sql.match(/insert\s+into\s+/i)&&!sql.match(/update\s+/i)&&!sql.match(/delete\s+from\s+/i));
 check('no scheduler',!sql.includes('cron.schedule'));
 check('validation read-only rollback',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v)&&!v.match(/^\s*insert\s+into\s+/im)&&!v.match(/^\s*update\s+/im)&&!v.match(/^\s*delete\s+from\s+/im));
-check('candidate unapplied',c.liveRuntimeProjectionAuthorityAlignmentCandidate?.candidatePrepared===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.migrationApplied===false&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.stagingValidated===false&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.validation050Status==='pending');
-check('repository authority true live marker false',c.authority?.runtimeProjectionAuthority===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.sourceLiveObservedRuntimeProjectionAuthority===false&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.targetRuntimeProjectionAuthority===true);
+check('candidate staging certified',c.liveRuntimeProjectionAuthorityAlignmentCandidate?.candidatePrepared===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.migrationApplied===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.stagingValidated===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.validation050Status==='PASS'&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.liveRuntimeFlagAligned===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.liveObservedRuntimeProjectionAuthority===true);
+check('repository authority true live marker aligned',c.authority?.runtimeProjectionAuthority===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.sourceLiveObservedRuntimeProjectionAuthority===false&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.targetRuntimeProjectionAuthority===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.liveObservedRuntimeProjectionAuthority===true);
+check('evidence keeps secondary authorities gated',e.validation050?.status==='PASS'&&e.runtimePostconditions?.runtimeProjectionAuthority===true&&e.runtimePostconditions?.runtimeSnapshotAuthority===false&&e.runtimePostconditions?.snapshotPublicationAuthority===false&&e.runtimePostconditions?.schedulerAuthority===false&&e.runtimePostconditions?.retentionCronJobs===0);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:'ana-a08-live-retention-runtime-projection-authority-alignment-candidate-v1',total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;
