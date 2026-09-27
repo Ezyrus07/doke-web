@@ -9,8 +9,11 @@ const tableAuthority = read('supabase/migrations/102_client_profile_table_author
 const metricsAuthority = read('supabase/migrations/103_client_profile_metrics_authority.sql');
 const permissionContract = read('supabase/migrations/104_client_profile_permission_contract.sql');
 const consistencyHardening = read('supabase/migrations/105_client_profile_consistency_hardening.sql');
+const publicRoleProjection = read('supabase/migrations/20260920114049_public_profile_role_projection.sql');
 const runtimeValidation = read('supabase/tests/008_client_profile_authority_validation.sql');
+const publicRoleValidation = read('supabase/tests/015_public_profile_role_projection_validation.sql');
 const identityService = read('backend/modules/auth/identity-service.js');
+const profileService = read('assets/js/services/profile-service.js');
 const packageJson = JSON.parse(read('package.json'));
 
 for (const token of [
@@ -44,6 +47,35 @@ for (const token of [
 ]) assert(consistencyHardening.includes(token), `Client consistency hardening missing: ${token}`);
 
 assert(!consistencyHardening.includes("actor.role in ('support', 'moderator', 'admin')"), 'Final client policy must not allow cross-account operator table reads.');
+
+for (const token of [
+  'create table if not exists public.public_profile_role_projection',
+  "role text not null check (role in ('client', 'professional'))",
+  'alter table public.public_profile_role_projection enable row level security',
+  'grant select on table public.public_profile_role_projection to anon, authenticated',
+  'private.sync_public_profile_role_projection',
+  "new.status = 'active'",
+  "new.role in ('client', 'professional')",
+  'from public, anon, authenticated, service_role'
+]) assert(publicRoleProjection.includes(token), `Public profile role projection missing: ${token}`);
+
+for (const token of [
+  ".from('user_profiles')",
+  ".from('public_profile_role_projection')",
+  "return role === 'client' || role === 'professional' ? role : ''",
+  'function isCanonicalUuid(value)',
+  '!isCanonicalUuid(id)',
+  'if (usesSupabaseProvider())',
+  'return getRemotePublicProfile(id).then'
+]) assert(profileService.includes(token), `Public profile remote read missing: ${token}`);
+
+assert(!profileService.includes('profileRow.role'), 'Public profile role must never be inferred from user_profiles.');
+for (const token of [
+  'projection_schema',
+  'browser_read_only',
+  'active_role_consistency',
+  'status_transition_sync'
+]) assert(publicRoleValidation.includes(token), `Public role staging validation missing: ${token}`);
 assert(identityService.includes(".select('user_id,orders_count,average_rating,reviews_count,updated_at')"), 'Identity service must read the complete owner-safe client metric projection.');
 assert(identityService.includes('professional.reviews_count || client.reviews_count || 0'), 'Client review count must be normalized without exposing private fields.');
 
