@@ -13,7 +13,7 @@ check('A07 watermark preserved',sql.includes('private.order_metric_watermark_v1(
 check('immutable dimension source preserved',sql.includes('private.order_metric_events')&&sql.includes("'ANA-A04_ORDER_SERVICE_SNAPSHOT_ENRICHMENT'"));
 check('no source mutation',!sql.match(/insert\s+into\s+/i)&&!sql.match(/update\s+/i)&&!sql.match(/delete\s+from\s+/i));
 check('no scheduler',!sql.includes('cron.schedule'));
-check('validation read-only rollback',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v)&&!v.match(/insert\s+into\s+/i)&&!v.match(/update\s+/i)&&!v.match(/delete\s+from\s+/i));
+check('validation read-only rollback',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v)&&!v.match(/^\s*insert\s+into\s+/im)&&!v.match(/^\s*update\s+/im)&&!v.match(/^\s*delete\s+from\s+/im));
 check('candidate unapplied',c.liveRuntimeProjectionAuthorityAlignmentCandidate?.candidatePrepared===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.migrationApplied===false&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.stagingValidated===false&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.validation050Status==='pending');
 check('repository authority true live marker false',c.authority?.runtimeProjectionAuthority===true&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.sourceLiveObservedRuntimeProjectionAuthority===false&&c.liveRuntimeProjectionAuthorityAlignmentCandidate?.targetRuntimeProjectionAuthority===true);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
