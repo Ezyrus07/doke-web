@@ -51,15 +51,15 @@
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false,
     "schedulerAuthority": false,
-    "migrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "migrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed",
     "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
-    "configBlobSha": "a800e169d0d22ef9e0e9b864079af62fe044c920",
+    "configBlobSha": "a384fe00007c0b53fdb35c461b0aded74bead061",
     "auditScript": "scripts/audit-ana-a09-canonical-funnel-snapshot-payload-adapter.js",
-    "auditBlobSha": "9c0ce6292676293467211f062cafa7d4fcb9aa7c",
+    "auditBlobSha": "c2a585707b40e7267263966c119e065a15f955e5",
     "conformanceScript": "scripts/test-ana-a09-canonical-funnel-snapshot-payload-adapter.js",
-    "conformanceBlobSha": "1b0274e87eec8dc16002076815ff161c99fe9261",
+    "conformanceBlobSha": "01ad409b4b01611e941591d0176c54029010c127",
     "docsPath": "docs/ANA-A09-CANONICAL-FUNNEL-SNAPSHOT-PAYLOAD-ADAPTER.md",
-    "docsBlobSha": "c12ebbc720aba1dc2d68ccafac2d303533383443"
+    "docsBlobSha": "d657a02f08ab19204298c35f3bf20e85b53e4227"
   },
   "preservedBoundaries": [
     "global-funnel-only",
@@ -81,10 +81,41 @@
     "production": false
   },
   "blockers": [
-    "Candidate is unapplied; validation 051 is pending.",
-    "Global live runtimeAuthority alignment remains a separate gate if required before publication.",
+    "Remediated candidate is unapplied; validation 051 is pending and requires a new exact-head staging authorization bound to the remediated migration blob.",
     "Runtime snapshot and snapshot publication authority remain false."
   ],
-  "nextSafeAction": "After exact-head CI and canonical Matrix refresh pass, request separate staging-only authorization to apply migration 20260927230000 and execute rollback-only validation 051.",
-  "authorizationRequirement": "Next Safe Action is not authorization. Adapter staging apply/read, snapshot mutation/publication, scheduler, production, merge or Ready require separate explicit authorization."
+  "nextSafeAction": "After exact-head CI passes, request a new staging-only authorization bound to migration blob d1f87a8ea609cd3aee881ea8abac092cdc5983ed and the unchanged validation-051 blob; do not reuse the consumed failed staging token.",
+  "authorizationRequirement": "The prior staging authorization was consumed by a failed syntax-rejected apply. Any new staging apply/read, snapshot mutation/publication, scheduler, production, merge or Ready requires a new explicit authorization.",
+  "syntaxRemediation": {
+    "authorizationToken": "authorize-ana-a09-canonical-funnel-snapshot-payload-adapter-syntax-remediation-repository-only head=40e72a3cf151f64df72b7a08cf984011c9415d98 matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1 failedMigration=20260927230000 failedMigrationBlobSha=df4a36d99e1bcce1755c3ff7d52666947464a788 validation=051 validationBlobSha=3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60 failureSqlState=42601 remediation=replace-pg_catalog.extract-with-postgres-extract-syntax runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "authorizationDigestSha256": "e776ba19825bfa901910649e9be8293dcdd6b3c51bf0665928d64d23139811c2",
+    "authorizedRepositoryHead": "40e72a3cf151f64df72b7a08cf984011c9415d98",
+    "failureSqlState": "42601",
+    "failedMigrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "remediatedMigrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed",
+    "replacement": "pg_catalog.extract(epoch from ...) -> extract(epoch from ...)",
+    "semanticDelta": "syntax_only",
+    "validation051BlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
+    "validation051Changed": false,
+    "failedStagingAttempt": {
+      "migrationApplied": false,
+      "migrationLedgerEntryCreated": false,
+      "adapterPresentAfterFailure": false,
+      "validation051Executed": false,
+      "relevantCronJobsAfterFailure": 0,
+      "snapshotMutationAttributedToAttempt": false
+    },
+    "boundaries": {
+      "repositoryOnly": true,
+      "stagingApplyAuthorized": false,
+      "appendInvocationAuthority": false,
+      "snapshotMutationAuthority": false,
+      "runtimeSnapshotAuthority": false,
+      "snapshotPublicationAuthority": false,
+      "schedulerAuthority": false,
+      "productionAuthority": false,
+      "mergeAuthority": false,
+      "readyForReviewAuthority": false
+    }
+  }
 }
