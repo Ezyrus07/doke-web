@@ -90,3 +90,34 @@ That future structure-only authorization must still keep:
 - `runtimeSnapshotAuthority=false`;
 - `snapshotPublicationAuthority=false`;
 - `schedulerAuthority=false`.
+
+## Staging structure installation — validation 052 PASS
+
+The private append-invocation contract structure is now installed in `doke-web-staging` (`zwkczgewzbsorbrjuzpb`).
+
+- repository migration: `20260928134000`
+- migration blob: `5661652eb4a428976419c46db5d66bcb0e2505b1`
+- staging ledger version: `20260928141605`
+- validation `052`: **PASS**
+- validation blob: `60a6326327bf673a2f3d81a60f1f44b8609ffa17`
+
+Validation 052 remained structural and rollback-only. It did not invoke `private.invoke_a09_canonical_funnel_snapshot_append_v1` and detected no snapshot mutation.
+
+Runtime privilege verification confirms that `anon`, `authenticated` and `service_role` have no `EXECUTE` privilege on either the authorization validator or append invoker. Installing the structure therefore did not create an application-callable append path.
+
+Canonical staging evidence:
+
+- `reports/generated/ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence.json`
+
+The current authorities remain:
+
+- `appendInvocationAuthority=false`
+- `snapshotMutationAuthority=false`
+- `runtimeSnapshotAuthority=false`
+- `snapshotPublicationAuthority=false`
+- `schedulerAuthority=false`
+
+ANA remains **3/6**.
+
+The next functional gate is a repository-only bounded first-append canary authorization contract for one explicit time window. No append or snapshot mutation is authorized by this evidence reconciliation.
+

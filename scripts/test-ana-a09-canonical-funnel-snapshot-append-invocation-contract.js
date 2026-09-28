@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-canonical-funnel-snapshot-append-invocation-contract.json'),'utf8'));
+const e=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence.json'),'utf8'));
 const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260928134000_ana_a09_canonical_funnel_snapshot_append_invocation_contract.sql'),'utf8');
 const v=fs.readFileSync(path.join(root,'supabase/tests/052_ana_a09_canonical_funnel_snapshot_append_invocation_contract_validation.sql'),'utf8');
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
@@ -12,11 +13,13 @@ check('append results constrained',sql.includes("not in ('APPENDED','NO_CHANGE')
 check('future evidence exact window',c.candidate.exactWindowBindingRequired===true&&sql.includes("(v_evidence ->> 'windowStart')::timestamptz")&&sql.includes("(v_evidence ->> 'windowEnd')::timestamptz"));
 check('future mutation explicitly gated',sql.includes("'appendInvocationAuthorized'")&&sql.includes("'snapshotMutationAuthorized'")&&sql.includes("'maxSnapshotWrites'"));
 check('continuous authorities denied',sql.includes("'runtimeSnapshotAuthority',false")&&sql.includes("'snapshotPublicationAuthority',false")&&sql.includes("'schedulerAuthority',false"));
-check('service role not executable',c.candidate.serviceRoleExecuteAllowed===false&&!sql.match(/grant\s+execute[\s\S]{0,160}service_role/i));
+check('service role remains non executable',c.candidate.serviceRoleExecuteAllowed===false&&e.staging.functions.authorizationValidator.serviceRoleExecute===false&&e.staging.functions.appendInvoker.serviceRoleExecute===false&&!sql.match(/grant\s+execute[\s\S]{0,160}service_role/i));
 check('no scheduler SQL',!sql.includes('cron.schedule')&&!sql.match(/\bpg_cron\b/i));
-check('validation does not invoke',!v.match(/perform\s+private\.invoke_a09_canonical_funnel_snapshot_append_v1/i)&&!v.match(/select\s+public\.append_analytics_metric_snapshot_v1/i));
-check('validation rollback only',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v));
-check('repository only state',c.authorization.stagingAuthority===false&&c.authority.appendInvocationAuthority===false&&c.authority.snapshotMutationAuthority===false&&c.prohibitedEffects.snapshotsWritten===false);
+check('validation does not invoke',!v.match(/perform\s+private\.invoke_a09_canonical_funnel_snapshot_append_v1/i)&&!v.match(/select\s+public\.append_analytics_metric_snapshot_v1/i)&&e.staging.validation052.invokerInvoked===false);
+check('validation rollback only',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v)&&e.staging.validation052.rollbackOnly===true);
+check('staging structure pass reconciled',c.candidate.migrationApplied===true&&c.candidate.appliedStagingMigrationVersion==='20260928141605'&&c.candidate.stagingValidated===true&&c.candidate.validation052Status==='PASS'&&e.staging.validation052.status==='PASS');
+check('no append authority yet',c.authority.appendInvocationAuthority===false&&c.authority.snapshotMutationAuthority===false&&e.authorities.appendInvocationAuthority===false&&e.authorities.snapshotMutationAuthority===false&&e.staging.validation052.snapshotMutationDetected===false);
+check('maturity unchanged',c.maturity.after===3&&c.maturity.promoted===false&&e.maturity.after===3&&e.maturity.promoted===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;

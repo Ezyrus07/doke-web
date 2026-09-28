@@ -1,0 +1,73 @@
+{
+  "evidenceId": "ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence-v1",
+  "contractId": "ana-a09-canonical-funnel-snapshot-append-invocation-contract-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "sourceCheckpoint": {
+    "pr": 488,
+    "branch": "ana/ana-001-foundation",
+    "repositoryHead": "2d54fa08600c6a07caddbb0ede3637f8145135ca",
+    "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+    "matrixVersion": "1.3.132",
+    "anaMaturity": "3/6"
+  },
+  "staging": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "migration": {
+      "repositoryVersion": "20260928134000",
+      "stagingVersion": "20260928141605",
+      "blobSha": "5661652eb4a428976419c46db5d66bcb0e2505b1",
+      "applied": true
+    },
+    "validation052": {
+      "path": "supabase/tests/052_ana_a09_canonical_funnel_snapshot_append_invocation_contract_validation.sql",
+      "blobSha": "60a6326327bf673a2f3d81a60f1f44b8609ffa17",
+      "status": "PASS",
+      "executionCompletedWithoutException": true,
+      "rollbackOnly": true,
+      "invokerInvoked": false,
+      "snapshotMutationDetected": false
+    },
+    "functions": {
+      "authorizationValidator": {
+        "name": "private.validate_a09_snapshot_append_invocation_authorization_v1",
+        "exists": true,
+        "anonExecute": false,
+        "authenticatedExecute": false,
+        "serviceRoleExecute": false
+      },
+      "appendInvoker": {
+        "name": "private.invoke_a09_canonical_funnel_snapshot_append_v1",
+        "exists": true,
+        "anonExecute": false,
+        "authenticatedExecute": false,
+        "serviceRoleExecute": false
+      }
+    }
+  },
+  "authorities": {
+    "runtimeProjectionAuthority": true,
+    "appendInvocationAuthority": false,
+    "snapshotMutationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false,
+    "reason": "Structure-only staging installation and validation do not grant append or publication authority."
+  },
+  "reconciliationAuthorization": {
+    "token": "authorize-ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence-reconciliation-repository-only head=2d54fa08600c6a07caddbb0ede3637f8145135ca matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-append-invocation-contract-candidate-v1 stagingProjectRef=zwkczgewzbsorbrjuzpb candidateConfigBlobSha=6154ec06e20b6e6dd5a755acb2b39a9a3223933f migration=20260928134000 migrationBlobSha=5661652eb4a428976419c46db5d66bcb0e2505b1 appliedStagingMigrationVersion=20260928141605 validation=052 validationBlobSha=60a6326327bf673a2f3d81a60f1f44b8609ffa17 validation052=PASS handoffBlobSha=e24cf0886619eee799126584ab358e80e02448df evidencePath=reports/generated/ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence.json scope=record-staging-structure-and-validation-052-pass-only anaMaturity=3/6 runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "digestSha256": "e0cc05de3d7545e8b182db695d01cb2996b99a3acddf059f2487adeddd08b4c7",
+    "repositoryWriteAuthority": true,
+    "stagingAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "nextSafeAction": "Design and certify a bounded first-append canary authorization contract for one explicit time window; no append may occur until a separate exact-window staging authorization is granted."
+}
