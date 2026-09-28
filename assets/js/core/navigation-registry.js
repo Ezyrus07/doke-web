@@ -133,7 +133,7 @@
     'pagamento-profissional.html': { key: 'pagamento-profissional', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true, mobileShell: { leading: 'back', backHref: 'pedidos.html', actions: [] } },
     'avaliacao-profissional.html': { key: 'avaliacao-profissional', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true, mobileShell: { leading: 'back', backHref: 'pedidos.html', actions: [] } },
     'mensagens.html': { key: 'mensagens', search: false, title: 'Mensagens', mobileShell: { leading: 'profile', actions: ['search', 'notifications'] } },
-    'notificacoes.html': { key: 'notificacoes', search: false, title: 'Notificações', bottomNav: false, mobileShell: { leading: 'profile', actions: ['search', 'filters'] } },
+    'notificacoes.html': { key: 'notificacoes', search: false, title: 'Notificações', compactSearchButton: true, hideSearchBar: true, bottomNav: false, mobileShell: { leading: 'profile', actions: ['search', 'filters'], inlineSearch: 'notifications' } },
     'novidades.html': { key: 'novidades', search: false, title: 'Novidades', bottomNav: false },
     'comunidade.html': { key: 'comunidade', search: false, title: 'Comunidade', mobileShell: { leading: 'profile', actions: ['search', 'community-create'] } },
     'comunidade-interna.html': { key: 'comunidade-interna', search: false, title: 'Comunidade', mobileShell: { leading: 'back', backHref: 'comunidade.html', actions: ['search'] } },
@@ -146,11 +146,11 @@
     'admin-verificacao.html': { key: 'admin-verificacao', search: false, title: 'Análise de identidade', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-anuncio-revisao.html': { key: 'admin-anuncio-revisao', search: false, title: 'Revisão de anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-pedidos-operacao.html': { key: 'admin-pedidos-operacao', search: false, title: 'Operação de pedidos', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
-    'configuracoes.html': { key: 'configuracoes', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false, mobileShell: { leading: 'profile', actions: ['search-link'] } },
+    'configuracoes.html': { key: 'configuracoes', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true, mobileShell: { leading: 'profile', actions: ['search-link'] } },
     'ajuda.html': { key: 'ajuda', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'tornar-profissional.html': { key: 'tornar-profissional', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true, mobileShell: { leading: 'back', backHref: 'owner-profile', actions: [] } },
     'verificacao-profissional.html': { key: 'verificacao-profissional', search: false, title: 'Verificação profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true, mobileShell: { leading: 'back', backHref: 'owner-profile', actions: [] } },
-    'anunciar-servico.html': { key: 'anunciar-servico', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false, mobileShell: { leading: 'back', backHref: 'owner-profile', actions: [] } }
+    'anunciar-servico.html': { key: 'anunciar-servico', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true, mobileShell: { leading: 'back', backHref: 'owner-profile', actions: [] } }
   };
 
   function clone(value) {
