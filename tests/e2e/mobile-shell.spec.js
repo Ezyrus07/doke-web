@@ -12,8 +12,8 @@ const pages = [
   { path: 'orcamento.html', leading: 'back', actions: 0, bottomNav: true },
   { path: 'carteira.html', leading: 'profile', actions: 2, bottomNav: true },
   { path: 'notificacoes.html', leading: 'profile', actions: 2, bottomNav: false },
-  { path: 'configuracoes.html', leading: 'profile', actions: 1, bottomNav: false },
-  { path: 'anunciar-servico.html', leading: 'back', actions: 0, bottomNav: false },
+  { path: 'configuracoes.html', leading: 'profile', actions: 1, bottomNav: true },
+  { path: 'anunciar-servico.html', leading: 'back', actions: 0, bottomNav: true },
 ];
 
 test.describe('PD-SHELL-001 mobile app shell', () => {
@@ -74,6 +74,25 @@ test.describe('PD-SHELL-001 mobile app shell', () => {
     await expect(actions.locator('a[href="notificacoes.html"]')).toHaveCount(0);
     await expect(actions.locator('[data-shell-search-trigger]')).toHaveCount(1);
     await expect(actions.locator('[data-shell-filter]')).toHaveCount(1);
+  });
+
+  test('notificacoes search stays local in the canonical second shell region', async ({ page }) => {
+    await page.goto('/notificacoes.html');
+
+    const shell = page.locator('.doke-mobile-shell');
+    const trigger = shell.locator('[data-shell-search-trigger]');
+    const region = shell.locator('[data-shell-inline-search][data-shell-inline-search-mode="notifications"]');
+    const shellInput = region.locator('input');
+    const pageInput = page.locator('[data-notifications-search]').first();
+
+    await expect(region).toBeHidden();
+    await trigger.click();
+    await expect(region).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    await shellInput.fill('pedido');
+    await expect(pageInput).toHaveValue('pedido');
+    await expect(page).toHaveURL(/\/notificacoes\.html(?:[?#].*)?$/);
   });
 
   test('compact search opens as a full-width second shell region and restores focus on Escape', async ({ page }) => {
