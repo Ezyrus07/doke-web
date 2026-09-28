@@ -587,7 +587,7 @@
     }
 
     var searchPages = ['home', 'resultados'];
-    var bottomNavDisabledPages = ['notificacoes', 'configuracoes', 'anunciar-servico'];
+    var bottomNavDisabledPages = ['notificacoes'];
     return {
       search: searchPages.indexOf(page) !== -1,
       bottomNav: bottomNavDisabledPages.indexOf(page) === -1
