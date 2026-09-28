@@ -75,3 +75,25 @@ Root cause: PostgreSQL `GREATEST` is special syntax rather than a schema-qualifi
 - replacement: `pg_catalog.greatest(0, floor(...)::bigint)` → `greatest(0::bigint, floor(...)::bigint)`
 
 The unchanged validation `051` remains failed/pending rerun. This lot does not apply the forward migration to staging and grants no append, snapshot mutation/publication, scheduler, production, merge or Ready authority.
+
+## Staging runtime-type remediation — validation 051 PASS
+
+The forward runtime-type remediation was subsequently applied to `doke-web-staging` (`zwkczgewzbsorbrjuzpb`) and recorded by the staging migration ledger as version `20260928020745`.
+
+The applied repository migration remains:
+
+- `supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql`
+- blob `ae59dd5d5e9656a938ec6d725e6305b549e0a698`
+
+The unchanged validation `051` (blob `3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60`) was rerun after the forward migration and completed without exception: **PASS**.
+
+The validation proves the current staging adapter remains compute-only, produces the expected eight global funnel payloads, preserves fingerprint/freshness semantics, and does not mutate `private.analytics_metric_snapshots_v1`.
+
+This closes the SQLSTATE `42883` runtime-type defect. It does **not** grant append invocation, snapshot mutation, runtime snapshot, snapshot publication or scheduler authority, and ANA remains **3/6**.
+
+Canonical staging evidence:
+
+- `reports/generated/ana-a09-canonical-funnel-snapshot-payload-adapter-staging-evidence.json`
+
+The prior `42601` and `42883` failures remain preserved as historical evidence; they are not rewritten or erased.
+

@@ -44,8 +44,8 @@
     "metricCount": 8,
     "candidatePrepared": true,
     "migrationApplied": true,
-    "stagingValidated": false,
-    "validation051Status": "failed",
+    "stagingValidated": true,
+    "validation051Status": "passed",
     "appendInvoked": false,
     "runtimeProjectionAuthority": true,
     "runtimeSnapshotAuthority": false,
@@ -53,18 +53,20 @@
     "schedulerAuthority": false,
     "migrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed",
     "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
-    "configBlobSha": "a384fe00007c0b53fdb35c461b0aded74bead061",
+    "configBlobSha": "383ed39d3d8240bdd51246ca6443668b5826904a",
     "auditScript": "scripts/audit-ana-a09-canonical-funnel-snapshot-payload-adapter.js",
-    "auditBlobSha": "c2a585707b40e7267263966c119e065a15f955e5",
+    "auditBlobSha": "7143430157bb505ae814d5d9b88da5017f0f0bb4",
     "conformanceScript": "scripts/test-ana-a09-canonical-funnel-snapshot-payload-adapter.js",
-    "conformanceBlobSha": "01ad409b4b01611e941591d0176c54029010c127",
+    "conformanceBlobSha": "f62976fc7170d10d59399574aaecf518a9dc884c",
     "docsPath": "docs/ANA-A09-CANONICAL-FUNNEL-SNAPSHOT-PAYLOAD-ADAPTER.md",
-    "docsBlobSha": "d657a02f08ab19204298c35f3bf20e85b53e4227",
+    "docsBlobSha": "d140f9e2452530b92918f7264946de204bf10ed5",
     "appliedStagingMigrationVersion": "20260928005802",
-    "failureSqlState": "42883",
+    "failureSqlState": null,
     "runtimeTypeRemediationMigration": "supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql",
     "runtimeTypeRemediationMigrationBlobSha": "ae59dd5d5e9656a938ec6d725e6305b549e0a698",
-    "runtimeTypeRemediationApplied": false
+    "runtimeTypeRemediationApplied": true,
+    "appliedForwardStagingMigrationVersion": "20260928020745",
+    "stagingEvidencePath": "reports/generated/ana-a09-canonical-funnel-snapshot-payload-adapter-staging-evidence.json"
   },
   "preservedBoundaries": [
     "global-funnel-only",
@@ -86,12 +88,12 @@
     "production": false
   },
   "blockers": [
-    "Validation 051 failed in staging with SQLSTATE 42883 because pg_catalog.greatest is not a callable catalog function.",
-    "Forward remediation supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql is repository-only and unapplied; a new exact-head staging authorization is required before apply/rerun.",
-    "Runtime snapshot and snapshot publication authority remain false."
+    "Runtime snapshot and snapshot publication authority remain false.",
+    "Append invocation and scheduler authority remain false.",
+    "ANA maturity remains 3/6; the next unresolved ANA-A09 functional maturity gate still requires exact-head certification and separate authorization."
   ],
-  "nextSafeAction": "After exact-head CI passes, request staging-only authorization bound to forward remediation blob ae59dd5d5e9656a938ec6d725e6305b549e0a698 and unchanged validation-051 blob 3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60.",
-  "authorizationRequirement": "No staging apply/read, snapshot mutation/publication, scheduler, production, merge or Ready is authorized by the runtime-type-remediation repository-only token.",
+  "nextSafeAction": "Certify this staging-evidence reconciliation on the exact resulting repository HEAD, then determine the next unresolved ANA-A09 functional maturity gate.",
+  "authorizationRequirement": "No staging write, append invocation, snapshot mutation/publication, scheduler, production, merge or Ready authority is granted by the staging-evidence reconciliation repository-only token.",
   "syntaxRemediation": {
     "authorizationToken": "authorize-ana-a09-canonical-funnel-snapshot-payload-adapter-syntax-remediation-repository-only head=40e72a3cf151f64df72b7a08cf984011c9415d98 matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1 failedMigration=20260927230000 failedMigrationBlobSha=df4a36d99e1bcce1755c3ff7d52666947464a788 validation=051 validationBlobSha=3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60 failureSqlState=42601 remediation=replace-pg_catalog.extract-with-postgres-extract-syntax runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
     "authorizationDigestSha256": "e776ba19825bfa901910649e9be8293dcdd6b3c51bf0665928d64d23139811c2",
@@ -133,7 +135,7 @@
     "appliedStagingMigrationVersion": "20260928005802",
     "appliedMigrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed",
     "validation051BlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
-    "validation051Status": "FAILED",
+    "validation051Status": "PASS",
     "failureSqlState": "42883",
     "remediation": "forward-replace-pg_catalog.greatest-with-postgres-greatest-and-cast-zero-bigint",
     "forwardMigration": "supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql",
@@ -150,6 +152,36 @@
       "productionAuthority": false,
       "mergeAuthority": false,
       "readyForReviewAuthority": false
-    }
+    },
+    "runtimeTypeRemediationApplied": true,
+    "appliedForwardStagingMigrationVersion": "20260928020745",
+    "validation051Executed": true,
+    "validation051Passed": true,
+    "stagingEvidencePath": "reports/generated/ana-a09-canonical-funnel-snapshot-payload-adapter-staging-evidence.json"
+  },
+  "latestReconciliationCheckpoint": {
+    "repositoryHead": "78f81c8225bac93fe4630daa6bf5f252c38d19f8",
+    "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+    "matrixVersion": "1.3.132",
+    "certificationRun": 36367467036,
+    "certificationRunConclusion": "success",
+    "anaMaturity": "3/6"
+  },
+  "stagingEvidenceReconciliation": {
+    "authorizationToken": "authorize-ana-a09-canonical-funnel-snapshot-payload-adapter-staging-evidence-reconciliation-repository-only head=78f81c8225bac93fe4630daa6bf5f252c38d19f8 matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1 certificationRun=36367467036 certificationRunConclusion=success stagingProjectRef=zwkczgewzbsorbrjuzpb priorAppliedStagingMigrationVersion=20260928005802 appliedForwardStagingMigrationVersion=20260928020745 forwardMigration=20260928012000 forwardMigrationBlobSha=ae59dd5d5e9656a938ec6d725e6305b549e0a698 validation=051 validationBlobSha=3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60 validation051=PASS configBlobSha=5c0eaa078bfcddbb49620ac48ec2891d08574c98 docsBlobSha=40795328fc8685234944deeef114222b1bbd33dd handoffBlobSha=c802b1abbfd6c73d37d2c6af6d023f89a7b5941c auditBlobSha=feb5a358fd650a6481daf224f20ef498abedcd5d testBlobSha=68860d462ebbcfe2a2ca2653068454d0395d49b4 evidencePath=reports/generated/ana-a09-canonical-funnel-snapshot-payload-adapter-staging-evidence.json scope=record-staging-remediation-and-validation-051-pass-only anaMaturity=3/6 runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "authorizationDigestSha256": "4ad813ce28dd44f490ea05addab94f4763a3f57d930c1b5e417763a2e627c399",
+    "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
+    "priorAppliedStagingMigrationVersion": "20260928005802",
+    "appliedForwardStagingMigrationVersion": "20260928020745",
+    "forwardMigrationBlobSha": "ae59dd5d5e9656a938ec6d725e6305b549e0a698",
+    "validation": "051",
+    "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
+    "validation051Status": "PASS",
+    "evidencePath": "reports/generated/ana-a09-canonical-funnel-snapshot-payload-adapter-staging-evidence.json",
+    "evidenceBlobSha": "ddd29090dde2a3b131d8cc1871b3eb82843c130d",
+    "configBlobSha": "383ed39d3d8240bdd51246ca6443668b5826904a",
+    "docsBlobSha": "d140f9e2452530b92918f7264946de204bf10ed5",
+    "auditBlobSha": "7143430157bb505ae814d5d9b88da5017f0f0bb4",
+    "testBlobSha": "f62976fc7170d10d59399574aaecf518a9dc884c"
   }
 }
