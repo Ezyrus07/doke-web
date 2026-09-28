@@ -43,9 +43,9 @@
     "scope": "global_funnel_only",
     "metricCount": 8,
     "candidatePrepared": true,
-    "migrationApplied": false,
+    "migrationApplied": true,
     "stagingValidated": false,
-    "validation051Status": "pending",
+    "validation051Status": "failed",
     "appendInvoked": false,
     "runtimeProjectionAuthority": true,
     "runtimeSnapshotAuthority": false,
@@ -59,7 +59,12 @@
     "conformanceScript": "scripts/test-ana-a09-canonical-funnel-snapshot-payload-adapter.js",
     "conformanceBlobSha": "01ad409b4b01611e941591d0176c54029010c127",
     "docsPath": "docs/ANA-A09-CANONICAL-FUNNEL-SNAPSHOT-PAYLOAD-ADAPTER.md",
-    "docsBlobSha": "d657a02f08ab19204298c35f3bf20e85b53e4227"
+    "docsBlobSha": "d657a02f08ab19204298c35f3bf20e85b53e4227",
+    "appliedStagingMigrationVersion": "20260928005802",
+    "failureSqlState": "42883",
+    "runtimeTypeRemediationMigration": "supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql",
+    "runtimeTypeRemediationMigrationBlobSha": "ae59dd5d5e9656a938ec6d725e6305b549e0a698",
+    "runtimeTypeRemediationApplied": false
   },
   "preservedBoundaries": [
     "global-funnel-only",
@@ -81,11 +86,12 @@
     "production": false
   },
   "blockers": [
-    "Remediated candidate is unapplied; validation 051 is pending and requires a new exact-head staging authorization bound to the remediated migration blob.",
+    "Validation 051 failed in staging with SQLSTATE 42883 because pg_catalog.greatest is not a callable catalog function.",
+    "Forward remediation supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql is repository-only and unapplied; a new exact-head staging authorization is required before apply/rerun.",
     "Runtime snapshot and snapshot publication authority remain false."
   ],
-  "nextSafeAction": "After exact-head CI passes, request a new staging-only authorization bound to migration blob d1f87a8ea609cd3aee881ea8abac092cdc5983ed and the unchanged validation-051 blob; do not reuse the consumed failed staging token.",
-  "authorizationRequirement": "The prior staging authorization was consumed by a failed syntax-rejected apply. Any new staging apply/read, snapshot mutation/publication, scheduler, production, merge or Ready requires a new explicit authorization.",
+  "nextSafeAction": "After exact-head CI passes, request staging-only authorization bound to forward remediation blob ae59dd5d5e9656a938ec6d725e6305b549e0a698 and unchanged validation-051 blob 3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60.",
+  "authorizationRequirement": "No staging apply/read, snapshot mutation/publication, scheduler, production, merge or Ready is authorized by the runtime-type-remediation repository-only token.",
   "syntaxRemediation": {
     "authorizationToken": "authorize-ana-a09-canonical-funnel-snapshot-payload-adapter-syntax-remediation-repository-only head=40e72a3cf151f64df72b7a08cf984011c9415d98 matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1 failedMigration=20260927230000 failedMigrationBlobSha=df4a36d99e1bcce1755c3ff7d52666947464a788 validation=051 validationBlobSha=3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60 failureSqlState=42601 remediation=replace-pg_catalog.extract-with-postgres-extract-syntax runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
     "authorizationDigestSha256": "e776ba19825bfa901910649e9be8293dcdd6b3c51bf0665928d64d23139811c2",
@@ -105,6 +111,34 @@
       "relevantCronJobsAfterFailure": 0,
       "snapshotMutationAttributedToAttempt": false
     },
+    "boundaries": {
+      "repositoryOnly": true,
+      "stagingApplyAuthorized": false,
+      "appendInvocationAuthority": false,
+      "snapshotMutationAuthority": false,
+      "runtimeSnapshotAuthority": false,
+      "snapshotPublicationAuthority": false,
+      "schedulerAuthority": false,
+      "productionAuthority": false,
+      "mergeAuthority": false,
+      "readyForReviewAuthority": false
+    }
+  },
+  "runtimeTypeRemediation": {
+    "authorizationToken": "authorize-ana-a09-canonical-funnel-snapshot-payload-adapter-runtime-type-remediation-repository-only head=63c8fcb83c700d5a5cdea56c6f796dd2c31b26fb matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1 appliedRepositoryMigration=20260927230000 appliedStagingMigrationVersion=20260928005802 appliedMigrationBlobSha=d1f87a8ea609cd3aee881ea8abac092cdc5983ed validation=051 validationBlobSha=3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60 validation051=FAILED failureSqlState=42883 remediation=forward-replace-pg_catalog.greatest-with-postgres-greatest-and-cast-zero-bigint runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "authorizationDigestSha256": "f5bfaa5316067db78ee3052b633d0c137be88c451ff08f66e4c69b8572f380c4",
+    "authorizedRepositoryHead": "63c8fcb83c700d5a5cdea56c6f796dd2c31b26fb",
+    "matrixVersion": "1.3.132",
+    "appliedRepositoryMigration": "20260927230000",
+    "appliedStagingMigrationVersion": "20260928005802",
+    "appliedMigrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed",
+    "validation051BlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
+    "validation051Status": "FAILED",
+    "failureSqlState": "42883",
+    "remediation": "forward-replace-pg_catalog.greatest-with-postgres-greatest-and-cast-zero-bigint",
+    "forwardMigration": "supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql",
+    "forwardMigrationBlobSha": "ae59dd5d5e9656a938ec6d725e6305b549e0a698",
+    "originalAppliedMigrationRewritten": false,
     "boundaries": {
       "repositoryOnly": true,
       "stagingApplyAuthorized": false,
