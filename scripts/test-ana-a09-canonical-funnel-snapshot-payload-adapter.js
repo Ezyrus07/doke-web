@@ -15,6 +15,8 @@ check('fingerprint algorithms',sql.includes("'crossBehavior'")&&sql.includes("'p
 check('zero publication authority',c.candidate.runtimeSnapshotAuthority===false&&c.candidate.snapshotPublicationAuthority===false&&c.candidate.schedulerAuthority===false);
 check('validation read-only',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v)&&!v.match(/^\s*insert\s+into\s+/im)&&!v.match(/^\s*update\s+/im)&&!v.match(/^\s*delete\s+from\s+/im));
 check('candidate pending',c.candidate.migrationApplied===false&&c.candidate.stagingValidated===false&&c.candidate.validation051Status==='pending');
+check('extract syntax remediated',!sql.includes('pg_catalog.extract(epoch from')&&sql.includes('extract(epoch from (v_computed_at-v_data_through))'));
+check('failed staging attempt preserved',c.syntaxRemediation?.failureSqlState==='42601'&&c.syntaxRemediation?.failedMigrationBlobSha==='df4a36d99e1bcce1755c3ff7d52666947464a788'&&c.syntaxRemediation?.remediatedMigrationBlobSha==='d1f87a8ea609cd3aee881ea8abac092cdc5983ed'&&c.syntaxRemediation?.stagingAttempt?.migrationLedgerEntryCreated===false&&c.syntaxRemediation?.stagingAttempt?.adapterPresentAfterFailure===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;
