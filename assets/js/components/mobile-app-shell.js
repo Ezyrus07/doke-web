@@ -518,7 +518,12 @@
       }
 
       if (pageCfg.key === 'notificacoes') {
-        return clickFirst('[data-notifications-mobile-search-toggle], .notifications-mobile-header .orders-page-header__search-toggle');
+        var notificationsSearch = document.querySelector('[data-notifications-search]');
+        if (notificationsSearch && typeof notificationsSearch.focus === 'function') {
+          notificationsSearch.focus();
+          return true;
+        }
+        return false;
       }
 
       if (pageCfg.key === 'mensagens') {
