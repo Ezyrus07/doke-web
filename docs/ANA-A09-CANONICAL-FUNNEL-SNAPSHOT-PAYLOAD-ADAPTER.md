@@ -53,3 +53,12 @@ The candidate:
 - `config/ana-a09-canonical-funnel-snapshot-payload-adapter.json`
 
 Migration application and validation 051 require a separate exact-head staging authorization.
+
+
+## Syntax remediation after failed staging apply
+
+The first staging application attempt of migration `20260927230000` was rejected by PostgreSQL with SQLSTATE `42601` before any migration ledger entry or adapter RPC was created. The failure was isolated to `pg_catalog.extract(epoch from ...)`.
+
+The repository-only remediation changes exactly that syntax to PostgreSQL's special-form `extract(epoch from ...)`. Failed migration blob: `df4a36d99e1bcce1755c3ff7d52666947464a788`. Remediated migration blob: `d1f87a8ea609cd3aee881ea8abac092cdc5983ed`.
+
+Validation 051 is byte-identical and remains pending. The previous staging authorization is consumed; applying the remediated blob requires a new exact-head staging authorization. No append/snapshot/publication/scheduler authority is granted by this remediation.
