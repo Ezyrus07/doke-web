@@ -25,14 +25,14 @@
     'admin-verificacao.html': { key: 'admin-verificacao', active: '', search: false, title: 'Análise de identidade', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-anuncio-revisao.html': { key: 'admin-anuncio-revisao', active: '', search: false, title: 'Revisão de anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-pedidos-operacao.html': { key: 'admin-pedidos-operacao', active: '', search: false, title: 'Operação de pedidos', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
-    'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
+    'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', compactSearchButton: true, hideSearchBar: true, bottomNav: false },
     'novidades.html': { key: 'novidades', active: 'notifications', search: false, title: 'Novidades', bottomNav: false },
     'ajuda.html': { key: 'ajuda', active: 'settings', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
+    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'tornar-profissional.html': { key: 'tornar-profissional', active: 'profile', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'verificacao-profissional.html': { key: 'verificacao-profissional', active: 'profile', search: false, title: 'Verificação profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'orcamento.html': { key: 'orcamento', active: 'orders', search: false, title: 'Orçamento' },
-    'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
+    'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'pagamento-profissional.html': { key: 'pagamento-profissional', active: 'orders', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'orders', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
@@ -41,7 +41,7 @@
   var FALLBACK_SHELL_PRESENTATION = {
     pedidos: { leading: 'profile', actions: ['search'] },
     mensagens: { leading: 'profile', actions: ['search', 'notifications'] },
-    notificacoes: { leading: 'profile', actions: ['search', 'filters'] },
+    notificacoes: { leading: 'profile', actions: ['search', 'filters'], inlineSearch: 'notifications' },
     comunidade: { leading: 'profile', actions: ['search', 'community-create'] },
     'comunidade-interna': { leading: 'back', backHref: 'comunidade.html', actions: ['search'] },
     carteira: { leading: 'profile', actions: ['wallet-search', 'wallet-withdraw'] },
@@ -369,12 +369,16 @@
   }
 
   function createShellInlineSearch(cfg) {
-    if (!cfg || !cfg.compactSearchButton || shellPresentation(cfg)) return '';
+    var presentation = shellPresentation(cfg);
+    var inlineSearchMode = presentation && presentation.inlineSearch ? presentation.inlineSearch : '';
+    if (!inlineSearchMode && (!cfg || !cfg.compactSearchButton || presentation)) return '';
+    var modeAttr = inlineSearchMode ? ' data-shell-inline-search-mode="' + inlineSearchMode + '"' : '';
+    var placeholder = inlineSearchMode === 'notifications' ? 'Buscar notificação' : 'Buscar';
     return [
-      '<form id="doke-shell-inline-search" class="doke-mobile-shell__inline-search" action="resultados.html" role="search" data-shell-inline-search autocomplete="off" hidden>',
+      '<form id="doke-shell-inline-search" class="doke-mobile-shell__inline-search" action="resultados.html" role="search" data-shell-inline-search' + modeAttr + ' autocomplete="off" hidden>',
       '  <label class="doke-mobile-shell__inline-field" for="doke-shell-inline-search-input">',
       '    <span class="doke-mobile-shell__inline-label">Buscar</span>',
-      '    <input id="doke-shell-inline-search-input" class="doke-mobile-shell__inline-input" type="search" name="q" placeholder="Buscar" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
+      '    <input id="doke-shell-inline-search-input" class="doke-mobile-shell__inline-input" type="search" name="q" placeholder="' + placeholder + '" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
       '  </label>',
       '</form>'
     ].join('');
@@ -606,6 +610,18 @@
     var shellInlineSearch = shell.querySelector('[data-shell-inline-search]');
     var shellInlineSearchInput = shell.querySelector('.doke-mobile-shell__inline-input');
     var shellSearchButton = shell.querySelector('[data-shell-search-trigger]');
+    var shellInlineSearchMode = shellInlineSearch ? (shellInlineSearch.getAttribute('data-shell-inline-search-mode') || '') : '';
+
+    function syncNotificationsInlineSearch() {
+      if (shellInlineSearchMode !== 'notifications' || !shellInlineSearchInput) return false;
+      var target = document.querySelector('[data-notifications-search]');
+      if (!target) return false;
+      if (target.value !== shellInlineSearchInput.value) target.value = shellInlineSearchInput.value;
+      try {
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      } catch (error) {}
+      return true;
+    }
 
     function setShellInlineSearchExpanded(expanded, restoreFocus) {
       if (!shellInlineSearch || !shellSearchButton) return;
@@ -633,6 +649,11 @@
         }
         var isOpen = shellInlineSearch.classList.contains('is-expanded');
         var value = shellInlineSearchInput.value.trim();
+        if (shellInlineSearchMode === 'notifications') {
+          if (!isOpen) setShellInlineSearchExpanded(true);
+          else syncNotificationsInlineSearch();
+          return;
+        }
         if (isOpen && value) {
           navigateTo('resultados.html?q=' + encodeURIComponent(value));
           return;
@@ -642,9 +663,19 @@
     }
 
     if (shellInlineSearch && shellInlineSearchInput) {
-      shellInlineSearchInput.value = queryValue();
+      if (shellInlineSearchMode === 'notifications') {
+        var notificationsSearchInput = document.querySelector('[data-notifications-search]');
+        shellInlineSearchInput.value = notificationsSearchInput ? notificationsSearchInput.value : '';
+        shellInlineSearchInput.addEventListener('input', syncNotificationsInlineSearch);
+      } else {
+        shellInlineSearchInput.value = queryValue();
+      }
       shellInlineSearch.addEventListener('submit', function (event) {
         event.preventDefault();
+        if (shellInlineSearchMode === 'notifications') {
+          syncNotificationsInlineSearch();
+          return;
+        }
         var value = shellInlineSearchInput.value.trim();
         if (!value) return;
         navigateTo('resultados.html?q=' + encodeURIComponent(value));
