@@ -59,7 +59,7 @@
     "lateFactRevisionAuthority": "ANA-A05",
     "publicationAllowed": false,
     "runtimeSnapshotAuthority": false,
-    "blockingReason": "SNAPSHOT_PAYLOAD_ADAPTER_STAGING_VALIDATION_AND_PUBLICATION_AUTHORITY_PENDING"
+    "blockingReason": "SNAPSHOT_PAYLOAD_ADAPTER_REMEDIATED_STAGING_VALIDATION_AND_PUBLICATION_AUTHORITY_PENDING"
   },
   "validationPlan": {
     "validation042Status": "passed",
@@ -78,7 +78,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The global projector remains staging-certified and repository runtime projection authority remains granted. The global snapshot payload adapter is repository-ready but not applied or staging-validated; snapshot/publication remain false, so ANA stays 3/6."
+    "reason": "The snapshot payload adapter syntax failure is repository-remediated; the failed staging attempt created no ledger entry or adapter RPC. The remediated adapter remains unapplied/staging-unvalidated and snapshot/publication remain false, so ANA stays 3/6."
   },
   "runtimeEvidence": {
     "artifact": "reports/generated/ana-a09-server-side-funnel-projector-runtime-evidence.json",
@@ -210,8 +210,45 @@
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false,
     "schedulerAuthority": false,
-    "migrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "migrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed",
     "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
-    "configBlobSha": "a800e169d0d22ef9e0e9b864079af62fe044c920"
+    "configBlobSha": "a800e169d0d22ef9e0e9b864079af62fe044c920",
+    "syntaxRemediated": true,
+    "failedMigrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "failureSqlState": "42601"
+  },
+  "snapshotPayloadAdapterSyntaxRemediation": {
+    "authorizationToken": "authorize-ana-a09-canonical-funnel-snapshot-payload-adapter-syntax-remediation-repository-only head=40e72a3cf151f64df72b7a08cf984011c9415d98 matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1 failedMigration=20260927230000 failedMigrationBlobSha=df4a36d99e1bcce1755c3ff7d52666947464a788 validation=051 validationBlobSha=3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60 failureSqlState=42601 remediation=replace-pg_catalog.extract-with-postgres-extract-syntax runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "authorizationDigestSha256": "e776ba19825bfa901910649e9be8293dcdd6b3c51bf0665928d64d23139811c2",
+    "authorizedRepositoryHead": "40e72a3cf151f64df72b7a08cf984011c9415d98",
+    "matrixVersion": "1.3.132",
+    "failureSqlState": "42601",
+    "failureReason": "PostgreSQL syntax error at pg_catalog.extract(epoch from ...); EXTRACT requires PostgreSQL special syntax.",
+    "remediation": "replace-pg_catalog.extract-with-postgres-extract-syntax",
+    "failedMigration": "20260927230000",
+    "failedMigrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "remediatedMigrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed",
+    "validation": "051",
+    "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
+    "stagingAttempt": {
+      "consumed": true,
+      "migrationApplied": false,
+      "migrationLedgerEntryCreated": false,
+      "adapterPresentAfterFailure": false,
+      "validation051Executed": false,
+      "relevantCronJobsAfterFailure": 0,
+      "snapshotMutationAttributedToAttempt": false
+    },
+    "repositoryOnly": true,
+    "stagingApplyAuthorized": false,
+    "stagingReadAuthorized": false,
+    "appendInvocationAuthority": false,
+    "snapshotMutationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
   }
 }
