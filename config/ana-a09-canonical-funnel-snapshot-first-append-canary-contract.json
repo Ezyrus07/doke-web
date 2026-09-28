@@ -1,0 +1,216 @@
+{
+  "contractId": "ana-a09-canonical-funnel-snapshot-first-append-canary-contract-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "scope": "repository_only_bounded_first_append_canary_contract_and_authorization_template",
+  "status": "candidate_ready_for_exact_head_repository_certification",
+  "objective": "Define the first bounded staging append canary without executing it. The canary must be bound to one explicit UTC window, start from zero existing target snapshots, process exactly eight canonical global-funnel payloads, expect eight APPENDED results, and preserve all continuous snapshot/publication/scheduler authorities as false.",
+  "sourceCheckpoint": {
+    "pr": 488,
+    "branch": "ana/ana-001-foundation",
+    "repositoryHead": "5802bf28507aa21d9ec66579c8561840abbaf029",
+    "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+    "matrixVersion": "1.3.132",
+    "anaMaturity": "3/6",
+    "certificationRun": 36436827896,
+    "certificationRunConclusion": "success"
+  },
+  "authorization": {
+    "token": "authorize-ana-a09-canonical-funnel-snapshot-first-append-canary-contract-repository-only head=5802bf28507aa21d9ec66579c8561840abbaf029 matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-first-append-canary-contract-v1 appendInvocationContractId=ana-a09-canonical-funnel-snapshot-append-invocation-contract-candidate-v1 appendInvocationConfigBlobSha=a2ff945493d2f4ff88d690be9277538094875652 stagingStructureEvidenceBlobSha=51919aec403111aa1e3bef7a69ca1f781025b53b migration=20260928134000 migrationBlobSha=5661652eb4a428976419c46db5d66bcb0e2505b1 appliedStagingMigrationVersion=20260928141605 validation052BlobSha=60a6326327bf673a2f3d81a60f1f44b8609ffa17 certificationRun=36436827896 certificationRunConclusion=success scope=design-bounded-first-append-canary-contract-and-authorization-evidence-template-only anaMaturity=3/6 maxSnapshotWrites=8 exactWindowRequired=true runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "digestSha256": "16d89f43697eaff6077839be66ed7e59a275b557c7c91b3dda59ea73bc8ab1c5",
+    "authorizedRepositoryHead": "5802bf28507aa21d9ec66579c8561840abbaf029",
+    "repositoryWriteAuthority": true,
+    "stagingAuthority": false,
+    "appendInvocationAuthority": false,
+    "snapshotMutationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "sourceBindings": {
+    "appendInvocationContractId": "ana-a09-canonical-funnel-snapshot-append-invocation-contract-candidate-v1",
+    "appendInvocationConfig": {
+      "path": "config/ana-a09-canonical-funnel-snapshot-append-invocation-contract.json",
+      "blobSha": "a2ff945493d2f4ff88d690be9277538094875652"
+    },
+    "stagingStructureEvidence": {
+      "path": "reports/generated/ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence.json",
+      "blobSha": "51919aec403111aa1e3bef7a69ca1f781025b53b",
+      "validation052Status": "PASS"
+    },
+    "installedMigration": {
+      "repositoryVersion": "20260928134000",
+      "stagingVersion": "20260928141605",
+      "blobSha": "5661652eb4a428976419c46db5d66bcb0e2505b1"
+    },
+    "validation052BlobSha": "60a6326327bf673a2f3d81a60f1f44b8609ffa17",
+    "payloadAdapterStagingEvidenceBlobSha": "ddd29090dde2a3b131d8cc1871b3eb82843c130d",
+    "a04SnapshotRuntimeBlobSha": "64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5",
+    "a05ReconciliationRuntimeBlobSha": "3bc753fe72a9a031ca43664ac28c8a659920c7ac"
+  },
+  "windowPolicy": {
+    "exactWindowRequired": true,
+    "actualWindowSelectedNow": false,
+    "timezone": "UTC",
+    "intervalSemantics": "[windowStart,windowEnd)",
+    "recommendedDurationSeconds": 300,
+    "windowStartPlaceholder": "<EXACT_UTC_WINDOW_START>",
+    "windowEndPlaceholder": "<EXACT_UTC_WINDOW_END>",
+    "selectionMustBeReadOnly": true,
+    "selectionMustOccurAfterRepositoryCertification": true,
+    "rejectIfEndNotAfterStart": true,
+    "rejectIfAnyTargetSnapshotAlreadyExists": true,
+    "rejectIfPayloadCountNotEight": true,
+    "rejectIfAdapterStateNotPayloadsComputedCandidate": true,
+    "noWindowInferenceAtExecution": true
+  },
+  "preflight": {
+    "required": true,
+    "readOnly": true,
+    "checks": [
+      "current PR #488 head equals the exact canary execution authorization head",
+      "PR remains OPEN/DRAFT/UNMERGED and base remains e0bd30e9d73378506a264fc0128de288435769f8",
+      "Domain Completion Matrix remains v1.3.132",
+      "staging project is zwkczgewzbsorbrjuzpb",
+      "staging migration ledger contains ana_a09_canonical_funnel_snapshot_append_invocation_contract at version 20260928141605",
+      "validator and invoker exist in private schema",
+      "anon/authenticated/service_role have no EXECUTE on validator or invoker",
+      "payload adapter returns state=payloads_computed_candidate and payloadCount=8 for the exact window",
+      "all eight payloads are global-funnel v1 with dimensions={}",
+      "exact target window has zero existing latest snapshot rows for the eight payload identities",
+      "authorization command digest and DB-canonical evidence digest are computed only after the exact user authorization exists"
+    ],
+    "expectedPreexistingTargetSnapshots": 0,
+    "expectedPayloadCount": 8
+  },
+  "execution": {
+    "invocationFunction": "private.invoke_a09_canonical_funnel_snapshot_append_v1",
+    "invocationCount": 1,
+    "maxSnapshotWrites": 8,
+    "expectedProcessedCount": 8,
+    "expectedAppendedCount": 8,
+    "expectedNoChangeCount": 0,
+    "expectedResultState": "authorized_window_processed",
+    "expectedPerPayloadState": "APPENDED",
+    "expectedInitialRevision": 1,
+    "transactionAtomic": true,
+    "partialCommitAllowed": false,
+    "replayInFirstCanaryAllowed": false,
+    "replayRequiresSeparateAuthorization": true
+  },
+  "postflight": {
+    "required": true,
+    "checks": [
+      "invoker result processedCount=8",
+      "invoker result appendedCount=8",
+      "invoker result noChangeCount=0",
+      "all eight result entries are APPENDED with non-null snapshotId and revision=1",
+      "the exact target window contains exactly eight new snapshot rows for the canary payload identities",
+      "each inserted row has revision=1 and supersedes_snapshot_id IS NULL",
+      "returned snapshotIds match the rows observed in the exact target window",
+      "validator/invoker EXECUTE privileges remain false for anon/authenticated/service_role",
+      "no scheduler was created or activated",
+      "runtimeSnapshotAuthority remains false",
+      "snapshotPublicationAuthority remains false",
+      "production, merge and Ready remain untouched"
+    ],
+    "evidenceMustRecordExactSnapshotIds": true
+  },
+  "failureSemantics": {
+    "failClosed": true,
+    "anyPreflightFailureAbortsBeforeInvocation": true,
+    "anyInvokerExceptionRollsBackWholeInvocationTransaction": true,
+    "sqlState40001MeansConcurrentRevisionConflictAndCanaryFailure": true,
+    "unexpectedNoChangeMeansCanaryFailure": true,
+    "unexpectedExistingTargetSnapshotMeansChooseDifferentWindowAndRequireNewAuthorization": true,
+    "doNotRetryWithSameAuthorizationAfterWindowChange": true,
+    "noAutomaticRetry": true
+  },
+  "idempotency": {
+    "a04ExactReplayBehavior": "NO_CHANGE when sourceFingerprint and projectionFingerprint match",
+    "exercisedByFirstCanary": false,
+    "reason": "The first canary is intentionally limited to one mutation-bearing invocation. A replay canary would require a separate explicit authorization."
+  },
+  "authorizationEvidenceTemplate": {
+    "path": "config/ana-a09-canonical-funnel-snapshot-first-append-canary-authorization-template.json",
+    "executableAsCommitted": false,
+    "failClosedDefaults": true,
+    "requiredRuntimeBoundaryValues": {
+      "appendInvocationAuthorized": true,
+      "snapshotMutationAuthorized": true,
+      "maxSnapshotWrites": 8,
+      "runtimeSnapshotAuthorityAuthorized": false,
+      "snapshotPublicationAuthorityAuthorized": false,
+      "schedulerAuthorized": false,
+      "productionAuthorized": false,
+      "pullRequestMergeAuthorized": false,
+      "readyForReviewAuthorized": false
+    },
+    "authorizationDigestRecipe": "sha256(exact UTF-8 staging authorization command)",
+    "evidenceDigestRecipe": "sha256(PostgreSQL jsonb text of authorization evidence with evidenceDigestSha256 removed)",
+    "evidenceDigestMustBeComputedAgainstDatabaseCanonicalJsonb": true
+  },
+  "futureStagingAuthorization": {
+    "commandName": "authorize-ana-a09-canonical-funnel-snapshot-first-append-canary-staging",
+    "genericProceedIsAuthorization": false,
+    "previousHeadAuthorizationReusable": false,
+    "exactWindowRequired": true,
+    "requiredArguments": [
+      "head",
+      "matrix",
+      "canaryContractId",
+      "canaryConfigBlobSha",
+      "authorizationTemplateBlobSha",
+      "stagingStructureEvidenceBlobSha",
+      "windowStart",
+      "windowEnd",
+      "expectedPayloadCount",
+      "expectedPreexistingTargetSnapshots",
+      "maxSnapshotWrites",
+      "expectedAppendedCount",
+      "expectedNoChangeCount",
+      "appendInvocationAuthority",
+      "snapshotMutationAuthority"
+    ],
+    "template": "authorize-ana-a09-canonical-funnel-snapshot-first-append-canary-staging head=<CURRENT_CERTIFIED_HEAD> matrix=v1.3.132 canaryContractId=ana-a09-canonical-funnel-snapshot-first-append-canary-contract-v1 canaryConfigBlobSha=<CURRENT_CANARY_CONFIG_BLOB_SHA> authorizationTemplateBlobSha=<CURRENT_TEMPLATE_BLOB_SHA> stagingStructureEvidenceBlobSha=51919aec403111aa1e3bef7a69ca1f781025b53b windowStart=<EXACT_UTC_WINDOW_START> windowEnd=<EXACT_UTC_WINDOW_END> expectedPayloadCount=8 expectedPreexistingTargetSnapshots=0 maxSnapshotWrites=8 expectedAppendedCount=8 expectedNoChangeCount=0 appendInvocationAuthority=true snapshotMutationAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "stagingMutationAuthorizedNow": false,
+    "appendInvocationAuthorizedNow": false,
+    "snapshotMutationAuthorizedNow": false
+  },
+  "authority": {
+    "repositoryCanaryContractAuthority": true,
+    "canaryAuthorizationTemplateAuthority": true,
+    "runtimeProjectionAuthority": true,
+    "stagingCanaryExecutionAuthority": false,
+    "appendInvocationAuthority": false,
+    "snapshotMutationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "prohibitedEffects": {
+    "stagingMutationInThisLot": false,
+    "appendInvocationInThisLot": false,
+    "snapshotWriteInThisLot": false,
+    "replayInvocationInThisLot": false,
+    "schedulerCreationInThisLot": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false,
+    "maturityPromotion": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false,
+    "reason": "This repository-only lot defines the first bounded append canary and a fail-closed authorization template. No append or snapshot mutation occurs."
+  },
+  "nextGate": "Certify this canary contract on the exact resulting HEAD, then perform a read-only staging preflight to select one clean exact UTC window. Only after binding that window into a new explicit staging authorization may the first append canary execute."
+}

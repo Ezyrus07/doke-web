@@ -16,6 +16,7 @@ name: ANA-A09 Canonical Funnel Projection
 # ANA-A09 runtime type remediation post-matrix exact-head certification arm
 # ANA-A09 snapshot append invocation contract candidate certification
 # ANA-A09 snapshot append invocation contract post-matrix exact-head certification arm
+# ANA-A09 first snapshot append canary contract candidate certification
 
 on:
   pull_request:
@@ -61,6 +62,12 @@ on:
       - 'supabase/migrations/20260928134000_ana_a09_canonical_funnel_snapshot_append_invocation_contract.sql'
       - 'supabase/tests/052_ana_a09_canonical_funnel_snapshot_append_invocation_contract_validation.sql'
       - 'reports/generated/ana-a09-canonical-funnel-snapshot-append-invocation-contract-candidate-handoff.json'
+      - 'config/ana-a09-canonical-funnel-snapshot-first-append-canary-contract.json'
+      - 'config/ana-a09-canonical-funnel-snapshot-first-append-canary-authorization-template.json'
+      - 'docs/ANA-A09-CANONICAL-FUNNEL-SNAPSHOT-FIRST-APPEND-CANARY-CONTRACT.md'
+      - 'scripts/audit-ana-a09-canonical-funnel-snapshot-first-append-canary-contract.js'
+      - 'scripts/test-ana-a09-canonical-funnel-snapshot-first-append-canary-contract.js'
+      - 'reports/generated/ana-a09-canonical-funnel-snapshot-first-append-canary-contract-handoff.json'
       - 'reports/generated/ana-a09-immutable-funnel-segmentation-runtime-staging-evidence.json'
       - 'config/ana-a07-a09-funnel-freshness-policy-candidate.json'
       - 'supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql'
@@ -114,6 +121,8 @@ jobs:
           node --check scripts/test-ana-a09-canonical-funnel-snapshot-payload-adapter.js
           node --check scripts/audit-ana-a09-canonical-funnel-snapshot-append-invocation-contract.js
           node --check scripts/test-ana-a09-canonical-funnel-snapshot-append-invocation-contract.js
+          node --check scripts/audit-ana-a09-canonical-funnel-snapshot-first-append-canary-contract.js
+          node --check scripts/test-ana-a09-canonical-funnel-snapshot-first-append-canary-contract.js
           node --check scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
@@ -138,6 +147,10 @@ jobs:
         run: node scripts/audit-ana-a09-canonical-funnel-snapshot-append-invocation-contract.js
       - name: Snapshot append invocation contract candidate conformance
         run: node scripts/test-ana-a09-canonical-funnel-snapshot-append-invocation-contract.js
+      - name: First snapshot append canary contract audit
+        run: node scripts/audit-ana-a09-canonical-funnel-snapshot-first-append-canary-contract.js
+      - name: First snapshot append canary contract conformance
+        run: node scripts/test-ana-a09-canonical-funnel-snapshot-first-append-canary-contract.js
       - name: Runtime canary contract audit
         run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
       - name: Runtime canary contract conformance
