@@ -92,7 +92,7 @@ begin
 
     v_lag_seconds := pg_catalog.greatest(
       0,
-      pg_catalog.floor(pg_catalog.extract(epoch from (v_computed_at-v_data_through)))::bigint
+      pg_catalog.floor(extract(epoch from (v_computed_at-v_data_through)))::bigint
     );
     v_projection_state := case
       when v_lag_seconds > v_max_lag_seconds then 'stale'
