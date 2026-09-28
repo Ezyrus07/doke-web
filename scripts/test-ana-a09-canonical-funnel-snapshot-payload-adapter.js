@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-canonical-funnel-snapshot-payload-adapter.json'),'utf8'));
-const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260927230000_ana_a09_canonical_funnel_snapshot_payload_adapter.sql'),'utf8');
+const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260927230000_ana_a09_canonical_funnel_snapshot_payload_adapter.sql'),'utf8');const fix=fs.readFileSync(path.join(root,'supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql'),'utf8');
 const v=fs.readFileSync(path.join(root,'supabase/tests/051_ana_a09_canonical_funnel_snapshot_payload_adapter_validation.sql'),'utf8');
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('adapter function',sql.includes('public.compute_analytics_canonical_funnel_snapshot_payloads_v1'));
@@ -14,8 +14,8 @@ check('not applicable reconciliation',sql.includes("'reconciliationState','not_a
 check('fingerprint algorithms',sql.includes("'crossBehavior'")&&sql.includes("'projectionFingerprint'")&&sql.includes("extensions.digest"));
 check('zero publication authority',c.candidate.runtimeSnapshotAuthority===false&&c.candidate.snapshotPublicationAuthority===false&&c.candidate.schedulerAuthority===false);
 check('validation read-only',/^begin;/m.test(v)&&/rollback;\s*$/m.test(v)&&!v.match(/^\s*insert\s+into\s+/im)&&!v.match(/^\s*update\s+/im)&&!v.match(/^\s*delete\s+from\s+/im));
-check('candidate pending',c.candidate.migrationApplied===false&&c.candidate.stagingValidated===false&&c.candidate.validation051Status==='pending');
-check('extract syntax remediated',!sql.includes('pg_catalog.extract(epoch from')&&sql.includes('extract(epoch from (v_computed_at-v_data_through))'));
+check('staging failure preserved',c.candidate.migrationApplied===true&&c.candidate.appliedStagingMigrationVersion==='20260928005802'&&c.candidate.stagingValidated===false&&c.candidate.validation051Status==='failed'&&c.candidate.failureSqlState==='42883');
+check('extract syntax remediated',!sql.includes('pg_catalog.extract(epoch from')&&sql.includes('extract(epoch from (v_computed_at-v_data_through))'));check('forward greatest remediation',!fix.includes('pg_catalog.greatest(')&&fix.includes('greatest(\n      0::bigint,')&&c.runtimeTypeRemediation?.forwardMigrationBlobSha==='ae59dd5d5e9656a938ec6d725e6305b549e0a698'&&c.runtimeTypeRemediation?.stagingApplyAuthorized===false);
 check('failed staging attempt preserved',c.syntaxRemediation?.failureSqlState==='42601'&&c.syntaxRemediation?.failedMigrationBlobSha==='df4a36d99e1bcce1755c3ff7d52666947464a788'&&c.syntaxRemediation?.remediatedMigrationBlobSha==='d1f87a8ea609cd3aee881ea8abac092cdc5983ed'&&c.syntaxRemediation?.stagingAttempt?.migrationLedgerEntryCreated===false&&c.syntaxRemediation?.stagingAttempt?.adapterPresentAfterFailure===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
