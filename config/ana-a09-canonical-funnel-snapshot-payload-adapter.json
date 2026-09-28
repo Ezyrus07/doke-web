@@ -73,7 +73,8 @@
     "snapshotPublicationAuthority": false,
     "schedulerAuthority": false,
     "browserExecuteAllowed": false,
-    "serviceRoleExecuteCandidate": true
+    "serviceRoleExecuteCandidate": true,
+    "migrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed"
   },
   "payloadContract": {
     "requiredFields": [
@@ -126,5 +127,39 @@
     "after": 3,
     "reason": "Payload-shape preparation alone grants no snapshot/publication authority and creates no staging evidence; ANA remains 3/6."
   },
-  "nextGate": "After exact-head CI and Matrix refresh pass, request separate staging-only authorization to apply migration 20260927230000 and execute rollback-only validation 051. Do not grant runtimeSnapshotAuthority or snapshotPublicationAuthority from adapter installation."
+  "nextGate": "Syntax remediation is repository-certified pending exact-head CI. The previous staging authorization failed before ledger/RPC creation and is consumed. A new exact-head staging authorization bound to the remediated migration blob is required before applying migration 20260927230000 or executing validation 051. Do not grant runtimeSnapshotAuthority or snapshotPublicationAuthority.",
+  "syntaxRemediation": {
+    "authorizationToken": "authorize-ana-a09-canonical-funnel-snapshot-payload-adapter-syntax-remediation-repository-only head=40e72a3cf151f64df72b7a08cf984011c9415d98 matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-payload-adapter-candidate-v1 failedMigration=20260927230000 failedMigrationBlobSha=df4a36d99e1bcce1755c3ff7d52666947464a788 validation=051 validationBlobSha=3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60 failureSqlState=42601 remediation=replace-pg_catalog.extract-with-postgres-extract-syntax runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false",
+    "authorizationDigestSha256": "e776ba19825bfa901910649e9be8293dcdd6b3c51bf0665928d64d23139811c2",
+    "authorizedRepositoryHead": "40e72a3cf151f64df72b7a08cf984011c9415d98",
+    "matrixVersion": "1.3.132",
+    "failureSqlState": "42601",
+    "failureReason": "PostgreSQL syntax error at pg_catalog.extract(epoch from ...); EXTRACT requires PostgreSQL special syntax.",
+    "remediation": "replace-pg_catalog.extract-with-postgres-extract-syntax",
+    "failedMigration": "20260927230000",
+    "failedMigrationBlobSha": "df4a36d99e1bcce1755c3ff7d52666947464a788",
+    "remediatedMigrationBlobSha": "d1f87a8ea609cd3aee881ea8abac092cdc5983ed",
+    "validation": "051",
+    "validationBlobSha": "3bca4c4a819bf11dc42751c7e70cb5e4e7c75c60",
+    "stagingAttempt": {
+      "consumed": true,
+      "migrationApplied": false,
+      "migrationLedgerEntryCreated": false,
+      "adapterPresentAfterFailure": false,
+      "validation051Executed": false,
+      "relevantCronJobsAfterFailure": 0,
+      "snapshotMutationAttributedToAttempt": false
+    },
+    "repositoryOnly": true,
+    "stagingApplyAuthorized": false,
+    "stagingReadAuthorized": false,
+    "appendInvocationAuthority": false,
+    "snapshotMutationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  }
 }
