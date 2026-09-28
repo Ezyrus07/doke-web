@@ -62,3 +62,16 @@ The first staging application attempt of migration `20260927230000` was rejected
 The repository-only remediation changes exactly that syntax to PostgreSQL's special-form `extract(epoch from ...)`. Failed migration blob: `df4a36d99e1bcce1755c3ff7d52666947464a788`. Remediated migration blob: `d1f87a8ea609cd3aee881ea8abac092cdc5983ed`.
 
 Validation 051 is byte-identical and remains pending. The previous staging authorization is consumed; applying the remediated blob requires a new exact-head staging authorization. No append/snapshot/publication/scheduler authority is granted by this remediation.
+
+
+## Runtime type remediation after validation 051 failure
+
+The remediated original migration was subsequently applied in staging as version `20260928005802`, but validation `051` failed with SQLSTATE `42883` when the adapter executed `pg_catalog.greatest(...)`.
+
+Root cause: PostgreSQL `GREATEST` is special syntax rather than a schema-qualified catalog function. Because the original migration is already applied, repository history is not rewritten. The repository-only remediation is a forward `CREATE OR REPLACE FUNCTION` migration:
+
+- `supabase/migrations/20260928012000_ana_a09_canonical_funnel_snapshot_payload_adapter_runtime_type_remediation.sql`
+- blob `ae59dd5d5e9656a938ec6d725e6305b549e0a698`
+- replacement: `pg_catalog.greatest(0, floor(...)::bigint)` → `greatest(0::bigint, floor(...)::bigint)`
+
+The unchanged validation `051` remains failed/pending rerun. This lot does not apply the forward migration to staging and grants no append, snapshot mutation/publication, scheduler, production, merge or Ready authority.
