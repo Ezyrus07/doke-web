@@ -53,9 +53,9 @@
   "candidate": {
     "contractId": "ana-a09-canonical-funnel-snapshot-append-invocation-contract-candidate-v1",
     "configPath": "config/ana-a09-canonical-funnel-snapshot-append-invocation-contract.json",
-    "configBlobSha": "d684b238001cef0eb06302bbfcf4787260206e6d",
+    "configBlobSha": "eda17d8dcaafc65cde0630612727dcd63bf1a473",
     "docsPath": "docs/ANA-A09-CANONICAL-FUNNEL-SNAPSHOT-APPEND-INVOCATION-CONTRACT.md",
-    "docsBlobSha": "f3a137ea93ceb8e7539aeeef48ea5ec713c86671",
+    "docsBlobSha": "0b2a209d8141f40e3abb603f1d790b82ca1dad54",
     "migration": "supabase/migrations/20260928134000_ana_a09_canonical_funnel_snapshot_append_invocation_contract.sql",
     "migrationBlobSha": "5661652eb4a428976419c46db5d66bcb0e2505b1",
     "validationSql": "supabase/tests/052_ana_a09_canonical_funnel_snapshot_append_invocation_contract_validation.sql",
@@ -80,11 +80,14 @@
     "stagingEvidencePath": "reports/generated/ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence.json",
     "runtimeValidatorRemediationMigration": "supabase/migrations/20260929005500_ana_a09_snapshot_append_validator_jsonb_cardinality_runtime_remediation.sql",
     "runtimeValidatorRemediationMigrationBlobSha": "3db9120aaebf24a9ef9a6a73579f7d14203cb1f8",
-    "runtimeValidatorRemediationApplied": false,
+    "runtimeValidatorRemediationApplied": true,
     "validation053Sql": "supabase/tests/053_ana_a09_snapshot_append_validator_runtime_validation.sql",
     "validation053BlobSha": "7ae6a7f6a69c908a50997d44fd11c883eb00e180",
-    "validation053Status": "pending",
-    "firstAppendCanaryBlocked": true
+    "validation053Status": "PASS",
+    "firstAppendCanaryBlocked": true,
+    "appliedRuntimeValidatorRemediationStagingVersion": "20260929013223",
+    "runtimeValidatorRemediationEvidencePath": "reports/generated/ana-a09-snapshot-append-validator-jsonb-cardinality-remediation-staging-evidence.json",
+    "firstAppendCanaryBlockedReason": "requires_fresh_preflight_and_new_exact_window_authorization_after_validator_remediation"
   },
   "preservedBoundaries": [
     "global-funnel-only",
@@ -111,14 +114,15 @@
     "after": 3,
     "promoted": false
   },
-  "nextSafeAction": "Certify the forward validator remediation and validation 053 on the exact resulting HEAD. Then require a separate staging-only authorization to apply the forward migration and run non-mutating validation 053.",
-  "authorizationRequirement": "This repository-only remediation does not authorize staging apply, append invocation, snapshot mutation, runtime snapshot/publication authority, scheduler, production, merge or Ready.",
+  "nextSafeAction": "Certify the reconciled remediation staging evidence on the exact resulting HEAD, then perform a fresh read-only staging preflight and issue a new exact-window first-append authorization.",
+  "authorizationRequirement": "Append invocation, snapshot mutation, runtime snapshot/publication authority, scheduler, production, merge and Ready remain unauthorized.",
   "latestReconciliationCheckpoint": {
-    "repositoryHead": "7eadb9f51e2df6d293bdf60f5d877a3fe26626c4",
+    "repositoryHead": "a1daca85cc3a5d374612c33a180d14763a41ea30",
+    "evidenceReconciliationCommitParent": "a1daca85cc3a5d374612c33a180d14763a41ea30",
     "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
     "matrixVersion": "1.3.132",
     "anaMaturity": "3/6",
-    "certificationRun": 36448246807,
+    "certificationRun": 36507998001,
     "certificationRunConclusion": "success"
   },
   "stagingStructureEvidenceReconciliation": {
@@ -184,6 +188,37 @@
     "auditBlobSha": "f058ceb7f786004b5b2f71edfb8e32d2f0becbd7",
     "testBlobSha": "31e6a647c94479c88d936c901267612fa4d01436",
     "workflowBlobSha": "dfda884035dc961e4bf607b4e4d6d817b9e1e8aa",
+    "stagingAuthority": false,
+    "appendInvocationAuthority": false,
+    "snapshotMutationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false
+  },
+  "runtimeValidatorRemediationStagingEvidenceReconciliation": {
+    "authorizationDigestSha256": "f8b4472e8b7a2b67eb9027ad738224482fa8ebf2229685e187e3deb0d2fab335",
+    "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
+    "remediation": {
+      "repositoryVersion": "20260929005500",
+      "stagingVersion": "20260929013223",
+      "blobSha": "3db9120aaebf24a9ef9a6a73579f7d14203cb1f8"
+    },
+    "validation053": {
+      "blobSha": "7ae6a7f6a69c908a50997d44fd11c883eb00e180",
+      "status": "PASS",
+      "executesValidator": true,
+      "invokesAppender": false,
+      "snapshotMutationDetected": false
+    },
+    "blockedCanaryWindow": {
+      "windowStart": "2026-09-28T15:55:00Z",
+      "windowEnd": "2026-09-28T16:00:00Z",
+      "snapshotRows": 0,
+      "priorAuthorizationReusable": false
+    },
+    "evidencePath": "reports/generated/ana-a09-snapshot-append-validator-jsonb-cardinality-remediation-staging-evidence.json",
+    "configBlobSha": "eda17d8dcaafc65cde0630612727dcd63bf1a473",
+    "docsBlobSha": "0b2a209d8141f40e3abb603f1d790b82ca1dad54",
     "stagingAuthority": false,
     "appendInvocationAuthority": false,
     "snapshotMutationAuthority": false,
