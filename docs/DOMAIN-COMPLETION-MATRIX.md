@@ -773,7 +773,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 6 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 6 referências mock; 58 referências de rede/Supabase; 4 marcadores de implementação pendente.
+**Evidência estática observada:** 6 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 6 referências mock; 56 referências de rede/Supabase; 4 marcadores de implementação pendente.
 
 **Páginas:** `carteira.html`, `admin.html`.
 
@@ -1077,7 +1077,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 899 arquivos no escopo; 230 referências a localStorage; 79 a sessionStorage; 242 referências mock; 282 referências de rede/Supabase; 11 marcadores de implementação pendente.
+**Evidência estática observada:** 899 arquivos no escopo; 230 referências a localStorage; 79 a sessionStorage; 242 referências mock; 280 referências de rede/Supabase; 11 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -1108,7 +1108,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2722 arquivos no escopo; 574 referências a localStorage; 164 a sessionStorage; 908 referências mock; 682 referências de rede/Supabase; 95 marcadores de implementação pendente.
+**Evidência estática observada:** 2722 arquivos no escopo; 574 referências a localStorage; 164 a sessionStorage; 908 referências mock; 680 referências de rede/Supabase; 95 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
