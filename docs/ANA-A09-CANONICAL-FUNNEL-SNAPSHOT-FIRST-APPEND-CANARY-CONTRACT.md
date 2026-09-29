@@ -112,9 +112,9 @@ The evidence must record the exact eight snapshot IDs.
 
 ## Idempotency
 
-A04 already implements deterministic exact replay as `NO_CHANGE` when source and projection fingerprints match.
+A04 implements deterministic exact replay as `NO_CHANGE` when source and projection fingerprints match.
 
-The **first** append canary will not exercise replay. A later replay canary, if desired, requires a separate explicit authorization so the mutation-bearing first canary stays maximally bounded.
+The **first** append canary intentionally did not exercise replay. A separately authorized replay canary was later executed against the same exact window and returned eight `NO_CHANGE` results, zero `APPENDED`, and zero committed snapshot writes. No revision greater than 1 was created.
 
 ## Authorization evidence template
 
@@ -165,6 +165,44 @@ The database-canonical authorization evidence digest was:
 
 ANA remains **3/6**.
 
+## Reconciled replay/idempotency evidence
+
+Machine-readable replay evidence:
+
+`reports/generated/ana-a09-canonical-funnel-snapshot-replay-canary-staging-evidence.json`
+
+Evidence blob: `3dd8511d84e25d08115a3b8f04cb186452f7fb5e`
+
+Observed replay result:
+
+- exact window: `2026-09-29T01:55:00Z → 2026-09-29T02:00:00Z`
+- `processedCount = 8`
+- `appendedCount = 0`
+- `noChangeCount = 8`
+- all eight returned states = `NO_CHANGE`
+- the same eight snapshot IDs were returned
+- target row count remained exactly 8
+- all target revisions remained `1`
+- rows with revision greater than 1 remained `0`
+- all `supersedes_snapshot_id` values remained null
+- latest target-row creation timestamp remained `2026-09-29T02:44:44.545703Z`
+- committed snapshot writes = `0`
+- A09 scheduler count remained zero
+- validator/invoker client-role privileges remained closed
+- runtime snapshot/publication/scheduler authority remained false
+
+The replay was protected by a transaction-level rollback guard. Any unexpected `APPENDED`, count mismatch, or authority mismatch would have raised an error and rolled back the full statement. The guard passed.
+
+Replay authorization digest:
+
+`ca7a1af2389141c45088d5bd963e8d0708373f0cf48cda438c3e390c5ffd6280`
+
+Database-canonical replay evidence digest:
+
+`bd788113258fa699d55e1e32754ebb95473c1649415ce1debc52e624a8d34071`
+
+ANA remains **3/6**.
+
 ## Next gate
 
-Certify this reconciled evidence on the exact resulting repository HEAD. This does not authorize replay. A replay/idempotency canary, if desired, requires a separate explicit authorization.
+Certify this reconciled replay evidence on the exact resulting repository HEAD, then advance the next unresolved ANA maturity gate. A09 replay success does not by itself authorize continuous snapshot publication, a scheduler, production, merge, Ready for review, or ANA maturity promotion.

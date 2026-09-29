@@ -3,6 +3,7 @@ const fs=require('fs');const path=require('path');const root=path.resolve(__dirn
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-canonical-funnel-snapshot-first-append-canary-contract.json'),'utf8'));
 const t=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-canonical-funnel-snapshot-first-append-canary-authorization-template.json'),'utf8'));
 const e=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-canonical-funnel-snapshot-first-append-canary-staging-evidence.json'),'utf8'));
+const replay=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-canonical-funnel-snapshot-replay-canary-staging-evidence.json'),'utf8'));
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('window not preselected',c.windowPolicy.actualWindowSelectedNow===false&&c.windowPolicy.exactWindowRequired===true);
 check('recommended window bounded',c.windowPolicy.recommendedDurationSeconds===300&&c.windowPolicy.timezone==='UTC');
@@ -25,6 +26,12 @@ check('first append exact persisted shape',e.postflight.targetRowCount===8&&e.po
 check('first append ids unique',Array.isArray(e.execution.snapshotIds)&&e.execution.snapshotIds.length===8&&new Set(e.execution.snapshotIds).size===8);
 check('first append remains bounded',e.postflight.a09SchedulerCount===0&&e.postflight.runtimeSnapshotAuthority===false&&e.postflight.snapshotPublicationAuthority===false&&e.reconciliation.productionAuthority===false&&e.reconciliation.mergeAuthority===false&&e.reconciliation.readyForReviewAuthority===false);
 check('replay still separate',e.execution.successfulInvokerCalls===1&&c.stagingFirstAppendCanaryEvidence.replayExercised===false&&c.stagingFirstAppendCanaryEvidence.replayRequiresSeparateAuthorization===true);
+
+check('replay pass',replay.execution.status==='PASS'&&replay.execution.processedCount===8&&replay.execution.appendedCount===0&&replay.execution.noChangeCount===8);
+check('replay no write persisted',replay.execution.committedSnapshotWrites===0&&replay.postflight.targetRowCount===8&&replay.postflight.revisionOneCount===8&&replay.postflight.higherRevisionCount===0&&replay.postflight.noNewSnapshotRowPersisted===true);
+check('replay same ids',replay.execution.snapshotIds.length===8&&new Set(replay.execution.snapshotIds).size===8&&JSON.stringify([...replay.execution.snapshotIds].sort())===JSON.stringify([...e.execution.snapshotIds].sort()));
+check('replay rollback guard enforced',replay.execution.rollbackGuard===1&&replay.replayAuthorization.unexpectedAppendRollbackRequired===true);
+check('replay boundaries closed',replay.postflight.a09SchedulerCount===0&&replay.postflight.runtimeSnapshotAuthority===false&&replay.postflight.snapshotPublicationAuthority===false&&replay.reconciliation.replayInvocationAuthority===false&&replay.reconciliation.stagingAuthority===false&&replay.reconciliation.productionAuthority===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;
