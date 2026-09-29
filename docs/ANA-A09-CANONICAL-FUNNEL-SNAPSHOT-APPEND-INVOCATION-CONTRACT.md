@@ -160,3 +160,27 @@ Until the forward migration is separately applied and 053 passes in staging, the
 
 ANA remains **3/6** and all append/publication/scheduler authorities remain false.
 
+## Runtime validator remediation — staging validation 053 PASS
+
+The forward-only JSONB cardinality remediation is applied in `doke-web-staging`.
+
+- repository migration: `20260929005500`
+- migration blob: `3db9120aaebf24a9ef9a6a73579f7d14203cb1f8`
+- staging ledger version: `20260929013223`
+- validation `053`: **PASS**
+- validation blob: `7ae6a7f6a69c908a50997d44fd11c883eb00e180`
+
+Validation 053 executed the authorization validator, remained rollback-only, did not invoke the append successor and did not mutate snapshots.
+
+Runtime inspection confirms that the validator no longer calls `pg_catalog.jsonb_object_length(...)`, uses `pg_catalog.jsonb_object_keys(...)`, and both the validator and invoker remain non-executable by `anon`, `authenticated` and `service_role`.
+
+The previously blocked canary window `2026-09-28T15:55:00Z → 2026-09-28T16:00:00Z` still contains **0** target snapshots. Its previous authorization must not be reused.
+
+Canonical evidence:
+
+- `reports/generated/ana-a09-snapshot-append-validator-jsonb-cardinality-remediation-staging-evidence.json`
+
+This resolves the validator runtime blocker but does not authorize an append. A fresh read-only preflight and a new exact-window authorization are required.
+
+ANA remains **3/6** and append/snapshot/publication/scheduler authorities remain false.
+
