@@ -169,10 +169,10 @@ for (const viewport of viewports) {
         grid.append(primary, bare);
 
         const body = primary.querySelector('.doke-ad-card__body');
-        const children = Array.from(body.children);
+        const children = [...body.children];
         const sellerIndex = children.findIndex((node) => node.classList.contains('doke-ad-card__seller'));
         const titleIndex = children.findIndex((node) => node.classList.contains('doke-ad-card__title'));
-        const facts = Array.from(primary.querySelectorAll('[data-results-decision-fact]'));
+        const facts = [...primary.querySelectorAll('[data-results-decision-fact]')];
         const visibleFacts = facts.filter((node) => getComputedStyle(node).display !== 'none');
         const cardStyle = getComputedStyle(primary);
         const titleStyle = getComputedStyle(primary.querySelector('.doke-ad-card__title'));
