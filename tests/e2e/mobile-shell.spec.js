@@ -68,6 +68,38 @@ test.describe('PD-SHELL-001 mobile app shell', () => {
     });
   }
 
+  test('resultados exposes Buscar + Filtros and routes both actions to canonical page controls', async ({ page }) => {
+    await page.goto('/resultados.html?q=limpeza&type=services');
+
+    const shell = page.locator('.doke-mobile-shell');
+    const actions = shell.locator('[data-shell-context-actions]');
+    const search = actions.locator('[data-shell-search-trigger]');
+    const filters = actions.locator('[data-shell-filter]');
+    const pageSearch = page.locator('[data-results-search-input]').first();
+
+    await expect(shell.locator('[data-shell-profile]')).toBeVisible();
+    await expect(shell.locator('[data-shell-title]')).toHaveText('Resultados');
+    await expect(search).toHaveCount(1);
+    await expect(filters).toHaveCount(1);
+    await expect(actions.locator('[data-shell-location]')).toHaveCount(0);
+    await expect(actions.locator('a[href="notificacoes.html"]')).toHaveCount(0);
+    await expect(shell.locator('[data-shell-search]')).toHaveCount(0);
+
+    await search.click();
+    await expect(pageSearch).toBeFocused();
+
+    await filters.click();
+    await expect(page.locator('body')).toHaveClass(/results-filters-open/);
+    await expect(page).toHaveURL(/\/resultados\.html\?q=limpeza&type=services$/);
+
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    }));
+    expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.innerWidth + 1);
+    await expect(page.locator('.doke-mobile-bottom-nav')).toBeVisible();
+  });
+
   test('notificacoes removes the self-referential notification action', async ({ page }) => {
     await page.goto('/notificacoes.html');
     const actions = page.locator('.doke-mobile-shell [data-shell-context-actions]');
@@ -145,28 +177,32 @@ test.describe('PD-SHELL-001 tablet boundary', () => {
     { width: 608, height: 926 },
     { width: 820, height: 1180 },
   ]) {
-    test(`${viewport.width}x${viewport.height} keeps phone shell disabled`, async ({ page }) => {
-      await page.setViewportSize(viewport);
-      await page.goto('/configuracoes.html');
-      await expect(page.locator('.doke-mobile-shell')).toHaveCount(0);
-      await expect(page.locator('.doke-mobile-bottom-nav')).toHaveCount(0);
-      const state = await page.evaluate(() => ({
-        mounted: document.body.classList.contains('doke-mobile-shell-mounted'),
-        overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
-      }));
-      expect(state.mounted).toBe(false);
-      expect(state.overflow).toBe(false);
-    });
+    for (const path of ['configuracoes.html', 'resultados.html?q=limpeza&type=services']) {
+      test(`${viewport.width}x${viewport.height} keeps phone shell disabled on ${path}`, async ({ page }) => {
+        await page.setViewportSize(viewport);
+        await page.goto(`/${path}`);
+        await expect(page.locator('.doke-mobile-shell')).toHaveCount(0);
+        await expect(page.locator('.doke-mobile-bottom-nav')).toHaveCount(0);
+        const state = await page.evaluate(() => ({
+          mounted: document.body.classList.contains('doke-mobile-shell-mounted'),
+          overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+        }));
+        expect(state.mounted).toBe(false);
+        expect(state.overflow).toBe(false);
+      });
+    }
   }
 });
 
 test.describe('PD-SHELL-001 desktop regression boundary', () => {
   test.use({ viewport: { width: 1366, height: 768 } });
 
-  test('desktop does not mount the phone shell', async ({ page }) => {
-    await page.goto('/index.html');
-    await expect(page.locator('.doke-mobile-shell')).toHaveCount(0);
-    await expect(page.locator('.doke-mobile-bottom-nav')).toHaveCount(0);
-    await expect(page.locator('.app-header')).toBeVisible();
-  });
+  for (const path of ['index.html', 'resultados.html?q=limpeza&type=services']) {
+    test(`desktop does not mount the phone shell on ${path}`, async ({ page }) => {
+      await page.goto(`/${path}`);
+      await expect(page.locator('.doke-mobile-shell')).toHaveCount(0);
+      await expect(page.locator('.doke-mobile-bottom-nav')).toHaveCount(0);
+      await expect(page.locator('.app-header')).toBeVisible();
+    });
+  }
 });
