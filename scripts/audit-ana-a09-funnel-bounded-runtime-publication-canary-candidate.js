@@ -26,7 +26,7 @@ check('future postflight exact',c.futureStagingExecutionContract?.postflight?.ex
 check('authority remains closed',c.authority?.runtimeCanaryExecutionAuthority===false&&c.authority?.snapshotMutationAuthority===false&&c.authority?.runtimeSnapshotAuthority===false&&c.authority?.snapshotPublicationAuthority===false&&c.authority?.schedulerAuthority===false&&c.authority?.stagingAuthority===false);
 check('no mutation in this lot',c.prohibitedEffects?.runtimeCanaryExecutedInThisLot===false&&c.prohibitedEffects?.snapshotWriteInThisLot===false&&c.prohibitedEffects?.schedulerCreatedInThisLot===false&&c.prohibitedEffects?.stagingMutationInThisLot===false);
 check('orchestration supports direct executor',orchestration.candidate?.maxSnapshotAppendAttemptsPerInvocation===24&&c.futureStagingExecutionContract?.execution?.maxSnapshotWriteAttempts===8);
-check('handoff bound',handoff.contractId===c.contractId&&handoff.candidate?.configBlobSha==='252b8ddc7e2ecfdae99e53009882068d410a004c');
+check('handoff bound',handoff.contractId===c.contractId&&handoff.candidate?.configBlobSha==='d5c8716a1c121180c7578ffa18d805aeddae384b');
 check('workflow wired',workflow.includes('config/ana-a09-funnel-bounded-runtime-publication-canary-candidate.json')&&workflow.includes('scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js')&&workflow.includes('scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js')&&workflow.includes('Bounded runtime publication canary candidate audit')&&workflow.includes('Bounded runtime publication canary candidate conformance'));
 check('matrix maturity unchanged',(matrix.domains||[]).find(d=>d.id==='ANA-001')?.maturity===3&&c.maturity?.after===3);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
