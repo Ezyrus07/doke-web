@@ -68,6 +68,13 @@ on:
       - 'supabase/tests/053_ana_a09_snapshot_append_validator_runtime_validation.sql'
       - 'supabase/migrations/20260929121600_ana_a09_funnel_snapshot_publication_orchestration_candidate.sql'
       - 'supabase/tests/054_ana_a09_funnel_snapshot_publication_orchestration_candidate_validation.sql'
+      - 'supabase/migrations/20260929133000_ana_a09_funnel_publication_policy_approval_activation_candidate.sql'
+      - 'supabase/tests/055_ana_a09_funnel_publication_policy_approval_activation_candidate_validation.sql'
+      - 'config/ana-a09-funnel-publication-policy-approval-activation-candidate.json'
+      - 'docs/ANA-A09-FUNNEL-PUBLICATION-POLICY-APPROVAL-ACTIVATION-CANDIDATE.md'
+      - 'scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js'
+      - 'scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js'
+      - 'reports/generated/ana-a09-funnel-publication-policy-approval-activation-candidate-handoff.json'
       - 'config/ana-a09-funnel-snapshot-publication-orchestration-candidate.json'
       - 'docs/ANA-A09-FUNNEL-SNAPSHOT-PUBLICATION-ORCHESTRATION-CANDIDATE.md'
       - 'scripts/audit-ana-a09-funnel-snapshot-publication-orchestration-candidate.js'
@@ -137,6 +144,8 @@ jobs:
           node --check scripts/test-ana-a09-canonical-funnel-snapshot-first-append-canary-contract.js
           node --check scripts/audit-ana-a09-funnel-snapshot-publication-orchestration-candidate.js
           node --check scripts/test-ana-a09-funnel-snapshot-publication-orchestration-candidate.js
+          node --check scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js
+          node --check scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js
           node --check scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
@@ -169,6 +178,10 @@ jobs:
         run: node scripts/audit-ana-a09-funnel-snapshot-publication-orchestration-candidate.js
       - name: Publication orchestration candidate conformance
         run: node scripts/test-ana-a09-funnel-snapshot-publication-orchestration-candidate.js
+      - name: Publication policy approval candidate audit
+        run: node scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js
+      - name: Publication policy approval candidate conformance
+        run: node scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js
       - name: Runtime canary contract audit
         run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
       - name: Runtime canary contract conformance

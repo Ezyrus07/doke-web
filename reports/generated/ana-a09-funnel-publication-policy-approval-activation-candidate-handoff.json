@@ -1,0 +1,80 @@
+{
+  "contractId": "ana-a09-funnel-publication-policy-approval-activation-candidate-v1",
+  "approvalEvidenceSchemaId": "ana-a09-funnel-publication-policy-activation-approval-evidence-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "sourceHead": "56f46d7cd943e523a98ec95744c37380c18cd48e",
+  "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+  "matrixVersion": "1.3.132",
+  "authorization": {
+    "token": "authorize-ana-a09-funnel-publication-policy-approval-activation-candidate-repository-only head=56f46d7cd943e523a98ec95744c37380c18cd48e matrix=v1.3.132 orchestrationContractId=ana-a09-funnel-snapshot-publication-orchestration-candidate-v1 orchestrationConfigBlobSha=2c99eaac6c03c29fbefe5973ae70b9160ee053d6 stagingStructureEvidenceBlobSha=0fa5595dd8b0c0ba925ff46fb7c3dbe0bc150595 funnelFreshnessConfigBlobSha=8b9ef1b01de43852101a9021da2423c4269079ba migrationBlobSha=01a6d7208a9d4d288eb9995325707d0ccdc9a3a6 validation054BlobSha=906629533492eec6be83441e51554d6eee4a3a97 policySetId=ana-a07-a09-funnel-v1-r1 metricCount=8 windowStepSeconds=300 projectionDelaySloSeconds=60 derivedMaxLagSeconds=360 maxCatchUpWindowsPerInvocation=3 preserveA11=true publicationPolicyPersistenceAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "digestSha256": "b7d38a1ec069d1d13f32cdb935477901e66ceee59ccda8ad513955f3a085f43d",
+    "repositoryWriteAuthority": true,
+    "publicationPolicyPersistenceAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "candidate": {
+    "migrationPath": "supabase/migrations/20260929133000_ana_a09_funnel_publication_policy_approval_activation_candidate.sql",
+    "migrationBlobSha": "bccd9801cac5de7bf9b1b689eef985a9d2a93d8a",
+    "validationPath": "supabase/tests/055_ana_a09_funnel_publication_policy_approval_activation_candidate_validation.sql",
+    "validationBlobSha": "c4376ea8140702e87740d52fd574b07ddb86d616",
+    "configPath": "config/ana-a09-funnel-publication-policy-approval-activation-candidate.json",
+    "configBlobSha": "968657f3e4400e1b3797ba82fb0b0a6fe3647cee",
+    "docsPath": "docs/ANA-A09-FUNNEL-PUBLICATION-POLICY-APPROVAL-ACTIVATION-CANDIDATE.md",
+    "docsBlobSha": "47531e2878122afd2bdabf7a3560d84d7e0281f6",
+    "auditPath": "scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js",
+    "auditBlobSha": "5f0d482f055fe57f93a3c88cc352403cc130b086",
+    "testPath": "scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js",
+    "testBlobSha": "1be91c161d74885cb929e8c2a10568a287419c14",
+    "workflowPath": ".github/workflows/ana-a09-canonical-funnel-projection.yml",
+    "workflowBlobSha": "a3f44e3c3151a1a4b7bbf38d1798c87b99336ab2",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "metricCount": 8,
+    "windowStepSeconds": 300,
+    "projectionDelaySloSeconds": 60,
+    "derivedMaxLagSeconds": 360,
+    "maxCatchUpWindowsPerInvocation": 3,
+    "windowAnchorSelected": false,
+    "effectiveFromSelected": false,
+    "validatorFunction": "private.validate_analytics_a09_funnel_publication_policy_approval_v1",
+    "activationFunction": "private.activate_analytics_a09_funnel_publication_policy_approved_v1",
+    "transientValidationRows": 8,
+    "persistentPolicyRowsAuthorized": 0,
+    "preservesA11": true
+  },
+  "writesPerformed": {
+    "repository": true,
+    "staging": false,
+    "production": false
+  },
+  "authorityAfterLot": {
+    "runtimeProjectionAuthority": true,
+    "publicationPolicyPersistenceAuthority": false,
+    "snapshotMutationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false
+  },
+  "residualRisks": [
+    "Candidate migration and validation 055 are not yet applied/executed in staging.",
+    "Real publication-policy windowAnchor is not approved.",
+    "Real publication-policy effectiveFrom is not approved.",
+    "No A09 publication-policy row exists persistently.",
+    "No continuous funnel snapshot publication has been exercised.",
+    "No A09 scheduler exists."
+  ],
+  "nextSafeAction": "Exact-head repository certification. Then request a separate staging-structure authorization to apply migration 20260929133000 and execute rollback-only validation 055 only; validation may create eight transient publication rows inside the rollback transaction but must persist zero rows, write zero snapshots and create zero scheduler jobs."
+}
