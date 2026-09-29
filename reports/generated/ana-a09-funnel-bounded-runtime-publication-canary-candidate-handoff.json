@@ -1,0 +1,79 @@
+{
+  "contractId": "ana-a09-funnel-bounded-runtime-publication-canary-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "sourceHead": "1ed17963797f2abac68426a93fcc8ec4a51de779",
+  "matrixVersion": "1.3.132",
+  "authorization": {
+    "command": "authorize-ana-a09-funnel-bounded-runtime-publication-canary-candidate-repository-only head=1ed17963797f2abac68426a93fcc8ec4a51de779 matrix=v1.3.132 activationEvidenceBlobSha=e90054442245f5fe71d41d309cbb7e2809d10ec2 temporalConfigBlobSha=528b04abef9ea27a647fe648603bb2c4b07e7c93 policySetId=ana-a07-a09-funnel-v1-r1 revision=1 metricCount=8 windowStepSeconds=300 projectionDelaySloSeconds=60 derivedMaxLagSeconds=360 effectiveFrom=2026-10-01T00:00:00Z effectiveUntil=null proposedCanaryWindowStart=2026-10-01T00:00:00Z proposedCanaryWindowEnd=2026-10-01T00:05:00Z maxPublicationWindows=1 maxSnapshotWriteAttempts=8 preserveA11=true publicationPoliciesPersisted=true runtimeCanaryExecutionAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "digestSha256": "0e1ce66dda97c660ec7d4ba000d3b1d074402bd789c8c431835d4bd27724318b",
+    "repositoryWriteAuthority": true,
+    "runtimeCanaryExecutionAuthority": false,
+    "snapshotMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "candidate": {
+    "configPath": "config/ana-a09-funnel-bounded-runtime-publication-canary-candidate.json",
+    "configBlobSha": "252b8ddc7e2ecfdae99e53009882068d410a004c",
+    "docsPath": "docs/ANA-A09-FUNNEL-BOUNDED-RUNTIME-PUBLICATION-CANARY-CANDIDATE.md",
+    "docsBlobSha": "63ad87169023534263f713b4245a81a6429e06e5",
+    "auditPath": "scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js",
+    "auditBlobSha": "86f3cff718284be19b102ba3b287a1ee49c73111",
+    "testPath": "scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js",
+    "testBlobSha": "3804c1bb019ebd2939209f192523e200814e4340",
+    "workflowPath": ".github/workflows/ana-a09-canonical-funnel-projection.yml",
+    "workflowBlobSha": "5b767609770d16b4a039e6511300eb2614a6ca9e",
+    "windowStart": "2026-10-01T00:00:00Z",
+    "windowEnd": "2026-10-01T00:05:00Z",
+    "earliestExecutionAt": "2026-10-01T00:06:00Z",
+    "recommendedExecutionBefore": "2026-10-01T00:11:00Z",
+    "maxPublicationWindows": 1,
+    "maxSnapshotWriteAttempts": 8
+  },
+  "readOnlyStagingProof": {
+    "observedAt": "2026-09-29T15:34:15.134174+00:00",
+    "plannerEvaluatedAt": "2026-10-01T00:06:00Z",
+    "plannerRowCount": 1,
+    "plannedWindowOrdinal": 1,
+    "plannedWindowStart": "2026-10-01T00:00:00Z",
+    "plannedWindowEnd": "2026-10-01T00:05:00Z",
+    "requiredMetricCount": 8,
+    "materializedMetricCount": 0,
+    "missingMetricCount": 8,
+    "targetSnapshotCount": 0,
+    "runtimeFunctionCount": 3,
+    "runtimeFunctionsOwner": "postgres",
+    "runtimeFunctionsSecurityDefiner": true,
+    "anonExecute": false,
+    "authenticatedExecute": false,
+    "serviceRoleExecute": false,
+    "currentPublicationPolicyCount": 8,
+    "currentlyEffectivePolicyCount": 0,
+    "effectiveAtCanaryWindowPolicyCount": 8,
+    "currentA09SnapshotCount": 8,
+    "currentA09FunnelCronCount": 0,
+    "a11PublicationPolicyCount": 1,
+    "a11SchedulerCount": 1
+  },
+  "writesPerformed": {
+    "repository": true,
+    "staging": false,
+    "production": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false
+  },
+  "residualRisks": [
+    "The canary cannot execute before 2026-10-01T00:06:00Z because the publication policy requires a 60-second projection delay after the 00:00-00:05 window.",
+    "Target-window source data and planner state can still change before execution; future staging authorization must repeat the preflight.",
+    "No bounded runtime snapshot publication has executed under the persisted publication-policy set.",
+    "No A09 scheduler exists."
+  ],
+  "nextSafeAction": "Exact-head repository certification. After 2026-10-01T00:06:00Z, repeat read-only preflight and require a separate explicit staging authorization for one direct-window invocation only."
+}

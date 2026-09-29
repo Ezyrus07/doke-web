@@ -100,6 +100,11 @@ on:
       - 'supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql'
       - 'scripts/audit-ana-a07-a09-funnel-runtime-canary-contract.js'
       - 'scripts/test-ana-a07-a09-funnel-runtime-canary-contract.js'
+      - 'config/ana-a09-funnel-bounded-runtime-publication-canary-candidate.json'
+      - 'docs/ANA-A09-FUNNEL-BOUNDED-RUNTIME-PUBLICATION-CANARY-CANDIDATE.md'
+      - 'scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js'
+      - 'scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js'
+      - 'reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-candidate-handoff.json'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - 'reports/generated/domain-completion-matrix-report.json'
@@ -146,6 +151,8 @@ jobs:
           node --check scripts/test-ana-a09-funnel-snapshot-publication-orchestration-candidate.js
           node --check scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js
           node --check scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js
+          node --check scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js
+          node --check scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js
           node --check scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
@@ -182,6 +189,10 @@ jobs:
         run: node scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js
       - name: Publication policy approval candidate conformance
         run: node scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js
+      - name: Bounded runtime publication canary candidate audit
+        run: node scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js
+      - name: Bounded runtime publication canary candidate conformance
+        run: node scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js
       - name: Runtime canary contract audit
         run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
       - name: Runtime canary contract conformance
