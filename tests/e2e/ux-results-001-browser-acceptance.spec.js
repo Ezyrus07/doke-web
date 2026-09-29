@@ -492,7 +492,8 @@ test.describe('PD-RESULTS-001 exact viewport contract', () => {
         await expect(trigger).toBeFocused();
 
         await shell.locator('[data-shell-filter]').click();
-        await expect(page.locator('[data-results-filters]')).toHaveAttribute('aria-hidden', 'false');
+        await expect(page.locator('[data-results-filters-open]').first()).toHaveAttribute('aria-expanded', 'true');
+        await expect(page.locator('[data-results-filters-backdrop]')).toBeVisible();
         await expect(page.locator('body')).toHaveClass(/results-filters-open/);
       } else {
         expect(metrics.shellVisible).toBe(false);
