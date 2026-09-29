@@ -121,3 +121,42 @@ ANA remains **3/6**.
 
 The next functional gate is a repository-only bounded first-append canary authorization contract for one explicit time window. No append or snapshot mutation is authorized by this evidence reconciliation.
 
+## Runtime validator blocker discovered before first append
+
+The authorized first-append canary for `2026-09-28T15:55:00Z → 2026-09-28T16:00:00Z` was **not invoked**.
+
+A final read-only dependency preflight proved that the installed validator references:
+
+`pg_catalog.jsonb_object_length(jsonb)`
+
+That function is unavailable in the staging PostgreSQL 17.6 runtime. The exact canary window still had **0** target snapshots after the blocker was confirmed.
+
+This does not invalidate validation 052 as a structural check; it exposes its limitation: 052 intentionally did not execute the validator.
+
+### Forward-only remediation candidate
+
+The historical applied migration `20260928134000` remains untouched.
+
+The forward migration candidate:
+
+- `supabase/migrations/20260929005500_ana_a09_snapshot_append_validator_jsonb_cardinality_runtime_remediation.sql`
+
+replaces JSONB object cardinality checks with explicit counts over `pg_catalog.jsonb_object_keys(...)`.
+
+It does not alter the invoker, grant EXECUTE, call A04 append, write snapshots, create a scheduler, or grant publication authority.
+
+### Validation 053
+
+`supabase/tests/053_ana_a09_snapshot_append_validator_runtime_validation.sql` is rollback-only and non-mutating. Unlike 052, it **executes the validator** with a complete synthetically bound evidence object and verifies the successful authorization result.
+
+Validation 053 explicitly does **not** call:
+
+- `private.invoke_a09_canonical_funnel_snapshot_append_v1`;
+- `public.append_analytics_metric_snapshot_v1`.
+
+It also compares snapshot row counts before/after the validator call.
+
+Until the forward migration is separately applied and 053 passes in staging, the first append canary remains blocked and the previous canary execution authorization must not be reused.
+
+ANA remains **3/6** and all append/publication/scheduler authorities remain false.
+
