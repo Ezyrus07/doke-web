@@ -1,0 +1,59 @@
+{
+  "contractId": "ana-a09-funnel-publication-policy-temporal-activation-approval-candidate-v1",
+  "parentContractId": "ana-a09-funnel-publication-policy-approval-activation-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "sourceHead": "ef48e0471510ae9a5fa8b950f53f2e7f71827c37",
+  "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+  "matrixVersion": "1.3.132",
+  "authorization": {
+    "token": "authorize-ana-a09-funnel-publication-policy-temporal-activation-approval-candidate-repository-only head=ef48e0471510ae9a5fa8b950f53f2e7f71827c37 matrix=v1.3.132 contractId=ana-a09-funnel-publication-policy-approval-activation-candidate-v1 candidateConfigBlobSha=09280227fae55e7c549d9e099bfe3948dd647915 stagingValidation055EvidenceBlobSha=f5ca619644611251e28705591774b2c5a90f64c8 migrationBlobSha=bccd9801cac5de7bf9b1b689eef985a9d2a93d8a validation055BlobSha=c4376ea8140702e87740d52fd574b07ddb86d616 appliedStagingMigrationVersion=20260929140910 policySetId=ana-a07-a09-funnel-v1-r1 revision=1 metricCount=8 windowStepSeconds=300 projectionDelaySloSeconds=60 derivedMaxLagSeconds=360 maxCatchUpWindowsPerInvocation=3 windowAnchor=1970-01-01T00:00:00Z effectiveFrom=2026-10-01T00:00:00Z effectiveUntil=null preserveA11=true temporalSelectionAuthority=true publicationPolicyPersistenceAuthority=false activationInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "digestSha256": "7805089138753cb6cdd9641d4f8482bf8bdacbd88a621e4c18eab471ba42bd2b",
+    "temporalSelectionAuthority": true,
+    "repositoryWriteAuthority": true,
+    "publicationPolicyPersistenceAuthority": false,
+    "activationInvocationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "candidate": {
+    "configPath": "config/ana-a09-funnel-publication-policy-temporal-activation-approval-candidate.json",
+    "configBlobSha": "ed94d155f2e780acbfec4d54f759572f0eb624a3",
+    "docsPath": "docs/ANA-A09-FUNNEL-PUBLICATION-POLICY-TEMPORAL-ACTIVATION-APPROVAL-CANDIDATE.md",
+    "docsBlobSha": "7b625ee56363b937c56cd824a1ac0cc50d6699a0",
+    "parentAuditPath": "scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js",
+    "parentAuditBlobSha": "37b87f530c3598c87f74f03ab232d7cf07fdbd32",
+    "parentTestPath": "scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js",
+    "parentTestBlobSha": "a82fa304fe122307004034a1a08991bc73bb8e83",
+    "windowAnchor": "1970-01-01T00:00:00Z",
+    "effectiveFrom": "2026-10-01T00:00:00Z",
+    "effectiveUntil": null,
+    "activationApprovalDeadline": "2026-10-01T00:00:00Z",
+    "gridAligned": true,
+    "activeFreshnessPolicyCountAtEffectiveFrom": 8,
+    "activationEvidenceGenerated": false,
+    "publicationPolicyRowsPersisted": 0,
+    "activationInvocationsPerformed": 0
+  },
+  "writesPerformed": {
+    "repository": true,
+    "staging": false,
+    "production": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false
+  },
+  "residualRisks": [
+    "The selected effectiveFrom expires as an activation target if a separate approval is not created before 2026-10-01T00:00:00Z.",
+    "No live activation approval evidence exists yet.",
+    "No A09 publication-policy row exists persistently.",
+    "No continuous funnel snapshot publication has been exercised.",
+    "No A09 scheduler exists."
+  ],
+  "nextSafeAction": "Exact-head certification. Then, before 2026-10-01T00:00:00Z, require a separate one-shot staging activation authorization bound to this temporal candidate. If the deadline passes, select a new effectiveFrom instead."
+}
