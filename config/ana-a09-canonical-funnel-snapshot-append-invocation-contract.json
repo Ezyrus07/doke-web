@@ -4,7 +4,7 @@
   "domain": "ANA-001",
   "front": "ANA-A09",
   "scope": "repository_only_server_side_append_invocation_contract_candidate",
-  "status": "runtime_validator_jsonb_cardinality_remediation_candidate_pending_staging",
+  "status": "runtime_validator_jsonb_cardinality_remediation_staging_validated",
   "sourceHead": "9d133b07f2d611ed408aa0d27aedd24fbf1dda22",
   "matrixVersion": "1.3.132",
   "objective": "Define a fail-closed server-side bridge from the staging-certified A09 canonical funnel snapshot payload adapter to the existing A04 append-only snapshot primitive, without granting append invocation, snapshot mutation, runtime snapshot, publication or scheduler authority.",
@@ -74,10 +74,12 @@
     "appliedStagingMigrationVersion": "20260928141605",
     "stagingStructureInstalled": true,
     "stagingEvidencePath": "reports/generated/ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence.json",
-    "runtimeValidatorRemediationApplied": false,
-    "validation053Status": "pending",
+    "runtimeValidatorRemediationApplied": true,
+    "validation053Status": "PASS",
     "firstAppendCanaryBlocked": true,
-    "firstAppendCanaryBlockedReason": "jsonb_object_length_undefined"
+    "firstAppendCanaryBlockedReason": "requires_fresh_preflight_and_new_exact_window_authorization_after_validator_remediation",
+    "appliedRuntimeValidatorRemediationStagingVersion": "20260929013223",
+    "runtimeValidatorRemediationEvidencePath": "reports/generated/ana-a09-snapshot-append-validator-jsonb-cardinality-remediation-staging-evidence.json"
   },
   "futureAuthorizationEvidenceSchema": {
     "exactTopLevelFields": [
@@ -183,7 +185,7 @@
     "promoted": false,
     "reason": "A runtime validator defect was found before the first append invocation. The remediation is repository-only and no append/snapshot authority is granted."
   },
-  "nextGate": "Certify the forward validator remediation and validation 053 on the exact resulting HEAD. Then, under a separate staging-only authorization, apply the forward migration and run validation 053 without invoking the append successor.",
+  "nextGate": "Certify this reconciled staging evidence on the exact resulting HEAD, then run a fresh read-only preflight and issue a new exact-window first-append canary authorization.",
   "stagingStructureEvidenceReconciliation": {
     "authorizationToken": "authorize-ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence-reconciliation-repository-only head=2d54fa08600c6a07caddbb0ede3637f8145135ca matrix=v1.3.132 contractId=ana-a09-canonical-funnel-snapshot-append-invocation-contract-candidate-v1 stagingProjectRef=zwkczgewzbsorbrjuzpb candidateConfigBlobSha=6154ec06e20b6e6dd5a755acb2b39a9a3223933f migration=20260928134000 migrationBlobSha=5661652eb4a428976419c46db5d66bcb0e2505b1 appliedStagingMigrationVersion=20260928141605 validation=052 validationBlobSha=60a6326327bf673a2f3d81a60f1f44b8609ffa17 validation052=PASS handoffBlobSha=e24cf0886619eee799126584ab358e80e02448df evidencePath=reports/generated/ana-a09-canonical-funnel-snapshot-append-invocation-contract-staging-structure-evidence.json scope=record-staging-structure-and-validation-052-pass-only anaMaturity=3/6 runtimeProjectionAuthority=true appendInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
     "authorizationDigestSha256": "e0cc05de3d7545e8b182db695d01cb2996b99a3acddf059f2487adeddd08b4c7",
@@ -225,10 +227,10 @@
     "validation052Status": "PASS_STRUCTURAL_ONLY",
     "validation052Limitation": "Validation 052 did not execute the validator and therefore did not detect the unavailable pg_catalog.jsonb_object_length(jsonb) call.",
     "forwardMigration": "supabase/migrations/20260929005500_ana_a09_snapshot_append_validator_jsonb_cardinality_runtime_remediation.sql",
-    "forwardMigrationApplied": false,
+    "forwardMigrationApplied": true,
     "remediation": "replace jsonb_object_length cardinality checks with explicit counts over pg_catalog.jsonb_object_keys",
     "runtimeValidation": "supabase/tests/053_ana_a09_snapshot_append_validator_runtime_validation.sql",
-    "runtimeValidationStatus": "pending",
+    "runtimeValidationStatus": "PASS",
     "runtimeValidationMustExecuteValidator": true,
     "runtimeValidationMustInvokeAppender": false,
     "runtimeValidationMustMutateSnapshots": false,
@@ -241,6 +243,8 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "readyForReviewAuthority": false,
-    "historyRewriteAuthority": false
+    "historyRewriteAuthority": false,
+    "appliedStagingMigrationVersion": "20260929013223",
+    "stagingEvidencePath": "reports/generated/ana-a09-snapshot-append-validator-jsonb-cardinality-remediation-staging-evidence.json"
   }
 }
