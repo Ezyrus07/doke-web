@@ -53,7 +53,7 @@
   "candidate": {
     "contractId": "ana-a09-canonical-funnel-snapshot-append-invocation-contract-candidate-v1",
     "configPath": "config/ana-a09-canonical-funnel-snapshot-append-invocation-contract.json",
-    "configBlobSha": "eda17d8dcaafc65cde0630612727dcd63bf1a473",
+    "configBlobSha": "5bda6bfbd4199fc29e9342abced71e0d2e2b053c",
     "docsPath": "docs/ANA-A09-CANONICAL-FUNNEL-SNAPSHOT-APPEND-INVOCATION-CONTRACT.md",
     "docsBlobSha": "0b2a209d8141f40e3abb603f1d790b82ca1dad54",
     "migration": "supabase/migrations/20260928134000_ana_a09_canonical_funnel_snapshot_append_invocation_contract.sql",
@@ -61,9 +61,9 @@
     "validationSql": "supabase/tests/052_ana_a09_canonical_funnel_snapshot_append_invocation_contract_validation.sql",
     "validationBlobSha": "60a6326327bf673a2f3d81a60f1f44b8609ffa17",
     "auditScript": "scripts/audit-ana-a09-canonical-funnel-snapshot-append-invocation-contract.js",
-    "auditBlobSha": "f058ceb7f786004b5b2f71edfb8e32d2f0becbd7",
+    "auditBlobSha": "f7f98d9cf66a5294806db4ad32844ccc7c36b1a1",
     "conformanceScript": "scripts/test-ana-a09-canonical-funnel-snapshot-append-invocation-contract.js",
-    "conformanceBlobSha": "31e6a647c94479c88d936c901267612fa4d01436",
+    "conformanceBlobSha": "7a9173c940f67eb49d4b1ae014de6a3ad80931fe",
     "workflowPath": ".github/workflows/ana-a09-canonical-funnel-projection.yml",
     "workflowBlobSha": "1b636fb96fadc2ee601cd076ea197e9710e2624f",
     "authorizationValidator": "private.validate_a09_snapshot_append_invocation_authorization_v1",
@@ -87,7 +87,8 @@
     "firstAppendCanaryBlocked": true,
     "appliedRuntimeValidatorRemediationStagingVersion": "20260929013223",
     "runtimeValidatorRemediationEvidencePath": "reports/generated/ana-a09-snapshot-append-validator-jsonb-cardinality-remediation-staging-evidence.json",
-    "firstAppendCanaryBlockedReason": "requires_fresh_preflight_and_new_exact_window_authorization_after_validator_remediation"
+    "firstAppendCanaryBlockedReason": "requires_fresh_preflight_and_new_exact_window_authorization_after_validator_remediation",
+    "runtimeValidatorRemediationEvidenceBlobSha": "dbc603f98f66a16872355d3f1d1c3e280f4c61f9"
   },
   "preservedBoundaries": [
     "global-funnel-only",
@@ -114,7 +115,7 @@
     "after": 3,
     "promoted": false
   },
-  "nextSafeAction": "Certify the reconciled remediation staging evidence on the exact resulting HEAD, then perform a fresh read-only staging preflight and issue a new exact-window first-append authorization.",
+  "nextSafeAction": "Certify this reconciled staging remediation evidence on the exact resulting HEAD, then perform a fresh read-only staging preflight and issue a new exact-window first-append canary authorization.",
   "authorizationRequirement": "Append invocation, snapshot mutation, runtime snapshot/publication authority, scheduler, production, merge and Ready remain unauthorized.",
   "latestReconciliationCheckpoint": {
     "repositoryHead": "a1daca85cc3a5d374612c33a180d14763a41ea30",
@@ -197,6 +198,7 @@
   },
   "runtimeValidatorRemediationStagingEvidenceReconciliation": {
     "authorizationDigestSha256": "f8b4472e8b7a2b67eb9027ad738224482fa8ebf2229685e187e3deb0d2fab335",
+    "authorizedSourceHead": "a1daca85cc3a5d374612c33a180d14763a41ea30",
     "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
     "remediation": {
       "repositoryVersion": "20260929005500",
@@ -217,13 +219,21 @@
       "priorAuthorizationReusable": false
     },
     "evidencePath": "reports/generated/ana-a09-snapshot-append-validator-jsonb-cardinality-remediation-staging-evidence.json",
-    "configBlobSha": "eda17d8dcaafc65cde0630612727dcd63bf1a473",
+    "evidenceBlobSha": "dbc603f98f66a16872355d3f1d1c3e280f4c61f9",
+    "configBlobSha": "5bda6bfbd4199fc29e9342abced71e0d2e2b053c",
     "docsBlobSha": "0b2a209d8141f40e3abb603f1d790b82ca1dad54",
+    "auditBlobSha": "f7f98d9cf66a5294806db4ad32844ccc7c36b1a1",
+    "testBlobSha": "7a9173c940f67eb49d4b1ae014de6a3ad80931fe",
+    "repositoryWriteAuthority": true,
     "stagingAuthority": false,
     "appendInvocationAuthority": false,
     "snapshotMutationAuthority": false,
     "runtimeSnapshotAuthority": false,
     "snapshotPublicationAuthority": false,
-    "schedulerAuthority": false
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
   }
 }
