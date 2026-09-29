@@ -2,13 +2,13 @@
 
 ## Purpose
 
-This contract defines the **first real snapshot append canary** for ANA-A09, but does not execute it.
+This contract originally defined the **first real snapshot append canary** for ANA-A09 without executing it. The explicitly authorized first staging canary has now executed successfully, and this repository-only reconciliation records that evidence.
 
-The canary is intentionally narrow: one explicit UTC window, one invocation, at most eight writes, and no continuous runtime snapshot, publication or scheduler authority.
+The canary remained intentionally narrow: one explicit UTC window, one successful invocation, exactly eight writes, and no continuous runtime snapshot, publication or scheduler authority.
 
 ## Current authority
 
-This repository lot grants only contract/template authority.
+This evidence-reconciliation repository lot grants only repository-write authority. The staging authorization was single-use and has already been consumed.
 
 It does **not** grant:
 
@@ -42,7 +42,7 @@ and neither it nor its authorization validator is executable by `anon`, `authent
 
 ## Window policy
 
-No time window is selected in this repository lot.
+The original contract did not preselect a window. The executed staging canary was later bound by read-only preflight and explicit authorization to `2026-09-29T01:55:00Z → 2026-09-29T02:00:00Z`.
 
 A later read-only preflight must select an exact UTC interval `[windowStart, windowEnd)`. The recommended canary size is five minutes, but the timestamps themselves must be explicitly observed and bound.
 
@@ -130,8 +130,41 @@ It is intentionally non-executable:
 
 Only a future explicit exact-window authorization may produce a runtime evidence object with `true / true / 8`.
 
+## Reconciled staging execution evidence
+
+Machine-readable evidence:
+
+`reports/generated/ana-a09-canonical-funnel-snapshot-first-append-canary-staging-evidence.json`
+
+Evidence blob: `00579a7e725a0f6299d8db563f394cb8e11d20d5`
+
+Observed result:
+
+- exact window: `2026-09-29T01:55:00Z → 2026-09-29T02:00:00Z`
+- `processedCount = 8`
+- `appendedCount = 8`
+- `noChangeCount = 0`
+- eight persisted rows, eight distinct metrics
+- every revision = `1`
+- every `supersedes_snapshot_id IS NULL`
+- all eight rows have `coverageState=complete`
+- all eight rows have `projectionState=stale`, which is allowed by the contract
+- validator/invoker remain non-executable by `anon`, `authenticated` and `service_role`
+- A09 scheduler count remains zero
+- runtime snapshot/publication/scheduler authority remains false
+
+A first technical execution attempt aborted before the invoker because PostgreSQL planned a constant `1/0` fail-closed branch. That transaction wrote zero snapshots. The guard was replaced with a zero-row `WHERE` predicate, after which exactly one authorized invoker call succeeded.
+
+The runtime authorization digest was:
+
+`67933b849d4972150292c878061183fca4076326f74901b1dcd43f370a5ef8a7`
+
+The database-canonical authorization evidence digest was:
+
+`6124997566ad22599a996416f171ce4613663c963863b958893ec1da01c2a9e3`
+
+ANA remains **3/6**.
+
 ## Next gate
 
-After exact-head repository certification, perform a **read-only staging preflight** to identify a clean exact UTC window.
-
-That read-only observation still does not authorize append execution. A new exact-window staging authorization is required before calling the invoker.
+Certify this reconciled evidence on the exact resulting repository HEAD. This does not authorize replay. A replay/idempotency canary, if desired, requires a separate explicit authorization.

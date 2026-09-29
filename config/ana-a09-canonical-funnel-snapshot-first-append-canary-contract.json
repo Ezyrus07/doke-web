@@ -3,7 +3,7 @@
   "domain": "ANA-001",
   "front": "ANA-A09",
   "scope": "repository_only_bounded_first_append_canary_contract_and_authorization_template",
-  "status": "candidate_ready_for_exact_head_repository_certification",
+  "status": "staging_first_append_canary_pass_evidence_reconciled_pending_exact_head_certification",
   "objective": "Define the first bounded staging append canary without executing it. The canary must be bound to one explicit UTC window, start from zero existing target snapshots, process exactly eight canonical global-funnel payloads, expect eight APPENDED results, and preserve all continuous snapshot/publication/scheduler authorities as false.",
   "sourceCheckpoint": {
     "pr": 488,
@@ -212,5 +212,28 @@
     "promoted": false,
     "reason": "This repository-only lot defines the first bounded append canary and a fail-closed authorization template. No append or snapshot mutation occurs."
   },
-  "nextGate": "Certify this canary contract on the exact resulting HEAD, then perform a read-only staging preflight to select one clean exact UTC window. Only after binding that window into a new explicit staging authorization may the first append canary execute."
+  "nextGate": "Certify the reconciled first-append staging evidence on the exact resulting HEAD. Do not infer ANA maturity promotion. Any replay/idempotency canary requires a separate explicit authorization.",
+  "stagingFirstAppendCanaryEvidence": {
+    "evidenceId": "ana-a09-canonical-funnel-snapshot-first-append-canary-staging-evidence-v1",
+    "evidencePath": "reports/generated/ana-a09-canonical-funnel-snapshot-first-append-canary-staging-evidence.json",
+    "evidenceBlobSha": "00579a7e725a0f6299d8db563f394cb8e11d20d5",
+    "authorizedSourceHead": "fe4166144f2dd4737c384a4d485c11b2c67bb18e",
+    "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
+    "windowStart": "2026-09-29T01:55:00Z",
+    "windowEnd": "2026-09-29T02:00:00Z",
+    "authorizationDigestSha256": "67933b849d4972150292c878061183fca4076326f74901b1dcd43f370a5ef8a7",
+    "evidenceDigestSha256": "6124997566ad22599a996416f171ce4613663c963863b958893ec1da01c2a9e3",
+    "reconciliationAuthorizationDigestSha256": "6fabdb688bd215406f49b9be310a1482783e07ae58f51a71740ad489fd4550e3",
+    "processedCount": 8,
+    "appendedCount": 8,
+    "noChangeCount": 0,
+    "revisionOneCount": 8,
+    "supersedesNullCount": 8,
+    "a09SchedulerCount": 0,
+    "firstAppendCanaryStatus": "PASS",
+    "snapshotMutationPerformedUnderExplicitStagingAuthorization": true,
+    "replayExercised": false,
+    "replayRequiresSeparateAuthorization": true,
+    "continuousAuthoritiesRemainFalse": true
+  }
 }
