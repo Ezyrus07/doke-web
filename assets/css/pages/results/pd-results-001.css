@@ -1,0 +1,202 @@
+/* PD-RESULTS-001 — page-owned discovery hierarchy.
+   Design source: Ezyrus07/design-lab#1.
+   Scope: Resultados composition only. Shared shell/card anatomy remains component-owned. */
+
+body.search-results-body .results-summary__location-context {
+  display: none;
+}
+
+body.search-results-body .results-grid .doke-ad-card__response {
+  color: var(--color-text-muted, #667b95);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  /* Search lives in the canonical mobile shell. Keep result-type switching here
+     without rendering a second competing search field or filter trigger. */
+  body.search-results-body .results-searchbar.home-search-hero {
+    margin: 0 0 8px;
+    padding: 0;
+  }
+
+  body.search-results-body .results-searchbar .home-search-hero__card {
+    gap: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body.search-results-body .results-searchbar .doke-results-search__form {
+    display: none;
+  }
+
+  body.search-results-body .results-searchbar .doke-results-search__scope.search-scope {
+    margin: 0;
+    padding: 0;
+  }
+
+  body.search-results-body
+    .results-searchbar
+    .doke-results-search__scope.search-scope
+    .search-scope__filter-toggle {
+    display: none;
+  }
+
+  /* Query context should read before chrome: query, location, then count. */
+  body.search-results-body .results-summary {
+    display: block;
+    min-height: 0;
+    margin: 0 0 8px;
+    padding: 4px 0 8px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.search-results-body .results-summary__content {
+    min-width: 0;
+  }
+
+  body.search-results-body .results-summary__content > .results-panel__eyebrow {
+    margin-bottom: 2px;
+  }
+
+  body.search-results-body .results-summary__location-context {
+    display: block;
+    margin-top: 2px;
+    color: var(--color-text-muted, #667b95);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  body.search-results-body .results-summary__content h2 {
+    margin-top: 4px;
+    font-size: 1.12rem;
+    line-height: 1.25;
+  }
+
+  body.search-results-body .results-summary__content p {
+    display: none;
+  }
+
+  body.search-results-body .results-summary__stats {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    width: auto;
+    min-width: 0;
+    margin-top: 4px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    text-align: left;
+  }
+
+  body.search-results-body .results-summary__stats strong,
+  body.search-results-body .results-summary__stats span {
+    color: var(--color-text-muted, #667b95);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  body.search-results-body .results-active-chips {
+    display: flex;
+    gap: 7px;
+    margin: 0 calc(var(--doke-page-inline-padding, 16px) * -1) 10px;
+    padding-inline: var(--doke-page-inline-padding, 16px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  body.search-results-body .results-active-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Preserve the canonical horizontal service card, but reorder information
+     for scanning: professional proof → service → signal → location → decision. */
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__body {
+    grid-template-rows: auto auto auto 1fr auto;
+  }
+
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__category {
+    display: none;
+  }
+
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__seller {
+    order: 1;
+  }
+
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__title {
+    order: 2;
+  }
+
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__tags {
+    order: 3;
+  }
+
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__tags span:nth-child(n + 2) {
+    display: none;
+  }
+
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__location {
+    order: 4;
+  }
+
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__footer {
+    order: 5;
+    padding-top: 7px;
+  }
+
+  body.search-results-body
+    .results-layout[data-results-mode="services"]
+    .results-grid
+    .doke-ad-card--results
+    .doke-ad-card__price {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.search-results-body .results-grid .doke-ad-card {
+    transition: none;
+  }
+}
