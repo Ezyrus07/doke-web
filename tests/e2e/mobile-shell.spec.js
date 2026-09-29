@@ -68,6 +68,40 @@ test.describe('PD-SHELL-001 mobile app shell', () => {
     });
   }
 
+  test('resultados uses canonical search and filters without a competing mobile search field', async ({ page }) => {
+    await page.goto('/resultados.html?q=Fotografia');
+
+    const shell = page.locator('.doke-mobile-shell');
+    const topbar = shell.locator('.doke-mobile-shell__topbar');
+    const searchTrigger = shell.locator('[data-shell-search-trigger]');
+    const filterTrigger = shell.locator('[data-shell-filter]');
+    const inlineSearch = shell.locator('[data-shell-inline-search][data-shell-inline-search-mode="results"]');
+
+    await expect(searchTrigger).toHaveCount(1);
+    await expect(filterTrigger).toHaveCount(1);
+    await expect(shell.locator('.doke-mobile-shell__search')).toHaveCount(0);
+    await expect(page.locator('.results-searchbar .doke-results-search__form')).toBeHidden();
+    await expect(inlineSearch).toBeHidden();
+
+    await searchTrigger.click();
+    await expect(inlineSearch).toBeVisible();
+    await expect(searchTrigger).toHaveAttribute('aria-expanded', 'true');
+
+    const topbarBox = await topbar.boundingBox();
+    const searchBox = await inlineSearch.boundingBox();
+    expect(topbarBox).not.toBeNull();
+    expect(searchBox).not.toBeNull();
+    expect(searchBox.y).toBeGreaterThanOrEqual(topbarBox.y + topbarBox.height);
+    expect(Math.abs(searchBox.width - topbarBox.width)).toBeLessThanOrEqual(1);
+
+    await inlineSearch.locator('input').press('Escape');
+    await expect(inlineSearch).toBeHidden();
+    await expect(searchTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(searchTrigger).toBeFocused();
+
+    await expect(page.locator('[data-results-empty-text]')).not.toContainText(/laterais|lat[eé]rais/i);
+  });
+
   test('notificacoes removes the self-referential notification action', async ({ page }) => {
     await page.goto('/notificacoes.html');
     const actions = page.locator('.doke-mobile-shell [data-shell-context-actions]');
