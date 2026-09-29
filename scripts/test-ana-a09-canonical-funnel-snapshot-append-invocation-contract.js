@@ -4,6 +4,7 @@ const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-canonical-funn
 const original=fs.readFileSync(path.join(root,'supabase/migrations/20260928134000_ana_a09_canonical_funnel_snapshot_append_invocation_contract.sql'),'utf8');
 const remediation=fs.readFileSync(path.join(root,'supabase/migrations/20260929005500_ana_a09_snapshot_append_validator_jsonb_cardinality_runtime_remediation.sql'),'utf8');
 const v053=fs.readFileSync(path.join(root,'supabase/tests/053_ana_a09_snapshot_append_validator_runtime_validation.sql'),'utf8');
+const e=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-snapshot-append-validator-jsonb-cardinality-remediation-staging-evidence.json'),'utf8'));
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('historical bug preserved only in old migration',original.includes('pg_catalog.jsonb_object_length')&&!remediation.includes('pg_catalog.jsonb_object_length'));
 check('remediation uses object key counting',remediation.includes('pg_catalog.jsonb_object_keys(v_evidence)')&&remediation.includes('pg_catalog.jsonb_object_keys(v_boundaries)'));
@@ -17,7 +18,10 @@ check('validation expects true true eight',v053.includes("appendInvocationAuthor
 check('validation does not invoke append successor',!v053.includes('v_result:=private.invoke_a09_canonical_funnel_snapshot_append_v1')&&!v053.match(/select\s+public\.append_analytics_metric_snapshot_v1/i));
 check('validation guards snapshot count',v053.includes('select count(*) into v_before from private.analytics_metric_snapshots_v1')&&v053.includes('select count(*) into v_after from private.analytics_metric_snapshots_v1'));
 check('repository candidate only',c.runtimeValidatorRemediation?.stagingAuthority===false&&c.runtimeValidatorRemediation?.appendInvocationAuthority===false&&c.runtimeValidatorRemediation?.snapshotMutationAuthority===false);
-check('canary remains blocked',c.candidate?.firstAppendCanaryBlocked===true&&c.candidate?.validation053Status==='pending');
+check('remediation staging pass reconciled',c.candidate?.runtimeValidatorRemediationApplied===true&&c.candidate?.appliedRuntimeValidatorRemediationStagingVersion==='20260929013223'&&c.candidate?.validation053Status==='PASS'&&e.validation053?.status==='PASS');
+check('runtime validator corrected',e.runtime?.validatorJsonbObjectLengthCallPresent===false&&e.runtime?.validatorJsonbObjectKeysPresent===true);
+check('privileges remain closed',e.runtime?.validatorExecute?.anon===false&&e.runtime?.validatorExecute?.authenticated===false&&e.runtime?.validatorExecute?.serviceRole===false&&e.runtime?.invokerExecute?.anon===false&&e.runtime?.invokerExecute?.authenticated===false&&e.runtime?.invokerExecute?.serviceRole===false);
+check('canary requires fresh authorization',c.candidate?.firstAppendCanaryBlocked===true&&c.candidate?.firstAppendCanaryBlockedReason==='requires_fresh_preflight_and_new_exact_window_authorization_after_validator_remediation'&&e.blockedCanaryWindow?.snapshotRows===0&&e.blockedCanaryWindow?.priorAuthorizationReusable===false);
 check('maturity unchanged',c.maturity?.after===3&&c.maturity?.promoted===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
