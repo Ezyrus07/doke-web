@@ -12,7 +12,7 @@
   var PAGE_CONFIG = {
     'index.html': { key: 'home', active: 'home', search: true, title: 'Início' },
     '': { key: 'home', active: 'home', search: true, title: 'Início' },
-    'resultados.html': { key: 'resultados', active: 'home', search: true, title: 'Resultados' },
+    'resultados.html': { key: 'resultados', active: 'home', search: true, title: 'Resultados', hideSearchBar: true },
     'detalhe-anuncio.html': { key: 'detalhe-anuncio', active: 'home', search: false, title: 'Anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'pedidos.html': { key: 'pedidos', active: 'orders', search: false, title: 'Pedidos', hideSearchBar: true },
     'mensagens.html': { key: 'mensagens', active: 'messages', search: false, title: 'Mensagens' },
@@ -39,6 +39,7 @@
 
   /* Fallback-only presentation map. The navigation registry is the canonical runtime owner. */
   var FALLBACK_SHELL_PRESENTATION = {
+    resultados: { leading: 'profile', actions: ['search', 'filters'], inlineSearch: 'results' },
     pedidos: { leading: 'profile', actions: ['search'] },
     mensagens: { leading: 'profile', actions: ['search', 'notifications'] },
     notificacoes: { leading: 'profile', actions: ['search', 'filters'], inlineSearch: 'notifications' },
