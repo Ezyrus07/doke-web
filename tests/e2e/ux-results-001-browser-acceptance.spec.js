@@ -352,3 +352,164 @@ test('pagination preserves focus, rollback and retry', async ({ page }) => {
   expect(error.state.title).toBe('Busca indisponível');
   expect(error.state.errorHidden).toBe(false);
 });
+
+
+test.describe('PD-RESULTS-001 exact viewport contract', () => {
+  const exactViewports = [
+    { name: 'phone', width: 390, height: 844 },
+    { name: 'tablet-compact', width: 608, height: 926 },
+    { name: 'tablet-wide', width: 820, height: 1180 },
+    { name: 'desktop', width: 1366, height: 768 },
+  ];
+
+  for (const viewport of exactViewports) {
+    test(`${viewport.name} ${viewport.width}x${viewport.height} preserves discovery hierarchy`, async ({ page }, testInfo) => {
+      test.setTimeout(90_000);
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await boot(page);
+
+      await page.evaluate(() => {
+        const h = window.__uxResults;
+        const services = [
+          {
+            id: 'pd-results-1',
+            title: 'Fotografia profissional para marcas e eventos',
+            category: 'Fotografia',
+            providerName: 'André Foto',
+            providerHandle: '@andrefoto',
+            rating: 5,
+            reviewsCount: 42,
+            responseTime: 'em 35 min',
+            tags: ['Disponível hoje', 'Verificado'],
+            location: 'Barra, Salvador',
+            priceLabel: 'R$ 600',
+          },
+          {
+            id: 'pd-results-2',
+            title: 'Ensaio profissional com direção de poses',
+            category: 'Fotografia',
+            providerName: 'Luiza Martins',
+            providerHandle: '@luizamartins',
+            rating: 4.9,
+            reviewsCount: 68,
+            responseTime: 'em 50 min',
+            tags: ['Amanhã', 'Verificado'],
+            location: 'Rio Vermelho, Salvador',
+            priceLabel: 'R$ 420',
+          },
+        ];
+
+        h.grid.textContent = '';
+        services.forEach((service) => {
+          h.grid.appendChild(window.Doke.publicServiceCard.create(service, { results: true }));
+        });
+        h.grid.hidden = false;
+
+        const ticket = h.installation.begin({
+          mode: 'services',
+          operation: 'initial',
+          query: 'fotografia',
+          authority: 'fixture_catalog',
+          coverage: 'current_environment',
+        });
+        h.installation.commit(ticket, {
+          applied: true,
+          state: 'ready',
+          query: 'fotografia',
+          count: services.length,
+          hasNext: false,
+          authority: 'fixture_catalog',
+          coverage: 'current_environment',
+        });
+      });
+
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+
+      const metrics = await page.evaluate(() => {
+        const visible = (selector) => {
+          const node = document.querySelector(selector);
+          if (!node) return false;
+          const style = getComputedStyle(node);
+          const rect = node.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden' && !node.hidden && rect.width > 0 && rect.height > 0;
+        };
+        const grid = document.querySelector('[data-results-grid]');
+        const cards = Array.from(grid?.querySelectorAll('.doke-ad-card--results') || []);
+        const firstCard = cards[0];
+        const gridStyle = grid ? getComputedStyle(grid) : null;
+        const firstCardStyle = firstCard ? getComputedStyle(firstCard) : null;
+        return {
+          overflow: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) - innerWidth,
+          shellVisible: visible('.doke-mobile-shell'),
+          bottomNavVisible: visible('.doke-mobile-bottom-nav'),
+          appHeaderVisible: visible('.app-header'),
+          pageSearchVisible: visible('.results-searchbar .doke-results-search__form'),
+          filterToggleVisible: visible('.search-scope__filter-toggle'),
+          sidebarVisible: visible('[data-shell-sidebar]'),
+          cardCount: cards.length,
+          gridColumns: gridStyle?.gridTemplateColumns || '',
+          cardDisplay: firstCardStyle?.display || '',
+          responseVisible: visible('.doke-ad-card__response'),
+          locationContextVisible: visible('[data-results-location-context]'),
+          summaryTitle: document.querySelector('[data-results-title]')?.textContent || '',
+          count: document.querySelector('[data-results-count]')?.textContent || '',
+        };
+      });
+
+      expect(metrics.overflow).toBeLessThanOrEqual(1);
+      expect(metrics.cardCount).toBe(2);
+      expect(metrics.responseVisible).toBe(true);
+      expect(metrics.summaryTitle).toContain('fotografia');
+      expect(metrics.count).toBe('2');
+
+      if (viewport.width <= 560) {
+        expect(metrics.shellVisible).toBe(true);
+        expect(metrics.bottomNavVisible).toBe(true);
+        expect(metrics.pageSearchVisible).toBe(false);
+        expect(metrics.cardDisplay).toBe('grid');
+
+        const shell = page.locator('.doke-mobile-shell');
+        const actions = shell.locator('[data-shell-context-actions] > *');
+        await expect(actions).toHaveCount(2);
+        await expect(shell.locator('[data-shell-search-trigger]')).toHaveCount(1);
+        await expect(shell.locator('[data-shell-filter]')).toHaveCount(1);
+
+        const trigger = shell.locator('[data-shell-search-trigger]');
+        const topbar = shell.locator('.doke-mobile-shell__topbar');
+        const inlineSearch = shell.locator('[data-shell-inline-search][data-shell-inline-search-mode="results"]');
+        await expect(inlineSearch).toBeHidden();
+        await trigger.click();
+        await expect(inlineSearch).toBeVisible();
+        await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        const topbarBox = await topbar.boundingBox();
+        const searchBox = await inlineSearch.boundingBox();
+        expect(topbarBox).not.toBeNull();
+        expect(searchBox).not.toBeNull();
+        expect(searchBox.y).toBeGreaterThanOrEqual(topbarBox.y + topbarBox.height);
+        expect(Math.abs(searchBox.width - topbarBox.width)).toBeLessThanOrEqual(1);
+        await inlineSearch.locator('input').press('Escape');
+        await expect(inlineSearch).toBeHidden();
+        await expect(trigger).toBeFocused();
+
+        await shell.locator('[data-shell-filter]').click();
+        await expect(page.locator('[data-results-filters]')).toHaveAttribute('aria-hidden', 'false');
+        await expect(page.locator('body')).toHaveClass(/results-filters-open/);
+      } else {
+        expect(metrics.shellVisible).toBe(false);
+        expect(metrics.bottomNavVisible).toBe(false);
+        expect(metrics.appHeaderVisible).toBe(true);
+        expect(metrics.pageSearchVisible).toBe(true);
+        expect(metrics.filterToggleVisible).toBe(true);
+      }
+
+      if (viewport.width >= 1181) {
+        expect(metrics.sidebarVisible).toBe(true);
+      }
+
+      await page.screenshot({
+        path: testInfo.outputPath(`pd-results-001-${viewport.width}x${viewport.height}.png`),
+        fullPage: true,
+      });
+    });
+  }
+});
