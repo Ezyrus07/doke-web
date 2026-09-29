@@ -21,26 +21,35 @@
   },
   "candidate": {
     "configPath": "config/ana-a09-funnel-publication-policy-temporal-activation-approval-candidate.json",
-    "configBlobSha": "ed94d155f2e780acbfec4d54f759572f0eb624a3",
+    "configBlobSha": "528b04abef9ea27a647fe648603bb2c4b07e7c93",
     "docsPath": "docs/ANA-A09-FUNNEL-PUBLICATION-POLICY-TEMPORAL-ACTIVATION-APPROVAL-CANDIDATE.md",
-    "docsBlobSha": "7b625ee56363b937c56cd824a1ac0cc50d6699a0",
+    "docsBlobSha": "94d66dd33e36b5e607fcc1134d737c6c390b5000",
     "parentAuditPath": "scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js",
-    "parentAuditBlobSha": "37b87f530c3598c87f74f03ab232d7cf07fdbd32",
+    "parentAuditBlobSha": "05150bd721b191ce1ecd34143b4c506243cfdbc2",
     "parentTestPath": "scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js",
-    "parentTestBlobSha": "a82fa304fe122307004034a1a08991bc73bb8e83",
+    "parentTestBlobSha": "54e79b38a575feea090401cbe251fc7b66d9f5b0",
     "windowAnchor": "1970-01-01T00:00:00Z",
     "effectiveFrom": "2026-10-01T00:00:00Z",
     "effectiveUntil": null,
     "activationApprovalDeadline": "2026-10-01T00:00:00Z",
     "gridAligned": true,
     "activeFreshnessPolicyCountAtEffectiveFrom": 8,
-    "activationEvidenceGenerated": false,
-    "publicationPolicyRowsPersisted": 0,
-    "activationInvocationsPerformed": 0
+    "activationEvidenceGenerated": true,
+    "publicationPolicyRowsPersisted": 8,
+    "activationInvocationsPerformed": 1,
+    "activationEvidencePath": "reports/generated/ana-a09-funnel-publication-policy-one-shot-activation-staging-evidence.json",
+    "activationEvidenceBlobSha": "e90054442245f5fe71d41d309cbb7e2809d10ec2",
+    "approvalId": "ana-a09-funnel-publication-approval-r1-82e59c9dc24d",
+    "approvedAt": "2026-09-29T14:56:34.375466Z",
+    "activationAuthorizationDigestSha256": "82e59c9dc24d94a4f48a832d46caf35e9a5a424046d90f2794e9ed9d9227a1a7",
+    "activationEvidenceDigestSha256": "2db1282f585217ab76069ba564c94f9133d08b3fa4c7d2f87fea76049684c829",
+    "currentlyEffectivePolicyCount": 0,
+    "effectiveAtT0PlusOnePolicyCount": 8,
+    "runtimeSelectorMetricCountAtT0PlusOne": 8
   },
   "writesPerformed": {
     "repository": true,
-    "staging": false,
+    "staging": true,
     "production": false
   },
   "maturity": {
@@ -49,11 +58,37 @@
     "promoted": false
   },
   "residualRisks": [
-    "The selected effectiveFrom expires as an activation target if a separate approval is not created before 2026-10-01T00:00:00Z.",
-    "No live activation approval evidence exists yet.",
-    "No A09 publication-policy row exists persistently.",
-    "No continuous funnel snapshot publication has been exercised.",
-    "No A09 scheduler exists."
+    "The eight publication policies are persisted but remain ineffective until 2026-10-01T00:00:00Z.",
+    "No bounded runtime snapshot publication canary has been executed under the persisted policy set.",
+    "No A09 scheduler exists.",
+    "Continuous funnel snapshot publication has not been exercised."
   ],
-  "nextSafeAction": "Exact-head certification. Then, before 2026-10-01T00:00:00Z, require a separate one-shot staging activation authorization bound to this temporal candidate. If the deadline passes, select a new effectiveFrom instead."
+  "nextSafeAction": "Exact-head certification of the reconciled one-shot activation evidence, then a separate repository-only bounded runtime publication canary contract. No snapshot publication or scheduler activation without new explicit authorization.",
+  "oneShotActivationEvidenceReconciliation": {
+    "evidencePath": "reports/generated/ana-a09-funnel-publication-policy-one-shot-activation-staging-evidence.json",
+    "evidenceBlobSha": "e90054442245f5fe71d41d309cbb7e2809d10ec2",
+    "authorizedRepositoryHead": "0fbb4e029d07464f1db752dc6d3dbac5a385156b",
+    "reconciliationAuthorizationToken": "authorize-ana-a09-funnel-publication-policy-one-shot-activation-evidence-reconciliation-repository-only head=0fbb4e029d07464f1db752dc6d3dbac5a385156b matrix=v1.3.132 temporalContractId=ana-a09-funnel-publication-policy-temporal-activation-approval-candidate-v1 temporalConfigBlobSha=ed94d155f2e780acbfec4d54f759572f0eb624a3 parentContractId=ana-a09-funnel-publication-policy-approval-activation-candidate-v1 stagingValidation055EvidenceBlobSha=f5ca619644611251e28705591774b2c5a90f64c8 appliedStagingMigrationVersion=20260929140910 policySetId=ana-a07-a09-funnel-v1-r1 revision=1 windowAnchor=1970-01-01T00:00:00Z effectiveFrom=2026-10-01T00:00:00Z effectiveUntil=null priorAuthorizationDigestSha256=eada577b71c277836d214e7f40414b76bc3a97b2ae40fb3a3b820fc5873a11b7 retryAuthorizationDigestSha256=82e59c9dc24d94a4f48a832d46caf35e9a5a424046d90f2794e9ed9d9227a1a7 approvalId=ana-a09-funnel-publication-approval-r1-82e59c9dc24d approvedAt=2026-09-29T14:56:34.375466Z activationEvidenceDigestSha256=2db1282f585217ab76069ba564c94f9133d08b3fa4c7d2f87fea76049684c829 prePublicationPolicyCount=0 postPublicationPolicyCount=8 currentlyEffectivePolicyCount=0 effectiveAtT0PlusOnePolicyCount=8 rowsInserted=8 snapshotWriteCount=0 postSnapshotCount=8 funnelCronCount=0 schedulerCreateCount=0 a11PublicationPolicyCount=1 a11SchedulerCount=1 runtimeSelectorMetricCount=8 anaMaturity=3/6 runtimeProjectionAuthority=true publicationPolicyPersistenceAuthority=false activationInvocationAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "reconciliationAuthorizationDigestSha256": "69d75d90de0091b06a9e2d6a587c6c25c206675c54658c89e5172ace239a955f",
+    "result": {
+      "prePublicationPolicyCount": 0,
+      "postPublicationPolicyCount": 8,
+      "rowsInserted": 8,
+      "currentlyEffectivePolicyCount": 0,
+      "effectiveAtT0PlusOnePolicyCount": 8,
+      "runtimeSelectorMetricCount": 8,
+      "snapshotWriteCount": 0,
+      "postSnapshotCount": 8,
+      "funnelCronCount": 0,
+      "schedulerCreateCount": 0,
+      "a11PublicationPolicyCount": 1,
+      "a11SchedulerCount": 1
+    },
+    "repositoryWriteAuthority": true,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  }
 }

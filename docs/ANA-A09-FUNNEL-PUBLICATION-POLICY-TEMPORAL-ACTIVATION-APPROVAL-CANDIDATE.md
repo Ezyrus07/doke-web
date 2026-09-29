@@ -107,3 +107,42 @@ That future authorization must grant only:
 It must continue to deny snapshot mutation, runtime snapshot authority, snapshot publication, scheduler activation, production, merge and Ready.
 
 If `2026-10-01T00:00:00Z` is reached before the activation gate is authorized and executed, stop and select a later `effectiveFrom` instead.
+
+
+## One-shot activation — reconciled staging evidence
+
+The one-shot activation is now complete and machine-readable evidence is stored at:
+
+`reports/generated/ana-a09-funnel-publication-policy-one-shot-activation-staging-evidence.json`
+
+Evidence blob:
+
+`e90054442245f5fe71d41d309cbb7e2809d10ec2`
+
+Committed staging result:
+
+- publication policies: `0 → 8`
+- exact parameter rows: `8`
+- approvalId: `ana-a09-funnel-publication-approval-r1-82e59c9dc24d`
+- approvedAt: `2026-09-29T14:56:34.375466Z`
+- activation authorization digest: `82e59c9dc24d94a4f48a832d46caf35e9a5a424046d90f2794e9ed9d9227a1a7`
+- activation evidence digest: `2db1282f585217ab76069ba564c94f9133d08b3fa4c7d2f87fea76049684c829`
+- currently effective policies: `0`
+- effective policies at `2026-10-01T00:00:01Z`: `8`
+- runtime selector metric count at `T0+1s`: `8`
+- snapshots: `8 → 8`
+- snapshot writes: `0`
+- funnel cron jobs: `0`
+- scheduler creates: `0`
+- A11 publication policy: `1`
+- A11 scheduler: `1`
+
+The earlier activation attempt bound to authorization digest `eada577b71c277836d214e7f40414b76bc3a97b2ae40fb3a3b820fc5873a11b7` rolled back with SQLSTATE `22012` and left zero persistent A09 publication policies. The successful retry uses the distinct digest above.
+
+The eight policies exist persistently now, but their `effectiveFrom` remains `2026-10-01T00:00:00Z`. This reconciliation grants no new runtime snapshot, snapshot publication, scheduler, production, merge or Ready authority.
+
+## Next gate after activation
+
+After exact-head certification, the next gate is a **repository-only bounded runtime publication canary contract**.
+
+That contract must remain separate from scheduler activation. It may define an explicitly authorized bounded publication window and expected snapshot-write envelope, but no snapshot publication may run and no A09 cron may be created without another explicit staging authorization.
