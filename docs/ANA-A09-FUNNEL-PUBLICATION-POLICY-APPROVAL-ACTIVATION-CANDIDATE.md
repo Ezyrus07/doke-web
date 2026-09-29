@@ -4,7 +4,7 @@
 
 Prepare the approval-aware activation boundary for the exact eight A09 funnel publication policies while keeping publication inactive.
 
-This is a **repository-only** candidate. It creates no staging policy row, writes no snapshot and creates no scheduler.
+The candidate was authored repository-only. Its approval/activation structure is now installed and validation 055 has passed in staging, while persistent A09 publication policies remain at zero.
 
 ## Why this gate exists
 
@@ -113,20 +113,50 @@ Validation blob:
 
 `c4376ea8140702e87740d52fd574b07ddb86d616`
 
-When separately authorized and run after applying the migration, validation 055 will:
+Validation 055 has now executed in staging with **PASS** and rollback.
 
-1. verify owner and execute boundaries;
-2. require A11 publication policy count `1`, A09 publication policy count `0`, and funnel cron count `0`;
-3. build a synthetic future approval envelope;
-4. prove valid approval acceptance;
-5. prove tampered HEAD and scheduler-boundary rejection;
-6. transiently insert exactly eight publication rows;
-7. prove the existing A09 runtime policy-set selector resolves all eight;
-8. prove replay activation is rejected;
-9. prove no funnel snapshot or cron count changes;
-10. rollback the transaction.
+It:
 
-Persistent publication-policy delta after validation must therefore remain **zero**.
+1. verified owner and execute boundaries;
+2. confirmed A11 publication policy count `1`, A09 publication policy count `0`, and funnel cron count `0`;
+3. built the synthetic future approval envelope;
+4. proved valid approval acceptance;
+5. proved tampered HEAD and scheduler-boundary rejection;
+6. transiently inserted exactly eight publication rows;
+7. proved the existing A09 runtime policy-set selector resolves all eight;
+8. proved replay activation is rejected;
+9. proved no funnel snapshot or cron count changes;
+10. rolled the transaction back.
+
+Persistent publication-policy delta after validation is **zero**.
+
+## Reconciled staging evidence
+
+Machine-readable evidence:
+
+`reports/generated/ana-a09-funnel-publication-policy-approval-activation-staging-evidence.json`
+
+Evidence blob:
+
+`f5ca619644611251e28705591774b2c5a90f64c8`
+
+Observed staging result:
+
+- applied migration version: `20260929140910`
+- validation `055`: **PASS**
+- transient publication-policy rows during rollback test: `8`
+- persistent A09 publication-policy rows: `0`
+- A11 publication policy count: `1`
+- A11 scheduler count: `1`
+- active A09 freshness policies: `8`
+- A09 snapshots: `8 → 8`
+- snapshot writes: `0`
+- funnel cron: `0 → 0`
+- scheduler creates: `0`
+- candidate functions installed: `2`
+- both functions remain owner `postgres`, `SECURITY DEFINER`, and non-executable by `anon`, `authenticated`, and `service_role`
+- real `windowAnchor`: still unselected
+- real `effectiveFrom`: still unselected
 
 ## Authority after this lot
 
@@ -145,6 +175,6 @@ ANA remains **3/6**.
 
 ## Next gate
 
-After exact-head certification, require a separate staging-structure authorization for migration `20260929133000` plus rollback-only validation `055`.
+After exact-head certification of this staging evidence, prepare a separate **repository-only temporal activation approval envelope**.
 
-That gate must persist zero publication policies and still cannot choose the real `windowAnchor` or `effectiveFrom`. Those values require a later explicit repository approval before a real one-time activation invocation.
+That later approval must explicitly state the real `windowAnchor` and `effectiveFrom`. Only after that separate approval may a one-time staging activation of the eight publication-policy rows be considered. Snapshot publication and scheduler activation remain later, independent gates.

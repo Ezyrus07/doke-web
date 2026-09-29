@@ -23,13 +23,13 @@
     "validationPath": "supabase/tests/055_ana_a09_funnel_publication_policy_approval_activation_candidate_validation.sql",
     "validationBlobSha": "c4376ea8140702e87740d52fd574b07ddb86d616",
     "configPath": "config/ana-a09-funnel-publication-policy-approval-activation-candidate.json",
-    "configBlobSha": "968657f3e4400e1b3797ba82fb0b0a6fe3647cee",
+    "configBlobSha": "09280227fae55e7c549d9e099bfe3948dd647915",
     "docsPath": "docs/ANA-A09-FUNNEL-PUBLICATION-POLICY-APPROVAL-ACTIVATION-CANDIDATE.md",
-    "docsBlobSha": "47531e2878122afd2bdabf7a3560d84d7e0281f6",
+    "docsBlobSha": "a3359ed46a753bb11848bca2035e74ba5930b7bd",
     "auditPath": "scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js",
-    "auditBlobSha": "5f0d482f055fe57f93a3c88cc352403cc130b086",
+    "auditBlobSha": "c63fd9082da812cfd6e206d841ba976f033afd51",
     "testPath": "scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js",
-    "testBlobSha": "1be91c161d74885cb929e8c2a10568a287419c14",
+    "testBlobSha": "fb164128d563a399d20b69a27348e98311738a12",
     "workflowPath": ".github/workflows/ana-a09-canonical-funnel-projection.yml",
     "workflowBlobSha": "a3f44e3c3151a1a4b7bbf38d1798c87b99336ab2",
     "policySetId": "ana-a07-a09-funnel-v1-r1",
@@ -48,7 +48,7 @@
   },
   "writesPerformed": {
     "repository": true,
-    "staging": false,
+    "staging": true,
     "production": false
   },
   "authorityAfterLot": {
@@ -69,12 +69,48 @@
     "promoted": false
   },
   "residualRisks": [
-    "Candidate migration and validation 055 are not yet applied/executed in staging.",
-    "Real publication-policy windowAnchor is not approved.",
-    "Real publication-policy effectiveFrom is not approved.",
+    "Real publication-policy windowAnchor is still not approved.",
+    "Real publication-policy effectiveFrom is still not approved.",
     "No A09 publication-policy row exists persistently.",
     "No continuous funnel snapshot publication has been exercised.",
     "No A09 scheduler exists."
   ],
-  "nextSafeAction": "Exact-head repository certification. Then request a separate staging-structure authorization to apply migration 20260929133000 and execute rollback-only validation 055 only; validation may create eight transient publication rows inside the rollback transaction but must persist zero rows, write zero snapshots and create zero scheduler jobs."
+  "nextSafeAction": "Exact-head certification of the reconciled validation-055 staging evidence, then a separate repository-only temporal activation approval envelope with explicit windowAnchor and effectiveFrom. No real publication-policy persistence, snapshot mutation or scheduler activation without new explicit authorization.",
+  "stagingApprovalActivationEvidenceReconciliation": {
+    "evidencePath": "reports/generated/ana-a09-funnel-publication-policy-approval-activation-staging-evidence.json",
+    "evidenceBlobSha": "f5ca619644611251e28705591774b2c5a90f64c8",
+    "authorizedRepositoryHead": "28c869772819db623f1c4b214ace2a34da08df08",
+    "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
+    "repositoryMigrationVersion": "20260929133000",
+    "appliedStagingMigrationVersion": "20260929140910",
+    "validation": "055",
+    "validationStatus": "PASS",
+    "stagingAuthorizationDigestSha256": "697e52a7ee790ba28b00cb318ee6c3b01306556df25959c93f1573111268cab1",
+    "reconciliationAuthorizationToken": "authorize-ana-a09-funnel-publication-policy-approval-activation-staging-evidence-reconciliation-repository-only head=28c869772819db623f1c4b214ace2a34da08df08 matrix=v1.3.132 contractId=ana-a09-funnel-publication-policy-approval-activation-candidate-v1 candidateConfigBlobSha=968657f3e4400e1b3797ba82fb0b0a6fe3647cee migration=20260929133000 migrationBlobSha=bccd9801cac5de7bf9b1b689eef985a9d2a93d8a appliedStagingMigrationVersion=20260929140910 validation=055 validationBlobSha=c4376ea8140702e87740d52fd574b07ddb86d616 validation055=PASS stagingProjectRef=zwkczgewzbsorbrjuzpb preserveA11=true a11PublicationPolicyCount=1 a11SchedulerCount=1 activeFreshnessPolicyCount=8 preFunnelPublicationPolicyCount=0 postFunnelPublicationPolicyCount=0 transientPublicationPolicyRows=8 persistentPublicationPolicyRows=0 preSnapshotCount=8 postSnapshotCount=8 snapshotWriteCount=0 preFunnelCronCount=0 postFunnelCronCount=0 schedulerCreateCount=0 candidateFunctionCount=2 anaMaturity=3/6 runtimeProjectionAuthority=true windowAnchorSelectionAuthority=false effectiveFromSelectionAuthority=false publicationPolicyPersistenceAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "reconciliationAuthorizationDigestSha256": "826302df8b55aebe378f1823396bee11b7d7dacfb0c369e780cabb8b59a347fd",
+    "result": {
+      "preserveA11": true,
+      "a11PublicationPolicyCount": 1,
+      "a11SchedulerCount": 1,
+      "activeFreshnessPolicyCount": 8,
+      "transientPublicationPolicyRows": 8,
+      "persistentPublicationPolicyRows": 0,
+      "preSnapshotCount": 8,
+      "postSnapshotCount": 8,
+      "snapshotWriteCount": 0,
+      "preFunnelCronCount": 0,
+      "postFunnelCronCount": 0,
+      "schedulerCreateCount": 0,
+      "candidateFunctionCount": 2,
+      "clientExecuteClosed": true,
+      "windowAnchorSelected": false,
+      "effectiveFromSelected": false
+    },
+    "repositoryWriteAuthority": true,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  }
 }
