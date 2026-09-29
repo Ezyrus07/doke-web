@@ -32,6 +32,7 @@
       title: query('[data-results-title]'),
       description: query('[data-results-description]'),
       count: query('[data-results-count]'),
+      locationContext: query('[data-results-location-context]'),
       loading: query('[data-results-loading]'),
       grid: query('[data-results-grid]'),
       inlineEmpty: query('[data-results-inline-empty]'),
@@ -80,6 +81,12 @@
     if (nodes.title) nodes.title.textContent = snapshot.summary && snapshot.summary.title || '';
     if (nodes.description) nodes.description.textContent = snapshot.summary && snapshot.summary.description || '';
     if (nodes.count) nodes.count.textContent = String(Math.max(0, Number(snapshot.count || 0)));
+    if (nodes.locationContext) {
+      var locationSource = query('[data-topbar-location-value]');
+      var locationText = locationSource ? String(locationSource.textContent || '').trim() : '';
+      nodes.locationContext.textContent = locationText;
+      nodes.locationContext.hidden = !locationText;
+    }
 
     [nodes.layout, nodes.summary, nodes.grid].forEach(function (node) {
       if (!node || !node.dataset) return;
