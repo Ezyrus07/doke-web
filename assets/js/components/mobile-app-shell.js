@@ -390,7 +390,7 @@
   }
 
   function createShellAction(name, cfg) {
-    if (name === 'search') return createShellSearchButton();
+    if (name === 'search') return shellPresentation(cfg) && shellPresentation(cfg).inlineSearch ? createShellSearchDisclosure() : createShellSearchButton();
     if (name === 'search-link') return '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>';
     if (name === 'notifications') return '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>';
     if (name === 'filters') return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>';
