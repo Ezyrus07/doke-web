@@ -25,7 +25,7 @@
     'admin-verificacao.html': { key: 'admin-verificacao', active: '', search: false, title: 'Análise de identidade', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-anuncio-revisao.html': { key: 'admin-anuncio-revisao', active: '', search: false, title: 'Revisão de anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-pedidos-operacao.html': { key: 'admin-pedidos-operacao', active: '', search: false, title: 'Operação de pedidos', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
-    'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
+    'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', compactSearchButton: true, hideSearchBar: true, bottomNav: false },
     'novidades.html': { key: 'novidades', active: 'notifications', search: false, title: 'Novidades', bottomNav: false },
     'ajuda.html': { key: 'ajuda', active: 'settings', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
@@ -35,6 +35,26 @@
     'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'pagamento-profissional.html': { key: 'pagamento-profissional', active: 'orders', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'orders', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
+  };
+
+  /* Fallback-only presentation map. The navigation registry is the canonical runtime owner. */
+  var FALLBACK_SHELL_PRESENTATION = {
+    pedidos: { leading: 'profile', actions: ['search'] },
+    mensagens: { leading: 'profile', actions: ['search', 'notifications'] },
+    notificacoes: { leading: 'profile', actions: ['search', 'filters'], inlineSearch: 'notifications' },
+    comunidade: { leading: 'profile', actions: ['search', 'community-create'] },
+    'comunidade-interna': { leading: 'back', backHref: 'comunidade.html', actions: ['search'] },
+    carteira: { leading: 'profile', actions: ['wallet-search', 'wallet-withdraw'] },
+    perfil: { leading: 'profile', actions: ['search-link', 'notifications'] },
+    'meu-perfil': { leading: 'profile', actions: ['search-link', 'notifications'] },
+    'detalhe-anuncio': { leading: 'back', backHref: 'resultados.html', actions: [] },
+    orcamento: { leading: 'back', backHref: 'pedidos.html', actions: [] },
+    configuracoes: { leading: 'profile', actions: ['search-link'] },
+    'anunciar-servico': { leading: 'back', backHref: 'owner-profile', actions: [] },
+    'pagamento-profissional': { leading: 'back', backHref: 'pedidos.html', actions: [] },
+    'avaliacao-profissional': { leading: 'back', backHref: 'pedidos.html', actions: [] },
+    'tornar-profissional': { leading: 'back', backHref: 'owner-profile', actions: [] },
+    'verificacao-profissional': { leading: 'back', backHref: 'owner-profile', actions: [] }
   };
 
   var ICONS = {
@@ -167,6 +187,29 @@
 
   function usesContextActions(cfg) {
     return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'comunidade-interna', 'carteira', 'notificacoes', 'perfil'].indexOf(cfg.key) !== -1);
+  }
+
+  function shellPresentation(cfg) {
+    if (!cfg) return null;
+    if (cfg.mobileShell && typeof cfg.mobileShell === 'object') return cfg.mobileShell;
+    return FALLBACK_SHELL_PRESENTATION[cfg.key] || null;
+  }
+
+  function shellBackHref(presentation) {
+    if (!presentation || !presentation.backHref) return 'index.html';
+    return presentation.backHref === 'owner-profile' ? ownerProfileHref() : presentation.backHref;
+  }
+
+  function createShellLeading(cfg) {
+    var presentation = shellPresentation(cfg);
+    if (presentation && presentation.leading === 'back') {
+      return '<a class="doke-mobile-shell__leading doke-mobile-shell__back" href="' + shellBackHref(presentation) + '" aria-label="Voltar">' + ICONS.back + '</a>';
+    }
+    return [
+      '<button class="doke-mobile-shell__leading doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta" aria-expanded="false">',
+      '  <span class="doke-mobile-shell__avatar">' + accountState().initials + '</span>',
+      '</button>'
+    ].join('');
   }
 
   function queryValue() {
@@ -322,12 +365,20 @@
   }
 
   function createShellSearchDisclosure() {
+    return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-expanded="false" aria-controls="doke-shell-inline-search" aria-label="Abrir busca">' + ICONS.search + '</button>';
+  }
+
+  function createShellInlineSearch(cfg) {
+    var presentation = shellPresentation(cfg);
+    var inlineSearchMode = presentation && presentation.inlineSearch ? presentation.inlineSearch : '';
+    if (!inlineSearchMode && (!cfg || !cfg.compactSearchButton || presentation)) return '';
+    var modeAttr = inlineSearchMode ? ' data-shell-inline-search-mode="' + inlineSearchMode + '"' : '';
+    var placeholder = inlineSearchMode === 'notifications' ? 'Buscar notificação' : 'Buscar';
     return [
-      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-expanded="false" aria-controls="doke-shell-inline-search-input" aria-label="Abrir busca">' + ICONS.search + '</button>',
-      '<form class="doke-mobile-shell__inline-search" action="resultados.html" role="search" data-shell-inline-search autocomplete="off">',
+      '<form id="doke-shell-inline-search" class="doke-mobile-shell__inline-search" action="resultados.html" role="search" data-shell-inline-search' + modeAttr + ' autocomplete="off" hidden>',
       '  <label class="doke-mobile-shell__inline-field" for="doke-shell-inline-search-input">',
       '    <span class="doke-mobile-shell__inline-label">Buscar</span>',
-      '    <input id="doke-shell-inline-search-input" class="doke-mobile-shell__inline-input" type="search" name="q" placeholder="Buscar" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
+      '    <input id="doke-shell-inline-search-input" class="doke-mobile-shell__inline-input" type="search" name="q" placeholder="' + placeholder + '" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
       '  </label>',
       '</form>'
     ].join('');
@@ -337,7 +388,25 @@
     return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Focar busca">' + ICONS.search + '</button>';
   }
 
+  function createShellAction(name, cfg) {
+    if (name === 'search') return createShellSearchButton();
+    if (name === 'search-link') return '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>';
+    if (name === 'notifications') return '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>';
+    if (name === 'filters') return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>';
+    if (name === 'community-create') return '<button class="doke-mobile-shell__quick-action" type="button" data-community-create-shell aria-label="Criar comunidade">' + ICONS.plus + '</button>';
+    if (name === 'wallet-search') return '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-search aria-label="Buscar no extrato">' + ICONS.search + '</button>';
+    if (name === 'wallet-withdraw') return '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-withdraw aria-label="Sacar saldo">' + ICONS.withdraw + '</button>';
+    return '';
+  }
+
   function createQuickActions(cfg) {
+    var presentation = shellPresentation(cfg);
+    if (presentation) {
+      return presentation.actions.map(function (name) {
+        return createShellAction(name, cfg);
+      }).join('');
+    }
+
     if (!usesContextActions(cfg)) {
       var baseActions = [];
 
@@ -361,69 +430,39 @@
       return baseActions.join('');
     }
 
-    if (cfg.key === 'comunidade') {
-      return [
-        createShellSearchDisclosure(),
-        '<button class="doke-mobile-shell__quick-action" type="button" data-community-code-shell aria-label="Entrar por código">' + ICONS.communityCode + '</button>',
-        '<button class="doke-mobile-shell__quick-action" type="button" data-community-create-shell aria-label="Criar comunidade">' + ICONS.plus + '</button>',
-        '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>'
-      ].join('');
-    }
-
-    if (cfg.key === 'comunidade-interna') {
-      return [
-        '<a class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--back" href="comunidade.html" aria-label="Voltar para comunidades">' + ICONS.back + '</a>',
-        createShellSearchButton(),
-        '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar canais">' + ICONS.check + '</button>',
-        '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Filtrar canais">' + ICONS.sliders + '</button>'
-      ].join('');
-    }
-
-    if (cfg.key === 'carteira') {
-      return [
-        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-search aria-label="Buscar no extrato">' + ICONS.search + '</button>',
-        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-withdraw aria-label="Sacar saldo">' + ICONS.withdraw + '</button>',
-        '<button class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--active" type="button" data-wallet-shell-view="overview" data-wallet-mobile-view="overview" aria-label="Ver extrato">' + ICONS.orders + '</button>',
-        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-view="statistics" data-wallet-mobile-view="statistics" aria-label="Ver estatísticas">' + ICONS.chart + '</button>'
-      ].join('');
-    }
-
-    var buttons = [
-      ((cfg.key === 'pedidos' || cfg.key === 'notificacoes' || cfg.key === 'mensagens')
-        ? createShellSearchDisclosure()
-        : '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>'),
-      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',
-      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar">' + ICONS.check + '</button>'
-    ];
-
-    if (cfg.key === 'pedidos') {
-      buttons.push('<button class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--active" type="button" data-shell-agenda aria-label="Abrir agenda">' + ICONS.calendar + '</button>');
-    } else {
-      buttons.push('<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>');
-    }
-
-    return buttons.join('');
+    return '';
   }
 
-  function hasCompactHeaderActions(cfg) {
-    return Boolean(cfg && cfg.compactSearchButton && cfg.hideLocation && !usesContextActions(cfg));
+  function shellActionCount(cfg) {
+    var presentation = shellPresentation(cfg);
+    if (presentation) return presentation.actions.length;
+    if (cfg && cfg.compactSearchButton && cfg.hideLocation && !usesContextActions(cfg)) return 2;
+    return null;
+  }
+
+  function shellActionsClass(cfg) {
+    var count = shellActionCount(cfg);
+    var className = 'doke-mobile-shell__actions';
+    if (count === 0) return className + ' doke-mobile-shell__actions--empty';
+    if (count === 1) return className + ' doke-mobile-shell__actions--single';
+    if (count === 2) return className + ' doke-mobile-shell__actions--compact';
+    return className;
   }
 
   function createShell(cfg) {
     var shell = document.createElement('div');
-    var actionsClass = 'doke-mobile-shell__actions' + (hasCompactHeaderActions(cfg) ? ' doke-mobile-shell__actions--compact' : '');
+    var actionsClass = shellActionsClass(cfg);
     shell.className = 'doke-mobile-shell';
     shell.setAttribute('data-doke-mobile-shell', '');
     shell.innerHTML = [
       '<header class="doke-mobile-shell__topbar" aria-label="Cabeçalho mobile global">',
-      '  <button class="doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta">',
-      '    <span class="doke-mobile-shell__avatar">' + accountState().initials + '</span>',
-      '    <span class="doke-mobile-shell__hello">' + shellProfileTitle(cfg) + '</span>',
-      '  </button>',
+      createShellLeading(cfg),
+      '  <span class="doke-mobile-shell__title doke-mobile-shell__hello" data-shell-title>' + shellProfileTitle(cfg) + '</span>',
       '  <div class="' + actionsClass + '" data-shell-context-actions>',
       createQuickActions(cfg),
       '  </div>',
       '</header>',
+      createShellInlineSearch(cfg),
       (cfg.hideSearchBar ? '' : [
         '<form class="doke-mobile-shell__search" action="resultados.html" role="search" data-shell-search autocomplete="off">',
         '  <button class="doke-mobile-shell__search-button" type="submit" aria-label="Buscar serviço">' + ICONS.search + '</button>',
@@ -455,12 +494,15 @@
       if (!event || event.key === SESSION_KEY) syncAccountSurface();
     });
 
-    shell.querySelector('[data-shell-profile]').addEventListener('click', function (event) {
-      if (openMobileDrawerDirect()) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    });
+    var profileTrigger = shell.querySelector('[data-shell-profile]');
+    if (profileTrigger) {
+      profileTrigger.addEventListener('click', function (event) {
+        if (openMobileDrawerDirect()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      });
+    }
     var locationButton = shell.querySelector('[data-shell-location]');
     if (locationButton) {
       locationButton.addEventListener('click', function () {
@@ -476,7 +518,12 @@
       }
 
       if (pageCfg.key === 'notificacoes') {
-        return clickFirst('[data-notifications-mobile-search-toggle], .notifications-mobile-header .orders-page-header__search-toggle');
+        var notificationsSearch = document.querySelector('[data-notifications-search]');
+        if (notificationsSearch && typeof notificationsSearch.focus === 'function') {
+          notificationsSearch.focus();
+          return true;
+        }
+        return false;
       }
 
       if (pageCfg.key === 'mensagens') {
@@ -568,15 +615,31 @@
     var shellInlineSearch = shell.querySelector('[data-shell-inline-search]');
     var shellInlineSearchInput = shell.querySelector('.doke-mobile-shell__inline-input');
     var shellSearchButton = shell.querySelector('[data-shell-search-trigger]');
+    var shellInlineSearchMode = shellInlineSearch ? (shellInlineSearch.getAttribute('data-shell-inline-search-mode') || '') : '';
 
-    function setShellInlineSearchExpanded(expanded) {
+    function syncNotificationsInlineSearch() {
+      if (shellInlineSearchMode !== 'notifications' || !shellInlineSearchInput) return false;
+      var target = document.querySelector('[data-notifications-search]');
+      if (!target) return false;
+      if (target.value !== shellInlineSearchInput.value) target.value = shellInlineSearchInput.value;
+      try {
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      } catch (error) {}
+      return true;
+    }
+
+    function setShellInlineSearchExpanded(expanded, restoreFocus) {
       if (!shellInlineSearch || !shellSearchButton) return;
       shell.classList.toggle('is-search-expanded', expanded);
       shellInlineSearch.classList.toggle('is-expanded', expanded);
-      shellInlineSearch.hidden = false;
+      shellInlineSearch.hidden = !expanded;
       shellSearchButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       if (expanded) {
+        document.body.setAttribute('data-shell-inline-search-expanded', 'true');
         window.setTimeout(function () { shellInlineSearchInput && shellInlineSearchInput.focus(); }, 0);
+      } else {
+        document.body.removeAttribute('data-shell-inline-search-expanded');
+        if (restoreFocus && typeof shellSearchButton.focus === 'function') shellSearchButton.focus();
       }
     }
 
@@ -591,6 +654,11 @@
         }
         var isOpen = shellInlineSearch.classList.contains('is-expanded');
         var value = shellInlineSearchInput.value.trim();
+        if (shellInlineSearchMode === 'notifications') {
+          if (!isOpen) setShellInlineSearchExpanded(true);
+          else syncNotificationsInlineSearch();
+          return;
+        }
         if (isOpen && value) {
           navigateTo('resultados.html?q=' + encodeURIComponent(value));
           return;
@@ -600,12 +668,27 @@
     }
 
     if (shellInlineSearch && shellInlineSearchInput) {
-      shellInlineSearchInput.value = queryValue();
+      if (shellInlineSearchMode === 'notifications') {
+        var notificationsSearchInput = document.querySelector('[data-notifications-search]');
+        shellInlineSearchInput.value = notificationsSearchInput ? notificationsSearchInput.value : '';
+        shellInlineSearchInput.addEventListener('input', syncNotificationsInlineSearch);
+      } else {
+        shellInlineSearchInput.value = queryValue();
+      }
       shellInlineSearch.addEventListener('submit', function (event) {
         event.preventDefault();
+        if (shellInlineSearchMode === 'notifications') {
+          syncNotificationsInlineSearch();
+          return;
+        }
         var value = shellInlineSearchInput.value.trim();
         if (!value) return;
         navigateTo('resultados.html?q=' + encodeURIComponent(value));
+      });
+      shellInlineSearchInput.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        event.preventDefault();
+        setShellInlineSearchExpanded(false, true);
       });
       document.addEventListener('click', function (event) {
         if (!shell.contains(event.target)) return;
@@ -777,6 +860,7 @@
     document.body.removeAttribute('data-shell-page');
     document.body.removeAttribute('data-shell-search');
     document.body.removeAttribute('data-shell-bottom-nav');
+    document.body.removeAttribute('data-shell-inline-search-expanded');
     document.documentElement.classList.remove('doke-mobile-shell-pending', 'doke-mobile-shell-ready');
     document.documentElement.setAttribute('data-doke-mobile-shell', 'viewport-disabled');
   }
@@ -792,6 +876,7 @@
     document.body.setAttribute('data-shell-page', cfg.key);
     document.body.setAttribute('data-shell-search', cfg.search ? 'true' : 'false');
     document.body.setAttribute('data-shell-bottom-nav', hasBottomNav(cfg) ? 'true' : 'false');
+    document.body.removeAttribute('data-shell-inline-search-expanded');
     document.body.classList.add('doke-mobile-shell-mounted');
     document.documentElement.removeAttribute('data-doke-mobile-shell');
     document.body.prepend(createShell(cfg));
