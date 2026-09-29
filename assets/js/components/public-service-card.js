@@ -111,7 +111,17 @@
     var sellerCopy=document.createElement('span'); sellerCopy.className='doke-ad-card__seller-copy';
     var sellerName=document.createElement('strong'); sellerName.className='doke-ad-card__seller-name'; sellerName.textContent=providerHandle(service); sellerName.title=sellerName.textContent; sellerCopy.appendChild(sellerName);
     var reviews=Number(service.reviewsCount || 0), rating=Number(service.rating || 0);
-    if (reviews>0 && rating>0) { var meta=document.createElement('span'); meta.className='doke-ad-card__seller-meta'; var rat=document.createElement('span'); rat.className='doke-ad-card__rating'; rat.textContent='★ '+rating.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' ('+reviews+' avaliações)'; meta.appendChild(rat); sellerCopy.appendChild(meta); }
+    var responseTime=clean(service.responseTime || service.providerResponseTime || service.professionalResponseTime);
+    if ((reviews>0 && rating>0) || (options.results && responseTime)) {
+      var meta=document.createElement('span'); meta.className='doke-ad-card__seller-meta';
+      if (reviews>0 && rating>0) {
+        var rat=document.createElement('span'); rat.className='doke-ad-card__rating'; rat.textContent='★ '+rating.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' ('+reviews+' avaliações)'; meta.appendChild(rat);
+      }
+      if (options.results && responseTime) {
+        var response=document.createElement('span'); response.className='doke-ad-card__response'; response.textContent='Responde '+responseTime.replace(/^em\s+/i,''); meta.appendChild(response);
+      }
+      sellerCopy.appendChild(meta);
+    }
     seller.append(avatar,sellerCopy); body.appendChild(seller);
 
     var tags=(Array.isArray(service.tags)?service.tags:[]).filter(Boolean).slice(0,2);
