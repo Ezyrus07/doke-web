@@ -491,10 +491,7 @@ test.describe('PD-RESULTS-001 exact viewport contract', () => {
         await expect(inlineSearch).toBeHidden();
         await expect(trigger).toBeFocused();
 
-        await shell.locator('[data-shell-filter]').click();
-        await expect(page.locator('[data-results-filters-open]').first()).toHaveAttribute('aria-expanded', 'true');
-        await expect(page.locator('[data-results-filters-backdrop]')).toBeVisible();
-        await expect(page.locator('body')).toHaveClass(/results-filters-open/);
+        await expect(shell.locator('[data-shell-filter]')).toHaveCount(1);
       } else {
         expect(metrics.shellVisible).toBe(false);
         expect(metrics.bottomNavVisible).toBe(false);
@@ -513,4 +510,22 @@ test.describe('PD-RESULTS-001 exact viewport contract', () => {
       });
     });
   }
+
+
+  test('phone shell filter delegates to the live Resultados filter presentation', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/resultados.html?q=fotografia&type=services');
+
+    const shellFilter = page.locator('.doke-mobile-shell [data-shell-filter]');
+    const pageFilterTrigger = page.locator('[data-results-filters-open]').first();
+    const backdrop = page.locator('[data-results-filters-backdrop]');
+
+    await expect(shellFilter).toBeVisible();
+    await expect(pageFilterTrigger).toHaveAttribute('aria-expanded', 'false');
+    await shellFilter.click();
+    await expect(pageFilterTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(backdrop).toBeVisible();
+    await expect(page.locator('body')).toHaveClass(/results-filters-open/);
+  });
 });
