@@ -609,6 +609,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
                 <strong>${rating}</strong>
                 <span>(${reviews})</span>
               </span>
+              ${item.responseTime ? `<span class="doke-ad-card__response">Responde ${String(item.responseTime).replace(/^em\\s+/i, '')}</span>` : ''}
             </span>
           </span>
         </div>
