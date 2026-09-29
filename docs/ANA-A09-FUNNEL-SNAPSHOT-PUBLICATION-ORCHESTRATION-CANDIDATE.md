@@ -4,7 +4,7 @@
 
 Prepare the next ANA-A09 publication gate without creating a second analytics publication authority.
 
-The candidate reuses `private.analytics_metric_publication_policies_v1`, preserves the active ANA-A11 liquidity path, and adds a bounded global-funnel planner/orchestrator/catch-up contract. This repository lot does **not** apply the migration to staging and does not grant runtime snapshot, publication or scheduler authority.
+The candidate reuses `private.analytics_metric_publication_policies_v1`, preserves the active ANA-A11 liquidity path, and adds a bounded global-funnel planner/orchestrator/catch-up contract. The structural migration has now been applied and validated in staging; runtime snapshot, publication and scheduler authority remain disabled.
 
 ## Root cause
 
@@ -135,6 +135,33 @@ Validation 054 is rollback-only and structural. It proves:
 - the missing A09 publication policy set fails closed;
 - no mutation-capable A09 publication function is invoked by the validation.
 
+## Staging structural evidence
+
+Machine-readable evidence:
+
+`reports/generated/ana-a09-funnel-snapshot-publication-orchestration-staging-evidence.json`
+
+Evidence blob:
+
+`0fa5595dd8b0c0ba925ff46fb7c3dbe0bc150595`
+
+Staging result:
+
+- repository migration version: `20260929121600`
+- applied staging migration version: `20260929125652`
+- validation `054`: **PASS**, rollback-only
+- A11 publication policy count: `1`
+- A11 scheduler count: `1`
+- A09 funnel publication policy count: `0`
+- A09 funnel cron count: `0`
+- A09 global snapshot count: `8 → 8`
+- snapshot writes in this lot: `0`
+- candidate private functions installed: `4`
+- all four functions remain owner `postgres` and non-executable by `anon`, `authenticated`, and `service_role`
+- no candidate-specific security or performance advisor finding was introduced
+
+The structural staging gate is therefore proven without activating publication.
+
 ## Authority after this lot
 
 - runtimeProjectionAuthority = `true`
@@ -150,6 +177,6 @@ ANA remains **3/6**.
 
 ## Next gate
 
-After exact-head repository certification, a separate staging-structure authorization may apply the migration and execute validation 054.
+After exact-head repository certification of this staging evidence, prepare a separate **repository-only publication-policy approval/activation candidate**.
 
-That staging-structure gate must still insert no A09 publication policies, write no funnel snapshots and create no scheduler. Policy approval/activation, bounded runtime canary and scheduler activation remain separate later gates.
+That candidate may define the exact eight-row A09 policy set and authorization contract, but it must not persist those policies in staging, publish snapshots or create a scheduler until separately authorized. Bounded runtime canary and scheduler activation remain later gates.

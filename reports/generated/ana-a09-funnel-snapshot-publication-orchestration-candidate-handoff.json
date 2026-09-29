@@ -21,13 +21,13 @@
     "validationPath": "supabase/tests/054_ana_a09_funnel_snapshot_publication_orchestration_candidate_validation.sql",
     "validationBlobSha": "906629533492eec6be83441e51554d6eee4a3a97",
     "configPath": "config/ana-a09-funnel-snapshot-publication-orchestration-candidate.json",
-    "configBlobSha": "7c3e1ce89730e42f88e296ff582f66ee45bfb440",
+    "configBlobSha": "2c99eaac6c03c29fbefe5973ae70b9160ee053d6",
     "docsPath": "docs/ANA-A09-FUNNEL-SNAPSHOT-PUBLICATION-ORCHESTRATION-CANDIDATE.md",
-    "docsBlobSha": "19bef2940d4fcedab1bafd09323e1bafaabde7ba",
+    "docsBlobSha": "778aec3c48a5706963ca59db31f5641c8e8ccf5a",
     "auditPath": "scripts/audit-ana-a09-funnel-snapshot-publication-orchestration-candidate.js",
-    "auditBlobSha": "1a463bf0e8df4e17464c7ae5d6ea53b6a5bf7197",
+    "auditBlobSha": "b6a28e721424c248e5459531993ad5b4d9558d3f",
     "testPath": "scripts/test-ana-a09-funnel-snapshot-publication-orchestration-candidate.js",
-    "testBlobSha": "deae4862d699b53773ff75007b966711f1f4ed8d",
+    "testBlobSha": "e91d25003191ce73c07e54f8c0f17f6e6721d7e1",
     "workflowPath": ".github/workflows/ana-a09-canonical-funnel-projection.yml",
     "workflowBlobSha": "00a016dbe2d99f9d6a8ea681c811e8d3f201f262",
     "metricCount": 8,
@@ -42,7 +42,7 @@
   },
   "writesPerformed": {
     "repository": true,
-    "staging": false,
+    "staging": true,
     "production": false
   },
   "authorityAfterLot": {
@@ -61,11 +61,42 @@
     "promoted": false
   },
   "residualRisks": [
-    "Candidate migration is not yet applied or validated against staging runtime.",
     "No A09 publication-policy rows exist yet.",
     "No A09 scheduler exists.",
+    "No continuous funnel snapshot publication has been exercised.",
     "Window anchor and publication effective window remain intentionally unselected.",
-    "Automatic revision of already-materialized late-fact windows is intentionally excluded and remains ANA-A05 authority."
+    "Automatic revision of already-materialized late-fact windows remains ANA-A05 authority."
   ],
-  "nextSafeAction": "Exact-head repository certification. Then request a separate staging-structure authorization for migration 20260929121600 plus rollback-only validation 054 only; no A09 publication policy insertion, snapshot publication or scheduler activation."
+  "nextSafeAction": "Exact-head certification of the reconciled staging-structure evidence, then a separate repository-only A09 publication-policy approval/activation candidate. No publication-policy persistence, snapshot mutation or scheduler activation without new explicit authorization.",
+  "stagingStructureEvidenceReconciliation": {
+    "evidencePath": "reports/generated/ana-a09-funnel-snapshot-publication-orchestration-staging-evidence.json",
+    "evidenceBlobSha": "0fa5595dd8b0c0ba925ff46fb7c3dbe0bc150595",
+    "authorizedRepositoryHead": "dc52c24d4bf71b8e29529538189e7c682d47ce83",
+    "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
+    "repositoryMigrationVersion": "20260929121600",
+    "appliedStagingMigrationVersion": "20260929125652",
+    "validation": "054",
+    "validationStatus": "PASS",
+    "stagingAuthorizationDigestSha256": "4186704a1dd6a1f9504cf13a9d3d00b9e13d404d8dbb166b92d6e720b332785d",
+    "reconciliationAuthorizationToken": "authorize-ana-a09-funnel-snapshot-publication-orchestration-staging-evidence-reconciliation-repository-only head=dc52c24d4bf71b8e29529538189e7c682d47ce83 matrix=v1.3.132 contractId=ana-a09-funnel-snapshot-publication-orchestration-candidate-v1 candidateConfigBlobSha=7c3e1ce89730e42f88e296ff582f66ee45bfb440 migration=20260929121600 migrationBlobSha=01a6d7208a9d4d288eb9995325707d0ccdc9a3a6 appliedStagingMigrationVersion=20260929125652 validation=054 validationBlobSha=906629533492eec6be83441e51554d6eee4a3a97 validation054=PASS stagingProjectRef=zwkczgewzbsorbrjuzpb preserveA11=true a11PublicationPolicyCount=1 a11SchedulerCount=1 funnelPublicationPolicyCount=0 funnelCronCount=0 preSnapshotCount=8 postSnapshotCount=8 snapshotWriteCount=0 candidateFunctionCount=4 anaMaturity=3/6 runtimeProjectionAuthority=true publicationPolicyPersistenceAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "reconciliationAuthorizationDigestSha256": "1005173681776fcf6b9af072281c9e02e283884cdf5ad77db296c21e0702d7fd",
+    "result": {
+      "preserveA11": true,
+      "a11PublicationPolicyCount": 1,
+      "a11SchedulerCount": 1,
+      "funnelPublicationPolicyCount": 0,
+      "funnelCronCount": 0,
+      "preSnapshotCount": 8,
+      "postSnapshotCount": 8,
+      "snapshotWriteCount": 0,
+      "candidateFunctionCount": 4,
+      "clientExecuteClosed": true
+    },
+    "repositoryWriteAuthority": true,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  }
 }

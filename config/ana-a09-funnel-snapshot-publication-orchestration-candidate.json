@@ -5,7 +5,7 @@
   "sourceHead": "0deddb7a8924fdda72ff12e032f70c6944d64224",
   "matrixVersion": "1.3.132",
   "scope": "generalize-existing-publication-policy-authority-and-build-a09-funnel-publication-orchestration-candidate-only",
-  "status": "repository_candidate_unapplied_staging_unauthorized",
+  "status": "staging_structure_applied_validation_054_pass_evidence_reconciled_pending_exact_head_certification",
   "objective": "Reuse the existing analytics publication-policy authority to prepare bounded global-funnel snapshot publication without creating a second policy store or granting runtime publication/scheduler authority.",
   "rootCause": {
     "maturityGap": "ANA-A09 has certified runtime projection, first snapshot append and exact replay idempotency, but no continuous publication policy or scheduler authority.",
@@ -142,8 +142,8 @@
     "plannerDoesNotCreateScheduler": true
   },
   "prohibitedEffects": {
-    "stagingMigrationApplied": false,
-    "stagingValidationExecuted": false,
+    "stagingMigrationApplied": true,
+    "stagingValidationExecuted": true,
     "publicationPolicyPersisted": false,
     "snapshotPublicationInvoked": false,
     "schedulerCreated": false,
@@ -157,7 +157,29 @@
     "before": 3,
     "after": 3,
     "promoted": false,
-    "reason": "Repository-only publication orchestration candidate. Runtime snapshot/publication/scheduler authority remain false and staging evidence for this candidate does not yet exist."
+    "reason": "Staging structural migration is applied and validation 054 passes, but A09 publication-policy persistence, snapshot publication, scheduler authority and continuous operational evidence remain absent."
   },
-  "nextGate": "Certify this candidate on the exact resulting HEAD. Then require separate exact-head staging authorization to apply the structural migration and execute rollback-only validation 054. Do not insert A09 publication policies or create a scheduler in that staging-structure lot."
+  "nextGate": "Certify the reconciled staging-structure evidence on the exact resulting HEAD. Then prepare a separate repository-only A09 publication-policy approval/activation candidate. No publication-policy persistence, snapshot mutation or scheduler activation is authorized by this evidence reconciliation.",
+  "stagingStructureEvidence": {
+    "evidenceId": "ana-a09-funnel-snapshot-publication-orchestration-staging-evidence-v1",
+    "evidencePath": "reports/generated/ana-a09-funnel-snapshot-publication-orchestration-staging-evidence.json",
+    "evidenceBlobSha": "0fa5595dd8b0c0ba925ff46fb7c3dbe0bc150595",
+    "authorizedRepositoryHead": "dc52c24d4bf71b8e29529538189e7c682d47ce83",
+    "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
+    "repositoryMigrationVersion": "20260929121600",
+    "appliedStagingMigrationVersion": "20260929125652",
+    "validation": "054",
+    "validationStatus": "PASS",
+    "preserveA11": true,
+    "a11PublicationPolicyCount": 1,
+    "a11SchedulerCount": 1,
+    "funnelPublicationPolicyCount": 0,
+    "funnelCronCount": 0,
+    "preSnapshotCount": 8,
+    "postSnapshotCount": 8,
+    "snapshotWriteCount": 0,
+    "candidateFunctionCount": 4,
+    "clientExecuteClosed": true,
+    "reconciliationAuthorizationDigestSha256": "1005173681776fcf6b9af072281c9e02e283884cdf5ad77db296c21e0702d7fd"
+  }
 }

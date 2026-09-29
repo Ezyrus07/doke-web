@@ -12,6 +12,7 @@ const validation=read('supabase/tests/054_ana_a09_funnel_snapshot_publication_or
 const docs=read('docs/ANA-A09-FUNNEL-SNAPSHOT-PUBLICATION-ORCHESTRATION-CANDIDATE.md');
 const workflow=read('.github/workflows/ana-a09-canonical-funnel-projection.yml');
 const handoff=json('reports/generated/ana-a09-funnel-snapshot-publication-orchestration-candidate-handoff.json');
+const stagingEvidence=json('reports/generated/ana-a09-funnel-snapshot-publication-orchestration-staging-evidence.json');
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 
 check('candidate identity',c.contractId==='ana-a09-funnel-snapshot-publication-orchestration-candidate-v1'&&c.domain==='ANA-001'&&c.front==='ANA-A09');
@@ -51,12 +52,21 @@ check('planner bounded and missing-only',migration.includes('where w.materialize
 check('validation rollback only',validation.trim().startsWith('-- ANA-A09 validation 054')&&validation.includes('\nbegin;')&&validation.trim().endsWith('rollback;'));
 check('validation does not invoke mutation functions',!validation.includes(':=private.run_analytics_a09_funnel_window_v1')&&!validation.includes(':=private.run_analytics_a09_funnel_catch_up_v1'));
 check('validation preserves a11',validation.includes("'ana-a11-liquidity-v1-r1'")&&validation.includes('VALIDATION_054_A11_PRESERVATION_FAILED'));
-check('docs boundaries',docs.includes('creates **no scheduler activation function and no cron job**')&&docs.includes('ANA remains **3/6**'));
+check('docs boundaries',docs.includes('creates **no scheduler activation function and no cron job**')&&docs.includes('ANA remains **3/6**')&&docs.includes('Staging structural evidence'));
 check('workflow candidate wired',workflow.includes('supabase/migrations/20260929121600_ana_a09_funnel_snapshot_publication_orchestration_candidate.sql')&&workflow.includes('supabase/tests/054_ana_a09_funnel_snapshot_publication_orchestration_candidate_validation.sql')&&workflow.includes('scripts/audit-ana-a09-funnel-snapshot-publication-orchestration-candidate.js')&&workflow.includes('scripts/test-ana-a09-funnel-snapshot-publication-orchestration-candidate.js')&&workflow.includes('Publication orchestration candidate audit')&&workflow.includes('Publication orchestration candidate conformance'));
 check('handoff bound',handoff.contractId===c.contractId&&handoff.sourceHead==='0deddb7a8924fdda72ff12e032f70c6944d64224'&&handoff.candidate?.migrationBlobSha===c.candidate?.migrationBlobSha&&handoff.candidate?.validationBlobSha===c.candidate?.validationBlobSha);
 check('no authority promotion',c.authorization?.stagingAuthority===false&&c.authorization?.runtimeSnapshotAuthority===false&&c.authorization?.snapshotPublicationAuthority===false&&c.authorization?.schedulerAuthority===false&&c.prohibitedEffects?.maturityPromotion===false);
 check('matrix maturity unchanged',(matrix.domains||[]).find(d=>d.id==='ANA-001')?.maturity===3);
 
+
+check('staging evidence identity',stagingEvidence.evidenceId==='ana-a09-funnel-snapshot-publication-orchestration-staging-evidence-v1'&&stagingEvidence.contractId===c.contractId&&stagingEvidence.authorizedRepositoryHead==='dc52c24d4bf71b8e29529538189e7c682d47ce83'&&stagingEvidence.matrixVersion==='1.3.132');
+check('staging migration exact',stagingEvidence.migration?.repositoryVersion==='20260929121600'&&stagingEvidence.migration?.appliedStagingVersion==='20260929125652'&&stagingEvidence.migration?.status==='APPLIED'&&stagingEvidence.sourceBindings?.migrationBlobSha==='01a6d7208a9d4d288eb9995325707d0ccdc9a3a6');
+check('validation 054 staging pass',stagingEvidence.validation054?.status==='PASS'&&stagingEvidence.validation054?.rollbackOnly===true&&stagingEvidence.validation054?.mutationCapableA09FunctionInvoked===false&&stagingEvidence.sourceBindings?.validationBlobSha==='906629533492eec6be83441e51554d6eee4a3a97');
+check('a11 preserved in staging',stagingEvidence.postflight?.a11PublicationPolicyCount===1&&stagingEvidence.postflight?.a11SchedulerCount===1&&stagingEvidence.invariants?.preserveA11===true);
+check('a09 remains inactive after structural staging',stagingEvidence.postflight?.funnelPublicationPolicyCount===0&&stagingEvidence.postflight?.funnelCronCount===0&&stagingEvidence.postflight?.a09GlobalSnapshotCount===8&&stagingEvidence.postflight?.snapshotWriteCount===0);
+check('candidate functions closed in staging',stagingEvidence.postflight?.candidateFunctionCount===4&&stagingEvidence.postflight?.candidateFunctionsOwner==='postgres'&&stagingEvidence.postflight?.anonExecute===false&&stagingEvidence.postflight?.authenticatedExecute===false&&stagingEvidence.postflight?.serviceRoleExecute===false);
+check('staging evidence bound to config',c.stagingStructureEvidence?.evidencePath==='reports/generated/ana-a09-funnel-snapshot-publication-orchestration-staging-evidence.json'&&c.stagingStructureEvidence?.evidenceBlobSha==='0fa5595dd8b0c0ba925ff46fb7c3dbe0bc150595'&&c.stagingStructureEvidence?.validationStatus==='PASS'&&c.stagingStructureEvidence?.snapshotWriteCount===0);
+check('reconciliation authority consumed',stagingEvidence.reconciliation?.authorizationDigestSha256==='1005173681776fcf6b9af072281c9e02e283884cdf5ad77db296c21e0702d7fd'&&stagingEvidence.reconciliation?.repositoryWriteAuthority===true&&stagingEvidence.reconciliation?.stagingAuthority===false&&stagingEvidence.reconciliation?.productionAuthority===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));
 if(failed.length)process.exitCode=1;

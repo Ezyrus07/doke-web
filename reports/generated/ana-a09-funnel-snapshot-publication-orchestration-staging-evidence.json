@@ -1,0 +1,103 @@
+{
+  "evidenceId": "ana-a09-funnel-snapshot-publication-orchestration-staging-evidence-v1",
+  "contractId": "ana-a09-funnel-snapshot-publication-orchestration-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "authorizedRepositoryHead": "dc52c24d4bf71b8e29529538189e7c682d47ce83",
+  "matrixVersion": "1.3.132",
+  "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
+  "sourceBindings": {
+    "candidateConfigBlobSha": "7c3e1ce89730e42f88e296ff582f66ee45bfb440",
+    "migrationPath": "supabase/migrations/20260929121600_ana_a09_funnel_snapshot_publication_orchestration_candidate.sql",
+    "migrationBlobSha": "01a6d7208a9d4d288eb9995325707d0ccdc9a3a6",
+    "validationPath": "supabase/tests/054_ana_a09_funnel_snapshot_publication_orchestration_candidate_validation.sql",
+    "validationBlobSha": "906629533492eec6be83441e51554d6eee4a3a97",
+    "handoffBlobShaBeforeReconciliation": "294ad6dd3d08314c46dc4ee2257bf606e344e1ff"
+  },
+  "stagingAuthorization": {
+    "digestSha256": "4186704a1dd6a1f9504cf13a9d3d00b9e13d404d8dbb166b92d6e720b332785d",
+    "scope": "structural migration plus rollback-only validation 054",
+    "publicationPolicyPersistenceAuthority": false,
+    "snapshotMutationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "migration": {
+    "repositoryVersion": "20260929121600",
+    "appliedStagingVersion": "20260929125652",
+    "name": "ana_a09_funnel_snapshot_publication_orchestration_candidate",
+    "status": "APPLIED",
+    "structuralEffects": {
+      "existingPublicationAuthorityReused": true,
+      "secondPublicationAuthorityCreated": false,
+      "a11ScopePreserved": true,
+      "a09ScopeAdded": true,
+      "legacyA11OnlyConstraintsRemoved": true,
+      "candidateFunctionCount": 4
+    }
+  },
+  "validation054": {
+    "status": "PASS",
+    "rollbackOnly": true,
+    "mutationCapableA09FunctionInvoked": false,
+    "transactionRolledBack": true
+  },
+  "preflight": {
+    "a11PublicationPolicyCount": 1,
+    "funnelPublicationPolicyCount": 0,
+    "funnelCronCount": 0,
+    "a09GlobalSnapshotCount": 8
+  },
+  "postflight": {
+    "observedAt": "2026-09-29T13:22:03.550783+00:00",
+    "a11PublicationPolicyCount": 1,
+    "a11SchedulerCount": 1,
+    "funnelPublicationPolicyCount": 0,
+    "funnelCronCount": 0,
+    "a09GlobalSnapshotCount": 8,
+    "snapshotWriteCount": 0,
+    "candidateFunctionCount": 4,
+    "candidateFunctionsOwner": "postgres",
+    "anonExecute": false,
+    "authenticatedExecute": false,
+    "serviceRoleExecute": false,
+    "generalizedConstraintPresent": true,
+    "securityAdvisorFindingsIntroducedForCandidate": 0,
+    "performanceAdvisorFindingsIntroducedForCandidate": 0
+  },
+  "invariants": {
+    "preserveA11": true,
+    "a11PublicationPolicyPreserved": true,
+    "a11SchedulerPreserved": true,
+    "publicationPolicyPersistenceOccurred": false,
+    "snapshotMutationOccurred": false,
+    "funnelSchedulerCreated": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "reconciliation": {
+    "authorizationToken": "authorize-ana-a09-funnel-snapshot-publication-orchestration-staging-evidence-reconciliation-repository-only head=dc52c24d4bf71b8e29529538189e7c682d47ce83 matrix=v1.3.132 contractId=ana-a09-funnel-snapshot-publication-orchestration-candidate-v1 candidateConfigBlobSha=7c3e1ce89730e42f88e296ff582f66ee45bfb440 migration=20260929121600 migrationBlobSha=01a6d7208a9d4d288eb9995325707d0ccdc9a3a6 appliedStagingMigrationVersion=20260929125652 validation=054 validationBlobSha=906629533492eec6be83441e51554d6eee4a3a97 validation054=PASS stagingProjectRef=zwkczgewzbsorbrjuzpb preserveA11=true a11PublicationPolicyCount=1 a11SchedulerCount=1 funnelPublicationPolicyCount=0 funnelCronCount=0 preSnapshotCount=8 postSnapshotCount=8 snapshotWriteCount=0 candidateFunctionCount=4 anaMaturity=3/6 runtimeProjectionAuthority=true publicationPolicyPersistenceAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "authorizationDigestSha256": "1005173681776fcf6b9af072281c9e02e283884cdf5ad77db296c21e0702d7fd",
+    "repositoryWriteAuthority": true,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false
+  },
+  "conclusion": "A09 publication orchestration structure is installed and rollback-only validation 054 passes in staging while A11 remains intact and A09 publication-policy/snapshot/scheduler authorities remain inactive.",
+  "nextSafeAction": "Certify this reconciled staging-structure evidence on the exact resulting repository HEAD, then prepare a separate repository-only A09 publication-policy approval/activation candidate. Do not persist publication policies or create a scheduler without a new explicit authorization."
+}
