@@ -367,7 +367,7 @@ test.describe('PD-RESULTS-001 canonical mobile shell integration', () => {
     await inlineInput.fill('pintura residencial');
     await inlineInput.press('Enter');
     await expect(pageSearch).toHaveValue('pintura residencial');
-    await expect(page).toHaveURL(/\/resultados\.html\?.*q=pintura(?:\+|%20)residencial.*type=services/);
+    await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('pintura residencial');\n    await expect.poll(() => new URL(page.url()).searchParams.get('type')).toBe('services');
 
     await inlineInput.press('Escape');
     await expect(inlineSearch).toBeHidden();
@@ -394,7 +394,7 @@ test.describe('PD-RESULTS-001 canonical mobile shell integration', () => {
     await expect(pageFilterTrigger).toHaveAttribute('aria-expanded', 'true');
     await expect(backdrop).toBeVisible();
     await expect(page.locator('body')).toHaveClass(/results-filters-open/);
-    await expect(page).toHaveURL(/\/resultados\.html\?.*q=fotografia.*type=services/);
+    await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('fotografia');\n    await expect.poll(() => new URL(page.url()).searchParams.get('type')).toBe('services');
   });
 });
 
