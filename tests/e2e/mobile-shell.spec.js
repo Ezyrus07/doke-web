@@ -68,13 +68,16 @@ test.describe('PD-SHELL-001 mobile app shell', () => {
     });
   }
 
-  test('resultados exposes Buscar + Filtros and routes both actions to canonical page controls', async ({ page }) => {
+  test('resultados uses the canonical second search region and preserves the existing results controller', async ({ page }) => {
     await page.goto('/resultados.html?q=limpeza&type=services');
 
     const shell = page.locator('.doke-mobile-shell');
+    const topbar = shell.locator('.doke-mobile-shell__topbar');
     const actions = shell.locator('[data-shell-context-actions]');
     const search = actions.locator('[data-shell-search-trigger]');
     const filters = actions.locator('[data-shell-filter]');
+    const inlineSearch = shell.locator('[data-shell-inline-search][data-shell-inline-search-mode="results"]');
+    const inlineInput = inlineSearch.locator('input');
     const pageSearch = page.locator('[data-results-search-input]').first();
 
     await expect(shell.locator('[data-shell-profile]')).toBeVisible();
@@ -84,13 +87,33 @@ test.describe('PD-SHELL-001 mobile app shell', () => {
     await expect(actions.locator('[data-shell-location]')).toHaveCount(0);
     await expect(actions.locator('a[href="notificacoes.html"]')).toHaveCount(0);
     await expect(shell.locator('[data-shell-search]')).toHaveCount(0);
+    await expect(inlineSearch).toBeHidden();
 
     await search.click();
-    await expect(pageSearch).toBeFocused();
+    await expect(inlineSearch).toBeVisible();
+    await expect(search).toHaveAttribute('aria-expanded', 'true');
+    await expect(inlineInput).toBeFocused();
+    await expect(inlineInput).toHaveValue('limpeza');
+
+    const topbarBox = await topbar.boundingBox();
+    const searchBox = await inlineSearch.boundingBox();
+    expect(topbarBox).not.toBeNull();
+    expect(searchBox).not.toBeNull();
+    expect(searchBox.y).toBeGreaterThanOrEqual(topbarBox.y + topbarBox.height);
+    expect(Math.abs(searchBox.width - topbarBox.width)).toBeLessThanOrEqual(1);
+
+    await inlineInput.fill('pintura residencial');
+    await inlineInput.press('Enter');
+    await expect(pageSearch).toHaveValue('pintura residencial');
+    await expect(page).toHaveURL(/\/resultados\.html\?.*q=pintura(?:\+|%20)residencial.*type=services/);
+
+    await inlineInput.press('Escape');
+    await expect(inlineSearch).toBeHidden();
+    await expect(search).toHaveAttribute('aria-expanded', 'false');
+    await expect(search).toBeFocused();
 
     await filters.click();
     await expect(page.locator('body')).toHaveClass(/results-filters-open/);
-    await expect(page).toHaveURL(/\/resultados\.html\?q=limpeza&type=services$/);
 
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
