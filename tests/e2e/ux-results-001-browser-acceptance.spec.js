@@ -332,6 +332,72 @@ for (const viewport of viewports) {
   });
 }
 
+
+test.describe('PD-RESULTS-001 canonical mobile shell integration', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('Search opens below the topbar and delegates submit to the existing Results search controller', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto('/resultados.html?q=fotografia&type=services');
+
+    const shell = page.locator('.doke-mobile-shell');
+    const topbar = shell.locator('.doke-mobile-shell__topbar');
+    const trigger = shell.locator('[data-shell-search-trigger]');
+    const inlineSearch = shell.locator('[data-shell-inline-search][data-shell-inline-search-mode="results"]');
+    const inlineInput = inlineSearch.locator('input');
+    const pageSearch = page.locator('[data-results-search-input]').first();
+
+    await expect(shell).toBeVisible();
+    await expect(page.locator('.results-searchbar .doke-results-search__form')).toBeHidden();
+    await expect(inlineSearch).toBeHidden();
+
+    await trigger.click();
+    await expect(inlineSearch).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(inlineInput).toBeFocused();
+    await expect(inlineInput).toHaveValue('fotografia');
+
+    const topbarBox = await topbar.boundingBox();
+    const searchBox = await inlineSearch.boundingBox();
+    expect(topbarBox).not.toBeNull();
+    expect(searchBox).not.toBeNull();
+    expect(searchBox.y).toBeGreaterThanOrEqual(topbarBox.y + topbarBox.height);
+    expect(Math.abs(searchBox.width - topbarBox.width)).toBeLessThanOrEqual(1);
+
+    await inlineInput.fill('pintura residencial');
+    await inlineInput.press('Enter');
+    await expect(pageSearch).toHaveValue('pintura residencial');
+    await expect(page).toHaveURL(/\/resultados\.html\?.*q=pintura(?:\+|%20)residencial.*type=services/);
+
+    await inlineInput.press('Escape');
+    await expect(inlineSearch).toBeHidden();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toBeFocused();
+
+    const overflow = await page.evaluate(() => (
+      Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) - window.innerWidth
+    ));
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
+  test('Filters delegates to the existing Resultados filter presentation', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto('/resultados.html?q=fotografia&type=services');
+
+    const shellFilter = page.locator('.doke-mobile-shell [data-shell-filter]');
+    const pageFilterTrigger = page.locator('[data-results-filters-open]').first();
+    const backdrop = page.locator('[data-results-filters-backdrop]');
+
+    await expect(shellFilter).toBeVisible();
+    await expect(pageFilterTrigger).toHaveAttribute('aria-expanded', 'false');
+    await shellFilter.click();
+    await expect(pageFilterTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(backdrop).toBeVisible();
+    await expect(page.locator('body')).toHaveClass(/results-filters-open/);
+    await expect(page).toHaveURL(/\/resultados\.html\?.*q=fotografia.*type=services/);
+  });
+});
+
 test('pagination preserves focus, rollback and retry', async ({ page }) => {
   test.setTimeout(90_000);
   await boot(page);
