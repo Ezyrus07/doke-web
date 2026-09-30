@@ -105,7 +105,8 @@ test.describe('PD-SHELL-001 mobile app shell', () => {
     await inlineInput.fill('pintura residencial');
     await inlineInput.press('Enter');
     await expect(pageSearch).toHaveValue('pintura residencial');
-    await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('pintura residencial');\n    await expect.poll(() => new URL(page.url()).searchParams.get('type')).toBe('services');
+    await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('pintura residencial');
+    await expect.poll(() => new URL(page.url()).searchParams.get('type')).toBe('services');
 
     await inlineInput.press('Escape');
     await expect(inlineSearch).toBeHidden();
