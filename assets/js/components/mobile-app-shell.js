@@ -39,7 +39,7 @@
 
   /* Fallback-only presentation map. The navigation registry is the canonical runtime owner. */
   var FALLBACK_SHELL_PRESENTATION = {
-    resultados: { leading: 'profile', actions: ['search', 'filters'] },
+    resultados: { leading: 'profile', actions: ['search', 'filters'], inlineSearch: 'results' },
     pedidos: { leading: 'profile', actions: ['search'] },
     mensagens: { leading: 'profile', actions: ['search', 'notifications'] },
     notificacoes: { leading: 'profile', actions: ['search', 'filters'], inlineSearch: 'notifications' },
@@ -390,7 +390,7 @@
   }
 
   function createShellAction(name, cfg) {
-    if (name === 'search') return createShellSearchButton();
+    if (name === 'search') return shellPresentation(cfg) && shellPresentation(cfg).inlineSearch ? createShellSearchDisclosure() : createShellSearchButton();
     if (name === 'search-link') return '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>';
     if (name === 'notifications') return '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>';
     if (name === 'filters') return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>';
@@ -514,15 +514,6 @@
     function triggerPageSearch() {
       var pageCfg = config();
 
-      if (pageCfg.key === 'resultados') {
-        var resultsSearch = document.querySelector('[data-results-search-input]');
-        if (resultsSearch && typeof resultsSearch.focus === 'function') {
-          resultsSearch.focus();
-          return true;
-        }
-        return false;
-      }
-
       if (pageCfg.key === 'pedidos') {
         return clickFirst('[data-orders-mobile-search-toggle], .orders-page-header__search-toggle, .orders-header-search__icon');
       }
@@ -638,6 +629,39 @@
       return true;
     }
 
+    function resultsInlineSearchTarget(value) {
+      var params;
+      try {
+        params = new URLSearchParams(window.location.search || '');
+      } catch (error) {
+        params = new URLSearchParams();
+      }
+      if (value) params.set('q', value);
+      else params.delete('q');
+      var query = params.toString();
+      return 'resultados.html' + (query ? '?' + query : '');
+    }
+
+    function submitResultsInlineSearch(value) {
+      if (shellInlineSearchMode !== 'results') return false;
+      var target = document.querySelector('[data-results-search-input]');
+      var form = document.querySelector('[data-results-search-form]');
+      if (!target || !form) return false;
+      if (target.value !== value) target.value = value;
+      try {
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      } catch (error) {}
+      if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+        return true;
+      }
+      try {
+        return form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      } catch (error) {
+        return false;
+      }
+    }
+
     function setShellInlineSearchExpanded(expanded, restoreFocus) {
       if (!shellInlineSearch || !shellSearchButton) return;
       shell.classList.toggle('is-search-expanded', expanded);
@@ -669,6 +693,17 @@
           else syncNotificationsInlineSearch();
           return;
         }
+        if (shellInlineSearchMode === 'results') {
+          if (!isOpen) {
+            setShellInlineSearchExpanded(true);
+            return;
+          }
+          if (value) {
+            if (submitResultsInlineSearch(value)) return;
+            navigateTo(resultsInlineSearchTarget(value));
+          }
+          return;
+        }
         if (isOpen && value) {
           navigateTo('resultados.html?q=' + encodeURIComponent(value));
           return;
@@ -693,6 +728,11 @@
         }
         var value = shellInlineSearchInput.value.trim();
         if (!value) return;
+        if (shellInlineSearchMode === 'results') {
+          if (submitResultsInlineSearch(value)) return;
+          navigateTo(resultsInlineSearchTarget(value));
+          return;
+        }
         navigateTo('resultados.html?q=' + encodeURIComponent(value));
       });
       shellInlineSearchInput.addEventListener('keydown', function (event) {
