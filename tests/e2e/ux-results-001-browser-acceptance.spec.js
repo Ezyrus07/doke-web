@@ -434,7 +434,7 @@ test.describe('PD-RESULTS-001 exact viewport contract', () => {
           return style.display !== 'none' && style.visibility !== 'hidden' && !node.hidden && rect.width > 0 && rect.height > 0;
         };
         const grid = document.querySelector('[data-results-grid]');
-        const cards = Array.from(grid?.querySelectorAll('.doke-ad-card--results') || []);
+        const cards = [...(grid?.querySelectorAll('.doke-ad-card--results') || [])];
         const firstCard = cards[0];
         const gridStyle = grid ? getComputedStyle(grid) : null;
         const firstCardStyle = firstCard ? getComputedStyle(firstCard) : null;
