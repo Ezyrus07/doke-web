@@ -126,7 +126,7 @@
   var PAGE_CONFIGS = {
     '': { key: 'home', search: true, title: 'Início' },
     'index.html': { key: 'home', search: true, title: 'Início' },
-    'resultados.html': { key: 'resultados', search: true, title: 'Resultados', hideSearchBar: true, mobileShell: { leading: 'profile', actions: ['search', 'filters'] } },
+    'resultados.html': { key: 'resultados', search: true, title: 'Resultados', hideSearchBar: true, mobileShell: { leading: 'profile', actions: ['search', 'filters'], inlineSearch: 'results' } },
     'detalhe-anuncio.html': { key: 'detalhe-anuncio', search: false, title: 'Anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true, mobileShell: { leading: 'back', backHref: 'resultados.html', actions: [] } },
     'pedidos.html': { key: 'pedidos', search: false, title: 'Pedidos', hideSearchBar: true, mobileShell: { leading: 'profile', actions: ['search'] } },
     'orcamento.html': { key: 'orcamento', search: false, title: 'Orçamento', mobileShell: { leading: 'back', backHref: 'pedidos.html', actions: [] } },
