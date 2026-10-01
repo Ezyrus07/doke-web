@@ -18,13 +18,13 @@
   },
   "candidate": {
     "configPath": "config/ana-a09-funnel-bounded-runtime-publication-canary-candidate.json",
-    "configBlobSha": "d5c8716a1c121180c7578ffa18d805aeddae384b",
+    "configBlobSha": "ea5ab76a922073322674e45509519ec680fb8672",
     "docsPath": "docs/ANA-A09-FUNNEL-BOUNDED-RUNTIME-PUBLICATION-CANARY-CANDIDATE.md",
-    "docsBlobSha": "63ad87169023534263f713b4245a81a6429e06e5",
+    "docsBlobSha": "a1379ec6ff2fe68e0290475558dffe6d92776b71",
     "auditPath": "scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js",
-    "auditBlobSha": "ff731cf31c3c572890c01b82ead554cf09ee1445",
+    "auditBlobSha": "1a63132841673d1734129f791db021d73c06174e",
     "testPath": "scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js",
-    "testBlobSha": "3804c1bb019ebd2939209f192523e200814e4340",
+    "testBlobSha": "d1c94e3640c494c7d757a9143d7f4618efa5dc67",
     "workflowPath": ".github/workflows/ana-a09-canonical-funnel-projection.yml",
     "workflowBlobSha": "5b767609770d16b4a039e6511300eb2614a6ca9e",
     "windowStart": "2026-10-01T00:00:00Z",
@@ -70,10 +70,49 @@
     "promoted": false
   },
   "residualRisks": [
-    "The canary cannot execute before 2026-10-01T00:06:00Z because the publication policy requires a 60-second projection delay after the 00:00-00:05 window.",
-    "Target-window source data and planner state can still change before execution; future staging authorization must repeat the preflight.",
-    "No bounded runtime snapshot publication has executed under the persisted publication-policy set.",
+    "The literal direct-window executor return payload was not retained in accessible logs; eight appends are inferred from persistent 0-to-8 revision-one evidence.",
+    "Only one bounded publication window has been exercised under the persisted policy set.",
+    "Continuous funnel snapshot publication has not been exercised.",
     "No A09 scheduler exists."
   ],
-  "nextSafeAction": "Exact-head repository certification. After 2026-10-01T00:06:00Z, repeat read-only preflight and require a separate explicit staging authorization for one direct-window invocation only."
+  "nextSafeAction": "Exact-head repository certification of the reconciled canary evidence. Then, only under a new explicit authorization, prepare a separate repository-only candidate for continuous publication/scheduler readiness.",
+  "status": "runtime_canary_executed_staging_evidence_reconciled_pending_exact_head_certification",
+  "runtimeCanaryExecutionEvidence": {
+    "evidencePath": "reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-staging-evidence.json",
+    "evidenceBlobSha": "e28703cd192e618582438bb0e63267caac881eda",
+    "authorizedRepositoryHead": "85f145bb563cde60178b25fe8aac047b4b097912",
+    "reconciliationAuthorizationToken": "authorize-ana-a09-funnel-bounded-runtime-publication-canary-evidence-reconciliation-repository-only head=85f145bb563cde60178b25fe8aac047b4b097912 matrix=v1.3.132 canaryContractId=ana-a09-funnel-bounded-runtime-publication-canary-candidate-v1 candidateConfigBlobSha=d5c8716a1c121180c7578ffa18d805aeddae384b activationEvidenceBlobSha=e90054442245f5fe71d41d309cbb7e2809d10ec2 policySetId=ana-a07-a09-funnel-v1-r1 windowStart=2026-10-01T00:00:00Z windowEnd=2026-10-01T00:05:00Z snapshotCreatedAt=2026-10-01T00:10:31.163345Z snapshotComputedAt=2026-10-01T00:10:31.174346Z preTargetSnapshotCount=0 postTargetSnapshotCount=8 distinctMetricCount=8 revisionOneCount=8 higherRevisionCount=0 supersedesNullCount=8 authoritativeCount=8 completeCoverageCount=8 dataThroughExactCount=8 funnelCronCount=0 schedulerCreateCount=0 a11PublicationPolicyCount=1 a11SchedulerCount=1 anaMaturity=3/6 runtimeCanaryExecuted=true runtimeProjectionAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "reconciliationAuthorizationDigestSha256": "9c9c21c9a34e9f38326b6e8f7d544b266cf0e2de6fddd40b8223809132b1698a",
+    "result": {
+      "preTargetSnapshotCount": 0,
+      "postTargetSnapshotCount": 8,
+      "distinctMetricCount": 8,
+      "revisionOneCount": 8,
+      "higherRevisionCount": 0,
+      "supersedesNullCount": 8,
+      "authoritativeCount": 8,
+      "completeCoverageCount": 8,
+      "dataThroughExactCount": 8,
+      "snapshotCreatedAt": "2026-10-01T00:10:31.163345Z",
+      "snapshotComputedAt": "2026-10-01T00:10:31.174346Z",
+      "literalExecutorReturnCaptured": false,
+      "inferredAppendedCount": 8,
+      "funnelCronCount": 0,
+      "schedulerCreateCount": 0,
+      "a11PublicationPolicyCount": 1,
+      "a11SchedulerCount": 1
+    },
+    "authorityAfterCanary": {
+      "runtimeProjectionAuthority": true,
+      "runtimeCanaryExecutionAuthority": false,
+      "snapshotMutationAuthority": false,
+      "runtimeSnapshotAuthority": false,
+      "snapshotPublicationAuthority": false,
+      "schedulerAuthority": false,
+      "stagingAuthority": false,
+      "productionAuthority": false,
+      "mergeAuthority": false,
+      "readyForReviewAuthority": false
+    }
+  }
 }

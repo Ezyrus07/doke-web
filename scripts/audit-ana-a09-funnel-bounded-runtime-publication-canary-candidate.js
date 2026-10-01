@@ -3,6 +3,7 @@ const fs=require('fs');const path=require('path');const root=path.resolve(__dirn
 const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');const json=(p)=>JSON.parse(read(p));
 const c=json('config/ana-a09-funnel-bounded-runtime-publication-canary-candidate.json');
 const activation=json('reports/generated/ana-a09-funnel-publication-policy-one-shot-activation-staging-evidence.json');
+const runtimeEvidence=json('reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-staging-evidence.json');
 const temporal=json('config/ana-a09-funnel-publication-policy-temporal-activation-approval-candidate.json');
 const orchestration=json('config/ana-a09-funnel-snapshot-publication-orchestration-candidate.json');
 const matrix=json('config/domain-completion-matrix.json');
@@ -29,6 +30,16 @@ check('orchestration supports direct executor',orchestration.candidate?.maxSnaps
 check('handoff bound',handoff.contractId===c.contractId&&handoff.candidate?.configBlobSha==='d5c8716a1c121180c7578ffa18d805aeddae384b');
 check('workflow wired',workflow.includes('config/ana-a09-funnel-bounded-runtime-publication-canary-candidate.json')&&workflow.includes('scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js')&&workflow.includes('scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js')&&workflow.includes('Bounded runtime publication canary candidate audit')&&workflow.includes('Bounded runtime publication canary candidate conformance'));
 check('matrix maturity unchanged',(matrix.domains||[]).find(d=>d.id==='ANA-001')?.maturity===3&&c.maturity?.after===3);
+
+check('runtime canary evidence identity',runtimeEvidence.evidenceId==='ana-a09-funnel-bounded-runtime-publication-canary-staging-evidence-v1'&&runtimeEvidence.contractId===c.contractId&&runtimeEvidence.authorizedRepositoryHead==='85f145bb563cde60178b25fe8aac047b4b097912'&&runtimeEvidence.matrixVersion==='1.3.132');
+check('runtime canary exact persistence',runtimeEvidence.persistentEvidence?.preTargetSnapshotCount===0&&runtimeEvidence.persistentEvidence?.postTargetSnapshotCount===8&&runtimeEvidence.persistentEvidence?.distinctMetricCount===8&&runtimeEvidence.persistentEvidence?.revisionOneCount===8&&runtimeEvidence.persistentEvidence?.higherRevisionCount===0&&runtimeEvidence.persistentEvidence?.supersedesNullCount===8);
+check('runtime canary authority and coverage',runtimeEvidence.persistentEvidence?.authoritativeCount===8&&runtimeEvidence.persistentEvidence?.completeCoverageCount===8&&runtimeEvidence.persistentEvidence?.dataThroughExactCount===8);
+check('runtime canary timestamps exact',runtimeEvidence.persistentEvidence?.snapshotCreatedAt==='2026-10-01T00:10:31.163345Z'&&runtimeEvidence.persistentEvidence?.snapshotComputedAt==='2026-10-01T00:10:31.174346Z');
+check('runtime canary no scheduler mutation',runtimeEvidence.persistentEvidence?.funnelCronCount===0&&runtimeEvidence.persistentEvidence?.schedulerCreateCount===0&&runtimeEvidence.persistentEvidence?.a11PublicationPolicyCount===1&&runtimeEvidence.persistentEvidence?.a11SchedulerCount===1);
+check('runtime canary return limitation explicit',runtimeEvidence.executionOutcome?.literalExecutorReturnCaptured===false&&runtimeEvidence.executionOutcome?.appendOutcomeInference?.inferredAppendedCount===8&&runtimeEvidence.executionOutcome?.appendOutcomeInference?.method==='persistent_cardinality_delta');
+check('runtime canary reconciliation binding',runtimeEvidence.reconciliation?.authorizationDigestSha256==='9c9c21c9a34e9f38326b6e8f7d544b266cf0e2de6fddd40b8223809132b1698a'&&runtimeEvidence.reconciliation?.repositoryWriteAuthority===true&&runtimeEvidence.reconciliation?.stagingAuthority===false);
+check('runtime canary evidence bound to config',c.executionEvidence?.generated===true&&c.executionEvidence?.evidencePath==='reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-staging-evidence.json'&&c.executionEvidence?.evidenceBlobSha==='e28703cd192e618582438bb0e63267caac881eda'&&c.executionEvidence?.postTargetSnapshotCount===8&&c.executionEvidence?.literalExecutorReturnCaptured===false);
+check('runtime authority remains closed after canary',runtimeEvidence.authorityAfterCanary?.runtimeCanaryExecutionAuthority===false&&runtimeEvidence.authorityAfterCanary?.snapshotMutationAuthority===false&&runtimeEvidence.authorityAfterCanary?.runtimeSnapshotAuthority===false&&runtimeEvidence.authorityAfterCanary?.snapshotPublicationAuthority===false&&runtimeEvidence.authorityAfterCanary?.schedulerAuthority===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));
 if(failed.length)process.exitCode=1;

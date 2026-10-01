@@ -5,7 +5,7 @@
   "sourceHead": "1ed17963797f2abac68426a93fcc8ec4a51de779",
   "matrixVersion": "1.3.132",
   "scope": "repository_only",
-  "status": "candidate_only_runtime_execution_not_authorized",
+  "status": "runtime_canary_executed_staging_evidence_reconciled_pending_exact_head_certification",
   "objective": "Define one bounded runtime publication canary for the first effective A09 funnel publication window without granting execution, snapshot mutation, continuous runtime publication or scheduler authority.",
   "authorization": {
     "command": "authorize-ana-a09-funnel-bounded-runtime-publication-canary-candidate-repository-only head=1ed17963797f2abac68426a93fcc8ec4a51de779 matrix=v1.3.132 activationEvidenceBlobSha=e90054442245f5fe71d41d309cbb7e2809d10ec2 temporalConfigBlobSha=528b04abef9ea27a647fe648603bb2c4b07e7c93 policySetId=ana-a07-a09-funnel-v1-r1 revision=1 metricCount=8 windowStepSeconds=300 projectionDelaySloSeconds=60 derivedMaxLagSeconds=360 effectiveFrom=2026-10-01T00:00:00Z effectiveUntil=null proposedCanaryWindowStart=2026-10-01T00:00:00Z proposedCanaryWindowEnd=2026-10-01T00:05:00Z maxPublicationWindows=1 maxSnapshotWriteAttempts=8 preserveA11=true publicationPoliciesPersisted=true runtimeCanaryExecutionAuthority=false snapshotMutationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
@@ -150,7 +150,7 @@
     }
   },
   "authority": {
-    "repositoryCandidateAuthority": true,
+    "repositoryCandidateAuthority": false,
     "runtimeCanaryExecutionAuthority": false,
     "snapshotMutationAuthority": false,
     "runtimeSnapshotAuthority": false,
@@ -177,5 +177,32 @@
     "after": 3,
     "promoted": false
   },
-  "nextGate": "Exact-head repository certification. Do not execute before 2026-10-01T00:06:00Z. After the policies are effective and the 60-second projection delay has elapsed, require a separate explicit staging authorization for exactly one direct-window invocation; scheduler activation remains a later independent gate."
+  "nextGate": "Exact-head repository certification of the reconciled canary evidence. After certification, any continuous funnel snapshot publication or A09 scheduler work requires a separate repository-only candidate and a later separate staging authorization; this canary does not grant either authority.",
+  "executionEvidence": {
+    "generated": true,
+    "evidencePath": "reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-staging-evidence.json",
+    "evidenceBlobSha": "e28703cd192e618582438bb0e63267caac881eda",
+    "runtimeCanaryExecuted": true,
+    "executedWindowStart": "2026-10-01T00:00:00Z",
+    "executedWindowEnd": "2026-10-01T00:05:00Z",
+    "snapshotCreatedAt": "2026-10-01T00:10:31.163345Z",
+    "snapshotComputedAt": "2026-10-01T00:10:31.174346Z",
+    "preTargetSnapshotCount": 0,
+    "postTargetSnapshotCount": 8,
+    "distinctMetricCount": 8,
+    "revisionOneCount": 8,
+    "higherRevisionCount": 0,
+    "supersedesNullCount": 8,
+    "authoritativeCount": 8,
+    "completeCoverageCount": 8,
+    "dataThroughExactCount": 8,
+    "literalExecutorReturnCaptured": false,
+    "inferredAppendedCount": 8,
+    "inferenceMethod": "persistent_cardinality_delta",
+    "funnelCronCount": 0,
+    "schedulerCreateCount": 0,
+    "a11PublicationPolicyCount": 1,
+    "a11SchedulerCount": 1,
+    "reconciliationAuthorizationDigestSha256": "9c9c21c9a34e9f38326b6e8f7d544b266cf0e2de6fddd40b8223809132b1698a"
+  }
 }

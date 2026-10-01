@@ -2,6 +2,7 @@
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-funnel-bounded-runtime-publication-canary-candidate.json'),'utf8'));
 const activation=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-funnel-publication-policy-one-shot-activation-staging-evidence.json'),'utf8'));
+const runtimeEvidence=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-staging-evidence.json'),'utf8'));
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('single exact window',c.canaryWindow.maxPublicationWindows===1&&c.canaryWindow.windowStart==='2026-10-01T00:00:00Z'&&c.canaryWindow.windowEnd==='2026-10-01T00:05:00Z');
 check('projection delay respected',Date.parse(c.canaryWindow.earliestExecutionAt)===Date.parse(c.canaryWindow.windowEnd)+60000);
@@ -16,6 +17,14 @@ check('future mutation requires separate authority',c.authorization.runtimeCanar
 check('scheduler remains independent',c.authority.schedulerAuthority===false&&c.futureStagingExecutionContract.requiredAuthority.schedulerAuthority===false&&c.repositoryReadOnlyStagingProof.currentA09FunnelCronCount===0);
 check('no continuous runtime authority',c.authority.runtimeSnapshotAuthority===false&&c.authority.snapshotPublicationAuthority===false);
 check('maturity unchanged',c.maturity.before===3&&c.maturity.after===3&&c.maturity.promoted===false);
+
+check('executed evidence exact cardinality',runtimeEvidence.persistentEvidence.postTargetSnapshotCount===8&&runtimeEvidence.persistentEvidence.distinctMetricCount===8&&runtimeEvidence.persistentEvidence.revisionOneCount===8&&runtimeEvidence.persistentEvidence.higherRevisionCount===0);
+check('executed evidence exact lineage',runtimeEvidence.persistentEvidence.supersedesNullCount===8&&runtimeEvidence.persistentEvidence.authoritativeCount===8&&runtimeEvidence.persistentEvidence.completeCoverageCount===8&&runtimeEvidence.persistentEvidence.dataThroughExactCount===8);
+check('executed evidence preserves scheduler boundary',runtimeEvidence.persistentEvidence.funnelCronCount===0&&runtimeEvidence.persistentEvidence.schedulerCreateCount===0&&runtimeEvidence.authorityAfterCanary.schedulerAuthority===false);
+check('executed evidence preserves a11',runtimeEvidence.persistentEvidence.a11PublicationPolicyCount===1&&runtimeEvidence.persistentEvidence.a11SchedulerCount===1);
+check('literal return not fabricated',runtimeEvidence.executionOutcome.literalExecutorReturnCaptured===false&&runtimeEvidence.executionOutcome.appendedCountLiteral===null&&runtimeEvidence.executionOutcome.appendOutcomeInference.inferredAppendedCount===8);
+check('reconciliation repository-only',runtimeEvidence.reconciliation.authorizationDigestSha256==='9c9c21c9a34e9f38326b6e8f7d544b266cf0e2de6fddd40b8223809132b1698a'&&runtimeEvidence.reconciliation.repositoryWriteAuthority===true&&runtimeEvidence.reconciliation.stagingAuthority===false);
+check('config now reconciled',c.status==='runtime_canary_executed_staging_evidence_reconciled_pending_exact_head_certification'&&c.executionEvidence.generated===true&&c.executionEvidence.runtimeCanaryExecuted===true);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;

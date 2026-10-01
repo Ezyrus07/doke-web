@@ -105,3 +105,54 @@ ANA remains **3/6**.
 First certify this candidate on the exact repository HEAD.
 
 After `2026-10-01T00:06:00Z`, a separate explicit staging authorization may allow exactly one direct-window canary invocation. No continuous publication and no scheduler activation are implied by that later canary.
+
+
+## Executed canary — reconciled staging evidence
+
+The bounded runtime canary executed for the exact target window and its persistent result is recorded at:
+
+`reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-staging-evidence.json`
+
+Evidence blob:
+
+`e28703cd192e618582438bb0e63267caac881eda`
+
+Observed persistent result:
+
+- target snapshots: `0 → 8`
+- distinct target metrics: `8`
+- revision-one rows: `8`
+- higher revisions: `0`
+- supersedes null: `8`
+- authoritative projections: `8`
+- complete coverage: `8`
+- exact data-through `2026-10-01T00:05:00Z`: `8`
+- snapshot created_at: `2026-10-01T00:10:31.163345Z`
+- snapshot computed_at: `2026-10-01T00:10:31.174346Z`
+- A09 funnel cron: `0`
+- scheduler creates: `0`
+- A11 publication policy: `1`
+- A11 scheduler: `1`
+
+The direct executor return payload was not retained in accessible logs. Therefore this repository evidence does **not** claim a captured literal `appendedCount=8`. Instead, it records a strong persistent inference of eight appends from the exact `0 → 8` target-window transition, with all eight rows at revision 1, no higher revisions, and no superseded snapshots.
+
+The canary does not grant continuous runtime snapshot authority, snapshot publication authority, or scheduler authority.
+
+## Authority after canary
+
+- runtimeProjectionAuthority = `true`
+- runtimeCanaryExecutionAuthority = `false`
+- snapshotMutationAuthority = `false`
+- runtimeSnapshotAuthority = `false`
+- snapshotPublicationAuthority = `false`
+- schedulerAuthority = `false`
+- stagingAuthority = `false`
+- productionAuthority = `false`
+- mergeAuthority = `false`
+- Ready for review authority = `false`
+
+ANA remains **3/6**.
+
+## Next gate after evidence certification
+
+After exact-head certification of this reconciliation, any move toward continuous funnel publication or an A09 scheduler must begin with a **separate repository-only candidate**. No scheduler creation or continuous publication is authorized by this canary evidence.
