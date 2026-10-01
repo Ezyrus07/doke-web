@@ -26,7 +26,8 @@ expect(css.includes('.detail-spec strong'), 'service specification values are no
 expect(css.includes('.ad-detail-title-block > div {\n  flex: 1 1 auto;'), 'title text column cannot shrink inside flex layout');
 expect(css.includes('.detail-scope-card {\n  overflow: hidden;'), 'scope cards do not contain defensive overflow');
 expect(foundation.includes('detalhe-anuncio.css?v=20260719-owner-actions-v1'), 'foundation does not load the current detail CSS contract');
-expect(html.includes('marketplace-detail-foundation.css?v=20260719-owner-actions-v1'), 'detail HTML does not bust the previous CSS cache');
+expect(html.includes('marketplace-detail-foundation.css?v=20260930-pd-detail-001-v1'), 'detail HTML does not load the PD-DETAIL-001 CSS entry version');
+expect(foundation.includes('detalhe-anuncio/visual-hierarchy.css?v=20260930-pd-detail-001-v1'), 'foundation does not load the PD-DETAIL-001 visual hierarchy contract');
 
 if (failures.length) {
   console.error('Detail ad content overflow contract failed:');
