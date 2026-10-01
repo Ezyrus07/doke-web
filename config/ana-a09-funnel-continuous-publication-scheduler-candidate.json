@@ -1,0 +1,211 @@
+{
+  "contractId": "ana-a09-funnel-continuous-publication-scheduler-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "sourceHead": "01fb50d8f35276031efec3d252a4b91672aa8dcc",
+  "matrixVersion": "1.3.132",
+  "scope": "repository_only_contract_candidate",
+  "status": "candidate_only_no_migration_no_scheduler_activation",
+  "objective": "Define the continuous A09 funnel publication scheduler contract after a successful bounded runtime canary, without creating a migration, cron job, continuous snapshot-publication authority or staging mutation in this lot.",
+  "authorization": {
+    "command": "authorize-ana-a09-funnel-continuous-publication-scheduler-candidate-repository-only head=01fb50d8f35276031efec3d252a4b91672aa8dcc matrix=v1.3.132 canaryEvidenceBlobSha=e28703cd192e618582438bb0e63267caac881eda candidateConfigBlobSha=ea5ab76a922073322674e45509519ec680fb8672 policySetId=ana-a07-a09-funnel-v1-r1 boundedRuntimeCanaryPassed=true targetSnapshotCount=8 revisionOneCount=8 higherRevisionCount=0 preserveA11=true continuousPublicationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "digestSha256": "b1e67c07834088546d5880cb29fadc9a09c7b3c94057201df6dc03d8d608ad36",
+    "repositoryWriteAuthority": true,
+    "continuousPublicationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "sourceBindings": {
+    "canaryEvidence": {
+      "path": "reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-staging-evidence.json",
+      "blobSha": "e28703cd192e618582438bb0e63267caac881eda"
+    },
+    "boundedCanaryConfig": {
+      "path": "config/ana-a09-funnel-bounded-runtime-publication-canary-candidate.json",
+      "blobSha": "ea5ab76a922073322674e45509519ec680fb8672"
+    },
+    "publicationOrchestration": {
+      "path": "config/ana-a09-funnel-snapshot-publication-orchestration-candidate.json",
+      "blobSha": "2c99eaac6c03c29fbefe5973ae70b9160ee053d6"
+    },
+    "a11SchedulerReference": {
+      "path": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
+      "blobSha": "3e18ce8809ba3abed374354720783c7f77bec4d0"
+    },
+    "a11SchedulerValidationReference": {
+      "path": "supabase/tests/040_ana_a11_liquidity_scheduler_activation_validation.sql",
+      "blobSha": "d6704ad88bca5639ca82683f017e73b20b50c7eb"
+    }
+  },
+  "boundedCanaryEvidence": {
+    "passedByPersistentEvidence": true,
+    "literalExecutorReturnCaptured": false,
+    "targetSnapshotCount": 8,
+    "revisionOneCount": 8,
+    "higherRevisionCount": 0,
+    "schedulerCreateCount": 0,
+    "a11Preserved": true,
+    "interpretation": "The canary pass is based on exact persistent 0-to-8 revision-one materialization with no higher revisions, not on a retained literal executor return payload."
+  },
+  "publicationPolicy": {
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "metricVersion": "v1",
+    "metricCount": 8,
+    "windowStepSeconds": 300,
+    "projectionDelaySloSeconds": 60,
+    "derivedMaxLagSeconds": 360,
+    "maxCatchUpWindowsPerInvocation": 3,
+    "maxSnapshotAppendAttemptsPerInvocation": 24,
+    "missedWindowOrder": "oldest_first",
+    "schedulerMechanism": "supabase_pg_cron_database_local"
+  },
+  "schedulerCandidate": {
+    "jobName": "doke-ana-funnel-v1-r1",
+    "schedule": "* * * * *",
+    "pollIntervalSeconds": 60,
+    "command": "select private.run_analytics_a09_funnel_catch_up_v1('ana-a07-a09-funnel-v1-r1', clock_timestamp());",
+    "target": "private.run_analytics_a09_funnel_catch_up_v1",
+    "database": "postgres",
+    "username": "postgres",
+    "planner": "private.plan_analytics_a09_funnel_windows_v1",
+    "plannerBypassed": false,
+    "publicationWindowStepSeconds": 300,
+    "projectionDelaySloSeconds": 60,
+    "maxCatchUpWindowsPerInvocation": 3,
+    "maxSnapshotAppendAttemptsPerInvocation": 24,
+    "concurrencyModel": "database_local_pg_cron",
+    "createsCronNow": false
+  },
+  "rationale": {
+    "minutePolling": "The 60-second poll interval is derived from projectionDelaySloSeconds=60. It does not change the canonical 300-second window grid because the planner alone selects closed missing windows.",
+    "boundedCatchUp": "Each scheduler tick can process at most three missing windows and twenty-four snapshot append attempts, preserving the already-certified bounded catch-up contract.",
+    "localExecution": "The scheduler calls a private database function directly, avoiding network latency or service-role exposure.",
+    "a11Parity": "The candidate mirrors the operational topology already used by ANA-A11 while binding to the eight-row A09 policy set and A09 catch-up executor.",
+    "cronGuidance": "Supabase documents database-local Cron/pg_cron jobs and recommends keeping concurrent jobs at or below eight and each job under ten minutes; activation must re-check operational headroom."
+  },
+  "proposedActivationBoundary": {
+    "functionName": "private.activate_analytics_a09_funnel_scheduler_v1",
+    "argument": "policy_set_id text",
+    "owner": "postgres",
+    "securityDefiner": true,
+    "clientExecute": {
+      "public": false,
+      "anon": false,
+      "authenticated": false,
+      "serviceRole": false
+    },
+    "exactPolicySetRequired": true,
+    "exactMetricCountRequired": 8,
+    "exactPolicyParametersRequired": true,
+    "canaryEvidenceRequired": true,
+    "canaryEvidenceBlobShaRequired": "e28703cd192e618582438bb0e63267caac881eda",
+    "exactJobNameRequired": "doke-ana-funnel-v1-r1",
+    "exactScheduleRequired": "* * * * *",
+    "exactCommandRequired": "select private.run_analytics_a09_funnel_catch_up_v1('ana-a07-a09-funnel-v1-r1', clock_timestamp());",
+    "conflictScope": [
+      "jobname like doke-ana-funnel%",
+      "command references run_analytics_a09_funnel_catch_up_v1"
+    ],
+    "zeroRelevantJobsBehavior": "APPENDED",
+    "oneExactJobBehavior": "NO_CHANGE",
+    "conflictingJobBehavior": "FAIL_CLOSED",
+    "verifyInsertedCronRow": true,
+    "preservesA11": true,
+    "createsSchedulerOnlyOnSeparateStagingInvocation": true
+  },
+  "futureMigrationContract": {
+    "migrationImplementationRequired": true,
+    "migrationCreatedInThisLot": false,
+    "migrationFilenameSelectedInThisLot": false,
+    "migrationMustBeCreatedWithSupabaseCli": true,
+    "migrationMustOnlyDefineActivationBoundary": true,
+    "migrationMustNotCreateCronJob": true,
+    "validationSqlRequired": true,
+    "validationMustRollback": true,
+    "validationMustTestFirstActivation": true,
+    "validationMustTestReplayIdempotency": true,
+    "validationMustTestConflictFailClosed": true,
+    "validationMustVerifyClientExecuteClosed": true,
+    "validationMustVerifyA11Preserved": true
+  },
+  "futureStagingActivationRequirements": {
+    "separateExplicitAuthorizationRequired": true,
+    "exactCertifiedHeadRequired": true,
+    "exactMigrationBlobRequired": true,
+    "exactValidationBlobRequired": true,
+    "a09RelevantCronCountRequired": 0,
+    "publicationPolicyCountRequired": 8,
+    "effectivePublicationPolicyCountRequired": 8,
+    "canaryEvidenceStillRequired": true,
+    "runtimeFunctionsClosedRequired": true,
+    "a11PublicationPolicyCountRequired": 1,
+    "a11SchedulerCountRequired": 1,
+    "cronConcurrencyReviewRequired": true,
+    "firstActivationExpectedStatus": "APPENDED",
+    "replayExpectedStatus": "NO_CHANGE",
+    "expectedPostA09CronCount": 1
+  },
+  "readOnlyStagingProof": {
+    "observedAt": "2026-10-01T11:21:06.217555+00:00",
+    "publicationPolicyCount": 8,
+    "effectivePublicationPolicyCount": 8,
+    "canaryWindowSnapshotCount": 8,
+    "totalA09GlobalSnapshotCount": 16,
+    "currentPlannerRowCount": 3,
+    "currentPlannerMissingMetricCounts": [
+      8,
+      8,
+      8
+    ],
+    "a09RelevantCronCount": 0,
+    "a11PublicationPolicyCount": 1,
+    "a11SchedulerCount": 1,
+    "activeCronJobCount": 6,
+    "runningCronJobsAtObservation": 0,
+    "recentCronRunWindowMinutes": 30,
+    "recentCronRunCount": 78,
+    "recentCronFailureCount": 0,
+    "maxRecentCronDurationSeconds": 0.544141,
+    "recentA11RunWindowMinutes": 10,
+    "recentA11Runs": 10,
+    "recentA11Failures": 0,
+    "a09RuntimeFunctionCount": 4,
+    "a09RuntimeFunctionsClosed": true
+  },
+  "authority": {
+    "repositoryCandidateAuthority": true,
+    "continuousPublicationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "prohibitedEffects": {
+    "migrationCreatedInThisLot": false,
+    "stagingMigrationApplied": false,
+    "cronCreated": false,
+    "snapshotPublicationInvoked": false,
+    "snapshotWriteInThisLot": false,
+    "publicationPolicyMutated": false,
+    "a11Mutated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false,
+    "maturityPromotion": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false
+  },
+  "nextGate": "Exact-head repository certification. Then require a separate repository-only migration-implementation authorization to scaffold the owner-only A09 scheduler activation function and rollback-only validation. No staging application or cron creation is authorized yet."
+}

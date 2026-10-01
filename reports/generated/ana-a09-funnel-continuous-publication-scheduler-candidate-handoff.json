@@ -1,0 +1,79 @@
+{
+  "contractId": "ana-a09-funnel-continuous-publication-scheduler-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "sourceHead": "01fb50d8f35276031efec3d252a4b91672aa8dcc",
+  "matrixVersion": "1.3.132",
+  "authorization": {
+    "digestSha256": "b1e67c07834088546d5880cb29fadc9a09c7b3c94057201df6dc03d8d608ad36",
+    "repositoryWriteAuthority": true,
+    "schedulerAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "candidate": {
+    "sourceHead": "01fb50d8f35276031efec3d252a4b91672aa8dcc",
+    "configPath": "config/ana-a09-funnel-continuous-publication-scheduler-candidate.json",
+    "configBlobSha": "c7d7d24c08f7dbc9618b2e1b7e192e3a9c932a4f",
+    "docsPath": "docs/ANA-A09-FUNNEL-CONTINUOUS-PUBLICATION-SCHEDULER-CANDIDATE.md",
+    "docsBlobSha": "39820c4fc05a510dab0a00dce862812e31dfdf46",
+    "auditPath": "scripts/audit-ana-a09-funnel-continuous-publication-scheduler-candidate.js",
+    "auditBlobSha": "64c9f1988ed4f112c299c8c6d558c300ef5eaa09",
+    "testPath": "scripts/test-ana-a09-funnel-continuous-publication-scheduler-candidate.js",
+    "testBlobSha": "ae0f2cad4328fe04608d61fed4485c9ed04ecc02",
+    "workflowPath": ".github/workflows/ana-a09-canonical-funnel-projection.yml",
+    "workflowBlobSha": "a19f28742004e0d03e1226f26be9f6eb841d46a4",
+    "migrationCreated": false,
+    "cronCreated": false,
+    "jobName": "doke-ana-funnel-v1-r1",
+    "schedule": "* * * * *",
+    "command": "select private.run_analytics_a09_funnel_catch_up_v1('ana-a07-a09-funnel-v1-r1', clock_timestamp());"
+  },
+  "readOnlyStagingProof": {
+    "observedAt": "2026-10-01T11:21:06.217555+00:00",
+    "publicationPolicyCount": 8,
+    "effectivePublicationPolicyCount": 8,
+    "canaryWindowSnapshotCount": 8,
+    "totalA09GlobalSnapshotCount": 16,
+    "currentPlannerRowCount": 3,
+    "currentPlannerMissingMetricCounts": [
+      8,
+      8,
+      8
+    ],
+    "a09RelevantCronCount": 0,
+    "a11PublicationPolicyCount": 1,
+    "a11SchedulerCount": 1,
+    "activeCronJobCount": 6,
+    "runningCronJobsAtObservation": 0,
+    "recentCronRunWindowMinutes": 30,
+    "recentCronRunCount": 78,
+    "recentCronFailureCount": 0,
+    "maxRecentCronDurationSeconds": 0.544141,
+    "recentA11RunWindowMinutes": 10,
+    "recentA11Runs": 10,
+    "recentA11Failures": 0,
+    "a09RuntimeFunctionCount": 4,
+    "a09RuntimeFunctionsClosed": true
+  },
+  "writesPerformed": {
+    "repository": true,
+    "staging": false,
+    "production": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false
+  },
+  "residualRisks": [
+    "The activation function and rollback-only validation have not yet been implemented as a migration candidate.",
+    "The staging planner currently reports the bounded maximum of three missing windows; no continuous catch-up has been exercised.",
+    "Supabase recommends no more than eight concurrent Cron jobs; activation must re-check operational concurrency headroom.",
+    "Continuous publication and scheduler authority remain disabled."
+  ],
+  "nextSafeAction": "Exact-head repository certification. Then require a separate repository-only migration-implementation authorization to scaffold the owner-only A09 scheduler activation function and rollback-only validation. No staging application or cron creation is authorized yet."
+}

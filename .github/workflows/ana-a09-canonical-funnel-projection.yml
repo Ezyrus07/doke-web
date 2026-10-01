@@ -105,6 +105,11 @@ on:
       - 'scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js'
       - 'scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js'
       - 'reports/generated/ana-a09-funnel-bounded-runtime-publication-canary-candidate-handoff.json'
+      - 'config/ana-a09-funnel-continuous-publication-scheduler-candidate.json'
+      - 'docs/ANA-A09-FUNNEL-CONTINUOUS-PUBLICATION-SCHEDULER-CANDIDATE.md'
+      - 'scripts/audit-ana-a09-funnel-continuous-publication-scheduler-candidate.js'
+      - 'scripts/test-ana-a09-funnel-continuous-publication-scheduler-candidate.js'
+      - 'reports/generated/ana-a09-funnel-continuous-publication-scheduler-candidate-handoff.json'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - 'reports/generated/domain-completion-matrix-report.json'
@@ -153,6 +158,8 @@ jobs:
           node --check scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js
           node --check scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js
           node --check scripts/test-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js
+          node --check scripts/audit-ana-a09-funnel-continuous-publication-scheduler-candidate.js
+          node --check scripts/test-ana-a09-funnel-continuous-publication-scheduler-candidate.js
           node --check scripts/audit-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/test-ana-a09-server-side-funnel-projector-runtime-readiness.js
           node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
@@ -189,6 +196,10 @@ jobs:
         run: node scripts/audit-ana-a09-funnel-publication-policy-approval-activation-candidate.js
       - name: Publication policy approval candidate conformance
         run: node scripts/test-ana-a09-funnel-publication-policy-approval-activation-candidate.js
+      - name: Continuous publication scheduler candidate audit
+        run: node scripts/audit-ana-a09-funnel-continuous-publication-scheduler-candidate.js
+      - name: Continuous publication scheduler candidate conformance
+        run: node scripts/test-ana-a09-funnel-continuous-publication-scheduler-candidate.js
       - name: Bounded runtime publication canary candidate audit
         run: node scripts/audit-ana-a09-funnel-bounded-runtime-publication-canary-candidate.js
       - name: Bounded runtime publication canary candidate conformance
