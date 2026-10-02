@@ -76,7 +76,7 @@ function createPublicProfileServiceFixture(options = {}) {
   const targetWindow = {
     Doke: {
       session: {
-        getCurrentUser() { return null; },
+        getCurrentUser() { return options.currentUser || null; },
         getSession() { return options.anonymous ? null : { provider: 'supabase' }; }
       }
     },
@@ -158,18 +158,18 @@ function createPublicProfileServiceFixture(options = {}) {
   assert(fixture.selections.some((item) => item.table === 'client_profiles' && item.columns === 'user_id,orders_count,average_rating,reviews_count,updated_at'));
 
   const publicClientFixture = createPublicProfileServiceFixture({
-    requestedId: 'client-public-1',
+    requestedId: '11111111-1111-4111-8111-111111111111',
     profileRow: {
-      user_id: 'client-public-1',
+      user_id: '11111111-1111-4111-8111-111111111111',
       display_name: 'Cliente Público',
       username: 'cliente.publico',
       city: 'Salvador',
       state: 'BA',
       role: 'professional'
     },
-    roleRow: { user_id: 'client-public-1', role: 'client' }
+    roleRow: { user_id: '11111111-1111-4111-8111-111111111111', role: 'client' }
   });
-  const publicClient = await publicClientFixture.service.getById('client-public-1');
+  const publicClient = await publicClientFixture.service.getById('11111111-1111-4111-8111-111111111111');
   assert.strictEqual(publicClient.role, 'client', 'Public role must come only from the canonical role projection.');
   assert.strictEqual(publicClient.type, 'client');
   assert.strictEqual(publicClient.name, 'Cliente Público');
@@ -177,33 +177,81 @@ function createPublicProfileServiceFixture(options = {}) {
   assert(publicClientFixture.calls.some((item) => item.table === 'public_profile_role_projection'));
 
   const anonymousClientFixture = createPublicProfileServiceFixture({
-    requestedId: 'anonymous-client-1',
+    requestedId: '22222222-2222-4222-8222-222222222222',
     anonymous: true,
     profileRow: {
-      user_id: 'anonymous-client-1',
+      user_id: '22222222-2222-4222-8222-222222222222',
       display_name: 'Cliente Anônimo'
     },
-    roleRow: { user_id: 'anonymous-client-1', role: 'client' }
+    roleRow: { user_id: '22222222-2222-4222-8222-222222222222', role: 'client' }
   });
-  const anonymousClient = await anonymousClientFixture.service.getById('anonymous-client-1');
+  const anonymousClient = await anonymousClientFixture.service.getById('22222222-2222-4222-8222-222222222222');
   assert.strictEqual(anonymousClient.role, 'client', 'Anonymous public profile reads must use the configured Supabase authority.');
   assert(anonymousClientFixture.calls.some((item) => item.table === 'user_profiles'));
   assert(anonymousClientFixture.calls.some((item) => item.table === 'public_profile_role_projection'));
 
   const publicProfessionalFixture = createPublicProfileServiceFixture({
-    requestedId: 'professional-public-1',
-    profileRow: { user_id: 'professional-public-1', display_name: 'Profissional Público' },
-    roleRow: { user_id: 'professional-public-1', role: 'professional' }
+    requestedId: '33333333-3333-4333-8333-333333333333',
+    profileRow: { user_id: '33333333-3333-4333-8333-333333333333', display_name: 'Profissional Público' },
+    roleRow: { user_id: '33333333-3333-4333-8333-333333333333', role: 'professional' }
   });
-  const publicProfessional = await publicProfessionalFixture.service.getById('professional-public-1');
+  const publicProfessional = await publicProfessionalFixture.service.getById('33333333-3333-4333-8333-333333333333');
   assert.strictEqual(publicProfessional.role, 'professional');
 
   const missingRoleFixture = createPublicProfileServiceFixture({
-    requestedId: 'suspended-public-1',
-    profileRow: { user_id: 'suspended-public-1', display_name: 'Perfil Suspenso' },
+    requestedId: '44444444-4444-4444-8444-444444444444',
+    profileRow: { user_id: '44444444-4444-4444-8444-444444444444', display_name: 'Perfil Suspenso' },
     roleRow: null
   });
-  assert.strictEqual(await missingRoleFixture.service.getById('suspended-public-1'), null);
+  assert.strictEqual(await missingRoleFixture.service.getById('44444444-4444-4444-8444-444444444444'), null);
+
+  const ownerMissingRoleFixture = createPublicProfileServiceFixture({
+    requestedId: '77777777-7777-4777-8777-777777777777',
+    currentUser: {
+      id: '77777777-7777-4777-8777-777777777777',
+      role: 'client',
+      profile: {
+        id: '77777777-7777-4777-8777-777777777777',
+        userId: '77777777-7777-4777-8777-777777777777',
+        role: 'client',
+        name: 'Perfil local obsoleto'
+      }
+    },
+    profileRow: {
+      user_id: '77777777-7777-4777-8777-777777777777',
+      display_name: 'Perfil Remoto Suspenso'
+    },
+    roleRow: null
+  });
+  assert.strictEqual(
+    await ownerMissingRoleFixture.service.getById('77777777-7777-4777-8777-777777777777'),
+    null,
+    'Signed-in owners must not fall back to stale session profile data when the public role projection is missing.'
+  );
+
+  const ownerMissingProfileFixture = createPublicProfileServiceFixture({
+    requestedId: '88888888-8888-4888-8888-888888888888',
+    currentUser: {
+      id: '88888888-8888-4888-8888-888888888888',
+      role: 'client',
+      profile: {
+        id: '88888888-8888-4888-8888-888888888888',
+        userId: '88888888-8888-4888-8888-888888888888',
+        role: 'client',
+        name: 'Perfil local obsoleto'
+      }
+    },
+    profileRow: null,
+    roleRow: {
+      user_id: '88888888-8888-4888-8888-888888888888',
+      role: 'client'
+    }
+  });
+  assert.strictEqual(
+    await ownerMissingProfileFixture.service.getById('88888888-8888-4888-8888-888888888888'),
+    null,
+    'Signed-in owners must not fall back to stale session profile data when the public profile row is missing.'
+  );
 
   const invalidIdFixture = createPublicProfileServiceFixture({
     requestedId: 'user_001',
@@ -219,20 +267,20 @@ function createPublicProfileServiceFixture(options = {}) {
   assert.strictEqual(invalidIdFixture.calls.length, 0, 'Invalid public ids must not reach Supabase UUID filters.');
 
   const invalidRoleFixture = createPublicProfileServiceFixture({
-    requestedId: 'admin-public-1',
-    profileRow: { user_id: 'admin-public-1', display_name: 'Operador' },
-    roleRow: { user_id: 'admin-public-1', role: 'admin' }
+    requestedId: '55555555-5555-4555-8555-555555555555',
+    profileRow: { user_id: '55555555-5555-4555-8555-555555555555', display_name: 'Operador' },
+    roleRow: { user_id: '55555555-5555-4555-8555-555555555555', role: 'admin' }
   });
-  assert.strictEqual(await invalidRoleFixture.service.getById('admin-public-1'), null);
+  assert.strictEqual(await invalidRoleFixture.service.getById('55555555-5555-4555-8555-555555555555'), null);
 
   const failingRemoteFixture = createPublicProfileServiceFixture({
-    requestedId: 'client-error-1',
-    profileRow: { user_id: 'client-error-1', display_name: 'Cliente Erro' },
-    roleRow: { user_id: 'client-error-1', role: 'client' },
+    requestedId: '66666666-6666-4666-8666-666666666666',
+    profileRow: { user_id: '66666666-6666-4666-8666-666666666666', display_name: 'Cliente Erro' },
+    roleRow: { user_id: '66666666-6666-4666-8666-666666666666', role: 'client' },
     errorTable: 'public_profile_role_projection'
   });
   await assert.rejects(
-    failingRemoteFixture.service.getById('client-error-1'),
+    failingRemoteFixture.service.getById('66666666-6666-4666-8666-666666666666'),
     /remote read failed: public_profile_role_projection/
   );
 
@@ -245,6 +293,8 @@ function createPublicProfileServiceFixture(options = {}) {
     anonymousPublicClientProjected: true,
     publicProfessionalRoleProjected: true,
     missingProjectionFailsClosed: true,
+    ownerMissingProjectionFailsClosed: true,
+    ownerMissingProfileFailsClosed: true,
     invalidPublicIdFailsClosed: true,
     remoteErrorsDoNotFallback: true
   }));
