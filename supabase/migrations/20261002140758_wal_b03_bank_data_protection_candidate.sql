@@ -1,5 +1,5 @@
 -- WAL-B03-A02: repository-only candidate. NOT APPLIED / NOT STAGING-READY.
--- A03 requires separate authorization plus resolution of the Vault ACL blocker.
+-- A03 requires separate authorization plus fresh runtime Data API boundary evidence.
 -- The session marker below is an accidental-execution tripwire, not authorization.
 begin;
 set local lock_timeout = '5s';
@@ -26,24 +26,73 @@ begin
      to_regprocedure('private.assert_staging_finance_sandbox()') is null then
     raise exception using message = 'WAL_B03_CAPABILITY_DRIFT';
   end if;
-  -- Browser identities must already be excluded. service_role is remediated below.
+  -- Platform-compatible Data API boundary. Supabase-managed Vault grants are not application-owned.
   foreach api_role in array array['anon', 'authenticated'] loop
     if has_schema_privilege(api_role, 'vault', 'USAGE') or
        has_table_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
        has_any_column_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
        has_table_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or
        has_any_column_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,REFERENCES') then
-      raise exception using message = 'WAL_B03_VAULT_ACL_REVIEW_REQUIRED';
+      raise exception using message = 'WAL_B03_VAULT_DATA_API_AUTHORITY_DRIFT';
     end if;
   end loop;
+  if has_schema_privilege('authenticator', 'vault', 'USAGE') or
+     has_table_privilege('authenticator', 'vault.secrets', 'SELECT') or
+     has_table_privilege('authenticator', 'vault.decrypted_secrets', 'SELECT') then
+    raise exception using message = 'WAL_B03_VAULT_DATA_API_AUTHORITY_DRIFT';
+  end if;
+  if coalesce((select r.rolcanlogin from pg_catalog.pg_roles r
+      where r.rolname = 'service_role'), true) then
+    raise exception using message = 'WAL_B03_SERVICE_ROLE_LOGIN_DRIFT';
+  end if;
   if not has_schema_privilege('postgres', 'vault', 'USAGE') or
      not has_table_privilege('postgres', 'vault.secrets', 'SELECT') or
      not has_table_privilege('postgres', 'vault.decrypted_secrets', 'SELECT') or
      not has_function_privilege('postgres', 'vault.create_secret(text,text,text,uuid)', 'EXECUTE') then
     raise exception using message = 'WAL_B03_POSTGRES_VAULT_AUTHORITY_DRIFT';
   end if;
-  if has_function_privilege('service_role', 'private.invoke_order_event_worker_if_needed()', 'EXECUTE') or
-     has_function_privilege('service_role', 'private.assert_staging_finance_sandbox()', 'EXECUTE') then
+  if exists (
+      select 1
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public'
+        and p.prokind in ('f', 'p')
+        and pg_get_functiondef(p.oid) ilike '%vault.%'
+    ) or exists (
+      select 1 from pg_catalog.pg_views v
+      where v.schemaname = 'public' and v.definition ilike '%vault.%'
+    ) or exists (
+      select 1 from pg_catalog.pg_matviews v
+      where v.schemaname = 'public' and v.definition ilike '%vault.%'
+    ) then
+    raise exception using message = 'WAL_B03_PUBLIC_VAULT_WRAPPER_DRIFT';
+  end if;
+  if exists (
+      select 1
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+      where n.nspname <> 'vault'
+        and p.prokind in ('f', 'p')
+        and pg_get_functiondef(p.oid) ilike '%vault.%'
+        and not (
+          n.nspname = 'private' and
+          p.proname in ('invoke_order_event_worker_if_needed', 'assert_staging_finance_sandbox')
+        )
+    ) then
+    raise exception using message = 'WAL_B03_PRIVATE_VAULT_CONSUMER_DRIFT';
+  end if;
+  if (
+      select count(*)
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'private'
+        and p.proname in ('invoke_order_event_worker_if_needed', 'assert_staging_finance_sandbox')
+        and pg_get_userbyid(p.proowner) = 'postgres'
+        and p.prosecdef
+        and not has_function_privilege('service_role', p.oid, 'EXECUTE')
+        and not has_function_privilege('anon', p.oid, 'EXECUTE')
+        and not has_function_privilege('authenticated', p.oid, 'EXECUTE')
+    ) <> 2 then
     raise exception using message = 'WAL_B03_INTERNAL_CONSUMER_BOUNDARY_DRIFT';
   end if;
   if exists (select 1 from vault.secrets where name = 'wal-bank-data-key-v1') then
@@ -52,51 +101,9 @@ begin
 end;
 $preflight$;
 
--- A02 remediation candidate: remove direct Vault authority from service_role.
--- postgres remains the sole authority used by the existing private SQL consumers.
-revoke all privileges on all tables in schema vault from service_role;
-revoke execute on all functions in schema vault from service_role;
-revoke usage on schema vault from service_role;
-
-do $vault_acl_hardening$
-begin
-  if has_schema_privilege('service_role', 'vault', 'USAGE') or
-     exists (
-       select 1
-       from pg_catalog.pg_class c
-       join pg_catalog.pg_namespace n on n.oid = c.relnamespace
-       where n.nspname = 'vault'
-         and c.relkind in ('r', 'v', 'm', 'f', 'p')
-         and (
-           has_table_privilege('service_role', c.oid,
-             'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or
-           has_any_column_privilege('service_role', c.oid,
-             'SELECT,INSERT,UPDATE,REFERENCES')
-         )
-     ) or
-     exists (
-       select 1
-       from pg_catalog.pg_proc p
-       join pg_catalog.pg_namespace n on n.oid = p.pronamespace
-       where n.nspname = 'vault'
-         and p.prokind in ('f', 'p')
-         and has_function_privilege('service_role', p.oid, 'EXECUTE')
-     ) then
-    raise exception using message = 'WAL_B03_SERVICE_ROLE_VAULT_HARDENING_FAILED';
-  end if;
-  if not has_schema_privilege('postgres', 'vault', 'USAGE') or
-     not has_table_privilege('postgres', 'vault.secrets', 'SELECT') or
-     not has_table_privilege('postgres', 'vault.decrypted_secrets', 'SELECT') or
-     not has_function_privilege('postgres', 'vault.create_secret(text,text,text,uuid)', 'EXECUTE') then
-    raise exception using message = 'WAL_B03_POSTGRES_VAULT_AUTHORITY_LOST';
-  end if;
-  if has_function_privilege('service_role', 'private.invoke_order_event_worker_if_needed()', 'EXECUTE') or
-     has_function_privilege('service_role', 'private.assert_staging_finance_sandbox()', 'EXECUTE') then
-    raise exception using message = 'WAL_B03_INTERNAL_CONSUMER_BOUNDARY_DRIFT';
-  end if;
-end;
-$vault_acl_hardening$;
-
+-- Supabase-managed Vault ACLs are intentionally not mutated by application migrations.
+-- A03 must supply fresh runtime evidence that the vault schema is absent from the
+-- PostgREST/Data API schema cache before this candidate may execute.
 -- Deliberately no IF NOT EXISTS: unexpected existing objects require reconciliation.
 create table private.wallet_bank_data_keys_v1 (
   key_version integer primary key check (key_version > 0),
@@ -186,24 +193,67 @@ begin
   if p_expected_rows is distinct from 1 then
     raise exception using message = 'WAL_B03_RECONCILE_EXPECTED_COUNT';
   end if;
-  -- Recheck the hardened authority at invocation, not just at migration installation.
-  foreach api_role in array array['anon', 'authenticated', 'service_role'] loop
+  -- Recheck the platform-compatible boundary at invocation.
+  foreach api_role in array array['anon', 'authenticated'] loop
     if has_schema_privilege(api_role, 'vault', 'USAGE') or
        has_table_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
        has_any_column_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
        has_table_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or
-       has_any_column_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,REFERENCES') or
-       exists (
-         select 1
-         from pg_catalog.pg_proc p
-         join pg_catalog.pg_namespace n on n.oid = p.pronamespace
-         where n.nspname = 'vault'
-           and p.prokind in ('f', 'p')
-           and has_function_privilege(api_role, p.oid, 'EXECUTE')
-       ) then
-      raise exception using message = 'WAL_B03_VAULT_ACL_REVIEW_REQUIRED';
+       has_any_column_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,REFERENCES') then
+      raise exception using message = 'WAL_B03_VAULT_DATA_API_AUTHORITY_DRIFT';
     end if;
   end loop;
+  if has_schema_privilege('authenticator', 'vault', 'USAGE') or
+     coalesce((select r.rolcanlogin from pg_catalog.pg_roles r
+       where r.rolname = 'service_role'), true) then
+    raise exception using message = 'WAL_B03_VAULT_DATA_API_AUTHORITY_DRIFT';
+  end if;
+  if exists (
+      select 1
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public'
+        and p.prokind in ('f', 'p')
+        and pg_get_functiondef(p.oid) ilike '%vault.%'
+    ) or exists (
+      select 1 from pg_catalog.pg_views v
+      where v.schemaname = 'public' and v.definition ilike '%vault.%'
+    ) or exists (
+      select 1 from pg_catalog.pg_matviews v
+      where v.schemaname = 'public' and v.definition ilike '%vault.%'
+    ) then
+    raise exception using message = 'WAL_B03_PUBLIC_VAULT_WRAPPER_DRIFT';
+  end if;
+  if exists (
+      select 1
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+      where n.nspname <> 'vault'
+        and p.prokind in ('f', 'p')
+        and pg_get_functiondef(p.oid) ilike '%vault.%'
+        and not (
+          n.nspname = 'private' and
+          p.proname in (
+            'invoke_order_event_worker_if_needed',
+            'assert_staging_finance_sandbox',
+            'backfill_wallet_bank_account_secrets_v1'
+          )
+        )
+    ) then
+    raise exception using message = 'WAL_B03_PRIVATE_VAULT_CONSUMER_DRIFT';
+  end if;
+  if has_function_privilege('service_role',
+       'private.invoke_order_event_worker_if_needed()', 'EXECUTE') or
+     has_function_privilege('service_role',
+       'private.assert_staging_finance_sandbox()', 'EXECUTE') or
+     has_function_privilege('service_role',
+       'private.backfill_wallet_bank_account_secrets_v1(integer)', 'EXECUTE') then
+    raise exception using message = 'WAL_B03_INTERNAL_CONSUMER_BOUNDARY_DRIFT';
+  end if;
+  if not has_schema_privilege('postgres', 'vault', 'USAGE') or
+     not has_table_privilege('postgres', 'vault.decrypted_secrets', 'SELECT') then
+    raise exception using message = 'WAL_B03_POSTGRES_VAULT_AUTHORITY_LOST';
+  end if;
   lock table public.wallet_bank_accounts in share row exclusive mode;
   lock table private.wallet_bank_account_secrets_v1 in exclusive mode;
   lock table private.wallet_bank_data_keys_v1 in share mode;
@@ -303,16 +353,52 @@ declare
   api_role text;
   protected_table text;
 begin
-  if has_schema_privilege('service_role', 'vault', 'USAGE') or
-     exists (
-       select 1
-       from pg_catalog.pg_proc p
-       join pg_catalog.pg_namespace n on n.oid = p.pronamespace
-       where n.nspname = 'vault'
-         and p.prokind in ('f', 'p')
-         and has_function_privilege('service_role', p.oid, 'EXECUTE')
-     ) then
-    raise exception using message = 'WAL_B03_SERVICE_ROLE_VAULT_PRIVILEGE_DRIFT';
+  if coalesce((select r.rolcanlogin from pg_catalog.pg_roles r
+      where r.rolname = 'service_role'), true) or
+     has_schema_privilege('authenticator', 'vault', 'USAGE') then
+    raise exception using message = 'WAL_B03_VAULT_DATA_API_AUTHORITY_DRIFT';
+  end if;
+  if exists (
+      select 1
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public'
+        and p.prokind in ('f', 'p')
+        and pg_get_functiondef(p.oid) ilike '%vault.%'
+    ) or exists (
+      select 1 from pg_catalog.pg_views v
+      where v.schemaname = 'public' and v.definition ilike '%vault.%'
+    ) or exists (
+      select 1 from pg_catalog.pg_matviews v
+      where v.schemaname = 'public' and v.definition ilike '%vault.%'
+    ) then
+    raise exception using message = 'WAL_B03_PUBLIC_VAULT_WRAPPER_DRIFT';
+  end if;
+  if exists (
+      select 1
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+      where n.nspname <> 'vault'
+        and p.prokind in ('f', 'p')
+        and pg_get_functiondef(p.oid) ilike '%vault.%'
+        and not (
+          n.nspname = 'private' and
+          p.proname in (
+            'invoke_order_event_worker_if_needed',
+            'assert_staging_finance_sandbox',
+            'backfill_wallet_bank_account_secrets_v1'
+          )
+        )
+    ) then
+    raise exception using message = 'WAL_B03_PRIVATE_VAULT_CONSUMER_DRIFT';
+  end if;
+  if has_function_privilege('service_role',
+       'private.invoke_order_event_worker_if_needed()', 'EXECUTE') or
+     has_function_privilege('service_role',
+       'private.assert_staging_finance_sandbox()', 'EXECUTE') or
+     has_function_privilege('service_role',
+       'private.backfill_wallet_bank_account_secrets_v1(integer)', 'EXECUTE') then
+    raise exception using message = 'WAL_B03_INTERNAL_CONSUMER_BOUNDARY_DRIFT';
   end if;
   if not has_schema_privilege('postgres', 'vault', 'USAGE') or
      not has_table_privilege('postgres', 'vault.decrypted_secrets', 'SELECT') then
