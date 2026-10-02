@@ -31,7 +31,7 @@
     "plaintextRetired": false,
     "productionChanged": false
   },
-  "stagingReadiness": "blocked_vault_acl_dependency_and_runtime_validation",
+  "stagingReadiness": "blocked_candidate_not_applied_and_runtime_validation",
   "blockerStatus": "WAL-B03_OPEN",
   "reconciledObservation": {
     "environment": "doke-web-staging",
@@ -59,7 +59,15 @@
     "preview": "failure_build_rate_limit",
     "executionPacket": "user_authorization_plus_A01_contract",
     "collisionReview": "dedicated_SQL_config_test_docs_workflow_paths;_no_UX_wallet_runtime_changes",
-    "observedOn": "2026-10-02"
+    "observedOn": "2026-10-02",
+    "serviceRoleVaultSecretsDelete": true,
+    "serviceRoleVaultCreateSecretExecute": true,
+    "serviceRoleVaultUpdateSecretExecute": true,
+    "serviceRoleVaultInternalDecryptExecute": true,
+    "postgresPrivateVaultConsumers": true,
+    "edgeFunctionsDirectVaultAccessObserved": false,
+    "vaultAccessObservedInLast24hLogs": false,
+    "aclHardeningAuditObservedOn": "2026-10-02"
   },
   "candidate": {
     "installationOnly": true,
@@ -80,17 +88,23 @@
     "retentionDurationDays": null,
     "purgeActivated": false,
     "rotationExecuted": false,
-    "globalVaultAclMutation": false
+    "globalVaultAclMutation": false,
+    "globalVaultAclMutationCandidate": true
   },
   "beforeA03": [
-    "Resolve shared Vault effective ACL and callable-wrapper authority in separately scoped work; never blindly revoke global grants.",
-    "Reconcile exact candidate SHA, SQL digest, source base, Control Center, collisions and live staging schema.",
+    "Reconcile exact candidate SHA, SQL digest, source base, Control Center, collisions and live staging schema/ACLs.",
+    "Confirm no new service_role Vault consumer exists and that postgres-owned private consumers remain the only observed Vault readers.",
     "Obtain explicit A03 authority; the session marker is only an accidental-execution guard.",
-    "Prove synthetic runtime negative cases and transaction rollback with a separately authorized executor.",
+    "Run rollback-only ACL/installation canaries proving service_role loses Vault schema/relation/function authority while postgres worker/sandbox consumers remain functional.",
+    "Prove synthetic crypto/runtime negative cases and transaction rollback with a separately authorized executor.",
     "Quiesce legacy bank writes for backfill and keep cutover blocked until a new equivalence check at A04.",
-    "Do not equate source-count equality with runtime masking or WAL-B03 closure."
+    "Do not equate ACL hardening or source-count equality with runtime masking or WAL-B03 closure."
   ],
   "runtimeAssertionsNotExecuted": [
+    "Vault ACL revocation from service_role",
+    "postgres Vault authority preservation",
+    "order-event worker post-revoke canary",
+    "staging finance sandbox post-revoke canary",
     "Vault key provisioning",
     "ACL by role",
     "AES roundtrip",
@@ -105,5 +119,14 @@
     "plaintext retirement",
     "key rotation and crypto-erasure"
   ],
-  "migrationSha256": "b769912d2bb65f7b1e242bda5bbf0d134e5d188d1259331b16b28db22e71b6bc"
+  "migrationSha256": "d0420d791c4d7af76843137133c0e1df1e3c755eba9b2f3a73e0a4ed0811af5c",
+  "vaultAclHardeningCandidate": {
+    "serviceRoleSchemaUsage": "revoke",
+    "serviceRoleVaultRelations": "revoke_all",
+    "serviceRoleVaultFunctions": "revoke_execute_all",
+    "preservePostgresVaultAuthority": true,
+    "preserveOrderEventWorker": true,
+    "preserveStagingFinanceSandbox": true,
+    "applied": false
+  }
 }
