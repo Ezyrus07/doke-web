@@ -1,0 +1,110 @@
+# Runtime canary staging evidence reconciliation repository-only certification
+# Runtime canary service eligibility remediation post-matrix final certification
+# Runtime canary identity remediation post-matrix final certification
+# Runtime canary contract post-matrix final certification
+# Runtime canary identity remediation repository-only certification
+# Runtime canary service eligibility remediation repository-only certification
+# Persistent activation post-matrix final certification
+# Runtime canary contract repository-only certification
+name: ANA-A07/A09 Funnel Freshness Activation Envelope
+# Final generated-matrix state certification
+# Runtime-enforcement candidate final generated-matrix certification
+# Activation-invocation contract final generated-matrix certification
+# Activation-approval scope separation final certification
+# Activation approval + successor candidate final generated-matrix certification
+# Approved successor staging validation final generated-matrix certification
+# Persistent activation final generated-matrix certification
+
+on:
+  pull_request:
+    paths:
+      - 'config/ana-a07-a09-funnel-freshness-policy-activation-envelope.json'
+      - 'scripts/lib/ana-a07-a09-funnel-freshness-policy-activation-envelope.js'
+      - 'scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-envelope.js'
+      - 'scripts/test-ana-a07-a09-funnel-freshness-policy-activation-envelope.js'
+      - 'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-ENVELOPE.md'
+      - 'config/ana-a07-a09-funnel-freshness-policy-candidate.json'
+      - 'scripts/test-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js'
+      - 'scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js'
+      - 'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-INVOCATION-CONTRACT.md'
+      - 'config/ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.json'
+      - 'supabase/tests/045_ana_a07_a09_funnel_policy_approved_activation_validation.sql'
+      - 'supabase/migrations/20260924144500_ana_a07_a09_funnel_policy_approved_activation.sql'
+      - 'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-ACTIVATION-APPROVAL.md'
+      - 'scripts/test-ana-a07-a09-funnel-freshness-policy-activation-approval.js'
+      - 'scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-approval.js'
+      - 'scripts/lib/ana-a07-a09-funnel-freshness-policy-activation-approval.js'
+      - 'reports/generated/ana-a07-a09-funnel-freshness-policy-activation-approval-evidence.json'
+      - 'reports/generated/ana-a07-a09-funnel-freshness-policy-approved-successor-staging-evidence.json'
+      - 'reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json'
+      - 'scripts/test-ana-a07-a09-funnel-runtime-canary-contract.js'
+      - 'scripts/audit-ana-a07-a09-funnel-runtime-canary-contract.js'
+      - 'supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql'
+      - 'docs/ANA-A07-A09-FUNNEL-RUNTIME-CANARY-CONTRACT.md'
+      - 'config/ana-a07-a09-funnel-runtime-canary-contract.json'
+      - 'reports/generated/ana-a07-a09-funnel-runtime-canary-identity-remediation-evidence.json'
+      - 'reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json'
+      - 'reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json'
+      - 'supabase/tests/044_ana_a07_a09_funnel_policy_approval_runtime_enforcement_validation.sql'
+      - 'reports/generated/ana-a07-a09-funnel-freshness-policy-runtime-enforcement-staging-evidence.json'
+      - 'supabase/migrations/20260924140000_ana_a07_a09_funnel_policy_approval_runtime_enforcement.sql'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/ana-a07-a09-funnel-freshness-policy-activation-envelope.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check scripts/lib/ana-a07-a09-funnel-freshness-policy-activation-envelope.js
+          node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-envelope.js
+          node --check scripts/test-ana-a07-a09-funnel-freshness-policy-activation-envelope.js
+          node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js
+          node --check scripts/test-ana-a07-a09-funnel-freshness-policy-activation-invocation-contract.js
+          node --check scripts/lib/ana-a07-a09-funnel-freshness-policy-activation-approval.js
+          node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-activation-approval.js
+          node --check scripts/test-ana-a07-a09-funnel-freshness-policy-activation-approval.js
+      - name: Envelope audit
+        run: npm run audit:ana-a07-a09-funnel-freshness-policy-activation-envelope
+      - name: Envelope conformance
+        run: npm run test:ana-a07-a09-funnel-freshness-policy-activation-envelope
+      - name: Activation-invocation contract audit
+        run: npm run audit:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract
+      - name: Activation-invocation contract conformance
+        run: npm run test:ana-a07-a09-funnel-freshness-policy-activation-invocation-contract
+      - name: Activation approval audit
+        run: npm run audit:ana-a07-a09-funnel-freshness-policy-activation-approval
+      - name: Activation approval conformance
+        run: npm run test:ana-a07-a09-funnel-freshness-policy-activation-approval
+      - name: Runtime canary contract audit
+        run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
+      - name: Runtime canary contract conformance
+        run: npm run test:ana-a07-a09-funnel-runtime-canary-contract
+      - name: Candidate regression
+        run: |
+          node scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
+          node scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js
+      - name: Domain matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check

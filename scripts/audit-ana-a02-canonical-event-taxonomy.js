@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('fs');const path=require('path');const authority=require('../backend/modules/analytics/canonical-event-taxonomy');
+const root=path.resolve(__dirname,'..');const c=JSON.parse(fs.readFileSync(path.join(root,'config','ana-a02-canonical-event-taxonomy.json'),'utf8'));const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('taxonomy version',authority.TAXONOMY_VERSION===c.taxonomyVersion);check('four classes',c.eventClasses.length===4);
+['order.requested','order.quoted','order.completed'].forEach((e)=>check(e+' ORD owner',authority.EVENTS[e].sourceOwner==='ORD-001'&&!authority.EVENTS[e].clientEmitAllowed));
+['payment.held','payment.released'].forEach((e)=>check(e+' PAY owner',authority.EVENTS[e].sourceOwner==='PAY-001'&&!authority.EVENTS[e].clientEmitAllowed));
+check('search executed server emitted',authority.EVENTS['search.executed'].clientEmitAllowed===false);check('impression proof',authority.EVENTS['search.result_impression'].exposureProofRequired===true);check('legacy budget alias',authority.resolveEventName('service_metric_events.budget')==='service.budget_cta_clicked');
+const ord=fs.readFileSync(path.join(root,'supabase/migrations/053_order_transaction_events.sql'),'utf8');['order.requested','order.quoted','order.completed'].forEach((e)=>check('ORD source '+e,ord.includes(e)));
+const search=fs.readFileSync(path.join(root,'supabase/migrations/163_service_search_observability_schema_v2.sql'),'utf8');check('search observability distinct',search.includes('actor_class')&&search.includes('ranking_version'));
+Object.entries(c.prohibitedEffects).forEach(([k,v])=>check('effect '+k,v===false));
+const failed=checks.filter((x)=>!x.passed).map((x)=>x.name);console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedChecks:failed},null,2));if(failed.length)process.exitCode=1;

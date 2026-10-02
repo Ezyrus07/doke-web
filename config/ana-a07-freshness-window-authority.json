@@ -1,0 +1,465 @@
+{
+  "contractId": "ana-a07-freshness-window-authority-v1",
+  "domain": "ANA-001",
+  "sourceHead": "277068f09dcdfd39209edaef89af43f97981d31c",
+  "createdAt": "2026-09-21T22:00:00-03:00",
+  "scope": "staging_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
+  "status": "behavior_ord_watermark_certified_a09_policy_active_runtime_canaries_certified_repository_projection_authority_granted",
+  "objective": "Define a deterministic, fail-closed authority for analytics dataThrough, dependency watermarks, canonical closed-window selection and fresh/stale/unavailable state without inventing operational TTLs.",
+  "rootCause": {
+    "helperGap": "ANA-A05 has an applyFreshness helper that accepts an ad hoc maxLagSeconds but there is no canonical policy registry, dependency-watermark contract or canonical latest-window selector.",
+    "runtimeGap": "Behavior/ORD watermarks and the A09 compute projector are installed, the eight r1 funnel freshness policies are active, and complete/orphan/empty-window/late-fact canaries are certified. Explicit repository-only runtime projection authority is now granted; live runtime flag alignment, runtime snapshot and snapshot publication remain separate gates.",
+    "evidenceGap": "ANA-A06 proved why selection cannot cherry-pick an older non-empty passing window when a newer canonical observation exists."
+  },
+  "freshnessStates": [
+    "fresh",
+    "stale",
+    "unavailable"
+  ],
+  "projectionStateMapping": {
+    "fresh": "authoritative",
+    "stale": "stale",
+    "unavailable": "unavailable"
+  },
+  "dataThroughAuthority": {
+    "definition": "Greatest timestamp through which all canonical dependencies required by the selected metric snapshot are proven materialized; it is never inferred from computedAt or from max(event timestamp).",
+    "dependencyRule": "canonical dataThrough is bounded by the minimum dependency watermark and windowEnd",
+    "futureWatermark": "fail_closed",
+    "declaredBeyondDependency": "unavailable",
+    "computedAtDefinesFreshness": false,
+    "maxEventTimestampDefinesFreshness": false,
+    "emptyWindowMayStillBeFresh": true,
+    "materializationFenceRequired": true,
+    "eventTimeMayDifferFromMaterializationTime": true
+  },
+  "windowSelection": {
+    "precondition": "candidate rows belong to the same metricKey, metricVersion and dimension set",
+    "closedOnly": true,
+    "order": [
+      "windowEnd desc",
+      "revision desc",
+      "computedAt desc",
+      "id desc"
+    ],
+    "olderHealthyFallbackAllowed": false,
+    "ambiguousTie": "fail_closed",
+    "emptyCandidateState": "unavailable"
+  },
+  "evaluation": {
+    "policyThresholdRequired": true,
+    "implicitDefaultMaxLagForbidden": true,
+    "missingThresholdState": "unavailable",
+    "noCandidateState": "unavailable",
+    "noClosedWindowState": "unavailable",
+    "missingDependencyState": "unavailable",
+    "unavailableDependencyState": "unavailable",
+    "dependencyStalePropagation": "stale",
+    "partialWindowCoverageState": "stale",
+    "noWindowCoverageState": "unavailable",
+    "lagCalculation": "max(0, evaluatedAt - dataThrough)",
+    "thresholdComparison": "stale when lagSeconds > maxLagSeconds; fresh otherwise after full window coverage"
+  },
+  "thresholdAuthority": {
+    "status": "metric_specific_policy_active_a09_funnel_canaries_certified_repository_projection_authority_granted",
+    "defaultMaxLagSeconds": null,
+    "reason": "Liquidity retains its active r1 policy and the eight ANA-A09 funnel freshness policies remain active at 360 seconds. Complete/orphan/empty-window/late-fact staging canaries are certified and explicit repository-only runtime projection authority is granted.",
+    "requiredFields": [
+      "policyId",
+      "metricKey",
+      "metricVersion",
+      "maxLagSeconds",
+      "effectiveFrom"
+    ],
+    "runtimeActivationBlockedUntilThresholds": false,
+    "activeMetricPolicies": [
+      {
+        "policyId": "ana-a11-liquidity-v1-r1",
+        "metricKey": "liquidity.active_service_seconds",
+        "metricVersion": "v1",
+        "maxLagSeconds": 360,
+        "effectiveFrom": "2026-09-23T16:00:00Z",
+        "effectiveUntil": null,
+        "runtimeCertified": true,
+        "evidenceArtifact": "reports/generated/ana-a11-post-effective-runtime-evidence.json"
+      }
+    ],
+    "candidateMetricPolicySet": {
+      "contractPath": "config/ana-a07-a09-funnel-freshness-policy-candidate.json",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "revision": 1,
+      "metricCount": 8,
+      "proposedWindowStepSeconds": 300,
+      "proposedProjectionDelayBudgetSeconds": 60,
+      "proposedMaxLagSeconds": 360,
+      "migration": "supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql",
+      "validationSql": "supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql",
+      "migrationApplied": true,
+      "validation043Status": "PASS",
+      "activationInvoked": true,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null,
+      "stagingMigrationVersion": "20260924005631",
+      "stagingValidated": true,
+      "activationFunctionInstalled": true,
+      "policyRowsPersisted": 8,
+      "runtimeEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json",
+      "successorActivationFunction": "private.activate_a09_funnel_policy_approved_v1",
+      "persistentActivationEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-freshness-policy-persistent-activation-staging-evidence.json",
+      "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+      "runtimeCanariesPending": false,
+      "runtimeCanariesCertified": true,
+      "runtimeCanaryEvidenceArtifact": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+      "runtimeCanaryEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734"
+    },
+    "runtimeProjectionBlockedUntilCanaries": false,
+    "runtimeProjectionBlockedUntilExplicitAuthority": false
+  },
+  "metricDependencies": [
+    {
+      "metricKey": "funnel.search_ctr",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-search-ctr-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": true,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    },
+    {
+      "metricKey": "marketplace.time_to_first_quote_seconds",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.resolved_quote_fill_rate",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.mature_quote_fill_rate",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.resolved_fulfillment_rate",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.pre_quote_cancellation_rate",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "marketplace.dispute_incidence",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "liquidity.active_service_seconds",
+      "sourceDomains": [
+        "CAT-001"
+      ],
+      "thresholdStatus": "active_policy_r1",
+      "policyId": "ana-a11-liquidity-v1-r1",
+      "maxLagSeconds": 360,
+      "runtimeCertified": true
+    },
+    {
+      "metricKey": "retention.repeat_request_30d",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "retention.repeat_completion_90d",
+      "sourceDomains": [
+        "ORD-001"
+      ],
+      "thresholdStatus": "pending"
+    },
+    {
+      "metricKey": "economics.gmv",
+      "sourceDomains": [
+        "PAY-001"
+      ],
+      "thresholdStatus": "blocked_until_PAY_canonical"
+    },
+    {
+      "metricKey": "economics.take_rate",
+      "sourceDomains": [
+        "PAY-001"
+      ],
+      "thresholdStatus": "blocked_until_PAY_and_policy_canonical"
+    },
+    {
+      "metricKey": "economics.cac",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "blocked_until_spend_attribution_authority"
+    },
+    {
+      "metricKey": "economics.ltv",
+      "sourceDomains": [
+        "ANA-001",
+        "PAY-001"
+      ],
+      "thresholdStatus": "blocked_until_revenue_margin_retention_authority"
+    },
+    {
+      "metricKey": "funnel.impression_to_click",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-impression-click-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": true,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    },
+    {
+      "metricKey": "funnel.click_to_detail",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-click-detail-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": true,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    },
+    {
+      "metricKey": "funnel.detail_to_budget_cta",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-detail-budget-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": true,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    },
+    {
+      "metricKey": "funnel.budget_cta_to_quote_started",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-budget-quote-start-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": true,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    },
+    {
+      "metricKey": "funnel.quote_started_to_completed",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-quote-start-complete-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": true,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    },
+    {
+      "metricKey": "funnel.quote_completed_to_submitted",
+      "sourceDomains": [
+        "ANA-001"
+      ],
+      "thresholdStatus": "active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-quote-complete-submit-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": true,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    },
+    {
+      "metricKey": "funnel.quote_submitted_to_order_requested",
+      "sourceDomains": [
+        "ANA-001",
+        "ORD-001"
+      ],
+      "thresholdStatus": "active_policy_r1_runtime_canaries_certified_repository_projection_authority_granted",
+      "policySetId": "ana-a07-a09-funnel-v1-r1",
+      "policyId": "ana-a07-a09-funnel-submit-order-v1-r1",
+      "proposedMaxLagSeconds": 360,
+      "runtimeCertified": true,
+      "maxLagSeconds": 360,
+      "effectiveFrom": "2026-09-24T14:00:00Z",
+      "effectiveUntil": null
+    }
+  ],
+  "invariants": [
+    "Freshness is based on dataThrough and explicit dependency watermarks, never computedAt alone.",
+    "An empty metric window does not become stale merely because sample_count is zero.",
+    "The latest canonical closed window is selected before freshness is evaluated; older fresh/pass windows are never used as fallback.",
+    "A metric cannot be fresh when its dataThrough is before windowEnd.",
+    "A declared dataThrough later than a dependency watermark is unavailable rather than silently clamped into authority.",
+    "Missing threshold policy fails closed as unavailable.",
+    "stale or unavailable dependencies propagate without being converted to authoritative.",
+    "Freshness state does not change transactional source authority or repair source-domain facts."
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "dataThroughContractAuthority": true,
+    "windowSelectionContractAuthority": true,
+    "freshnessStateContractAuthority": true,
+    "thresholdValueAuthority": false,
+    "runtimeWatermarkAuthority": true,
+    "runtimeProjectionAuthority": true,
+    "alertDeliveryAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "candidateThresholdValueAuthority": true,
+    "activeFunnelFreshnessPolicyAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "repositoryRuntimeCanaryContractAuthority": true,
+    "runtimeCanaryEvidenceAuthority": true
+  },
+  "activationRequirements": [
+    "preserve the active ana-a07-a09-funnel-v1-r1 effective window and certified canary evidence without inferring a staging runtime flag mutation",
+    "keep runtime snapshot and snapshot publication authority false until separately authorized append-only publication gates close",
+    "preserve A04/A05 append-only snapshot revision semantics and latest-window no-cherry-pick selection"
+  ],
+  "preservedBoundaries": [
+    "Product Analytics remains distinct from operational observability.",
+    "A06 structural data-quality PASS remains separate from A07 freshness state.",
+    "ORD, CAT and PAY remain canonical owners of their source facts.",
+    "Browser analytics remains disabled by default.",
+    "LEGAL-B03 remains authoritative for consent, retention, anonymization and holder rights.",
+    "PAY-backed metrics remain unavailable until PAY authority is canonical."
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "browserClientActivation": false,
+    "anonymousIdentityStitching": false,
+    "alertDelivery": false,
+    "sourceDomainMutation": false,
+    "paymentMutation": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "reason": "A07 watermarks, active A09 freshness policies and complete/orphan/empty-window/late-fact projection canaries are certified in staging. Explicit repository-only runtime projection authority is granted, while runtime snapshot/publication remain separate gates; ANA stays 3/6."
+  },
+  "dependencyWatermarkAuthority": {
+    "contractId": "ana-a07-behavior-ord-watermark-authority-v1",
+    "configPath": "config/ana-a07-behavior-ord-watermark-authority.json",
+    "modulePath": "backend/modules/analytics/dependency-watermark-authority.js",
+    "status": "runtime_watermark_certified",
+    "basis": "active_transaction_floor_v1",
+    "behavior": {
+      "sourceRelation": "private.analytics_behavior_events_v1",
+      "materializationTime": "received_at",
+      "eventTime": "occurred_at"
+    },
+    "orderMetric": {
+      "sourceRelation": "private.order_metric_events",
+      "materializationTime": "created_at",
+      "eventTime": "occurred_at"
+    },
+    "maxEventTimestampAuthority": false,
+    "preparedTransactionPolicy": "fail_closed",
+    "runtimeMigrationApplied": true,
+    "runtimeCandidatePath": "config/ana-a07-behavior-ord-watermark-runtime-readiness.json",
+    "migrationPath": "supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql",
+    "validationSql": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+    "stagingMigrationVersion": "20260923230106",
+    "stagingValidated": true,
+    "validation041Status": "passed",
+    "compatibilityMigrationPath": "supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql",
+    "structuralValidation041Passed": true,
+    "compatibilityMigrationApplied": true,
+    "compatibilityStagingMigrationVersion": "20260923231132",
+    "runtimeEvidenceArtifact": "reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json",
+    "concurrentWriterCertified": true,
+    "lateFactCertified": false,
+    "concurrentWriterCleanupPassed": true
+  },
+  "runtimeCanaryContract": {
+    "path": "config/ana-a07-a09-funnel-runtime-canary-contract.json",
+    "contractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "status": "staging_certified_runtime_projection_authority_repository_granted",
+    "canarySet": [
+      "complete",
+      "orphan",
+      "empty-window",
+      "late-fact"
+    ],
+    "validation046": "supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql",
+    "lateFactExecutor": "transient_pg_cron_second_session",
+    "emptyWindowCertified": true,
+    "lateFactCertified": true,
+    "stagingExecutionAuthorized": false,
+    "identityAuthority": "seed002-email-resolved",
+    "legacyFixedUserIdsRetired": true,
+    "serviceEligibilityAuthority": "approved-service-version",
+    "fixtureMode": "synthetic-approved-version",
+    "serviceEligibilityRemediationEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence.json",
+    "stagingEvidencePath": "reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json",
+    "stagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "validation046Status": "PASS",
+    "completeCertified": true,
+    "orphanCertified": true,
+    "cleanupStatus": "PASS"
+  },
+  "runtimeProjectionAuthorityGrant": {
+    "sourceContract": "config/ana-a09-canonical-funnel-projection.json",
+    "authorizedRepositoryHead": "28960baecb1b495b16c3799c55a80305764db0ac",
+    "matrixVersion": "1.3.132",
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+    "canaryStagingEvidenceBlobSha": "3b7274a391a857f2de06538f3302f6be01b06734",
+    "authorizationDigestSha256": "ae527ee8a752a13493612fe50e8266e65def7c118a232a954b5fbff69a886cc5",
+    "repositoryOnly": true,
+    "runtimeProjectionAuthority": true,
+    "stagingRuntimeFlagChanged": false,
+    "stagingMutationAuthorized": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false
+  }
+}

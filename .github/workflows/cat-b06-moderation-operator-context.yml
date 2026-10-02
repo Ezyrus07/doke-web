@@ -1,0 +1,45 @@
+name: CAT-B06 Moderation Operator Context
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/096_identity_helper_invoker_hardening.sql'
+      - 'supabase/migrations/122_service_moderation_operator_authority.sql'
+      - 'supabase/migrations/135_self_service_operation_dispatcher.sql'
+      - 'supabase/migrations/20260923002000_cat_b06_moderation_operator_context.sql'
+      - 'supabase/functions/service-moderation-operations/**'
+      - 'scripts/test-service-moderation-operator-authority-contract.js'
+      - 'scripts/test-service-moderation-operations-runtime.mjs'
+      - 'scripts/test-service-moderation-audit-history-contract.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'package.json'
+      - '.github/workflows/cat-b06-moderation-operator-context.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: |
+          node --check scripts/test-service-moderation-operator-authority-contract.js
+          node --check scripts/test-service-moderation-operations-runtime.mjs
+          node --check scripts/test-service-moderation-audit-history-contract.js
+      - run: |
+          npm run test:service-moderation-operator-authority-contract
+          npm run test:service-moderation-operations-runtime
+          npm run test:service-moderation-audit-history-contract
+      - run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+      - run: git diff --check

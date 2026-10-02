@@ -69,13 +69,110 @@ insert into public.service_categories (name, slug, description, sort_order) valu
 on conflict (slug) do update set name = excluded.name, description = excluded.description, sort_order = excluded.sort_order;
 
 insert into public.services (id, professional_id, category_id, title, slug, description, price_mode, price_cents, currency, status, city, state) values
-  ('55555555-5555-4555-8555-555555555555', (select user_id from doke_seed_auth_users where seed_role = 'professional'), (select id from public.service_categories where slug = 'pintura'), 'Pintura de apartamento', 'pintura-apartamento-demo', 'Serviço demo para fluxo completo de pedido e pagamento.', 'quote', null, 'BRL', 'published', 'Salvador', 'BA')
+  ('55555555-5555-4555-8555-555555555555', (select user_id from doke_seed_auth_users where seed_role = 'professional'), (select id from public.service_categories where slug = 'pintura'), 'Pintura de apartamento', 'pintura-apartamento-demo', 'Serviço demo para fluxo completo de pedido e pagamento.', 'quote', null, 'BRL', 'draft', 'Salvador', 'BA')
 on conflict (professional_id, slug) do update set
   category_id = excluded.category_id,
   title = excluded.title,
   description = excluded.description,
-  status = excluded.status,
+  price_mode = excluded.price_mode,
+  price_cents = excluded.price_cents,
+  currency = excluded.currency,
+  city = excluded.city,
+  state = excluded.state,
   updated_at = now();
+
+-- CAT authority requires every orderable service to point at an approved,
+-- immutable service version. Keep this controlled staging seed aligned with
+-- the same moderation boundary used by the application instead of publishing
+-- a raw services row directly.
+do $seed$
+declare
+  v_service_id uuid := '55555555-5555-4555-8555-555555555555';
+  v_professional_id uuid := (select user_id from doke_seed_auth_users where seed_role = 'professional');
+  v_admin_id uuid := (select user_id from doke_seed_auth_users where seed_role = 'admin');
+  v_version_id uuid;
+  v_snapshot jsonb;
+begin
+  v_snapshot := jsonb_build_object(
+    'id', v_service_id::text,
+    'externalId', v_service_id::text,
+    'title', 'Pintura de apartamento',
+    'description', 'Serviço demo para fluxo completo de pedido e pagamento.',
+    'fullDescription', 'Serviço demo para fluxo completo de pedido e pagamento.',
+    'category', 'Pintura',
+    'city', 'Salvador',
+    'state', 'BA',
+    'status', 'active',
+    'moderationStatus', 'published',
+    'remotePriceMode', 'quote',
+    'currency', 'BRL',
+    'images', '[]'::jsonb,
+    'providerName', 'Profissional Doke',
+    'quoteTemplate', '{}'::jsonb
+  );
+
+  insert into public.service_versions (
+    service_id,
+    professional_id,
+    version_number,
+    source,
+    change_class,
+    review_status,
+    snapshot,
+    change_summary,
+    submitted_at,
+    reviewed_at,
+    reviewed_by,
+    risk_flags,
+    classification_reasons,
+    visibility_action
+  ) values (
+    v_service_id,
+    v_professional_id,
+    1,
+    'create',
+    'major',
+    'approved',
+    v_snapshot,
+    jsonb_build_object('controlledSeed', true),
+    now(),
+    now(),
+    v_admin_id,
+    '[]'::jsonb,
+    '[]'::jsonb,
+    'not_public_until_approved'
+  )
+  on conflict (service_id, version_number) do update set
+    professional_id = excluded.professional_id,
+    source = excluded.source,
+    change_class = excluded.change_class,
+    review_status = excluded.review_status,
+    snapshot = excluded.snapshot,
+    change_summary = excluded.change_summary,
+    reviewed_at = excluded.reviewed_at,
+    reviewed_by = excluded.reviewed_by,
+    review_reason = null,
+    risk_flags = excluded.risk_flags,
+    classification_reasons = excluded.classification_reasons,
+    visibility_action = excluded.visibility_action,
+    updated_at = now()
+  returning id into v_version_id;
+
+  perform set_config('doke.service_moderation_apply', 'on', true);
+
+  update public.services
+  set professional_id = v_professional_id,
+      metadata = v_snapshot,
+      status = 'published',
+      moderation_status = 'published',
+      approved_version_id = v_version_id,
+      pending_version_id = null,
+      review_reason = null,
+      reviewed_at = now(),
+      updated_at = now()
+  where id = v_service_id;
+end
+$seed$;
 
 insert into public.orders (id, client_id, professional_id, service_id, title, description, status, city, state) values
   ('66666666-6666-4666-8666-666666666666', (select user_id from doke_seed_auth_users where seed_role = 'client'), (select user_id from doke_seed_auth_users where seed_role = 'professional'), '55555555-5555-4555-8555-555555555555', 'Pintura da sala', 'Pedido demo para validar orçamento, chat, pagamento, contestação, repasse e saque.', 'in_progress', 'Salvador', 'BA')

@@ -1,0 +1,76 @@
+{
+  "evidenceId": "ana-a07-watermark-concurrent-writer-canary-evidence-v1",
+  "domain": "ANA-001",
+  "subLot": "ANA-A07",
+  "environment": "staging",
+  "sourceHead": "94b7c0b825b8ba6f30953de6c187c2c28cbfa908",
+  "matrixVersion": "1.3.132",
+  "authorization": "authorize-ana-a07-watermark-concurrent-writer-runtime-state-reconciliation-repository-only head=94b7c0b825b8ba6f30953de6c187c2c28cbfa908 matrix=v1.3.132 concurrentWriterCanary=PASS transientCronJobId=9 cleanup=PASS",
+  "prerequisites": {
+    "validation041": "PASS",
+    "compatibilityStagingMigrationVersion": "20260923231132",
+    "previousEvidence": "reports/generated/ana-a07-watermark-compatibility-runtime-evidence.json"
+  },
+  "directConnectorAttempt": {
+    "status": "inconclusive",
+    "reason": "execute_sql calls serialized; observer ran after rollback",
+    "certificationImpact": "none"
+  },
+  "executor": {
+    "mechanism": "transient_pg_cron_second_session",
+    "jobId": 9,
+    "jobName": "doke-ana-a07-watermark-concurrent-writer-canary-once",
+    "schedule": "5 seconds",
+    "scheduledAt": "2026-09-23T23:31:28.503111Z",
+    "commandSemantics": "BEGIN; SET LOCAL application_name; TEMP table; synthetic insert; pg_sleep(20); ROLLBACK",
+    "persistentSourceMutation": false
+  },
+  "observation": {
+    "observedAt": "2026-09-23T23:31:54.193612Z",
+    "writerFound": true,
+    "writerPid": 3239880,
+    "writerState": "active",
+    "writerXactStart": "2026-09-23T23:31:34.252362Z",
+    "activeTransactionCount": 1,
+    "earliestActiveXactStart": "2026-09-23T23:31:34.252362Z",
+    "helperObservedAt": "2026-09-23T23:31:54.204672Z",
+    "dataThrough": "2026-09-23T23:31:34.252361Z",
+    "reason": "ACTIVE_TRANSACTION_FLOOR",
+    "helperBeforeWriter": true,
+    "helperMatchesEarliestPredecessor": true,
+    "behaviorBeforeWriter": true,
+    "orderBeforeWriter": true,
+    "predecessorDeltaMicroseconds": 1
+  },
+  "cleanup": {
+    "unscheduled": true,
+    "cronRunId": 148554,
+    "cronRunTerminalStatus": "failed",
+    "cronRunReturnMessage": "job canceled",
+    "terminalStatusInterpretation": "expected cleanup cancellation after evidence capture",
+    "jobStillExists": false,
+    "taggedSessions": 0,
+    "preparedTransactionCount": 0,
+    "watermarkCronCount": 0,
+    "postCleanupReason": "NO_ACTIVE_TRANSACTION",
+    "postCleanupDataThrough": "2026-09-23T23:32:33.776747Z"
+  },
+  "certification": {
+    "concurrentWriterCanary": "PASS",
+    "runtimeWatermarkAuthority": true,
+    "stagingAuthority": false,
+    "emptyWindowProjectionCertified": false,
+    "lateFactCertified": false,
+    "a09ActivationAllowed": false,
+    "anaMaturityBefore": 3,
+    "anaMaturityAfter": 3
+  },
+  "boundaries": {
+    "repositoryOnlyReconciliation": true,
+    "stagingMutationInThisReconciliation": false,
+    "transientSchedulerFullyRemoved": true,
+    "productionTouched": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  }
+}

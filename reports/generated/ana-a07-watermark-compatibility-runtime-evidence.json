@@ -1,0 +1,90 @@
+{
+  "evidenceId": "ana-a07-watermark-compatibility-runtime-evidence-v1",
+  "domain": "ANA-001",
+  "subLot": "ANA-A07",
+  "environment": "staging",
+  "sourceHead": "612348f0695c7cf8d573ff1e330c872ef5eedc70",
+  "matrixVersion": "1.3.132",
+  "authorization": "authorize-ana-a07-watermark-compatibility-runtime-state-reconciliation-repository-only head=612348f0695c7cf8d573ff1e330c872ef5eedc70 matrix=v1.3.132 stagingMigrationVersion=20260923231132 validation041=PASS",
+  "originalMigration": {
+    "repositoryVersion": "20260923224000",
+    "stagingVersion": "20260923230106",
+    "name": "ana_a07_behavior_ord_dependency_watermarks",
+    "applied": true
+  },
+  "compatibilityMigration": {
+    "repositoryVersion": "20260923231000",
+    "stagingVersion": "20260923231132",
+    "name": "ana_a07_behavior_ord_watermark_compatibility",
+    "applied": true
+  },
+  "validation041": {
+    "path": "supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql",
+    "status": "PASS",
+    "rollbackOnly": true,
+    "previousFailure": {
+      "status": "FAILED",
+      "errorCode": "42883",
+      "rootCause": "invalid pg_catalog.least qualification"
+    },
+    "remediation": "forward-only helper redefinition with explicit CASE"
+  },
+  "runtimeObservation": {
+    "observedAt": "2026-09-23T23:14:56.197764Z",
+    "helperOwner": "postgres",
+    "behaviorOwner": "postgres",
+    "orderOwner": "postgres",
+    "helperServiceExecute": false,
+    "behaviorServiceExecute": true,
+    "orderServiceExecute": true,
+    "preparedTransactionCount": 0,
+    "watermarkCronCount": 0,
+    "helperUsesExplicitCase": true,
+    "invalidPgCatalogLeastPresent": false,
+    "behaviorEnvelope": {
+      "contractId": "ana-a07-behavior-watermark-v1",
+      "sourceDomain": "ANA-001",
+      "sourceRelation": "private.analytics_behavior_events_v1",
+      "eventTime": "occurred_at",
+      "materializationTime": "received_at",
+      "basis": "active_transaction_floor_v1",
+      "freshnessState": "fresh",
+      "reason": "NO_ACTIVE_TRANSACTION",
+      "activeTransactionCount": 0,
+      "preparedTransactionCount": 0
+    },
+    "orderEnvelope": {
+      "contractId": "ana-a07-order-metric-watermark-v1",
+      "sourceDomain": "ORD-001",
+      "sourceRelation": "private.order_metric_events",
+      "eventTime": "occurred_at",
+      "materializationTime": "created_at",
+      "basis": "active_transaction_floor_v1",
+      "freshnessState": "fresh",
+      "reason": "NO_ACTIVE_TRANSACTION",
+      "activeTransactionCount": 0,
+      "preparedTransactionCount": 0
+    }
+  },
+  "certification": {
+    "validation041Passed": true,
+    "noActiveTransactionObserved": true,
+    "grantsValidated": true,
+    "concurrentWriterCertified": false,
+    "lateFactCertified": false,
+    "runtimeWatermarkAuthority": false,
+    "stagingAuthority": false,
+    "a09ActivationAllowed": false,
+    "anaMaturityBefore": 3,
+    "anaMaturityAfter": 3
+  },
+  "boundaries": {
+    "stagingMutationInThisReconciliation": false,
+    "schedulerChanged": false,
+    "sourceFactsMutated": false,
+    "browserAnalyticsActivated": false,
+    "productionTouched": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  }
+}

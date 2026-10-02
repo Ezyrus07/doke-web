@@ -1,0 +1,57 @@
+{
+  "contractId": "ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-evidence-v1",
+  "domain": "ANA-001",
+  "environment": "repository_only",
+  "authorization": "authorize-ana-a07-a09-funnel-runtime-canary-service-eligibility-remediation-repository-only head=a7cac83368fca981d84b2f7e93274f8744ed9299 matrix=v1.3.132 canaryContractId=ana-a07-a09-funnel-runtime-canary-contract-v1 validation=046 identityAuthority=seed002-email-resolved serviceEligibilityAuthority=approved-service-version fixtureMode=synthetic-approved-version failure=DOKE_ORDER_SERVICE_NOT_ELIGIBLE persistentActivationEvidenceBlobSha=24ddfedcb29b465f510130befe61d4e4a283e2d2",
+  "authorizationDigestSha256": "fe20d6d120050bde718784a6a4bcd68c4296af17cdbb068d02a544e024b2864a",
+  "authorizedRepositoryHead": "a7cac83368fca981d84b2f7e93274f8744ed9299",
+  "matrixVersion": "1.3.132",
+  "canaryContractId": "ana-a07-a09-funnel-runtime-canary-contract-v1",
+  "validation": "046",
+  "identityAuthority": "seed002-email-resolved",
+  "serviceEligibilityAuthority": "approved-service-version",
+  "fixtureMode": "synthetic-approved-version",
+  "persistentActivationEvidenceBlobSha": "24ddfedcb29b465f510130befe61d4e4a283e2d2",
+  "rootCause": {
+    "failure": "DOKE_ORDER_SERVICE_NOT_ELIGIBLE",
+    "canonicalOrderEligibility": [
+      "service.status=published",
+      "service.approved_version_id is not null",
+      "service.moderation_status is eligible",
+      "approved service_version exists for service and professional",
+      "service_version.review_status=approved"
+    ],
+    "priorFixture": "draft service without approved version",
+    "runtimeDefect": false
+  },
+  "repositoryRemediation": {
+    "syntheticServiceStartsDraft": true,
+    "syntheticApprovedVersionCreated": true,
+    "serviceModerationApplyUsed": true,
+    "servicePromotedPublished": true,
+    "approvedVersionIdBound": true,
+    "eligibilityAssertionAdded": true,
+    "orderCreatedOnlyAfterEligibilityAssertion": true,
+    "rollbackOnly": true
+  },
+  "preRemediationAbortResidue": {
+    "canaryServices": 0,
+    "canaryServiceVersions": 0,
+    "canaryOrders": 0,
+    "canaryBehaviorRows": 0,
+    "canaryOrderMetricRows": 0,
+    "canaryCrons": 0
+  },
+  "boundaries": {
+    "stagingMutationInThisLot": false,
+    "validation046ExecutedAfterRemediation": false,
+    "lateFactExecuted": false,
+    "runtimeProjectionAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "persistentCronAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  }
+}

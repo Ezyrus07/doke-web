@@ -1,0 +1,185 @@
+{
+  "contractId": "ana-a09-funnel-snapshot-publication-orchestration-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A09",
+  "sourceHead": "0deddb7a8924fdda72ff12e032f70c6944d64224",
+  "matrixVersion": "1.3.132",
+  "scope": "generalize-existing-publication-policy-authority-and-build-a09-funnel-publication-orchestration-candidate-only",
+  "status": "staging_structure_applied_validation_054_pass_evidence_reconciled_pending_exact_head_certification",
+  "objective": "Reuse the existing analytics publication-policy authority to prepare bounded global-funnel snapshot publication without creating a second policy store or granting runtime publication/scheduler authority.",
+  "rootCause": {
+    "maturityGap": "ANA-A09 has certified runtime projection, first snapshot append and exact replay idempotency, but no continuous publication policy or scheduler authority.",
+    "authorityGap": "private.analytics_metric_publication_policies_v1 is the existing publication authority but its contract constraints currently admit only ANA-A11 liquidity.",
+    "designDecision": "Generalize the existing table forward-only and add A09-specific private planner/orchestrator/catch-up functions. Do not create a second publication table."
+  },
+  "authorization": {
+    "token": "authorize-ana-a09-funnel-snapshot-publication-orchestration-candidate-repository-only head=0deddb7a8924fdda72ff12e032f70c6944d64224 matrix=v1.3.132 a09ProjectionConfigBlobSha=2ea7cdd6d3864da26ba29813ef78c8cc85392f56 funnelFreshnessConfigBlobSha=8b9ef1b01de43852101a9021da2423c4269079ba replayCanaryEvidenceBlobSha=3dd8511d84e25d08115a3b8f04cb186452f7fb5e appendInvocationConfigBlobSha=5bda6bfbd4199fc29e9342abced71e0d2e2b053c a11PublicationPolicyBaseBlobSha=a42e584513078e0c4127dd367ca56ad36615a07d a11PlannerReferenceBlobSha=dd39a22a9e04b32f2e550bc5d7c5637f8f9ea6b8 a11ExecutorReferenceBlobSha=25d57899a058711210fde5b4945d3db2de751dcf a11SchedulerReferenceBlobSha=3e18ce8809ba3abed374354720783c7f77bec4d0 scope=generalize-existing-publication-policy-authority-and-build-a09-funnel-publication-orchestration-candidate-only preserveA11=true noSecondPublicationAuthority=true metricCount=8 windowStepSeconds=300 projectionDelaySloSeconds=60 derivedMaxLagSeconds=360 proposedMaxCatchUpWindowsPerInvocation=3 runtimeProjectionAuthority=true runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "digestSha256": "82dfb786bb14366984ad91860cf6ffb02ec49b5a4fc087077662ee8a20a77d04",
+    "repositoryWriteAuthority": true,
+    "stagingAuthority": false,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "sourceBindings": {
+    "a09ProjectionConfig": {
+      "path": "config/ana-a09-canonical-funnel-projection.json",
+      "blobSha": "2ea7cdd6d3864da26ba29813ef78c8cc85392f56"
+    },
+    "funnelFreshnessConfig": {
+      "path": "config/ana-a07-a09-funnel-freshness-policy-candidate.json",
+      "blobSha": "8b9ef1b01de43852101a9021da2423c4269079ba"
+    },
+    "replayCanaryEvidence": {
+      "path": "reports/generated/ana-a09-canonical-funnel-snapshot-replay-canary-staging-evidence.json",
+      "blobSha": "3dd8511d84e25d08115a3b8f04cb186452f7fb5e"
+    },
+    "appendInvocationConfig": {
+      "path": "config/ana-a09-canonical-funnel-snapshot-append-invocation-contract.json",
+      "blobSha": "5bda6bfbd4199fc29e9342abced71e0d2e2b053c"
+    },
+    "a11PublicationPolicyBase": {
+      "path": "supabase/migrations/20260923012500_ana_a11_liquidity_publication_policy_authority.sql",
+      "blobSha": "a42e584513078e0c4127dd367ca56ad36615a07d"
+    },
+    "a11PlannerReference": {
+      "path": "supabase/migrations/20260923023000_ana_a11_liquidity_window_planner.sql",
+      "blobSha": "dd39a22a9e04b32f2e550bc5d7c5637f8f9ea6b8"
+    },
+    "a11ExecutorReference": {
+      "path": "supabase/migrations/20260923024000_ana_a11_liquidity_catch_up_executor.sql",
+      "blobSha": "25d57899a058711210fde5b4945d3db2de751dcf"
+    },
+    "a11SchedulerReference": {
+      "path": "supabase/migrations/20260923031000_ana_a11_liquidity_scheduler_activation.sql",
+      "blobSha": "3e18ce8809ba3abed374354720783c7f77bec4d0"
+    }
+  },
+  "candidate": {
+    "migration": "supabase/migrations/20260929121600_ana_a09_funnel_snapshot_publication_orchestration_candidate.sql",
+    "migrationBlobSha": "01a6d7208a9d4d288eb9995325707d0ccdc9a3a6",
+    "validationSql": "supabase/tests/054_ana_a09_funnel_snapshot_publication_orchestration_candidate_validation.sql",
+    "validationBlobSha": "906629533492eec6be83441e51554d6eee4a3a97",
+    "publicationPolicyTable": "private.analytics_metric_publication_policies_v1",
+    "createsSecondPublicationAuthority": false,
+    "preservesA11": true,
+    "a11FunctionsReplaced": false,
+    "a11PolicyRowMutatedByCandidate": false,
+    "publicationPolicyRowsInsertedByCandidate": 0,
+    "schedulerCreatedByCandidate": false,
+    "metricVersion": "v1",
+    "metricCount": 8,
+    "metricKeys": [
+      "funnel.budget_cta_to_quote_started",
+      "funnel.click_to_detail",
+      "funnel.detail_to_budget_cta",
+      "funnel.impression_to_click",
+      "funnel.quote_completed_to_submitted",
+      "funnel.quote_started_to_completed",
+      "funnel.quote_submitted_to_order_requested",
+      "funnel.search_ctr"
+    ],
+    "policySetId": "ana-a07-a09-funnel-v1-r1",
+    "windowStepSeconds": 300,
+    "projectionDelaySloSeconds": 60,
+    "derivedMaxLagSeconds": 360,
+    "maxCatchUpWindowsPerInvocation": 3,
+    "maxSnapshotAppendAttemptsPerInvocation": 24,
+    "missedWindowOrder": "oldest_first",
+    "schedulerMechanismRequired": "supabase_pg_cron_database_local",
+    "windowAnchorSelectedNow": false,
+    "effectiveFromSelectedNow": false,
+    "effectiveUntilSelectedNow": false,
+    "plannerScope": "missing_global_funnel_windows_only",
+    "automaticLateFactRevision": false,
+    "lateFactRevisionAuthority": "ANA-A05",
+    "atomicCatchUpInvocation": true,
+    "mutationCapablePrivateFunctionsPrepared": true,
+    "privateFunctionExecuteAnon": false,
+    "privateFunctionExecuteAuthenticated": false,
+    "privateFunctionExecuteServiceRole": false
+  },
+  "publicationAuthorityGeneralization": {
+    "existingTableReused": true,
+    "oldA11OnlyContractConstraintsReplaced": true,
+    "allowedContractScopes": [
+      {
+        "metricScope": "liquidity.active_service_seconds",
+        "derivationContractId": "ana-a11-liquidity-freshness-policy-derivation-v1",
+        "seriesContractId": "ana-a11-liquidity-series-orchestration-v1"
+      },
+      {
+        "metricScope": "eight_canonical_global_funnel_metrics",
+        "derivationContractId": "ana-a07-a09-funnel-freshness-policy-candidate-v1",
+        "seriesContractId": "ana-a09-funnel-snapshot-publication-orchestration-candidate-v1"
+      }
+    ],
+    "currentGenericSelectorPreserved": "private.current_analytics_metric_publication_policy_v1"
+  },
+  "runtimeFunctions": [
+    "private.current_analytics_a09_funnel_publication_policy_set_v1",
+    "private.plan_analytics_a09_funnel_windows_v1",
+    "private.run_analytics_a09_funnel_window_v1",
+    "private.run_analytics_a09_funnel_catch_up_v1"
+  ],
+  "failClosedSemantics": {
+    "requiresExactlyEightActivePolicyRows": true,
+    "requiresExactMetricSet": true,
+    "requiresSharedPolicyParameters": true,
+    "unsupportedPolicySetRaises": true,
+    "missingPolicySetRaises": true,
+    "unalignedWindowRaises": true,
+    "openWindowRaises": true,
+    "invalidPayloadSetRaises": true,
+    "duplicatePayloadMetricRaises": true,
+    "appendStateOutsideAppendedOrNoChangeRaises": true,
+    "plannerDoesNotInventPolicy": true,
+    "plannerDoesNotCreateScheduler": true
+  },
+  "prohibitedEffects": {
+    "stagingMigrationApplied": true,
+    "stagingValidationExecuted": true,
+    "publicationPolicyPersisted": false,
+    "snapshotPublicationInvoked": false,
+    "schedulerCreated": false,
+    "productionChanged": false,
+    "matrixChanged": false,
+    "maturityPromotion": false,
+    "pullRequestMerged": false,
+    "readyForReviewChanged": false
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false,
+    "reason": "Staging structural migration is applied and validation 054 passes, but A09 publication-policy persistence, snapshot publication, scheduler authority and continuous operational evidence remain absent."
+  },
+  "nextGate": "Certify the reconciled staging-structure evidence on the exact resulting HEAD. Then prepare a separate repository-only A09 publication-policy approval/activation candidate. No publication-policy persistence, snapshot mutation or scheduler activation is authorized by this evidence reconciliation.",
+  "stagingStructureEvidence": {
+    "evidenceId": "ana-a09-funnel-snapshot-publication-orchestration-staging-evidence-v1",
+    "evidencePath": "reports/generated/ana-a09-funnel-snapshot-publication-orchestration-staging-evidence.json",
+    "evidenceBlobSha": "0fa5595dd8b0c0ba925ff46fb7c3dbe0bc150595",
+    "authorizedRepositoryHead": "dc52c24d4bf71b8e29529538189e7c682d47ce83",
+    "stagingProjectRef": "zwkczgewzbsorbrjuzpb",
+    "repositoryMigrationVersion": "20260929121600",
+    "appliedStagingMigrationVersion": "20260929125652",
+    "validation": "054",
+    "validationStatus": "PASS",
+    "preserveA11": true,
+    "a11PublicationPolicyCount": 1,
+    "a11SchedulerCount": 1,
+    "funnelPublicationPolicyCount": 0,
+    "funnelCronCount": 0,
+    "preSnapshotCount": 8,
+    "postSnapshotCount": 8,
+    "snapshotWriteCount": 0,
+    "candidateFunctionCount": 4,
+    "clientExecuteClosed": true,
+    "reconciliationAuthorizationDigestSha256": "1005173681776fcf6b9af072281c9e02e283884cdf5ad77db296c21e0702d7fd"
+  }
+}

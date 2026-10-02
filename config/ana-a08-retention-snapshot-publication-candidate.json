@@ -1,0 +1,206 @@
+{
+  "contractId": "ana-a08-retention-snapshot-publication-candidate-v1",
+  "sourceContractId": "ana-a08-retention-cohort-projection-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A08",
+  "sourceHead": "2615a725c224b80bfd9e79d870ac0baffb02e8fc",
+  "matrixVersion": "1.3.132",
+  "scope": "repository_snapshot_publication_contract_candidate",
+  "status": "repository_candidate_policy_pending_no_runtime_authority",
+  "objective": "Freeze an A04/A05-compatible retention snapshot publication contract without creating a migration, invoking append, assigning retention freshness thresholds, creating a scheduler, mutating staging, or promoting ANA maturity.",
+  "authorization": {
+    "token": "authorize-ana-a08-retention-snapshot-publication-candidate-repository-only\nhead=2615a725c224b80bfd9e79d870ac0baffb02e8fc\nmatrix=v1.3.132\na08ConfigBlobSha=399ef449b4e257e9d8ece15ce14d33fbc60b1870\na08LiveAuthorityEvidenceBlobSha=203f2471bb9fceb5b5f7438e540fae8676174171\ncontractId=ana-a08-retention-cohort-projection-v1\nmetrics=retention.repeat_request_30d,retention.repeat_completion_90d\nruntimeProjectionAuthority=true\ncurrentRetentionSnapshotCount=0\ncurrentRetentionCronCount=0\npreserveA07WatermarkAuthority=true\npreserveA04AppendOnlySnapshotAuthority=true\npreserveA05ReconciliationAuthority=true\npreserveA09=true\npreserveA11=true\nzeroDenominatorMustRemainNull=true\nanonymousIdentityStitchingAllowed=false\ncurrentServiceJoinAllowed=false\nrepositoryWriteAuthority=true\nruntimeSnapshotAuthority=false\nsnapshotPublicationAuthority=false\nschedulerAuthority=false\nstagingAuthority=false\nproductionAuthority=false\nmergeAuthority=false\nreadyForReviewAuthority=false\nmaturityPromotionAuthority=false\nhistoryRewriteAuthority=false",
+    "digestSha256": "18561eba199d671b574939585bf8d4004efb275cf67986068899833d12545b96",
+    "authorizedRepositoryHead": "2615a725c224b80bfd9e79d870ac0baffb02e8fc",
+    "repositoryOnly": true,
+    "repositoryWriteAuthority": true,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "maturityPromotionAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "sourceAuthorities": {
+    "a08Projection": {
+      "path": "config/ana-a08-retention-cohort-projection.json",
+      "blobSha": "399ef449b4e257e9d8ece15ce14d33fbc60b1870"
+    },
+    "a08LiveAuthorityEvidence": {
+      "path": "reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence.json",
+      "blobSha": "203f2471bb9fceb5b5f7438e540fae8676174171"
+    },
+    "a04AppendOnlySnapshotRuntime": {
+      "path": "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
+      "blobSha": "64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5",
+      "appendRpc": "public.append_analytics_metric_snapshot_v1(jsonb)"
+    },
+    "a05Reconciliation": {
+      "path": "config/ana-a05-reconciliation-data-quality.json",
+      "blobSha": "5ba0c3384af98abbe406b4b7697ede88ddb93ad3"
+    },
+    "a07Freshness": {
+      "path": "config/ana-a07-freshness-window-authority.json",
+      "blobSha": "30fbd5f9652e6915a58bf62c6b0c0c1af31eaf44"
+    }
+  },
+  "metrics": [
+    {
+      "metricKey": "retention.repeat_request_30d",
+      "metricVersion": "v1",
+      "measurementWindowDays": 30,
+      "repeatEventType": "order.requested"
+    },
+    {
+      "metricKey": "retention.repeat_completion_90d",
+      "metricVersion": "v1",
+      "measurementWindowDays": 90,
+      "repeatEventType": "order.completed"
+    }
+  ],
+  "preparationBaseline": {
+    "observedAt": "2026-10-02T12:16:56.238990+00:00",
+    "retentionSnapshotCount": 0,
+    "retentionCronCount": 0,
+    "liveProjectionFunction": "public.compute_analytics_retention_cohort_v1",
+    "liveRuntimeProjectionAuthority": true,
+    "liveRuntimeSnapshotAuthority": false,
+    "liveSnapshotPublicationAllowed": false,
+    "liveSchedulerAuthority": false
+  },
+  "futureAdapterContract": {
+    "functionName": "public.compute_analytics_retention_snapshot_payload_v1",
+    "materializedInRepository": false,
+    "migrationCreated": false,
+    "migrationCreationAuthority": false,
+    "validationCreated": false,
+    "sourceComputeFunction": "public.compute_analytics_retention_cohort_v1",
+    "appendRpc": "public.append_analytics_metric_snapshot_v1",
+    "appendInvocationAllowed": false,
+    "browserExecuteAllowed": false,
+    "intendedExecutionBoundary": "service_role_only",
+    "requiredInputs": [
+      "metricKey",
+      "publicationWindowStart",
+      "publicationWindowEnd",
+      "serviceCategory?",
+      "serviceState?"
+    ],
+    "publicationWindowSemantics": {
+      "explicitClosedWindowRequired": true,
+      "callerMustSupplyWindow": true,
+      "implicitCadenceForbidden": true,
+      "publicationWindowDoesNotRedefineRetentionHorizon": true,
+      "computeRequestedDataThrough": "publicationWindowEnd",
+      "effectiveDataThrough": "clamped by ANA-A07 order_metric_watermark_v1() inside the canonical A08 projector"
+    }
+  },
+  "payloadContract": {
+    "a04RequiredFields": [
+      "metricKey",
+      "metricVersion",
+      "windowStart",
+      "windowEnd",
+      "dataThrough",
+      "dimensions",
+      "numerator",
+      "denominator",
+      "value",
+      "sampleCount",
+      "projectionState",
+      "coverageState",
+      "reconciliationState",
+      "sourceFingerprint",
+      "projectionFingerprint",
+      "correctionReason",
+      "computedAt"
+    ],
+    "dimensions": {
+      "global": {},
+      "supportedSegmentKeys": [
+        "serviceCategory",
+        "serviceState"
+      ],
+      "authority": "immutable first-completion dimensions from ANA-A04 order service snapshot",
+      "mutableCurrentServiceJoinAllowed": false
+    },
+    "zeroDenominator": {
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "sampleCount": 0,
+      "convertNullToZero": false,
+      "appendSemantic": "null is preserved if a later authorized append gate exists"
+    },
+    "coverageState": {
+      "complete": "canonical projector reports complete cohort-dimension coverage for the requested scope, including legitimate zero-denominator results",
+      "partial": "mature cohort rows exist with missing immutable cohort dimensions or requested segment dimension coverage is incomplete",
+      "notApplicable": false
+    },
+    "reconciliationState": "not_applicable until a retention-specific reconciliation authority exists; never fabricate matched",
+    "sourceFingerprint": {
+      "authority": "A05 deterministic fingerprint semantics",
+      "requiredFutureRule": "digest the canonical sorted private.order_metric_events source universe that can affect the metric at effective dataThrough, including stable event identity, order/client identity, event type/time and immutable dimensions; computedAt is excluded"
+    },
+    "projectionFingerprint": {
+      "requiredFutureRule": "sha256 of canonical semantic projection identity including metricKey, metricVersion, effective dataThrough, dimensions, numerator, denominator, null-preserving value, sampleCount, coverageState and deterministic excluded-count surface; computedAt is excluded"
+    },
+    "correctionReason": null,
+    "revisionAuthority": "ANA-A05/A04 append-only revision semantics"
+  },
+  "freshnessGate": {
+    "authority": "ANA-A07",
+    "retentionThresholdStatus": {
+      "retention.repeat_request_30d": "pending",
+      "retention.repeat_completion_90d": "pending"
+    },
+    "implicitDefaultMaxLagForbidden": true,
+    "freshnessPolicyRequiredBeforeAppendEligibility": true,
+    "currentAppendEligibility": "blocked_policy_pending",
+    "currentProjectionStateForAppend": "unavailable",
+    "reason": "A07 requires an explicit metric-specific threshold. No retention maxLag/window cadence/effective window is authorized in this lot."
+  },
+  "preservedBoundaries": {
+    "preserveA07WatermarkAuthority": true,
+    "preserveA04AppendOnlySnapshotAuthority": true,
+    "preserveA05ReconciliationAuthority": true,
+    "preserveA09": true,
+    "preserveA11": true,
+    "canonicalClientIdOnly": true,
+    "anonymousIdentityStitchingAllowed": false,
+    "currentServiceJoinAllowed": false,
+    "rehireInferred": false,
+    "sourceMutationAllowed": false,
+    "appendInvoked": false,
+    "snapshotWriteAllowed": false,
+    "publicationAllowed": false,
+    "schedulerAllowed": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "stagingMutationAllowed": false,
+    "productionAllowed": false
+  },
+  "nonGoals": [
+    "Do not create a SQL migration or validation file without separate migration-creation authority.",
+    "Do not select retention windowStepSeconds, projectionDelaySloSeconds, maxLagSeconds, effectiveFrom or effectiveUntil.",
+    "Do not create or modify pg_cron jobs.",
+    "Do not append retention snapshots.",
+    "Do not reinterpret null retention as zero retention.",
+    "Do not promote ANA above 3/6."
+  ],
+  "supabaseCompatibilityReview": {
+    "reviewedAt": "2026-10-02",
+    "directCronTableMutationAllowed": false,
+    "note": "Future scheduler work must use pg_cron functions rather than direct cron.job writes; this repository-only candidate creates no cron and no SQL migration."
+  },
+  "maturity": {
+    "before": 3,
+    "after": 3,
+    "promoted": false
+  },
+  "nextGate": "Prepare a separate repository-only ANA-A08 retention freshness/publication policy candidate that explicitly binds metric-specific maxLag/window cadence/effective-window semantics. Until that policy exists, snapshot append/publication/scheduler authority remains false."
+}

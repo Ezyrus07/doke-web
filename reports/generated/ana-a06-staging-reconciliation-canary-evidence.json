@@ -1,0 +1,100 @@
+{
+  "contractId": "ana-a06-staging-reconciliation-canary-evidence-v1",
+  "domain": "ANA-001",
+  "parentContract": "ana-a06-data-quality-ownership-gates-v1",
+  "authorization": {
+    "phrase": "authorize-ana-a06-staging-reconciliation-canary",
+    "consumed": true,
+    "genericContinuationAccepted": false
+  },
+  "target": {
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "environment": "staging"
+  },
+  "canary": {
+    "rpc": "public.run_analytics_order_reconciliation_v1(timestamptz,timestamptz)",
+    "windowStart": "2026-09-19T00:00:00+00:00",
+    "windowEnd": "2026-09-19T02:00:00+00:00",
+    "runId": "16f75016-3ab9-425f-b12b-754312e8e6ec",
+    "observedAt": "2026-09-22T00:54:01.842505+00:00",
+    "sourceCount": 1,
+    "projectionCount": 1,
+    "reconciliationUniverseCount": 1,
+    "mismatchedEventCount": 0,
+    "reconciliationState": "matched",
+    "divergenceCounts": {
+      "sourceMissing": 0,
+      "subjectMismatch": 0,
+      "eventKeyMismatch": 0,
+      "dimensionMismatch": 0,
+      "eventTypeMismatch": 0,
+      "projectionMissing": 0,
+      "timestampMismatch": 0,
+      "duplicateProjection": 0
+    },
+    "sourceFingerprint": "345623c4d05ff099492dca7a9deff02152b9ab44079e1295aae9714e4c750959",
+    "projectionFingerprint": "bf197609e3c5935048bce61f5cb47e950c3972bd52d2171941ee6845680b689e",
+    "comparisonFingerprint": "2b1f1684c12942bceb64aea8a9e509c88ffd4b0f23a74bf2ec14b096db29ef0e",
+    "rollups": [
+      {
+        "metricKey": "analytics_projection_missing_rate",
+        "sampleCount": 1,
+        "value": 0,
+        "healthState": "healthy",
+        "gateState": "pass"
+      },
+      {
+        "metricKey": "analytics_reconciliation_mismatch_rate",
+        "sampleCount": 1,
+        "value": 0,
+        "healthState": "healthy",
+        "gateState": "pass"
+      }
+    ],
+    "overallGateState": "pass"
+  },
+  "mutationEnvelope": {
+    "sourceFactsBefore": 1,
+    "sourceFactsAfter": 1,
+    "projectionFactsBefore": 1,
+    "projectionFactsAfter": 1,
+    "reconciliationRunsBefore": 7,
+    "reconciliationRunsAfter": 8,
+    "rollupsBefore": 14,
+    "rollupsAfter": 16,
+    "expectedReconciliationRunDelta": 1,
+    "actualReconciliationRunDelta": 1,
+    "expectedRollupDelta": 2,
+    "actualRollupDelta": 2,
+    "sourceMutationObserved": false,
+    "projectionMutationObserved": false,
+    "unexpectedMutationObserved": false
+  },
+  "determinism": {
+    "sameWindowHistoricalRuns": 2,
+    "sourceFingerprintMatchesHistorical": true,
+    "projectionFingerprintMatchesHistorical": true,
+    "comparisonFingerprintMatchesHistorical": true,
+    "duplicateRequiredMetricGroupsForNewRun": 0
+  },
+  "boundaries": {
+    "orderSourceMutationAllowed": false,
+    "projectionSourceMutationAllowed": false,
+    "browserClientActivated": false,
+    "anonymousIdentityStitching": false,
+    "migrationApplied": false,
+    "deploymentPerformed": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "conclusion": {
+    "state": "pass",
+    "a06SublotStatus": "staging_reconciliation_canary_pass",
+    "maturityBefore": 3,
+    "maturityAfter": 3,
+    "maturityPromotionAuthorized": false,
+    "reason": "A06 structural data-quality gate passed on a controlled non-empty staging reconciliation. ANA remains 3/6 because funnel, CAT supply/liquidity, retention and freshness maturity-4 sublots remain incomplete.",
+    "freshnessAuthorityClosed": false
+  }
+}

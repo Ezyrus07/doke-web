@@ -1,0 +1,102 @@
+# Runtime canary staging evidence reconciliation repository-only certification
+# Runtime canary service eligibility remediation post-matrix final certification
+# Runtime canary identity remediation post-matrix final certification
+# Runtime canary contract post-matrix final certification
+# Persistent activation post-matrix final certification
+name: ANA-A07 Freshness Window Authority
+# ANA-A07 final generated-matrix state certification
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/analytics/freshness-window-authority.js'
+      - 'backend/modules/analytics/dependency-watermark-authority.js'
+      - 'config/ana-a07-behavior-ord-watermark-authority.json'
+      - 'supabase/migrations/20260923224000_ana_a07_behavior_ord_dependency_watermarks.sql'
+      - 'supabase/migrations/20260923231000_ana_a07_behavior_ord_watermark_compatibility.sql'
+      - 'supabase/tests/041_ana_a07_behavior_ord_dependency_watermarks_validation.sql'
+      - 'config/ana-a07-behavior-ord-watermark-runtime-readiness.json'
+      - 'docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-RUNTIME-READINESS.md'
+      - 'scripts/audit-ana-a07-behavior-ord-watermark-runtime-readiness.js'
+      - 'scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js'
+      - 'docs/ANA-A07-BEHAVIOR-ORD-WATERMARK-AUTHORITY.md'
+      - 'config/ana-a07-freshness-window-authority.json'
+      - 'docs/ANA-A07-FRESHNESS-WINDOW-AUTHORITY.md'
+      - 'scripts/audit-ana-a07-freshness-window-authority.js'
+      - 'scripts/test-ana-a07-freshness-window-authority.js'
+      - 'config/ana-a07-a09-funnel-freshness-policy-candidate.json'
+      - 'supabase/migrations/20260924004500_ana_a07_a09_funnel_freshness_policy_activation.sql'
+      - 'supabase/tests/043_ana_a07_a09_funnel_freshness_policy_activation_validation.sql'
+      - 'docs/ANA-A07-A09-FUNNEL-FRESHNESS-POLICY-CANDIDATE.md'
+      - 'scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js'
+      - 'scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js'
+      - 'config/ana-a07-a09-funnel-runtime-canary-contract.json'
+      - 'reports/generated/ana-a07-a09-funnel-runtime-canary-staging-evidence.json'
+      - 'docs/ANA-A07-A09-FUNNEL-RUNTIME-CANARY-CONTRACT.md'
+      - 'supabase/tests/046_ana_a07_a09_funnel_runtime_canary_validation.sql'
+      - 'scripts/audit-ana-a07-a09-funnel-runtime-canary-contract.js'
+      - 'scripts/test-ana-a07-a09-funnel-runtime-canary-contract.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'reports/generated/ana-a07-a09-funnel-freshness-policy-activation-structure-runtime-evidence.json'
+      - 'reports/generated/ana-a07-watermark-concurrent-writer-canary-evidence.json'
+      - 'package.json'
+      - '.github/workflows/ana-a07-freshness-window-authority.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/analytics/freshness-window-authority.js
+          node --check backend/modules/analytics/dependency-watermark-authority.js
+          node --check scripts/audit-ana-a07-freshness-window-authority.js
+          node --check scripts/test-ana-a07-freshness-window-authority.js
+          node --check scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
+          node --check scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js
+          node --check scripts/audit-ana-a07-a09-funnel-runtime-canary-contract.js
+          node --check scripts/test-ana-a07-a09-funnel-runtime-canary-contract.js
+      - name: ANA-A07 audit
+        run: npm run audit:ana-a07-freshness-window-authority
+      - name: Runtime canary contract audit
+        run: npm run audit:ana-a07-a09-funnel-runtime-canary-contract
+      - name: Runtime canary contract conformance
+        run: npm run test:ana-a07-a09-funnel-runtime-canary-contract
+      - name: ANA-A07/A09 funnel freshness policy candidate audit
+        run: node scripts/audit-ana-a07-a09-funnel-freshness-policy-candidate.js
+      - name: ANA-A07/A09 funnel freshness policy candidate conformance
+        run: node scripts/test-ana-a07-a09-funnel-freshness-policy-candidate.js
+      - name: ANA-A07 watermark runtime candidate audit
+        run: node scripts/audit-ana-a07-behavior-ord-watermark-runtime-readiness.js
+      - name: ANA-A07 watermark runtime candidate conformance
+        run: node scripts/test-ana-a07-behavior-ord-watermark-runtime-readiness.js
+      - name: ANA-A07 conformance
+        run: npm run test:ana-a07-freshness-window-authority
+      - name: ANA-A05 regression
+        run: |
+          npm run audit:ana-a05-reconciliation-data-quality
+          npm run test:ana-a05-reconciliation-data-quality
+      - name: ANA-A06 regression
+        run: |
+          npm run audit:ana-a06-data-quality-ownership-gates
+          npm run test:ana-a06-data-quality-ownership-gates
+      - name: Domain matrix regression
+        run: npm run audit:domain-completion-matrix
+      - name: Diff hygiene
+        run: git diff --check

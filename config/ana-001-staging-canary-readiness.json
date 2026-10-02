@@ -1,0 +1,61 @@
+{
+  "contractId": "ana-001-staging-canary-v1",
+  "domain": "ANA-001",
+  "scope": "staging_only",
+  "status": "runner_ready_execution_not_authorized",
+  "productionAllowed": false,
+  "browserClientMustRemainDisabledDuringDirectCanary": true,
+  "requiredAuthorization": {
+    "environmentVariable": "DOKE_ANA_STAGING_CANARY_CONFIRM",
+    "exactPhrase": "execute-ana-staging-canary",
+    "genericContinuationAccepted": false
+  },
+  "requiredEnvironmentNames": [
+    "DOKE_ENVIRONMENT",
+    "DOKE_SUPABASE_URL",
+    "DOKE_SUPABASE_PROJECT_REF",
+    "DOKE_SUPABASE_ANON_KEY",
+    "DOKE_SUPABASE_SECRET_KEY",
+    "DOKE_STAGING_CLIENT_EMAIL",
+    "DOKE_STAGING_CLIENT_PASSWORD",
+    "DOKE_STAGING_PROFESSIONAL_EMAIL",
+    "DOKE_STAGING_PROFESSIONAL_PASSWORD",
+    "DOKE_ANA_STAGING_SEARCH_QUERY",
+    "DOKE_ANA_STAGING_SEARCH_SERVICE_ID",
+    "DOKE_ANA_STAGING_SERVICE_ID",
+    "DOKE_ANA_STAGING_OWNER_SERVICE_ID",
+    "DOKE_ANA_STAGING_ORDER_ID",
+    "DOKE_ANA_STAGING_WINDOW_START",
+    "DOKE_ANA_STAGING_WINDOW_END"
+  ],
+  "edgeFunctions": {
+    "search": "search-public-services-v2",
+    "analytics": "analytics-behavior-v1"
+  },
+  "cases": [
+    "client_password_login",
+    "analytics_session_issued",
+    "search_exposure_proof_received",
+    "valid_impression_accepted",
+    "exact_client_event_replay_returns_same_event",
+    "same_client_event_payload_drift_rejected",
+    "tampered_exposure_proof_rejected",
+    "quote_session_issued",
+    "structural_quote_progress_accepted",
+    "submitted_quote_matches_real_synthetic_order",
+    "professional_owner_login",
+    "owner_detail_traffic_excluded",
+    "order_health_projection_available",
+    "ord_reconciliation_executes",
+    "metric_snapshot_append_then_no_change"
+  ],
+  "reportPath": "reports/generated/ana-001-staging-canary.json",
+  "prohibited": {
+    "productionTargets": true,
+    "realUserCredentials": true,
+    "paymentMutation": true,
+    "anonymousIdentityStitching": true,
+    "sourceDomainMutation": true,
+    "browserClientActivation": true
+  }
+}

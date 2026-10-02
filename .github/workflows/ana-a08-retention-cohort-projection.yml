@@ -1,0 +1,101 @@
+# ANA-A08 retention snapshot publication candidate registered-matrix exact-head certification
+# ANA-A08 retention snapshot publication candidate post-matrix exact-head certification
+# ANA-A08 retention snapshot publication candidate certification
+name: ANA-A08 Retention Cohort Projection
+# ANA-A08 final generated-matrix state certification
+# ANA-A08 retention runtime projector candidate certification
+# ANA-A08 retention runtime projector candidate exact-head certification
+# ANA-A08 retention runtime projector staging evidence reconciliation certification
+# ANA-A08 staging evidence reconciliation exact-head certification
+# ANA-A08 repository runtime projection authority grant certification
+# ANA-A08 repository projection authority exact-head certification
+# ANA-A08 live retention runtime projection authority alignment candidate certification
+# ANA-A08 live projection alignment candidate exact-head certification
+# ANA-A08 live projection alignment staging evidence reconciliation certification
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/analytics/retention-cohort-projection.js'
+      - 'config/ana-a08-retention-cohort-projection.json'
+      - 'docs/ANA-A08-RETENTION-COHORT-PROJECTION.md'
+      - 'supabase/migrations/20260927010000_ana_a08_retention_cohort_projector.sql'
+      - 'supabase/tests/049_ana_a08_retention_cohort_projector_validation.sql'
+      - 'reports/generated/ana-a08-retention-runtime-projector-candidate-handoff.json'
+      - 'reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json'
+      - 'reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-candidate-handoff.json'
+      - 'reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence.json'
+      - 'config/ana-a08-retention-snapshot-publication-candidate.json'
+      - 'docs/ANA-A08-RETENTION-SNAPSHOT-PUBLICATION-CANDIDATE.md'
+      - 'reports/generated/ana-a08-retention-snapshot-publication-candidate-handoff.json'
+      - 'scripts/audit-ana-a08-retention-snapshot-publication-candidate.js'
+      - 'scripts/test-ana-a08-retention-snapshot-publication-candidate.js'
+      - 'scripts/test-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js'
+      - 'scripts/audit-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js'
+      - 'supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql'
+      - 'supabase/migrations/20260927021000_ana_a08_live_retention_runtime_projection_authority_alignment.sql'
+      - 'scripts/audit-ana-a08-retention-cohort-projection.js'
+      - 'scripts/test-ana-a08-retention-cohort-projection.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/ana-a08-retention-cohort-projection.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/analytics/retention-cohort-projection.js
+          node --check scripts/audit-ana-a08-retention-cohort-projection.js
+          node --check scripts/test-ana-a08-retention-cohort-projection.js
+          node --check scripts/audit-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js
+          node --check scripts/test-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js
+          node --check scripts/audit-ana-a08-retention-snapshot-publication-candidate.js
+          node --check scripts/test-ana-a08-retention-snapshot-publication-candidate.js
+      - name: ANA-A08 audit
+        run: npm run audit:ana-a08-retention-cohort-projection
+      - name: ANA-A08 conformance
+        run: npm run test:ana-a08-retention-cohort-projection
+      - name: Live retention runtime projection authority alignment candidate audit
+        run: node scripts/audit-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js
+      - name: Live retention runtime projection authority alignment candidate conformance
+        run: node scripts/test-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js
+      - name: Retention snapshot publication candidate audit
+        run: node scripts/audit-ana-a08-retention-snapshot-publication-candidate.js
+      - name: Retention snapshot publication candidate conformance
+        run: node scripts/test-ana-a08-retention-snapshot-publication-candidate.js
+      - name: ANA-A05 regression
+        run: |
+          npm run audit:ana-a05-reconciliation-data-quality
+          npm run test:ana-a05-reconciliation-data-quality
+      - name: ANA-A04 regression
+        run: |
+          npm run audit:ana-a04-marketplace-funnel-health-projections
+          npm run test:ana-a04-marketplace-funnel-health-projections
+      - name: ANA-A07 regression
+        run: |
+          npm run audit:ana-a07-freshness-window-authority
+          npm run test:ana-a07-freshness-window-authority
+      - name: Domain matrix regression
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check

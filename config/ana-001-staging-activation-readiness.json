@@ -1,0 +1,179 @@
+{
+  "contractId": "ana-001-staging-activation-readiness-v1",
+  "domain": "ANA-001",
+  "sourceHead": "afa396eb294b4063cb462e4edb7e01464f76eb80",
+  "scope": "repository_only",
+  "status": "staging_activation_in_progress_runtime_policy_blocked",
+  "executionModeAvailable": false,
+  "productionAllowed": false,
+  "requiredAuthorization": {
+    "environmentVariable": "DOKE_ANA_STAGING_AUTHORIZATION",
+    "exactPhrase": "authorize-ana-staging-canary",
+    "genericContinuationAccepted": false
+  },
+  "targetPolicy": {
+    "requiredEnvironment": "staging",
+    "targetMarkerEnvironmentVariable": "DOKE_ANA_TARGET_MARKER",
+    "allowedMarkers": [
+      "staging",
+      "stg",
+      "preview",
+      "sandbox",
+      "local"
+    ],
+    "productionMarkersForbidden": [
+      "prod",
+      "production"
+    ]
+  },
+  "artifacts": [
+    {
+      "kind": "migration",
+      "order": 1,
+      "path": "supabase/migrations/20260918232000_ana_a03_behavioral_event_ledger.sql",
+      "repositoryBlobSha": "89f92c627799d66b997346ca713264c8a5af39ab"
+    },
+    {
+      "kind": "migration",
+      "order": 2,
+      "path": "supabase/migrations/20260918233000_ana_a04_metric_projection_runtime.sql",
+      "repositoryBlobSha": "64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5"
+    },
+    {
+      "kind": "migration",
+      "order": 3,
+      "path": "supabase/migrations/20260918234000_ana_a05_reconciliation_runtime.sql",
+      "repositoryBlobSha": "3bc753fe72a9a031ca43664ac28c8a659920c7ac"
+    },
+    {
+      "kind": "migration",
+      "order": 4,
+      "path": "supabase/migrations/20260919002000_ana_a03_server_event_idempotency_hardening.sql",
+      "repositoryBlobSha": "59ff2a049a4a09fd0a340e2b131f92de6623cfd4"
+    },
+    {
+      "kind": "migration",
+      "order": 5,
+      "path": "supabase/migrations/20260919002100_ana_a05_reconciliation_dimension_hardening.sql",
+      "repositoryBlobSha": "854aede3d41b3ae56855b2dca25db20fa62f9346"
+    },
+    {
+      "kind": "edge_function",
+      "order": 6,
+      "path": "supabase/functions/search-public-services-v2/index.ts",
+      "repositoryBlobSha": "181b769a47063df0be4cbd1d87b5d9c49a35d456",
+      "functionName": "search-public-services-v2"
+    },
+    {
+      "kind": "edge_function",
+      "order": 7,
+      "path": "supabase/functions/analytics-behavior-v1/index.ts",
+      "repositoryBlobSha": "a73cb2fd29d53432abbac8252d4022a3de13805d",
+      "functionName": "analytics-behavior-v1"
+    }
+  ],
+  "requiredRuntimeEnvironmentNames": [
+    "DOKE_ANALYTICS_SESSION_SECRET",
+    "DOKE_ANALYTICS_EXPOSURE_SECRET",
+    "DOKE_ANALYTICS_SESSION_TTL_SECONDS",
+    "DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS",
+    "DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS",
+    "DOKE_ANALYTICS_RATE_LIMIT",
+    "DOKE_ANALYTICS_RATE_WINDOW_SECONDS",
+    "DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS"
+  ],
+  "activationSequence": [
+    "verify_repository_artifact_fingerprints",
+    "verify_explicit_staging_target_and_authorization",
+    "apply_A03_behavioral_event_ledger",
+    "apply_A04_metric_projection_runtime",
+    "apply_A05_reconciliation_runtime",
+    "apply_A03_server_event_idempotency_hardening",
+    "apply_A05_reconciliation_dimension_hardening",
+    "configure_runtime_policy_environment_in_staging",
+    "deploy_search_public_services_v2",
+    "deploy_analytics_behavior_v1",
+    "run_direct_edge_synthetic_canary_with_analytics_client_still_disabled",
+    "run_order_projection_and_reconciliation_canaries",
+    "enable_analytics_client_only_in_controlled_staging",
+    "run_browser_synthetic_canary",
+    "collect_evidence_then_reassess_maturity_3_gate"
+  ],
+  "syntheticCanaryRequirements": [
+    "authenticated synthetic user only",
+    "published synthetic service owned by another synthetic user",
+    "no persistent anonymous identity",
+    "no anonymous to authenticated stitching",
+    "valid search exposure impression and click accepted",
+    "tampered exposure proof rejected",
+    "same client event replay returns same event identity",
+    "same client event with changed payload is rejected",
+    "owner traffic is excluded",
+    "quote session emits structural progress only",
+    "quote submitted requires matching synthetic order",
+    "ORD projection reconciles one to one",
+    "metric append is no-op for unchanged fingerprints",
+    "stale unavailable and no-data states remain distinguishable",
+    "no production or real-user data is touched"
+  ],
+  "rollback": {
+    "primary": "disable analytics client and remove staging analytics runtime policy exposure",
+    "destructiveSchemaRollbackAllowed": false,
+    "searchMustRemainAvailableWhenAnalyticsUnavailable": true,
+    "canonicalSourceMutationAllowed": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "migrationsApplied": false,
+    "edgeFunctionsDeployed": false,
+    "stagingMutations": false,
+    "productionMutations": false,
+    "secretsRead": false,
+    "secretsWritten": false,
+    "clientActivated": false
+  },
+  "edgeGatewayPolicy": {
+    "verifyJwt": false,
+    "callerApiKey": "publishable",
+    "authenticatedIdentity": "user access token resolved inside Edge via auth.getUser",
+    "anonymousIdentity": "publishable-key bearer treated as anonymous after failed getUser",
+    "rationale": "Supabase publishable keys are not JWTs; built-in verify_jwt only validates legacy JWT-based keys."
+  },
+  "canonicalRuntimePolicy": {
+    "version": "ana-runtime-policy-v1",
+    "classification": "technical_security_and_integrity_not_data_retention",
+    "values": {
+      "DOKE_ANALYTICS_SESSION_TTL_SECONDS": 1800,
+      "DOKE_ANALYTICS_QUOTE_SESSION_TTL_SECONDS": 3600,
+      "DOKE_ANALYTICS_EXPOSURE_TTL_SECONDS": 300,
+      "DOKE_ANALYTICS_RATE_LIMIT": 120,
+      "DOKE_ANALYTICS_RATE_WINDOW_SECONDS": 60,
+      "DOKE_ANALYTICS_DEDUP_WINDOW_SECONDS": 60
+    },
+    "rationale": {
+      "session": "30 minutes limits the lifetime of an ephemeral analytics correlation envelope while preserving normal browsing continuity.",
+      "quoteSession": "60 minutes allows a realistic quote flow without creating cross-session identity.",
+      "exposure": "5 minutes limits replay of signed search exposure while allowing normal result-to-detail navigation.",
+      "rateLimit": "120 requests per 60 seconds tolerates normal multi-event interaction bursts while bounding automated abuse.",
+      "dedup": "60 seconds suppresses accidental repeated service-level behavior without collapsing distinct later intent."
+    },
+    "privacyBoundary": {
+      "persistentAnonymousIdentity": false,
+      "crossSessionAnonymousStitching": false,
+      "crossDeviceStitching": false,
+      "anonymousToAuthenticatedStitching": false,
+      "dataRetentionPolicyDefined": false,
+      "consentPolicyDefined": false,
+      "legalAuthority": "LEGAL-B03"
+    },
+    "secretPolicy": {
+      "minimumEntropyBits": 256,
+      "distinctSessionAndExposureSecrets": true,
+      "repositoryStorageForbidden": true,
+      "clientExposureForbidden": true,
+      "stagingAndProductionReuseForbidden": true,
+      "rotationRequiresControlledCanary": true
+    }
+  }
+}

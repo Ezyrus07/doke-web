@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('fs');const path=require('path');const sql=fs.readFileSync(path.join(__dirname,'..','supabase','migrations','20260918233000_ana_a04_metric_projection_runtime.sql'),'utf8');
+const checks=[];const check=(n,v)=>checks.push({name:n,passed:Boolean(v)});
+check('no browser snapshot access',sql.includes('revoke all on table private.analytics_metric_snapshots_v1 from public, anon, authenticated, service_role'));
+check('service role snapshot select',sql.includes('grant select on table private.analytics_metric_snapshots_v1 to service_role'));
+check('append service role only',sql.includes('grant execute on function public.append_analytics_metric_snapshot_v1(jsonb) to service_role'));
+check('compute service role only',sql.includes('grant execute on function public.compute_analytics_order_health_v1(timestamptz,timestamptz,text,text) to service_role'));
+check('no canonical order mutation',!sql.match(/update\s+public\.orders/i)&&!sql.match(/delete\s+from\s+public\.orders/i));
+check('no order domain mutation',!sql.match(/update\s+private\.order_domain_events/i)&&!sql.match(/delete\s+from\s+private\.order_domain_events/i));
+check('metric snapshots append only',!sql.match(/update\s+private\.analytics_metric_snapshots_v1/i)&&!sql.match(/delete\s+from\s+private\.analytics_metric_snapshots_v1/i));check('concurrent append fail-closed',sql.includes('exception when unique_violation')&&sql.includes('DOKE_ANALYTICS_METRIC_REVISION_CONFLICT'));
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);console.log(JSON.stringify({contractId:'ana-a04-runtime-readiness-v1',total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));if(failed.length)process.exitCode=1;

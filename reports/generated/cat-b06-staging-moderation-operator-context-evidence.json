@@ -1,0 +1,79 @@
+{
+  "contractId": "cat-b06-moderation-operator-context-staging-evidence-v1",
+  "domain": "CAT-001",
+  "blocker": "CAT-B06",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "observedAt": "2026-09-23T00:44:21.298472+00:00",
+  "repositoryHeadAtExecution": "d2538924e545cee8a5a75c14aa95c9618e0c6eeb",
+  "authorization": "authorize-cat-b06-moderation-operator-context-staging",
+  "migration": {
+    "repositoryPath": "supabase/migrations/20260923002000_cat_b06_moderation_operator_context.sql",
+    "appliedVersion": "20260923003844",
+    "appliedName": "cat_b06_moderation_operator_context"
+  },
+  "structuralValidation": {
+    "result": "PASS",
+    "wrapperCount": 6,
+    "allRevalidateCanonicalOperator": true,
+    "allSetJwtSub": true,
+    "allSetJwtRole": true,
+    "allSetJwtClaims": true,
+    "serviceRoleExecute": true,
+    "authenticatedExecute": false,
+    "anonExecute": false
+  },
+  "readCanary": {
+    "result": "PASS",
+    "queuePayloadType": "array",
+    "auditPayloadType": "array",
+    "detailPayloadType": "object",
+    "subClaimMaterialized": true,
+    "downstreamRoleResolves": true
+  },
+  "mutationCanaries": {
+    "result": "PASS",
+    "rollbackOnly": true,
+    "approve": {
+      "stateAppliedInsideTransaction": true,
+      "reviewedByMatchesOperator": true,
+      "servicePointsToApprovedVersion": true
+    },
+    "requestChanges": {
+      "stateAppliedInsideTransaction": true,
+      "reviewedByMatchesOperator": true,
+      "serviceModerationStateUpdated": true
+    },
+    "reject": {
+      "stateAppliedInsideTransaction": true,
+      "reviewedByMatchesOperator": true,
+      "pendingVersionCleared": true
+    }
+  },
+  "negativeCanary": {
+    "result": "PASS",
+    "activeNonOperatorDenied": true,
+    "error": "DOKE_SERVICE_MODERATION_OPERATOR_REQUIRED"
+  },
+  "postCanaryState": {
+    "catLedgerRows": 11,
+    "pendingReviewCount": 1,
+    "approvedRemediationVersionPreserved": true,
+    "pendingRemediationVersionPreserved": true,
+    "canaryReasonPersisted": false,
+    "canaryNotificationPersisted": false
+  },
+  "securityBoundary": {
+    "triggerExternalIoMarkers": false,
+    "catB06WrappersInSecurityAdvisorFindings": false,
+    "unrelatedAdvisorFindingsPreserved": true
+  },
+  "boundaries": {
+    "productionChanged": false,
+    "edgeFunctionDeployment": false,
+    "browserAnalyticsActivated": false,
+    "anonymousIdentityStitching": false,
+    "pullRequestMerge": false
+  },
+  "result": "staging_runtime_pass"
+}

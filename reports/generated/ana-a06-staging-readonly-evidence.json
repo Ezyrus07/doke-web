@@ -1,0 +1,106 @@
+{
+  "contractId": "ana-a06-staging-readonly-evidence-v1",
+  "domain": "ANA-001",
+  "parentContract": "ana-a06-data-quality-ownership-gates-v1",
+  "capturedAt": "2026-09-22T00:42:07.311675+00:00",
+  "authorization": {
+    "phrase": "authorize-ana-a06-staging-readonly-gate",
+    "consumed": true,
+    "genericContinuationAccepted": false
+  },
+  "target": {
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "environment": "staging",
+    "projectStatus": "ACTIVE_HEALTHY"
+  },
+  "execution": {
+    "mode": "read_only",
+    "stagingReads": true,
+    "stagingMutations": false,
+    "migrationsApplied": false,
+    "rpcMutationsInvoked": false,
+    "sourceDomainMutations": false,
+    "browserClientActivated": false,
+    "anonymousIdentityStitching": false,
+    "productionChanges": false,
+    "pullRequestMerge": false
+  },
+  "source": {
+    "reconciliationTable": "private.analytics_reconciliation_runs_v1",
+    "rollupTable": "private.analytics_data_quality_rollups_v1",
+    "observedReconciliationRuns": 7,
+    "observedRollupRows": 14,
+    "requiredMetrics": [
+      "analytics_projection_missing_rate",
+      "analytics_reconciliation_mismatch_rate"
+    ],
+    "unknownMetricRows": 0,
+    "outOfRangeRatioRows": 0,
+    "duplicateRequiredMetricGroups": 0
+  },
+  "latestObservation": {
+    "selection": "most_recent_coherent_source_run_by_observed_at",
+    "selectionAuthority": "diagnostic_conservative_observation_not_freshness_policy",
+    "runId": "ebe817a0-a7a8-445e-9e59-623d417aa663",
+    "windowStart": "2026-09-21T14:55:49.913+00:00",
+    "windowEnd": "2026-09-21T17:00:49.913+00:00",
+    "observedAt": "2026-09-21T16:55:56.923384+00:00",
+    "sourceDomain": "ORD-001",
+    "projectionDomain": "ANA-001",
+    "sourceCount": 0,
+    "projectionCount": 0,
+    "reconciliationState": "matched",
+    "divergenceCountTotal": 0,
+    "rollups": [
+      {
+        "metricKey": "analytics_projection_missing_rate",
+        "sampleCount": 0,
+        "value": null,
+        "healthState": "no_data",
+        "gateState": "hold",
+        "gateReason": "no_data"
+      },
+      {
+        "metricKey": "analytics_reconciliation_mismatch_rate",
+        "sampleCount": 0,
+        "value": null,
+        "healthState": "no_data",
+        "gateState": "hold",
+        "gateReason": "no_data"
+      }
+    ],
+    "overallGateState": "hold"
+  },
+  "historicalContext": {
+    "totalRuns": 7,
+    "passRunsWithMinimumSample": 2,
+    "noDataRuns": 5,
+    "latestPassRunId": "c818cedf-d2cb-43ac-9d1f-e50aeac1318e",
+    "latestPassObservedAt": "2026-09-19T01:48:39.247092+00:00",
+    "latestPassSampleCount": 1,
+    "latestPassProjectionMissingRate": 0,
+    "latestPassReconciliationMismatchRate": 0,
+    "canonicalOrderFactCount": 1,
+    "canonicalOrderFactObservedAt": "2026-09-19T01:05:27.296532+00:00",
+    "projectionFactCount": 1,
+    "projectionFactObservedAt": "2026-09-19T01:05:27.296532+00:00",
+    "interpretation": "The current hold is caused by a zero-sample latest window, not by a known ORD-to-ANA divergence. Historical passing runs are retained as evidence but are not cherry-picked to override the latest no-data observation."
+  },
+  "gateConclusion": {
+    "state": "hold",
+    "maturityBefore": 3,
+    "maturityAfter": 3,
+    "promotionAuthorized": false,
+    "blockerType": "insufficient_current_sample",
+    "rootCause": "The latest observed reconciliation window contains no canonical ORD facts or ANA projections, so both required metrics are no_data with sample_count=0. The A06 minimum sample floor is one.",
+    "nextControlledStep": "A separately authorized staging reconciliation canary may append a fresh A05 reconciliation run and the two associated rollups over the already-existing synthetic ORD/ANA fact window. It must not mutate ORD source facts."
+  },
+  "nextAuthorization": {
+    "phrase": "authorize-ana-a06-staging-reconciliation-canary",
+    "stagingMutationRequired": true,
+    "allowedMutation": "append one ANA-A05 reconciliation run and its two data-quality rollups only",
+    "sourceMutationAllowed": false,
+    "productionAllowed": false
+  }
+}

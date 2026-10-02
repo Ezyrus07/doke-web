@@ -103,6 +103,39 @@
     document.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
   }
 
+  function analyticsApi() {
+    return Doke.repositories && Doke.repositories.analytics || null;
+  }
+
+  function wireAnalyticsCard(card, item) {
+    var analytics = analyticsApi();
+    if (!card || !item || !item.analyticsExposureProof || !analytics) return;
+    var impressionRecorded = false;
+    var recordImpression = function () {
+      if (impressionRecorded || typeof analytics.trackSearchImpression !== 'function') return;
+      impressionRecorded = true;
+      Promise.resolve(analytics.trackSearchImpression(item)).catch(function () {});
+    };
+    if (typeof root.IntersectionObserver === 'function') {
+      var observer = new root.IntersectionObserver(function (entries) {
+        if (!entries.some(function (entry) { return entry.isIntersecting && entry.intersectionRatio >= 0.5; })) return;
+        observer.disconnect();
+        recordImpression();
+      }, { threshold: [0.5] });
+      observer.observe(card);
+    } else {
+      recordImpression();
+    }
+    var cta = card.querySelector && card.querySelector('.doke-ad-card__cta');
+    if (cta && typeof analytics.trackSearchClick === 'function') {
+      cta.addEventListener('click', function () {
+        Promise.resolve(analytics.trackSearchClick(item)).catch(function () {});
+      });
+    }
+  }
+
+
+
   function applySuccess(context, response, append, epoch, options) {
     if (epoch !== state.epoch) return state.items.slice();
     options = options || {};
@@ -117,7 +150,9 @@
     }
 
     additions.forEach(function (item) {
-      context.grid.appendChild(context.createCard(item));
+      var card = context.createCard(item);
+      context.grid.appendChild(card);
+      wireAnalyticsCard(card, item);
     });
     state.items = append ? state.items.concat(additions) : additions.slice();
     state.mode = fallback ? 'fallback' : 'direct';

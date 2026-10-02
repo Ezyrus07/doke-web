@@ -1,0 +1,73 @@
+name: ANA-001 Defense-in-Depth Hardening Readiness
+# ANA-001 hardening closure certification
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+    paths:
+      - 'config/ana-001-defense-in-depth-hardening-readiness.json'
+      - 'scripts/audit-ana-001-defense-in-depth-hardening-readiness.js'
+      - 'scripts/test-ana-001-defense-in-depth-hardening-readiness.js'
+      - 'scripts/plan-ana-001-defense-in-depth-hardening.js'
+      - 'supabase/migrations/20260921134000_ana_001_private_table_defense_in_depth.sql'
+      - 'docs/ANA-001-STAGING-ACTIVATION-EVIDENCE.md'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - '.github/workflows/ana-001-defense-in-depth-hardening-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax
+        run: |
+          node --check scripts/audit-ana-001-defense-in-depth-hardening-readiness.js
+          node --check scripts/test-ana-001-defense-in-depth-hardening-readiness.js
+          node --check scripts/plan-ana-001-defense-in-depth-hardening.js
+
+      - name: Readiness audit
+        run: npm run audit:ana-001-defense-in-depth-hardening-readiness
+
+      - name: Negative conformance
+        run: npm run test:ana-001-defense-in-depth-hardening-readiness
+
+      - name: Dry-run plan
+        run: npm run plan:ana-001-defense-in-depth-hardening:dry-run
+
+      - name: Direct execution remains blocked
+        shell: bash
+        run: |
+          set +e
+          node scripts/plan-ana-001-defense-in-depth-hardening.js --execute >/tmp/ana-hardening-execute.out 2>&1
+          code=$?
+          set -e
+          test "$code" = "2"
+          grep -q 'ANA_HARDENING_EXECUTION_REQUIRES_APPROVED_MIGRATION_EXECUTOR' /tmp/ana-hardening-execute.out
+
+      - name: Domain matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check

@@ -1,0 +1,61 @@
+name: ANA-A10 CAT Liquidity Projection
+# staging runtime canary certified; policy threshold intentionally remains unset
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/analytics/marketplace-health-projection.js'
+      - 'config/ana-a10-cat-liquidity-projection.json'
+      - 'config/ana-a10-cat-liquidity-runtime-readiness.json'
+      - 'supabase/migrations/20260922140000_ana_a10_cat_liquidity_runtime.sql'
+      - 'supabase/migrations/20260922143000_ana_a10_cat_liquidity_runtime_compatibility.sql'
+      - 'supabase/tests/032_ana_a10_cat_liquidity_runtime_validation.sql'
+      - 'scripts/audit-ana-a10-cat-liquidity-runtime-readiness.js'
+      - 'scripts/test-ana-a10-cat-liquidity-runtime-readiness.js'
+      - 'docs/ANA-A10-CAT-LIQUIDITY-RUNTIME-READINESS.md'
+      - 'docs/ANA-A10-CAT-LIQUIDITY-PROJECTION.md'
+      - 'scripts/audit-ana-a10-cat-liquidity-projection.js'
+      - 'scripts/test-ana-a10-cat-liquidity-projection.js'
+      - 'config/ana-a04-marketplace-funnel-health-projections.json'
+      - 'config/ana-a07-freshness-window-authority.json'
+      - 'config/ana-a09-canonical-funnel-projection.json'
+      - 'config/cat-a06-listing-visibility-timeline.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/ana-a10-cat-liquidity-projection.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repository-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: |
+          node --check backend/modules/analytics/marketplace-health-projection.js
+          node --check scripts/audit-ana-a10-cat-liquidity-projection.js
+          node --check scripts/test-ana-a10-cat-liquidity-projection.js
+      - run: npm run audit:ana-a10-cat-liquidity-projection
+      - run: npm run test:ana-a10-cat-liquidity-projection
+      - run: npm run audit:ana-a10-cat-liquidity-runtime-readiness
+      - run: npm run test:ana-a10-cat-liquidity-runtime-readiness
+      - run: |
+          npm run audit:cat-a06-listing-visibility-timeline
+          npm run test:cat-a06-listing-visibility-timeline
+          npm run audit:ana-a04-marketplace-funnel-health-projections
+          npm run test:ana-a04-marketplace-funnel-health-projections
+          npm run audit:ana-a07-freshness-window-authority
+          npm run test:ana-a07-freshness-window-authority
+          npm run audit:ana-a09-canonical-funnel-projection
+          npm run test:ana-a09-canonical-funnel-projection
+      - run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+      - run: git diff --check

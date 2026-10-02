@@ -1,0 +1,37 @@
+'use strict';
+const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
+const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-canonical-funnel-snapshot-first-append-canary-contract.json'),'utf8'));
+const t=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-canonical-funnel-snapshot-first-append-canary-authorization-template.json'),'utf8'));
+const e=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-canonical-funnel-snapshot-first-append-canary-staging-evidence.json'),'utf8'));
+const replay=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-canonical-funnel-snapshot-replay-canary-staging-evidence.json'),'utf8'));
+const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
+check('window not preselected',c.windowPolicy.actualWindowSelectedNow===false&&c.windowPolicy.exactWindowRequired===true);
+check('recommended window bounded',c.windowPolicy.recommendedDurationSeconds===300&&c.windowPolicy.timezone==='UTC');
+check('empty target required',c.preflight.expectedPreexistingTargetSnapshots===0&&c.windowPolicy.rejectIfAnyTargetSnapshotAlreadyExists===true);
+check('eight payloads required',c.preflight.expectedPayloadCount===8&&c.execution.maxSnapshotWrites===8);
+check('first invocation only',c.execution.invocationCount===1&&c.execution.replayInFirstCanaryAllowed===false);
+check('first result strict',c.execution.expectedProcessedCount===8&&c.execution.expectedAppendedCount===8&&c.execution.expectedNoChangeCount===0&&c.execution.expectedInitialRevision===1);
+check('transaction atomic',c.execution.transactionAtomic===true&&c.execution.partialCommitAllowed===false);
+check('conflict fails canary',c.failureSemantics.sqlState40001MeansConcurrentRevisionConflictAndCanaryFailure===true&&c.failureSemantics.unexpectedNoChangeMeansCanaryFailure===true);
+check('no auto retry',c.failureSemantics.noAutomaticRetry===true&&c.failureSemantics.doNotRetryWithSameAuthorizationAfterWindowChange===true);
+check('postflight snapshot ids required',c.postflight.evidenceMustRecordExactSnapshotIds===true);
+check('template starts denied',t.boundaries.appendInvocationAuthorized===false&&t.boundaries.snapshotMutationAuthorized===false&&t.boundaries.maxSnapshotWrites===0);
+check('template source bindings exact',t.payloadAdapterStagingEvidenceBlobSha==='ddd29090dde2a3b131d8cc1871b3eb82843c130d'&&t.a04SnapshotRuntimeBlobSha==='64da0e7aec1ea15c9a58656ab1b0a63c8b7065a5'&&t.a05ReconciliationRuntimeBlobSha==='3bc753fe72a9a031ca43664ac28c8a659920c7ac');
+check('future token cannot be inferred',c.futureStagingAuthorization.genericProceedIsAuthorization===false&&c.futureStagingAuthorization.previousHeadAuthorizationReusable===false&&c.futureStagingAuthorization.exactWindowRequired===true);
+check('no authority now',c.futureStagingAuthorization.stagingMutationAuthorizedNow===false&&c.futureStagingAuthorization.appendInvocationAuthorizedNow===false&&c.futureStagingAuthorization.snapshotMutationAuthorizedNow===false);
+check('maturity unchanged',c.maturity.before===3&&c.maturity.after===3&&c.maturity.promoted===false);
+
+check('first append evidence pass',e.execution.status==='PASS'&&e.execution.processedCount===8&&e.execution.appendedCount===8&&e.execution.noChangeCount===0);
+check('first append exact persisted shape',e.postflight.targetRowCount===8&&e.postflight.distinctMetricCount===8&&e.postflight.revisionOneCount===8&&e.postflight.supersedesNullCount===8&&e.postflight.returnedSnapshotIdsMatchPersistedRows===true);
+check('first append ids unique',Array.isArray(e.execution.snapshotIds)&&e.execution.snapshotIds.length===8&&new Set(e.execution.snapshotIds).size===8);
+check('first append remains bounded',e.postflight.a09SchedulerCount===0&&e.postflight.runtimeSnapshotAuthority===false&&e.postflight.snapshotPublicationAuthority===false&&e.reconciliation.productionAuthority===false&&e.reconciliation.mergeAuthority===false&&e.reconciliation.readyForReviewAuthority===false);
+check('replay still separate',e.execution.successfulInvokerCalls===1&&c.stagingFirstAppendCanaryEvidence.replayExercised===false&&c.stagingFirstAppendCanaryEvidence.replayRequiresSeparateAuthorization===true);
+
+check('replay pass',replay.execution.status==='PASS'&&replay.execution.processedCount===8&&replay.execution.appendedCount===0&&replay.execution.noChangeCount===8);
+check('replay no write persisted',replay.execution.committedSnapshotWrites===0&&replay.postflight.targetRowCount===8&&replay.postflight.revisionOneCount===8&&replay.postflight.higherRevisionCount===0&&replay.postflight.noNewSnapshotRowPersisted===true);
+check('replay same ids',replay.execution.snapshotIds.length===8&&new Set(replay.execution.snapshotIds).size===8&&JSON.stringify([...replay.execution.snapshotIds].sort())===JSON.stringify([...e.execution.snapshotIds].sort()));
+check('replay rollback guard enforced',replay.execution.rollbackGuard===1&&replay.replayAuthorization.unexpectedAppendRollbackRequired===true);
+check('replay boundaries closed',replay.postflight.a09SchedulerCount===0&&replay.postflight.runtimeSnapshotAuthority===false&&replay.postflight.snapshotPublicationAuthority===false&&replay.reconciliation.replayInvocationAuthority===false&&replay.reconciliation.stagingAuthority===false&&replay.reconciliation.productionAuthority===false);
+const failed=checks.filter(x=>!x.passed).map(x=>x.name);
+console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
+if(failed.length)process.exitCode=1;
