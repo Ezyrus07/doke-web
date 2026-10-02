@@ -90,7 +90,7 @@ function conversationFixtures() {
           id: 'accepted-message-2',
           senderId: PROFESSIONAL_ID,
           author: 'Profissional Aceito',
-          text: 'Levo todo o material necessário.',
+          text: 'Levo o material necessário.',
           createdAt: '2026-10-01T12:02:00.000Z',
           time: '12:02',
         },
