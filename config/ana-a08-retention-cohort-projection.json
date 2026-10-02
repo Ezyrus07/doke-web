@@ -117,7 +117,7 @@
   "maturity": {
     "before": 3,
     "after": 3,
-    "reason": "The ANA-A08 compute-only retention projector is installed, validation 049 and 050 pass in staging, repository runtime projection authority is granted, and the live runtimeProjectionAuthority marker is aligned true. Runtime snapshot/publication/scheduler remain false, so ANA stays 3/6."
+    "reason": "Retention compute authority is live and the snapshot publication contract is now repository-defined, but both retention freshness thresholds remain pending and no runtime snapshot/publication/scheduler authority exists; ANA stays 3/6."
   },
   "runtimeCandidate": {
     "contractId": "ana-a08-retention-runtime-projector-candidate-v1",
@@ -174,7 +174,7 @@
     "mergeAuthority": false,
     "readyForReviewAuthority": false
   },
-  "nextGate": "Treat ANA-A08 live runtime projection authority-marker alignment as staging-certified and repository-reconciled. Do not reopen it without drift. Runtime snapshot authority and snapshot publication remain false and require separate explicit authorization; ANA remains 3/6.",
+  "nextGate": "Treat the retention snapshot publication contract candidate as repository-prepared. Next prepare an explicit retention freshness/publication policy candidate; do not create an adapter migration, append snapshots, schedule retention publication, touch staging/production, or promote ANA without separate authority.",
   "stagingEvidence": {
     "artifact": "reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json",
     "blobSha": "3249080dec64c1aeec1119309dbf1db9992fb85c",
@@ -335,5 +335,30 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "readyForReviewAuthority": false
+  },
+  "snapshotPublicationCandidate": {
+    "contractId": "ana-a08-retention-snapshot-publication-candidate-v1",
+    "configPath": "config/ana-a08-retention-snapshot-publication-candidate.json",
+    "configBlobSha": "fbad19daaa083ed5e87440c3f3cc2dba283d4d6d",
+    "docsPath": "docs/ANA-A08-RETENTION-SNAPSHOT-PUBLICATION-CANDIDATE.md",
+    "handoffPath": "reports/generated/ana-a08-retention-snapshot-publication-candidate-handoff.json",
+    "handoffBlobSha": "cb19d81eb84c36cebb75d19efd8d3a061bd44623",
+    "auditPath": "scripts/audit-ana-a08-retention-snapshot-publication-candidate.js",
+    "testPath": "scripts/test-ana-a08-retention-snapshot-publication-candidate.js",
+    "candidatePrepared": true,
+    "migrationCreated": false,
+    "appendInvoked": false,
+    "retentionSnapshotCountAtPreparation": 0,
+    "retentionCronCountAtPreparation": 0,
+    "zeroDenominatorMustRemainNull": true,
+    "retentionFreshnessPolicyPending": true,
+    "appendEligibility": "blocked_policy_pending",
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "maturityPromotionAuthority": false
   }
 }

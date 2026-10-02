@@ -1,0 +1,64 @@
+{
+  "handoffId": "ana-a08-retention-snapshot-publication-candidate-v1",
+  "domain": "ANA-001",
+  "front": "ANA-A08",
+  "sourceCheckpoint": {
+    "pr": 488,
+    "branch": "ana/ana-001-foundation",
+    "head": "2615a725c224b80bfd9e79d870ac0baffb02e8fc",
+    "baseSha": "e0bd30e9d73378506a264fc0128de288435769f8",
+    "matrixVersion": "1.3.132",
+    "anaMaturity": "3/6"
+  },
+  "authorization": {
+    "digestSha256": "18561eba199d671b574939585bf8d4004efb275cf67986068899833d12545b96",
+    "repositoryWriteAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "maturityPromotionAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "artifacts": {
+    "configPath": "config/ana-a08-retention-snapshot-publication-candidate.json",
+    "configBlobSha": "fbad19daaa083ed5e87440c3f3cc2dba283d4d6d",
+    "docsPath": "docs/ANA-A08-RETENTION-SNAPSHOT-PUBLICATION-CANDIDATE.md",
+    "docsBlobSha": "4f9822369821b188066d85cacf465472d3a3ba54",
+    "auditPath": "scripts/audit-ana-a08-retention-snapshot-publication-candidate.js",
+    "auditBlobSha": "3384473f1aabfa59364d315b849902155219a4ba",
+    "testPath": "scripts/test-ana-a08-retention-snapshot-publication-candidate.js",
+    "testBlobSha": "6cddd34ad9e298f4c8310ea9f5a6be1c023661f9"
+  },
+  "baseline": {
+    "retentionSnapshotCount": 0,
+    "retentionCronCount": 0,
+    "runtimeProjectionAuthority": true,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "schedulerAuthority": false
+  },
+  "decisions": [
+    "Reuse A04 append-only snapshot shape and A05 revision/fingerprint semantics.",
+    "Preserve zero-denominator retention as null value, never numeric zero.",
+    "Require explicit caller-supplied publication windows; do not invent cadence.",
+    "Preserve A07 order watermark as effective dataThrough authority.",
+    "Fail closed while retention freshness thresholds remain pending.",
+    "Do not create a migration or validation file in this lot."
+  ],
+  "blockers": [
+    "A07 retention.repeat_request_30d freshness threshold is pending.",
+    "A07 retention.repeat_completion_90d freshness threshold is pending.",
+    "No retention runtime snapshot/publication authority exists.",
+    "No retention scheduler authority exists."
+  ],
+  "writesPerformed": {
+    "repository": true,
+    "staging": false,
+    "production": false
+  },
+  "nextSafeAction": "Prepare a repository-only retention freshness/publication policy candidate. It must explicitly bind retention metric maxLag/cadence/effective-window semantics before any adapter migration, append invocation or scheduler can be authorized."
+}

@@ -1,3 +1,4 @@
+# ANA-A08 retention snapshot publication candidate certification
 name: ANA-A08 Retention Cohort Projection
 # ANA-A08 final generated-matrix state certification
 # ANA-A08 retention runtime projector candidate certification
@@ -22,6 +23,11 @@ on:
       - 'reports/generated/ana-a08-retention-runtime-projector-staging-evidence.json'
       - 'reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-candidate-handoff.json'
       - 'reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence.json'
+      - 'config/ana-a08-retention-snapshot-publication-candidate.json'
+      - 'docs/ANA-A08-RETENTION-SNAPSHOT-PUBLICATION-CANDIDATE.md'
+      - 'reports/generated/ana-a08-retention-snapshot-publication-candidate-handoff.json'
+      - 'scripts/audit-ana-a08-retention-snapshot-publication-candidate.js'
+      - 'scripts/test-ana-a08-retention-snapshot-publication-candidate.js'
       - 'scripts/test-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js'
       - 'scripts/audit-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js'
       - 'supabase/tests/050_ana_a08_live_retention_runtime_projection_authority_alignment_validation.sql'
@@ -59,6 +65,8 @@ jobs:
           node --check scripts/test-ana-a08-retention-cohort-projection.js
           node --check scripts/audit-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js
           node --check scripts/test-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js
+          node --check scripts/audit-ana-a08-retention-snapshot-publication-candidate.js
+          node --check scripts/test-ana-a08-retention-snapshot-publication-candidate.js
       - name: ANA-A08 audit
         run: npm run audit:ana-a08-retention-cohort-projection
       - name: ANA-A08 conformance
@@ -67,6 +75,14 @@ jobs:
         run: node scripts/audit-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js
       - name: Live retention runtime projection authority alignment candidate conformance
         run: node scripts/test-ana-a08-live-retention-runtime-projection-authority-alignment-candidate.js
+      - name: Retention snapshot publication candidate audit
+        run: node scripts/audit-ana-a08-retention-snapshot-publication-candidate.js
+      - name: Retention snapshot publication candidate conformance
+        run: node scripts/test-ana-a08-retention-snapshot-publication-candidate.js
+      - name: ANA-A05 regression
+        run: |
+          npm run audit:ana-a05-reconciliation-data-quality
+          npm run test:ana-a05-reconciliation-data-quality
       - name: ANA-A04 regression
         run: |
           npm run audit:ana-a04-marketplace-funnel-health-projections

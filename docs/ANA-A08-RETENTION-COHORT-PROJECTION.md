@@ -107,3 +107,14 @@ Current staging-certified state is `migrationApplied=true`, `stagingValidated=tr
 ## Live alignment staging evidence
 
 The canonical post-alignment staging evidence is `reports/generated/ana-a08-live-retention-runtime-projection-authority-alignment-staging-evidence.json` (blob `203f2471bb9fceb5b5f7438e540fae8676174171`). Staging migration version `20260927223828` and validation 050 PASS prove exactly 2 `runtimeProjectionAuthority=true` markers and 0 false markers, service-role-only execution, zero retention cron jobs, zero source mutation and zero snapshot append. The earlier validation-049 evidence is preserved as the pre-alignment historical observation.
+
+
+## Retention snapshot publication candidate
+
+A repository-only snapshot publication contract is now frozen at `config/ana-a08-retention-snapshot-publication-candidate.json`.
+
+It reuses the A04 append-only payload shape and A05 revision/fingerprint semantics, preserves A07 watermark authority, and explicitly keeps zero-denominator retention as `value=null`.
+
+The contract is deliberately fail-closed because A07 still records both retention metrics with `thresholdStatus=pending`. No cadence, `maxLagSeconds`, projection-delay budget or effective window is invented. Consequently no adapter migration was created, no append RPC was invoked, no retention cron exists, and runtime snapshot/publication/scheduler authority remain false.
+
+The next separate gate is a repository-only retention freshness/publication policy candidate. ANA remains **3/6**.
