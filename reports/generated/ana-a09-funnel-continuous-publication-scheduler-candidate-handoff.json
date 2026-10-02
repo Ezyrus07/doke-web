@@ -17,7 +17,7 @@
   "candidate": {
     "sourceHead": "01fb50d8f35276031efec3d252a4b91672aa8dcc",
     "configPath": "config/ana-a09-funnel-continuous-publication-scheduler-candidate.json",
-    "configBlobSha": "57a928db2401bb0e3f477f3d696357c28936fa7c",
+    "configBlobSha": "7d644beae2d0ac8d9948a4d53bb1ef5495314132",
     "docsPath": "docs/ANA-A09-FUNNEL-CONTINUOUS-PUBLICATION-SCHEDULER-CANDIDATE.md",
     "docsBlobSha": "fa14061b7fa36505fe9f90bb602cf0ab1d977c73",
     "auditPath": "scripts/audit-ana-a09-funnel-continuous-publication-scheduler-candidate.js",
@@ -70,13 +70,13 @@
     "promoted": false
   },
   "residualRisks": [
-    "The activation boundary is installed and validation 056 passed in staging, but the persistent A09 scheduler remains deliberately unactivated.",
-    "Continuous catch-up under a persistent A09 cron has not been exercised because scheduler activation authority remains false.",
-    "Staging currently has six active cron jobs; a future activation must re-read exact cron headroom and conflict scope immediately before invoking the activation function.",
-    "The reconciled evidence must pass exact-head repository certification before any scheduler-activation authorization is considered."
+    "The staging scheduler is active and four observed runs succeeded, but the historical catch-up backlog remains open; the planner still returns three missing windows per bounded invocation.",
+    "Snapshot count is expected to continue increasing while backlog catch-up proceeds, so later observations must not treat a higher count alone as drift.",
+    "The scheduler currently raises active cron jobs from six to seven, remaining below the project's conservative eight-job activation gate; future scheduler additions or cadence changes require a fresh headroom review.",
+    "This reconciliation does not certify production, merge readiness, maturity promotion, or long-duration operational reliability."
   ],
-  "nextSafeAction": "Certify this reconciled staging evidence on the exact resulting repository HEAD. If green, require a separate explicit exact-head scheduler-activation authorization with a fresh staging drift/headroom preflight. No production, merge or Ready for review authority is implied.",
-  "status": "staging_migration_applied_validation_056_pass_evidence_reconciled_pending_exact_head_certification",
+  "nextSafeAction": "Certify the activation evidence on the exact resulting repository HEAD. If green, continue read-only operational observation until the planner backlog closes or an anomaly occurs. Any scheduler mutation, disablement, cadence change, production action, merge or maturity promotion requires separate authority.",
+  "status": "continuous_scheduler_active_staging_activation_evidence_reconciled_pending_exact_head_certification",
   "migrationImplementationAuthorization": {
     "authorizedSourceHead": "77c6ef87b8e773d2031631078169ad0bbc8c1a1c",
     "digestSha256": "ec041cc99a84065e56f9816781397de7538a7cc6a174f35ed576ce99201955e3",
@@ -132,6 +132,37 @@
   "evidenceReconciliationAuthorization": {
     "authorizedSourceHead": "093b38cd1c868eba4e4e431a9032dd4e3c6122da",
     "digestSha256": "64fb8e4772ff2d0e0e0a9f63ea13aa6807fac70a01ab727fadf9206710dc44bd",
+    "repositoryWriteAuthority": true,
+    "schedulerActivationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "stagingRuntimeActivation": {
+    "evidencePath": "reports/generated/ana-a09-funnel-continuous-scheduler-activation-staging-evidence.json",
+    "evidenceBlobSha": "fd302fa6e05e9d17a0d0151147a77ce175c0338c",
+    "authorizedRepositoryHead": "a08f6b085cbfe2f2172afc7a95f3b4285a3dcc24",
+    "jobId": 14,
+    "activationStatus": "APPENDED",
+    "replayStatus": "NO_CHANGE",
+    "exactJobActive": true,
+    "activeCronJobs": 7,
+    "successfulObservedRunCount": 4,
+    "activationCheckpointSnapshotCount": 64,
+    "preWriteRecheckSnapshotCount": 112,
+    "preWriteRecheckRevisionOneCount": 112,
+    "preWriteRecheckHigherRevisionCount": 0,
+    "a11RelevantCronCount": 1,
+    "a11ExactCronCount": 1,
+    "recentCronFailures": 0,
+    "plannerStillBounded": true,
+    "backlogStillPresent": true
+  },
+  "activationEvidenceReconciliationAuthorization": {
+    "authorizedSourceHead": "a08f6b085cbfe2f2172afc7a95f3b4285a3dcc24",
+    "digestSha256": "2e6e6c86ec0b17fe988aa3ab9ae2813493b200f5055b9ee40993435599ceaf05",
     "repositoryWriteAuthority": true,
     "schedulerActivationAuthority": false,
     "stagingAuthority": false,

@@ -5,8 +5,8 @@
   "sourceHead": "01fb50d8f35276031efec3d252a4b91672aa8dcc",
   "matrixVersion": "1.3.132",
   "scope": "repository_only_contract_candidate",
-  "status": "staging_migration_applied_validation_056_pass_evidence_reconciled_pending_exact_head_certification",
-  "objective": "Maintain the continuous A09 funnel scheduler contract with its activation boundary installed and rollback-validated in staging, while keeping persistent scheduler activation, continuous publication, runtime snapshot publication, production, merge and ready-for-review authority closed.",
+  "status": "continuous_scheduler_active_staging_activation_evidence_reconciled_pending_exact_head_certification",
+  "objective": "Maintain and certify the active staging A09 continuous publication scheduler, preserving its bounded catch-up semantics, exact A11 coexistence, client-closed activation boundary, and repository/runtime authority separation.",
   "authorization": {
     "command": "authorize-ana-a09-funnel-continuous-publication-scheduler-candidate-repository-only head=01fb50d8f35276031efec3d252a4b91672aa8dcc matrix=v1.3.132 canaryEvidenceBlobSha=e28703cd192e618582438bb0e63267caac881eda candidateConfigBlobSha=ea5ab76a922073322674e45509519ec680fb8672 policySetId=ana-a07-a09-funnel-v1-r1 boundedRuntimeCanaryPassed=true targetSnapshotCount=8 revisionOneCount=8 higherRevisionCount=0 preserveA11=true continuousPublicationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
     "digestSha256": "b1e67c07834088546d5880cb29fadc9a09c7b3c94057201df6dc03d8d608ad36",
@@ -211,7 +211,7 @@
     "after": 3,
     "promoted": false
   },
-  "nextGate": "Exact-head repository certification of the reconciled staging evidence. Persistent scheduler activation remains a separate gate requiring explicit exact-head authorization plus a fresh staging drift/headroom check; this evidence reconciliation grants no scheduler activation authority.",
+  "nextGate": "Exact-head repository certification of the active-scheduler staging evidence. After certification, perform read-only operational observation until backlog closure or anomaly. Any scheduler mutation, cadence change, disablement, production action, merge or maturity promotion remains separately authorized.",
   "migrationImplementationAuthorization": {
     "command": "authorize-ana-a09-funnel-scheduler-activation-function-migration-candidate-repository-only head=77c6ef87b8e773d2031631078169ad0bbc8c1a1c matrix=v1.3.132 continuousSchedulerConfigBlobSha=c7d7d24c08f7dbc9618b2e1b7e192e3a9c932a4f continuousSchedulerHandoffBlobSha=87027b04544548940bafd95e7f998bb04292f72d canaryEvidenceBlobSha=e28703cd192e618582438bb0e63267caac881eda policySetId=ana-a07-a09-funnel-v1-r1 activationFunction=private.activate_analytics_a09_funnel_scheduler_v1 jobName=doke-ana-funnel-v1-r1 schedule=*_*_*_*_* targetFunction=private.run_analytics_a09_funnel_catch_up_v1 validationRollbackOnly=true preserveA11=true migrationCreationAuthority=true repositoryWriteAuthority=true schedulerAuthority=false continuousPublicationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
     "digestSha256": "ec041cc99a84065e56f9816781397de7538a7cc6a174f35ed576ce99201955e3",
@@ -289,5 +289,42 @@
     "mergeAuthority": false,
     "readyForReviewAuthority": false,
     "historyRewriteAuthority": false
-  }
+  },
+  "stagingRuntimeActivation": {
+    "evidencePath": "reports/generated/ana-a09-funnel-continuous-scheduler-activation-staging-evidence.json",
+    "evidenceBlobSha": "fd302fa6e05e9d17a0d0151147a77ce175c0338c",
+    "authorizedRepositoryHead": "a08f6b085cbfe2f2172afc7a95f3b4285a3dcc24",
+    "jobId": 14,
+    "jobName": "doke-ana-funnel-v1-r1",
+    "schedule": "* * * * *",
+    "activationStatus": "APPENDED",
+    "replayStatus": "NO_CHANGE",
+    "schedulerActive": true,
+    "continuousPublicationActiveInStaging": true,
+    "runtimeSnapshotPublicationActiveInStaging": true,
+    "activationCheckpointSnapshotCount": 64,
+    "preWriteRecheckSnapshotCount": 112,
+    "preWriteRecheckRevisionOneCount": 112,
+    "preWriteRecheckHigherRevisionCount": 0,
+    "successfulObservedRunCount": 4,
+    "recentCronFailures": 0,
+    "activeCronJobs": 7,
+    "a11RelevantCronCount": 1,
+    "a11ExactCronCount": 1,
+    "plannerStillBounded": true,
+    "backlogStillPresent": true
+  },
+  "activationEvidenceReconciliationAuthorization": {
+    "authorizedSourceHead": "a08f6b085cbfe2f2172afc7a95f3b4285a3dcc24",
+    "matrixVersion": "1.3.132",
+    "digestSha256": "2e6e6c86ec0b17fe988aa3ab9ae2813493b200f5055b9ee40993435599ceaf05",
+    "repositoryWriteAuthority": true,
+    "schedulerActivationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "authorityInterpretation": "The authority object below constrains actions in the current repository-reconciliation lot. The stagingRuntimeActivation block records that the scheduler and continuous publication were activated previously under a separate explicit staging authorization."
 }

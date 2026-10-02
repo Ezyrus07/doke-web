@@ -127,19 +127,45 @@ Latest read-only staging reconciliation at `2026-10-02T00:27:38.076411Z`:
 
 Supabase recommends no more than eight concurrent Cron jobs and jobs shorter than ten minutes. This candidate records that as a **future activation gate**, not as permission to activate.
 
-## Authority remains closed
+## Persistent staging scheduler activation
 
-- continuousPublicationAuthority = `false`
-- runtimeSnapshotAuthority = `false`
-- snapshotPublicationAuthority = `false`
-- schedulerAuthority = `false`
+The A09 scheduler is now **persistently active in staging** under a separately authorized runtime activation. This document records that operational fact; the current repository-reconciliation lot has no scheduler/staging write authority.
+
+Activation evidence:
+
+- activation source HEAD: `a08f6b085cbfe2f2172afc7a95f3b4285a3dcc24`
+- job: `14 / doke-ana-funnel-v1-r1`
+- schedule: `* * * * *`
+- first activation: `APPENDED`
+- exact replay: `NO_CHANGE`
+- target: `private.run_analytics_a09_funnel_catch_up_v1`
+- exact A09 cron rows: `1`
+- active cron jobs after activation: `7`
+- A11 relevant/exact cron rows: `1 / 1`
+- first two observed runs: `succeeded / succeeded`
+- authorized activation checkpoint: `64` snapshots, all revision 1, no higher revisions
+
+Read-only pre-write reconciliation at `2026-10-02T00:39:08.668128Z` observed four consecutive successful A09 scheduler runs and `112` global A09 snapshots, all `revision=1`, with `0` higher revisions and `0` recent Cron failures. The planner still returned three bounded missing windows with `[8,8,8]` missing metrics, so historical catch-up remains in progress.
+
+The increase from `64 → 112` snapshots is expected continuous runtime progress, not repository drift. The scheduler publishes at most three missing five-minute windows per invocation, eight metrics per window. The activation/reconciliation evidence is stored at:
+
+`reports/generated/ana-a09-funnel-continuous-scheduler-activation-staging-evidence.json`
+
+The Control Center observation at this closure remained `DRIFT/SNAPSHOT` and reported staging runtime as `NOT CONNECTED`; it was therefore not used as runtime certification authority.
+
+## Current reconciliation authority
+
+The staging scheduler and continuous publication are already active from the prior explicit runtime authorization. For **this repository-only reconciliation**, no additional runtime mutation is authorized:
+
+- schedulerActivationAuthority = `false`
 - stagingAuthority = `false`
 - productionAuthority = `false`
 - mergeAuthority = `false`
 - Ready for review authority = `false`
+- historyRewriteAuthority = `false`
 
 ANA remains **3/6**.
 
 ## Next gate
 
-Certify the reconciled staging evidence on the exact resulting repository HEAD. Even after that certification, persistent A09 scheduler activation remains a **separate explicit authorization gate** and must begin with a fresh staging conflict/headroom check. Production, merge and Ready for review remain unauthorized.
+Certify the persistent scheduler activation evidence on the exact resulting repository HEAD. After certification, continue **read-only operational observation** until the bounded backlog closes or a runtime anomaly appears. Any scheduler mutation, disablement, cadence change, production action, merge, Ready for review or maturity promotion requires separate authority.
