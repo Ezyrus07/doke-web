@@ -1,0 +1,76 @@
+name: WAL-B03 A02 Bank Data Protection Migration Candidate
+
+on:
+  push:
+    branches: ['sec/wal-b03-a02-bank-data-protection-migration-candidate']
+  pull_request:
+    branches: ['sec/wal-b03-a01-bank-data-protection-authority']
+    paths:
+      - '.github/workflows/wal-b03-a02-bank-data-protection-migration-candidate.yml'
+      - 'config/wal-b03-a02-bank-data-protection-migration-candidate.json'
+      - 'docs/WAL-B03-A02-BANK-DATA-PROTECTION-MIGRATION-CANDIDATE.md'
+      - 'scripts/test-wal-b03-a02-migration-candidate.py'
+      - 'scripts/requirements-wal-b03-a02.txt'
+      - 'supabase/migrations/20261002140758_wal_b03_bank_data_protection_candidate.sql'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  repository-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exact source and repository-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=b0d18389fc5748f6b143f00f30104c3b487c96d4
+          git merge-base --is-ancestor "$base" HEAD
+          python - <<'PY'
+          import subprocess
+          expected = {
+            '.github/workflows/wal-b03-a02-bank-data-protection-migration-candidate.yml',
+            'config/wal-b03-a02-bank-data-protection-migration-candidate.json',
+            'docs/WAL-B03-A02-BANK-DATA-PROTECTION-MIGRATION-CANDIDATE.md',
+            'scripts/test-wal-b03-a02-migration-candidate.py',
+            'scripts/requirements-wal-b03-a02.txt',
+            'supabase/migrations/20261002140758_wal_b03_bank_data_protection_candidate.sql',
+            'docs/DOMAIN-COMPLETION-MATRIX.md',
+            'reports/generated/domain-completion-matrix-report.json',
+          }
+          actual = set(subprocess.check_output(['git', 'diff', '--name-only',
+            'b0d18389fc5748f6b143f00f30104c3b487c96d4...HEAD'], text=True).splitlines())
+          assert actual == expected, f'Unexpected scope: {sorted(actual ^ expected)}'
+          print('Exact A02 repository-only scope: PASS')
+          PY
+      - name: Install pinned offline SQL parser
+        run: python -m pip install --disable-pip-version-check -r scripts/requirements-wal-b03-a02.txt
+      - name: Parse SQL and PLpgSQL and test negative source mutations
+        run: python scripts/test-wal-b03-a02-migration-candidate.py
+      - name: A01 and WAL-A02 predecessor regressions
+        run: |
+          node scripts/audit-wal-b03-a01-bank-data-protection-authority.js
+          node scripts/test-wal-b03-a01-bank-data-protection-authority.js
+          node scripts/audit-wal-a02-bank-account-sensitive-data-boundary.js
+          node scripts/test-wal-a02-bank-account-sensitive-data-boundary.js
+          node scripts/test-financial-rpc-authority-contract.js
+      - name: Matrix and agent governance
+        run: |
+          node scripts/audit-domain-completion-matrix.js --write
+          git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check b0d18389fc5748f6b143f00f30104c3b487c96d4...HEAD

@@ -1,0 +1,109 @@
+{
+  "contractId": "wal-b03-a02-bank-data-protection-migration-candidate-v1",
+  "sourcePr": 537,
+  "sourceHead": "b0d18389fc5748f6b143f00f30104c3b487c96d4",
+  "matrixVersion": "1.3.132",
+  "dependsOn": [
+    "wal-b03-a01-bank-data-protection-authority-v1",
+    "wal-a02-bank-account-sensitive-data-boundary-v1"
+  ],
+  "scope": "repository_only",
+  "migrationSource": "supabase/migrations/20261002140758_wal_b03_bank_data_protection_candidate.sql",
+  "migrationSourceCreatedBy": "supabase@2.119.0 migration new wal_b03_bank_data_protection_candidate",
+  "authorization": {
+    "repositoryWrite": true,
+    "createRepositoryMigrationSource": true,
+    "migrationApply": false,
+    "stagingWrite": false,
+    "deploy": false,
+    "production": false,
+    "merge": false,
+    "readyForReview": false,
+    "historyRewrite": false
+  },
+  "effects": {
+    "migrationPrepared": true,
+    "migrationApplied": false,
+    "stagingMutationPerformed": false,
+    "runtimeIntegrated": false,
+    "keyProvisioned": false,
+    "backfillExecuted": false,
+    "plaintextRetired": false,
+    "productionChanged": false
+  },
+  "stagingReadiness": "blocked_vault_acl_dependency_and_runtime_validation",
+  "blockerStatus": "WAL-B03_OPEN",
+  "reconciledObservation": {
+    "environment": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "valuesInspected": false,
+    "bankAccountRows": 1,
+    "secretStoreExists": false,
+    "sensitiveColumns": [
+      "account_holder",
+      "document",
+      "branch",
+      "account_number",
+      "pix_key"
+    ],
+    "pgcryptoVersion": "1.3",
+    "vaultVersion": "0.3.1",
+    "serviceRoleVaultSecretsSelect": true,
+    "serviceRoleVaultDecryptedSecretsSelect": true,
+    "controlCenter": "FALLBACK_snapshot_drift",
+    "checkpoint": "FALLBACK",
+    "controlCenterStaging": "NOT_CONNECTED",
+    "githubHeadMatchesAuthorization": true,
+    "a01CiPush": 37015693291,
+    "a01CiPullRequest": 37015700704,
+    "preview": "failure_build_rate_limit",
+    "executionPacket": "user_authorization_plus_A01_contract",
+    "collisionReview": "dedicated_SQL_config_test_docs_workflow_paths;_no_UX_wallet_runtime_changes",
+    "observedOn": "2026-10-02"
+  },
+  "candidate": {
+    "installationOnly": true,
+    "automaticBackfill": false,
+    "expectedBackfillRows": 1,
+    "cipher": "aes256",
+    "keyAlias": "wal-bank-data-key-v1",
+    "keyOwner": "postgres",
+    "functionSecurity": "invoker",
+    "functionConsumers": [
+      "postgres_maintenance_under_separate_A03_authorization"
+    ],
+    "genericDecrypt": false,
+    "legacyTableModified": false,
+    "legacySaveRpcModified": false,
+    "supportRawAccess": false,
+    "serviceRoleDirectSecretAccess": false,
+    "retentionDurationDays": null,
+    "purgeActivated": false,
+    "rotationExecuted": false,
+    "globalVaultAclMutation": false
+  },
+  "beforeA03": [
+    "Resolve shared Vault effective ACL and callable-wrapper authority in separately scoped work; never blindly revoke global grants.",
+    "Reconcile exact candidate SHA, SQL digest, source base, Control Center, collisions and live staging schema.",
+    "Obtain explicit A03 authority; the session marker is only an accidental-execution guard.",
+    "Prove synthetic runtime negative cases and transaction rollback with a separately authorized executor.",
+    "Quiesce legacy bank writes for backfill and keep cutover blocked until a new equivalence check at A04.",
+    "Do not equate source-count equality with runtime masking or WAL-B03 closure."
+  ],
+  "runtimeAssertionsNotExecuted": [
+    "Vault key provisioning",
+    "ACL by role",
+    "AES roundtrip",
+    "wrong-key rejection",
+    "nondeterministic ciphertext",
+    "binding tamper rejection",
+    "backfill 1/1",
+    "retry idempotency",
+    "concurrent writer blocking",
+    "transaction rollback",
+    "masked browser and operator responses",
+    "plaintext retirement",
+    "key rotation and crypto-erasure"
+  ],
+  "migrationSha256": "b769912d2bb65f7b1e242bda5bbf0d134e5d188d1259331b16b28db22e71b6bc"
+}
