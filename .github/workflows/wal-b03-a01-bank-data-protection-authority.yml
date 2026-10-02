@@ -7,12 +7,14 @@ on:
   pull_request:
     paths:
       - '.github/workflows/wal-b03-a01-bank-data-protection-authority.yml'
-      - 'scripts/lib/wal-b03-bank-data-protection-authority.js'
       - 'config/wal-b03-a01-bank-data-protection-authority.json'
       - 'docs/WAL-B03-A01-BANK-DATA-PROTECTION-AUTHORITY.md'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - 'scripts/audit-wal-b03-a01-bank-data-protection-authority.js'
+      - 'scripts/lib/wal-b03-bank-data-protection-authority.js'
       - 'scripts/test-wal-b03-a01-bank-data-protection-authority.js'
-      - 'tests/fixtures/wal-b03-a01-bank-data-protection-cases.json|docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json'
+      - 'tests/fixtures/wal-b03-a01-bank-data-protection-cases.json'
 
 permissions:
   contents: read
@@ -36,7 +38,7 @@ jobs:
           base='6eb8e55317a20f88f8ecb0f083c00c101b2afc59'
           mapfile -t changed < <(git diff --name-only "$base"...HEAD)
           printf '%s\n' "${changed[@]}"
-          allowed='^(.github/workflows/wal-b03-a01-bank-data-protection-authority.yml|scripts/lib/wal-b03-bank-data-protection-authority.js|config/wal-b03-a01-bank-data-protection-authority.json|docs/WAL-B03-A01-BANK-DATA-PROTECTION-AUTHORITY.md|scripts/audit-wal-b03-a01-bank-data-protection-authority.js|scripts/test-wal-b03-a01-bank-data-protection-authority.js|tests/fixtures/wal-b03-a01-bank-data-protection-cases.json)$'
+          allowed='^(.github/workflows/wal-b03-a01-bank-data-protection-authority.yml|config/wal-b03-a01-bank-data-protection-authority.json|docs/WAL-B03-A01-BANK-DATA-PROTECTION-AUTHORITY.md|docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json|scripts/audit-wal-b03-a01-bank-data-protection-authority.js|scripts/lib/wal-b03-bank-data-protection-authority.js|scripts/test-wal-b03-a01-bank-data-protection-authority.js|tests/fixtures/wal-b03-a01-bank-data-protection-cases.json)$'
           unexpected="$(printf '%s\n' "${changed[@]}" | grep -Ev "$allowed" || true)"
           if [[ -n "$unexpected" ]]; then
             echo "Unexpected file outside WAL-B03-A01 scope:"
@@ -76,9 +78,7 @@ jobs:
         run: |
           set -euo pipefail
           generated="$(git diff --name-only)"
-          unexpected="$(printf '%s\n' "$generated" | grep -Ev '^(docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json)
-        run: git diff --check 6eb8e55317a20f88f8ecb0f083c00c101b2afc59...HEAD
- || true)"
+          unexpected="$(printf '%s\n' "$generated" | grep -Ev '^(docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json)$' || true)"
           if [[ -n "$unexpected" ]]; then
             echo "Generator changed unexpected files:"
             echo "$unexpected"
