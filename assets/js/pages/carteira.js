@@ -965,6 +965,7 @@
       setText(receivablesNodes.nextCopy, next
         ? (next.payoutFullDateLabel || next.payoutDateLabel || 'Data prevista') + ' · ' + (next.releaseReason || getReceivableStatusLabel(next))
         : 'Sem valores em garantia no momento.');
+      if (receivablesNodes.nextCard) receivablesNodes.nextCard.hidden = !next;
 
       clearNode(receivablesNodes.list);
       items.slice(0, 3).forEach((item) => receivablesNodes.list?.appendChild(createReceivableRow(item || {})));
