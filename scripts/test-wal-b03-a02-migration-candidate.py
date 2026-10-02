@@ -35,24 +35,56 @@ def validate_contract(contract):
         'stagingMutationPerformed': False, 'runtimeIntegrated': False,
         'keyProvisioned': False, 'backfillExecuted': False,
         'plaintextRetired': False, 'productionChanged': False}, 'effect boundary')
-    require(contract['stagingReadiness'] == 'blocked_candidate_not_applied_and_runtime_validation', 'Vault blocker')
-    require(contract['vaultAclHardeningCandidate'] == {
-        'serviceRoleSchemaUsage': 'revoke',
-        'serviceRoleVaultRelations': 'revoke_all',
-        'serviceRoleVaultFunctions': 'revoke_execute_all',
-        'preservePostgresVaultAuthority': True,
-        'preserveOrderEventWorker': True,
-        'preserveStagingFinanceSandbox': True,
-        'applied': False}, 'Vault ACL hardening candidate')
+    require(contract['stagingReadiness'] ==
+            'blocked_runtime_schema_cache_revalidation_and_a03_rollback_canary',
+            'runtime boundary gate')
+    require(contract['vaultDataApiBoundary'] == {
+        'preserveSupabaseVault': True,
+        'platformManagedVaultAclMutation': False,
+        'serviceRoleNoLoginRequired': True,
+        'authenticatorVaultUsageRequired': False,
+        'vaultAbsentFromPostgrestSchemaCacheRequired': True,
+        'noPublicVaultWrappersRequired': True,
+        'noEdgeFunctionDirectVaultAccessRequired': True,
+        'noRepositoryVaultSchemaClientRequired': True,
+        'privatePostgresConsumers': [
+            'private.invoke_order_event_worker_if_needed()',
+            'private.assert_staging_finance_sandbox()'
+        ],
+        'serviceRolePrivateConsumerExecuteRequired': False,
+        'runtimeRevalidationRequiredBeforeA03': True,
+        'observedOn': '2026-10-02'}, 'platform-compatible Vault boundary')
     require(contract['blockerStatus'] == 'WAL-B03_OPEN', 'blocker closure')
     require(contract['candidate']['retentionDurationDays'] is None, 'retention policy')
+    require(contract['candidate']['globalVaultAclMutation'] is False, 'no global Vault mutation')
+    require(contract['candidate']['globalVaultAclMutationCandidate'] is False, 'no global Vault mutation candidate')
+
+
+def validate_repository_clients():
+    client_roots = [ROOT / 'assets', ROOT / 'backend', ROOT / 'supabase/functions']
+    schema_pattern = re.compile(r"\.schema\(\s*['\"]vault['\"]\s*\)", re.I)
+    edge_patterns = [
+        re.compile(r'\bvault\.', re.I),
+        re.compile(r'\bdecrypted_secrets\b', re.I),
+        re.compile(r'\bcreate_secret\s*\(', re.I),
+    ]
+    for base in client_roots:
+        if not base.exists():
+            continue
+        for path in base.rglob('*'):
+            if not path.is_file() or path.suffix.lower() not in {'.js', '.mjs', '.cjs', '.ts', '.tsx', '.html'}:
+                continue
+            content = path.read_text(errors='ignore')
+            require(not schema_pattern.search(content), f'Vault schema client forbidden: {path}')
+            if 'supabase/functions' in path.as_posix():
+                for pattern in edge_patterns:
+                    require(not pattern.search(content), f'direct Edge Vault access forbidden: {path}')
 
 
 def validate_sql(source):
-    # PostgreSQL parses the top-level AST and procedural bodies without connecting.
     statements = json.loads(parser.parse_sql_json(source))['stmts']
     plpgsql = json.loads(parser.parse_plpgsql_json(source))
-    require(len(plpgsql) == 5, 'all five procedural bodies parsed')
+    require(len(plpgsql) == 4, 'all four procedural bodies parsed')
     code = re.sub(r'--[^\n]*', '', source).lower()
     allowed = {'TransactionStmt', 'VariableSetStmt', 'DoStmt', 'CreateStmt',
                'IndexStmt', 'AlterTableStmt', 'GrantStmt', 'CreateFunctionStmt', 'AlterOwnerStmt'}
@@ -78,33 +110,59 @@ def validate_sql(source):
             ['private', 'backfill_wallet_bank_account_secrets_v1'], 'private backfill only')
     require(function['returnType']['names'] == [{'String': {'sval': 'jsonb'}}], 'no raw row return type')
     options = [o['DefElem'] for o in function['options']]
-    require(any(o['defname'] == 'security' and o['arg'] == {'Boolean': {'boolval': False}} for o in options), 'invoker security')
+    require(any(o['defname'] == 'security' and o['arg'] == {'Boolean': {'boolval': False}} for o in options),
+            'invoker security')
     require('set search_path = pg_catalog' in code, 'fixed search path')
-    require('security definer' not in code and not re.search(r'\bexecute\s+(?!on\b)', code), 'no definer or dynamic SQL')
+    require('security definer' not in code and not re.search(r'\bexecute\s+(?!on\b)', code),
+            'no definer or dynamic SQL')
     require('kyc_crypto_secrets' not in code, 'domain-separated keys')
-    require(not re.search(r'\b(update|delete\s+from|insert\s+into|alter\s+table|truncate)\s+public\.', code), 'legacy write')
-    require(not re.search(r'\b(drop|grant|create\s+policy|raise\s+(notice|warning|info|log|debug))\b', code), 'no expanded effects or sensitive logging')
+    require(not re.search(r'\b(update|delete\s+from|insert\s+into|alter\s+table|truncate)\s+public\.', code),
+            'legacy write')
+    require(not re.search(r'\b(drop|grant|create\s+policy|raise\s+(notice|warning|info|log|debug))\b', code),
+            'no expanded effects or sensitive logging')
     require('sqlerrm' not in code and 'raise exception using message = ' in code, 'sanitized errors')
     require("current_user <> 'postgres'" in code, 'executor check')
-    require(code.count("current_setting('doke.wal_b03_a03_execution', true) is distinct from 'explicitly_authorized'") == 2, 'execution tripwire')
+    require(code.count("current_setting('doke.wal_b03_a03_execution', true) is distinct from 'explicitly_authorized'") == 2,
+            'execution tripwire')
     require(code.index('$preflight$') < code.index('create table'), 'preflight before DDL')
-    require(code.count("has_any_column_privilege(api_role, 'vault.decrypted_secrets', 'select')") == 2, 'column ACL checks')
-    require('revoke all privileges on all tables in schema vault from service_role;' in code, 'service_role Vault relation hardening')
-    require('revoke execute on all functions in schema vault from service_role;' in code, 'service_role Vault function hardening')
-    require('revoke usage on schema vault from service_role;' in code, 'service_role Vault schema hardening')
-    require("has_schema_privilege('service_role', 'vault', 'usage')" in code, 'effective Vault schema assertion')
-    require("has_function_privilege('service_role', p.oid, 'execute')" in code, 'effective Vault function assertion')
-    require("has_function_privilege('postgres', 'vault.create_secret(text,text,text,uuid)', 'execute')" in code, 'postgres Vault authority preserved')
-    require("has_function_privilege('service_role', 'private.invoke_order_event_worker_if_needed()', 'execute')" in code, 'worker boundary preserved')
-    require("has_function_privilege('service_role', 'private.assert_staging_finance_sandbox()', 'execute')" in code, 'sandbox boundary preserved')
-    require(code.count("has_table_privilege(api_role, 'vault.decrypted_secrets', 'select')") == 2, 'table ACL checks')
-    require(code.count("'wal_b03_vault_acl_review_required'") == 2, 'installation and invocation Vault guard')
+
+    require('revoke all privileges on all tables in schema vault from service_role;' not in code,
+            'no platform-managed Vault relation revoke')
+    require('revoke execute on all functions in schema vault from service_role;' not in code,
+            'no platform-managed Vault function revoke')
+    require('revoke usage on schema vault from service_role;' not in code,
+            'no platform-managed Vault schema revoke')
+    require(code.count("has_schema_privilege('authenticator', 'vault', 'usage')") >= 3,
+            'authenticator Vault isolation')
+    require(code.count("r.rolname = 'service_role'") >= 3 and 'rolcanlogin' in code,
+            'service_role NOLOGIN boundary')
+    require(code.count("'wal_b03_public_vault_wrapper_drift'") >= 3,
+            'public Vault wrapper guard')
+    require(code.count("'wal_b03_private_vault_consumer_drift'") >= 3,
+            'private Vault consumer guard')
+    require("pg_get_functiondef(p.oid) ilike '%vault.%'" in code, 'Vault consumer inspection')
+    require("v.schemaname = 'public' and v.definition ilike '%vault.%'" in code,
+            'public Vault view inspection')
+    require("has_function_privilege('postgres', 'vault.create_secret(text,text,text,uuid)', 'execute')" in code,
+            'postgres Vault authority preserved')
+    require("has_function_privilege('service_role', 'private.invoke_order_event_worker_if_needed()', 'execute')" in code,
+            'worker boundary preserved')
+    require("has_function_privilege('service_role', 'private.assert_staging_finance_sandbox()', 'execute')" in code,
+            'sandbox boundary preserved')
+    require("has_function_privilege('service_role',
+       'private.backfill_wallet_bank_account_secrets_v1(integer)', 'execute')" in code,
+            'backfill boundary preserved')
+
     for table in TABLES:
         require(f'alter table private.{table} enable row level security;' in code, 'RLS')
-        require(f'revoke all on table private.{table} from public, anon, authenticated, service_role;' in code, 'table revocation')
-    require(re.search(r'revoke all on function private.backfill_wallet_bank_account_secrets_v1\(integer\)\s+from public, anon, authenticated, service_role;', code), 'function revocation')
-    require('has_function_privilege' in code and 'has_any_column_privilege(api_role, protected_table' in code, 'effective ACL assertion')
-    require('extensions.gen_random_bytes(32)' in code and 'vault.create_secret(encode(' in code, 'runtime key entropy')
+        require(f'revoke all on table private.{table} from public, anon, authenticated, service_role;' in code,
+                'table revocation')
+    require(re.search(r'revoke all on function private.backfill_wallet_bank_account_secrets_v1\(integer\)\s+from public, anon, authenticated, service_role;', code),
+            'function revocation')
+    require('has_function_privilege' in code and 'has_any_column_privilege(api_role, protected_table' in code,
+            'effective private ACL assertion')
+    require('extensions.gen_random_bytes(32)' in code and 'vault.create_secret(encode(' in code,
+            'runtime key entropy')
     require('cipher-algo=aes256,compress-algo=0,s2k-mode=3' in code, 'AES option')
     require(not re.search(r'cipher-algo=(?!aes256)[a-z0-9]+', code), 'no weak ciphers')
     require('if encrypted = encrypted_again then' in code, 'nondeterminism canary')
@@ -115,24 +173,29 @@ def validate_sql(source):
     for binding in ["'user_id', source_row.user_id", "'secret_reference_id', reference_id",
                     "'key_version', wal_key_version", "'secret_version', 1", "'payload_version', 1"]:
         require(binding in code, 'identity and version binding')
-    require('p_expected_rows is distinct from 1' in code and 'source_count <> p_expected_rows' in code, 'bounded count')
+    require('p_expected_rows is distinct from 1' in code and 'source_count <> p_expected_rows' in code,
+            'bounded count')
     require('lock table public.wallet_bank_accounts in share row exclusive mode;' in code, 'source write lock')
-    require('lock table private.wallet_bank_account_secrets_v1 in exclusive mode;' in code, 'backfill serialization')
+    require('lock table private.wallet_bank_account_secrets_v1 in exclusive mode;' in code,
+            'backfill serialization')
     require('encrypted := secret_row.ciphertext;' in code, 'retry reuses ciphertext')
     require('purge_after is null and destroyed_at is null' in code, 'unapproved purge disabled')
     returns = re.findall(r'\breturn\s+([^;]+);', code)
     require(len(returns) == 1, 'single return')
     require(re.sub(r'\s+', '', returns[0]) ==
-            "jsonb_build_object('source_count',source_count,'inserted_count',inserted_count,'verified_count',verified_count,'legacy_plaintext_preserved',true,'runtime_cutover',false)", 'aggregate-only return')
-    require(not re.search(r'(select|perform)\s+private.backfill_wallet_bank_account_secrets_v1', code), 'no automatic backfill')
+            "jsonb_build_object('source_count',source_count,'inserted_count',inserted_count,'verified_count',verified_count,'legacy_plaintext_preserved',true,'runtime_cutover',false)",
+            'aggregate-only return')
+    require(not re.search(r'(select|perform)\s+private.backfill_wallet_bank_account_secrets_v1', code),
+            'no automatic backfill')
     return len(statements)
 
 
 class CandidateTests(unittest.TestCase):
     def test_candidate(self):
         validate_contract(CONTRACT)
+        validate_repository_clients()
         self.assertEqual(hashlib.sha256(SOURCE.encode()).hexdigest(), CONTRACT['migrationSha256'])
-        self.assertEqual(validate_sql(SOURCE), 24)
+        self.assertEqual(validate_sql(SOURCE), 20)
 
     def test_canonical_predecessors_and_maturity(self):
         a01 = json.loads((ROOT / 'config/wal-b03-a01-bank-data-protection-authority.json').read_text())
@@ -146,7 +209,8 @@ class CandidateTests(unittest.TestCase):
         self.assertTrue(any(b['id'] == 'WAL-B03' for b in wallet['blockers']))
 
     def test_authority_mutations(self):
-        for field in ['migrationApply', 'stagingWrite', 'deploy', 'production', 'merge', 'readyForReview', 'historyRewrite']:
+        for field in ['migrationApply', 'stagingWrite', 'deploy', 'production', 'merge',
+                      'readyForReview', 'historyRewrite']:
             with self.subTest(field=field):
                 contract = copy.deepcopy(CONTRACT)
                 contract['authorization'][field] = True
@@ -157,7 +221,8 @@ class CandidateTests(unittest.TestCase):
         mutations = [
             ('security invoker', 'security definer'),
             ('set search_path = pg_catalog', 'set search_path = public'),
-            ('create table private.wallet_bank_account_secrets_v1', 'create table public.wallet_bank_account_secrets_v1'),
+            ('create table private.wallet_bank_account_secrets_v1',
+             'create table public.wallet_bank_account_secrets_v1'),
             ('ciphertext bytea not null', 'account_number text, ciphertext bytea not null'),
             ('cipher-algo=aes256', 'cipher-algo=cast5'),
             ("'user_id', source_row.user_id", "'user_id', gen_random_uuid()"),
@@ -169,16 +234,18 @@ class CandidateTests(unittest.TestCase):
             ('p_expected_rows is distinct from 1', 'p_expected_rows is null'),
             ('lock table public.wallet_bank_accounts in share row exclusive mode;', ''),
             ('lock table private.wallet_bank_account_secrets_v1 in exclusive mode;', ''),
-            ("current_setting('doke.wal_b03_a03_execution', true) is distinct from 'explicitly_authorized'", 'false'),
-            ("has_any_column_privilege(api_role, 'vault.decrypted_secrets', 'SELECT')", 'false'),
-            ('revoke all privileges on all tables in schema vault from service_role;', ''),
-            ('revoke execute on all functions in schema vault from service_role;', ''),
-            ('revoke usage on schema vault from service_role;', ''),
-            ("has_schema_privilege('service_role', 'vault', 'USAGE')", 'false'),
+            ("current_setting('doke.wal_b03_a03_execution', true) is distinct from 'explicitly_authorized'",
+             'false'),
+            ("has_schema_privilege('authenticator', 'vault', 'USAGE')", 'false'),
+            ("r.rolname = 'service_role'", "r.rolname = 'service_role_disabled'"),
+            ("p.proname in ('invoke_order_event_worker_if_needed', 'assert_staging_finance_sandbox')",
+             "p.proname in ('unexpected_consumer')"),
             ('revoke all on table private.wallet_bank_account_secrets_v1 from public, anon, authenticated, service_role;', ''),
             ('alter table private.wallet_bank_account_secrets_v1 enable row level security;', ''),
             ('purge_after is null and destroyed_at is null', 'true'),
-            ("return jsonb_build_object('source_count', source_count, 'inserted_count', inserted_count,\n    'verified_count', verified_count, 'legacy_plaintext_preserved', true,\n    'runtime_cutover', false);", 'return recovered;'),
+            ("return jsonb_build_object('source_count', source_count, 'inserted_count', inserted_count,\n    'verified_count', verified_count, 'legacy_plaintext_preserved', true,\n    'runtime_cutover', false);",
+             'return recovered;'),
+            ('commit;', 'revoke usage on schema vault from service_role; commit;'),
             ('commit;', 'grant select on private.wallet_bank_account_secrets_v1 to service_role; commit;'),
             ('commit;', 'update public.wallet_bank_accounts set document = null; commit;'),
             ('commit;', 'select private.backfill_wallet_bank_account_secrets_v1(1); commit;'),
