@@ -11,6 +11,7 @@ on:
       - 'docs/WAL-B03-A02-BANK-DATA-PROTECTION-MIGRATION-CANDIDATE.md'
       - 'scripts/test-wal-b03-a02-migration-candidate.py'
       - 'scripts/requirements-wal-b03-a02.txt'
+      - 'scripts/build-wal-b03-a03-rollback-canary.py'
       - 'supabase/migrations/20261002140758_wal_b03_bank_data_protection_candidate.sql'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - 'reports/generated/domain-completion-matrix-report.json'
@@ -46,6 +47,7 @@ jobs:
             'docs/WAL-B03-A02-BANK-DATA-PROTECTION-MIGRATION-CANDIDATE.md',
             'scripts/test-wal-b03-a02-migration-candidate.py',
             'scripts/requirements-wal-b03-a02.txt',
+            'scripts/build-wal-b03-a03-rollback-canary.py',
             'supabase/migrations/20261002140758_wal_b03_bank_data_protection_candidate.sql',
             'docs/DOMAIN-COMPLETION-MATRIX.md',
             'reports/generated/domain-completion-matrix-report.json',
@@ -59,6 +61,51 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r scripts/requirements-wal-b03-a02.txt
       - name: Parse SQL and PLpgSQL and test negative source mutations
         run: python scripts/test-wal-b03-a02-migration-candidate.py
+      - name: Build and parse A03 rollback-only canary
+        run: |
+          python scripts/build-wal-b03-a03-rollback-canary.py > /tmp/wal-b03-a03-rollback-canary.sql
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          from pglast import parser
+          sql = Path('/tmp/wal-b03-a03-rollback-canary.sql').read_text()
+          parser.parse_sql_json(sql)
+          assert not re.search(r'(?mi)^\s*commit\s*;\s*      - name: A01 and WAL-A02 predecessor regressions
+        run: |
+          node scripts/audit-wal-b03-a01-bank-data-protection-authority.js
+          node scripts/test-wal-b03-a01-bank-data-protection-authority.js
+          node scripts/audit-wal-a02-bank-account-sensitive-data-boundary.js
+          node scripts/test-wal-a02-bank-account-sensitive-data-boundary.js
+          node scripts/test-financial-rpc-authority-contract.js
+      - name: Matrix and agent governance
+        run: |
+          node scripts/audit-domain-completion-matrix.js --write
+          git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check b0d18389fc5748f6b143f00f30104c3b487c96d4...HEAD
+, sql)
+          assert len(re.findall(r'(?mi)^\s*rollback\s*;\s*      - name: A01 and WAL-A02 predecessor regressions
+        run: |
+          node scripts/audit-wal-b03-a01-bank-data-protection-authority.js
+          node scripts/test-wal-b03-a01-bank-data-protection-authority.js
+          node scripts/audit-wal-a02-bank-account-sensitive-data-boundary.js
+          node scripts/test-wal-a02-bank-account-sensitive-data-boundary.js
+          node scripts/test-financial-rpc-authority-contract.js
+      - name: Matrix and agent governance
+        run: |
+          node scripts/audit-domain-completion-matrix.js --write
+          git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check b0d18389fc5748f6b143f00f30104c3b487c96d4...HEAD
+, sql)) == 1
+          assert 'private.invoke_order_event_worker_if_needed();' not in sql.lower()
+          assert 'perform private.assert_staging_finance_sandbox();' in sql.lower()
+          print('A03 rollback-only canary source: PASS')
+          PY
       - name: A01 and WAL-A02 predecessor regressions
         run: |
           node scripts/audit-wal-b03-a01-bank-data-protection-authority.js
