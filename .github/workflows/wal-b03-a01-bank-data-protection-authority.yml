@@ -17,7 +17,7 @@ on:
       - 'tests/fixtures/wal-b03-a01-bank-data-protection-cases.json'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   wal-b03-a01:
@@ -93,6 +93,20 @@ jobs:
             docs/DOMAIN-COMPLETION-MATRIX.md
             reports/generated/domain-completion-matrix-report.json
           if-no-files-found: error
+
+      - name: Commit generated derivatives on branch push
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git commit -m 'WAL-B03 A01 sync domain matrix derivatives'
+          git push origin HEAD:sec/wal-b03-a01-bank-data-protection-authority
 
       - name: Domain matrix remains canonical
         run: node scripts/audit-domain-completion-matrix.js
