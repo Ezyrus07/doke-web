@@ -251,7 +251,23 @@ async function seedConversations(page) {
   await expect.poll(() => page.locator('.message-item[data-message-id]').count()).toBe(fixtures.length);
 }
 
+async function returnToConversationListIfNeeded(page) {
+  const compactThreadOpen = await page.evaluate(() => (
+    window.innerWidth <= 1180
+    && document.querySelector('[data-messages-page]')?.dataset.messagesMode === 'thread'
+  ));
+  if (!compactThreadOpen) return;
+
+  const back = page.locator('[data-messages-back]');
+  await expect(back).toBeVisible();
+  await back.click();
+  await expect.poll(() => page.evaluate(() => (
+    document.querySelector('[data-messages-page]')?.dataset.messagesMode || ''
+  ))).toBe('list');
+}
+
 async function openConversation(page, id) {
+  await returnToConversationListIfNeeded(page);
   const item = page.locator(`.message-item[data-message-id="${id}"]`).first();
   await expect(item).toBeVisible();
   await item.click();
