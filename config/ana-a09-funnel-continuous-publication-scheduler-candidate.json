@@ -5,8 +5,8 @@
   "sourceHead": "01fb50d8f35276031efec3d252a4b91672aa8dcc",
   "matrixVersion": "1.3.132",
   "scope": "repository_only_contract_candidate",
-  "status": "migration_candidate_materialized_repository_only_pending_exact_head_certification",
-  "objective": "Define and materialize the repository-only A09 funnel scheduler activation-function migration candidate after the bounded runtime canary, without applying the migration, creating a persistent cron job, publishing snapshots, or granting scheduler/staging/production authority.",
+  "status": "staging_migration_applied_validation_056_pass_evidence_reconciled_pending_exact_head_certification",
+  "objective": "Maintain the continuous A09 funnel scheduler contract with its activation boundary installed and rollback-validated in staging, while keeping persistent scheduler activation, continuous publication, runtime snapshot publication, production, merge and ready-for-review authority closed.",
   "authorization": {
     "command": "authorize-ana-a09-funnel-continuous-publication-scheduler-candidate-repository-only head=01fb50d8f35276031efec3d252a4b91672aa8dcc matrix=v1.3.132 canaryEvidenceBlobSha=e28703cd192e618582438bb0e63267caac881eda candidateConfigBlobSha=ea5ab76a922073322674e45509519ec680fb8672 policySetId=ana-a07-a09-funnel-v1-r1 boundedRuntimeCanaryPassed=true targetSnapshotCount=8 revisionOneCount=8 higherRevisionCount=0 preserveA11=true continuousPublicationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
     "digestSha256": "b1e67c07834088546d5880cb29fadc9a09c7b3c94057201df6dc03d8d608ad36",
@@ -211,7 +211,7 @@
     "after": 3,
     "promoted": false
   },
-  "nextGate": "Exact-head repository certification after canonical Domain Completion Matrix regeneration. If green, require a separate exact-head staging migration-application + rollback-validation authorization. Persistent scheduler activation remains a later, separately authorized action.",
+  "nextGate": "Exact-head repository certification of the reconciled staging evidence. Persistent scheduler activation remains a separate gate requiring explicit exact-head authorization plus a fresh staging drift/headroom check; this evidence reconciliation grants no scheduler activation authority.",
   "migrationImplementationAuthorization": {
     "command": "authorize-ana-a09-funnel-scheduler-activation-function-migration-candidate-repository-only head=77c6ef87b8e773d2031631078169ad0bbc8c1a1c matrix=v1.3.132 continuousSchedulerConfigBlobSha=c7d7d24c08f7dbc9618b2e1b7e192e3a9c932a4f continuousSchedulerHandoffBlobSha=87027b04544548940bafd95e7f998bb04292f72d canaryEvidenceBlobSha=e28703cd192e618582438bb0e63267caac881eda policySetId=ana-a07-a09-funnel-v1-r1 activationFunction=private.activate_analytics_a09_funnel_scheduler_v1 jobName=doke-ana-funnel-v1-r1 schedule=*_*_*_*_* targetFunction=private.run_analytics_a09_funnel_catch_up_v1 validationRollbackOnly=true preserveA11=true migrationCreationAuthority=true repositoryWriteAuthority=true schedulerAuthority=false continuousPublicationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
     "digestSha256": "ec041cc99a84065e56f9816781397de7538a7cc6a174f35ed576ce99201955e3",
@@ -253,5 +253,41 @@
     "preservesA11": true,
     "policyApprovalEvidenceDigestSha256": "2db1282f585217ab76069ba564c94f9133d08b3fa4c7d2f87fea76049684c829",
     "canaryEvidenceBlobSha": "e28703cd192e618582438bb0e63267caac881eda"
+  },
+  "stagingValidationEvidence": {
+    "evidencePath": "reports/generated/ana-a09-funnel-scheduler-activation-staging-validation-evidence.json",
+    "evidenceBlobSha": "ac00dabd148649d42708c2e30d8d0f9816b85e47",
+    "authorizedRepositoryHead": "093b38cd1c868eba4e4e431a9032dd4e3c6122da",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "appliedStagingMigrationVersion": "20261002002201",
+    "validation": "056",
+    "validationStatus": "PASS",
+    "validationRollbackOnly": true,
+    "a09EffectivePolicyCount": 8,
+    "a09RelevantCronCount": 0,
+    "a09GlobalSnapshotCount": 16,
+    "a11PublicationPolicyCount": 1,
+    "a11RelevantCronCount": 1,
+    "a11ExactCronCount": 1,
+    "activeCronJobs": 6,
+    "activationFunctionOwner": "postgres",
+    "activationFunctionSecurityDefiner": true,
+    "clientExecuteClosed": true,
+    "schedulerActivated": false
+  },
+  "evidenceReconciliationAuthorization": {
+    "authorizedSourceHead": "093b38cd1c868eba4e4e431a9032dd4e3c6122da",
+    "matrixVersion": "1.3.132",
+    "digestSha256": "64fb8e4772ff2d0e0e0a9f63ea13aa6807fac70a01ab727fadf9206710dc44bd",
+    "repositoryWriteAuthority": true,
+    "schedulerActivationAuthority": false,
+    "continuousPublicationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
   }
 }

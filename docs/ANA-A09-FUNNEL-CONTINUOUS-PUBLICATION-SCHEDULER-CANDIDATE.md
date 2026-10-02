@@ -4,7 +4,7 @@
 
 Define the continuous publication scheduler contract for the eight canonical A09 funnel metrics after the bounded runtime canary succeeded.
 
-The scheduler contract was first defined repository-only and is now accompanied by a **repository-only migration implementation candidate**. The migration has not been applied to staging, does not register a cron job merely by being applied, does not publish snapshots, and does not grant continuous publication authority.
+The scheduler contract was first defined repository-only. Its owner-only activation boundary is now **installed and rollback-validated in staging**. The migration itself did not register a persistent cron job, validation `056` rolled back its synthetic scheduler rows, and persistent scheduler/continuous-publication authority remains closed.
 
 ## Certified inputs
 
@@ -84,24 +84,46 @@ The migration that defines this function **does not invoke it** and therefore do
 - migration blob: `9593480d6f3e6f4d63ec16c6fb5c2b2a590d5075`
 - rollback-only validation: `supabase/tests/056_ana_a09_funnel_scheduler_activation_validation.sql`
 - validation blob: `aeccec3474e1f4b52ff8c6faaa05e7d87dc846b5`
-- persistent scheduler creation in this lot: `0`
-- staging writes in this lot: `0`
-- production writes in this lot: `0`
+- repository migration version: `20261002000155`
+- applied staging migration version: `20261002002201`
+- validation `056`: `PASS` / rollback-only
+- persistent scheduler creation after validation: `0`
+- production writes: `0`
 
 The activation function binds the exact eight effective publication policies, the certified bounded-canary evidence, the approved policy evidence digest, exact job/schedule/command, conservative Cron headroom, and the existing A11 policy/scheduler. Exact replay is `NO_CHANGE`; conflicts fail closed.
 
+## Staging validation closure
+
+Authorized staging application installed only the activation boundary and executed validation `056` rollback-only. Repository evidence: `reports/generated/ana-a09-funnel-scheduler-activation-staging-validation-evidence.json`.
+
+Closure facts:
+
+- authorized repository HEAD: `093b38cd1c868eba4e4e431a9032dd4e3c6122da`
+- staging project: `zwkczgewzbsorbrjuzpb`
+- applied migration: `20261002002201 / ana_a09_funnel_scheduler_activation`
+- validation `056`: `PASS`
+- activation function owner: `postgres`
+- `SECURITY DEFINER`: `true`
+- `anon/authenticated/service_role EXECUTE`: `false / false / false`
+- first activation path tested transiently: `APPENDED`
+- exact replay tested transiently: `NO_CHANGE`
+- conflicting A09 cron tested transiently: fail closed
+- A11 preservation: PASS
+- persistent A09 cron after rollback: `0`
+- A09 global snapshots after rollback: `16`
+
 ## Operational proof observed
 
-Read-only staging observation at `2026-10-01T11:21:06.217555Z`:
+Latest read-only staging reconciliation at `2026-10-02T00:27:38.076411Z`:
 
 - active A09 publication policies: `8`
+- approval-evidence digest: exactly one, `2db1282f585217ab76069ba564c94f9133d08b3fa4c7d2f87fea76049684c829`
 - A09 relevant cron jobs: `0`
 - active cron jobs total: `6`
-- running cron jobs at observation: `0`
-- last 30 minutes: `78` cron runs, `0` failures
-- maximum recent run duration: `0.544141s`
-- last 10 minutes of A11: `10` runs, `0` failures
-- A09 runtime functions: `4`, all owner `postgres`, SECURITY DEFINER, closed to client roles
+- A09 global snapshots: `16`
+- A11 publication policy rows: `1`
+- A11 relevant/exact cron rows: `1 / 1`
+- activation function: owner `postgres`, SECURITY DEFINER, closed to `anon`, `authenticated`, and `service_role`
 
 Supabase recommends no more than eight concurrent Cron jobs and jobs shorter than ten minutes. This candidate records that as a **future activation gate**, not as permission to activate.
 
@@ -120,4 +142,4 @@ ANA remains **3/6**.
 
 ## Next gate
 
-Regenerate the canonical Domain Completion Matrix and certify the exact resulting repository HEAD. Only after that may a **separate exact-head staging authorization** apply the migration and execute validation `056` rollback-only. Persistent A09 scheduler activation remains separately unauthorized.
+Certify the reconciled staging evidence on the exact resulting repository HEAD. Even after that certification, persistent A09 scheduler activation remains a **separate explicit authorization gate** and must begin with a fresh staging conflict/headroom check. Production, merge and Ready for review remain unauthorized.
