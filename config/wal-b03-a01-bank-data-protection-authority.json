@@ -1,0 +1,221 @@
+{
+  "contractId": "wal-b03-a01-bank-data-protection-authority-v1",
+  "domain": "WAL-001",
+  "blockerId": "WAL-B03",
+  "dependsOn": ["wal-a02-bank-account-sensitive-data-boundary-v1"],
+  "sourceHead": "6eb8e55317a20f88f8ecb0f083c00c101b2afc59",
+  "matrixVersion": "1.3.132",
+  "scope": "repository_only",
+  "authorization": {
+    "id": "authorize-wal-b03-a01-bank-data-protection-authority-repository-only",
+    "repositoryWriteAuthority": true,
+    "migrationAuthority": false,
+    "stagingMutationAuthority": false,
+    "productionAuthority": false,
+    "deployAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false
+  },
+  "status": "design_ready_separate_migration_authority_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingMutationPerformed": false,
+  "productionChanged": false,
+  "runtimeObservation": {
+    "environment": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "readOnlyInspection": true,
+    "valuesInspected": false,
+    "walletBankAccountRowCountObserved": 1,
+    "table": "public.wallet_bank_accounts",
+    "rlsEnabled": true,
+    "forceRls": false,
+    "authenticatedTableSelect": true,
+    "ownerOrSupportAdminSelectPolicy": true,
+    "plaintextColumns": ["account_holder", "document", "branch", "account_number", "pix_key"],
+    "cryptoLikeColumnsObserved": [],
+    "userDefinedProtectionTriggersObserved": 0,
+    "saveRpc": {
+      "name": "public.save_wallet_bank_account",
+      "securityDefiner": true,
+      "returnsCurrentRowType": true,
+      "authenticatedExecute": false,
+      "serviceRoleExecute": true,
+      "plaintextParameters": ["p_account_holder", "p_document", "p_branch", "p_account_number", "p_pix_key"]
+    },
+    "selfServicePath": {
+      "dispatcherSerializesSaveResultToJson": true,
+      "edgeReturnsDispatcherResult": true,
+      "maskedResponseEnforced": false
+    },
+    "installedCapabilities": {
+      "pgcrypto": "1.3",
+      "supabaseVault": "0.3.1"
+    }
+  },
+  "sensitiveFields": ["account_holder", "document", "branch", "account_number", "pix_key"],
+  "targetArchitecture": {
+    "rawIntake": {
+      "scope": "single_server_command",
+      "browserPersistence": false,
+      "logging": false,
+      "requiredDisposition": "destroy_after_protected_write_or_failure"
+    },
+    "keyAuthority": {
+      "provider": "supabase_vault",
+      "keyAlias": "wal-bank-data-key-v1",
+      "domain": "WAL-001",
+      "reuseKycCryptoSecrets": false,
+      "repositorySecretMaterialAllowed": false,
+      "browserKeyAccess": false,
+      "supportKeyAccess": false,
+      "rotationRequired": true
+    },
+    "secretStoreCandidate": {
+      "relation": "private.wallet_bank_account_secrets_v1",
+      "exposedThroughDataApi": false,
+      "directAnonAccess": false,
+      "directAuthenticatedAccess": false,
+      "directServiceRoleTableAccess": false,
+      "owner": "postgres",
+      "ciphertextColumn": "ciphertext",
+      "keyVersionColumn": "key_version",
+      "referenceColumn": "secret_reference_id",
+      "lifecycleColumns": ["created_at", "rotated_at", "retired_at", "purge_after", "destroyed_at"],
+      "plaintextColumnsAllowed": []
+    },
+    "encryptionCandidate": {
+      "engine": "pgcrypto",
+      "mode": "pgp_sym_encrypt",
+      "cipher": "aes256",
+      "nondeterministicCiphertextRequired": true,
+      "encryptedPayloadMustBind": ["user_id", "secret_reference_id", "key_version"],
+      "decryptionMustVerifyBinding": true,
+      "genericDecryptRpcAllowed": false
+    },
+    "browserProjection": {
+      "contract": "wallet-bank-account-masked-projection-v1",
+      "rawFieldsAllowed": [],
+      "requiredFields": [
+        "bankAccountReferenceId",
+        "bankAccountSecretVersion",
+        "bankName",
+        "bankCode",
+        "accountType",
+        "holderNameMasked",
+        "documentMasked",
+        "branchMasked",
+        "accountNumberMasked",
+        "pixKeyMasked",
+        "pixKeyType",
+        "destinationKind",
+        "destinationLabel",
+        "status",
+        "updatedAt",
+        "projectionFingerprint"
+      ],
+      "ownerRawReadAllowed": false,
+      "supportRawReadAllowed": false,
+      "adminRawReadAllowed": false
+    },
+    "operatorAccess": {
+      "default": "masked_projection_only",
+      "supportRawAccess": "deny",
+      "adminRawAccess": "deny",
+      "breakGlassRawAccess": "not_defined_not_authorized"
+    },
+    "decryptionAuthority": {
+      "currentAllowedConsumers": [],
+      "futureProviderAdapterRequires": [
+        "PAY-B01 provider authority",
+        "purpose-bound server function",
+        "separate runtime authorization",
+        "audit event without plaintext"
+      ],
+      "ownerReadRequiresDecryption": false,
+      "supportReadRequiresDecryption": false
+    },
+    "responseContract": {
+      "saveMustReturnMaskedProjectionOnly": true,
+      "getMustReturnMaskedProjectionOnly": true,
+      "rawRowTypeReturnForbidden": true,
+      "selfServiceJsonRawSecretReturnForbidden": true
+    },
+    "retentionAuthority": {
+      "durationApproved": false,
+      "durationDays": null,
+      "hardcodedDurationForbidden": true,
+      "lifecycleFieldsRequired": ["retired_at", "purge_after", "destroyed_at"],
+      "purgeAfterRequiresApprovedPolicy": true,
+      "cryptoErasureSupportedByKeyRetirement": true
+    },
+    "loggingAuthority": {
+      "rawBankDataAllowed": false,
+      "decryptedPayloadAllowed": false,
+      "allowed": ["opaque_reference", "key_version", "masked_projection_fingerprint", "operation_code", "actor_id"]
+    }
+  },
+  "orderedFutureGates": [
+    {
+      "id": "WAL-B03-A02",
+      "name": "migration candidate repository-only",
+      "requiresSeparateAuthorization": true,
+      "allowedEffects": ["repository_migration_source", "static_tests", "dry_run_plan"],
+      "forbiddenEffects": ["staging_write", "deploy", "production"]
+    },
+    {
+      "id": "WAL-B03-A03",
+      "name": "staging migration and protected backfill",
+      "requiresSeparateAuthorization": true,
+      "allowedEffects": ["staging_migration", "server_side_backfill", "rollback_canary"],
+      "forbiddenEffects": ["production", "plaintext_retirement_before_cutover_proof"]
+    },
+    {
+      "id": "WAL-B03-A04",
+      "name": "masked runtime cutover",
+      "requiresSeparateAuthorization": true,
+      "allowedEffects": ["staging_runtime_cutover", "masked_owner_read", "masked_operator_read"],
+      "forbiddenEffects": ["production", "support_raw_access", "generic_decrypt"]
+    },
+    {
+      "id": "WAL-B03-A05",
+      "name": "legacy plaintext retirement",
+      "requiresSeparateAuthorization": true,
+      "allowedEffects": ["staging_plaintext_retirement_after_equivalence"],
+      "forbiddenEffects": ["production", "history_rewrite"]
+    }
+  ],
+  "migrationPreconditions": [
+    "Recheck exact source HEAD and matrix version before writing migration source.",
+    "Preserve WAL-A02 masking authority or explicitly version a compatible successor.",
+    "Re-read staging row count, grants, RLS policy, crypto capabilities and save/read path before any staging write.",
+    "Never copy bank-account plaintext into logs, reports, CI artifacts or repository fixtures.",
+    "Backfill verification may emit only fingerprints, counts or booleans, never plaintext.",
+    "Do not retire legacy plaintext until masked read/write equivalence is proved.",
+    "Plaintext retirement requires separate authorization after runtime canaries pass."
+  ],
+  "preservedBlockers": ["WAL-B02", "WAL-B03", "WAL-B04", "PAY-B01", "PAY-B03", "PAY-B04"],
+  "completionCriteria": [
+    "WAL-specific key authority distinct from KYC is defined.",
+    "Target secret storage is private with no direct browser or service-role table access.",
+    "Owner, support and admin reads are masked-only.",
+    "Save and get responses forbid raw row payloads.",
+    "Retention lifecycle exists without inventing an unapproved duration.",
+    "Migration, staging cutover and plaintext retirement remain separately authorized.",
+    "WAL-B03 remains open until staging plaintext storage and runtime plaintext responses are removed."
+  ],
+  "prohibitedEffects": {
+    "migrationFileCreated": false,
+    "migrationApplied": false,
+    "stagingMutation": false,
+    "deployment": false,
+    "providerContact": false,
+    "credentialConfigured": false,
+    "realBankDataRead": false,
+    "realBankDataWrite": false,
+    "productionChange": false,
+    "merge": false,
+    "readyForReview": false
+  }
+}
