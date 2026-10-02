@@ -16,13 +16,15 @@ Control Center was queried on 2026-10-02: product/matrix/CI LIVE, panel/checkpoi
 
 Direct staging metadata confirmed one legacy bank-account row, no secret store, pgcrypto 1.3 in `extensions`, Vault 0.3.1, authenticated owner/support row reads, service-role-only save RPC returning the legacy row type. No bank values, keys, ciphertext or decrypted secrets were selected.
 
-**New prerequisite: `service_role` has SELECT on both `vault.secrets` and `vault.decrypted_secrets`.** The candidate checks effective table AND column privileges and refuses installation/backfill while this is true. It does not modify shared Vault grants. Before A03, inventory consumers, inherited roles and callable Vault wrappers/functions, choose a bounded authority fix, obtain the corresponding authorization, then prove negative runtime access. Table ACL checks alone do not certify that no privileged wrapper can expose a key.
+**Vault ACL remediation is now part of the repository-only candidate, but remains unapplied.** Read-only staging reconciliation found that `service_role` has Vault schema usage, SELECT/DELETE on Vault relations, EXECUTE on `vault.create_secret(...)` and `vault.update_secret(...)`, plus EXECUTE on the internal `_crypto_aead_det_decrypt(...)` primitive. No direct Vault access was found in deployed Edge Functions or repository clients, and the observed Vault readers are postgres-owned private SQL functions used by the order-event worker and staging finance sandbox. The candidate therefore revokes all Vault relation privileges, all Vault function EXECUTE privileges and schema USAGE from `service_role`, while asserting that postgres retains the minimum Vault authority needed by those internal consumers. A03 must still prove this in rollback-only runtime canaries before any committing application.
 
 The concurrent UX wallet work is on different branches and runtime files. This batch uses dedicated candidate paths; generated matrix files are the only shared derivatives. The historical SEC-B09 matrix discrepancy is preserved, not silently repaired here.
 
 ## Candidate behavior (not yet observed in runtime)
 
 - One transaction, bounded lock and statement timeouts, capability/role/ACL/collision checks before DDL.
+- Before candidate storage DDL, revoke all current Vault relation privileges, Vault function EXECUTE privileges and Vault schema USAGE from `service_role`; then assert no effective Vault access remains for that role.
+- Preserve postgres Vault USAGE/SELECT/create-secret authority and keep `private.invoke_order_event_worker_if_needed()` plus `private.assert_staging_finance_sandbox()` unavailable to `service_role`.
 - A session marker plus `current_user = postgres` prevents accidental execution. **The marker does not confer human authorization**, and must not be set by automated deploy/CI.
 - No `IF NOT EXISTS` or replacement of existing objects: collisions fail closed.
 - `private.wallet_bank_data_keys_v1`: versioned WAL Vault references, a single active key, retirement metadata. No raw key column; no KYC key reuse.
@@ -51,7 +53,9 @@ Use synthetic values only and a separately authorized disposable executor. Do no
 | Case | Required future result |
 |---|---|
 | Missing authorization marker; non-postgres executor | Abort before DDL |
-| API role has Vault table/column/inherited access | Abort before key creation |
+| anon/authenticated has Vault access before hardening | Abort before key creation |
+| service_role after hardening still has Vault schema, relation, column or function authority | Abort transaction |
+| postgres loses required Vault access or service_role gains direct worker/sandbox function execution | Abort transaction |
 | Existing alias, relation or function; missing crypto capability | Abort; no partial installation |
 | SQL installation within a rollback-only transaction | All candidate objects and Vault key disappear after rollback |
 | anon/authenticated/service_role access, including owner/support/admin JWT identities | No private table access or backfill execution |
@@ -67,7 +71,7 @@ The backfill's row lock ends with its transaction. A03 must quiesce legacy bank 
 
 ## A03 execution envelope (requires another authorization)
 
-1. Resolve the Vault authority dependency and document consumer impact; otherwise STOP.
+1. Recheck the Vault consumer inventory and exact effective ACLs. The candidate must remove all direct `service_role` Vault authority while preserving the two postgres-owned private consumers; otherwise STOP.
 2. Recheck candidate/source SHA, SQL SHA-256, Matrix, staging project identity/schema/grants/counts, migration history, collisions and the operational change gate. Stop on any drift. Verify logging configuration and recovery readiness without dumping sensitive values.
 3. Prepare and authorize a synthetic rollback-only canary with exact scripts and evidence schema. Do not execute a generic `db push` over the pending repository migration stack.
 4. Prove installation rollback on the exact engine/extensions and negative role tests. Runtime evidence must contain only counts/booleans and opaque operation references.
@@ -83,7 +87,7 @@ After an installation/backfill commit but before cutover, keep the unused privat
 
 ## Static verification and limits
 
-`python scripts/test-wal-b03-a02-migration-candidate.py` parses SQL and PL/pgSQL with pglast 7.20 (PostgreSQL 17 parser), checks candidate/ACL/binding/return boundaries and runs negative source mutations. It cannot prove relation resolution, role execution, encryption, concurrency or rollback. There is no mock database test presented as runtime evidence.
+`python scripts/test-wal-b03-a02-migration-candidate.py` parses SQL and PL/pgSQL with pglast 7.20 (PostgreSQL 17 parser), checks candidate/ACL/binding/return boundaries, verifies Vault relation/function/schema hardening plus preserved postgres consumer authority, and runs negative source mutations. It cannot prove relation resolution, role execution, encryption, concurrency or rollback. There is no mock database test presented as runtime evidence.
 
 Run A01 and WAL-A02 regressions, financial RPC authority checks, deterministic matrix generation/audit, agent governance and diff hygiene. Generated matrix derivatives may change inventory counts only; maturity, production gates, canonical matrix config and SEC-B09 state are not changed.
 
