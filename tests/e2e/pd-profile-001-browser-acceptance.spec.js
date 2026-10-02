@@ -154,7 +154,7 @@ for (const viewport of viewports) {
       expect(state.eyebrow).toBe('Perfil profissional');
       expect(state.guidance).toContain('serviços');
       expect(state.primaryVisible).toBe(true);
-      expect(state.socialVisible).toBe(true);
+      expect(state.socialVisible).toBe(viewport.width > 520);
       expect(state.verifiedVisible).toBe(true);
       expect(state.decisionLinks).toEqual(['Ver serviços', 'Ler avaliações', 'Conhecer profissional']);
       expect(state.tabs.slice(0, 3)).toEqual(['Serviços', 'Avaliações', 'Sobre']);
