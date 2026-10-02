@@ -6,7 +6,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const contract = require(path.join(root, 'config/wal-b03-a01-bank-data-protection-authority.json'));
 const fixture = require(path.join(root, 'tests/fixtures/wal-b03-a01-bank-data-protection-cases.json'));
-const authority = require(path.join(root, 'backend/modules/wallet/wallet-bank-data-protection-authority.js'));
+const authority = require(path.join(root, 'scripts/lib/wal-b03-bank-data-protection-authority.js'));
 const predecessor = require(path.join(root, 'backend/modules/wallet/wallet-bank-account-sensitive-data.js'));
 
 let assertions = 0;

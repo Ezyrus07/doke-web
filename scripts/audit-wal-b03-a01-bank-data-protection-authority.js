@@ -10,7 +10,7 @@ const json = (relative) => JSON.parse(read(relative));
 const contract = json('config/wal-b03-a01-bank-data-protection-authority.json');
 const predecessor = json('config/wal-a02-bank-account-sensitive-data-boundary.json');
 const matrix = json('config/domain-completion-matrix.json');
-const moduleSource = read('backend/modules/wallet/wallet-bank-data-protection-authority.js');
+const moduleSource = read('scripts/lib/wal-b03-bank-data-protection-authority.js');
 const docs = read('docs/WAL-B03-A01-BANK-DATA-PROTECTION-AUTHORITY.md');
 const walletFoundation = read('supabase/migrations/005_wallet_runtime_foundation.sql');
 const financialRpc = read('supabase/migrations/107_financial_rpc_authority.sql');

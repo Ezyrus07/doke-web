@@ -7,7 +7,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/wal-b03-a01-bank-data-protection-authority.yml'
-      - 'backend/modules/wallet/wallet-bank-data-protection-authority.js'
+      - 'scripts/lib/wal-b03-bank-data-protection-authority.js'
       - 'config/wal-b03-a01-bank-data-protection-authority.json'
       - 'docs/WAL-B03-A01-BANK-DATA-PROTECTION-AUTHORITY.md'
       - 'scripts/audit-wal-b03-a01-bank-data-protection-authority.js'
@@ -36,7 +36,7 @@ jobs:
           base='6eb8e55317a20f88f8ecb0f083c00c101b2afc59'
           mapfile -t changed < <(git diff --name-only "$base"...HEAD)
           printf '%s\n' "${changed[@]}"
-          allowed='^(.github/workflows/wal-b03-a01-bank-data-protection-authority.yml|backend/modules/wallet/wallet-bank-data-protection-authority.js|config/wal-b03-a01-bank-data-protection-authority.json|docs/WAL-B03-A01-BANK-DATA-PROTECTION-AUTHORITY.md|scripts/audit-wal-b03-a01-bank-data-protection-authority.js|scripts/test-wal-b03-a01-bank-data-protection-authority.js|tests/fixtures/wal-b03-a01-bank-data-protection-cases.json)$'
+          allowed='^(.github/workflows/wal-b03-a01-bank-data-protection-authority.yml|scripts/lib/wal-b03-bank-data-protection-authority.js|config/wal-b03-a01-bank-data-protection-authority.json|docs/WAL-B03-A01-BANK-DATA-PROTECTION-AUTHORITY.md|scripts/audit-wal-b03-a01-bank-data-protection-authority.js|scripts/test-wal-b03-a01-bank-data-protection-authority.js|tests/fixtures/wal-b03-a01-bank-data-protection-cases.json)$'
           unexpected="$(printf '%s\n' "${changed[@]}" | grep -Ev "$allowed" || true)"
           if [[ -n "$unexpected" ]]; then
             echo "Unexpected file outside WAL-B03-A01 scope:"
@@ -50,7 +50,7 @@ jobs:
 
       - name: Syntax
         run: |
-          node --check backend/modules/wallet/wallet-bank-data-protection-authority.js
+          node --check scripts/lib/wal-b03-bank-data-protection-authority.js
           node --check scripts/audit-wal-b03-a01-bank-data-protection-authority.js
           node --check scripts/test-wal-b03-a01-bank-data-protection-authority.js
 
