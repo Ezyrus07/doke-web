@@ -70,38 +70,8 @@ jobs:
           from pglast import parser
           sql = Path('/tmp/wal-b03-a03-rollback-canary.sql').read_text()
           parser.parse_sql_json(sql)
-          assert not re.search(r'(?mi)^\s*commit\s*;\s*      - name: A01 and WAL-A02 predecessor regressions
-        run: |
-          node scripts/audit-wal-b03-a01-bank-data-protection-authority.js
-          node scripts/test-wal-b03-a01-bank-data-protection-authority.js
-          node scripts/audit-wal-a02-bank-account-sensitive-data-boundary.js
-          node scripts/test-wal-a02-bank-account-sensitive-data-boundary.js
-          node scripts/test-financial-rpc-authority-contract.js
-      - name: Matrix and agent governance
-        run: |
-          node scripts/audit-domain-completion-matrix.js --write
-          git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
-          npm run audit:domain-completion-matrix
-          npm run audit:agent-governance
-      - name: Diff hygiene
-        run: git diff --check b0d18389fc5748f6b143f00f30104c3b487c96d4...HEAD
-, sql)
-          assert len(re.findall(r'(?mi)^\s*rollback\s*;\s*      - name: A01 and WAL-A02 predecessor regressions
-        run: |
-          node scripts/audit-wal-b03-a01-bank-data-protection-authority.js
-          node scripts/test-wal-b03-a01-bank-data-protection-authority.js
-          node scripts/audit-wal-a02-bank-account-sensitive-data-boundary.js
-          node scripts/test-wal-a02-bank-account-sensitive-data-boundary.js
-          node scripts/test-financial-rpc-authority-contract.js
-      - name: Matrix and agent governance
-        run: |
-          node scripts/audit-domain-completion-matrix.js --write
-          git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
-          npm run audit:domain-completion-matrix
-          npm run audit:agent-governance
-      - name: Diff hygiene
-        run: git diff --check b0d18389fc5748f6b143f00f30104c3b487c96d4...HEAD
-, sql)) == 1
+          assert not re.search(r'(?mi)^\s*commit\s*;\s*\Z', sql)
+          assert len(re.findall(r'(?mi)^\s*rollback\s*;\s*$', sql)) == 1
           assert 'private.invoke_order_event_worker_if_needed();' not in sql.lower()
           assert 'perform private.assert_staging_finance_sandbox();' in sql.lower()
           print('A03 rollback-only canary source: PASS')
