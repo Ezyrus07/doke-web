@@ -4,7 +4,7 @@
 
 Define the continuous publication scheduler contract for the eight canonical A09 funnel metrics after the bounded runtime canary succeeded.
 
-This lot is **repository-only contract design**. It does not create a migration, does not register a cron job, does not publish another snapshot, and does not grant continuous publication authority.
+The scheduler contract was first defined repository-only and is now accompanied by a **repository-only migration implementation candidate**. The migration has not been applied to staging, does not register a cron job merely by being applied, does not publish snapshots, and does not grant continuous publication authority.
 
 ## Certified inputs
 
@@ -53,9 +53,9 @@ Each invocation remains constrained by the existing publication policy:
 
 The scheduler must call the **catch-up executor**, never the direct projection or direct window function.
 
-## Future activation boundary
+## Materialized activation boundary
 
-The next implementation lot should create an owner-only function:
+The authorized repository-only implementation materializes the owner-only function:
 
 `private.activate_analytics_a09_funnel_scheduler_v1(text)`
 
@@ -73,7 +73,22 @@ Required semantics:
 10. preserve the A11 job unchanged;
 11. remain inaccessible to `public`, `anon`, `authenticated`, and `service_role`.
 
-The migration that defines this function must **not itself create the cron job**. Actual scheduler creation remains a separate staging invocation requiring another explicit authorization.
+The migration that defines this function **does not invoke it** and therefore does not itself create the cron job. Actual scheduler creation remains a separate staging invocation requiring another explicit authorization.
+
+### Repository implementation evidence
+
+- authorization source HEAD: `77c6ef87b8e773d2031631078169ad0bbc8c1a1c`
+- Supabase CLI: `2.119.0`
+- CLI generation workflow run/job: `36943876952 / 110641368483` — SUCCESS
+- migration: `supabase/migrations/20261002000155_ana_a09_funnel_scheduler_activation.sql`
+- migration blob: `9593480d6f3e6f4d63ec16c6fb5c2b2a590d5075`
+- rollback-only validation: `supabase/tests/056_ana_a09_funnel_scheduler_activation_validation.sql`
+- validation blob: `aeccec3474e1f4b52ff8c6faaa05e7d87dc846b5`
+- persistent scheduler creation in this lot: `0`
+- staging writes in this lot: `0`
+- production writes in this lot: `0`
+
+The activation function binds the exact eight effective publication policies, the certified bounded-canary evidence, the approved policy evidence digest, exact job/schedule/command, conservative Cron headroom, and the existing A11 policy/scheduler. Exact replay is `NO_CHANGE`; conflicts fail closed.
 
 ## Operational proof observed
 
@@ -105,4 +120,4 @@ ANA remains **3/6**.
 
 ## Next gate
 
-After exact-head certification, create the migration scaffold with the Supabase CLI under a **new repository-only authorization**. That migration may define the activation function and rollback-only validation, but must still create no cron job and perform no staging mutation.
+Regenerate the canonical Domain Completion Matrix and certify the exact resulting repository HEAD. Only after that may a **separate exact-head staging authorization** apply the migration and execute validation `056` rollback-only. Persistent A09 scheduler activation remains separately unauthorized.

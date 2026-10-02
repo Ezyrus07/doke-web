@@ -5,8 +5,8 @@
   "sourceHead": "01fb50d8f35276031efec3d252a4b91672aa8dcc",
   "matrixVersion": "1.3.132",
   "scope": "repository_only_contract_candidate",
-  "status": "candidate_only_no_migration_no_scheduler_activation",
-  "objective": "Define the continuous A09 funnel publication scheduler contract after a successful bounded runtime canary, without creating a migration, cron job, continuous snapshot-publication authority or staging mutation in this lot.",
+  "status": "migration_candidate_materialized_repository_only_pending_exact_head_certification",
+  "objective": "Define and materialize the repository-only A09 funnel scheduler activation-function migration candidate after the bounded runtime canary, without applying the migration, creating a persistent cron job, publishing snapshots, or granting scheduler/staging/production authority.",
   "authorization": {
     "command": "authorize-ana-a09-funnel-continuous-publication-scheduler-candidate-repository-only head=01fb50d8f35276031efec3d252a4b91672aa8dcc matrix=v1.3.132 canaryEvidenceBlobSha=e28703cd192e618582438bb0e63267caac881eda candidateConfigBlobSha=ea5ab76a922073322674e45509519ec680fb8672 policySetId=ana-a07-a09-funnel-v1-r1 boundedRuntimeCanaryPassed=true targetSnapshotCount=8 revisionOneCount=8 higherRevisionCount=0 preserveA11=true continuousPublicationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false schedulerAuthority=false stagingAuthority=false repositoryWriteAuthority=true productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
     "digestSha256": "b1e67c07834088546d5880cb29fadc9a09c7b3c94057201df6dc03d8d608ad36",
@@ -121,8 +121,8 @@
   },
   "futureMigrationContract": {
     "migrationImplementationRequired": true,
-    "migrationCreatedInThisLot": false,
-    "migrationFilenameSelectedInThisLot": false,
+    "migrationCreatedInThisLot": true,
+    "migrationFilenameSelectedInThisLot": true,
     "migrationMustBeCreatedWithSupabaseCli": true,
     "migrationMustOnlyDefineActivationBoundary": true,
     "migrationMustNotCreateCronJob": true,
@@ -132,7 +132,11 @@
     "validationMustTestReplayIdempotency": true,
     "validationMustTestConflictFailClosed": true,
     "validationMustVerifyClientExecuteClosed": true,
-    "validationMustVerifyA11Preserved": true
+    "validationMustVerifyA11Preserved": true,
+    "migrationCreatedWithSupabaseCli": true,
+    "supabaseCliVersion": "2.119.0",
+    "cliGenerationWorkflowRunId": 36943876952,
+    "cliGenerationWorkflowJobId": 110641368483
   },
   "futureStagingActivationRequirements": {
     "separateExplicitAuthorizationRequired": true,
@@ -190,7 +194,7 @@
     "readyForReviewAuthority": false
   },
   "prohibitedEffects": {
-    "migrationCreatedInThisLot": false,
+    "migrationCreatedInThisLot": true,
     "stagingMigrationApplied": false,
     "cronCreated": false,
     "snapshotPublicationInvoked": false,
@@ -207,5 +211,47 @@
     "after": 3,
     "promoted": false
   },
-  "nextGate": "Exact-head repository certification. Then require a separate repository-only migration-implementation authorization to scaffold the owner-only A09 scheduler activation function and rollback-only validation. No staging application or cron creation is authorized yet."
+  "nextGate": "Exact-head repository certification after canonical Domain Completion Matrix regeneration. If green, require a separate exact-head staging migration-application + rollback-validation authorization. Persistent scheduler activation remains a later, separately authorized action.",
+  "migrationImplementationAuthorization": {
+    "command": "authorize-ana-a09-funnel-scheduler-activation-function-migration-candidate-repository-only head=77c6ef87b8e773d2031631078169ad0bbc8c1a1c matrix=v1.3.132 continuousSchedulerConfigBlobSha=c7d7d24c08f7dbc9618b2e1b7e192e3a9c932a4f continuousSchedulerHandoffBlobSha=87027b04544548940bafd95e7f998bb04292f72d canaryEvidenceBlobSha=e28703cd192e618582438bb0e63267caac881eda policySetId=ana-a07-a09-funnel-v1-r1 activationFunction=private.activate_analytics_a09_funnel_scheduler_v1 jobName=doke-ana-funnel-v1-r1 schedule=*_*_*_*_* targetFunction=private.run_analytics_a09_funnel_catch_up_v1 validationRollbackOnly=true preserveA11=true migrationCreationAuthority=true repositoryWriteAuthority=true schedulerAuthority=false continuousPublicationAuthority=false runtimeSnapshotAuthority=false snapshotPublicationAuthority=false stagingAuthority=false productionAuthority=false mergeAuthority=false readyForReviewAuthority=false historyRewriteAuthority=false",
+    "digestSha256": "ec041cc99a84065e56f9816781397de7538a7cc6a174f35ed576ce99201955e3",
+    "authorizedSourceHead": "77c6ef87b8e773d2031631078169ad0bbc8c1a1c",
+    "matrixVersion": "1.3.132",
+    "sourceConfigBlobSha": "c7d7d24c08f7dbc9618b2e1b7e192e3a9c932a4f",
+    "sourceHandoffBlobSha": "87027b04544548940bafd95e7f998bb04292f72d",
+    "canaryEvidenceBlobSha": "e28703cd192e618582438bb0e63267caac881eda",
+    "migrationCreationAuthority": true,
+    "repositoryWriteAuthority": true,
+    "schedulerAuthority": false,
+    "continuousPublicationAuthority": false,
+    "runtimeSnapshotAuthority": false,
+    "snapshotPublicationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "migrationCandidate": {
+    "migrationPath": "supabase/migrations/20261002000155_ana_a09_funnel_scheduler_activation.sql",
+    "migrationBlobSha": "9593480d6f3e6f4d63ec16c6fb5c2b2a590d5075",
+    "validationPath": "supabase/tests/056_ana_a09_funnel_scheduler_activation_validation.sql",
+    "validationBlobSha": "aeccec3474e1f4b52ff8c6faaa05e7d87dc846b5",
+    "activationFunction": "private.activate_analytics_a09_funnel_scheduler_v1",
+    "owner": "postgres",
+    "securityDefiner": true,
+    "clientExecuteClosed": true,
+    "jobName": "doke-ana-funnel-v1-r1",
+    "schedule": "* * * * *",
+    "targetFunction": "private.run_analytics_a09_funnel_catch_up_v1",
+    "migrationInvokesActivation": false,
+    "migrationCreatesCron": false,
+    "validationRollbackOnly": true,
+    "firstActivationExpectedStatus": "APPENDED",
+    "replayExpectedStatus": "NO_CHANGE",
+    "conflictBehavior": "FAIL_CLOSED",
+    "preservesA11": true,
+    "policyApprovalEvidenceDigestSha256": "2db1282f585217ab76069ba564c94f9133d08b3fa4c7d2f87fea76049684c829",
+    "canaryEvidenceBlobSha": "e28703cd192e618582438bb0e63267caac881eda"
+  }
 }
