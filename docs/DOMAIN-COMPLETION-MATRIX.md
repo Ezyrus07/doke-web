@@ -1077,7 +1077,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 899 arquivos no escopo; 230 referências a localStorage; 79 a sessionStorage; 242 referências mock; 280 referências de rede/Supabase; 11 marcadores de implementação pendente.
+**Evidência estática observada:** 900 arquivos no escopo; 230 referências a localStorage; 79 a sessionStorage; 242 referências mock; 282 referências de rede/Supabase; 11 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
