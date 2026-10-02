@@ -15,25 +15,87 @@ begin
   end if;
   if to_regnamespace('private') is null or
      to_regclass('public.wallet_bank_accounts') is null or
+     to_regclass('vault.secrets') is null or
      to_regclass('vault.decrypted_secrets') is null or
+     to_regprocedure('vault.create_secret(text,text,text,uuid)') is null or
+     to_regprocedure('vault.update_secret(uuid,text,text,text,uuid)') is null or
+     to_regprocedure('vault._crypto_aead_det_decrypt(bytea,bytea,bigint,bytea,bytea)') is null or
      to_regprocedure('extensions.pgp_sym_encrypt(text,text,text)') is null or
-     to_regprocedure('extensions.pgp_sym_decrypt(bytea,text)') is null then
+     to_regprocedure('extensions.pgp_sym_decrypt(bytea,text)') is null or
+     to_regprocedure('private.invoke_order_event_worker_if_needed()') is null or
+     to_regprocedure('private.assert_staging_finance_sandbox()') is null then
     raise exception using message = 'WAL_B03_CAPABILITY_DRIFT';
   end if;
-  -- Do not revoke shared Vault privileges here: consumers need a separate review.
-  foreach api_role in array array['anon', 'authenticated', 'service_role'] loop
-    if has_table_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
+  -- Browser identities must already be excluded. service_role is remediated below.
+  foreach api_role in array array['anon', 'authenticated'] loop
+    if has_schema_privilege(api_role, 'vault', 'USAGE') or
+       has_table_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
        has_any_column_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
        has_table_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or
        has_any_column_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,REFERENCES') then
       raise exception using message = 'WAL_B03_VAULT_ACL_REVIEW_REQUIRED';
     end if;
   end loop;
+  if not has_schema_privilege('postgres', 'vault', 'USAGE') or
+     not has_table_privilege('postgres', 'vault.secrets', 'SELECT') or
+     not has_table_privilege('postgres', 'vault.decrypted_secrets', 'SELECT') or
+     not has_function_privilege('postgres', 'vault.create_secret(text,text,text,uuid)', 'EXECUTE') then
+    raise exception using message = 'WAL_B03_POSTGRES_VAULT_AUTHORITY_DRIFT';
+  end if;
+  if has_function_privilege('service_role', 'private.invoke_order_event_worker_if_needed()', 'EXECUTE') or
+     has_function_privilege('service_role', 'private.assert_staging_finance_sandbox()', 'EXECUTE') then
+    raise exception using message = 'WAL_B03_INTERNAL_CONSUMER_BOUNDARY_DRIFT';
+  end if;
   if exists (select 1 from vault.secrets where name = 'wal-bank-data-key-v1') then
     raise exception using message = 'WAL_B03_KEY_ALIAS_COLLISION';
   end if;
 end;
 $preflight$;
+
+-- A02 remediation candidate: remove direct Vault authority from service_role.
+-- postgres remains the sole authority used by the existing private SQL consumers.
+revoke all privileges on all tables in schema vault from service_role;
+revoke execute on all functions in schema vault from service_role;
+revoke usage on schema vault from service_role;
+
+do $vault_acl_hardening$
+begin
+  if has_schema_privilege('service_role', 'vault', 'USAGE') or
+     exists (
+       select 1
+       from pg_catalog.pg_class c
+       join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'vault'
+         and c.relkind in ('r', 'v', 'm', 'f', 'p')
+         and (
+           has_table_privilege('service_role', c.oid,
+             'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or
+           has_any_column_privilege('service_role', c.oid,
+             'SELECT,INSERT,UPDATE,REFERENCES')
+         )
+     ) or
+     exists (
+       select 1
+       from pg_catalog.pg_proc p
+       join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'vault'
+         and p.prokind in ('f', 'p')
+         and has_function_privilege('service_role', p.oid, 'EXECUTE')
+     ) then
+    raise exception using message = 'WAL_B03_SERVICE_ROLE_VAULT_HARDENING_FAILED';
+  end if;
+  if not has_schema_privilege('postgres', 'vault', 'USAGE') or
+     not has_table_privilege('postgres', 'vault.secrets', 'SELECT') or
+     not has_table_privilege('postgres', 'vault.decrypted_secrets', 'SELECT') or
+     not has_function_privilege('postgres', 'vault.create_secret(text,text,text,uuid)', 'EXECUTE') then
+    raise exception using message = 'WAL_B03_POSTGRES_VAULT_AUTHORITY_LOST';
+  end if;
+  if has_function_privilege('service_role', 'private.invoke_order_event_worker_if_needed()', 'EXECUTE') or
+     has_function_privilege('service_role', 'private.assert_staging_finance_sandbox()', 'EXECUTE') then
+    raise exception using message = 'WAL_B03_INTERNAL_CONSUMER_BOUNDARY_DRIFT';
+  end if;
+end;
+$vault_acl_hardening$;
 
 -- Deliberately no IF NOT EXISTS: unexpected existing objects require reconciliation.
 create table private.wallet_bank_data_keys_v1 (
@@ -124,12 +186,21 @@ begin
   if p_expected_rows is distinct from 1 then
     raise exception using message = 'WAL_B03_RECONCILE_EXPECTED_COUNT';
   end if;
-  -- Recheck the shared authority at invocation, not just at migration installation.
+  -- Recheck the hardened authority at invocation, not just at migration installation.
   foreach api_role in array array['anon', 'authenticated', 'service_role'] loop
-    if has_table_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
+    if has_schema_privilege(api_role, 'vault', 'USAGE') or
+       has_table_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
        has_any_column_privilege(api_role, 'vault.decrypted_secrets', 'SELECT') or
        has_table_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or
-       has_any_column_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,REFERENCES') then
+       has_any_column_privilege(api_role, 'vault.secrets', 'SELECT,INSERT,UPDATE,REFERENCES') or
+       exists (
+         select 1
+         from pg_catalog.pg_proc p
+         join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+         where n.nspname = 'vault'
+           and p.prokind in ('f', 'p')
+           and has_function_privilege(api_role, p.oid, 'EXECUTE')
+       ) then
       raise exception using message = 'WAL_B03_VAULT_ACL_REVIEW_REQUIRED';
     end if;
   end loop;
@@ -232,6 +303,21 @@ declare
   api_role text;
   protected_table text;
 begin
+  if has_schema_privilege('service_role', 'vault', 'USAGE') or
+     exists (
+       select 1
+       from pg_catalog.pg_proc p
+       join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'vault'
+         and p.prokind in ('f', 'p')
+         and has_function_privilege('service_role', p.oid, 'EXECUTE')
+     ) then
+    raise exception using message = 'WAL_B03_SERVICE_ROLE_VAULT_PRIVILEGE_DRIFT';
+  end if;
+  if not has_schema_privilege('postgres', 'vault', 'USAGE') or
+     not has_table_privilege('postgres', 'vault.decrypted_secrets', 'SELECT') then
+    raise exception using message = 'WAL_B03_POSTGRES_VAULT_AUTHORITY_LOST';
+  end if;
   foreach api_role in array array['anon', 'authenticated', 'service_role'] loop
     foreach protected_table in array array['private.wallet_bank_data_keys_v1',
       'private.wallet_bank_account_secrets_v1'] loop
