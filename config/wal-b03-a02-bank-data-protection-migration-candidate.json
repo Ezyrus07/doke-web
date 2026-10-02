@@ -31,7 +31,7 @@
     "plaintextRetired": false,
     "productionChanged": false
   },
-  "stagingReadiness": "blocked_candidate_not_applied_and_runtime_validation",
+  "stagingReadiness": "blocked_runtime_schema_cache_revalidation_and_a03_rollback_canary",
   "blockerStatus": "WAL-B03_OPEN",
   "reconciledObservation": {
     "environment": "doke-web-staging",
@@ -67,7 +67,20 @@
     "postgresPrivateVaultConsumers": true,
     "edgeFunctionsDirectVaultAccessObserved": false,
     "vaultAccessObservedInLast24hLogs": false,
-    "aclHardeningAuditObservedOn": "2026-10-02"
+    "serviceRoleCanLogin": false,
+    "authenticatorVaultUsage": false,
+    "publicVaultWrappersObserved": 0,
+    "repositoryVaultSchemaClientObserved": false,
+    "postgrestSchemaCacheRelations": 54,
+    "publicDataApiRelations": 54,
+    "vaultRelationsIfExposed": 2,
+    "vaultInPostgrestSchemaCache": false,
+    "vaultExposureEvidenceMethod": "runtime_schema_cache_relation_count_reconciliation",
+    "serviceRoleRestTrafficObservedLast24h": false,
+    "profileHeaderTrafficObservedLast24h": false,
+    "platformManagedVaultGrantor": "supabase_admin",
+    "platformVaultAclMutationByPostgresSupported": false,
+    "a03PriorRollbackCanary": "FAIL_SAFE_platform_managed_vault_acl_revocation_incompatible_no_durable_change"
   },
   "candidate": {
     "installationOnly": true,
@@ -84,29 +97,32 @@
     "legacyTableModified": false,
     "legacySaveRpcModified": false,
     "supportRawAccess": false,
-    "serviceRoleDirectSecretAccess": false,
     "retentionDurationDays": null,
     "purgeActivated": false,
     "rotationExecuted": false,
     "globalVaultAclMutation": false,
-    "globalVaultAclMutationCandidate": true
+    "globalVaultAclMutationCandidate": false,
+    "serviceRoleExternalVaultAccess": false,
+    "serviceRoleInternalVaultAclManagedByPlatform": true,
+    "vaultDataApiExposureRequired": false,
+    "runtimeSchemaCacheEvidenceRequiredBeforeA03": true
   },
   "beforeA03": [
-    "Reconcile exact candidate SHA, SQL digest, source base, Control Center, collisions and live staging schema/ACLs.",
-    "Confirm no new service_role Vault consumer exists and that postgres-owned private consumers remain the only observed Vault readers.",
+    "Reconcile exact candidate SHA, SQL digest, source base, Control Center, collisions and live staging schema/capabilities.",
+    "Re-prove that vault is absent from the live PostgREST/Data API schema cache; do not infer this from PostgreSQL grants alone.",
+    "Confirm no public Vault wrapper/view, no deployed Edge Function direct Vault access, no repository .schema('vault') client, and no unexpected non-vault SQL consumer exists.",
+    "Confirm service_role remains NOLOGIN and cannot execute the private worker, sandbox or WAL backfill functions.",
     "Obtain explicit A03 authority; the session marker is only an accidental-execution guard.",
-    "Run rollback-only ACL/installation canaries proving service_role loses Vault schema/relation/function authority while postgres worker/sandbox consumers remain functional.",
-    "Prove synthetic crypto/runtime negative cases and transaction rollback with a separately authorized executor.",
-    "Quiesce legacy bank writes for backfill and keep cutover blocked until a new equivalence check at A04.",
-    "Do not equate ACL hardening or source-count equality with runtime masking or WAL-B03 closure."
+    "Run the exact platform-compatible rollback-only installation canary and verify candidate objects/key disappear after rollback.",
+    "Prove synthetic crypto/runtime negative cases before any committed migration or real backfill.",
+    "Quiesce legacy bank writes for a separately authorized backfill and keep cutover blocked until A04 equivalence.",
+    "Do not equate Data API isolation or source-count equality with runtime masking or WAL-B03 closure."
   ],
   "runtimeAssertionsNotExecuted": [
-    "Vault ACL revocation from service_role",
-    "postgres Vault authority preservation",
-    "order-event worker post-revoke canary",
-    "staging finance sandbox post-revoke canary",
-    "Vault key provisioning",
-    "ACL by role",
+    "platform-compatible A03 rollback canary for the remediated candidate",
+    "fresh PostgREST schema-cache boundary immediately before A03",
+    "Vault key provisioning for the remediated candidate",
+    "private storage ACL by role",
     "AES roundtrip",
     "wrong-key rejection",
     "nondeterministic ciphertext",
@@ -114,19 +130,26 @@
     "backfill 1/1",
     "retry idempotency",
     "concurrent writer blocking",
-    "transaction rollback",
     "masked browser and operator responses",
     "plaintext retirement",
     "key rotation and crypto-erasure"
   ],
-  "migrationSha256": "d0420d791c4d7af76843137133c0e1df1e3c755eba9b2f3a73e0a4ed0811af5c",
-  "vaultAclHardeningCandidate": {
-    "serviceRoleSchemaUsage": "revoke",
-    "serviceRoleVaultRelations": "revoke_all",
-    "serviceRoleVaultFunctions": "revoke_execute_all",
-    "preservePostgresVaultAuthority": true,
-    "preserveOrderEventWorker": true,
-    "preserveStagingFinanceSandbox": true,
-    "applied": false
+  "migrationSha256": "0965229ebed8eaf8c093a53d69bdd01ed1254744942de90e30dd056f65f2603d",
+  "vaultDataApiBoundary": {
+    "preserveSupabaseVault": true,
+    "platformManagedVaultAclMutation": false,
+    "serviceRoleNoLoginRequired": true,
+    "authenticatorVaultUsageRequired": false,
+    "vaultAbsentFromPostgrestSchemaCacheRequired": true,
+    "noPublicVaultWrappersRequired": true,
+    "noEdgeFunctionDirectVaultAccessRequired": true,
+    "noRepositoryVaultSchemaClientRequired": true,
+    "privatePostgresConsumers": [
+      "private.invoke_order_event_worker_if_needed()",
+      "private.assert_staging_finance_sandbox()"
+    ],
+    "serviceRolePrivateConsumerExecuteRequired": false,
+    "runtimeRevalidationRequiredBeforeA03": true,
+    "observedOn": "2026-10-02"
   }
 }
