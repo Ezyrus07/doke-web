@@ -17,15 +17,15 @@
   "candidate": {
     "sourceHead": "01fb50d8f35276031efec3d252a4b91672aa8dcc",
     "configPath": "config/ana-a09-funnel-continuous-publication-scheduler-candidate.json",
-    "configBlobSha": "7d644beae2d0ac8d9948a4d53bb1ef5495314132",
+    "configBlobSha": "42d198d4089cfffd17e5a0a05725e9b95e990bb1",
     "docsPath": "docs/ANA-A09-FUNNEL-CONTINUOUS-PUBLICATION-SCHEDULER-CANDIDATE.md",
-    "docsBlobSha": "fa14061b7fa36505fe9f90bb602cf0ab1d977c73",
+    "docsBlobSha": "dd15ba388d96f24d25ee315bf2efbd4d3bec92f5",
     "auditPath": "scripts/audit-ana-a09-funnel-continuous-publication-scheduler-candidate.js",
-    "auditBlobSha": "2b2e9957fff439368a2cd1d82def2fe3df229f70",
+    "auditBlobSha": "35c10d5e10c52ccb40de6c0aeaf95579b966b307",
     "testPath": "scripts/test-ana-a09-funnel-continuous-publication-scheduler-candidate.js",
-    "testBlobSha": "31e50a335e58a569bc44ba23c1cba1b686b1297a",
+    "testBlobSha": "2b777d128578b9f02bc12e9b116054ec2c9b60b6",
     "workflowPath": ".github/workflows/ana-a09-canonical-funnel-projection.yml",
-    "workflowBlobSha": "620092d595e82787f6e4a115e929d17f9811c7f0",
+    "workflowBlobSha": "c4145631f1b81094d338309fbf696d3cde9649ec",
     "migrationCreated": true,
     "cronCreated": false,
     "jobName": "doke-ana-funnel-v1-r1",
@@ -70,13 +70,13 @@
     "promoted": false
   },
   "residualRisks": [
-    "The staging scheduler is active and four observed runs succeeded, but the historical catch-up backlog remains open; the planner still returns three missing windows per bounded invocation.",
-    "Snapshot count is expected to continue increasing while backlog catch-up proceeds, so later observations must not treat a higher count alone as drift.",
-    "The scheduler currently raises active cron jobs from six to seven, remaining below the project's conservative eight-job activation gate; future scheduler additions or cadence changes require a fresh headroom review.",
-    "This reconciliation does not certify production, merge readiness, maturity promotion, or long-duration operational reliability."
+    "The steady-state closure is proven in staging, not production.",
+    "The freshness observation is a point-in-time proof; later operational regressions remain possible and require monitoring.",
+    "No maturity promotion is authorized by this reconciliation even though staging-operational evidence is stronger than the current matrix maturity.",
+    "The Control Center still reports stale engineering sources and staging runtime as not connected, so it is not the runtime certification authority for this closure."
   ],
-  "nextSafeAction": "Certify the activation evidence on the exact resulting repository HEAD. If green, continue read-only operational observation until the planner backlog closes or an anomaly occurs. Any scheduler mutation, disablement, cadence change, production action, merge or maturity promotion requires separate authority.",
-  "status": "continuous_scheduler_active_staging_activation_evidence_reconciled_pending_exact_head_certification",
+  "nextSafeAction": "Certify this steady-state closure evidence on the exact resulting repository HEAD. Any maturity promotion, production action, scheduler mutation, merge or Ready for review requires separate authority.",
+  "status": "steady_state_closure_evidence_reconciled_pending_exact_head_certification",
   "migrationImplementationAuthorization": {
     "authorizedSourceHead": "77c6ef87b8e773d2031631078169ad0bbc8c1a1c",
     "digestSha256": "ec041cc99a84065e56f9816781397de7538a7cc6a174f35ed576ce99201955e3",
@@ -169,6 +169,42 @@
     "productionAuthority": false,
     "mergeAuthority": false,
     "readyForReviewAuthority": false,
+    "historyRewriteAuthority": false
+  },
+  "steadyStateClosureEvidence": {
+    "evidencePath": "reports/generated/ana-a09-funnel-steady-state-closure-staging-evidence.json",
+    "evidenceBlobSha": "4d97d75edb818f34f357b2c7739984d08b566854",
+    "authorizedRepositoryHead": "0d2d338926700ea6ead9123dbbd9b828e04899cd",
+    "expectedOperationalWindows": 428,
+    "materializedOperationalWindows": 428,
+    "continuousWithoutGaps": true,
+    "prePolicyCanaryWindows": 1,
+    "totalSnapshotCount": 3432,
+    "revisionOneCount": 3432,
+    "higherRevisionCount": 0,
+    "duplicateRevisionKeys": 0,
+    "plannerPendingWindowCount": 0,
+    "authorizedLagSeconds": 216,
+    "preWriteLagSeconds": 334,
+    "derivedMaxLagSeconds": 360,
+    "withinDerivedMaxLag": true,
+    "totalRuns": 671,
+    "succeededRuns": 671,
+    "failedRuns": 0,
+    "a11RelevantCronCount": 1,
+    "a11ExactCronCount": 1,
+    "steadyStateReached": true
+  },
+  "steadyStateClosureReconciliationAuthorization": {
+    "authorizedSourceHead": "0d2d338926700ea6ead9123dbbd9b828e04899cd",
+    "digestSha256": "5ec33e52e788e5f422277aa6c66e16cf7489df4a97ccd52c189087738900f73b",
+    "repositoryWriteAuthority": true,
+    "schedulerActivationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "maturityPromotionAuthority": false,
     "historyRewriteAuthority": false
   }
 }

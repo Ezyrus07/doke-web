@@ -153,6 +153,33 @@ The increase from `64 → 112` snapshots is expected continuous runtime progress
 
 The Control Center observation at this closure remained `DRIFT/SNAPSHOT` and reported staging runtime as `NOT CONNECTED`; it was therefore not used as runtime certification authority.
 
+## Steady-state closure evidence
+
+The staging scheduler has completed its historical bounded catch-up and reached **steady state**.
+
+Authorized closure checkpoint:
+
+- policy effective from: `2026-10-01T00:00:00Z`
+- operational windows expected/materialized: `428 / 428`
+- continuous without gaps: `true`
+- pre-policy canary windows: `1`
+- total snapshots: `3432`
+- revision-one snapshots: `3432`
+- higher revisions: `0`
+- duplicate revision keys: `0`
+- planner pending windows: `0`
+- observed lag: `216s` against derived max `360s`
+
+The mandatory pre-write read-only recheck at `2026-10-02T11:45:34.121791Z` reproduced the structural closure: `428/428` operational windows, no gaps, `3432/3432` revision-one snapshots, no duplicate revision keys, planner backlog `0`, A11 `1/1`, and `671/671` observed scheduler runs succeeded. The instantaneous lag was `334s`, still within the same `360s` bound.
+
+Each of the eight metrics had exactly `429` snapshots: `428` post-policy operational windows plus the one eight-metric pre-policy canary window at `2026-09-29T01:55:00Z–02:00:00Z`. Therefore the apparent pre-policy calendar gap is not an operational publication gap.
+
+Canonical closure evidence:
+
+`reports/generated/ana-a09-funnel-steady-state-closure-staging-evidence.json`
+
+This is **staging-operational evidence only**. It does not promote ANA maturity, authorize production, merge the PR, change scheduler cadence, or grant Ready for review.
+
 ## Current reconciliation authority
 
 The staging scheduler and continuous publication are already active from the prior explicit runtime authorization. For **this repository-only reconciliation**, no additional runtime mutation is authorized:
@@ -168,4 +195,4 @@ ANA remains **3/6**.
 
 ## Next gate
 
-Certify the persistent scheduler activation evidence on the exact resulting repository HEAD. After certification, continue **read-only operational observation** until the bounded backlog closes or a runtime anomaly appears. Any scheduler mutation, disablement, cadence change, production action, merge, Ready for review or maturity promotion requires separate authority.
+Certify the steady-state closure evidence on the exact resulting repository HEAD. After certification, A09 has staging-operational closure evidence, but maturity remains `3/6` until a separate maturity gate explicitly evaluates and authorizes promotion. Production, scheduler mutation, merge and Ready for review remain separately governed.

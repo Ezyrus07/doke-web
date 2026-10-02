@@ -2,6 +2,7 @@
 const fs=require('fs');const path=require('path');const root=path.resolve(__dirname,'..');
 const c=JSON.parse(fs.readFileSync(path.join(root,'config/ana-a09-funnel-continuous-publication-scheduler-candidate.json'),'utf8'));
 const e=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-funnel-continuous-scheduler-activation-staging-evidence.json'),'utf8'));
+const z=JSON.parse(fs.readFileSync(path.join(root,'reports/generated/ana-a09-funnel-steady-state-closure-staging-evidence.json'),'utf8'));
 const checks=[];const check=(n,x)=>checks.push({name:n,passed:Boolean(x)});
 check('persistent scheduler activated previously',e.activationResult.status==='APPENDED'&&e.activationResult.jobId===14&&e.activationResult.active===true);
 check('exact replay no change',e.replayVerification.status==='NO_CHANGE'&&e.replayVerification.jobId===14);
@@ -16,6 +17,16 @@ check('planner remains bounded',e.preWriteReadOnlyRecheck.planner.plannedWindowC
 check('repository reconciliation only',e.reconciliationAuthorization.repositoryWriteAuthority===true&&e.reconciliationAuthorization.schedulerActivationAuthority===false&&e.reconciliationAuthorization.stagingAuthority===false&&e.reconciliationEffects.stagingWritePerformed===false&&e.reconciliationEffects.schedulerReinvoked===false);
 check('no production or merge authority',e.reconciliationAuthorization.productionAuthority===false&&e.reconciliationAuthorization.mergeAuthority===false&&e.reconciliationAuthorization.readyForReviewAuthority===false&&e.reconciliationAuthorization.historyRewriteAuthority===false);
 check('maturity unchanged',c.maturity.before===3&&c.maturity.after===3&&c.maturity.promoted===false&&e.maturity.after===3);
+check('steady state backlog closed',z.interpretation.steadyStateReached===true&&z.interpretation.catchUpBacklogClosed===true&&z.preWriteReadOnlyRecheck.planner.pendingWindowCount===0);
+check('operational window continuity exact',z.preWriteReadOnlyRecheck.continuity.expectedOperationalWindows===428&&z.preWriteReadOnlyRecheck.continuity.materializedOperationalWindows===428&&z.preWriteReadOnlyRecheck.continuity.continuousWithoutGaps===true);
+check('steady state freshness within bound',z.preWriteReadOnlyRecheck.continuity.lagSeconds<=z.preWriteReadOnlyRecheck.continuity.derivedMaxLagSeconds&&z.preWriteReadOnlyRecheck.continuity.withinDerivedMaxLag===true);
+check('steady state snapshots exact',z.preWriteReadOnlyRecheck.snapshotIntegrity.totalSnapshotCount===3432&&z.preWriteReadOnlyRecheck.snapshotIntegrity.revisionOneCount===3432&&z.preWriteReadOnlyRecheck.snapshotIntegrity.higherRevisionCount===0&&z.preWriteReadOnlyRecheck.snapshotIntegrity.duplicateRevisionKeys===0);
+check('snapshot symmetry exact',z.preWriteReadOnlyRecheck.snapshotIntegrity.metricCount===8&&z.preWriteReadOnlyRecheck.snapshotIntegrity.minSnapshotsPerMetric===429&&z.preWriteReadOnlyRecheck.snapshotIntegrity.maxSnapshotsPerMetric===429);
+check('prepolicy canary explains isolated window',z.preWriteReadOnlyRecheck.prePolicyCanary.distinctWindows===1&&z.preWriteReadOnlyRecheck.prePolicyCanary.metricRows===8);
+check('closure observed run health',z.preWriteReadOnlyRecheck.runHealth.totalRuns===671&&z.preWriteReadOnlyRecheck.runHealth.succeededRuns===671&&z.preWriteReadOnlyRecheck.runHealth.failedRuns===0);
+check('closure a11 preserved',z.preWriteReadOnlyRecheck.a11.relevantCronCount===1&&z.preWriteReadOnlyRecheck.a11.exactCronCount===1&&z.preWriteReadOnlyRecheck.a11.preserved===true);
+check('closure repository only',z.reconciliationAuthorization.repositoryWriteAuthority===true&&z.reconciliationAuthorization.schedulerActivationAuthority===false&&z.reconciliationAuthorization.stagingAuthority===false&&z.reconciliationAuthorization.productionAuthority===false&&z.reconciliationAuthorization.mergeAuthority===false&&z.reconciliationAuthorization.readyForReviewAuthority===false&&z.reconciliationAuthorization.maturityPromotionAuthority===false);
+check('closure maturity unchanged',z.maturity.before===3&&z.maturity.after===3&&z.maturity.promoted===false);
 const failed=checks.filter(x=>!x.passed).map(x=>x.name);
 console.log(JSON.stringify({contractId:c.contractId,total:checks.length,passed:checks.length-failed.length,failed:failed.length,status:failed.length?'failed':'passed',failedCases:failed},null,2));
 if(failed.length)process.exitCode=1;
