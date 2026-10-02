@@ -7,6 +7,7 @@ const ordersService = require('../backend/modules/orders/orders-service');
 const clientId = 'b0400000-0000-4000-8000-000000000001';
 const professionalId = 'b0400000-0000-4000-8000-000000000002';
 const forgedProfessionalId = 'b0400000-0000-4000-8000-000000000003';
+const forgedServiceId = 'b0400000-0000-4000-8000-000000000099';
 const serviceId = 'b0400000-0000-4000-8000-000000000010';
 const versionId = 'b0400000-0000-4000-8000-000000000011';
 const externalServiceId = 'service-external-cat-b04';
@@ -25,8 +26,17 @@ function makeSupabase(serviceOverride) {
   function servicesBuilder() {
     const state = { filter: null, value: null, select: '' };
     return {
-      select(value) { state.select = value; calls.push({ type: 'service-select', value }); return this; },
-      eq(filter, value) { state.filter = filter; state.value = value; calls.push({ type: 'service-filter', filter, value }); return this; },
+      select(value) {
+        state.select = value;
+        calls.push({ type: 'service-select', value });
+        return this;
+      },
+      eq(filter, value) {
+        state.filter = filter;
+        state.value = value;
+        calls.push({ type: 'service-filter', filter, value });
+        return this;
+      },
       maybeSingle() {
         const matched = state.filter === 'id'
           ? state.value === service.id
@@ -38,51 +48,51 @@ function makeSupabase(serviceOverride) {
     };
   }
 
-  function ordersBuilder() {
-    let inserted = null;
-    return {
-      insert(payload) { inserted = payload; calls.push({ type: 'order-insert', payload }); return this; },
-      select(value) { calls.push({ type: 'order-select', value }); return this; },
-      maybeSingle() {
-        const canonicalSnapshot = {
-          id: externalServiceId,
-          title: 'Snapshot aprovado',
-          priceValue: 125,
-          serviceId,
-          serviceVersionId: versionId,
-          professionalId,
-          snapshotAuthority: 'approved_service_version'
-        };
-        return Promise.resolve({
-          data: Object.assign({
-            id: 'b0400000-0000-4000-8000-000000000020',
-            service_version_id: versionId,
-            service_snapshot: canonicalSnapshot,
-            created_at: '2026-07-28T02:00:00.000Z',
-            updated_at: '2026-07-28T02:00:00.000Z'
-          }, inserted, {
-            professional_id: professionalId,
-            service_id: serviceId,
-            metadata: Object.assign({}, inserted.metadata, {
-              serviceSnapshot: canonicalSnapshot,
-              serviceVersionId: versionId,
-              serviceSnapshotAuthority: 'approved_service_version'
-            })
-          }),
-          error: null
-        });
-      }
-    };
-  }
-
-  return {
+  const supabase = {
     calls,
     from(table) {
+      calls.push({ type: 'from', table });
       if (table === 'services') return servicesBuilder();
-      if (table === 'orders') return ordersBuilder();
-      throw new Error('Unexpected table: ' + table);
+      throw new Error('Unexpected direct table access during CAT-B04 create: ' + table);
+    },
+    rpc(name, payload) {
+      calls.push({ type: 'rpc', name, payload });
+      if (name !== 'create_order_command') {
+        throw new Error('Unexpected RPC: ' + name);
+      }
+      const canonicalSnapshot = {
+        id: externalServiceId,
+        title: 'Snapshot aprovado',
+        priceValue: 125,
+        serviceId,
+        serviceVersionId: versionId,
+        professionalId,
+        snapshotAuthority: 'approved_service_version'
+      };
+      return Promise.resolve({
+        data: {
+          id: 'b0400000-0000-4000-8000-000000000020',
+          client_id: clientId,
+          professional_id: professionalId,
+          service_id: serviceId,
+          service_version_id: versionId,
+          service_snapshot: canonicalSnapshot,
+          title: payload.p_title,
+          description: payload.p_description,
+          status: 'requested',
+          metadata: Object.assign({}, payload.p_metadata, {
+            serviceSnapshot: canonicalSnapshot,
+            serviceVersionId: versionId,
+            serviceSnapshotAuthority: 'approved_service_version'
+          }),
+          created_at: '2026-07-28T02:00:00.000Z',
+          updated_at: '2026-07-28T02:00:00.000Z'
+        },
+        error: null
+      });
     }
   };
+  return supabase;
 }
 
 async function runCanonicalCreate() {
@@ -92,13 +102,26 @@ async function runCanonicalCreate() {
     body: {
       serviceId: externalServiceId,
       professionalId: forgedProfessionalId,
+      professional_id: forgedProfessionalId,
       providerId: forgedProfessionalId,
+      provider_id: forgedProfessionalId,
       title: 'Pedido de snapshot',
       details: 'Detalhes específicos do pedido.',
-      serviceSnapshot: { title: 'FORGED' },
-      serviceVersionId: 'forged-version',
-      serviceSnapshotAuthority: 'browser',
-      quoteAnswers: [{ questionId: 'q1', answer: 'Resposta' }]
+      metadata: {
+        serviceId: forgedServiceId,
+        service_id: forgedServiceId,
+        professionalId: forgedProfessionalId,
+        professional_id: forgedProfessionalId,
+        providerId: forgedProfessionalId,
+        provider_id: forgedProfessionalId,
+        serviceSnapshot: { title: 'FORGED' },
+        service_snapshot: { title: 'FORGED_SNAKE' },
+        serviceVersionId: 'forged-version',
+        service_version_id: 'forged-version-snake',
+        serviceSnapshotAuthority: 'browser',
+        service_snapshot_authority: 'browser-snake',
+        quoteAnswers: [{ questionId: 'q1', answer: 'Resposta' }]
+      }
     }
   }, { id: clientId, role: 'client' });
 
@@ -109,17 +132,36 @@ async function runCanonicalCreate() {
     value: externalServiceId
   });
 
-  const insert = supabase.calls.find((call) => call.type === 'order-insert');
-  assert.ok(insert, 'canonical order insert was not called');
-  assert.equal(insert.payload.client_id, clientId);
-  assert.equal(insert.payload.professional_id, professionalId);
-  assert.equal(insert.payload.service_id, serviceId);
-  assert.equal(Object.prototype.hasOwnProperty.call(insert.payload.metadata, 'serviceSnapshot'), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(insert.payload.metadata, 'serviceVersionId'), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(insert.payload.metadata, 'serviceSnapshotAuthority'), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(insert.payload.metadata, 'professionalId'), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(insert.payload.metadata, 'providerId'), false);
-  assert.equal(Array.isArray(insert.payload.metadata.quoteAnswers), true);
+  const rpc = supabase.calls.find((call) => call.type === 'rpc');
+  assert.ok(rpc, 'canonical create_order_command RPC was not called');
+  assert.equal(rpc.name, 'create_order_command');
+  assert.equal(rpc.payload.p_service_ref, externalServiceId);
+  assert.equal(Object.prototype.hasOwnProperty.call(rpc.payload, 'p_professional_id'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(rpc.payload, 'p_service_id'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(rpc.payload, 'p_service_snapshot'), false);
+
+  [
+    'serviceId',
+    'service_id',
+    'professionalId',
+    'professional_id',
+    'providerId',
+    'provider_id',
+    'serviceSnapshot',
+    'service_snapshot',
+    'serviceVersionId',
+    'service_version_id',
+    'serviceSnapshotAuthority',
+    'service_snapshot_authority'
+  ].forEach((key) => {
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(rpc.payload.p_metadata, key),
+      false,
+      'authority-shaped metadata must be stripped before RPC: ' + key
+    );
+  });
+  assert.equal(Array.isArray(rpc.payload.p_metadata.quoteAnswers), true);
+  assert.equal(supabase.calls.some((call) => call.type === 'from' && call.table === 'orders'), false);
 
   assert.equal(result.status, 'created');
   assert.equal(result.order.professionalId, professionalId);
@@ -138,24 +180,24 @@ async function runEligibilityFailures() {
     }, { id: clientId, role: 'client' }),
     (error) => error && error.code === 'DOKE_ORDER_SERVICE_NOT_ELIGIBLE'
   );
-  assert.equal(ineligible.calls.some((call) => call.type === 'order-insert'), false);
+  assert.equal(ineligible.calls.some((call) => call.type === 'rpc'), false);
 
   const ownService = makeSupabase();
   await assert.rejects(
     ordersService.createOrder({
       supabase: ownService,
       body: { serviceId: externalServiceId, title: 'Pedido próprio' }
-    }, { id: professionalId, role: 'client' }),
+    }, { id: professionalId, role: 'professional' }),
     (error) => error && error.code === 'DOKE_ORDER_OWN_SERVICE_FORBIDDEN'
   );
-  assert.equal(ownService.calls.some((call) => call.type === 'order-insert'), false);
+  assert.equal(ownService.calls.some((call) => call.type === 'rpc'), false);
 }
 
 Promise.resolve()
   .then(runCanonicalCreate)
   .then(runEligibilityFailures)
   .then(() => {
-    console.log('Order approved-version snapshot backend runtime: PASS');
+    console.log('Order approved-version snapshot RPC authority runtime: PASS');
   })
   .catch((error) => {
     console.error(error);
