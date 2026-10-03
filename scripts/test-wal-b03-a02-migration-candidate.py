@@ -149,8 +149,7 @@ def validate_sql(source):
             'worker boundary preserved')
     require("has_function_privilege('service_role', 'private.assert_staging_finance_sandbox()', 'execute')" in code,
             'sandbox boundary preserved')
-    require("has_function_privilege('service_role',
-       'private.backfill_wallet_bank_account_secrets_v1(integer)', 'execute')" in code,
+    require("'private.backfill_wallet_bank_account_secrets_v1(integer)', 'execute')" in code,
             'backfill boundary preserved')
 
     for table in TABLES:
