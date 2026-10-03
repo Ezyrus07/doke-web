@@ -965,6 +965,7 @@
       setText(receivablesNodes.nextCopy, next
         ? (next.payoutFullDateLabel || next.payoutDateLabel || 'Data prevista') + ' · ' + (next.releaseReason || getReceivableStatusLabel(next))
         : 'Sem valores em garantia no momento.');
+      if (receivablesNodes.nextCard) receivablesNodes.nextCard.hidden = !next;
 
       clearNode(receivablesNodes.list);
       items.slice(0, 3).forEach((item) => receivablesNodes.list?.appendChild(createReceivableRow(item || {})));
@@ -1189,12 +1190,6 @@
 
       document.body.dataset.walletView = nextView;
 
-      document.querySelectorAll('[data-wallet-mobile-view]').forEach((button) => {
-        const isActiveMobileView = button.dataset.walletMobileView === nextView;
-        button.classList.toggle('is-view-active', isActiveMobileView);
-        button.classList.toggle('doke-mobile-shell__quick-action--active', isActiveMobileView);
-        button.setAttribute('aria-pressed', String(isActiveMobileView));
-      });
     };
 
     viewButtons.forEach((button) => {
@@ -2169,71 +2164,6 @@
     });
 
     bindTransactionItems();
-
-    const syncWalletMobileHeaderActions = () => {
-      const actionGroups = Array.from(document.querySelectorAll('.doke-mobile-page-header__actions, .doke-mobile-shell__actions[data-shell-context-actions]'));
-      if (!actionGroups.length) return;
-
-      actionGroups.forEach((group) => {
-        if (group.dataset.walletMobileActionsReady === 'true') return;
-
-        const isShellActions = group.classList.contains('doke-mobile-shell__actions');
-        const actionClass = isShellActions
-          ? 'doke-mobile-shell__quick-action wallet-mobile-action'
-          : 'doke-mobile-page-header__action wallet-mobile-action doke-btn';
-
-        group.dataset.walletMobileActionsReady = 'true';
-        group.classList.add('wallet-mobile-actions');
-        group.setAttribute('aria-label', 'Ações rápidas da carteira');
-
-        group.innerHTML = `
-          <button class="${actionClass}" type="button" data-wallet-mobile-withdraw aria-label="Sacar saldo">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16"></path><path d="m6 10 6-6 6 6"></path></svg>
-          </button>
-          <button class="${actionClass}" type="button" data-wallet-mobile-view="overview" aria-label="Ver extrato">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M7 17.5h8"></path></svg>
-          </button>
-          <button class="${actionClass}" type="button" data-wallet-mobile-view="statistics" aria-label="Ver estatísticas">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>
-          </button>
-        `;
-
-        const withdrawButton = group.querySelector('[data-wallet-mobile-withdraw]');
-        const mobileViewButtons = Array.from(group.querySelectorAll('[data-wallet-mobile-view]'));
-
-        withdrawButton?.addEventListener('click', openWithdrawModal);
-
-        mobileViewButtons.forEach((button) => {
-          button.addEventListener('click', () => {
-            setView(button.dataset.walletMobileView);
-          });
-        });
-      });
-    };
-
-    const syncWalletMobileHeaderState = () => {
-      const activeView = document.body.dataset.walletView || 'overview';
-      document.querySelectorAll('[data-wallet-mobile-view]').forEach((button) => {
-        button.classList.toggle('is-view-active', button.dataset.walletMobileView === activeView);
-      });
-    };
-
-    const ensureWalletMobileHeader = () => {
-      syncWalletMobileHeaderActions();
-      syncWalletMobileHeaderState();
-    };
-
-    ensureWalletMobileHeader();
-    window.setTimeout(ensureWalletMobileHeader, 80);
-    window.setTimeout(ensureWalletMobileHeader, 300);
-
-    const mobileHeader = document.querySelector('.doke-mobile-page-header');
-    if (mobileHeader) {
-      const mobileHeaderObserver = new MutationObserver(() => {
-        ensureWalletMobileHeader();
-      });
-      mobileHeaderObserver.observe(mobileHeader, { childList: true, subtree: true });
-    }
 
     window.addEventListener('pageshow', () => {
       scheduleWalletStateRefresh(0);
