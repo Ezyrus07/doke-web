@@ -169,12 +169,20 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     updateLoadMoreState();
   };
 
+  const syncRequestTriggerDisclosure = (button, expanded) => {
+    if (!button) return;
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-controls', 'community-request-modal');
+    button.setAttribute('aria-expanded', String(Boolean(expanded)));
+  };
+
   const openRequestModal = (button) => {
     if (!requestModal) return;
     const card = button.closest('[data-community-card]');
     const communityName = card?.dataset.title || 'esta comunidade';
     activeRequestButton = button;
     activeRequestCommunityId = String(card?.dataset.communityId || '').trim();
+    syncRequestTriggerDisclosure(button, true);
 
     if (requestTitle) requestTitle.textContent = `Solicitar entrada em ${communityName}`;
     if (requestCopy) {
@@ -209,11 +217,16 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     window.setTimeout(() => requestMessage?.focus(), 80);
   };
 
-  const closeRequestModal = () => {
+  const closeRequestModal = ({ restoreFocus = true } = {}) => {
     if (!requestModal) return;
+    const requestTrigger = activeRequestButton;
     requestModal.hidden = true;
     requestModal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('community-modal-open');
+    syncRequestTriggerDisclosure(requestTrigger, false);
+    activeRequestButton = null;
+    activeRequestCommunityId = '';
+    if (restoreFocus && requestTrigger && !requestTrigger.disabled) requestTrigger.focus?.();
   };
 
   const setActionTriggersExpanded = (modal, expanded) => {
@@ -238,7 +251,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       .filter((item) => !item.disabled && item.offsetParent !== null);
   };
 
-  const getOpenActionModal = () => [codeModal].find((modal) => modal && !modal.hidden);
+  const getOpenActionModal = () => [requestModal, codeModal].find((modal) => modal && !modal.hidden);
 
   const openActionModal = (modal, trigger = null) => {
     if (!modal) return;
@@ -1049,7 +1062,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       const requiresApproval = record.entryMode === 'approval';
       const actionMarkup = isPublic && !requiresApproval
         ? '<button class="community-card__action doke-btn doke-btn--primary" data-community-public-join type="button">Participar</button>'
-        : `<button class="community-card__action doke-btn doke-btn--ghost${isPending ? ' community-card__action--pending' : ''}" data-community-request type="button"${isPending ? ' disabled' : ''}>${isPending ? 'Solicitação pendente' : 'Solicitar entrada'}</button>`;
+        : `<button class="community-card__action doke-btn doke-btn--ghost${isPending ? ' community-card__action--pending' : ''}" data-community-request type="button" aria-haspopup="dialog" aria-controls="community-request-modal" aria-expanded="false"${isPending ? ' disabled' : ''}>${isPending ? 'Solicitação pendente' : 'Solicitar entrada'}</button>`;
       return `
         <article class="community-card community-discover-card doke-card doke-community-card" data-community-discover-card data-community-card data-community-id="${escapeCommunityHtml(record.id)}" data-title="${escapeCommunityHtml(record.title)}" data-category="${categoryFilterFromRecord(record)}" data-community-questions='${JSON.stringify(record.joinQuestions || []).replace(/'/g, "&#39;")}'>
           <div class="community-card__cover">
@@ -1301,7 +1314,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         activeRequestButton.disabled = true;
       }
       window.setTimeout(() => {
-        closeRequestModal();
+        closeRequestModal({ restoreFocus: false });
         renderCommunityCollections();
       }, 1400);
     });
