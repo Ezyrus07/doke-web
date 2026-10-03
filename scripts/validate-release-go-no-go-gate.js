@@ -50,6 +50,12 @@ const report = { name: 'release-go-no-go-gate', generatedAt: new Date().toISOStr
 main();
 function main() {
   exists('docs/RELEASE-GO-NO-GO-RUNBOOK.md') ? pass(report, 'runbook.present') : fail(report, 'Missing docs/RELEASE-GO-NO-GO-RUNBOOK.md');
+  const releaseTarget = String(process.env.DOKE_RELEASE_TARGET || 'private-beta').trim().toLowerCase();
+  const authorityArgs = releaseTarget === 'production' && !dryRun ? ['scripts/audit-release-environment-authority.js', '--require-production-manifest'] : ['scripts/audit-release-environment-authority.js', '--contract-only'];
+  const authority = run(process.execPath, authorityArgs);
+  if (authority.exitCode === 0) pass(report, 'release_environment_authority.pass', { releaseTarget });
+  else if (releaseTarget === 'production') block(report, `Release environment authority blocked production: ${authority.stderrTail.concat(authority.stdoutTail).join(' | ')}`);
+  else fail(report, `Release environment authority contract failed: ${authority.stderrTail.concat(authority.stdoutTail).join(' | ')}`);
   if (dryRun) { report.status = report.failures.length ? 'failed' : 'release_go_no_go_plan_ready'; report.decision = 'not_evaluated'; return finish(report, reportPath, report.failures.length ? 1 : 0); }
   for (const item of required) {
     const status = readJson(item.file, report)?.status;
