@@ -157,6 +157,7 @@ function conversationFixtures() {
         status: 'in_progress',
         statusLabel: 'Em andamento',
         proposalApprovedAt: '2026-10-01T14:00:00.000Z',
+        chargeMessageId: 'financial-charge',
         paymentStatus: 'held',
         disputeStatus: 'em_analise',
         budget: 'R$ 900,00',
