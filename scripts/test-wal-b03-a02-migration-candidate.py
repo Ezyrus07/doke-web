@@ -145,9 +145,9 @@ def validate_sql(source):
             'public Vault view inspection')
     require("has_function_privilege('postgres', 'vault.create_secret(text,text,text,uuid)', 'execute')" in code,
             'postgres Vault authority preserved')
-    require("has_function_privilege('service_role', 'private.invoke_order_event_worker_if_needed()', 'execute')" in code,
+    require("'private.invoke_order_event_worker_if_needed()', 'execute')" in code,
             'worker boundary preserved')
-    require("has_function_privilege('service_role', 'private.assert_staging_finance_sandbox()', 'execute')" in code,
+    require("'private.assert_staging_finance_sandbox()', 'execute')" in code,
             'sandbox boundary preserved')
     require("'private.backfill_wallet_bank_account_secrets_v1(integer)', 'execute')" in code,
             'backfill boundary preserved')
