@@ -313,7 +313,7 @@ async function assertRequestDialogLifecycle(page) {
   const answer = modal.locator('[data-community-request-answer="0"]');
   if (await answer.count()) await answer.fill('Sou morador da região.');
   await modal.getByRole('button', { name: 'Enviar solicitação' }).click();
-  await expect(modal.locator('[data-community-action-feedback]')).toContainText('Solicitação enviada');
+  await expect(modal.getByRole('button', { name: 'Solicitação enviada' })).toBeDisabled();
   await expect(modal).toBeHidden({ timeout: 4_000 });
 
   const pendingButton = card(page, 'pd-community-private').locator('[data-community-request]');
@@ -418,7 +418,7 @@ test.describe('PD-COMMUNITY-001 entry transitions', () => {
 
     await Promise.all([
       page.waitForURL(/\/comunidade-interna\.html\?.*community=pd-community-invite/, { timeout: 15_000 }),
-      modal.getByRole('button', { name: 'Entrar na comunidade' }).click(),
+      modal.getByRole('button', { name: 'Entrar', exact: true }).click(),
     ]);
     await expect(page.locator('body')).toHaveAttribute('data-page', 'comunidade-interna');
 
