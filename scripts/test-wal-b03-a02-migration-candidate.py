@@ -140,6 +140,8 @@ def validate_sql(source):
             'public Vault wrapper guard')
     require(code.count("'wal_b03_private_vault_consumer_drift'") >= 3,
             'private Vault consumer guard')
+    require("p.proname in ('invoke_order_event_worker_if_needed', 'assert_staging_finance_sandbox')" in code,
+            'canonical preflight Vault consumer allowlist')
     require("pg_get_functiondef(p.oid) ilike '%vault.%'" in code, 'Vault consumer inspection')
     require("v.schemaname = 'public' and v.definition ilike '%vault.%'" in code,
             'public Vault view inspection')
