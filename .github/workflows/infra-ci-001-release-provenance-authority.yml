@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/infra-ci-001
+          mkdir -p reports/generated
           node <<'NODE'
           const fs = require('fs');
           const contract = JSON.parse(fs.readFileSync('config/release-environment-authority.json', 'utf8'));
@@ -84,16 +84,16 @@ jobs:
             production_supabase_ref: 'future-production-ref',
             authorization_id: 'infra-ci-001-synthetic-production-proof'
           };
-          fs.writeFileSync('/tmp/infra-ci-001/release-environment-manifest.json', JSON.stringify(manifest, null, 2));
+          fs.writeFileSync('reports/generated/infra-ci-001-synthetic-production-manifest.json', JSON.stringify(manifest, null, 2));
           NODE
 
           set +e
-          DOKE_RELEASE_ENVIRONMENT_MANIFEST_PATH=/tmp/infra-ci-001/release-environment-manifest.json \
+          DOKE_RELEASE_ENVIRONMENT_MANIFEST_PATH=reports/generated/infra-ci-001-synthetic-production-manifest.json \
             node scripts/audit-release-environment-authority.js --require-production-manifest \
-            > /tmp/infra-ci-001/production-authority.json 2>&1
+            > /tmp/infra-ci-001-production-authority.json 2>&1
           status=$?
           set -e
-          cat /tmp/infra-ci-001/production-authority.json
+          cat /tmp/infra-ci-001-production-authority.json
           if [ "$status" -eq 0 ]; then
             echo 'Production authority unexpectedly passed while production Supabase is unassigned.' >&2
             exit 1
@@ -101,7 +101,7 @@ jobs:
 
           node <<'NODE'
           const fs = require('fs');
-          const report = JSON.parse(fs.readFileSync('/tmp/infra-ci-001/production-authority.json', 'utf8'));
+          const report = JSON.parse(fs.readFileSync('/tmp/infra-ci-001-production-authority.json', 'utf8'));
           const expected = 'Production Supabase authority is UNASSIGNED; production release is forbidden.';
           if (report.status !== 'blocked') throw new Error(`expected blocked status, got ${report.status}`);
           if (!Array.isArray(report.blockers) || !report.blockers.includes(expected)) {
@@ -113,6 +113,8 @@ jobs:
           }
           console.log('INFRA-CI-001 production fail-closed proof: PASS');
           NODE
+
+          rm -f reports/generated/infra-ci-001-synthetic-production-manifest.json
 
       - name: Diff hygiene
         run: git diff --check
