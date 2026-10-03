@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "contractId": "infra-env-002-release-provenance-authority-v1",
+  "schemaVersion": 2,
+  "contractId": "infra-env-002-release-provenance-authority-v2",
   "status": "repository_authority",
   "canonicalRepository": "Ezyrus07/doke-web",
   "canonicalReleaseBranch": "MAIN",
@@ -27,9 +27,7 @@
     "mustDifferFromStaging": true
   },
   "releasePolicy": {
-    "productionSourceBranches": [
-      "MAIN"
-    ],
+    "productionSourceBranches": ["MAIN"],
     "previewBranchesAllowed": true,
     "directProductionFromFeatureBranchesForbidden": true,
     "productionRequiresExplicitReleaseTarget": true,
@@ -37,8 +35,16 @@
     "productionRequiresExplicitAuthorizationId": true,
     "productionRequiresRollbackDeploymentId": true,
     "productionRequiresCanonicalVercelProject": true,
-    "productionRequiresDistinctSupabaseProject": true
+    "productionRequiresDistinctSupabaseProject": true,
+    "prCandidateProvenanceMode": "runtime_git_event",
+    "productionReleaseProvenanceMode": "post_integration_runtime"
   },
+  "requiredCandidateRuntimeFields": [
+    "candidate_sha",
+    "candidate_tree_sha",
+    "candidate_branch",
+    "release_branch"
+  ],
   "forbiddenDirectProductionBranchPrefixes": [
     "ana/",
     "ux/",
@@ -57,9 +63,8 @@
   ],
   "requiredProductionManifestFields": [
     "repository",
-    "source_sha",
-    "source_tree_sha",
-    "source_branch",
+    "release_sha",
+    "release_tree_sha",
     "release_branch",
     "vercel_project_id",
     "preview_deployment_id",
