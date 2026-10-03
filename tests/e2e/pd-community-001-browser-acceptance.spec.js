@@ -237,6 +237,15 @@ async function expectNoOverflow(page) {
   ))).toBeLessThanOrEqual(1);
 }
 
+async function waitForCommunityRoomReady(page) {
+  await expect(page.locator('body')).toHaveAttribute('data-page', 'comunidade-interna');
+  const room = page.locator('[data-community-room]');
+  await expect(room).toHaveAttribute('data-community-access-state', 'allowed', { timeout: 30_000 });
+  await expect(room).toHaveAttribute('data-community-hydrated', 'true', { timeout: 30_000 });
+  await expect(page.locator('body')).toHaveAttribute('data-data-state', 'hydrated', { timeout: 30_000 });
+  await expect(room).toBeVisible();
+}
+
 function card(page, id) {
   return page.locator(`[data-community-card][data-community-id="${id}"]`);
 }
@@ -371,10 +380,7 @@ for (const viewport of viewports) {
         page.waitForURL(/\/comunidade-interna\.html\?.*community=pd-community-member/, { timeout: 15_000 }),
         memberOpen.click(),
       ]);
-      await expect(page.locator('body')).toHaveAttribute('data-page', 'comunidade-interna');
-      await expect.poll(() => page.evaluate(() => (
-        document.querySelector('[data-community-room]')?.dataset.communityRoomReady || ''
-      )), { timeout: 30_000 }).toBe('true');
+      await waitForCommunityRoomReady(page);
       expect(externalWrites).toEqual([]);
     });
   });
@@ -392,7 +398,7 @@ test.describe('PD-COMMUNITY-001 entry transitions', () => {
       page.waitForURL(/\/comunidade-interna\.html\?.*community=pd-community-public/, { timeout: 15_000 }),
       publicJoin.click(),
     ]);
-    await expect(page.locator('body')).toHaveAttribute('data-page', 'comunidade-interna');
+    await waitForCommunityRoomReady(page);
 
     const joined = await page.evaluate(() => {
       const record = window.Doke.communityDomain.repository.getById('pd-community-public');
@@ -420,7 +426,7 @@ test.describe('PD-COMMUNITY-001 entry transitions', () => {
       page.waitForURL(/\/comunidade-interna\.html\?.*community=pd-community-invite/, { timeout: 15_000 }),
       modal.getByRole('button', { name: 'Entrar', exact: true }).click(),
     ]);
-    await expect(page.locator('body')).toHaveAttribute('data-page', 'comunidade-interna');
+    await waitForCommunityRoomReady(page);
 
     const joined = await page.evaluate(() => {
       const record = window.Doke.communityDomain.repository.getById('pd-community-invite');
