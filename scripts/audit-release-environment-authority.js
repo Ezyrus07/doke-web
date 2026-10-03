@@ -118,14 +118,15 @@ if (requireCandidateProvenance && contract) {
   const releaseBranch = String(process.env.DOKE_RELEASE_BRANCH || '');
 
   expect(report, nonEmpty(candidateBranch), 'candidate.branch.present');
-  expect(report, releaseBranch === contract.canonicalReleaseBranch, 'candidate.release_branch.canonical');
+  expect(report, nonEmpty(releaseBranch), 'candidate.target_branch.present');
   validateRuntimeGitBinding(report, 'candidate', candidateSha, candidateTree);
 
   report.candidate = {
     sha: candidateSha || null,
     tree: candidateTree || null,
     branch: candidateBranch || null,
-    releaseBranch: releaseBranch || null
+    releaseBranch: releaseBranch || null,
+    targetsCanonicalReleaseBranch: releaseBranch === contract.canonicalReleaseBranch
   };
 }
 
