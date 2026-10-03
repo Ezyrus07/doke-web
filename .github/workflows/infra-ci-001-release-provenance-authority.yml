@@ -18,9 +18,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout candidate tree
+      - name: Checkout exact candidate tree
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -31,10 +32,11 @@ jobs:
       - name: Preserve domain workflow isolation when this lane changes
         if: github.event_name == 'pull_request'
         shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          base='${{ github.event.pull_request.base.sha }}'
-          changed_workflows="$(git diff --name-only "$base...HEAD" -- .github/workflows || true)"
+          changed_workflows="$(git diff --name-only "$PR_BASE_SHA...HEAD" -- .github/workflows || true)"
           if ! printf '%s\n' "$changed_workflows" | grep -qx '.github/workflows/infra-ci-001-release-provenance-authority.yml'; then
             echo 'INFRA provenance workflow is unchanged; domain workflow changes are outside this isolation guard.'
             exit 0
@@ -55,16 +57,22 @@ jobs:
       - name: Validate release environment authority contract
         run: npm run audit:release-environment-authority
 
+      - name: Validate exact PR candidate provenance
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          DOKE_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+          DOKE_CANDIDATE_BRANCH: ${{ github.event.pull_request.head.ref }}
+          DOKE_RELEASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          DOKE_CANDIDATE_TREE_SHA="$(git rev-parse "${DOKE_CANDIDATE_SHA}^{tree}")"
+          export DOKE_CANDIDATE_TREE_SHA
+          node scripts/audit-release-environment-authority.js --require-pr-candidate
+
       - name: Validate non-MAIN contract-only integration
         if: github.event_name != 'pull_request' || github.base_ref != 'MAIN'
         run: node scripts/validate-release-go-no-go-gate.js --dry-run
-
-      - name: Validate MAIN production provenance
-        if: github.event_name == 'pull_request' && github.base_ref == 'MAIN'
-        env:
-          DOKE_RELEASE_TARGET: production
-          DOKE_RELEASE_ENVIRONMENT_MANIFEST_PATH: reports/generated/release-environment-manifest.json
-        run: npm run validate:release-environment-authority:production
 
       - name: Prove unassigned production remains fail-closed
         shell: bash
@@ -78,34 +86,38 @@ jobs:
           fi
 
           mkdir -p reports/generated
-          fixture='reports/generated/infra-ci-001-synthetic-production-manifest.json'
-          output='/tmp/infra-ci-001-production-authority.json'
+          fixture='reports/generated/infra-ci-003-synthetic-production-manifest.json'
+          output='/tmp/infra-ci-003-production-authority.json'
+          release_sha="$(git rev-parse HEAD)"
+          release_tree="$(git rev-parse HEAD^{tree})"
           trap 'rm -f "$fixture"' EXIT
 
-          node <<'NODE'
+          RELEASE_SHA="$release_sha" RELEASE_TREE="$release_tree" node <<'NODE'
           const fs = require('fs');
           const contract = JSON.parse(fs.readFileSync('config/release-environment-authority.json', 'utf8'));
           const manifest = {
             repository: contract.canonicalRepository,
-            source_sha: '1111111111111111111111111111111111111111',
-            source_tree_sha: '2222222222222222222222222222222222222222',
-            source_branch: contract.canonicalReleaseBranch,
+            release_sha: process.env.RELEASE_SHA,
+            release_tree_sha: process.env.RELEASE_TREE,
             release_branch: contract.canonicalReleaseBranch,
             vercel_project_id: contract.canonicalVercelProject.projectId,
-            preview_deployment_id: 'dpl_infra_ci_001_synthetic',
-            preview_deployment_sha: '1111111111111111111111111111111111111111',
+            preview_deployment_id: 'dpl_infra_ci_003_synthetic',
+            preview_deployment_sha: process.env.RELEASE_SHA,
             staging_supabase_ref: contract.staging.supabaseProjectRef,
             staging_migration_head: 'synthetic-staging-head',
             edge_function_versions: ['synthetic-function@sha256:00000000'],
             ci_run_ids: ['synthetic-ci-run'],
-            rollback_deployment_id: 'dpl_infra_ci_001_rollback',
+            rollback_deployment_id: 'dpl_infra_ci_003_rollback',
             production_supabase_ref: 'future-production-ref',
-            authorization_id: 'infra-ci-002-synthetic-production-proof'
+            authorization_id: 'infra-ci-003-synthetic-production-proof'
           };
-          fs.writeFileSync('reports/generated/infra-ci-001-synthetic-production-manifest.json', JSON.stringify(manifest, null, 2));
+          fs.writeFileSync('reports/generated/infra-ci-003-synthetic-production-manifest.json', JSON.stringify(manifest, null, 2));
           NODE
 
           set +e
+          DOKE_RELEASE_SHA="$release_sha" \
+          DOKE_RELEASE_TREE_SHA="$release_tree" \
+          DOKE_RELEASE_BRANCH=MAIN \
           DOKE_RELEASE_ENVIRONMENT_MANIFEST_PATH="$fixture" \
             node scripts/audit-release-environment-authority.js --require-production-manifest \
             > "$output" 2>&1
@@ -120,20 +132,32 @@ jobs:
 
           node <<'NODE'
           const fs = require('fs');
-          const report = JSON.parse(fs.readFileSync('/tmp/infra-ci-001-production-authority.json', 'utf8'));
+          const report = JSON.parse(fs.readFileSync('/tmp/infra-ci-003-production-authority.json', 'utf8'));
           const expected = 'Production Supabase authority is UNASSIGNED; production release is forbidden.';
           if (report.status !== 'blocked') throw new Error(`expected blocked status, got ${report.status}`);
           if (!Array.isArray(report.blockers) || !report.blockers.includes(expected)) {
             throw new Error('canonical production fail-closed blocker missing');
           }
           if (report.failures.length !== 0) {
-            throw new Error(`unexpected contract failures: ${report.failures.join(' | ')}`);
+            throw new Error(`unexpected provenance failures: ${report.failures.join(' | ')}`);
           }
           if (report.performsExternalNetworkRequest !== false || report.performsExternalMutation !== false) {
             throw new Error('release authority audit must remain repository-only');
           }
-          console.log('INFRA-CI-002 production UNASSIGNED fail-closed proof: PASS');
+          console.log('INFRA-CI-003 production UNASSIGNED fail-closed proof: PASS');
+          NODE
+
+      - name: Block MAIN pre-release while production authority is unassigned
+        if: github.event_name == 'pull_request' && github.base_ref == 'MAIN'
+        run: |
+          node <<'NODE'
+          const contract = require('./config/release-environment-authority.json');
+          if (!contract.production || !contract.production.supabaseProjectRef) {
+            console.error('Production Supabase authority is UNASSIGNED; MAIN release remains NO_GO.');
+            process.exit(1);
+          }
           NODE
 
       - name: Diff hygiene
+        if: always()
         run: git diff --check
