@@ -116,3 +116,54 @@ This contract does **not** authorize:
 - production deployment.
 
 Each remains a separate governed write.
+
+
+## INFRA-CI-002 — MAIN production provenance enforcement
+
+The dedicated release-provenance lane is designed to be eligible for future use as a required check without creating a path-filter deadlock.
+
+### Trigger model
+
+The workflow runs for every pull request. It no longer uses `paths:` filtering.
+
+This is intentional: a required GitHub check backed by a path-filtered workflow can remain pending on pull requests that do not match the filter because no check run is created.
+
+The workflow keeps domain-workflow isolation narrow. If the INFRA provenance workflow itself changes in a pull request, that change must not be bundled with changes to other workflow files. Pull requests that only change domain workflows are not rejected by this INFRA isolation guard.
+
+### Target-sensitive validation
+
+For pull requests whose base branch is not `MAIN`, and for manual workflow dispatch, the lane preserves repository-only contract validation:
+
+```text
+release-environment-authority contract
+  -> release-go-no-go dry-run
+  -> no external network mutation
+```
+
+For pull requests whose base branch is `MAIN`, the lane switches to production provenance validation and requires the canonical manifest path:
+
+`reports/generated/release-environment-manifest.json`
+
+The production audit requires the exact manifest fields declared by `config/release-environment-authority.json` and validates the canonical repository, release branch, Vercel project, staging Supabase authority, preview/source SHA binding, CI evidence, rollback deployment and explicit authorization provenance.
+
+A missing or invalid production manifest fails closed.
+
+While `production.supabaseProjectRef` remains unassigned, even a structurally complete production manifest is blocked with:
+
+`Production Supabase authority is UNASSIGNED; production release is forbidden.`
+
+The workflow also carries a synthetic repository-only proof for this UNASSIGNED state. That proof is skipped automatically once a distinct production Supabase authority is later assigned, so it cannot become a permanent deadlock after the topology legitimately advances.
+
+### What this gate does not authorize
+
+INFRA-CI-002 does not itself authorize or perform:
+
+- branch-protection or ruleset writes;
+- merge or Ready for Review;
+- Vercel promotion, redeploy, rollback or configuration changes;
+- Supabase writes, migrations or production project creation;
+- GitHub Pages changes;
+- shadow-project disconnect/removal;
+- secret, OAuth, SMTP or DNS changes.
+
+Branch protection must be enabled only under a separate authorization after this lane is green and its required-check behavior is reconciled against the live GitHub topology.
