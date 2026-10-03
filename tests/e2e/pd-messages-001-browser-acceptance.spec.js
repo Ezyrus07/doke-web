@@ -178,6 +178,7 @@ function conversationFixtures() {
           senderId: PROFESSIONAL_ID,
           author: 'Profissional Financeiro',
           type: 'charge',
+          financialKind: 'charge',
           amount: 'R$ 900,00',
           installments: 'À vista',
           paid: true,
@@ -282,6 +283,24 @@ async function expectNoOverflow(page) {
   ))).toBeLessThanOrEqual(1);
 }
 
+async function expectOrderActionForViewport(page) {
+  const phoneThread = await page.evaluate(() => window.innerWidth <= 560);
+  const orderAction = page.locator('.messages-thread__action--order');
+  const chargeAction = page.locator('[data-messages-charge]');
+  const callAction = page.locator('[data-thread-call-toggle]');
+  const moreAction = page.locator('[data-thread-more-toggle]');
+
+  if (phoneThread) {
+    await expect(orderAction).toBeHidden();
+    await expect(chargeAction).toBeHidden();
+    await expect(callAction).toBeHidden();
+    await expect(moreAction).toBeVisible();
+    return;
+  }
+
+  await expect(orderAction).toBeVisible();
+}
+
 async function expectEmptyThreadAuthority(page) {
   await expect(page.locator('[data-thread-name]')).toHaveText('Selecione uma conversa');
   await expect(page.locator('.messages-thread__actions')).toBeHidden();
@@ -307,19 +326,19 @@ async function exerciseConversationDecisionHierarchy(page) {
   await expect(page.locator('[data-messages-composer-input]')).toBeEnabled();
 
   await openConversation(page, 'pd_messages_accepted');
-  await expect(page.locator('.messages-thread__action--order')).toBeVisible();
+  await expectOrderActionForViewport(page);
   await expect(page.locator('[data-messages-composer-input]')).toBeEnabled();
   await expect(page.locator('.message-row.is-message-group-continuation')).toHaveCount(1);
   await expect(page.locator('.message-row.is-message-group-start')).toHaveCount(2);
   await expect(acceptedItem.locator('.message-item__badge')).toBeHidden();
 
   await openConversation(page, 'pd_messages_pending');
-  await expect(page.locator('.messages-thread__action--order')).toBeVisible();
+  await expectOrderActionForViewport(page);
   await expect(page.locator('[data-messages-composer-input]')).toBeDisabled();
   await expect(page.locator('[data-messages-thread-lock]')).toBeVisible();
 
   await openConversation(page, 'pd_messages_financial');
-  await expect(page.locator('.messages-thread__action--order')).toBeVisible();
+  await expectOrderActionForViewport(page);
   await expect(page.locator('[data-messages-composer-input]')).toBeEnabled();
   await expect(page.locator('.message-bubble__charge')).toHaveCount(2);
   await expect(page.locator('.message-bubble__charge-status--approved')).toBeVisible();
