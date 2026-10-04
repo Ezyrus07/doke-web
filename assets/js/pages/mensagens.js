@@ -495,7 +495,8 @@
 
   const normalizeLocalMessage = (message, conversation) => {
     const currentUserId = getCurrentUserId();
-    const mine = message?.mine === true || Boolean(currentUserId && message?.senderId && String(message.senderId) === String(currentUserId));
+    const senderId = message?.senderId || message?.authorId || '';
+    const mine = senderId ? Boolean(currentUserId && String(senderId) === String(currentUserId)) : message?.mine === true;
     const attachmentRepository = window.Doke?.repositories?.attachments;
     const rawAttachments = Array.isArray(message?.attachments)
       ? message.attachments
@@ -510,7 +511,7 @@
     return {
       id: message?.id || "",
       senderId: message?.senderId || message?.authorId || "",
-      author: mine ? "Você" : message?.author || conversation?.name || "Doke",
+      author: mine ? "Você" : (message?.author && message.author !== "Você" ? message.author : conversation?.name) || "Doke",
       authorAvatarUrl: message?.authorAvatarUrl || message?.avatarUrl || "",
       authorInitials: message?.authorInitials || "",
       createdAt: message?.createdAt || message?.sentAt || message?.timestamp || "",
@@ -734,7 +735,7 @@
     root?.querySelectorAll?.('[data-local-conversation="true"]').forEach((card) => card.remove());
   };
 
-  const hydrateLocalConversations = (root) => {
+  const hydrateLocalConversations = (root, sourceConversations) => {
     const service = window.Doke?.services?.messages;
     const { ordersList } = getConversationLists(root);
     const scopeKey = getConversationScopeKey();
@@ -745,17 +746,18 @@
       hydratedConversationScope = scopeKey;
     }
 
-    if (!service?.listLocalConversations || !ordersList) {
+    if (!ordersList) {
       return { scopeChanged, count: 0, conversationIds: [] };
     }
 
-    const localConversations = service.listLocalConversations({ currentUser: true }) || [];
+    const localConversations = sourceConversations || service?.listLocalConversations?.({ currentUser: true }) || [];
+    const apiActive = window.Doke?.repositoryBoundary?.getDataProviderStatus?.().activeProvider === 'api';
     const currentConversationIds = new Set();
     localConversations.slice().reverse().forEach((conversation) => {
       if (!conversation?.id) return;
       const conversationId = String(conversation.id);
       currentConversationIds.add(conversationId);
-      const reconciliation = reconcileLocalConversationOrder(conversation);
+      const reconciliation = apiActive ? { conversation, changed: false } : reconcileLocalConversationOrder(conversation);
       const sourceConversation = reconciliation.conversation || conversation;
       if (reconciliation.changed) {
         const repository = window.Doke?.repositories?.messages;
@@ -3613,9 +3615,9 @@
       toggleConversationSelectedByItem(item);
     });
 
-    const refreshLocalConversationSurface = ({ preferRequested = false } = {}) => {
+    const refreshLocalConversationSurface = ({ preferRequested = false, sourceConversations } = {}) => {
       const previousActiveId = activeId;
-      const hydrationResult = hydrateLocalConversations(root);
+      const hydrationResult = hydrateLocalConversations(root, sourceConversations);
       const activeConversationRemoved = Boolean(previousActiveId && !conversations[previousActiveId]);
 
       if (hydrationResult.scopeChanged) {
@@ -3665,9 +3667,29 @@
       document.addEventListener(eventName, handler);
       addRouteCleanup(() => document.removeEventListener(eventName, handler));
     };
-    const refreshAuthorizedConversationSurface = (options = {}) => {
+    let conversationRefreshVersion = 0;
+    const refreshAuthorizedConversationSurface = async (options = {}) => {
       if (!accountAuthorized) return;
-      refreshLocalConversationSurface(options);
+      const version = ++conversationRefreshVersion;
+      const scope = getConversationScopeKey();
+      if (scope !== hydratedConversationScope) {
+        clearHydratedConversationScope(root);
+        activeId = '';
+        renderEmptyThread();
+      }
+      try {
+        const service = window.Doke?.services?.messages;
+        if (!service?.listConversations) throw new Error('O serviço de mensagens não está disponível.');
+        const sourceConversations = await service.listConversations({ currentUser: true });
+        if (!accountAuthorized || version !== conversationRefreshVersion || scope !== getConversationScopeKey() || !root.isConnected) return;
+        refreshLocalConversationSurface({ ...options, sourceConversations });
+        root.dataset.messagesReady = 'true';
+      } catch (error) {
+        if (version === conversationRefreshVersion && scope === getConversationScopeKey() && root.isConnected) {
+          root.dataset.messagesReady = 'false';
+          showMessagesInitializationError(root, error);
+        }
+      }
     };
     const withMessagesAccessTimeout = (task, timeoutMs = 3500) => new Promise((resolve, reject) => {
       let settled = false;
@@ -3703,12 +3725,11 @@
         name: 'messages-account-access',
         source: 'mensagens.html',
         next: window.location.pathname + window.location.search
-      })).then((result) => {
+      })).then(async (result) => {
         if (!result?.allowed) return result;
         accountAuthorized = true;
         hydration?.mark('auth');
-        refreshLocalConversationSurface({ preferRequested: true });
-        root.dataset.messagesReady = 'true';
+        await refreshAuthorizedConversationSurface({ preferRequested: true });
         return result;
       }).catch((error) => {
         accountAuthorized = false;
@@ -4397,7 +4418,7 @@
         submitIssueReport(conversation, message, report)
           .then(() => {
             closeCompletionModal();
-            refreshLocalConversationSurface({ preferRequested: true });
+            refreshAuthorizedConversationSurface({ preferRequested: true });
             if (contextId && conversations[contextId]) renderThread(contextId, { scrollTo: 'start', openOnMobile: true });
             showCopyToast('Relato enviado. O pedido entrou em contestação.');
           })
@@ -4597,7 +4618,7 @@
     ["doke:wallet-dispute-opened", "doke:wallet-dispute-resolved", "doke:order-dispute-synced", "doke:completion-requested", "doke:payment-released"].forEach((eventName) => {
       bindDocumentLifecycle(eventName, () => {
         if (!accountAuthorized) return;
-        refreshLocalConversationSurface({ preferRequested: false });
+        refreshAuthorizedConversationSurface({ preferRequested: false });
         syncVisibility();
         if (activeId) renderThread(activeId);
       });
