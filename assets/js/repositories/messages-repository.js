@@ -402,6 +402,7 @@
       professionalId: row.professional_id,
       participants: [row.client_id, row.professional_id].filter(Boolean),
       archived: row.status === 'archived',
+      backendStatus: row.status || '',
       createdAt: row.created_at,
       updatedAt: row.updated_at || row.last_message_at || row.created_at,
       syncStatus: 'synced'

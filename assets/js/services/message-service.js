@@ -386,7 +386,8 @@
 
   function isConversationUnlocked(conversation) {
     var status = conversation && conversation.order && conversation.order.status || conversation && conversation.status || '';
-    return ['conversation', 'accepted', 'responded', 'quoted', 'in_progress', 'completed'].indexOf(status) !== -1;
+    if (['conversation', 'accepted', 'responded', 'quoted', 'in_progress', 'completed'].indexOf(status) !== -1) return true;
+    return requiresServerOwnedCommands() && normalizeText(conversation && conversation.backendStatus).toLowerCase() === 'active';
   }
 
   function updateConversationOrder(order, options) {

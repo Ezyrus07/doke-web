@@ -119,6 +119,9 @@ async function validateManualActivationAndOrderMutation() {
     idempotencyKey: 'front-accept-001'
   });
   assertEqual(accepted.status, 'accepted', 'Accepted order must normalize API action response.');
+  assertEqual(browser.conversationCalls.length, 1, 'Accepted order must hand off exactly once to the messaging authority.');
+  assertEqual(browser.conversationCalls[0].order.id, accepted.id, 'Messaging handoff must preserve the accepted order identity.');
+  assertEqual(browser.conversationCalls[0].options.commandId, 'front-accept-001:conversation', 'Messaging handoff must derive a stable command id from the accept idempotency key.');
 
   const calledPaths = browser.fetchCalls.map((entry) => entry.path);
   assertDeepEqual(calledPaths, ['/orders', '/orders/order_api_1/accept'], 'Frontend activation canary must call only expected orders endpoints.');
@@ -229,8 +232,10 @@ function createBrowserRuntime(options = {}) {
   };
 
   const location = new URL(options.url || 'https://staging.doke.example/pedidos.html');
+  const conversationCalls = [];
   const browser = {
     fetchCalls,
+    conversationCalls,
     console,
     URL,
     URLSearchParams,
@@ -265,7 +270,14 @@ function createBrowserRuntime(options = {}) {
     dispatchEvent() { return true; },
     navigator: { userAgent: 'doke-orders-write-frontend-runtime' },
     Doke: {
-      services: {},
+      services: {
+        messages: {
+          createConversationForOrder(order, messageOptions) {
+            conversationCalls.push({ order, options: messageOptions });
+            return Promise.resolve({ id: 'conversation_order_api_1', orderId: order.id });
+          }
+        }
+      },
       session: {
         getCurrentUser() {
           return { id: 'user_client_1', role: 'client', name: 'Cliente Canary', email: 'cliente@staging.example' };
