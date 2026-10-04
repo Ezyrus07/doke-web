@@ -39,7 +39,7 @@ function v2Response(request) {
 }
 
 function createRuntime(overrides = {}) {
-  const calls = { edge: [], rpc: [], fixture: [] };
+  const calls = { edge: [], edgeTransport: [], rpc: [], fixture: [] };
   const client = {
     functions: {
       invoke(name, options) {
@@ -75,7 +75,13 @@ function createRuntime(overrides = {}) {
         }
       }
     },
-    DokeSupabase: { getClient: () => client },
+    DokeSupabase: {
+      getClient: () => client,
+      invokeEdgeFunction(name, options) {
+        calls.edgeTransport.push({ name, options });
+        return client.functions.invoke(name, options);
+      }
+    },
     supabase: { createClient: () => client },
     crypto: { randomUUID: () => '11111111-1111-4111-8111-111111111111' }
   };
@@ -122,9 +128,11 @@ async function expectReject(promise, code) {
   assert.strictEqual(edgePage.contractVersion, '2.0.0');
   assert.strictEqual(edgePage.ranking.version, 'search-rank-v0');
   assert.strictEqual(edgeRuntime.calls.edge.length, 1);
+  assert.strictEqual(edgeRuntime.calls.edgeTransport.length, 1);
   assert.strictEqual(edgeRuntime.calls.rpc.length, 0);
   assert.strictEqual(edgeRuntime.calls.fixture.length, 0);
   assert.strictEqual(edgeRuntime.calls.edge[0].name, 'search-public-services-v2');
+  assert.strictEqual(edgeRuntime.calls.edgeTransport[0].name, 'search-public-services-v2');
   assert.strictEqual(edgeRuntime.calls.edge[0].options.body.query, 'limpeza');
   assert.strictEqual(edgeRuntime.calls.edge[0].options.headers['x-doke-request-id'], '11111111-1111-4111-8111-111111111111');
   assert.strictEqual(edgeRuntime.repository.getContract().transport, 'edge-v2');
