@@ -29,7 +29,7 @@ const checks = [
   [formExperience.includes('service?.submitForReview') && !formExperience.includes('service?.create(payload)'), 'formulário não usa a autoridade de revisão'],
   [repository.includes("invokeSelfService('submit_service_for_review'") && repository.includes('getOwnedReviewDraft') && supabaseBootstrap.includes('self-service-operations'), 'repositório não implementa submissão/versionamento via gateway Edge'],
   [repository.includes('isPubliclyVisible') && repository.includes('approvedContentRemainsPublic') && repository.includes("['published', 'changes_pending_review']"), 'catálogo não restringe versões não aprovadas'],
-  [repository.includes('canReadLocalService') && repository.includes('resolveReadableLocalService'), 'detalhe ainda expõe rascunhos locais a visitantes'],
+  [repository.includes('canReadFixtureService') && repository.includes('resolveReadableFixtureService'), 'detalhe ainda expõe rascunhos locais a visitantes'],
   [service.includes('submitForReview') && service.includes('getOwnedReviewDraft'), 'serviço de domínio não expõe revisão segura'],
   [detail.includes("quoteMode || 'default').toLowerCase() !== 'disabled'"), 'detalhe não remove orçamento quando desativado'],
   [budget.includes('recebe somente conversas neste anúncio') && budget.includes('changes_pending_review'), 'orçamento não bloqueia modo desativado/moderação'],

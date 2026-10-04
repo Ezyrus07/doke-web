@@ -113,7 +113,7 @@ const repository = read(files.repository);
   "RPC_NAME = 'search_public_services_v1'",
   "EDGE_FUNCTION_NAME = 'search-public-services-v2'",
   'client.rpc(RPC_NAME, { p_request: request })',
-  'client.functions.invoke(EDGE_FUNCTION_NAME, options)',
+  'invokeEdge(EDGE_FUNCTION_NAME, options)',
   "createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE'",
   'function resolveTransport(config)',
   'function resolveRollbackTransport(config)'
