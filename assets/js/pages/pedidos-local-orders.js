@@ -5,6 +5,8 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var accessGranted = false;
+  var acceptCommandKeys = new Map();
+  var renderVersion = 0;
 
   var CARD_ICONS = {
     receipt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15H7z"></path><path d="M9.5 9.5h5"></path><path d="M9.5 13h5"></path></svg>'
@@ -694,14 +696,20 @@
     if (!list) return Promise.resolve([]);
     var user = getCurrentUser();
     if (!accessGranted || !user || !user.id) return Promise.resolve([]);
+    var version = ++renderVersion;
+    var isCurrent = function () {
+      return version === renderVersion && list.isConnected && accessGranted && String(getCurrentUser()?.id || '') === String(user.id);
+    };
     var experience = window.DokeOrders && window.DokeOrders.experience;
 
     if (experience && typeof experience.load === 'function') {
       return experience.load({ force: options.force === true }).then(function (result) {
         var orders = Array.isArray(result && result.data) ? result.data : [];
+        if (!isCurrent()) return [];
         renderOrders(list, orders, user, options);
         return orders;
       }).catch(function (error) {
+        if (!isCurrent()) return [];
         document.dispatchEvent(new CustomEvent('doke:orders-list-error', {
           detail: { error: error && error.message ? error.message : String(error) }
         }));
@@ -710,14 +718,23 @@
       });
     }
 
-    var repository = Doke.repositories && Doke.repositories.orders;
-    if (!repository || typeof repository.listLocal !== 'function') {
+    var service = Doke.services && Doke.services.orders;
+    if (!service || typeof service.listForCurrentUser !== 'function') {
       renderOrders(list, [], user, { force: true });
       return Promise.resolve([]);
     }
-    var orders = repository.listLocal({ currentUser: true });
-    renderOrders(list, orders, user, options);
-    return Promise.resolve(orders);
+    return service.listForCurrentUser({ fresh: options.force === true }).then(function (orders) {
+      if (!isCurrent()) return [];
+      renderOrders(list, orders, user, options);
+      return orders;
+    }).catch(function (error) {
+      if (!isCurrent()) return [];
+      document.dispatchEvent(new CustomEvent('doke:orders-list-error', {
+        detail: { error: error && error.message ? error.message : String(error) }
+      }));
+      renderOrders(list, [], user, { force: true });
+      return [];
+    });
   }
 
 
@@ -992,10 +1009,15 @@
         acceptButton.disabled = true;
         acceptButton.setAttribute('aria-disabled', 'true');
         acceptLabel.textContent = 'Aceitando...';
+        var commandScope = String(getCurrentUser()?.id || '') + ':' + orderId;
+        if (!acceptCommandKeys.has(commandScope)) {
+          acceptCommandKeys.set(commandScope, 'order-accept:' + (window.crypto?.randomUUID?.() || Date.now().toString(36) + '-' + Math.random().toString(36).slice(2)));
+        }
+        var acceptOptions = { idempotencyKey: acceptCommandKeys.get(commandScope) };
         var acceptExperience = window.DokeOrders && window.DokeOrders.experience;
         var acceptTask = acceptExperience && typeof acceptExperience.mutateStatus === 'function'
-          ? acceptExperience.mutateStatus({ orderId: orderId, action: 'accept', card: acceptButton.closest('.order-card') })
-          : Doke.services.orders.accept(orderId);
+          ? acceptExperience.mutateStatus({ orderId: orderId, action: 'accept', args: [acceptOptions], card: acceptButton.closest('.order-card') })
+          : Doke.services.orders.accept(orderId, acceptOptions);
 
         acceptTask.then(function () {
           scheduleRender({ force: true });

@@ -901,6 +901,8 @@ const initBudgetPage = () => {
     });
     goToStep(0);
 
+    // Keep the same command across retries, including a lost create response.
+    let submissionIntent = null;
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (currentStep !== panels.length - 1) {
@@ -1028,22 +1030,40 @@ const initBudgetPage = () => {
       };
 
       try {
+        if (typeof ordersService?.create !== "function") {
+          throw new Error("O serviço de pedidos não está disponível. Tente novamente em instantes.");
+        }
+        if (attachmentFiles.length && (typeof attachmentsRepository?.uploadOrderFiles !== "function" || typeof ordersService.updateAttachments !== "function")) {
+          throw new Error("O serviço de anexos não está disponível. Tente novamente em instantes.");
+        }
         const latestService = await window.Doke?.services?.services?.getById?.(serviceId);
         if (!latestService || String(latestService.status || "active").toLowerCase() !== "active") {
           throw new Error("Este anúncio não está mais aceitando novos pedidos.");
         }
-        let savedOrder = ordersService?.create
-          ? await ordersService.create(payload)
-          : Object.assign({ id: `order-${Date.now()}` }, payload);
+        const signature = JSON.stringify({
+          actorId: window.Doke?.session?.getCurrentUser?.()?.id || '',
+          ...payload, createdAt: null, creatédAt: null, updatedAt: null,
+          attachments: attachmentFiles.map((file) => [file.name, file.size, file.lastModified, file.type])
+        });
+        if (!submissionIntent || submissionIntent.signature !== signature) {
+          submissionIntent = { signature, payload: { ...payload, idempotencyKey: createMetricToken("quote-command") }, order: null };
+        }
+        let savedOrder = submissionIntent.order || await ordersService.create(submissionIntent.payload);
+        if (!savedOrder?.id) {
+          throw new Error("O envio não foi confirmado. Tente novamente para verificar sua solicitação.");
+        }
+        submissionIntent.order = savedOrder;
 
         if (attachmentFiles.length) {
           if (!attachmentsRepository?.uploadOrderFiles) {
             throw new Error("O serviço de anexos não está disponível. Recarregue a página e tente novamente.");
           }
           const uploadedAttachments = await attachmentsRepository.uploadOrderFiles(savedOrder.id, attachmentFiles, { maxFiles: 8 });
-          savedOrder = ordersService?.updateAttachments
-            ? await ordersService.updateAttachments(savedOrder.id, uploadedAttachments)
-            : Object.assign({}, savedOrder, { attachments: uploadedAttachments });
+          const updatedOrder = await ordersService.updateAttachments(savedOrder.id, uploadedAttachments);
+          if (!updatedOrder?.id || updatedOrder.id !== savedOrder.id) {
+            throw new Error("Não foi possível confirmar os anexos do pedido. Tente novamente.");
+          }
+          savedOrder = updatedOrder;
         }
 
         recordQuoteSubmitted(savedOrder);

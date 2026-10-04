@@ -588,10 +588,18 @@ function extractIdempotencyKey(payload, options) {
     return boundary.getById('orders', orderId).then(normalizeOrderFromProvider);
   }
 
+  function getApiCommandPayload(payload) {
+    var command = stripCanaryPayloadMetadata(payload || {});
+    command.__requestMeta = Object.assign({}, payload && payload.__requestMeta || {});
+    var idempotencyKey = extractIdempotencyKey(payload || {});
+    if (idempotencyKey) command.__requestMeta.idempotencyKey = idempotencyKey;
+    return command;
+  }
+
   function ordersBoundaryCreate(payload) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.create !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
-    return boundary.create('orders', payload || {}).then(function (response) {
+    return boundary.create('orders', getApiCommandPayload(payload)).then(function (response) {
       return normalizeOrderFromProvider(response && response.order || response);
     });
   }
@@ -599,7 +607,7 @@ function extractIdempotencyKey(payload, options) {
   function ordersBoundaryAction(actionName, payload) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.action !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
-    return boundary.action('orders', actionName, payload || {}).then(function (response) {
+    return boundary.action('orders', actionName, getApiCommandPayload(payload)).then(function (response) {
       return normalizeOrderFromProvider(response && response.order || response);
     });
   }
@@ -833,29 +841,6 @@ function extractIdempotencyKey(payload, options) {
     });
   }
 
-  var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
-
-  function routeProfessionalForMock(payload) {
-    payload = payload || {};
-    var originalProfessionalId = normalizeText(payload.professionalId || payload.providerId || '');
-    if (!originalProfessionalId) return payload;
-
-    // Static mock environment rule:
-    // service cards may use provider IDs (pro_001, pro-renato, etc.), while the login
-    // account used for professional testing is user_profissional_demo. Route operational
-    // ownership to that mock account and preserve the provider identity as display data.
-    if (originalProfessionalId !== DEMO_PROFESSIONAL_ID) {
-      return Object.assign({}, payload, {
-        displayProfessionalId: originalProfessionalId,
-        sourceProfessionalId: originalProfessionalId,
-        professionalId: DEMO_PROFESSIONAL_ID,
-        providerId: DEMO_PROFESSIONAL_ID
-      });
-    }
-
-    return payload;
-  }
-
   function buildTitle(payload) {
     var service = normalizeText(payload.serviceTitle || payload.service || payload.title || 'Serviço solicitado');
     var address = normalizeText(payload.locationTitle || payload.location || '');
@@ -908,16 +893,15 @@ function extractIdempotencyKey(payload, options) {
     assertOrderCommandProviderAvailable('create');
     var repository = assertRepository();
     var createdAt = nowIso();
-    var routedPayload = routeProfessionalForMock(payload);
-    var order = repository.normalize(Object.assign({}, routedPayload, {
-      id: routedPayload.id || createOrderId(),
+    var order = repository.normalize(Object.assign({}, payload, {
+      id: payload.id || createOrderId(),
       clientId: user.id,
       clientName: user.name || 'Cliente Doke',
       clientInitials: user.initials || user.avatarInitials || getInitials(user.name || 'Cliente Doke'),
       status: 'pending',
       statusLabel: 'Aguardando resposta',
       nextAction: 'Acompanhar pedido',
-      title: routedPayload.title || buildTitle(routedPayload),
+      title: payload.title || buildTitle(payload),
       source: 'budget',
       createdAt: createdAt,
       creatédAt: createdAt,
