@@ -142,6 +142,7 @@ function createRemoteAuthority() {
 function createBrowserRuntime({ actor, token, remote }) {
   const storage = new Map();
   const events = [];
+  const conversationCalls = [];
   const document = {
     readyState: 'complete',
     documentElement: { dataset: {}, setAttribute() {}, getAttribute() { return null; } },
@@ -209,7 +210,14 @@ function createBrowserRuntime({ actor, token, remote }) {
       flags: { enableNetworkRequests: false }
     },
     Doke: {
-      services: {},
+      services: {
+        messages: {
+          createConversationForOrder(order, options) {
+            conversationCalls.push({ order: clone(order), options: clone(options) });
+            return Promise.resolve({ id: 'conversation-ord-a06-1', orderId: order.id, backendStatus: 'active' });
+          }
+        }
+      },
       repositories: { orders: repository },
       session: {
         getCurrentUser() { return actor; },
@@ -226,7 +234,7 @@ function createBrowserRuntime({ actor, token, remote }) {
     vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
   });
 
-  return { browser, storage, events };
+  return { browser, storage, events, conversationCalls };
 }
 
 function activate(runtime) {
@@ -286,6 +294,9 @@ function activate(runtime) {
   });
   assert.strictEqual(accepted.status, 'accepted');
   assert.strictEqual(accepted.version, 2);
+  assert.strictEqual(professional.conversationCalls.length, 1);
+  assert.strictEqual(professional.conversationCalls[0].order.id, accepted.id);
+  assert.strictEqual(professional.conversationCalls[0].options.commandId, 'ord-a06-accept-001:conversation');
 
   const clientAccepted = await client.browser.Doke.services.orders.getById(created.id);
   assert.strictEqual(clientAccepted.status, 'accepted');

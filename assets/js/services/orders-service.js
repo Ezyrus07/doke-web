@@ -1025,6 +1025,19 @@ function extractIdempotencyKey(payload, options) {
     });
   }
 
+  function ensureAcceptedConversation(order, options) {
+    var messagesService = services.messages;
+    if (!messagesService || typeof messagesService.createConversationForOrder !== 'function') {
+      var unavailable = new Error('O servidor aceitou o pedido, mas a autoridade de conversa não está disponível. Tente novamente.');
+      unavailable.code = 'DOKE_ACCEPTED_CONVERSATION_AUTHORITY_UNAVAILABLE';
+      return Promise.reject(unavailable);
+    }
+    var idempotencyKey = extractIdempotencyKey(options || {});
+    return messagesService.createConversationForOrder(order, {
+      commandId: idempotencyKey ? idempotencyKey + ':conversation' : ''
+    });
+  }
+
   function isDemoProfessionalActor(actor) {
     return Boolean(actor && actor.role === 'professional' && String(actor.id) === 'user_profissional_demo');
   }
@@ -1075,14 +1088,20 @@ function extractIdempotencyKey(payload, options) {
         actorRole: actor.role || 'guest'
       });
       return ordersWriteCanaryAction(getApiActionForStatus(canaryStatus), orderId, canaryPayload, options).then(function (saved) {
-        document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
-          detail: {
-            order: saved,
-            status: canaryStatus,
-            provider: ORDERS_WRITE_CANARY_PROVIDER
-          }
-        }));
-        return saved;
+        var conversationTask = canaryStatus === 'accepted'
+          ? ensureAcceptedConversation(saved, options)
+          : Promise.resolve(null);
+        return conversationTask.then(function (conversation) {
+          document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
+            detail: {
+              order: saved,
+              status: canaryStatus,
+              conversation: conversation,
+              provider: ORDERS_WRITE_CANARY_PROVIDER
+            }
+          }));
+          return saved;
+        });
       });
     }
 
@@ -1102,14 +1121,20 @@ function extractIdempotencyKey(payload, options) {
       // The browser must not deny a valid command based only on the account's primary role.
 
       return ordersBoundaryAction(getApiActionForStatus(normalizedStatus), apiPayload).then(function (saved) {
-        document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
-          detail: {
-            order: saved,
-            status: normalizedStatus,
-            provider: 'api'
-          }
-        }));
-        return saved;
+        var conversationTask = normalizedStatus === 'accepted'
+          ? ensureAcceptedConversation(saved, options)
+          : Promise.resolve(null);
+        return conversationTask.then(function (conversation) {
+          document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
+            detail: {
+              order: saved,
+              status: normalizedStatus,
+              conversation: conversation,
+              provider: 'api'
+            }
+          }));
+          return saved;
+        });
       });
     }
 
