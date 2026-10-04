@@ -3,8 +3,11 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var providers = Object.create(null);
-  var activeProviderName = 'mock';
   var requestedProviderName = normalizeProviderName(getRuntimeConfig().dataProvider || getRuntimeConfig().dataSource || 'mock');
+  var activeProviderName = requestedProviderName === 'blocked'
+    || (requestedProviderName === 'api' && getRuntimeConfig().remoteAuthorityRequired === true && !canUseProvider('api'))
+      ? 'blocked'
+      : 'mock';
   var lastProviderWarning = '';
 
   function clone(value) {
@@ -26,7 +29,9 @@
 
   function normalizeProviderName(providerName) {
     var name = String(providerName || '').trim().toLowerCase();
-    return name === 'api' ? 'api' : 'mock';
+    if (name === 'api') return 'api';
+    if (name === 'blocked') return 'blocked';
+    return 'mock';
   }
 
   function getRuntimeConfig() {
@@ -63,6 +68,7 @@
 
   function canUseProvider(providerName) {
     var name = normalizeProviderName(providerName);
+    if (name === 'blocked') return false;
     if (name === 'mock') return true;
     if (name === 'api') return Boolean(getApiBaseUrl()) && isNetworkEnabled();
     return false;
@@ -70,6 +76,7 @@
 
   function getProviderBlockReason(providerName) {
     var name = normalizeProviderName(providerName);
+    if (name === 'blocked') return 'remote authority is required but no API provider is configured.';
     if (name !== 'api') return '';
     if (!getApiBaseUrl()) return 'apiBaseUrl is not configured.';
     if (!isNetworkEnabled()) return 'enableNetworkRequests flag is disabled.';
@@ -84,7 +91,16 @@
     requestedProviderName = name;
 
     if (reason) {
-      var message = 'Provider "' + name + '" blocked: ' + reason + ' Keeping provider "mock".';
+      var remoteRequired = getRuntimeConfig().remoteAuthorityRequired === true;
+      var message = 'Provider "' + name + '" blocked: ' + reason;
+      if (remoteRequired || name === 'blocked') {
+        activeProviderName = 'blocked';
+        document.documentElement.setAttribute('data-doke-data-provider', activeProviderName);
+        document.documentElement.setAttribute('data-doke-requested-data-provider', requestedProviderName);
+        warnProvider(message + ' Mock fallback is disabled.');
+        return 'blocked';
+      }
+      message += ' Keeping provider "mock".';
       if (strict) throw new Error(message);
       warnProvider(message);
       return 'mock';
@@ -116,6 +132,7 @@
 
   function setProvider(providerName, options) {
     var name = resolveProviderName(providerName, options || {});
+    if (name === 'blocked') return null;
     if (!providers[name]) {
       throw new Error('Repository provider "' + name + '" is not registered.');
     }
@@ -148,6 +165,11 @@
 
   function getProvider(providerName) {
     var name = providerName ? assertProviderName(providerName) : activeProviderName;
+    if (name === 'blocked') {
+      var unavailable = new Error('Remote repository authority is unavailable. Mock fallback is disabled.');
+      unavailable.code = 'DOKE_REMOTE_AUTHORITY_UNAVAILABLE';
+      throw unavailable;
+    }
     var provider = providers[name];
     if (!provider) {
       throw new Error('Repository provider "' + name + '" is not registered.');

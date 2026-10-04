@@ -21,7 +21,10 @@ const mockProvider = read('assets/js/services/mock-repository-provider.js');
 const adapterDoc = read('docs/API-ADAPTER-CONTRACT.md');
 
 const requiredRuntimeSnippets = [
-  "dataProvider: resolveDataProvider(windowConfig)",
+  "dataProvider: dataProvider",
+  "remoteAuthorityRequired: environment === 'staging'",
+  "mockAuthorityAllowed: environment !== 'staging'",
+  "BLOCKED: 'blocked'",
   "apiBaseUrl: resolveApiBaseUrl(windowConfig)",
   "enableNetworkRequests",
   "dokeDataProvider",
@@ -33,7 +36,9 @@ for (const snippet of requiredRuntimeSnippets) {
 }
 
 const requiredBoundarySnippets = [
-  "activeProviderName = 'mock'",
+  "requestedProviderName === 'blocked'",
+  "DOKE_REMOTE_AUTHORITY_UNAVAILABLE",
+  "Mock fallback is disabled",
   "requestedProviderName",
   "getProviderBlockReason",
   "apiBaseUrl is not configured",
@@ -73,5 +78,5 @@ if (failures.length) {
 }
 
 console.log('Data provider flag contract audit passed.');
-console.log('Provider default: mock');
+console.log('Local/production legacy default: mock; staging without an API boundary: blocked.');
 console.log('API readiness requires apiBaseUrl and enableNetworkRequests.');
