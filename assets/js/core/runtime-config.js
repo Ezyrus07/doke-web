@@ -26,6 +26,11 @@
     SUPABASE: 'supabase'
   });
 
+  var STAGING_RUNTIME_ENDPOINTS = Object.freeze({
+    'https://doke-web-git-codex-kontrat-staging-authority-polic-8bea12-doke1.vercel.app':
+      'https://kontrat-staging-api-runtime-git-codex-kontrat-stag-387b11-doke1.vercel.app'
+  });
+
   var CANARY_STORAGE_KEYS = Object.freeze({
     ordersWriteEnabled: 'doke.canary.ordersWrite.enabled',
     ordersWriteReadProvider: 'doke.canary.ordersWrite.readProvider',
@@ -98,12 +103,12 @@
     catch (error) { return null; }
   }
 
-  function resolveDataProvider(windowConfig, environment) {
+  function resolveDataProvider(windowConfig, environment, apiBaseUrl) {
     var params = queryParams();
     var configured = windowConfig.dataProvider || windowConfig.dataSource || '';
 
     if (environment === 'staging') {
-      return normalizeDataProvider(configured, DATA_PROVIDER_VALUES.BLOCKED);
+      return apiBaseUrl ? DATA_PROVIDER_VALUES.API : DATA_PROVIDER_VALUES.BLOCKED;
     }
 
     var provider = configured || readStorage('doke.dataProvider') || DATA_PROVIDER_VALUES.MOCK;
@@ -193,14 +198,27 @@
     return ordersWriteCanary && normalizeBoolean(value) === true;
   }
 
-  function resolveApiBaseUrl(windowConfig) {
+  function readOrigin() {
+    var explicitOrigin = normalizeBaseUrl(window.location.origin || '');
+    if (explicitOrigin) return explicitOrigin;
+    var protocol = String(window.location.protocol || 'https:').trim().toLowerCase();
+    var hostname = String(window.location.hostname || '').trim().toLowerCase();
+    return hostname ? protocol + '//' + hostname : '';
+  }
+
+  function resolveApiBaseUrl(windowConfig, environment) {
+    if (environment === 'staging') {
+      var trustedConfigUrl = normalizeBaseUrl(windowConfig.apiBaseUrl || '');
+      return trustedConfigUrl || STAGING_RUNTIME_ENDPOINTS[readOrigin()] || '';
+    }
     var params = queryParams();
     var baseUrl = windowConfig.apiBaseUrl || readStorage('doke.apiBaseUrl') || '';
     if (params.has('dokeApiBaseUrl')) baseUrl = params.get('dokeApiBaseUrl');
     return normalizeBaseUrl(baseUrl);
   }
 
-  function resolveNetworkFlag(windowConfig, flags) {
+  function resolveNetworkFlag(windowConfig, flags, environment, apiBaseUrl) {
+    if (environment === 'staging') return Boolean(apiBaseUrl);
     var params = queryParams();
     var value = windowConfig.enableNetworkRequests;
     if (value === undefined && windowConfig.flags) value = windowConfig.flags.enableNetworkRequests;
@@ -213,11 +231,12 @@
   var windowConfig = readWindowConfig();
   var environment = windowConfig.environment || readEnvironment();
   var flags = mergeFlags(DEFAULT_FLAGS, windowConfig.flags || {});
-  flags.enableNetworkRequests = resolveNetworkFlag(windowConfig, flags);
+  var apiBaseUrl = resolveApiBaseUrl(windowConfig, environment);
+  flags.enableNetworkRequests = resolveNetworkFlag(windowConfig, flags, environment, apiBaseUrl);
   var ordersWriteCanary = resolveOrdersWriteCanary(windowConfig, environment);
   var betaLaunchCanary = resolveBetaLaunchCanary(windowConfig);
   var betaLaunchDomains = resolveBetaLaunchDomains(windowConfig);
-  var requestedDataProvider = resolveDataProvider(windowConfig, environment);
+  var requestedDataProvider = resolveDataProvider(windowConfig, environment, apiBaseUrl);
   var ordersProvider = resolveOrdersProvider(windowConfig, ordersWriteCanary, environment);
   var ordersReadProvider = resolveOrdersReadProvider(windowConfig, environment);
   var ordersReadActivation = ordersReadProvider === ORDERS_PROVIDER_VALUES.SUPABASE_READ;
@@ -229,7 +248,7 @@
   var authProvider = AUTH_PROVIDER_VALUES.SUPABASE;
 
   Doke.runtimeConfig = Object.freeze({
-    version: '20260729-ord-a06-visual-settlement-v1',
+    version: '20261005-staging-browser-write-v1',
     environment: environment,
     remoteAuthorityRequired: environment === 'staging',
     mockAuthorityAllowed: environment !== 'staging',
@@ -240,7 +259,7 @@
     authProvider: authProvider,
     requestedAuthProvider: authProvider,
     defaultAuthProvider: AUTH_PROVIDER_VALUES.SUPABASE,
-    apiBaseUrl: resolveApiBaseUrl(windowConfig),
+    apiBaseUrl: apiBaseUrl,
     authIdentityCanary: false,
     ordersProvider: ordersProvider,
     ordersReadProvider: ordersReadProvider,

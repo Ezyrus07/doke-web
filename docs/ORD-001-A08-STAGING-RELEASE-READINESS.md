@@ -2,7 +2,7 @@
 
 ## Decisão arquitetural
 
-Nenhum provedor externo de deploy é declarado canônico no repositório. Não existem Dockerfile, manifesto Railway/Render/Fly, função serverless ou workflow de promoção que possa ser tratado como autoridade operacional.
+O runtime continua independente do provedor. O canário autorizado usa um projeto Vercel isolado chamado `kontrat-staging-api-runtime`, vinculado ao diretório `backend/runtime/staging` e sem domínio de produção da Kontrat.
 
 O ponto de execução existente continua sendo:
 
@@ -34,6 +34,7 @@ DOKE_ENABLE_STAGING_API
 DOKE_STAGING_RELEASE_ID
 DOKE_STAGING_RELEASE_SHA
 DOKE_STAGING_ROLLBACK_RELEASE_ID
+DOKE_ALLOWED_ORIGINS
 ```
 
 Nenhuma chave Supabase, token, credencial ou URL é devolvida pelo healthcheck.
@@ -64,7 +65,14 @@ Não existe `POST`, login, bearer token, service-role, pedido, orçamento ou mut
 
 Todo release de staging deve declarar previamente um `DOKE_STAGING_ROLLBACK_RELEASE_ID` válido e diferente do release candidato. ORD-A08 apenas comprova que a referência existe; a implementação concreta do rollback pertence ao provedor que vier a ser formalmente escolhido.
 
-Até que um provedor externo seja vinculado, o estado correto é `release_preflight_contract_complete_not_deployed`.
+Para o canário Vercel de staging, o rollback operacional é:
+
+1. definir `DOKE_ENABLE_STAGING_API=0` no Preview da branch ou interromper o deployment do projeto isolado;
+2. remover o endpoint público do mapa `STAGING_RUNTIME_ENDPOINTS` e publicar novamente apenas o frontend Preview;
+3. comprovar que a origem de staging retorna `dataProvider=blocked`;
+4. não reverter automaticamente pedidos, conversas ou mensagens criados pelo canário.
+
+As variáveis Supabase privilegiadas permanecem somente no runtime server-side. O frontend recebe apenas a URL pública do runtime.
 
 ## Produção
 
@@ -85,9 +93,7 @@ CI executa somente teste local, auditoria e dry-run. A rede externa nunca é hab
 
 ## Próxima fronteira
 
-1. escolher formalmente o provedor de staging;
-2. definir release e rollback commands específicos do provedor;
-3. injetar identidade de release no ambiente server-side;
-4. promover pelo fluxo controlado;
-5. executar o preflight read-only;
-6. manter o canário visual A06 sob autorização separada.
+1. validar o fluxo autenticado de pedidos e mensagens no navegador contra o runtime de staging;
+2. conservar release e rollback IDs distintos;
+3. executar o preflight read-only antes de cada novo canário;
+4. manter produção bloqueada.

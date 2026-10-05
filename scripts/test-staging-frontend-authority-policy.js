@@ -10,7 +10,7 @@ const boundarySource = fs.readFileSync('assets/js/services/repository-boundary.j
 function runtimeFor({ hostname, search = '', storageEntries = [], windowConfig = undefined }) {
   const storage = new Map(storageEntries);
   const window = {
-    location: { hostname, search },
+    location: { hostname, origin: 'https://' + hostname, protocol: 'https:', search },
     localStorage: { getItem(key) { return storage.has(key) ? storage.get(key) : null; } },
     DOKE_RUNTIME_CONFIG: windowConfig
   };
@@ -20,7 +20,7 @@ function runtimeFor({ hostname, search = '', storageEntries = [], windowConfig =
 }
 
 const preview = runtimeFor({
-  hostname: 'doke-web-git-codex-kontrat-staging-authority-policy-20261004-doke1.vercel.app',
+  hostname: 'doke-web-git-codex-kontrat-staging-authority-polic-8bea12-doke1.vercel.app',
   search: '?dokeDataProvider=mock&dokeOrdersWriteCanary=1&dokeOrdersProvider=mock',
   storageEntries: [
     ['doke.dataProvider', 'mock'],
@@ -31,7 +31,9 @@ const preview = runtimeFor({
 assert.strictEqual(preview.environment, 'staging');
 assert.strictEqual(preview.remoteAuthorityRequired, true);
 assert.strictEqual(preview.mockAuthorityAllowed, false);
-assert.strictEqual(preview.dataProvider, 'blocked');
+assert.strictEqual(preview.dataProvider, 'api');
+assert.strictEqual(preview.flags.enableNetworkRequests, true);
+assert.strictEqual(preview.apiBaseUrl, 'https://kontrat-staging-api-runtime-git-codex-kontrat-stag-387b11-doke1.vercel.app');
 assert.strictEqual(preview.ordersProvider, 'supabase-read');
 assert.strictEqual(preview.ordersReadProvider, 'supabase-read');
 assert.strictEqual(preview.ordersWriteCanary, false);
@@ -42,6 +44,20 @@ const stagingApi = runtimeFor({
 });
 assert.strictEqual(stagingApi.dataProvider, 'api');
 assert.strictEqual(stagingApi.flags.enableNetworkRequests, true);
+
+const unauthorizedPreview = runtimeFor({
+  hostname: 'doke-web-git-unrelated-preview-doke1.vercel.app',
+  search: '?dokeDataProvider=mock&dokeApiBaseUrl=https://untrusted.example&dokeEnableNetwork=1',
+  storageEntries: [
+    ['doke.dataProvider', 'mock'],
+    ['doke.apiBaseUrl', 'https://untrusted.example'],
+    ['doke.flag.enableNetworkRequests', 'true']
+  ]
+});
+assert.strictEqual(unauthorizedPreview.environment, 'staging');
+assert.strictEqual(unauthorizedPreview.dataProvider, 'blocked');
+assert.strictEqual(unauthorizedPreview.flags.enableNetworkRequests, false);
+assert.strictEqual(unauthorizedPreview.apiBaseUrl, '');
 
 const local = runtimeFor({
   hostname: '127.0.0.1',
@@ -58,7 +74,7 @@ assert.strictEqual(production.dataProvider, 'mock');
 
 const attributes = new Map();
 const boundaryWindow = {
-  Doke: { runtimeConfig: preview },
+  Doke: { runtimeConfig: unauthorizedPreview },
   document: { documentElement: { setAttribute(name, value) { attributes.set(name, value); } } },
   console: { warn() {} }
 };
