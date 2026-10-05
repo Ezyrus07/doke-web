@@ -13,6 +13,10 @@ const ALLOWED_HEADERS = 'authorization,content-type,x-idempotency-key,x-request-
 const EXPOSED_HEADERS = 'x-doke-runtime-contract,x-doke-runtime-release-fingerprint';
 
 function createNodeHttpServer(options) {
+  return http.createServer(createNodeRequestHandler(options));
+}
+
+function createNodeRequestHandler(options) {
   const safeOptions = options && typeof options === 'object' ? options : {};
   const runtimeEnv = safeOptions.env || process.env;
   const releaseDescriptor = assertRuntimeReleaseEnvironment(runtimeEnv);
@@ -30,7 +34,7 @@ function createNodeHttpServer(options) {
     return runtime;
   }
 
-  return http.createServer(async (request, response) => {
+  return async function handleNodeRequest(request, response) {
     const requestId = readHeader(request.headers, 'x-request-id') || `doke_http_${Date.now()}`;
 
     try {
@@ -92,7 +96,7 @@ function createNodeHttpServer(options) {
         }
       });
     }
-  });
+  };
 }
 
 function loadSupabaseClientFactory() {
@@ -284,10 +288,18 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = Object.freeze({
+let deployedRequestHandler = null;
+
+async function handleDeployedRequest(request, response) {
+  if (!deployedRequestHandler) deployedRequestHandler = createNodeRequestHandler({ env: process.env });
+  return deployedRequestHandler(request, response);
+}
+
+module.exports = Object.assign(handleDeployedRequest, {
   applyCorsHeaders,
   createCorsPolicy,
   createNodeHttpServer,
+  createNodeRequestHandler,
   isAllowedOrigin,
   isAllowedCredentialedOrigin,
   parseAllowedOrigins,

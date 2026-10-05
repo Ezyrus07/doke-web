@@ -4,7 +4,8 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { createNodeHttpServer } = require('../backend/runtime/staging/node-http-server');
+const nodeHttpModule = require('../backend/runtime/staging/node-http-server');
+const { createNodeHttpServer } = nodeHttpModule;
 const { createRuntimeReleaseDescriptor, RELEASE_CONTRACT_VERSION } = require('../backend/runtime/staging/runtime-release-contract');
 const {
   REPORT_PATH,
@@ -19,6 +20,8 @@ const releaseSha = 'abcdef1234567890abcdef1234567890abcdef12';
 const allowedOrigin = 'https://staging-web.example';
 const rejectedOrigin = 'https://untrusted.example';
 let runtimeCalls = 0;
+
+assert.strictEqual(typeof nodeHttpModule, 'function', 'The staging runtime must export a deployable HTTP handler.');
 
 assert.throws(
   () => createNodeHttpServer({ env: { DOKE_ENVIRONMENT: 'production' }, runtime: { handle: async () => ({ status: 200, body: {} }) } }),
