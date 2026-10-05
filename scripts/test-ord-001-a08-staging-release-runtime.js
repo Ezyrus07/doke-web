@@ -16,6 +16,8 @@ const {
 const releaseId = 'ord-a08-test-release-01';
 const rollbackReleaseId = 'ord-a08-test-rollback-00';
 const releaseSha = 'abcdef1234567890abcdef1234567890abcdef12';
+const allowedOrigin = 'https://staging-web.example';
+const rejectedOrigin = 'https://untrusted.example';
 let runtimeCalls = 0;
 
 assert.throws(
@@ -33,7 +35,8 @@ const server = createNodeHttpServer({
     DOKE_ENABLE_STAGING_API: '1',
     DOKE_STAGING_RELEASE_ID: releaseId,
     DOKE_STAGING_RELEASE_SHA: releaseSha,
-    DOKE_STAGING_ROLLBACK_RELEASE_ID: rollbackReleaseId
+    DOKE_STAGING_ROLLBACK_RELEASE_ID: rollbackReleaseId,
+    DOKE_ALLOWED_ORIGINS: allowedOrigin
   },
   runtime: {
     async handle() {
@@ -60,12 +63,31 @@ server.listen(0, '127.0.0.1', async () => {
     assert.strictEqual(healthBody.release.productionAllowed, false);
     assert.strictEqual(healthBody.capabilities.requestFreshness.maximumAgeSeconds, 300);
 
+    const allowedPreflight = await fetch(baseUrl + '/orders', {
+      method: 'OPTIONS',
+      headers: { Origin: allowedOrigin }
+    });
+    assert.strictEqual(allowedPreflight.status, 204);
+    assert.strictEqual(allowedPreflight.headers.get('access-control-allow-origin'), allowedOrigin);
+    assert.strictEqual(allowedPreflight.headers.get('access-control-allow-credentials'), 'true');
+    assert(allowedPreflight.headers.get('access-control-expose-headers').includes('x-doke-runtime-release-fingerprint'));
+
+    const rejectedPreflight = await fetch(baseUrl + '/orders', {
+      method: 'OPTIONS',
+      headers: { Origin: rejectedOrigin }
+    });
+    assert.strictEqual(rejectedPreflight.status, 403);
+    assert.strictEqual(rejectedPreflight.headers.get('access-control-allow-origin'), null);
+    const rejectedBody = await rejectedPreflight.json();
+    assert.strictEqual(rejectedBody.error.code, 'DOKE_CORS_ORIGIN_FORBIDDEN');
+
     const config = createPreflightConfig({
       DOKE_ENVIRONMENT: 'staging',
       DOKE_ORD_A08_STAGING_API_URL: baseUrl,
       DOKE_ORD_A08_RELEASE_ID: releaseId,
       DOKE_ORD_A08_RELEASE_SHA: releaseSha,
       DOKE_ORD_A08_ROLLBACK_RELEASE_ID: rollbackReleaseId,
+      DOKE_ORD_A08_ALLOWED_ORIGIN: allowedOrigin,
       DOKE_ORD_A08_TARGET_MARKER: 'local',
       DOKE_ORD_A08_ALLOW_NETWORK: '1'
     });
@@ -81,7 +103,7 @@ server.listen(0, '127.0.0.1', async () => {
     const writtenReport = JSON.parse(fs.readFileSync(absoluteReportPath, 'utf8'));
     assert.strictEqual(writtenReport.status, report.status);
     assert.strictEqual(writtenReport.mutations, 0);
-    assert.strictEqual(runtimeCalls, 0, 'Health and OPTIONS must not invoke the domain runtime.');
+    assert.strictEqual(runtimeCalls, 0, 'Health and allowed/rejected OPTIONS must not invoke the domain runtime.');
     console.log('ORD-A08 staging release runtime test passed.');
   } finally {
     fs.rmSync(absoluteReportPath, { force: true });

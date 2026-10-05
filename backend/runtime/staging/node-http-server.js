@@ -10,12 +10,14 @@ const DEFAULT_HOST = '127.0.0.1';
 const MAX_BODY_BYTES = 1024 * 1024;
 const ALLOWED_METHODS = 'GET,POST,PATCH,PUT,DELETE,OPTIONS';
 const ALLOWED_HEADERS = 'authorization,content-type,x-idempotency-key,x-request-id,x-doke-request-issued-at,x-doke-request-nonce,apikey';
+const EXPOSED_HEADERS = 'x-doke-runtime-contract,x-doke-runtime-release-fingerprint';
 
 function createNodeHttpServer(options) {
   const safeOptions = options && typeof options === 'object' ? options : {};
   const runtimeEnv = safeOptions.env || process.env;
   const releaseDescriptor = assertRuntimeReleaseEnvironment(runtimeEnv);
   const releaseHeaders = createRuntimeReleaseHeaders(releaseDescriptor);
+  const corsPolicy = createCorsPolicy(runtimeEnv);
   let runtime = safeOptions.runtime || null;
 
   function getRuntime() {
@@ -32,8 +34,21 @@ function createNodeHttpServer(options) {
     const requestId = readHeader(request.headers, 'x-request-id') || `doke_http_${Date.now()}`;
 
     try {
-      applyCorsHeaders(response, request.headers.origin);
       Object.entries(releaseHeaders).forEach(([key, value]) => response.setHeader(key, value));
+      const origin = readHeader(request.headers, 'origin');
+      const originAllowed = applyCorsHeaders(response, origin, corsPolicy);
+
+      if (origin && !originAllowed) {
+        sendJson(response, 403, {
+          ok: false,
+          error: {
+            code: 'DOKE_CORS_ORIGIN_FORBIDDEN',
+            message: 'Origin is not allowed by the staging runtime.',
+            requestId
+          }
+        });
+        return;
+      }
 
       if (request.method === 'OPTIONS') {
         sendJson(response, 204, null);
@@ -153,21 +168,76 @@ function sendJson(response, status, payload) {
   response.end(JSON.stringify(payload === undefined ? null : payload));
 }
 
-function applyCorsHeaders(response, origin) {
+function createCorsPolicy(env) {
+  const source = env && typeof env === 'object' ? env : {};
+  const environment = String(source.DOKE_ENVIRONMENT || 'local').trim().toLowerCase();
+  const configuredOrigins = parseAllowedOrigins(source.DOKE_ALLOWED_ORIGINS || '');
+  return Object.freeze({
+    environment,
+    configuredOrigins
+  });
+}
+
+function parseAllowedOrigins(value) {
+  const origins = String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const normalized = origins.map((origin) => {
+    if (origin === '*') throw corsConfigError('Wildcard origins are forbidden.');
+    let parsed;
+    try {
+      parsed = new URL(origin);
+    } catch {
+      throw corsConfigError(`Invalid allowed origin: ${origin}`);
+    }
+    if (!/^https?:$/.test(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password) {
+      throw corsConfigError(`Allowed origin must be an exact HTTP(S) origin: ${origin}`);
+    }
+    return parsed.origin;
+  });
+
+  return Object.freeze(Array.from(new Set(normalized)));
+}
+
+function corsConfigError(message) {
+  const error = new Error(message);
+  error.code = 'DOKE_CORS_CONFIG_INVALID';
+  error.status = 503;
+  return error;
+}
+
+function applyCorsHeaders(response, origin, policy) {
   response.setHeader('vary', 'Origin');
   response.setHeader('access-control-allow-methods', ALLOWED_METHODS);
   response.setHeader('access-control-allow-headers', ALLOWED_HEADERS);
   response.setHeader('access-control-max-age', '86400');
 
-  if (!origin) {
-    response.setHeader('access-control-allow-origin', '*');
-    return;
-  }
-
-  if (!isAllowedCredentialedOrigin(origin)) return;
+  if (!origin) return true;
+  if (!isAllowedOrigin(origin, policy)) return false;
 
   response.setHeader('access-control-allow-origin', origin);
   response.setHeader('access-control-allow-credentials', 'true');
+  response.setHeader('access-control-expose-headers', EXPOSED_HEADERS);
+  return true;
+}
+
+function isAllowedOrigin(origin, policy) {
+  const normalizedOrigin = normalizeOrigin(origin);
+  if (!normalizedOrigin) return false;
+  const safePolicy = policy || createCorsPolicy({});
+  if (safePolicy.configuredOrigins.includes(normalizedOrigin)) return true;
+  return safePolicy.environment === 'local' && isAllowedCredentialedOrigin(normalizedOrigin);
+}
+
+function normalizeOrigin(origin) {
+  try {
+    const parsed = new URL(String(origin || ''));
+    return parsed.origin === String(origin || '') ? parsed.origin : '';
+  } catch {
+    return '';
+  }
 }
 
 function isAllowedCredentialedOrigin(origin) {
@@ -215,8 +285,12 @@ if (require.main === module) {
 }
 
 module.exports = Object.freeze({
+  applyCorsHeaders,
+  createCorsPolicy,
   createNodeHttpServer,
+  isAllowedOrigin,
   isAllowedCredentialedOrigin,
+  parseAllowedOrigins,
   readRequestBody,
   startServer
 });
