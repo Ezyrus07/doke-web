@@ -521,7 +521,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The browser write canary stopped before login because the preserved synthetic accounts have no recoverable credentials in the active browser session and the supported dashboard recovery path would send external email; no order or message mutation was attempted.
 
 **Bloqueadores:**
-- **ORD-B02 · HIGH · frontend_activation:** The isolated staging runtime, exact-origin CORS, authenticated browser transport and fail-closed Preview activation are deployed and preflighted. ORD-B02 remains open because the active browser session does not retain the existing synthetic credentials; a supported server-side password rotation or preserved credentials are required before the two-account browser canary can prove request, acceptance, messaging and reload persistence. _(Fase 6)_
+- **ORD-B02 · HIGH · frontend_activation:** The isolated staging runtime, exact-origin CORS, authenticated browser transport and fail-closed Preview activation are deployed and preflighted. ORD-B02 remains open because the active browser session does not retain the existing synthetic credentials; the authorization envelope and runId-scoped cleanup readiness remain mandatory, and a supported server-side password rotation or preserved credentials are required before the two-account browser canary can prove request, acceptance, messaging and reload persistence. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close. _(Fase 8)_
 
 **Próximas ações:**
