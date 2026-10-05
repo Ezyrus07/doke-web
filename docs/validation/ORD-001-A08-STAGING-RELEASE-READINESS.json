@@ -1,18 +1,26 @@
 {
   "domain": "ORD-001",
   "sublot": "ORD-A08",
-  "status": "release_preflight_contract_complete_not_deployed",
+  "status": "staging_runtime_deployed_preflight_passed_browser_canary_blocked",
   "environment": "staging",
-  "recordedAt": "2026-07-30T08:36:00-03:00",
-  "objective": "Establish platform-neutral release identity, read-only deployment preflight and mandatory rollback binding before any staging promotion.",
-  "canonicalExternalProviderBound": false,
+  "recordedAt": "2026-10-05T02:25:00-03:00",
+  "objective": "Deploy the existing server-owned HTTP runtime to isolated staging, activate the authorized Preview browser path and preserve production blocking.",
+  "canonicalExternalProviderBound": true,
+  "provider": {
+    "name": "vercel",
+    "project": "kontrat-staging-api-runtime",
+    "scope": "preview_branch_only",
+    "productionProjectReused": false,
+    "customProductionDomainAttached": false
+  },
   "runtime": {
-    "entrypoint": "npm run serve:staging-api-runtime",
+    "entrypoint": "backend/runtime/staging/node-http-server.js",
     "contractVersion": "ord-a08-staging-release-v1",
     "healthEndpoint": "GET /health",
     "productionAllowed": false,
     "releaseIdentityRequired": true,
-    "rollbackIdentityRequired": true
+    "rollbackIdentityRequired": true,
+    "corsAllowlistRequired": true
   },
   "preflight": {
     "allowedMethods": ["GET", "OPTIONS"],
@@ -20,25 +28,27 @@
     "credentialsRequired": false,
     "serviceRoleRequired": false,
     "mutationEndpointsAllowed": false,
-    "targetSafetyRequired": true
+    "targetSafetyRequired": true,
+    "healthPassed": true,
+    "allowedOriginPassed": true,
+    "rejectedOriginPassed": true
   },
   "rollback": {
     "contractRequired": true,
     "candidateMustDifferFromRollback": true,
-    "providerCommandBound": false
+    "providerCommandBound": true,
+    "dataRollbackAutomatic": false
   },
-  "deployedToStaging": false,
-  "networkRequestsPerformed": false,
+  "deployedToStaging": true,
+  "networkRequestsPerformed": true,
   "mutationsPerformed": false,
   "accountsUsed": 0,
   "ordersCreated": 0,
   "productionChanged": false,
   "remainingBlockers": [
-    "select_and_bind_external_staging_release_provider",
-    "define_provider_specific_release_and_rollback_commands",
-    "deploy_release_identity_contract_to_staging",
-    "execute_read_only_preflight_against_deployed_runtime",
-    "explicit_authorization_for_real_visual_canary"
+    "existing_synthetic_credentials_unavailable_in_browser_session",
+    "supported_dashboard_recovery_would_send_external_email",
+    "browser_canary_not_executed"
   ],
-  "nextAction": "Bind an explicit external staging provider and deterministic rollback command before any deployment attempt."
+  "nextAction": "Reuse preserved credentials or separately authorize a server-side password rotation for exactly the existing synthetic client and professional accounts, then run the browser write canary."
 }
