@@ -207,15 +207,15 @@
 
   function createRequestNonce() {
     var cryptoApi = window.crypto || window.msCrypto;
-    if (cryptoApi && typeof cryptoApi.randomUUID === 'function') return 'api-' + cryptoApi.randomUUID();
+    if (cryptoApi && typeof cryptoApi.randomUUID === 'function') return 'ord-' + cryptoApi.randomUUID();
     if (cryptoApi && typeof cryptoApi.getRandomValues === 'function') {
       var bytes = new Uint8Array(16);
       cryptoApi.getRandomValues(bytes);
-      return 'api-' + Array.prototype.map.call(bytes, function (value) {
+      return 'ord-' + Array.prototype.map.call(bytes, function (value) {
         return value.toString(16).padStart(2, '0');
       }).join('');
     }
-    return 'api-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    return 'ord-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   }
 
   function isMutationMethod(method) {

@@ -28,7 +28,7 @@ const window = {
       };
     }
   },
-  crypto: { randomUUID: () => 'nonce-0001' },
+  crypto: { randomUUID: () => '12345678-1234-4123-8123-123456789abc' },
   async fetch(url, options) {
     calls.push({ url, options });
     return { ok: true, status: 200, async json() { return { ok: true }; } };
@@ -73,7 +73,8 @@ vm.runInNewContext(source, {
   assert.strictEqual(mutationHeaders.Authorization, `Bearer ${userJwt}`);
   assert.strictEqual(mutationHeaders['x-idempotency-key'], 'idem-order-1');
   assert.strictEqual(mutationHeaders['x-request-id'], 'request-order-1');
-  assert.strictEqual(mutationHeaders['x-doke-request-nonce'], 'api-nonce-0001');
+  assert.strictEqual(mutationHeaders['x-doke-request-nonce'], 'ord-12345678-1234-4123-8123-123456789abc');
+  assert(/^ord-[A-Za-z0-9._:-]{16,160}$/.test(mutationHeaders['x-doke-request-nonce']), 'Mutation nonce must satisfy the canonical ORD-A07 freshness contract.');
   assert(!Number.isNaN(Date.parse(mutationHeaders['x-doke-request-issued-at'])));
   assert(!JSON.stringify(calls).includes('service_role'));
   assert(!JSON.stringify(calls).includes('sb_secret_'));
