@@ -37,6 +37,7 @@ async function main() {
   validateDefaultState();
   validateUnsafeTargetBlock();
   await validateCanonicalOrdersListPayload();
+  await validateCanonicalOrderGetPayload();
   await validateManualActivationAndOrderMutation();
   report.activationStatus = report.failures.length ? 'failed' : 'orders_write_frontend_activation_runtime_validated';
   finish();
@@ -143,6 +144,49 @@ async function validateCanonicalOrdersListPayload() {
   assertEqual(orders.length, 1, 'Canonical { orders, count } payload must normalize to one order.');
   assertEqual(orders[0].id, 'order_api_read_1', 'Canonical payload normalization must preserve order identity.');
   record('orders_read.canonical_orders_payload_normalized');
+}
+
+async function validateCanonicalOrderGetPayload() {
+  const browser = createBrowserRuntime({ url: 'https://staging.doke.example/pedidos.html' });
+  loadRuntime(browser);
+
+  browser.window.Doke.runtimeConfig = Object.freeze(Object.assign({}, browser.window.Doke.runtimeConfig, {
+    environment: 'staging',
+    dataProvider: 'api',
+    requestedDataProvider: 'api',
+    ordersProvider: 'supabase-read',
+    ordersReadProvider: 'supabase-read',
+    requestedOrdersProvider: 'supabase-read',
+    apiBaseUrl: 'https://staging-api.doke.example',
+    flags: Object.freeze(Object.assign({}, browser.window.Doke.runtimeConfig.flags || {}, {
+      enableNetworkRequests: true
+    }))
+  }));
+
+  browser.window.Doke.repositoryBoundary = {
+    getDataProviderStatus() {
+      return { activeProvider: 'api', apiReady: true };
+    },
+    getById(resource, id) {
+      assertEqual(resource, 'orders', 'Canonical order get must request the orders resource.');
+      assertEqual(id, 'order_api_read_1', 'Canonical order get must preserve the requested order id.');
+      return Promise.resolve({
+        order: {
+          id: 'order_api_read_1',
+          clientId: 'user_client_1',
+          professionalId: 'pro_renato',
+          status: 'pending',
+          title: 'Pedido individual retornado pelo runtime canônico'
+        }
+      });
+    }
+  };
+
+  const order = await browser.window.Doke.services.orders.getById('order_api_read_1');
+  assert(order, 'Canonical order envelope must normalize to an order.');
+  assertEqual(order.id, 'order_api_read_1', 'Canonical order payload normalization must preserve order identity.');
+  assertEqual(order.clientId, 'user_client_1', 'Canonical order payload normalization must preserve client identity.');
+  record('orders_read.canonical_order_payload_normalized');
 }
 
 async function validateManualActivationAndOrderMutation() {
