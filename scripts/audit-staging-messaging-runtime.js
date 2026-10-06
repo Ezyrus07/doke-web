@@ -86,6 +86,8 @@ if (registry && loader) {
   });
 }
 
+requireSnippet('backend/runtime/staging/node-http-server.js', 'x-doke-command-attempt');
+requireSnippet('backend/runtime/staging/node-http-server.js', 'x-doke-command-created-at');
 requireSnippet('docs/STAGING-API-RUNTIME.md', 'Sprint 19');
 requireSnippet('docs/STAGING-API-RUNTIME.md', 'GET /conversations');
 requireSnippet('docs/STAGING-API-RUNTIME.md', 'POST /conversations/:id/messages');
