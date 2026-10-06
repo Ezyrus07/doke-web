@@ -36,6 +36,7 @@ async function main() {
   assertFilesExist();
   validateDefaultState();
   validateUnsafeTargetBlock();
+  await validateCanonicalOrdersListPayload();
   await validateManualActivationAndOrderMutation();
   report.activationStatus = report.failures.length ? 'failed' : 'orders_write_frontend_activation_runtime_validated';
   finish();
@@ -96,6 +97,52 @@ function validateUnsafeTargetBlock() {
   assert(blocked, 'Production-like orders write target must be blocked.');
   assertEqual(browser.window.localStorage.getItem('doke.canary.ordersWrite.enabled'), null, 'Blocked target must not persist enabled canary state.');
   record('target_safety.production_like_blocked');
+}
+
+async function validateCanonicalOrdersListPayload() {
+  const browser = createBrowserRuntime({ url: 'https://staging.doke.example/pedidos.html' });
+  loadRuntime(browser);
+
+  browser.window.Doke.runtimeConfig = Object.freeze(Object.assign({}, browser.window.Doke.runtimeConfig, {
+    environment: 'staging',
+    dataProvider: 'api',
+    requestedDataProvider: 'api',
+    ordersProvider: 'supabase-read',
+    ordersReadProvider: 'supabase-read',
+    requestedOrdersProvider: 'supabase-read',
+    apiBaseUrl: 'https://staging-api.doke.example',
+    flags: Object.freeze(Object.assign({}, browser.window.Doke.runtimeConfig.flags || {}, {
+      enableNetworkRequests: true
+    }))
+  }));
+
+  browser.window.Doke.repositoryBoundary = {
+    getDataProviderStatus() {
+      return {
+        activeProvider: 'api',
+        apiReady: true
+      };
+    },
+    list(resource, filters) {
+      assertEqual(resource, 'orders', 'Canonical orders list must request the orders resource.');
+      assert(filters && filters.currentUser === true, 'Canonical orders list must preserve currentUser scoping.');
+      return Promise.resolve({
+        orders: [{
+          id: 'order_api_read_1',
+          clientId: 'user_client_1',
+          professionalId: 'pro_renato',
+          status: 'pending',
+          title: 'Pedido retornado pelo runtime canônico'
+        }],
+        count: 1
+      });
+    }
+  };
+
+  const orders = await browser.window.Doke.services.orders.listForCurrentUser();
+  assertEqual(orders.length, 1, 'Canonical { orders, count } payload must normalize to one order.');
+  assertEqual(orders[0].id, 'order_api_read_1', 'Canonical payload normalization must preserve order identity.');
+  record('orders_read.canonical_orders_payload_normalized');
 }
 
 async function validateManualActivationAndOrderMutation() {
