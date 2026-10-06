@@ -103,6 +103,55 @@ function createMessagingSupabase() {
   };
 }
 
+function bootCanonicalConversationRead() {
+  const conversation = {
+    id: 'conv-canonical-1',
+    clientId: uuid,
+    professionalId: peer,
+    participants: [uuid, peer],
+    status: 'active',
+    backendStatus: 'active',
+    messages: []
+  };
+  const Doke = {
+    session: { getCurrentUser() { return { id: uuid, role: 'client', name: 'Real' }; } },
+    repositories: {
+      messages: {
+        normalize(value) { return value; }
+      }
+    },
+    repositoryBoundary: {
+      getDataProviderStatus() {
+        return { activeProvider: 'api', requestedProvider: 'api', apiReady: true };
+      },
+      getById(resource, id) {
+        assert.strictEqual(resource, 'conversations');
+        assert.strictEqual(id, conversation.id);
+        return Promise.resolve({ conversation });
+      },
+      hasProvider(name) { return name === 'api'; }
+    },
+    services: {},
+    permissions: {}
+  };
+  const document = { dispatchEvent() {} };
+  function CustomEvent(name, init) { this.type = name; this.detail = init && init.detail; }
+  const root = { Doke, document, CustomEvent, localStorage: { getItem() { return null; } }, console: { warn() {} } };
+  root.window = root;
+  const context = { window: root, document, CustomEvent, Promise, Object, Array, String, Boolean, RegExp, JSON, Error, Map, Set, Date, Math, setTimeout, clearTimeout, console: root.console };
+  vm.runInNewContext(source, context, { filename: 'message-service.js' });
+  return { service: Doke.services.messages, conversation };
+}
+
+async function verifyCanonicalConversationReadEnvelope() {
+  const runtime = bootCanonicalConversationRead();
+  const conversation = await runtime.service.getConversationById(runtime.conversation.id);
+  assert.strictEqual(conversation.id, runtime.conversation.id);
+  assert.strictEqual(conversation.clientId, uuid);
+  assert.strictEqual(conversation.professionalId, peer);
+  assert.deepStrictEqual(Array.from(conversation.participants), [uuid, peer]);
+}
+
 async function verifyBackendConversationEligibility() {
   const store = createMessagingSupabase();
   const actor = { id: peer, role: 'professional' };
