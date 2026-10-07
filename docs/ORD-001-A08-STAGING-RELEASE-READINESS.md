@@ -35,9 +35,29 @@ DOKE_STAGING_RELEASE_ID
 DOKE_STAGING_RELEASE_SHA
 DOKE_STAGING_ROLLBACK_RELEASE_ID
 DOKE_ALLOWED_ORIGINS
+VERCEL_GIT_COMMIT_SHA   # variável de sistema do deployment Vercel
 ```
 
 Nenhuma chave Supabase, token, credencial ou URL é devolvida pelo healthcheck.
+
+### Guard de identidade do deployment
+
+Quando o runtime detecta execução na Vercel, `DOKE_STAGING_RELEASE_SHA` deixa de ser uma
+declaração suficiente. O contrato também lê `VERCEL_GIT_COMMIT_SHA` e exige correspondência
+exata entre o SHA configurado e o commit realmente implantado.
+
+- SHA configurado = SHA do deployment: `deploymentIdentity.verified=true`;
+- `VERCEL_GIT_COMMIT_SHA` ausente em runtime Vercel: fail-closed;
+- SHA do deployment inválido: fail-closed;
+- SHA configurado diferente do deployment: blocker `release_revision_deployment_mismatch`;
+- em qualquer falha de identidade, `readyForTraffic=false` e rotas de domínio retornam
+  `503 DOKE_STAGING_RELEASE_IDENTITY_MISMATCH` antes de executar o runtime;
+- `GET /health` continua disponível para diagnóstico e expõe somente metadados não secretos;
+- o contrato de rollback permanece independente e continua exigindo release ID distinto.
+
+O fingerprint de release passa a incluir também a revisão observada do deployment quando a
+verificação Vercel é obrigatória. Ambientes locais continuam aceitando a revisão configurada
+sem exigir uma variável de sistema específica do provedor.
 
 ## Preflight read-only
 
@@ -132,5 +152,6 @@ promoção. Nenhum teste de pagamentos, nem prontidão de produção, foi certif
 1. reconciliar Control Center com GitHub/Vercel e tratar fontes marcadas como desatualizadas;
 2. revisar a cadeia de Draft PRs `#543 → #544 → #545 → #546` e o antecessor UX `#470`;
 3. recertificar CI e Previews no HEAD posterior a qualquer alteração de documentação;
-4. repetir o preflight read-only com `releaseSha`, fingerprint e rollback esperados antes de novo canário;
-5. manter `HOLD BEFORE INFRA WRITE`, produção bloqueada e merge/Ready dependentes de autorização explícita.
+4. habilitar/verificar a disponibilidade de `VERCEL_GIT_COMMIT_SHA` no Preview isolado e reconciliar `DOKE_STAGING_RELEASE_SHA` apenas com autorização de Infra;
+5. repetir o preflight read-only com `releaseSha`, fingerprint e rollback esperados antes de novo canário;
+6. manter `HOLD BEFORE INFRA WRITE`, produção bloqueada e merge/Ready dependentes de autorização explícita.
