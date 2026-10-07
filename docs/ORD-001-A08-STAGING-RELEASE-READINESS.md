@@ -91,9 +91,46 @@ npm run execute:ord-001-a08-staging-release-preflight:report
 
 CI executa somente teste local, auditoria e dry-run. A rede externa nunca é habilitada pelo workflow.
 
+## Certificação do fluxo autenticado — 2026-10-06
+
+**Evidência funcional em staging, não promoção de produção.** Na PR #546, o commit
+`280787d0b6130d89c2963c7b197118f9021b9daa` foi executado em browser Chromium/Playwright real, contra o Preview web
+e o runtime API isolado da Vercel no **mesmo SHA**, sem injeção de arquivos no navegador.
+O browser usou duas contas sintéticas autenticadas (cliente e profissional).
+
+A sequência observada foi: login cliente → detalhe do anúncio → orçamento → criação de pedido HTTP →
+login profissional → visualização e aceite do pedido → criação da conversa → envio de mensagem HTTP →
+reload da conversa → novo login cliente → visualização do pedido aceito e da mensagem persistida.
+
+| Evidência de staging | Referência sintética | Resultado |
+| --- | --- | --- |
+| Pedido criado e aceito | `353709cf-f345-4fa8-8a2d-98461d40d342` | `accepted`, readback confirmado |
+| Conversa vinculada ao pedido | `27be6ccd-b3a1-4922-915a-df156d5bb3f1` | `active`, participantes corretos |
+| Mensagem do profissional | `dbc9c458-e53c-4f0f-8ee3-d897e188dcad` | persistência confirmada após reload e relogin |
+
+No SHA funcional certificado: **64/64 GitHub Actions bem-sucedidas** e três verificações
+Vercel em `SUCCESS / READY`. O canário final retornou `clientOrderAccepted=true`,
+`messagePersisted=true` e `dataProvider=api`. A validação da mensagem esperou a resposta
+HTTP do `POST /messages` antes de recarregar, evitando confundir UI otimista com persistência.
+
+**Separação de escopos:** o preflight ORD-A08 acima permanece estritamente read-only
+(`GET /health` + `OPTIONS /orders`, zero mutações). O *browser canary* foi um teste
+distinto, com escritas reais apenas nos dados sintéticos de staging. O histórico inicial
+do preflight, no qual o browser canary estava bloqueado, permanece preservado no JSON de
+evidência em `historicalPreflight`.
+
+**Limites e riscos remanescentes:** o relatório do browser observou 387 falhas de requisição,
+principalmente `net::ERR_ABORTED` durante navegações; isso não foi triado como auditoria
+de console limpo. Os logs brutos do teste não foram arquivados no repositório; a prova
+inclui o checkpoint de execução e o readback de staging. Credenciais e scripts temporários
+locais foram eliminados ao final do ensaio. O SSO do projeto API isolado de staging foi
+desabilitado; a revisão de segurança desse perímetro é obrigatória antes de qualquer
+promoção. Nenhum teste de pagamentos, nem prontidão de produção, foi certificado.
+
 ## Próxima fronteira
 
-1. validar o fluxo autenticado de pedidos e mensagens no navegador contra o runtime de staging;
-2. conservar release e rollback IDs distintos;
-3. executar o preflight read-only antes de cada novo canário;
-4. manter produção bloqueada.
+1. reconciliar Control Center com GitHub/Vercel e tratar fontes marcadas como desatualizadas;
+2. revisar a cadeia de Draft PRs `#543 → #544 → #545 → #546` e o antecessor UX `#470`;
+3. recertificar CI e Previews no HEAD posterior a qualquer alteração de documentação;
+4. repetir o preflight read-only com `releaseSha`, fingerprint e rollback esperados antes de novo canário;
+5. manter `HOLD BEFORE INFRA WRITE`, produção bloqueada e merge/Ready dependentes de autorização explícita.
