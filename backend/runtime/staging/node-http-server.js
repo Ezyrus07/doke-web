@@ -72,6 +72,30 @@ function createNodeRequestHandler(options) {
         return;
       }
 
+      if (releaseDescriptor.deploymentIdentity &&
+          releaseDescriptor.deploymentIdentity.verificationRequired &&
+          releaseDescriptor.deploymentIdentity.verified !== true) {
+        sendJson(response, 503, {
+          ok: false,
+          error: {
+            code: 'DOKE_STAGING_RELEASE_IDENTITY_MISMATCH',
+            message: 'Staging runtime release identity is not verified.',
+            requestId
+          },
+          release: {
+            contractVersion: releaseDescriptor.contractVersion,
+            environment: releaseDescriptor.environment,
+            releaseId: releaseDescriptor.releaseId,
+            revision: releaseDescriptor.revision,
+            deploymentIdentity: releaseDescriptor.deploymentIdentity,
+            readyForTraffic: false,
+            productionAllowed: false,
+            blockers: releaseDescriptor.blockers
+          }
+        });
+        return;
+      }
+
       const body = await readRequestBody(request);
       const runtimeResponse = await getRuntime().handle({
         method: request.method,
