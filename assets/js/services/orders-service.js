@@ -570,9 +570,11 @@ function extractIdempotencyKey(payload, options) {
   function normalizeOrdersFromProvider(payload) {
     var items = Array.isArray(payload)
       ? payload
-      : payload && Array.isArray(payload.items)
-        ? payload.items
-        : [];
+      : payload && Array.isArray(payload.orders)
+        ? payload.orders
+        : payload && Array.isArray(payload.items)
+          ? payload.items
+          : [];
     return items.map(normalizeOrderFromProvider);
   }
 
@@ -585,7 +587,9 @@ function extractIdempotencyKey(payload, options) {
   function ordersBoundaryGetById(orderId) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.getById !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
-    return boundary.getById('orders', orderId).then(normalizeOrderFromProvider);
+    return boundary.getById('orders', orderId).then(function (response) {
+      return normalizeOrderFromProvider(response && response.order || response);
+    });
   }
 
   function getApiCommandPayload(payload) {

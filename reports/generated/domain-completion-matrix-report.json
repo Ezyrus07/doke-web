@@ -25,14 +25,14 @@
     },
     "blockerCounts": {
       "medium": 8,
-      "high": 34,
+      "high": 33,
       "critical": 12
     },
     "activeHtmlPages": 30,
     "repositories": 27,
     "backendModules": 15,
     "migrations": 186,
-    "packageScripts": 1028,
+    "packageScripts": 1030,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1268,
+      "filesMatched": 1271,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -251,11 +251,11 @@
       ],
       "missingRequiredPaths": [],
       "signals": {
-        "localStorage": 319,
+        "localStorage": 321,
         "sessionStorage": 83,
-        "mock": 582,
-        "network": 251,
-        "directSupabase": 191,
+        "mock": 603,
+        "network": 255,
+        "directSupabase": 192,
         "todo": 39
       },
       "signalFiles": {
@@ -586,7 +586,7 @@
           },
           {
             "file": "scripts/test-msg-001-a03-server-command-boundary.js",
-            "count": 4
+            "count": 5
           },
           {
             "file": "scripts/test-msg-001-a05-attachment-lifecycle-runtime.js",
@@ -727,6 +727,10 @@
           {
             "file": "scripts/test-services-supabase-repository-contract.js",
             "count": 5
+          },
+          {
+            "file": "scripts/test-staging-frontend-authority-policy.js",
+            "count": 1
           },
           {
             "file": "scripts/test-transition-system-freeze.js",
@@ -1553,6 +1557,10 @@
             "count": 2
           },
           {
+            "file": "scripts/test-staging-frontend-authority-policy.js",
+            "count": 9
+          },
+          {
             "file": "scripts/test-ux-notif-002-financial-producer-handoff.js",
             "count": 2
           },
@@ -1618,11 +1626,11 @@
           },
           {
             "file": "scripts/validate-orders-write-frontend-activation-runtime.js",
-            "count": 4
+            "count": 9
           },
           {
             "file": "scripts/validate-orders-write-frontend-rollback-gate.js",
-            "count": 6
+            "count": 13
           },
           {
             "file": "scripts/validate-private-beta-user-entry-plan.js",
@@ -1979,6 +1987,10 @@
             "count": 1
           },
           {
+            "file": "scripts/test-api-repository-authenticated-transport.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-auth-canonical-session-runtime.js",
             "count": 1
           },
@@ -2015,6 +2027,10 @@
             "count": 1
           },
           {
+            "file": "scripts/test-msg-001-a03-server-command-boundary.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-msg-001-a05-attachment-lifecycle-runtime.js",
             "count": 1
           },
@@ -2028,7 +2044,7 @@
           },
           {
             "file": "scripts/test-ord-001-a08-staging-release-runtime.js",
-            "count": 1
+            "count": 3
           },
           {
             "file": "scripts/test-order-command-boundary-runtime.js",
@@ -2501,6 +2517,10 @@
             "count": 1
           },
           {
+            "file": "scripts/test-msg-001-a03-server-command-boundary.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-msg-001-a05-attachment-lifecycle-runtime.js",
             "count": 1
           },
@@ -2962,7 +2982,7 @@
       "signals": {
         "localStorage": 33,
         "sessionStorage": 2,
-        "mock": 33,
+        "mock": 34,
         "network": 27,
         "directSupabase": 26,
         "todo": 3
@@ -3031,7 +3051,7 @@
           },
           {
             "file": "assets/js/core/runtime-config.js",
-            "count": 23
+            "count": 24
           },
           {
             "file": "assets/js/core/session.js",
@@ -3639,7 +3659,7 @@
       "signals": {
         "localStorage": 11,
         "sessionStorage": 0,
-        "mock": 69,
+        "mock": 70,
         "network": 22,
         "directSupabase": 20,
         "todo": 2
@@ -3671,7 +3691,7 @@
         "mock": [
           {
             "file": "assets/js/core/runtime-config.js",
-            "count": 23
+            "count": 24
           },
           {
             "file": "assets/js/pages/pedidos/orders-details.js",
@@ -3766,7 +3786,7 @@
           "id": "ORD-B02",
           "severity": "high",
           "category": "frontend_activation",
-          "description": "Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue.",
+          "description": "The isolated staging runtime, exact-origin CORS, authenticated browser transport and fail-closed Preview activation are deployed and preflighted. ORD-B02 remains open because the active browser session does not retain the existing synthetic credentials; the authorization envelope and runId-scoped cleanup readiness remain mandatory, and a supported server-side password rotation or preserved credentials are required before the two-account browser canary can prove request, acceptance, messaging and reload persistence.",
           "targetPhase": "Fase 6"
         },
         {
@@ -3775,13 +3795,6 @@
           "category": "financial_dependency",
           "description": "Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close.",
           "targetPhase": "Fase 8"
-        },
-        {
-          "id": "ORD-B05",
-          "severity": "high",
-          "category": "staging_release",
-          "description": "ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked.",
-          "targetPhase": "Fase 6"
         }
       ],
       "tests": [
@@ -3873,7 +3886,7 @@
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1176,
+      "filesMatched": 1179,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -3903,11 +3916,11 @@
       ],
       "missingRequiredPaths": [],
       "signals": {
-        "localStorage": 247,
+        "localStorage": 249,
         "sessionStorage": 73,
-        "mock": 321,
-        "network": 250,
-        "directSupabase": 197,
+        "mock": 342,
+        "network": 254,
+        "directSupabase": 198,
         "todo": 19
       },
       "signalFiles": {
@@ -4118,7 +4131,7 @@
           },
           {
             "file": "scripts/test-msg-001-a03-server-command-boundary.js",
-            "count": 4
+            "count": 5
           },
           {
             "file": "scripts/test-msg-001-a05-attachment-lifecycle-runtime.js",
@@ -4259,6 +4272,10 @@
           {
             "file": "scripts/test-services-supabase-repository-contract.js",
             "count": 5
+          },
+          {
+            "file": "scripts/test-staging-frontend-authority-policy.js",
+            "count": 1
           },
           {
             "file": "scripts/test-transition-system-freeze.js",
@@ -4833,6 +4850,10 @@
             "count": 2
           },
           {
+            "file": "scripts/test-staging-frontend-authority-policy.js",
+            "count": 9
+          },
+          {
             "file": "scripts/test-ux-notif-002-financial-producer-handoff.js",
             "count": 2
           },
@@ -4898,11 +4919,11 @@
           },
           {
             "file": "scripts/validate-orders-write-frontend-activation-runtime.js",
-            "count": 4
+            "count": 9
           },
           {
             "file": "scripts/validate-orders-write-frontend-rollback-gate.js",
-            "count": 6
+            "count": 13
           },
           {
             "file": "scripts/validate-private-beta-user-entry-plan.js",
@@ -5251,6 +5272,10 @@
             "count": 1
           },
           {
+            "file": "scripts/test-api-repository-authenticated-transport.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-auth-canonical-session-runtime.js",
             "count": 1
           },
@@ -5287,6 +5312,10 @@
             "count": 1
           },
           {
+            "file": "scripts/test-msg-001-a03-server-command-boundary.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-msg-001-a05-attachment-lifecycle-runtime.js",
             "count": 1
           },
@@ -5300,7 +5329,7 @@
           },
           {
             "file": "scripts/test-ord-001-a08-staging-release-runtime.js",
-            "count": 1
+            "count": 3
           },
           {
             "file": "scripts/test-order-command-boundary-runtime.js",
@@ -5782,6 +5811,10 @@
           },
           {
             "file": "scripts/test-internal-rail-alignment-contract.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/test-msg-001-a03-server-command-boundary.js",
             "count": 1
           },
           {
@@ -7850,7 +7883,7 @@
       "signals": {
         "localStorage": 246,
         "sessionStorage": 84,
-        "mock": 247,
+        "mock": 250,
         "network": 284,
         "directSupabase": 260,
         "todo": 11
@@ -8271,7 +8304,7 @@
           },
           {
             "file": "assets/js/core/runtime-config.js",
-            "count": 23
+            "count": 24
           },
           {
             "file": "assets/js/core/session.js",
@@ -8391,7 +8424,7 @@
           },
           {
             "file": "assets/js/services/repository-boundary.js",
-            "count": 8
+            "count": 10
           },
           {
             "file": "assets/js/services/review-service.js",
@@ -9171,7 +9204,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2730,
+      "filesMatched": 2736,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -9201,11 +9234,11 @@
       ],
       "missingRequiredPaths": [],
       "signals": {
-        "localStorage": 593,
+        "localStorage": 596,
         "sessionStorage": 169,
-        "mock": 913,
-        "network": 688,
-        "directSupabase": 603,
+        "mock": 938,
+        "network": 693,
+        "directSupabase": 605,
         "todo": 95
       },
       "signalFiles": {
@@ -9416,7 +9449,7 @@
           },
           {
             "file": "config/domain-completion-matrix.json",
-            "count": 8
+            "count": 9
           },
           {
             "file": "config/msg-001-a01-authority-baseline.json",
@@ -9748,7 +9781,7 @@
           },
           {
             "file": "scripts/test-msg-001-a03-server-command-boundary.js",
-            "count": 4
+            "count": 5
           },
           {
             "file": "scripts/test-msg-001-a05-attachment-lifecycle-runtime.js",
@@ -9889,6 +9922,10 @@
           {
             "file": "scripts/test-services-supabase-repository-contract.js",
             "count": 5
+          },
+          {
+            "file": "scripts/test-staging-frontend-authority-policy.js",
+            "count": 1
           },
           {
             "file": "scripts/test-transition-system-freeze.js",
@@ -10440,7 +10477,7 @@
           },
           {
             "file": "assets/js/core/runtime-config.js",
-            "count": 23
+            "count": 24
           },
           {
             "file": "assets/js/core/session.js",
@@ -10560,7 +10597,7 @@
           },
           {
             "file": "assets/js/services/repository-boundary.js",
-            "count": 8
+            "count": 10
           },
           {
             "file": "assets/js/services/review-service.js",
@@ -10604,7 +10641,7 @@
           },
           {
             "file": "config/domain-completion-matrix.json",
-            "count": 10
+            "count": 11
           },
           {
             "file": "config/pay-001-a01-authority-baseline.json",
@@ -11239,6 +11276,10 @@
             "count": 2
           },
           {
+            "file": "scripts/test-staging-frontend-authority-policy.js",
+            "count": 9
+          },
+          {
             "file": "scripts/test-ux-notif-002-financial-producer-handoff.js",
             "count": 2
           },
@@ -11304,11 +11345,11 @@
           },
           {
             "file": "scripts/validate-orders-write-frontend-activation-runtime.js",
-            "count": 4
+            "count": 9
           },
           {
             "file": "scripts/validate-orders-write-frontend-rollback-gate.js",
-            "count": 6
+            "count": 13
           },
           {
             "file": "scripts/validate-private-beta-user-entry-plan.js",
@@ -11729,6 +11770,10 @@
             "count": 29
           },
           {
+            "file": "backend/runtime/staging/node-http-server.js",
+            "count": 1
+          },
+          {
             "file": "backend/runtime/staging/staging-api-runtime.js",
             "count": 2
           },
@@ -12105,6 +12150,10 @@
             "count": 1
           },
           {
+            "file": "scripts/test-api-repository-authenticated-transport.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-auth-canonical-session-runtime.js",
             "count": 1
           },
@@ -12141,6 +12190,10 @@
             "count": 1
           },
           {
+            "file": "scripts/test-msg-001-a03-server-command-boundary.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-msg-001-a05-attachment-lifecycle-runtime.js",
             "count": 1
           },
@@ -12154,7 +12207,7 @@
           },
           {
             "file": "scripts/test-ord-001-a08-staging-release-runtime.js",
-            "count": 1
+            "count": 3
           },
           {
             "file": "scripts/test-order-command-boundary-runtime.js",
@@ -12807,6 +12860,10 @@
             "count": 29
           },
           {
+            "file": "backend/runtime/staging/node-http-server.js",
+            "count": 1
+          },
+          {
             "file": "backend/runtime/staging/staging-api-runtime.js",
             "count": 2
           },
@@ -13084,6 +13141,10 @@
           },
           {
             "file": "scripts/test-internal-rail-alignment-contract.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/test-msg-001-a03-server-command-boundary.js",
             "count": 1
           },
           {

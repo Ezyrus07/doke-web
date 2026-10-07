@@ -241,7 +241,7 @@
     root.location.replace(href);
   };
 
-  const evaluate = async () => {
+  const evaluate = async (options = {}) => {
     if (!ns.routes || !ns.service) {
       return setDecision('pending', {
         authenticated: false,
@@ -266,7 +266,7 @@
       });
     }
 
-    await refreshAuthority(policy);
+    if (options.refreshAuthority !== false) await refreshAuthority(policy);
     if (version !== evaluationVersion) return null;
 
     const context = getAuthContext();
@@ -316,7 +316,7 @@
   const bind = () => {
     if (bound) return evaluate();
     bound = true;
-    ns.service?.onAuthChange?.(() => evaluate());
+    ns.service?.onAuthChange?.(() => evaluate({ refreshAuthority: false }));
     doc.addEventListener('doke:supabase-client-ready', () => evaluate());
     root.addEventListener('pageshow', () => evaluate());
     return evaluate();

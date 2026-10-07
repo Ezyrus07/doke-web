@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1268 arquivos no escopo; 319 referências a localStorage; 83 a sessionStorage; 582 referências mock; 251 referências de rede/Supabase; 39 marcadores de implementação pendente.
+**Evidência estática observada:** 1271 arquivos no escopo; 321 referências a localStorage; 83 a sessionStorage; 603 referências mock; 255 referências de rede/Supabase; 39 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -220,7 +220,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI remote; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 32 arquivos no escopo; 33 referências a localStorage; 2 a sessionStorage; 33 referências mock; 27 referências de rede/Supabase; 3 marcadores de implementação pendente.
+**Evidência estática observada:** 32 arquivos no escopo; 33 referências a localStorage; 2 a sessionStorage; 34 referências mock; 27 referências de rede/Supabase; 3 marcadores de implementação pendente.
 
 **Páginas:** `auth/login.html`, `auth/cadastro.html`, `auth/esqueci-senha.html`.
 
@@ -387,7 +387,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 25 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 69 referências mock; 22 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 25 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 70 referências mock; 22 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `orcamento.html`, `pedidos.html`, `mensagens.html`, `pagamento-profissional.html`, `admin-pedidos-operacao.html`.
 
@@ -515,16 +515,18 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Generic scheduled transitions remain absent, quote dates remain client intent and incomplete schedule projections fail closed in presentation.
 - C01B does not close ORD-B02, ORD-B03 or ORD-B05 and does not activate staging or production writes.
 - SCHED-C01C makes the order detail drawer consume the same canonical schedule presenter used by order cards without adding any order or scheduling command.
+- The authorized staging-only Vercel project kontrat-staging-api-runtime now deploys the existing Node HTTP authority from backend/runtime/staging without reusing a Kontrat production project or domain.
+- GET /health and CORS were proved on the deployed Preview: the release identity matched the deployed commit, the exact web Preview origin was accepted and an unrelated origin was rejected.
+- The authorized web Preview now selects the API provider and authenticated JWT transport while unrelated Preview origins remain blocked and cannot activate mock or network authority through query or localStorage overrides.
+- The browser write canary stopped before login because the preserved synthetic accounts have no recoverable credentials in the active browser session and the supported dashboard recovery path would send external email; no order or message mutation was attempted.
 
 **Bloqueadores:**
-- **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
+- **ORD-B02 · HIGH · frontend_activation:** The isolated staging runtime, exact-origin CORS, authenticated browser transport and fail-closed Preview activation are deployed and preflighted. ORD-B02 remains open because the active browser session does not retain the existing synthetic credentials; the authorization envelope and runId-scoped cleanup readiness remain mandatory, and a supported server-side password rotation or preserved credentials are required before the two-account browser canary can prove request, acceptance, messaging and reload persistence. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close. _(Fase 8)_
-- **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Complete ORD-B02 through the separately authorized two-account visual settlement canary and run-scoped cleanup.
+- Complete ORD-B02 by reusing preserved credentials or separately authorizing server-side password rotation for exactly the existing synthetic client and professional accounts, then execute the two-account browser canary.
 - Keep ORD-B03 handed to PAY-001 until the real PSP webhook lifecycle becomes canonical.
-- Keep ORD-B05 blocked until exact external staging provider selection and separately authorized deployment.
 - Keep production release and pull-request merge blocked pending independent authorization.
 
 **Gate de saída:**
@@ -539,7 +541,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1176 arquivos no escopo; 247 referências a localStorage; 73 a sessionStorage; 321 referências mock; 250 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1179 arquivos no escopo; 249 referências a localStorage; 73 a sessionStorage; 342 referências mock; 254 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1077,7 +1079,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 905 arquivos no escopo; 246 referências a localStorage; 84 a sessionStorage; 247 referências mock; 284 referências de rede/Supabase; 11 marcadores de implementação pendente.
+**Evidência estática observada:** 905 arquivos no escopo; 246 referências a localStorage; 84 a sessionStorage; 250 referências mock; 284 referências de rede/Supabase; 11 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -1108,7 +1110,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2730 arquivos no escopo; 593 referências a localStorage; 169 a sessionStorage; 913 referências mock; 688 referências de rede/Supabase; 95 marcadores de implementação pendente.
+**Evidência estática observada:** 2736 arquivos no escopo; 596 referências a localStorage; 169 a sessionStorage; 938 referências mock; 693 referências de rede/Supabase; 95 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.

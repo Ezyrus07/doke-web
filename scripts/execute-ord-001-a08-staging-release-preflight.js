@@ -29,6 +29,17 @@ function normalizeBaseUrl(value) {
   return String(value || '').trim().replace(/\/$/, '');
 }
 
+function normalizeOrigin(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    return parsed.origin === raw ? parsed.origin : '';
+  } catch {
+    return '';
+  }
+}
+
 function createPreflightConfig(env) {
   const source = env && typeof env === 'object' ? env : {};
   return Object.freeze({
@@ -37,6 +48,7 @@ function createPreflightConfig(env) {
     releaseId: String(source.DOKE_ORD_A08_RELEASE_ID || '').trim().toLowerCase(),
     releaseSha: String(source.DOKE_ORD_A08_RELEASE_SHA || '').trim().toLowerCase(),
     rollbackReleaseId: String(source.DOKE_ORD_A08_ROLLBACK_RELEASE_ID || '').trim().toLowerCase(),
+    allowedOrigin: normalizeOrigin(source.DOKE_ORD_A08_ALLOWED_ORIGIN || 'http://127.0.0.1:4173'),
     targetMarker: String(source.DOKE_ORD_A08_TARGET_MARKER || '').trim().toLowerCase(),
     allowNetwork: String(source.DOKE_ORD_A08_ALLOW_NETWORK || '') === '1'
   });
@@ -74,6 +86,7 @@ function validatePreflightConfig(config, options) {
   if (!RELEASE_ID_PATTERN.test(config.releaseId)) blockers.push('DOKE_ORD_A08_RELEASE_ID');
   if (!REVISION_PATTERN.test(config.releaseSha)) blockers.push('DOKE_ORD_A08_RELEASE_SHA');
   if (!RELEASE_ID_PATTERN.test(config.rollbackReleaseId) || config.rollbackReleaseId === config.releaseId) blockers.push('DOKE_ORD_A08_ROLLBACK_RELEASE_ID');
+  if (!config.allowedOrigin) blockers.push('DOKE_ORD_A08_ALLOWED_ORIGIN');
   const target = config.baseUrl ? describeSafeTarget(config.baseUrl, config.targetMarker) : { safe: false, reason: 'missing_url' };
   if (config.baseUrl && !target.safe) blockers.push(`unsafe_target:${target.reason}`);
   if (requireNetwork && !config.allowNetwork) blockers.push('DOKE_ORD_A08_ALLOW_NETWORK');
@@ -91,6 +104,7 @@ function buildDryRunPlan() {
       'DOKE_ORD_A08_RELEASE_ID',
       'DOKE_ORD_A08_RELEASE_SHA',
       'DOKE_ORD_A08_ROLLBACK_RELEASE_ID',
+      'DOKE_ORD_A08_ALLOWED_ORIGIN',
       'DOKE_ORD_A08_TARGET_MARKER',
       'DOKE_ORD_A08_ALLOW_NETWORK'
     ]),
@@ -142,7 +156,7 @@ async function executePreflight(config, options) {
   const optionsResponse = await fetchWithTimeout(config.baseUrl + '/orders', {
     method: 'OPTIONS',
     headers: {
-      Origin: 'http://127.0.0.1:4173',
+      Origin: config.allowedOrigin,
       'Access-Control-Request-Method': 'POST',
       'Access-Control-Request-Headers': REQUIRED_ALLOW_HEADERS.join(',')
     }

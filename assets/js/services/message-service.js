@@ -171,7 +171,9 @@
   function messagesBoundaryGetById(conversationId) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.getById !== 'function') return Promise.reject(new Error('Messages API boundary indisponível.'));
-    return boundary.getById('conversations', conversationId).then(normalizeConversationFromProvider);
+    return boundary.getById('conversations', conversationId).then(function (response) {
+      return normalizeConversationFromProvider(response && response.conversation || response);
+    });
   }
 
   function messagesBoundaryCreateForOrder(order, options) {

@@ -18,7 +18,7 @@ const RUNTIME_FILES = Object.freeze([
 const report = {
   name: 'orders-write-frontend-activation-runtime',
   generatedAt: new Date().toISOString(),
-  objective: 'Validate manual frontend orders write activation while canonical reads remain on supabase-read, submitted writes stay disabled by default, and the canary preserves idempotency and domain isolation without external network.',
+  objective: 'Validate staging fail-closed authority plus local/dev manual orders write activation, safe target enforcement, idempotency and domain isolation without external network.',
   performsNetworkRequest: false,
   performsMutation: false,
   files: RUNTIME_FILES.slice(),
@@ -36,6 +36,8 @@ async function main() {
   assertFilesExist();
   validateDefaultState();
   validateUnsafeTargetBlock();
+  await validateCanonicalOrdersListPayload();
+  await validateCanonicalOrderGetPayload();
   await validateManualActivationAndOrderMutation();
   report.activationStatus = report.failures.length ? 'failed' : 'orders_write_frontend_activation_runtime_validated';
   finish();
@@ -49,21 +51,41 @@ function assertFilesExist() {
 }
 
 function validateDefaultState() {
-  const browser = createBrowserRuntime();
-  loadRuntime(browser);
-  const config = browser.window.Doke.runtimeConfig;
-  assertEqual(config.dataProvider, 'mock', 'Default dataProvider must remain mock.');
-  assertEqual(config.ordersProvider, 'supabase-read', 'Default ordersProvider must preserve ORD-A04 canonical remote reads.');
-  assertEqual(config.orderWriteActivation, false, 'Default orderWriteActivation must remain false.');
+  const stagingBrowser = createBrowserRuntime();
+  loadRuntime(stagingBrowser);
+  const config = stagingBrowser.window.Doke.runtimeConfig;
+  assertEqual(config.dataProvider, 'blocked', 'Staging without remote command authority must remain blocked.');
+  assertEqual(config.ordersProvider, 'supabase-read', 'Staging must preserve ORD-A04 canonical remote reads.');
+  assertEqual(config.orderWriteActivation, false, 'Staging orderWriteActivation must remain false.');
+  assertEqual(config.remoteAuthorityRequired, true, 'Staging must require remote authority.');
+  assertEqual(config.mockAuthorityAllowed, false, 'Staging must never allow mock authority.');
 
-  const status = browser.window.Doke.services.orders.getOrdersWriteCanaryStatus();
-  assertEqual(status.active, false, 'Orders write canary must be inactive by default.');
-  assert(status.blockers.includes('ordersWriteCanary is not enabled.'), 'Inactive canary must explain missing enabled flag.');
-  record('default_state.remote_read_write_locked');
+  const stagingStatus = stagingBrowser.window.Doke.services.orders.getOrdersWriteCanaryStatus();
+  assertEqual(stagingStatus.active, false, 'Orders write canary must be inactive in staging.');
+  assert(stagingStatus.blockers.includes('ordersWriteCanary is not enabled.'), 'Inactive staging canary must explain missing enabled flag.');
+
+  const localBrowser = createBrowserRuntime({ url: 'http://127.0.0.1/pedidos.html' });
+  loadRuntime(localBrowser);
+  const localConfig = localBrowser.window.Doke.runtimeConfig;
+  assertEqual(localConfig.dataProvider, 'mock', 'Local/dev may keep mock as the default data provider.');
+  assertEqual(localConfig.ordersProvider, 'mock', 'Local/dev may keep mock as the default orders provider.');
+  assertEqual(localConfig.remoteAuthorityRequired, false, 'Local/dev must not require remote authority.');
+  assertEqual(localConfig.mockAuthorityAllowed, true, 'Local/dev may allow mock authority.');
+
+  const productionBrowser = createBrowserRuntime({ url: 'https://doke.example/pedidos.html' });
+  loadRuntime(productionBrowser);
+  const productionConfig = productionBrowser.window.Doke.runtimeConfig;
+  assertEqual(productionConfig.environment, 'production', 'Production environment detection must remain unchanged.');
+  assertEqual(productionConfig.dataProvider, 'mock', 'Production legacy data provider default must remain unchanged.');
+  assertEqual(productionConfig.orderWriteActivation, false, 'Production order writes must remain disabled.');
+  record('default_state.staging_blocked_local_mock_production_unchanged');
 }
 
 function validateUnsafeTargetBlock() {
-  const browser = createBrowserRuntime({ fetch: createOrdersFetch() });
+  const browser = createBrowserRuntime({
+    url: 'http://127.0.0.1/pedidos.html',
+    fetch: createOrdersFetch()
+  });
   loadRuntime(browser);
   let blocked = false;
   try {
@@ -78,8 +100,98 @@ function validateUnsafeTargetBlock() {
   record('target_safety.production_like_blocked');
 }
 
+async function validateCanonicalOrdersListPayload() {
+  const browser = createBrowserRuntime({ url: 'https://staging.doke.example/pedidos.html' });
+  loadRuntime(browser);
+
+  browser.window.Doke.runtimeConfig = Object.freeze(Object.assign({}, browser.window.Doke.runtimeConfig, {
+    environment: 'staging',
+    dataProvider: 'api',
+    requestedDataProvider: 'api',
+    ordersProvider: 'supabase-read',
+    ordersReadProvider: 'supabase-read',
+    requestedOrdersProvider: 'supabase-read',
+    apiBaseUrl: 'https://staging-api.doke.example',
+    flags: Object.freeze(Object.assign({}, browser.window.Doke.runtimeConfig.flags || {}, {
+      enableNetworkRequests: true
+    }))
+  }));
+
+  browser.window.Doke.repositoryBoundary = {
+    getDataProviderStatus() {
+      return {
+        activeProvider: 'api',
+        apiReady: true
+      };
+    },
+    list(resource, filters) {
+      assertEqual(resource, 'orders', 'Canonical orders list must request the orders resource.');
+      assert(filters && filters.currentUser === true, 'Canonical orders list must preserve currentUser scoping.');
+      return Promise.resolve({
+        orders: [{
+          id: 'order_api_read_1',
+          clientId: 'user_client_1',
+          professionalId: 'pro_renato',
+          status: 'pending',
+          title: 'Pedido retornado pelo runtime canônico'
+        }],
+        count: 1
+      });
+    }
+  };
+
+  const orders = await browser.window.Doke.services.orders.listForCurrentUser();
+  assertEqual(orders.length, 1, 'Canonical { orders, count } payload must normalize to one order.');
+  assertEqual(orders[0].id, 'order_api_read_1', 'Canonical payload normalization must preserve order identity.');
+  record('orders_read.canonical_orders_payload_normalized');
+}
+
+async function validateCanonicalOrderGetPayload() {
+  const browser = createBrowserRuntime({ url: 'https://staging.doke.example/pedidos.html' });
+  loadRuntime(browser);
+
+  browser.window.Doke.runtimeConfig = Object.freeze(Object.assign({}, browser.window.Doke.runtimeConfig, {
+    environment: 'staging',
+    dataProvider: 'api',
+    requestedDataProvider: 'api',
+    ordersProvider: 'supabase-read',
+    ordersReadProvider: 'supabase-read',
+    requestedOrdersProvider: 'supabase-read',
+    apiBaseUrl: 'https://staging-api.doke.example',
+    flags: Object.freeze(Object.assign({}, browser.window.Doke.runtimeConfig.flags || {}, {
+      enableNetworkRequests: true
+    }))
+  }));
+
+  browser.window.Doke.repositoryBoundary = {
+    getDataProviderStatus() {
+      return { activeProvider: 'api', apiReady: true };
+    },
+    getById(resource, id) {
+      assertEqual(resource, 'orders', 'Canonical order get must request the orders resource.');
+      assertEqual(id, 'order_api_read_1', 'Canonical order get must preserve the requested order id.');
+      return Promise.resolve({
+        order: {
+          id: 'order_api_read_1',
+          clientId: 'user_client_1',
+          professionalId: 'pro_renato',
+          status: 'pending',
+          title: 'Pedido individual retornado pelo runtime canônico'
+        }
+      });
+    }
+  };
+
+  const order = await browser.window.Doke.services.orders.getById('order_api_read_1');
+  assert(order, 'Canonical order envelope must normalize to an order.');
+  assertEqual(order.id, 'order_api_read_1', 'Canonical order payload normalization must preserve order identity.');
+  assertEqual(order.clientId, 'user_client_1', 'Canonical order payload normalization must preserve client identity.');
+  record('orders_read.canonical_order_payload_normalized');
+}
+
 async function validateManualActivationAndOrderMutation() {
   const browser = createBrowserRuntime({
+    url: 'http://127.0.0.1/pedidos.html',
     storage: {
       'doke.dataProvider': 'api',
       'doke.ordersProvider': 'supabase-read',

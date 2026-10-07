@@ -5,9 +5,11 @@ on:
     paths:
       - 'backend/runtime/staging/runtime-release-contract.js'
       - 'backend/runtime/staging/node-http-server.js'
+      - 'assets/js/services/api-repository-provider.js'
       - 'backend/shared/security/request-freshness-contract.js'
       - 'scripts/execute-ord-001-a08-staging-release-preflight.js'
       - 'scripts/test-ord-001-a08-staging-release-runtime.js'
+      - 'scripts/test-api-repository-authenticated-transport.js'
       - 'scripts/audit-ord-001-a08-staging-release-readiness.js'
       - 'docs/ORD-001-A08-STAGING-RELEASE-READINESS.md'
       - 'docs/validation/ORD-001-A08-STAGING-RELEASE-READINESS.json'
@@ -29,6 +31,8 @@ jobs:
           node-version: 24
       - name: Test staging release runtime
         run: node scripts/test-ord-001-a08-staging-release-runtime.js
+      - name: Test authenticated browser transport
+        run: node scripts/test-api-repository-authenticated-transport.js
       - name: Audit staging release readiness
         run: node scripts/audit-ord-001-a08-staging-release-readiness.js
       - name: Prove preflight remains dry-run in CI

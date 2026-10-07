@@ -60,7 +60,7 @@ function createStagingApiRuntime(options) {
         now: request.now
       });
 
-      return jsonResponse(statusForRoute(match.route), result && Object.prototype.hasOwnProperty.call(result, 'data') ? result.data : result);
+      return jsonResponse(statusForRoute(match.route), serializeRuntimeResult(result));
     } catch (error) {
       return errorResponse(error, requestId);
     }
@@ -148,6 +148,14 @@ function matchPath(routePath, requestPath) {
   }, {});
 }
 
+function serializeRuntimeResult(result) {
+  if (!result || typeof result !== 'object' || !Object.prototype.hasOwnProperty.call(result, 'data')) return result;
+  const data = result.data;
+  const acknowledgement = result.acknowledgement;
+  if (!acknowledgement || !data || typeof data !== 'object' || Array.isArray(data)) return data;
+  return Object.freeze({ ...data, acknowledgement });
+}
+
 function statusForRoute(route) {
   if (route.method === 'POST' && (route.name.endsWith('.create') || route.name === 'auth.register')) return 201;
   return 200;
@@ -183,5 +191,6 @@ module.exports = Object.freeze({
   matchRoute,
   matchPath,
   normalizeRuntimeRequest,
+  serializeRuntimeResult,
   routeRequiresServiceStore
 });

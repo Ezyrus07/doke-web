@@ -2,7 +2,7 @@
 
 ## Decisão arquitetural
 
-Nenhum provedor externo de deploy é declarado canônico no repositório. Não existem Dockerfile, manifesto Railway/Render/Fly, função serverless ou workflow de promoção que possa ser tratado como autoridade operacional.
+O runtime continua independente do provedor. O canário autorizado usa um projeto Vercel isolado chamado `kontrat-staging-api-runtime`, vinculado ao diretório `backend/runtime/staging` e sem domínio de produção da Kontrat.
 
 O ponto de execução existente continua sendo:
 
@@ -34,6 +34,7 @@ DOKE_ENABLE_STAGING_API
 DOKE_STAGING_RELEASE_ID
 DOKE_STAGING_RELEASE_SHA
 DOKE_STAGING_ROLLBACK_RELEASE_ID
+DOKE_ALLOWED_ORIGINS
 ```
 
 Nenhuma chave Supabase, token, credencial ou URL é devolvida pelo healthcheck.
@@ -64,7 +65,14 @@ Não existe `POST`, login, bearer token, service-role, pedido, orçamento ou mut
 
 Todo release de staging deve declarar previamente um `DOKE_STAGING_ROLLBACK_RELEASE_ID` válido e diferente do release candidato. ORD-A08 apenas comprova que a referência existe; a implementação concreta do rollback pertence ao provedor que vier a ser formalmente escolhido.
 
-Até que um provedor externo seja vinculado, o estado correto é `release_preflight_contract_complete_not_deployed`.
+Para o canário Vercel de staging, o rollback operacional é:
+
+1. definir `DOKE_ENABLE_STAGING_API=0` no Preview da branch ou interromper o deployment do projeto isolado;
+2. remover o endpoint público do mapa `STAGING_RUNTIME_ENDPOINTS` e publicar novamente apenas o frontend Preview;
+3. comprovar que a origem de staging retorna `dataProvider=blocked`;
+4. não reverter automaticamente pedidos, conversas ou mensagens criados pelo canário.
+
+As variáveis Supabase privilegiadas permanecem somente no runtime server-side. O frontend recebe apenas a URL pública do runtime.
 
 ## Produção
 
@@ -83,11 +91,46 @@ npm run execute:ord-001-a08-staging-release-preflight:report
 
 CI executa somente teste local, auditoria e dry-run. A rede externa nunca é habilitada pelo workflow.
 
+## Certificação do fluxo autenticado — 2026-10-06
+
+**Evidência funcional em staging, não promoção de produção.** Na PR #546, o commit
+`280787d0b6130d89c2963c7b197118f9021b9daa` foi executado em browser Chromium/Playwright real, contra o Preview web
+e o runtime API isolado da Vercel no **mesmo SHA**, sem injeção de arquivos no navegador.
+O browser usou duas contas sintéticas autenticadas (cliente e profissional).
+
+A sequência observada foi: login cliente → detalhe do anúncio → orçamento → criação de pedido HTTP →
+login profissional → visualização e aceite do pedido → criação da conversa → envio de mensagem HTTP →
+reload da conversa → novo login cliente → visualização do pedido aceito e da mensagem persistida.
+
+| Evidência de staging | Referência sintética | Resultado |
+| --- | --- | --- |
+| Pedido criado e aceito | `353709cf-f345-4fa8-8a2d-98461d40d342` | `accepted`, readback confirmado |
+| Conversa vinculada ao pedido | `27be6ccd-b3a1-4922-915a-df156d5bb3f1` | `active`, participantes corretos |
+| Mensagem do profissional | `dbc9c458-e53c-4f0f-8ee3-d897e188dcad` | persistência confirmada após reload e relogin |
+
+No SHA funcional certificado: **64/64 GitHub Actions bem-sucedidas** e três verificações
+Vercel em `SUCCESS / READY`. O canário final retornou `clientOrderAccepted=true`,
+`messagePersisted=true` e `dataProvider=api`. A validação da mensagem esperou a resposta
+HTTP do `POST /messages` antes de recarregar, evitando confundir UI otimista com persistência.
+
+**Separação de escopos:** o preflight ORD-A08 acima permanece estritamente read-only
+(`GET /health` + `OPTIONS /orders`, zero mutações). O *browser canary* foi um teste
+distinto, com escritas reais apenas nos dados sintéticos de staging. O histórico inicial
+do preflight, no qual o browser canary estava bloqueado, permanece preservado no JSON de
+evidência em `historicalPreflight`.
+
+**Limites e riscos remanescentes:** o relatório do browser observou 387 falhas de requisição,
+principalmente `net::ERR_ABORTED` durante navegações; isso não foi triado como auditoria
+de console limpo. Os logs brutos do teste não foram arquivados no repositório; a prova
+inclui o checkpoint de execução e o readback de staging. Credenciais e scripts temporários
+locais foram eliminados ao final do ensaio. O SSO do projeto API isolado de staging foi
+desabilitado; a revisão de segurança desse perímetro é obrigatória antes de qualquer
+promoção. Nenhum teste de pagamentos, nem prontidão de produção, foi certificado.
+
 ## Próxima fronteira
 
-1. escolher formalmente o provedor de staging;
-2. definir release e rollback commands específicos do provedor;
-3. injetar identidade de release no ambiente server-side;
-4. promover pelo fluxo controlado;
-5. executar o preflight read-only;
-6. manter o canário visual A06 sob autorização separada.
+1. reconciliar Control Center com GitHub/Vercel e tratar fontes marcadas como desatualizadas;
+2. revisar a cadeia de Draft PRs `#543 → #544 → #545 → #546` e o antecessor UX `#470`;
+3. recertificar CI e Previews no HEAD posterior a qualquer alteração de documentação;
+4. repetir o preflight read-only com `releaseSha`, fingerprint e rollback esperados antes de novo canário;
+5. manter `HOLD BEFORE INFRA WRITE`, produção bloqueada e merge/Ready dependentes de autorização explícita.

@@ -18,11 +18,17 @@
 
   var DATA_PROVIDER_VALUES = Object.freeze({
     MOCK: 'mock',
-    API: 'api'
+    API: 'api',
+    BLOCKED: 'blocked'
   });
 
   var AUTH_PROVIDER_VALUES = Object.freeze({
     SUPABASE: 'supabase'
+  });
+
+  var STAGING_RUNTIME_ENDPOINTS = Object.freeze({
+    'https://doke-web-git-codex-kontrat-staging-authority-polic-8bea12-doke1.vercel.app':
+      'https://kontrat-staging-api-runtime-git-codex-kontrat-stag-387b11-doke1.vercel.app'
   });
 
   var CANARY_STORAGE_KEYS = Object.freeze({
@@ -43,9 +49,10 @@
   });
 
   function readEnvironment() {
-    var host = window.location.hostname || '';
+    var host = String(window.location.hostname || '').trim().toLowerCase();
     if (/localhost|127\.0\.0\.1/.test(host)) return 'local';
-    if (/staging|preview|vercel|netlify/.test(host)) return 'staging';
+    if (/(^|[.-])(staging|preview)([.-]|$)/.test(host)) return 'staging';
+    if (/\.vercel\.app$/.test(host) && /-git-/.test(host)) return 'staging';
     return 'production';
   }
 
@@ -62,9 +69,11 @@
       : {};
   }
 
-  function normalizeDataProvider(value) {
+  function normalizeDataProvider(value, fallback) {
     var provider = String(value || '').trim().toLowerCase();
-    return provider === DATA_PROVIDER_VALUES.API ? DATA_PROVIDER_VALUES.API : DATA_PROVIDER_VALUES.MOCK;
+    if (provider === DATA_PROVIDER_VALUES.API) return DATA_PROVIDER_VALUES.API;
+    if (provider === DATA_PROVIDER_VALUES.BLOCKED) return DATA_PROVIDER_VALUES.BLOCKED;
+    return fallback || DATA_PROVIDER_VALUES.MOCK;
   }
 
   function normalizeOrdersProvider(value) {
@@ -94,14 +103,21 @@
     catch (error) { return null; }
   }
 
-  function resolveDataProvider(windowConfig) {
+  function resolveDataProvider(windowConfig, environment, apiBaseUrl) {
     var params = queryParams();
-    var provider = windowConfig.dataProvider || windowConfig.dataSource || readStorage('doke.dataProvider') || 'mock';
+    var configured = windowConfig.dataProvider || windowConfig.dataSource || '';
+
+    if (environment === 'staging') {
+      return apiBaseUrl ? DATA_PROVIDER_VALUES.API : DATA_PROVIDER_VALUES.BLOCKED;
+    }
+
+    var provider = configured || readStorage('doke.dataProvider') || DATA_PROVIDER_VALUES.MOCK;
     if (params.has('dokeDataProvider')) provider = params.get('dokeDataProvider');
-    return normalizeDataProvider(provider);
+    return normalizeDataProvider(provider, DATA_PROVIDER_VALUES.MOCK);
   }
 
-  function resolveOrdersWriteCanary(windowConfig) {
+  function resolveOrdersWriteCanary(windowConfig, environment) {
+    if (environment === 'staging') return false;
     var params = queryParams();
     var nestedCanary = windowConfig.canary && typeof windowConfig.canary === 'object'
       ? windowConfig.canary.ordersWrite
@@ -182,14 +198,27 @@
     return ordersWriteCanary && normalizeBoolean(value) === true;
   }
 
-  function resolveApiBaseUrl(windowConfig) {
+  function readOrigin() {
+    var explicitOrigin = normalizeBaseUrl(window.location.origin || '');
+    if (explicitOrigin) return explicitOrigin;
+    var protocol = String(window.location.protocol || 'https:').trim().toLowerCase();
+    var hostname = String(window.location.hostname || '').trim().toLowerCase();
+    return hostname ? protocol + '//' + hostname : '';
+  }
+
+  function resolveApiBaseUrl(windowConfig, environment) {
+    if (environment === 'staging') {
+      var trustedConfigUrl = normalizeBaseUrl(windowConfig.apiBaseUrl || '');
+      return trustedConfigUrl || STAGING_RUNTIME_ENDPOINTS[readOrigin()] || '';
+    }
     var params = queryParams();
     var baseUrl = windowConfig.apiBaseUrl || readStorage('doke.apiBaseUrl') || '';
     if (params.has('dokeApiBaseUrl')) baseUrl = params.get('dokeApiBaseUrl');
     return normalizeBaseUrl(baseUrl);
   }
 
-  function resolveNetworkFlag(windowConfig, flags) {
+  function resolveNetworkFlag(windowConfig, flags, environment, apiBaseUrl) {
+    if (environment === 'staging') return Boolean(apiBaseUrl);
     var params = queryParams();
     var value = windowConfig.enableNetworkRequests;
     if (value === undefined && windowConfig.flags) value = windowConfig.flags.enableNetworkRequests;
@@ -202,22 +231,27 @@
   var windowConfig = readWindowConfig();
   var environment = windowConfig.environment || readEnvironment();
   var flags = mergeFlags(DEFAULT_FLAGS, windowConfig.flags || {});
-  flags.enableNetworkRequests = resolveNetworkFlag(windowConfig, flags);
-  var ordersWriteCanary = resolveOrdersWriteCanary(windowConfig);
+  var apiBaseUrl = resolveApiBaseUrl(windowConfig, environment);
+  flags.enableNetworkRequests = resolveNetworkFlag(windowConfig, flags, environment, apiBaseUrl);
+  var ordersWriteCanary = resolveOrdersWriteCanary(windowConfig, environment);
   var betaLaunchCanary = resolveBetaLaunchCanary(windowConfig);
   var betaLaunchDomains = resolveBetaLaunchDomains(windowConfig);
-  var requestedDataProvider = resolveDataProvider(windowConfig);
+  var requestedDataProvider = resolveDataProvider(windowConfig, environment, apiBaseUrl);
   var ordersProvider = resolveOrdersProvider(windowConfig, ordersWriteCanary, environment);
   var ordersReadProvider = resolveOrdersReadProvider(windowConfig, environment);
   var ordersReadActivation = ordersReadProvider === ORDERS_PROVIDER_VALUES.SUPABASE_READ;
   var ordersMockDevelopment = environment === 'local' && ordersReadProvider === ORDERS_PROVIDER_VALUES.MOCK;
   var orderWriteActivation = resolveOrderWriteActivation(windowConfig, ordersWriteCanary);
-  var dataProvider = ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : requestedDataProvider;
+  var dataProvider = environment === 'local' && (ordersWriteCanary || betaLaunchCanary)
+    ? DATA_PROVIDER_VALUES.MOCK
+    : requestedDataProvider;
   var authProvider = AUTH_PROVIDER_VALUES.SUPABASE;
 
   Doke.runtimeConfig = Object.freeze({
-    version: '20260729-ord-a06-visual-settlement-v1',
+    version: '20261005-staging-browser-write-v1',
     environment: environment,
+    remoteAuthorityRequired: environment === 'staging',
+    mockAuthorityAllowed: environment !== 'staging',
     flags: flags,
     dataProvider: dataProvider,
     requestedDataProvider: requestedDataProvider,
@@ -225,7 +259,7 @@
     authProvider: authProvider,
     requestedAuthProvider: authProvider,
     defaultAuthProvider: AUTH_PROVIDER_VALUES.SUPABASE,
-    apiBaseUrl: resolveApiBaseUrl(windowConfig),
+    apiBaseUrl: apiBaseUrl,
     authIdentityCanary: false,
     ordersProvider: ordersProvider,
     ordersReadProvider: ordersReadProvider,

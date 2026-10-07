@@ -73,8 +73,8 @@ assert(compareVersions(matrix.version, '1.3.46') >= 0, `Matrix version ${matrix.
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(ord, 'ORD-001 domain missing from completion matrix');
 const postB04Closure = compareVersions(matrix.version, '1.3.70') >= 0;
-assert.deepStrictEqual(ord.blockers.map((blocker) => blocker.id), postB04Closure ? ['ORD-B02', 'ORD-B03', 'ORD-B05'] : ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']);
-assert.strictEqual(ord.nextActions.length, 4);
+assert.deepStrictEqual(ord.blockers.map((blocker) => blocker.id), postB04Closure ? ['ORD-B02', 'ORD-B03'] : ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']);
+assert.strictEqual(ord.nextActions.length, postB04Closure ? 3 : 4);
 if (postB04Closure) {
   assert(ord.nextActions[0].includes('ORD-B02'));
   assert(ord.evidence.some((item) => item.includes('run 30716088197')));
@@ -87,8 +87,11 @@ if (postB04Closure) {
 
 const blockers = Object.fromEntries(ord.blockers.map((blocker) => [blocker.id, blocker]));
 assert(blockers['ORD-B02'].description.includes('authorization envelope'));
-assert(blockers['ORD-B05'].description.includes('external staging release provider'));
-assert(blockers['ORD-B05'].description.includes('explicit provider selection'));
+if (postB04Closure) assert(!blockers['ORD-B05']);
+else {
+  assert(blockers['ORD-B05'].description.includes('external staging release provider'));
+  assert(blockers['ORD-B05'].description.includes('explicit provider selection'));
+}
 assert(blockers['ORD-B03'].description.includes('PAY-001'));
 if (postB04Closure) assert(!blockers['ORD-B04']);
 else assert(blockers['ORD-B04'].description.includes('SCHED-001'));
