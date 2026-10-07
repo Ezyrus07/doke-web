@@ -12,6 +12,7 @@ const RELEASE_CONTRACT_VERSION = 'ord-a08-staging-release-v1';
 const REQUEST_FRESHNESS_CONTRACT_VERSION = 'ord-a07-request-freshness-v1';
 const RELEASE_ID_PATTERN = /^ord-a08-[a-z0-9][a-z0-9._-]{7,95}$/;
 const REVISION_PATTERN = /^[a-f0-9]{7,64}$/i;
+const VERCEL_GIT_SHA_PATTERN = /^[a-f0-9]{40}$/i;
 
 function normalizeEnvironment(value) {
   return String(value || '').trim().toLowerCase();
@@ -25,6 +26,27 @@ function normalizeRevision(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function createDeploymentIdentity(source, configuredRevision) {
+  const vercelEnvironment = normalizeEnvironment(source && source.VERCEL_ENV);
+  const vercelRuntime = String(source && source.VERCEL || '') === '1' ||
+    Boolean(vercelEnvironment) ||
+    Boolean(String(source && source.VERCEL_GIT_COMMIT_SHA || '').trim());
+  const deploymentRevision = normalizeRevision(source && source.VERCEL_GIT_COMMIT_SHA);
+  const deploymentRevisionValid = Boolean(deploymentRevision && VERCEL_GIT_SHA_PATTERN.test(deploymentRevision));
+  const configuredRevisionValid = Boolean(configuredRevision && REVISION_PATTERN.test(configuredRevision));
+  const verified = vercelRuntime
+    ? Boolean(deploymentRevisionValid && configuredRevisionValid && deploymentRevision === configuredRevision)
+    : null;
+
+  return Object.freeze({
+    provider: vercelRuntime ? 'vercel' : 'local',
+    verificationRequired: vercelRuntime,
+    source: vercelRuntime ? 'VERCEL_GIT_COMMIT_SHA' : 'not_required',
+    deploymentRevision: deploymentRevision || 'unbound',
+    verified
+  });
+}
+
 function createRuntimeReleaseDescriptor(env) {
   const source = env && typeof env === 'object' ? env : {};
   const rawEnvironment = normalizeEnvironment(source.DOKE_ENVIRONMENT || 'local');
@@ -34,6 +56,7 @@ function createRuntimeReleaseDescriptor(env) {
   const revision = normalizeRevision(source.DOKE_STAGING_RELEASE_SHA);
   const rollbackReleaseId = normalizeReleaseId(source.DOKE_STAGING_ROLLBACK_RELEASE_ID);
   const stagingApiEnabled = String(source.DOKE_ENABLE_STAGING_API || '') === '1';
+  const deploymentIdentity = createDeploymentIdentity(source, revision);
   const blockers = [];
 
   if (productionBlocked) blockers.push('production_environment_forbidden');
@@ -46,12 +69,18 @@ function createRuntimeReleaseDescriptor(env) {
   else if (!RELEASE_ID_PATTERN.test(rollbackReleaseId)) blockers.push('rollback_release_id_invalid');
   if (releaseId && rollbackReleaseId && releaseId === rollbackReleaseId) blockers.push('rollback_release_must_differ');
   if (!stagingApiEnabled) blockers.push('staging_api_not_enabled');
+  if (deploymentIdentity.verificationRequired) {
+    if (deploymentIdentity.deploymentRevision === 'unbound') blockers.push('vercel_git_commit_sha_missing');
+    else if (!VERCEL_GIT_SHA_PATTERN.test(deploymentIdentity.deploymentRevision)) blockers.push('vercel_git_commit_sha_invalid');
+    else if (REVISION_PATTERN.test(revision) && deploymentIdentity.deploymentRevision !== revision) blockers.push('release_revision_deployment_mismatch');
+  }
 
   const fingerprint = crypto.createHash('sha256').update([
     RELEASE_CONTRACT_VERSION,
     environment,
     releaseId || 'unbound',
-    revision || 'unbound'
+    revision || 'unbound',
+    deploymentIdentity.verificationRequired ? deploymentIdentity.deploymentRevision : 'identity-not-required'
   ].join(':')).digest('hex');
 
   return Object.freeze({
@@ -59,6 +88,7 @@ function createRuntimeReleaseDescriptor(env) {
     environment,
     releaseId: releaseId || 'unbound',
     revision: revision || 'unbound',
+    deploymentIdentity,
     fingerprint,
     rollbackReady: Boolean(rollbackReleaseId && RELEASE_ID_PATTERN.test(rollbackReleaseId) && rollbackReleaseId !== releaseId),
     readyForTraffic: blockers.length === 0,
@@ -99,6 +129,8 @@ module.exports = Object.freeze({
   REQUEST_FRESHNESS_CONTRACT_VERSION,
   RELEASE_ID_PATTERN,
   REVISION_PATTERN,
+  VERCEL_GIT_SHA_PATTERN,
+  createDeploymentIdentity,
   createRuntimeReleaseDescriptor,
   assertRuntimeReleaseEnvironment,
   createRuntimeReleaseHeaders
