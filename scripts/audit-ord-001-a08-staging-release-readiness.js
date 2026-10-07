@@ -51,6 +51,9 @@ requireAll('release contract', contract, [
   "REQUEST_FRESHNESS_CONTRACT_VERSION = 'ord-a07-request-freshness-v1'",
   'DOKE_PRODUCTION_RUNTIME_BLOCKED',
   'rollback_release_must_differ',
+  'VERCEL_GIT_COMMIT_SHA',
+  'release_revision_deployment_mismatch',
+  'deploymentIdentity',
   'productionAllowed: false',
   'readyForTraffic: blockers.length === 0'
 ]);
@@ -62,7 +65,8 @@ requireAll('node runtime', server, [
   'capabilities: { requestFreshness: releaseDescriptor.requestFreshness }',
   'createNodeRequestHandler',
   'DOKE_ALLOWED_ORIGINS',
-  'DOKE_CORS_ORIGIN_FORBIDDEN'
+  'DOKE_CORS_ORIGIN_FORBIDDEN',
+  'DOKE_STAGING_RELEASE_IDENTITY_MISMATCH'
 ]);
 requireAll('preflight', preflight, [
   "method: 'GET'",
@@ -83,6 +87,9 @@ requireAll('runtime test', test, [
   'executePreflight',
   'writeReport',
   'Object.isFrozen(report)',
+  'VERCEL_GIT_COMMIT_SHA',
+  'release_revision_deployment_mismatch',
+  'DOKE_STAGING_RELEASE_IDENTITY_MISMATCH',
   'mutations, 0'
 ]);
 requireAll('docs', docs, [
