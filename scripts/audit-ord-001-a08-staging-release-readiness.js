@@ -116,13 +116,25 @@ requireAll('workflow', workflow, [
 assert(!workflow.includes('contents: write'), 'ORD-A08 workflow must remain read-only.');
 assert(!workflow.includes('--execute'), 'ORD-A08 CI must not perform network preflight execution.');
 
-assert.strictEqual(evidence.status, 'staging_runtime_deployed_preflight_passed_browser_canary_blocked');
+assert.strictEqual(evidence.status, 'staging_runtime_deployed_preflight_passed_browser_canary_proven');
+assert.strictEqual(evidence.browserCanary.status, 'passed');
+assert.strictEqual(evidence.browserCanary.scope, 'isolated-staging-preview-only');
+assert(/^[a-f0-9]{40}$/.test(evidence.browserCanary.evidenceHeadSha));
+assert.strictEqual(evidence.browserCanary.acceptedOrderReadback, true);
+assert.strictEqual(evidence.browserCanary.activeConversationReadback, true);
+assert.strictEqual(evidence.browserCanary.persistedMessageReadback, true);
+assert.strictEqual(evidence.browserCanary.messagePostAwaitedBeforeReload, true);
+assert.strictEqual(evidence.browserCanary.productionTested, false);
+assert.strictEqual(evidence.historicalPreflight.status, 'staging_runtime_deployed_preflight_passed_browser_canary_blocked');
 assert.strictEqual(evidence.canonicalExternalProviderBound, true);
 assert.strictEqual(evidence.provider.project, 'kontrat-staging-api-runtime');
 assert.strictEqual(evidence.provider.productionProjectReused, false);
 assert.strictEqual(evidence.deployedToStaging, true);
 assert.strictEqual(evidence.networkRequestsPerformed, true);
-assert.strictEqual(evidence.mutationsPerformed, false);
+assert.strictEqual(evidence.mutationsPerformed, true);
+assert.strictEqual(evidence.preflight.mutationsPerformed, false);
+assert.strictEqual(evidence.accountsUsed, 2);
+assert.strictEqual(evidence.ordersCreated, 1);
 assert.strictEqual(evidence.productionChanged, false);
 assert.strictEqual(evidence.rollback.contractRequired, true);
 assert.strictEqual(evidence.rollback.providerCommandBound, true);
