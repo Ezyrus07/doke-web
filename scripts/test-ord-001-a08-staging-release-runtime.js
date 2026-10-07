@@ -21,6 +21,19 @@ const allowedOrigin = 'https://staging-web.example';
 const rejectedOrigin = 'https://untrusted.example';
 let runtimeCalls = 0;
 
+function createResponseCapture() {
+  const headers = new Map();
+  return {
+    statusCode: 0,
+    body: '',
+    setHeader(name, value) { headers.set(String(name).toLowerCase(), value); },
+    hasHeader(name) { return headers.has(String(name).toLowerCase()); },
+    getHeader(name) { return headers.get(String(name).toLowerCase()); },
+    end(value) { this.body = value === undefined ? '' : String(value); },
+    headers
+  };
+}
+
 assert.strictEqual(typeof nodeHttpModule, 'function', 'The staging runtime must export a deployable HTTP handler.');
 
 assert.throws(
@@ -32,6 +45,52 @@ assert.strictEqual(unbound.readyForTraffic, false);
 assert(unbound.blockers.includes('release_id_missing'));
 assert(unbound.blockers.includes('rollback_release_id_missing'));
 
+const matchingVercel = createRuntimeReleaseDescriptor({
+  DOKE_ENVIRONMENT: 'staging',
+  DOKE_ENABLE_STAGING_API: '1',
+  DOKE_STAGING_RELEASE_ID: releaseId,
+  DOKE_STAGING_RELEASE_SHA: releaseSha,
+  DOKE_STAGING_ROLLBACK_RELEASE_ID: rollbackReleaseId,
+  VERCEL: '1',
+  VERCEL_ENV: 'preview',
+  VERCEL_GIT_COMMIT_SHA: releaseSha
+});
+assert.strictEqual(matchingVercel.readyForTraffic, true);
+assert.strictEqual(matchingVercel.deploymentIdentity.provider, 'vercel');
+assert.strictEqual(matchingVercel.deploymentIdentity.source, 'VERCEL_GIT_COMMIT_SHA');
+assert.strictEqual(matchingVercel.deploymentIdentity.deploymentRevision, releaseSha);
+assert.strictEqual(matchingVercel.deploymentIdentity.verified, true);
+assert.strictEqual(matchingVercel.rollbackReady, true);
+
+const mismatchedVercel = createRuntimeReleaseDescriptor({
+  DOKE_ENVIRONMENT: 'staging',
+  DOKE_ENABLE_STAGING_API: '1',
+  DOKE_STAGING_RELEASE_ID: releaseId,
+  DOKE_STAGING_RELEASE_SHA: releaseSha,
+  DOKE_STAGING_ROLLBACK_RELEASE_ID: rollbackReleaseId,
+  VERCEL: '1',
+  VERCEL_ENV: 'preview',
+  VERCEL_GIT_COMMIT_SHA: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+});
+assert.strictEqual(mismatchedVercel.readyForTraffic, false);
+assert.strictEqual(mismatchedVercel.deploymentIdentity.verified, false);
+assert(mismatchedVercel.blockers.includes('release_revision_deployment_mismatch'));
+assert.strictEqual(mismatchedVercel.rollbackReady, true);
+
+const missingVercelCommit = createRuntimeReleaseDescriptor({
+  DOKE_ENVIRONMENT: 'staging',
+  DOKE_ENABLE_STAGING_API: '1',
+  DOKE_STAGING_RELEASE_ID: releaseId,
+  DOKE_STAGING_RELEASE_SHA: releaseSha,
+  DOKE_STAGING_ROLLBACK_RELEASE_ID: rollbackReleaseId,
+  VERCEL: '1',
+  VERCEL_ENV: 'preview'
+});
+assert.strictEqual(missingVercelCommit.readyForTraffic, false);
+assert.strictEqual(missingVercelCommit.deploymentIdentity.verified, false);
+assert(missingVercelCommit.blockers.includes('vercel_git_commit_sha_missing'));
+assert.strictEqual(missingVercelCommit.rollbackReady, true);
+
 const server = createNodeHttpServer({
   env: {
     DOKE_ENVIRONMENT: 'staging',
@@ -39,7 +98,10 @@ const server = createNodeHttpServer({
     DOKE_STAGING_RELEASE_ID: releaseId,
     DOKE_STAGING_RELEASE_SHA: releaseSha,
     DOKE_STAGING_ROLLBACK_RELEASE_ID: rollbackReleaseId,
-    DOKE_ALLOWED_ORIGINS: allowedOrigin
+    DOKE_ALLOWED_ORIGINS: allowedOrigin,
+    VERCEL: '1',
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_SHA: releaseSha
   },
   runtime: {
     async handle() {
@@ -61,6 +123,8 @@ server.listen(0, '127.0.0.1', async () => {
     const healthBody = await health.json();
     assert.strictEqual(healthBody.release.releaseId, releaseId);
     assert.strictEqual(healthBody.release.revision, releaseSha);
+    assert.strictEqual(healthBody.release.deploymentIdentity.deploymentRevision, releaseSha);
+    assert.strictEqual(healthBody.release.deploymentIdentity.verified, true);
     assert.strictEqual(healthBody.release.readyForTraffic, true);
     assert.strictEqual(healthBody.release.rollbackReady, true);
     assert.strictEqual(healthBody.release.productionAllowed, false);
@@ -83,6 +147,34 @@ server.listen(0, '127.0.0.1', async () => {
     assert.strictEqual(rejectedPreflight.headers.get('access-control-allow-origin'), null);
     const rejectedBody = await rejectedPreflight.json();
     assert.strictEqual(rejectedBody.error.code, 'DOKE_CORS_ORIGIN_FORBIDDEN');
+
+    let mismatchRuntimeCalls = 0;
+    const mismatchHandler = nodeHttpModule.createNodeRequestHandler({
+      env: {
+        DOKE_ENVIRONMENT: 'staging',
+        DOKE_ENABLE_STAGING_API: '1',
+        DOKE_STAGING_RELEASE_ID: releaseId,
+        DOKE_STAGING_RELEASE_SHA: releaseSha,
+        DOKE_STAGING_ROLLBACK_RELEASE_ID: rollbackReleaseId,
+        DOKE_ALLOWED_ORIGINS: allowedOrigin,
+        VERCEL: '1',
+        VERCEL_ENV: 'preview',
+        VERCEL_GIT_COMMIT_SHA: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+      },
+      runtime: {
+        async handle() {
+          mismatchRuntimeCalls += 1;
+          return { status: 200, body: { shouldNotRun: true } };
+        }
+      }
+    });
+    const mismatchResponse = createResponseCapture();
+    await mismatchHandler({ method: 'GET', url: '/orders', headers: {} }, mismatchResponse);
+    assert.strictEqual(mismatchResponse.statusCode, 503);
+    const mismatchBody = JSON.parse(mismatchResponse.body);
+    assert.strictEqual(mismatchBody.error.code, 'DOKE_STAGING_RELEASE_IDENTITY_MISMATCH');
+    assert.strictEqual(mismatchBody.release.deploymentIdentity.verified, false);
+    assert.strictEqual(mismatchRuntimeCalls, 0, 'Identity mismatch must fail closed before domain runtime execution.');
 
     const config = createPreflightConfig({
       DOKE_ENVIRONMENT: 'staging',
