@@ -112,6 +112,16 @@ Multi-surface rollout/migration belongs to `NOTIF-H10 — QA/migration`.
 
 Receipts are registered under the `notification_action` domain in `Doke.accountStorage` as account-private, until-logout, clear-on-logout, cross-tab metadata.
 
+### Canonical storage integration — 2026-10-08
+
+The browser adapter uses the actual `registerDomain({ ... })`, `resolveScope`, `read` and `write` contract. The previous adapter called nonexistent `getJson/setJson` methods; a ready message executor therefore still returned `receipt-storage-unavailable` without dispatching. The H09/H10 fixtures previously simulated those nonexistent methods and used expired wall-clock dates.
+
+Receipts are stored as exact command-key/receipt pairs under the canonical `receipts` key. This preserves case and punctuation in idempotency keys without violating account-storage key syntax or persisting message bodies. Storage is account-only, cleared on logout, and limited to 64 KiB. Full or invalid storage fails closed; receipts are never evicted to permit a retry.
+
+Pending actions are scoped to the account. The account is rechecked before dispatch and before asynchronous completion/reconciliation writes, so an account switch cannot write an old receipt into the new account. This consumes the existing account authority; it does not change authentication or backend authorization.
+
+H09/H10 now load the real account-storage module with synthetic identities and a fixed test clock. Regression coverage includes reload replay, exact command keys, logout cleanup, account changes, corruption, storage failures and capacity exhaustion. The dedicated `Notification receipt storage` workflow runs those tests plus privacy, toast and repository governance checks. Local/CI evidence does not certify remote messaging or promote NTF maturity.
+
 If receipt read/write authority is unavailable, H09 returns `UNKNOWN_OUTCOME` with retry blocked **before any new side effect is dispatched**.
 
 ## Definition-of-done tests

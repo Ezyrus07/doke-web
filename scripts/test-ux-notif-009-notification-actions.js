@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { createRuntime } = require('./lib/notification-action-test-runtime.js');
 const ACTION_MODULE_PATH = require.resolve('../assets/js/core/notification-action.js');
 const actionModule = require(ACTION_MODULE_PATH);
 
@@ -45,22 +46,11 @@ function browserAuthority({
   accountStorage = true,
   sessionMode = 'complete'
 } = {}) {
-  const values = new Map();
-  const registrations = [];
   const calls = [];
   const user = currentUser === undefined
     ? { id: '4aa842d5-3a96-48f9-8a8d-ccb231e7c991', role: 'client' }
     : currentUser;
   const status = boundaryStatus || { required: true, ready: true };
-  const storage = accountStorage ? {
-    registerDomain(name, metadata) {
-      registrations.push({ name, metadata });
-      if (registerThrows) throw new Error('registration unavailable');
-    },
-    getJson(_domain, key, fallback) { return values.has(key) ? values.get(key) : fallback; },
-    setJson(_domain, key, value) { values.set(key, value); },
-    getScopeFingerprint() { return 'scope_user_1'; }
-  } : undefined;
   let messages;
   if (serviceMode === 'missing') messages = undefined;
   else if (serviceMode === 'no-status') {
@@ -81,21 +71,13 @@ function browserAuthority({
     };
   }
   const Doke = {
-    accountStorage: storage,
     services: { messages }
   };
   if (sessionMode === 'complete') Doke.session = { getCurrentUser() { return user; } };
   else if (sessionMode === 'no-getter') Doke.session = {};
 
-  const browserWindow = { Doke };
-  const previousWindow = global.window;
-  global.window = browserWindow;
-  delete require.cache[ACTION_MODULE_PATH];
-  require(ACTION_MODULE_PATH);
-  if (previousWindow === undefined) delete global.window;
-  else global.window = previousWindow;
-
-  return { api: browserWindow.Doke.notificationAction, calls, registrations, values };
+  const runtime = createRuntime(Doke, { accountStorage, registerThrows });
+  return { ...runtime, calls, Doke };
 }
 
 (async () => {
@@ -347,15 +329,91 @@ function browserAuthority({
     assert.equal(runtime.calls[0].payload.commandId, 'notif-action:reply-1');
     assert.equal(runtime.calls[0].payload.clientMutationId, 'notif-action:reply-1');
     assert.equal(runtime.calls[0].payload.body, 'Resposta confirmada');
-    assert.equal(runtime.registrations[0].name, 'notification_action');
-    assert.equal(runtime.registrations[0].metadata.clearOnLogout, true);
+    const policy = runtime.Doke.accountStorage.getPolicy('notification_action');
+    assert.equal(policy.clearOnLogout, true);
+    assert.equal(policy.allowGuest, false);
+    assert.equal(policy.crossTab, 'metadata');
   }
 
   {
     const runtime = browserAuthority({ registerThrows: true });
     const action = runtime.api.resolveActions({ actions: [candidate()] })[0];
-    const result = await runtime.api.execute(action, { body: 'Registro de domínio é best-effort' });
-    assert.equal(result.state, 'SUCCEEDED');
+    const result = await runtime.api.execute(action, { body: 'Registro de domínio é obrigatório' });
+    assert.equal(result.state, 'UNKNOWN_OUTCOME');
+    assert.equal(runtime.calls.length, 0);
+  }
+
+  {
+    const runtime = browserAuthority();
+    const action = candidate({ idempotencyKey: 'Case:Sensitive/command?1' });
+    assert.equal((await runtime.api.execute(action, { body: 'synthetic private reply' })).state, 'SUCCEEDED');
+    runtime.reloadAction();
+    const replay = await runtime.Doke.notificationAction.execute(action, { body: 'must not resend' });
+    assert.equal(replay.replayed, true, 'receipt must survive authority reload');
+    assert.equal(runtime.calls.length, 1);
+    assert.equal((await runtime.api.execute({ ...action, idempotencyKey: 'case:Sensitive/command?1' }, { body: 'distinct command' })).state, 'SUCCEEDED');
+    assert.equal(runtime.calls.length, 2, 'case-sensitive command identities must not collide in storage');
+    assert.equal(JSON.stringify([...runtime.values]).includes('synthetic private reply'), false, 'receipt never persists reply body');
+    runtime.Doke.accountStorage.handleAccountTransition({ previousAccountId: '4aa842d5-3a96-48f9-8a8d-ccb231e7c991', nextAccountId: '' });
+    assert.equal(runtime.values.size, 0, 'logout clears canonical receipt domain');
+  }
+
+  for (const mode of ['read', 'write', 'corrupt']) {
+    const runtime = browserAuthority();
+    if (mode === 'corrupt') {
+      runtime.Doke.accountStorage.write({ domain: 'notification_action', key: 'receipts', value: { invalid: true } });
+    } else {
+      runtime.window.localStorage[mode === 'read' ? 'getItem' : 'setItem'] = () => { throw new Error('synthetic storage failure'); };
+    }
+    const result = await runtime.api.execute(candidate(), { body: 'must not send' });
+    assert.equal(result.state, 'UNKNOWN_OUTCOME', mode);
+    assert.equal(result.retryBlocked, true);
+    assert.equal(runtime.calls.length, 0, mode + ' must fail before dispatch');
+  }
+
+  {
+    const runtime = browserAuthority();
+    const persist = runtime.window.localStorage.setItem;
+    let writes = 0;
+    runtime.window.localStorage.setItem = (key, value) => {
+      if (++writes === 2) throw new Error('synthetic one-time receipt failure');
+      persist(key, value);
+    };
+    const result = await runtime.api.execute(candidate(), { body: 'synthetic reply' });
+    assert.equal(result.state, 'UNKNOWN_OUTCOME', 'lost success receipt must not become a retryable failure even if storage recovers');
+    assert.equal((await runtime.api.execute(candidate(), { body: 'must not resend' })).retryBlocked, true);
+    assert.equal(runtime.calls.length, 1);
+  }
+
+  {
+    const runtime = browserAuthority();
+    runtime.Doke.accountStorage.write({ domain: 'notification_action', key: 'receipts', value: [['existing', { state: 'SUCCEEDED', padding: 'x'.repeat(65420) }]] });
+    const result = await runtime.api.execute(candidate(), { body: 'must not send' });
+    assert.equal(result.state, 'UNKNOWN_OUTCOME', 'receipt capacity exhaustion must fail closed');
+    assert.equal(runtime.calls.length, 0);
+  }
+
+  {
+    let release;
+    const runtime = browserAuthority({ sendMessage: () => new Promise((resolve) => { release = resolve; }) });
+    const pending = runtime.api.execute(candidate(), { body: 'synthetic account A reply' });
+    await Promise.resolve();
+    runtime.Doke.session.getCurrentUser = () => ({ id: 'synthetic-account-B' });
+    assert.equal(runtime.api.getState(candidate()), 'AVAILABLE', 'in-flight actions are account scoped');
+    release({ id: 'synthetic-message-A' });
+    const result = await pending;
+    assert.equal(result.state, 'UNKNOWN_OUTCOME', 'late completion must not report success to another account');
+    assert.equal(runtime.Doke.accountStorage.read({ domain: 'notification_action', key: 'receipts' }), null, 'late receipt must not reach account B');
+  }
+
+  {
+    const runtime = browserAuthority();
+    const pending = runtime.api.execute(candidate(), { body: 'must not send after switch' });
+    runtime.Doke.session.getCurrentUser = () => ({ id: 'synthetic-account-B' });
+    assert.equal((await pending).state, 'UNKNOWN_OUTCOME');
+    assert.equal(runtime.calls.length, 0, 'account must be rechecked immediately before dispatch');
+    assert.equal((await runtime.api.execute(candidate(), { body: 'account B reply' })).state, 'SUCCEEDED');
+    assert.equal(runtime.calls.length, 1);
   }
 
   {
@@ -421,8 +479,8 @@ function browserAuthority({
     const runtime = browserAuthority(scenario);
     const action = runtime.api.resolveActions({ actions: [candidate()] })[0];
     const result = await runtime.api.execute(action, { body: 'Sem sessão válida' });
-    assert.equal(result.state, 'FAILED');
-    assert.equal(result.reason, 'permission-denied');
+    assert.equal(result.state, 'UNKNOWN_OUTCOME');
+    assert.equal(result.reason, 'receipt-storage-unavailable');
     assert.equal(runtime.calls.length, 0);
   }
 
