@@ -110,23 +110,38 @@
         maxBytes: 65536
       });
     } catch (_error) { return null; }
-    function entries() {
+    function legacyEntries() {
       var value = storage.read({ domain: 'notification_action', key: 'receipts', allowGuest: false });
       if (value === null) return new Map();
       if (!Array.isArray(value) || value.some(function (entry) {
-        return !Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string' || !entry[1] || !STATES[entry[1].state];
+        return !Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string' || !entry[1] || !Object.prototype.hasOwnProperty.call(STATES, entry[1].state);
       })) throw createError('Recibos inválidos.', 'DOKE_NOTIFICATION_ACTION_STORAGE_UNAVAILABLE');
       return new Map(value);
+    }
+    // A bounded locator only; the full command identity below is the collision guard.
+    function slot(key) {
+      var hash = 14695981039346656037n;
+      for (var index = 0; index < key.length; index += 1) {
+        hash = BigInt.asUintN(64, (hash ^ BigInt(key.charCodeAt(index))) * 1099511628211n);
+      }
+      return 'receipt.' + hash.toString(16);
+    }
+    function readEntry(key) {
+      var entry = storage.read({ domain: 'notification_action', key: slot(key), allowGuest: false });
+      if (entry === null) return legacyEntries().get(key) || null;
+      if (entry.commandKey !== key || !entry.receipt || !Object.prototype.hasOwnProperty.call(STATES, entry.receipt.state)) {
+        throw createError('Identidade do recibo inválida.', 'DOKE_NOTIFICATION_ACTION_STORAGE_UNAVAILABLE');
+      }
+      return entry.receipt;
     }
     return Object.freeze({
       scopeFingerprint: function () {
         return storage.resolveScope({ allowGuest: false }).scopeId;
       },
-      read: function (key) { return entries().get(key) || null; },
+      read: readEntry,
       write: function (key, value) {
-        var receipts = entries();
-        receipts.set(key, value);
-        storage.write({ domain: 'notification_action', key: 'receipts', allowGuest: false, value: Array.from(receipts) });
+        readEntry(key);
+        storage.write({ domain: 'notification_action', key: slot(key), allowGuest: false, value: { commandKey: key, receipt: value } });
         return true;
       }
     });
@@ -169,6 +184,7 @@
       try {
         if (pending.has(pendingKey(action, currentScope()))) return STATES.PENDING;
         var receipt = readReceipt(action);
+        if (receipt && receipt.state === STATES.PENDING) return STATES.UNKNOWN_OUTCOME;
         return receipt && STATES[receipt.state] || STATES.AVAILABLE;
       } catch (_error) {
         return STATES.UNKNOWN_OUTCOME;
@@ -178,7 +194,6 @@
       action = validateCandidate(action, executors);
       if (!action) return Promise.resolve(Object.freeze({ ok: false, state: STATES.FAILED, reason: 'invalid-action' }));
       if (isExpired(action)) {
-        try { writeReceipt(action, { state: STATES.EXPIRED, at: now(), actionId: action.actionId }); } catch (_error) {}
         return Promise.resolve(Object.freeze({ ok: false, state: STATES.EXPIRED, reason: 'expired' }));
       }
       var scope;
@@ -190,6 +205,7 @@
       if (prior && prior.state === STATES.UNKNOWN_OUTCOME) return Promise.resolve(Object.freeze({ ok: false, state: STATES.UNKNOWN_OUTCOME, replayed: true, retryBlocked: true, receipt: prior }));
       var key = pendingKey(action, scope);
       if (pending.has(key)) return pending.get(key);
+      if (prior && prior.state === STATES.PENDING) return Promise.resolve(Object.freeze({ ok: false, state: STATES.UNKNOWN_OUTCOME, reason: 'pending-reconciliation-required', retryBlocked: true, receipt: prior }));
       if (!hasPermission(action.permissionRequirement, action)) {
         var denied = { state: STATES.FAILED, at: now(), actionId: action.actionId, reason: 'permission-denied' };
         try { writeReceipt(action, denied); } catch (_error) {}

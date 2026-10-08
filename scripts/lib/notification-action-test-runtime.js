@@ -4,8 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-function createRuntime(Doke, { registerThrows = false, accountStorage = true } = {}) {
-  const values = new Map();
+function createRuntime(Doke, { registerThrows = false, accountStorage = true, values = new Map() } = {}) {
   function memory(data = new Map()) {
     return {
       get length() { return data.size; },

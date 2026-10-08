@@ -8,6 +8,11 @@ on:
       - 'scripts/lib/notification-action-test-runtime.js'
       - 'scripts/test-ux-notif-009-notification-actions.js'
       - 'scripts/test-ux-notif-010-multi-surface-rollout.js'
+      - 'scripts/test-notification-receipt-recovery.js'
+      - 'scripts/test-notification-receipt-browser.js'
+      - 'notificacoes.html'
+      - 'mensagens.html'
+      - 'comunidade-interna.html'
       - '.github/workflows/notification-receipt-storage.yml'
 
 permissions:
@@ -22,18 +27,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install locked browser test dependencies
+        run: npm ci --ignore-scripts
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
       - name: Validate syntax
         run: |
           node --check assets/js/core/notification-action.js
           node --check scripts/lib/notification-action-test-runtime.js
           node --check scripts/test-ux-notif-009-notification-actions.js
           node --check scripts/test-ux-notif-010-multi-surface-rollout.js
+          node --check scripts/test-notification-receipt-recovery.js
+          node --check scripts/test-notification-receipt-browser.js
       - name: Validate real storage and notification consumers
         run: |
           node scripts/test-ux-notif-009-notification-actions.js
           node scripts/test-ux-notif-010-multi-surface-rollout.js
           node scripts/test-ux-priv-001-account-storage.js
           node scripts/test-ux-notif-003-toast-manager-runtime.js
+          node scripts/test-notification-receipt-recovery.js
+          node scripts/test-notification-receipt-browser.js
       - name: Audit governance
         run: |
           npm run audit:domain-completion-matrix

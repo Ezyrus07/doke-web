@@ -388,8 +388,14 @@ function browserAuthority({
   {
     const runtime = browserAuthority();
     runtime.Doke.accountStorage.write({ domain: 'notification_action', key: 'receipts', value: [['existing', { state: 'SUCCEEDED', padding: 'x'.repeat(65420) }]] });
+    const persist = runtime.window.localStorage.setItem;
+    runtime.window.localStorage.setItem = (key, value) => {
+      const total = [...runtime.values].filter(([storedKey]) => storedKey !== key).reduce((sum, [, stored]) => sum + stored.length, 0);
+      if (total + value.length > 65536) throw new Error('synthetic browser quota exceeded');
+      persist(key, value);
+    };
     const result = await runtime.api.execute(candidate(), { body: 'must not send' });
-    assert.equal(result.state, 'UNKNOWN_OUTCOME', 'receipt capacity exhaustion must fail closed');
+    assert.equal(result.state, 'UNKNOWN_OUTCOME', 'browser storage quota exhaustion must fail closed');
     assert.equal(runtime.calls.length, 0);
   }
 
