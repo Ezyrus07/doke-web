@@ -1,0 +1,663 @@
+/* UX-VISUAL-017 — wallet transaction, receipt and withdrawal decision hierarchy.
+ * Narrow late owner for financial detail surfaces only. Runtime remains the
+ * source of amount, status, payout, dispute and withdrawal truth.
+ */
+body[data-page="carteira"] {
+  --wallet-detail-divider: rgba(24, 75, 118, 0.10);
+  --wallet-detail-muted: #6f8499;
+  --wallet-detail-subtle: #f7fafc;
+  --wallet-detail-current: #174f7d;
+  --wallet-detail-current-soft: #eef6fb;
+  --wallet-detail-done: #177663;
+  --wallet-detail-done-soft: #edf9f5;
+  --wallet-detail-pending: #8a641a;
+  --wallet-detail-pending-soft: #fff8e8;
+}
+
+/* Transaction detail is a reconciliation surface: amount and state first,
+ * then financial composition, provenance and optional follow-up actions. */
+body[data-page="carteira"] .wallet-transaction-detail-modal__surface,
+body[data-page="carteira"] .wallet-withdraw-track-modal__surface,
+body[data-page="carteira"] .wallet-transaction-receipt-modal__surface {
+  width: min(100%, 680px);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__header,
+  .wallet-withdraw-track-modal__header,
+  .wallet-transaction-receipt-modal__header
+) {
+  align-items: flex-start;
+  gap: var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__copy,
+  .wallet-withdraw-track-modal__copy,
+  .wallet-transaction-receipt-modal__copy
+) {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__eyebrow,
+  .wallet-withdraw-track-modal__eyebrow,
+  .wallet-transaction-receipt-modal__eyebrow
+) {
+  color: var(--wallet-detail-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: var(--doke-type-tracking-label, 0.04em);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__title,
+  .wallet-withdraw-track-modal__title,
+  .wallet-transaction-receipt-modal__title
+) {
+  color: #123b68;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__description,
+  .wallet-withdraw-track-modal__description,
+  .wallet-transaction-receipt-modal__description
+) {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--wallet-detail-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__body,
+  .wallet-withdraw-track-modal__body,
+  .wallet-transaction-receipt-modal__body
+) {
+  display: grid;
+  gap: var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__amount-card,
+  .wallet-withdraw-track-card,
+  .wallet-transaction-receipt-card
+) {
+  display: grid;
+  gap: 5px;
+  padding: var(--doke-space-5, 20px);
+  border: 1px solid rgba(23, 79, 125, 0.12);
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-detail-current-soft);
+  box-shadow: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__amount-card,
+  .wallet-transaction-receipt-card
+) > span,
+body[data-page="carteira"] .wallet-withdraw-track-card > span {
+  color: var(--wallet-detail-muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: var(--doke-type-tracking-label, 0.04em);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__amount-card,
+  .wallet-withdraw-track-card,
+  .wallet-transaction-receipt-card
+) > strong {
+  color: var(--wallet-detail-current);
+  font-size: clamp(1.85rem, 4vw, 2.45rem);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__amount-card,
+  .wallet-transaction-receipt-card
+) > small,
+body[data-page="carteira"] .wallet-withdraw-track-card > small {
+  justify-self: start;
+  min-height: 26px;
+  padding: 6px 9px;
+  border: 1px solid rgba(79, 105, 132, 0.13);
+  border-radius: var(--radius-pill, 999px);
+  background: #fff;
+  color: #526b84;
+  font-size: 0.7rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+/* Financial composition is one common region, not a grid of promotional cards. */
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-grid,
+  .wallet-transaction-receipt-grid
+) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--wallet-detail-divider);
+  border-radius: var(--radius-base, 14px);
+  background: #fff;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-grid,
+  .wallet-transaction-receipt-grid
+) article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--wallet-detail-divider);
+  background: #fff;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-grid,
+  .wallet-transaction-receipt-grid
+) article:nth-child(odd) {
+  border-inline-end: 1px solid var(--wallet-detail-divider);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-grid,
+  .wallet-transaction-receipt-grid
+) article:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-grid,
+  .wallet-transaction-receipt-grid
+) article > span {
+  color: #7b8fa4;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-grid,
+  .wallet-transaction-receipt-grid
+) article > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #183e65;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  font-weight: 800;
+}
+
+body[data-page="carteira"] :is(
+  [data-wallet-transaction-gross],
+  [data-wallet-transaction-fee],
+  [data-wallet-receipt-gross],
+  [data-wallet-receipt-fee],
+  [data-wallet-receipt-net]
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="carteira"] :is(
+  [data-wallet-transaction-status-detail],
+  [data-wallet-receipt-status]
+) {
+  color: var(--wallet-detail-current);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-note,
+  .wallet-transaction-receipt-note,
+  .wallet-withdraw-track-note
+) {
+  margin: 0;
+  padding: var(--doke-space-3, 12px) var(--doke-space-4, 16px);
+  border: 0;
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-detail-subtle);
+  color: var(--wallet-detail-muted);
+  box-shadow: none;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+/* Dispute is consequential context, but the wallet should not imply an outcome.
+ * Actions stay neutral and route the user to the existing order/conversation. */
+body[data-page="carteira"] .wallet-dispute-actions {
+  display: grid;
+  gap: var(--doke-space-2, 8px);
+  padding: var(--doke-space-4, 16px);
+  border: 1px solid rgba(138, 100, 26, 0.16);
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-detail-pending-soft);
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-dispute-actions > strong {
+  color: #6f571e;
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+body[data-page="carteira"] .wallet-dispute-actions > p {
+  margin: 0;
+  color: #7b6c4d;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+body[data-page="carteira"] .wallet-dispute-actions__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--doke-space-2, 8px);
+}
+
+body[data-page="carteira"] .wallet-dispute-actions__controls .doke-btn {
+  min-height: var(--doke-control-height-md, 46px);
+  background: #fff;
+  color: #4f6680;
+  box-shadow: none;
+}
+
+/* Timelines expose current state before completed history and pending future. */
+body[data-page="carteira"] :is(
+  .wallet-release-timeline,
+  .wallet-withdraw-timeline
+) {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+) {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: var(--doke-space-3, 12px);
+  min-width: 0;
+  padding: 0 0 var(--doke-space-4, 16px);
+  opacity: 1;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+):last-child {
+  padding-bottom: 0;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+)::before {
+  content: "";
+  position: absolute;
+  inset-block: 20px 0;
+  inset-inline-start: 11px;
+  width: 2px;
+  background: #dce6ef;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+):last-child::before {
+  display: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__marker,
+  .wallet-withdraw-timeline__marker
+) {
+  position: relative;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border: 2px solid #c8d6e4;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+) > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+) strong {
+  color: #405d78;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+) :is(small, p, span:not(.wallet-release-timeline__marker):not(.wallet-withdraw-timeline__marker)) {
+  color: #8193a5;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+)[data-state="done"] :is(.wallet-release-timeline__marker, .wallet-withdraw-timeline__marker) {
+  border-color: var(--wallet-detail-done);
+  background: var(--wallet-detail-done);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+)[data-state="done"] strong {
+  color: #356b62;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+)[data-state="current"] {
+  padding: var(--doke-space-3, 12px);
+  margin: 0 0 var(--doke-space-3, 12px);
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-detail-current-soft);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+)[data-state="current"]::before {
+  inset-block-start: 32px;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+)[data-state="current"] :is(.wallet-release-timeline__marker, .wallet-withdraw-timeline__marker) {
+  border-color: var(--wallet-detail-current);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(23, 79, 125, 0.10);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+)[data-state="current"] strong {
+  color: var(--wallet-detail-current);
+  font-weight: 900;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-release-timeline__item,
+  .wallet-withdraw-timeline__item
+)[data-state="pending"] {
+  opacity: 0.62;
+}
+
+/* Withdrawal confirmation: amount is the decision, available balance and
+ * destination are supporting verification, and confirm is the only primary CTA. */
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog__body {
+  gap: var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-field > span {
+  color: #3f5e7a;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-money-field {
+  min-height: var(--doke-control-height-lg, 54px);
+  border: 1px solid rgba(23, 79, 125, 0.14);
+  border-radius: var(--radius-control-lg, 14px);
+  background: #fff;
+  box-shadow: var(--doke-white-control-shadow);
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-money-field:focus-within {
+  border-color: rgba(23, 79, 125, 0.30);
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-money-field > span {
+  color: #71879d;
+  font-weight: 800;
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw [data-wallet-withdraw-amount] {
+  min-height: 52px;
+  border: 0;
+  box-shadow: none;
+  color: #123b68;
+  font-size: clamp(1.15rem, 3vw, 1.5rem);
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw [data-wallet-withdraw-amount]:focus {
+  outline: 0;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-dialog-summary--withdraw {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--wallet-detail-divider);
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-detail-subtle);
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-dialog-summary--withdraw article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--doke-space-3, 12px) var(--doke-space-4, 16px);
+}
+
+body[data-page="carteira"] .wallet-dialog-summary--withdraw article + article {
+  border-inline-start: 1px solid var(--wallet-detail-divider);
+}
+
+body[data-page="carteira"] .wallet-dialog-summary--withdraw article > span {
+  color: #7a8ea3;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+body[data-page="carteira"] .wallet-dialog-summary--withdraw article > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #244b70;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+body[data-page="carteira"] .wallet-dialog-summary--withdraw [data-wallet-withdraw-available] {
+  color: var(--wallet-detail-current);
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-error:not([hidden]) {
+  padding: var(--doke-space-3, 12px);
+  border-radius: var(--radius-base, 14px);
+  background: #fff3f3;
+  color: #9b3434;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 750;
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+  gap: var(--doke-space-2, 8px);
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-btn {
+  min-height: var(--doke-control-height-lg, 54px);
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-btn.doke-btn--ghost {
+  background: #fff;
+  color: #607891;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-btn.doke-btn--primary {
+  background: var(--doke-primary, #2a5f90);
+  color: #fff;
+}
+
+/* Tracking and receipts are evidence/status surfaces, not new transaction CTAs. */
+body[data-page="carteira"] .wallet-withdraw-track-modal__footer,
+body[data-page="carteira"] .wallet-transaction-detail-modal__footer,
+body[data-page="carteira"] .wallet-transaction-receipt-modal__footer {
+  gap: var(--doke-space-2, 8px);
+  box-shadow: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__secondary,
+  .wallet-withdraw-track-modal__secondary,
+  .wallet-transaction-receipt-modal__secondary
+) {
+  min-height: var(--doke-control-height-md, 46px);
+  background: #fff;
+  color: #607891;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__primary,
+  .wallet-withdraw-track-modal__primary
+) {
+  min-height: var(--doke-control-height-md, 46px);
+  background: var(--doke-primary, #2a5f90);
+  color: #fff;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__secondary,
+  .wallet-withdraw-track-modal__secondary,
+  .wallet-transaction-receipt-modal__secondary,
+  .wallet-transaction-detail-modal__primary,
+  .wallet-withdraw-track-modal__primary,
+  .wallet-dialog-btn,
+  .wallet-dispute-actions__controls .doke-btn
+):focus-visible {
+  outline: 2px solid var(--doke-primary, #2a5f90);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  body[data-page="carteira"] :is(
+    .wallet-transaction-detail-grid,
+    .wallet-transaction-receipt-grid,
+    .wallet-dialog-summary--withdraw
+  ) {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="carteira"] :is(
+    .wallet-transaction-detail-grid,
+    .wallet-transaction-receipt-grid
+  ) article,
+  body[data-page="carteira"] :is(
+    .wallet-transaction-detail-grid,
+    .wallet-transaction-receipt-grid
+  ) article:nth-child(odd),
+  body[data-page="carteira"] :is(
+    .wallet-transaction-detail-grid,
+    .wallet-transaction-receipt-grid
+  ) article:nth-last-child(-n + 2) {
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--wallet-detail-divider);
+  }
+
+  body[data-page="carteira"] :is(
+    .wallet-transaction-detail-grid,
+    .wallet-transaction-receipt-grid
+  ) article:last-child {
+    border-bottom: 0;
+  }
+
+  body[data-page="carteira"] .wallet-dialog-summary--withdraw article + article {
+    border-inline-start: 0;
+    border-top: 1px solid var(--wallet-detail-divider);
+  }
+
+  body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog__footer,
+  body[data-page="carteira"] :is(
+    .wallet-transaction-detail-modal__footer,
+    .wallet-withdraw-track-modal__footer,
+    .wallet-transaction-receipt-modal__footer
+  ) {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="carteira"] :is(
+    .wallet-transaction-detail-modal__secondary,
+    .wallet-withdraw-track-modal__secondary,
+    .wallet-transaction-receipt-modal__secondary,
+    .wallet-transaction-detail-modal__primary,
+    .wallet-withdraw-track-modal__primary,
+    .wallet-dialog-btn
+  ) {
+    width: 100%;
+    min-height: var(--doke-control-height-md, 46px);
+  }
+
+  body[data-page="carteira"] .wallet-dialog--withdraw .wallet-dialog-btn {
+    min-height: var(--doke-control-height-lg, 54px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="carteira"] :is(
+    .wallet-transaction-detail-modal__secondary,
+    .wallet-withdraw-track-modal__secondary,
+    .wallet-transaction-receipt-modal__secondary,
+    .wallet-transaction-detail-modal__primary,
+    .wallet-withdraw-track-modal__primary,
+    .wallet-dialog-btn
+  ) {
+    transition: none;
+    transform: none;
+  }
+}

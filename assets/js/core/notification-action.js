@@ -98,22 +98,52 @@
   }
   function createAccountStore(Doke) {
     var storage = Doke && Doke.accountStorage;
-    if (!storage || typeof storage.registerDomain !== 'function' || typeof storage.getJson !== 'function' || typeof storage.setJson !== 'function') return null;
+    if (!storage || typeof storage.registerDomain !== 'function' || typeof storage.read !== 'function' || typeof storage.write !== 'function' || typeof storage.resolveScope !== 'function') return null;
     try {
-      storage.registerDomain('notification_action', {
-        prefix: 'doke.notification-action.receipt.v1',
-        privacy: 'account-private',
-        retention: 'until-logout',
+      storage.registerDomain({
+        domain: 'notification_action',
+        dataClass: 'account_private',
+        retention: 'until_logout',
         clearOnLogout: true,
-        crossTab: true
+        allowGuest: false,
+        crossTab: 'metadata',
+        maxBytes: 65536
       });
-    } catch (_error) {}
+    } catch (_error) { return null; }
+    function legacyEntries() {
+      var value = storage.read({ domain: 'notification_action', key: 'receipts', allowGuest: false });
+      if (value === null) return new Map();
+      if (!Array.isArray(value) || value.some(function (entry) {
+        return !Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string' || !entry[1] || !Object.prototype.hasOwnProperty.call(STATES, entry[1].state);
+      })) throw createError('Recibos inválidos.', 'DOKE_NOTIFICATION_ACTION_STORAGE_UNAVAILABLE');
+      return new Map(value);
+    }
+    // A bounded locator only; the full command identity below is the collision guard.
+    function slot(key) {
+      var hash = 14695981039346656037n;
+      for (var index = 0; index < key.length; index += 1) {
+        hash = BigInt.asUintN(64, (hash ^ BigInt(key.charCodeAt(index))) * 1099511628211n);
+      }
+      return 'receipt.' + hash.toString(16);
+    }
+    function readEntry(key) {
+      var entry = storage.read({ domain: 'notification_action', key: slot(key), allowGuest: false });
+      if (entry === null) return legacyEntries().get(key) || null;
+      if (entry.commandKey !== key || !entry.receipt || !Object.prototype.hasOwnProperty.call(STATES, entry.receipt.state)) {
+        throw createError('Identidade do recibo inválida.', 'DOKE_NOTIFICATION_ACTION_STORAGE_UNAVAILABLE');
+      }
+      return entry.receipt;
+    }
     return Object.freeze({
       scopeFingerprint: function () {
-        return normalizeText(storage.getScopeFingerprint && storage.getScopeFingerprint() || storage.getCurrentScopeKey && storage.getCurrentScopeKey() || '');
+        return storage.resolveScope({ allowGuest: false }).scopeId;
       },
-      read: function (key) { return storage.getJson('notification_action', key, null); },
-      write: function (key, value) { storage.setJson('notification_action', key, value); return true; }
+      read: readEntry,
+      write: function (key, value) {
+        readEntry(key);
+        storage.write({ domain: 'notification_action', key: slot(key), allowGuest: false, value: { commandKey: key, receipt: value } });
+        return true;
+      }
     });
   }
   function receiptKey(action) { return normalizeText(action && action.idempotencyKey); }
@@ -125,6 +155,12 @@
     var now = typeof options.now === 'function' ? options.now : function () { return new Date().toISOString(); };
     var hasPermission = typeof options.hasPermission === 'function' ? options.hasPermission : function () { return false; };
     var pending = new Map();
+
+    function currentScope() { return store && typeof store.scopeFingerprint === 'function' ? store.scopeFingerprint() : ''; }
+    function assertScope(scope) {
+      if (currentScope() !== scope) throw createError('Conta da ação mudou.', 'DOKE_NOTIFICATION_ACTION_SCOPE_CHANGED');
+    }
+    function pendingKey(action, scope) { return JSON.stringify([scope, receiptKey(action)]); }
 
     function nowMs() { return new Date(now()).getTime(); }
     function isExpired(action) { return new Date(action.expiresAt).getTime() <= nowMs(); }
@@ -145,9 +181,10 @@
     function getState(action) {
       if (!action || !action.idempotencyKey) return STATES.FAILED;
       if (isExpired(action)) return STATES.EXPIRED;
-      if (pending.has(receiptKey(action))) return STATES.PENDING;
       try {
+        if (pending.has(pendingKey(action, currentScope()))) return STATES.PENDING;
         var receipt = readReceipt(action);
+        if (receipt && receipt.state === STATES.PENDING) return STATES.UNKNOWN_OUTCOME;
         return receipt && STATES[receipt.state] || STATES.AVAILABLE;
       } catch (_error) {
         return STATES.UNKNOWN_OUTCOME;
@@ -157,17 +194,18 @@
       action = validateCandidate(action, executors);
       if (!action) return Promise.resolve(Object.freeze({ ok: false, state: STATES.FAILED, reason: 'invalid-action' }));
       if (isExpired(action)) {
-        try { writeReceipt(action, { state: STATES.EXPIRED, at: now(), actionId: action.actionId }); } catch (_error) {}
         return Promise.resolve(Object.freeze({ ok: false, state: STATES.EXPIRED, reason: 'expired' }));
       }
-      var key = receiptKey(action);
+      var scope;
       var prior;
-      try { prior = readReceipt(action); } catch (error) {
+      try { scope = currentScope(); prior = readReceipt(action); } catch (error) {
         return Promise.resolve(Object.freeze({ ok: false, state: STATES.UNKNOWN_OUTCOME, reason: 'receipt-storage-unavailable', retryBlocked: true, error: publicError(error) }));
       }
       if (prior && prior.state === STATES.SUCCEEDED) return Promise.resolve(Object.freeze({ ok: true, state: STATES.SUCCEEDED, replayed: true, receipt: prior }));
       if (prior && prior.state === STATES.UNKNOWN_OUTCOME) return Promise.resolve(Object.freeze({ ok: false, state: STATES.UNKNOWN_OUTCOME, replayed: true, retryBlocked: true, receipt: prior }));
+      var key = pendingKey(action, scope);
       if (pending.has(key)) return pending.get(key);
+      if (prior && prior.state === STATES.PENDING) return Promise.resolve(Object.freeze({ ok: false, state: STATES.UNKNOWN_OUTCOME, reason: 'pending-reconciliation-required', retryBlocked: true, receipt: prior }));
       if (!hasPermission(action.permissionRequirement, action)) {
         var denied = { state: STATES.FAILED, at: now(), actionId: action.actionId, reason: 'permission-denied' };
         try { writeReceipt(action, denied); } catch (_error) {}
@@ -179,9 +217,13 @@
         return Promise.resolve(Object.freeze({ ok: false, state: STATES.UNKNOWN_OUTCOME, reason: 'receipt-storage-unavailable', retryBlocked: true, error: publicError(error) }));
       }
       var executor = executors[action.commandType];
+      var domainSucceeded = false;
       var task = Promise.resolve().then(function () {
+        assertScope(scope);
         return executor.execute(action, input || {});
       }).then(function (domainResult) {
+        domainSucceeded = true;
+        assertScope(scope);
         var receipt = writeReceipt(action, {
           state: STATES.SUCCEEDED,
           at: now(),
@@ -190,10 +232,10 @@
         });
         return Object.freeze({ ok: true, state: STATES.SUCCEEDED, domainResult: domainResult, receipt: freezeReceipt(receipt) });
       }).catch(function (error) {
-        var unknown = isUnknownOutcome(error);
+        var unknown = domainSucceeded || isUnknownOutcome(error);
         var state = unknown ? STATES.UNKNOWN_OUTCOME : STATES.FAILED;
         var receipt = { state: state, at: now(), actionId: action.actionId, errorCode: normalizeText(error && error.code) };
-        try { writeReceipt(action, receipt); } catch (_storageError) { state = STATES.UNKNOWN_OUTCOME; receipt.state = state; receipt.errorCode = 'DOKE_NOTIFICATION_ACTION_STORAGE_UNAVAILABLE'; }
+        try { assertScope(scope); writeReceipt(action, receipt); } catch (_storageError) { state = STATES.UNKNOWN_OUTCOME; receipt.state = state; receipt.errorCode = 'DOKE_NOTIFICATION_ACTION_STORAGE_UNAVAILABLE'; }
         return Object.freeze({ ok: false, state: state, retryBlocked: state === STATES.UNKNOWN_OUTCOME, receipt: freezeReceipt(receipt), error: publicError(error) });
       }).finally(function () { pending.delete(key); });
       pending.set(key, task);
@@ -206,7 +248,13 @@
       if (!executor || typeof executor.reconcile !== 'function') {
         try { return Promise.resolve(readReceipt(action)); } catch (_error) { return Promise.resolve(null); }
       }
-      return Promise.resolve(executor.reconcile(action)).then(function (result) {
+      var scope;
+      try { scope = currentScope(); } catch (error) { return Promise.reject(error); }
+      return Promise.resolve().then(function () {
+        assertScope(scope);
+        return executor.reconcile(action);
+      }).then(function (result) {
+        assertScope(scope);
         if (!result || result.state !== STATES.SUCCEEDED) return result;
         writeReceipt(action, { state: STATES.SUCCEEDED, at: now(), actionId: action.actionId, reconciled: true });
         return result;
