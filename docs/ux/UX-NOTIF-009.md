@@ -112,6 +112,24 @@ Multi-surface rollout/migration belongs to `NOTIF-H10 — QA/migration`.
 
 Receipts are registered under the `notification_action` domain in `Doke.accountStorage` as account-private, until-logout, clear-on-logout, cross-tab metadata.
 
+### Canonical storage integration — 2026-10-08
+
+The browser adapter uses the actual `registerDomain({ ... })`, `resolveScope`, `read` and `write` contract. The previous adapter called nonexistent `getJson/setJson` methods; a ready message executor therefore still returned `receipt-storage-unavailable` without dispatching. The H09/H10 fixtures previously simulated those nonexistent methods and used expired wall-clock dates.
+
+Each new receipt has its own canonical storage entry, using a bounded `receipt.<fnv64>` locator and an envelope containing the exact command key and receipt. The locator is not an authorization or cryptographic identity: a full-key mismatch fails closed. Case, punctuation and Unicode are preserved without violating the canonical 96-character storage-key limit. The canonical 65,536 serialized-character limit applies per entry; browser quota applies to total storage. Account-only policy, logout cleanup and metadata-only cross-tab events remain unchanged. Full or invalid storage blocks dispatch; receipts are never evicted to permit retry.
+
+The prior `receipts` array remains a read-only fallback for commands without a new entry. Existing success, unknown and pending receipts retain their meaning. New writes never replace that shared array, eliminating its read/modify/write lost-update race for distinct command locators. Same-command concurrent dispatch remains subject to server-owned idempotency; this patch does not introduce a cross-tab transaction coordinator.
+
+A persisted `PENDING` receipt without a matching local in-flight promise is exposed as `UNKNOWN_OUTCOME` and blocks dispatch. This also covers successful sending followed by failure to persist both `SUCCEEDED` and `UNKNOWN_OUTCOME`, including after reload. Expiry cannot overwrite that durable sentinel. Only the existing trusted executor reconciliation interface may settle it; no status endpoint or client-side success is invented. Browser quick replies remain blocked when their domain offers no reconciliation evidence.
+
+On all three H10 surfaces, account storage, notification actions, toast and the in-app consumer execute in deferred document order. The action URL uses `v=20261008-notification-receipts-v2` on every surface. Unchanged storage/toast source needs no cache-key bump; `defer` is a document attribute. Existing open tabs need a document reload to consume the corrected execution order.
+
+Pending actions are scoped to the account. The account is rechecked before dispatch and before asynchronous completion/reconciliation writes, so an account switch cannot write an old receipt into the new account. This consumes the existing account authority; it does not change authentication or backend authorization.
+
+H09/H10 now load the real account-storage module with synthetic identities and a fixed test clock. Regression coverage includes reload replay, exact command keys, logout cleanup, account changes, corruption, storage failures and capacity exhaustion. The dedicated `Notification receipt storage` workflow runs those tests plus privacy, toast and repository governance checks. Local/CI evidence does not certify remote messaging or promote NTF maturity.
+
+The recovery regression suite forces the original lost-update interleaving in two independent module contexts. The Chromium suite uses the complete page HTML and original script attributes, real storage/action/toast/in-app modules, and isolated unrelated scripts/network dependencies; the browser determines execution order. It covers all three pages at 1366x768, 820x1180 and 390x844, two same-origin tabs writing 60 distinct receipts, and real localStorage completion failures followed by reload. This is focused integration evidence, not full visual or authenticated remote journey certification.
+
 If receipt read/write authority is unavailable, H09 returns `UNKNOWN_OUTCOME` with retry blocked **before any new side effect is dispatched**.
 
 ## Definition-of-done tests

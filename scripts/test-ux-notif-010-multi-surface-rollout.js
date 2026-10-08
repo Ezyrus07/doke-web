@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
+const { createRuntime } = require('./lib/notification-action-test-runtime.js');
 const ACTION_MODULE_PATH = require.resolve('../assets/js/core/notification-action.js');
 const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
 
@@ -25,28 +26,15 @@ function candidate(overrides = {}) {
 }
 
 function createBrowserRuntime() {
-  const values = new Map();
   const calls = [];
   let boundaryStatus = { required: true, ready: false };
   const Doke = {
-    accountStorage: {
-      registerDomain() {},
-      getJson(_domain, key, fallback) { return values.has(key) ? values.get(key) : fallback; },
-      setJson(_domain, key, value) { values.set(key, value); },
-      getScopeFingerprint() { return 'scope_h10'; }
-    },
     session: {
       getCurrentUser() { return { id: '4aa842d5-3a96-48f9-8a8d-ccb231e7c991', role: 'client' }; }
     },
     services: {}
   };
-  const browserWindow = { Doke };
-  const previousWindow = global.window;
-  global.window = browserWindow;
-  delete require.cache[ACTION_MODULE_PATH];
-  require(ACTION_MODULE_PATH);
-  if (previousWindow === undefined) delete global.window;
-  else global.window = previousWindow;
+  createRuntime(Doke);
 
   return {
     Doke,
