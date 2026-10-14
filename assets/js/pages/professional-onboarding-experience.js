@@ -130,6 +130,9 @@
 
     try {
       const profile = await service.complete(preparedDraft || serialize(form, step));
+      if (!profile?.id || !profile?.userId || profile.status === 'draft') {
+        throw new Error('A criação do perfil não foi confirmada. Confira seu perfil antes de tentar novamente.');
+      }
       core.invalidate({
         domains: ['profiles'],
         reason: 'professional-profile-created'

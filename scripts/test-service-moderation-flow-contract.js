@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const assert = require('node:assert/strict');
+const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
@@ -29,7 +31,7 @@ const checks = [
   [formExperience.includes('service?.submitForReview') && !formExperience.includes('service?.create(payload)'), 'formulário não usa a autoridade de revisão'],
   [repository.includes("invokeSelfService('submit_service_for_review'") && repository.includes('getOwnedReviewDraft') && supabaseBootstrap.includes('self-service-operations'), 'repositório não implementa submissão/versionamento via gateway Edge'],
   [repository.includes('isPubliclyVisible') && repository.includes('approvedContentRemainsPublic') && repository.includes("['published', 'changes_pending_review']"), 'catálogo não restringe versões não aprovadas'],
-  [repository.includes('canReadLocalService') && repository.includes('resolveReadableLocalService'), 'detalhe ainda expõe rascunhos locais a visitantes'],
+  [repository.includes('canReadFixtureService') && repository.includes('resolveReadableFixtureService'), 'detalhe deve aplicar leitura escopada às fixtures em memória'],
   [service.includes('submitForReview') && service.includes('getOwnedReviewDraft'), 'serviço de domínio não expõe revisão segura'],
   [detail.includes("quoteMode || 'default').toLowerCase() !== 'disabled'"), 'detalhe não remove orçamento quando desativado'],
   [budget.includes('recebe somente conversas neste anúncio') && budget.includes('changes_pending_review'), 'orçamento não bloqueia modo desativado/moderação'],
@@ -56,3 +58,35 @@ console.log('- orçamento possui etapa própria e três modos');
 console.log('- publicação direta foi substituída por revisão versionada');
 console.log('- catálogo, detalhe, orçamento, perfil e admin respeitam moderação');
 console.log('- schema, RLS e permissões estão materializados em migrations');
+
+// Exercise the current read authority, rather than relying on function names
+// to claim that private review drafts cannot be read by visitors or other owners.
+(async () => {
+  let actor = { id: 'fixture_owner', role: 'professional' };
+  const context = {
+    console, Promise, Date, Map, URLSearchParams,
+    Doke: { repositories: {}, services: {}, session: { getCurrentUser: () => actor } },
+    document: { documentElement: { setAttribute() {} }, dispatchEvent() {} },
+    CustomEvent: function(type, init) { this.type = type; this.detail = init?.detail; }
+  };
+  context.window = context;
+  vm.runInNewContext(repository, context);
+  const repo = context.Doke.repositories.services;
+  for (const status of ['draft', 'inactive', 'archived']) {
+    const id = 'fixture_' + status;
+    await repo.save({ id, title: id, ownerId: actor.id, professionalId: actor.id,
+      status, moderationStatus: status === 'draft' ? 'pending_review' : 'published' });
+    assert.equal((await repo.getById(id)).id, id, 'Owner must retain access to private listings.');
+    for (const stranger of [null, { id: 'fixture_stranger', role: 'professional' }, { id: 'fixture_client', role: 'client' }]) {
+      actor = stranger;
+      assert.equal(await repo.getById(id), null, 'Non-owner must not read a private listing.');
+      assert.equal((await repo.list({})).some(item => item.id === id), false, 'Non-public listing must not appear in discovery.');
+    }
+    actor = { id: 'fixture_owner', role: 'professional' };
+  }
+  await repo.save({ id: 'fixture_public', ownerId: actor.id, status: 'active', moderationStatus: 'published', approvedVersionId: 'fixture-approved' });
+  actor = null;
+  assert.equal((await repo.getById('fixture_public')).id, 'fixture_public', 'Approved active listing must remain public.');
+  assert.equal((await repo.list({})).length, 1);
+  console.log('- runtime: private drafts/inactive/archived blocked for guests, clients and other owners; approved listing public');
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -204,31 +204,45 @@
   const updateProviderLine = (root, service) => {
     const line = root.querySelector('.ad-detail-provider-line');
     if (!line) return;
+    line.hidden = !service.providerName;
 
     const link = document.createElement('a');
     link.href = service.providerId ? `perfil.html?id=${encodeURIComponent(service.providerId)}` : 'perfil.html';
-    link.textContent = service.providerName || 'Profissional Doke';
+    link.textContent = service.providerName || '';
 
     replaceChildrenText(line, ['Por ', link]);
   };
 
   const updateStats = (root, service) => {
     const stats = root.querySelectorAll('.ad-detail-stats li .ad-detail-stat-copy strong');
-    const values = [service.views, service.likes, service.messages, service.saves].map((value) => Number(value) || 0);
-    stats.forEach((node, index) => { node.textContent = String(values[index] || 0); });
+    const values = [service.views, service.likes, service.messages, service.saves];
+    stats.forEach((node, index) => {
+      const value = values[index];
+      const available = value != null && value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0;
+      node.textContent = available ? String(value) : '';
+      node.closest('li').hidden = !available;
+    });
   };
 
   const updateDescription = (root, service) => {
     setText(root, '#descricao-title', service.descriptionTitle || `Detalhes de ${service.title || 'serviço'}`);
 
     const descriptionSection = root.querySelector('.detail-section--description');
-    const description = descriptionSection?.querySelector('.detail-section__header + p');
-    if (description && service.description) description.textContent = service.description;
+    const description = descriptionSection?.querySelector('[data-detail-description]');
+    const text = typeof service.description === 'string' ? service.description.trim() : '';
+    if (description) {
+      description.textContent = text;
+      description.hidden = !text;
+    }
 
     const checklist = descriptionSection?.querySelector('.detail-checklist');
-    if (checklist && Array.isArray(service.checklist)) {
+    const items = Array.isArray(service.checklist)
+      ? service.checklist.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim()) : [];
+    if (descriptionSection) descriptionSection.hidden = !text && items.length === 0;
+    if (checklist) {
+      checklist.hidden = items.length === 0;
       checklist.textContent = '';
-      service.checklist.forEach((item) => {
+      items.forEach((item) => {
         const li = document.createElement('li');
         li.textContent = item;
         checklist.appendChild(li);
@@ -236,21 +250,43 @@
     }
   };
 
+  const updateBreadcrumb = (root, service) => {
+    const nav = root.querySelector('.ad-detail-breadcrumb');
+    if (!nav) return;
+    nav.textContent = '';
+    const entries = [['Início', 'index.html'], ['Serviços', 'resultados.html']];
+    if (service.category) entries.push([service.category, 'resultados.html?category=' + encodeURIComponent(service.category)]);
+    entries.push([service.detailTitle || service.title || 'Detalhe do anúncio', '']);
+    entries.forEach(([label, href], index) => {
+      if (index) {
+        const separator = document.createElement('span');
+        separator.setAttribute('aria-hidden', 'true');
+        separator.textContent = '›';
+        nav.appendChild(separator);
+      }
+      const node = document.createElement(href ? 'a' : 'span');
+      if (href) node.href = href;
+      else node.setAttribute('aria-current', 'page');
+      node.textContent = label;
+      nav.appendChild(node);
+    });
+  };
+
   const updateSpecs = (root, service) => {
     const specs = root.querySelector('.detail-spec-grid');
     if (!specs) return;
 
     const rows = Object.assign({
-      Categoria: service.category || 'Serviço',
-      'Materiais inclusos': service.specs?.['Materiais inclusos'] || 'Sob orçamento',
-      'Tipo de serviço': service.specs?.['Tipo de serviço'] || service.category || 'Serviço',
-      Garantia: service.specs?.Garantia || service.guarantee || 'Sob orçamento',
-      'Prazo médio': service.specs?.['Prazo médio'] || 'Sob orçamento',
-      Atendimento: service.specs?.Atendimento || service.location || 'Local a combinar'
+      Categoria: service.category,
+      Garantia: service.guarantee,
+      Atendimento: service.location
     }, service.specs || {});
+    const available = Object.entries(rows).filter(([, value]) => value != null && String(value).trim());
+    const section = specs.closest('.detail-section--service-details');
+    if (section) section.hidden = available.length === 0;
 
     specs.textContent = '';
-    Object.entries(rows).slice(0, 6).forEach(([label, value]) => {
+    available.slice(0, 6).forEach(([label, value]) => {
       const item = document.createElement('div');
       item.className = 'detail-spec';
       const labelNode = document.createElement('span');
@@ -275,7 +311,7 @@
   };
 
   const splitItems = (value) => {
-    if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
+    if (Array.isArray(value)) return value.filter((item) => typeof item === 'string').map((item) => item.trim()).filter(Boolean);
     return String(value || '').split(/\n|;|,/).map((item) => item.trim()).filter(Boolean);
   };
 
@@ -327,9 +363,17 @@
     const reviewSection = root.querySelector('[data-reviews-scope="service"]');
     const workerSection = root.querySelector('[data-announcement-related="workers"]');
     const publicationSection = root.querySelector('[data-announcement-related="publications"]');
-    if (reviewSection) reviewSection.hidden = reviews.length === 0 || Number(payload?.data?.service?.reviewsCount || 0) === 0;
-    if (workerSection) workerSection.hidden = workers.length === 0;
-    if (publicationSection) publicationSection.hidden = publications.length === 0;
+    const renderers = window.Doke?.renderers || {};
+    [[reviewSection, '[data-reviews-list]', reviews, renderers.reviewCard],
+      [workerSection, '[data-related-workers-list]', workers, renderers.workerCard],
+      [publicationSection, '[data-related-publications-list]', publications, renderers.publicationCard]]
+      .forEach(([section, selector, items, render]) => {
+        if (!section) return;
+        const list = section.querySelector(selector);
+        if (list) list.textContent = '';
+        if (list && typeof render === 'function') items.forEach((item) => list.appendChild(render(item)));
+        section.hidden = !list || list.children.length === 0;
+      });
   };
 
   const updateListingStatus = (root, service) => {
@@ -488,8 +532,8 @@
     const priceNote = service.paymentLabel || (priceLabel === 'Sob orçamento'
       ? 'Valor definido após o pedido'
       : 'Valor informado no anúncio');
-    const responseLabel = service.responseTime || 'Não informado';
-    const guaranteeLabel = service.guarantee || service.specs?.Garantia || 'Não informada';
+    const responseLabel = service.responseTime || '';
+    const guaranteeLabel = service.guarantee || service.specs?.Garantia || '';
 
     setText(root, '.ad-action-card__price', priceLabel);
     setText(root, '.ad-action-card__subtext', service.paymentLabel || 'Valor final após orçamento');
@@ -511,12 +555,19 @@
     if (compactMessageCta) compactMessageCta.href = getMessageHref(service);
 
     const meta = root.querySelectorAll('.ad-action-card__meta dd');
-    if (meta[0]) meta[0].textContent = responseLabel;
-    if (meta[1]) meta[1].textContent = guaranteeLabel;
+    [responseLabel, guaranteeLabel].forEach((value, index) => {
+      if (meta[index]) { meta[index].textContent = value; meta[index].parentElement.hidden = !value; }
+    });
+    [['[data-detail-decision-response]', responseLabel], ['[data-detail-decision-guarantee]', guaranteeLabel]].forEach(([selector, value]) => {
+      const node = root.querySelector(selector);
+      if (node) { node.textContent = value; node.closest('dl > div').hidden = !value; }
+    });
     updateOwnerDashboard(root, service);
   };
 
   const updateProviderCard = (root, service) => {
+    const card = root.querySelector('.provider-card');
+    if (card) card.hidden = !service.providerName;
     const avatar = root.querySelector('.provider-card__avatar');
     if (avatar) {
       avatar.src = service.providerAvatar || firstImage(service);
@@ -544,7 +595,8 @@
     const locationCard = root.querySelector('.location-card p');
     if (locationCard) {
       locationCard.innerHTML = '';
-      locationCard.appendChild(document.createTextNode(service.location || 'Local a combinar'));
+      locationCard.appendChild(document.createTextNode(service.location || ''));
+      locationCard.closest('.location-card').hidden = !service.location && !service.region;
       if (service.region) {
         locationCard.appendChild(document.createElement('br'));
         locationCard.appendChild(document.createTextNode(`Região ${service.region}`));
@@ -561,6 +613,7 @@
       return Promise.resolve([]);
     }
     return api.list({ status: 'active', fresh: true }).then((items) => {
+      if (!root.isConnected || lastHydratedService !== service) return [];
       const related = (Array.isArray(items) ? items : [])
         .filter((item) => item && item.id !== service.id)
         .sort((a, b) => Number(b.category === service.category) - Number(a.category === service.category))
@@ -570,6 +623,7 @@
       section.hidden = related.length === 0;
       return related;
     }).catch(() => {
+      if (!root.isConnected || lastHydratedService !== service) return [];
       grid.textContent = '';
       section.hidden = true;
       return [];
@@ -622,11 +676,13 @@
     const root = document.querySelector('[data-detail-page-root]');
     const service = payload?.data?.service || payload?.service;
     if (!root || !service) return;
+    const routeId = window.Doke?.detailAdDataController?.getServiceId(root);
+    if (payload?.serviceId && routeId && String(payload.serviceId) !== String(routeId)) return;
 
     lastHydratedService = service;
     root.dataset.serviceId = service.id || '';
     updateGallery(root, service);
-    setText(root, '.ad-detail-breadcrumb span:last-child', service.category || 'Detalhe do anúncio');
+    updateBreadcrumb(root, service);
     setText(root, '.ad-detail-title-block .detail-eyebrow', service.category || 'Serviço Doke');
     setText(root, '#ad-detail-title', service.detailTitle || service.title || 'Serviço Doke');
     setText(root, '.ad-detail-id', formatId(service.id));
@@ -868,6 +924,7 @@
   });
 
   document.addEventListener('doke:detail-ad-data-ready', (event) => hydrateDetail(event.detail));
+  document.addEventListener('doke:detail-ad-data-loading', () => { lastHydratedService = null; });
   document.addEventListener('doke:auth-session-change', () => {
     const root = document.querySelector('[data-detail-page-root]');
     if (!root || !lastHydratedService) return;

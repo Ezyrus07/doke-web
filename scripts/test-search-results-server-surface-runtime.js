@@ -12,6 +12,7 @@ const source = fs.readFileSync(
 
 function element(name) {
   let text = '';
+  const listeners = new Map();
   const node = {
     name,
     hidden: false,
@@ -19,9 +20,43 @@ function element(name) {
     dataset: {},
     attributes: new Map(),
     children: [],
+    parentNode: null,
     setAttribute(key, value) { this.attributes.set(key, String(value)); },
     getAttribute(key) { return this.attributes.get(key) || null; },
-    appendChild(child) { this.children.push(child); return child; },
+    removeAttribute(key) { this.attributes.delete(key); },
+    appendChild(child) { child.parentNode = this; this.children.push(child); return child; },
+    insertBefore(child, reference) {
+      if (reference == null) return this.appendChild(child);
+      const index = this.children.indexOf(reference);
+      assert(index >= 0, 'mock insertBefore reference must belong to parent');
+      child.parentNode = this;
+      this.children.splice(index, 0, child);
+      return child;
+    },
+    get nextSibling() {
+      if (!this.parentNode) return null;
+      return this.parentNode.children[this.parentNode.children.indexOf(this) + 1] || null;
+    },
+    addEventListener(type, listener) {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type).add(listener);
+    },
+    removeEventListener(type, listener) { listeners.get(type)?.delete(listener); },
+    dispatchEvent(event) {
+      for (const listener of listeners.get(event.type) || []) listener(event);
+      return true;
+    },
+    querySelector(selector) {
+      const match = selector.match(/^\[([^\]]+)\]$/);
+      const attribute = match && match[1];
+      const datasetKey = attribute?.replace(/^data-/, '').replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      for (const child of this.children) {
+        if (attribute && (child.attributes?.has(attribute) || Object.hasOwn(child.dataset || {}, datasetKey))) return child;
+        const nested = child.querySelector?.(selector);
+        if (nested) return nested;
+      }
+      return null;
+    },
     get childCount() { return this.children.length; },
     set innerHTML(value) {
       if (value === '') this.children = [];
@@ -75,8 +110,21 @@ function createRuntime(options = {}) {
     }
   }
 
+  const documentEvents = element('document');
+  const layout = element('layout');
+  const summary = element('summary');
+  layout.dataset.resultsLayout = '';
+  summary.dataset.resultsSummary = '';
   const document = {
-    dispatchEvent(event) { events.push(event); }
+    readyState: 'complete',
+    querySelector(selector) {
+      if (selector === '[data-results-layout]') return layout;
+      return layout.querySelector(selector);
+    },
+    createElement(tag) { return element(tag); },
+    addEventListener(...args) { documentEvents.addEventListener(...args); },
+    removeEventListener(...args) { documentEvents.removeEventListener(...args); },
+    dispatchEvent(event) { events.push(event); return documentEvents.dispatchEvent(event); }
   };
 
   const context = {
@@ -100,9 +148,6 @@ function createRuntime(options = {}) {
     favoriteHydrations: 0
   };
   context.window = context;
-  vm.createContext(context);
-  vm.runInContext(source, context, { filename: 'server-results-surface.js' });
-
   const ui = {
     grid: element('grid'),
     loadMoreButton: element('loadMoreButton'),
@@ -117,6 +162,13 @@ function createRuntime(options = {}) {
     refreshed: 0,
     hydrationErrors: []
   };
+  ui.grid.dataset.resultsGrid = '';
+  ui.description.dataset.resultsDescription = '';
+  layout.appendChild(summary);
+  summary.appendChild(ui.description);
+  layout.appendChild(ui.grid);
+  vm.createContext(context);
+  vm.runInContext(source, context, { filename: 'server-results-surface.js' });
 
   const resultContext = {
     query: 'eletricista',
@@ -146,13 +198,15 @@ function createRuntime(options = {}) {
     renderActiveChips(query, filters, count) { ui.chips.push({ query, filters, count }); }
   };
 
-  return { context, calls, events, ui, resultContext };
+  return { context, calls, events, ui, resultContext, document, layout };
 }
 
 (async () => {
   const runtime = createRuntime();
   const surface = runtime.context.Doke.searchResultsServerSurface;
   assert(surface, 'server results surface must register');
+  assert(runtime.document.querySelector('[data-search-authority-note]'), 'mock must exercise disclosure node construction');
+  assert(runtime.document.querySelector('[data-search-retry]'), 'mock must exercise retry control construction');
 
   await surface.render(runtime.resultContext);
   assert.strictEqual(runtime.calls.length, 1, 'initial render must issue one canonical request');

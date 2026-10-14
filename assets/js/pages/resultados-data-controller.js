@@ -14,57 +14,51 @@
     return root.querySelector('[data-results-grid]');
   }
 
+  function appendSkeletonNode(parent, tag, className, text) {
+    var node = document.createElement(tag);
+    node.className = className;
+    if (text) node.textContent = text;
+    parent.appendChild(node);
+    return node;
+  }
+
   function createQuerySkeletonCard() {
-    return [
-      '<article class="results-query-skeleton__card doke-card" aria-hidden="true">',
-      '  <span class="results-query-skeleton__media doke-skeleton-line"></span>',
-      '  <div class="results-query-skeleton__body">',
-      '    <span class="results-query-skeleton__category doke-skeleton-line"></span>',
-      '    <span class="results-query-skeleton__title doke-skeleton-line"></span>',
-      '    <div class="results-query-skeleton__seller">',
-      '      <span class="results-query-skeleton__avatar doke-skeleton-line"></span>',
-      '      <span class="results-query-skeleton__seller-copy">',
-      '        <span class="results-query-skeleton__seller-name doke-skeleton-line"></span>',
-      '        <span class="results-query-skeleton__rating doke-skeleton-line"></span>',
-      '      </span>',
-      '    </div>',
-      '    <span class="results-query-skeleton__tags">',
-      '      <span class="results-query-skeleton__tag doke-skeleton-line"></span>',
-      '      <span class="results-query-skeleton__tag doke-skeleton-line"></span>',
-      '    </span>',
-      '    <span class="results-query-skeleton__location doke-skeleton-line"></span>',
-      '    <span class="results-query-skeleton__footer">',
-      '      <span class="results-query-skeleton__price doke-skeleton-line"></span>',
-      '      <span class="results-query-skeleton__button doke-skeleton-line"></span>',
-      '    </span>',
-      '  </div>',
-      '</article>'
-    ].join('');
+    var card = document.createElement('article');
+    card.className = 'results-query-skeleton__card doke-card';
+    card.setAttribute('aria-hidden', 'true');
+    appendSkeletonNode(card, 'span', 'results-query-skeleton__media doke-skeleton-line');
+    var body = appendSkeletonNode(card, 'div', 'results-query-skeleton__body');
+    appendSkeletonNode(body, 'span', 'results-query-skeleton__category doke-skeleton-line');
+    appendSkeletonNode(body, 'span', 'results-query-skeleton__title doke-skeleton-line');
+    var seller = appendSkeletonNode(body, 'div', 'results-query-skeleton__seller');
+    appendSkeletonNode(seller, 'span', 'results-query-skeleton__avatar doke-skeleton-line');
+    var sellerCopy = appendSkeletonNode(seller, 'span', 'results-query-skeleton__seller-copy');
+    appendSkeletonNode(sellerCopy, 'span', 'results-query-skeleton__seller-name doke-skeleton-line');
+    appendSkeletonNode(sellerCopy, 'span', 'results-query-skeleton__rating doke-skeleton-line');
+    var tags = appendSkeletonNode(body, 'span', 'results-query-skeleton__tags');
+    appendSkeletonNode(tags, 'span', 'results-query-skeleton__tag doke-skeleton-line');
+    appendSkeletonNode(tags, 'span', 'results-query-skeleton__tag doke-skeleton-line');
+    appendSkeletonNode(body, 'span', 'results-query-skeleton__location doke-skeleton-line');
+    var footer = appendSkeletonNode(body, 'span', 'results-query-skeleton__footer');
+    appendSkeletonNode(footer, 'span', 'results-query-skeleton__price doke-skeleton-line');
+    appendSkeletonNode(footer, 'span', 'results-query-skeleton__button doke-skeleton-line');
+    return card;
   }
 
   function ensureQuerySkeleton(root) {
     if (!root || !root.querySelector) return null;
     var loading = root.querySelector('[data-results-loading]');
     if (!loading || loading.dataset.querySkeletonReady === 'true') return loading;
-
-    var cards = '';
-    for (var index = 0; index < QUERY_SKELETON_CARD_COUNT; index += 1) {
-      cards += createQuerySkeletonCard();
-    }
-
     loading.classList.add('results-loading--skeleton', 'results-query-skeleton');
     loading.dataset.querySkeletonReady = 'true';
     loading.setAttribute('aria-label', 'Carregando anúncios');
-    loading.innerHTML = [
-      '<span class="results-query-skeleton__status">Carregando anúncios...</span>',
-      '<div class="results-query-skeleton__grid" aria-hidden="true">',
-      cards,
-      '</div>'
-    ].join('');
-
+    loading.textContent = '';
+    appendSkeletonNode(loading, 'span', 'results-query-skeleton__status', 'Carregando anúncios...');
+    var grid = appendSkeletonNode(loading, 'div', 'results-query-skeleton__grid');
+    grid.setAttribute('aria-hidden', 'true');
+    for (var index = 0; index < QUERY_SKELETON_CARD_COUNT; index += 1) grid.appendChild(createQuerySkeletonCard());
     return loading;
   }
-
   function getSearchContract() {
     var service = Doke.services && Doke.services.search;
     if (!service || typeof service.getContract !== 'function') return {};

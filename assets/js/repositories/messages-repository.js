@@ -12,6 +12,28 @@
   var LEGACY_STORAGE_KEY = 'doke.messages.local.v1';
   var FALLBACK_URL = 'assets/data/mock-messages.json';
   var cache = null;
+  var sessionGeneration = 0;
+  var cacheIdentity = '';
+  function synchronizeCacheIdentity() {
+    var user = root.DokeAuth?.service?.getCurrentUser?.() || Doke.session?.getCurrentUser?.() || null;
+    var identity = JSON.stringify([user?.id || '', user?.role || '', user?.accountStatus || '']);
+    if (identity !== cacheIdentity) {
+      cacheIdentity = identity;
+      sessionGeneration += 1;
+      cache = null;
+      cacheAuthority = '';
+      fixtureMemory = [];
+      fixtureMemoryInitialized = false;
+    }
+    return sessionGeneration;
+  }
+  document.addEventListener('doke:auth-session-change', synchronizeCacheIdentity);
+  function assertCacheIdentity(generation) {
+    if (generation === synchronizeCacheIdentity()) return;
+    var error = new Error('Session changed while loading repository data.');
+    error.code = 'DOKE_SESSION_CHANGED';
+    throw error;
+  }
   var cacheAuthority = '';
   var fixtureMemory = [];
   var fixtureMemoryInitialized = false;
@@ -354,12 +376,14 @@
 
   function loadLocal(options) {
     options = options || {};
+    var generation = synchronizeCacheIdentity();
     if (cache && cacheAuthority === 'fixture-memory' && !options.fresh) return Promise.resolve(clone(cache));
     if (options.currentUser !== false) {
       cache = mergeById(readLocal());
       return Promise.resolve(clone(cache));
     }
     return loadBase(options).catch(function () { return []; }).then(function (base) {
+      assertCacheIdentity(generation);
       cache = mergeById(Array.isArray(base) ? base : [], readLocal());
       return clone(cache);
     });
@@ -480,6 +504,7 @@
 
   function load(options) {
     options = options || {};
+    var generation = synchronizeCacheIdentity();
     var authority = getAuthorityMode();
     if (cache && cacheAuthority === authority && !options.fresh) return Promise.resolve(clone(cache));
     if (authority === 'fixture-memory') {
@@ -495,6 +520,7 @@
       return Promise.reject(unavailable);
     }
     return fetchRemoteConversations().then(function (remote) {
+      assertCacheIdentity(generation);
       cache = mergeById(remote);
       cacheAuthority = 'remote-only';
       lastRemoteError = null;
@@ -638,6 +664,7 @@
     });
   }
 
+  synchronizeCacheIdentity();
   repositories.messages = Object.freeze({
     storageKey: STORAGE_KEY, legacyStorageKey: LEGACY_STORAGE_KEY, normalize: normalizeConversation, normalizeMessage: normalizeMessage,
     readLocal: readLocal, writeLocal: writeLocal, listLocal: listLocal, load: load, list: list, getById: getById, save: save,

@@ -1032,9 +1032,13 @@ const initBudgetPage = () => {
         if (!latestService || String(latestService.status || "active").toLowerCase() !== "active") {
           throw new Error("Este anúncio não está mais aceitando novos pedidos.");
         }
-        let savedOrder = ordersService?.create
-          ? await ordersService.create(payload)
-          : Object.assign({ id: `order-${Date.now()}` }, payload);
+        if (typeof ordersService?.create !== "function") {
+          throw new Error("O serviço de pedidos não está disponível. Recarregue a página e tente novamente.");
+        }
+        let savedOrder = await ordersService.create(payload);
+        if (!savedOrder?.id) {
+          throw new Error("Não foi possível confirmar o pedido. Confira seus pedidos antes de tentar novamente.");
+        }
 
         if (attachmentFiles.length) {
           if (!attachmentsRepository?.uploadOrderFiles) {

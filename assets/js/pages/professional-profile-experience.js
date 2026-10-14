@@ -102,7 +102,7 @@
     var user = Doke.session && typeof Doke.session.getCurrentUser === 'function' ? Doke.session.getCurrentUser() : null;
     var servicesApi = Doke.services && Doke.services.services;
     var servicesPromise = servicesApi && typeof servicesApi.listByProfessional === 'function'
-      ? Promise.resolve(servicesApi.listByProfessional(profileId, { status: ['active', 'inactive', 'archived'], sort: 'updated_desc' }))
+      ? Promise.resolve(servicesApi.listByProfessional(profileId, { status: ['draft', 'active', 'inactive', 'archived'], sort: 'updated_desc' }))
       : Promise.resolve([]);
 
     return Promise.all([profilePromise, professionalPromise, servicesPromise]).then(function (results) {
@@ -346,7 +346,9 @@
       saveButton.textContent = 'Salvando…';
     }
     setEditorStatus('Salvando alterações…', 'loading');
-    Promise.resolve(service.update(collectEditorPayload())).then(function () {
+    Promise.resolve().then(function () {
+      return service.update(collectEditorPayload());
+    }).then(function () {
       return loadProfessionalContext((Doke.session && Doke.session.getCurrentUser && Doke.session.getCurrentUser() || {}).id);
     }).then(function (payload) {
       professionalLastPayload = payload;

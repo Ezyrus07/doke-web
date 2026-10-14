@@ -37,7 +37,7 @@
         ? (editing
           ? 'Preparando uma nova versão sem substituir o anúncio atualmente aprovado.'
           : 'Salvando a versão e enviando as informações para a fila de análise.')
-        : (editing
+        : (editing && detail?.status !== 'draft'
           ? 'A versão pública anterior permanece disponível enquanto as alterações são analisadas.'
           : 'Seu anúncio ficará visível para os clientes somente depois da aprovação.');
       if (submitStateActions) submitStateActions.hidden = isPending;
@@ -510,8 +510,8 @@
         nextButton.disabled = true;
         showSubmitState('pending');
         experience.submit()
-          .then(() => {
-            showSubmitState('success');
+          .then((saved) => {
+            showSubmitState('success', saved);
           })
           .catch((error) => {
             hideSubmitState();

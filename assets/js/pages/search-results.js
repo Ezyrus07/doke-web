@@ -148,8 +148,8 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const locationOptions = searchData.locationOptions || {};
   const states = locationOptions.states || locationOptions.statés || [];
   const citiesByState = locationOptions.citiesByState || locationOptions.citiesByStaté || {};
-  const neighborhoodsByCity = locationOptions.neighborhoodsByCity || {};
-  const cepLookup = locationOptions.cepLookup || {};
+  const getNeighborhoods = () => locationOptions.getNeighborhoods?.(els.stateSelect?.value || '', els.citySelect?.value || '') || [];
+  let cepRequestId = 0;
 
   let activeModalResolver = null;
   let activeSearchIndex = -1;
@@ -367,9 +367,13 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const fillSelectOptions = (select, values, placeholder) => {
     if (!select) return;
     const current = select.value;
-    const options = ['<option value="">' + placeholder + '</option>']
-      .concat((values || []).map((value) => `<option value="${String(value)}">${String(value)}</option>`));
-    select.innerHTML = options.join('');
+    select.textContent = '';
+    ['', ...(values || [])].forEach((value) => {
+      const option = document.createElement('option');
+      option.value = String(value);
+      option.textContent = value ? String(value) : placeholder;
+      select.appendChild(option);
+    });
     if ([...select.options].some((option) => option.value === current)) {
       select.value = current;
     }
@@ -411,10 +415,22 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       .join('');
   };
 
+  const ensureLocationValue = (select, value) => {
+    if (!select || !value) return;
+    if (![...select.options].some((option) => option.value === value)) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
+    }
+    select.value = value;
+    uiSelectApi?.refresh(select);
+  };
+
   const bootstrapLocationSelects = () => {
     fillSelectOptions(els.stateSelect, states, 'Qualquer estado');
 
-    const stateValue = params.get('state') || params.get('staté') || '';
+    const stateValue = String(params.get('state') || params.get('staté') || params.get('estado') || '').toUpperCase();
     if (els.stateSelect && stateValue) {
       els.stateSelect.value = stateValue;
       uiSelectApi?.refresh(els.stateSelect);
@@ -422,17 +438,17 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
     const cityOptions = citiesByState[els.stateSelect?.value || ''] || [];
     fillSelectOptions(els.citySelect, cityOptions, 'Qualquer cidade');
-    const cityValue = params.get('city') || '';
+    const cityValue = params.get('city') || params.get('cidade') || '';
     if (els.citySelect && cityValue) {
-      els.citySelect.value = cityValue;
+      ensureLocationValue(els.citySelect, cityValue);
       uiSelectApi?.refresh(els.citySelect);
     }
 
-    const neighborhoodOptions = neighborhoodsByCity[els.citySelect?.value || ''] || [];
+    const neighborhoodOptions = getNeighborhoods();
     fillSelectOptions(els.neighborhoodSelect, neighborhoodOptions, 'Qualquer bairro');
-    const neighborhoodValue = params.get('neighborhood') || '';
+    const neighborhoodValue = params.get('neighborhood') || params.get('bairro') || '';
     if (els.neighborhoodSelect && neighborhoodValue) {
-      els.neighborhoodSelect.value = neighborhoodValue;
+      ensureLocationValue(els.neighborhoodSelect, neighborhoodValue);
       uiSelectApi?.refresh(els.neighborhoodSelect);
     }
 
@@ -536,6 +552,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     params.delete('state');
     params.delete('city');
     params.delete('neighborhood');
+    ['staté', 'estado', 'cidade', 'bairro'].forEach((name) => params.delete(name));
     params.delete('minRating');
     ['guaranteed', 'emergency', 'online', 'availableToday'].forEach((name) => params.delete(name));
 
@@ -971,6 +988,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const closeInlineCep = (clearValue = false) => {
+    if (clearValue) cepRequestId++;
     if (!els.cepInput) return;
     els.cepRow?.classList.remove('is-editing');
     els.cepInput.hidden = true;
@@ -981,15 +999,17 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     }
   };
 
-  const applyCepValue = (cep) => {
+  const applyCepValue = async (cep) => {
+    const requestId = ++cepRequestId;
     const cleanCep = String(cep || '').replace(/\D/g, '');
-    const formattedCep = cleanCep.length === 8 ? `${cleanCep.slice(0, 5)}-${cleanCep.slice(5)}` : cep;
-    const cepData = cepLookup[formattedCep] || cepLookup[cleanCep];
+    const cepData = await locationOptions.lookupCep?.(cleanCep);
+    if (signal.aborted || requestId !== cepRequestId) return false;
     if (!cepData) {
       els.cepInput?.setAttribute('aria-invalid', 'true');
       return false;
     }
 
+    locationOptions.rememberLocation?.(cepData);
     if (els.stateSelect) {
       els.stateSelect.value = cepData.state || cepData.staté || '';
       uiSelectApi?.refresh(els.stateSelect);
@@ -999,7 +1019,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       els.citySelect.value = cepData.city || '';
       uiSelectApi?.refresh(els.citySelect);
     }
-    fillSelectOptions(els.neighborhoodSelect, neighborhoodsByCity[els.citySelect?.value || ''] || [], 'Qualquer bairro');
+    fillSelectOptions(els.neighborhoodSelect, getNeighborhoods(), 'Qualquer bairro');
     if (els.neighborhoodSelect) {
       els.neighborhoodSelect.value = cepData.neighborhood || '';
       uiSelectApi?.refresh(els.neighborhoodSelect);
@@ -1015,7 +1035,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     applyCepValue(cep);
   };
 
-  const applyInlineCep = () => {
+  const applyInlineCep = async () => {
     if (!els.cepInput) return;
     const cleanCep = String(els.cepInput.value || '').replace(/\D/g, '');
     if (!cleanCep) {
@@ -1023,7 +1043,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       return;
     }
     if (cleanCep.length < 8) return;
-    const applied = applyCepValue(els.cepInput.value);
+    const applied = await applyCepValue(els.cepInput.value);
     if (applied) {
       if (els.cepFillButton) els.cepFillButton.textContent = formatCepInputValue(els.cepInput.value);
       closeInlineCep(false);
@@ -1055,6 +1075,17 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   renderCategoryFilters();
   enhanceResultsSelects();
   bootstrapLocationSelects();
+  locationOptions.loadCities?.().then(() => {
+    if (signal.aborted) return;
+    const current = els.citySelect?.value || '';
+    fillSelectOptions(els.citySelect, citiesByState[els.stateSelect?.value || ''] || [], 'Qualquer cidade');
+    ensureLocationValue(els.citySelect, current);
+  }).catch(() => {
+    if (signal.aborted) return;
+    const placeholder = els.citySelect?.querySelector('option[value=""]');
+    if (placeholder) placeholder.textContent = 'Municípios indisponíveis';
+    if (els.citySelect) uiSelectApi?.refresh(els.citySelect);
+  });
   renderResultsRecommendations();
   renderResultsHistory();
   renderResultsSuggestions(els.resultsSearchInput.value);
@@ -1175,6 +1206,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   }, { signal });
 
   els.cepInput?.addEventListener('input', () => {
+    cepRequestId++;
     els.cepInput.value = formatCepInputValue(els.cepInput.value);
     els.cepInput.removeAttribute('aria-invalid');
     if (String(els.cepInput.value || '').replace(/\D/g, '').length === 8) {
@@ -1206,12 +1238,17 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   els.filtersForm.addEventListener('change', (event) => {
     if (event.target === els.stateSelect) {
+      cepRequestId++;
+      if (els.citySelect) els.citySelect.value = '';
+      if (els.neighborhoodSelect) els.neighborhoodSelect.value = '';
       fillSelectOptions(els.citySelect, citiesByState[els.stateSelect?.value || ''] || [], 'Qualquer cidade');
       fillSelectOptions(els.neighborhoodSelect, [], 'Qualquer bairro');
     }
 
     if (event.target === els.citySelect) {
-      fillSelectOptions(els.neighborhoodSelect, neighborhoodsByCity[els.citySelect?.value || ''] || [], 'Qualquer bairro');
+      cepRequestId++;
+      if (els.neighborhoodSelect) els.neighborhoodSelect.value = '';
+      fillSelectOptions(els.neighborhoodSelect, getNeighborhoods(), 'Qualquer bairro');
     }
 
     loadResults();

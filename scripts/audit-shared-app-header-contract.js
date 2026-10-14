@@ -98,8 +98,8 @@ for (const [file, expected] of Object.entries(pageContracts)) {
   if (expected.variant === 'contextual' && hasLocation) {
     fail(file, 'contextual app-header must not expose the standard location control');
   }
-  if (expected.variant === 'standard' && (!/\bdata-topbar-location-value\b/i.test(html) || !/\bdata-location-fallback=["']Belo Horizonte, MG["']/i.test(html))) {
-    fail(file, 'standard app-header location must use the shared Belo Horizonte fallback contract');
+  if (expected.variant === 'standard' && (!/\bdata-topbar-location-value\b/i.test(html) || !/\bdata-location-fallback=["']Escolher localiza\u00e7\u00e3o["']/i.test(html))) {
+    fail(file, 'standard app-header location must use the unselected location fallback contract');
   }
 
   const contextTag = (html.match(/<[^>]+\bdata-header-context\b[^>]*>/i) || [])[0] || '';

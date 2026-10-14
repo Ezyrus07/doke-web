@@ -467,7 +467,7 @@
 
 
   function unsupportedMutation(methodName, resourceName) {
-    return Promise.reject(new Error('Mock repository provider does not implement ' + methodName + '() for "' + getResourceName(resourceName) + '". Use the domain repository/service that owns localStorage writes until the API adapter migration reaches this resource.'));
+    return Promise.reject(new Error('Mock repository provider does not implement ' + methodName + '() for "' + getResourceName(resourceName) + '". Use the canonical domain service and server command boundary; this fixture provider cannot authorize mutations.'));
   }
 
   function create(resourceName, payload) {

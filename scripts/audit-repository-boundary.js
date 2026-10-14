@@ -7,7 +7,7 @@ const requiredFiles = [
   'assets/js/services/repository-boundary.js',
   'assets/js/services/mock-repository-provider.js',
   'docs/REPOSITORY-BOUNDARY.md',
-  'docs/GLOBAL-CYCLE-30-REPOSITORY-BOUNDARY.md'
+  'docs/DATA-READY-CONTRACTS.md'
 ];
 
 const report = {

@@ -513,3 +513,126 @@ test('pagination preserves focus, rollback and retry', async ({ page }) => {
   expect(error.state.title).toBe('Busca indisponível');
   expect(error.state.errorHidden).toBe(false);
 });
+
+
+// PD-DEMO-001: Shared header disclosure contracts; tests are part of the existing classified Results lane.
+const tabletDesktop = [
+  { name: 'tablet-608', width: 608, height: 926 },
+  { name: 'tablet-820', width: 820, height: 1180 },
+  { name: 'tablet-1024', width: 1024, height: 768 },
+  { name: 'desktop-1366', width: 1366, height: 768 },
+];
+
+
+const expectNoHorizontalOverflow = async (page) => {
+  await expect.poll(() => page.evaluate(() => (
+    Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) - innerWidth
+  ))).toBeLessThanOrEqual(1);
+};
+
+for (const viewport of tabletDesktop) {
+  test.describe(`PD-DEMO-001 ${viewport.name}`, () => {
+    test.use({ viewport: { width: viewport.width, height: viewport.height } });
+
+    for (const pathname of ['index.html', 'resultados.html', 'comunidade.html']) {
+      test(`shared header disclosure works on ${pathname}`, async ({ page }) => {
+        await page.goto(`/${pathname}`);
+        await expect.poll(() => page.evaluate(() => document.documentElement.dataset.dokeDocumentBoot), { timeout: 20000 }).toBe('ready');
+        const trigger = page.locator('.app-header .home-side-meta__search:visible').first();
+        await expect(trigger).toBeVisible();
+
+        await trigger.click();
+        const form = page.locator('.app-header .home-side-meta__search-form[data-header-search-disclosure]').first();
+        const input = form.locator('input[type="search"], input[type="text"]').first();
+
+        await expect(form).toBeVisible();
+        await expect(form).toHaveClass(/is-expanded/);
+        await expect(form).toHaveAttribute('data-search-expanded', '');
+        await expect(form).toHaveCSS('display', 'flex');
+        await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        await expect(input).toBeFocused();
+
+        await input.fill('encanador Salvador');
+        await expect(input).toHaveValue('encanador Salvador');
+        await input.press('Escape');
+        await expect(form).not.toHaveClass(/is-expanded/);
+        await expect(form).toBeHidden();
+        await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        await expect(trigger).toBeFocused();
+        expect(new URL(page.url()).pathname).toBe(`/${pathname}`);
+        await expectNoHorizontalOverflow(page);
+      });
+    }
+  });
+}
+
+test.describe('PD-DEMO-001 mobile-390', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('home preserves its existing search form', async ({ page }) => {
+    await page.goto('/index.html');
+    const form = page.locator('.doke-mobile-shell form.doke-mobile-shell__search').first();
+    await expect(form).toBeVisible();
+    const input = form.locator('input[type="search"]').first();
+    await expect(input).toBeVisible();
+    await input.fill('encanador');
+    await expect(input).toHaveValue('encanador');
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('results inline search opens, closes and restores focus', async ({ page }) => {
+    await page.goto('/resultados.html?q=encanador&type=services');
+    const trigger = page.locator('[data-doke-mobile-shell] [data-shell-search-trigger]').first();
+    const form = page.locator('[data-shell-inline-search-mode="results"]').first();
+    const input = form.locator('input[type="search"]').first();
+    await expect(trigger).toBeVisible();
+    await expect(form).toBeHidden();
+    await trigger.click();
+    await expect(form).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(input).toBeFocused();
+    await input.fill('pintura');
+    await input.press('Escape');
+    await expect(form).toBeHidden();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toBeFocused();
+    await expectNoHorizontalOverflow(page);
+  });
+});
+
+
+// PD-LOCATION-001: never claim a default location without an explicit user choice.
+test.describe('PD-LOCATION-001 unselected and selected location', () => {
+  test.use({ viewport: { width: 1366, height: 768 } });
+
+  test('unselected location remains neutral; new-address form has empty city and UF', async ({ page }) => {
+    const neutral = 'Escolher localiza\u00e7\u00e3o';
+    await page.goto('/index.html?dokeDataProvider=mock');
+    const headerLocation = page.locator('.app-header [data-topbar-location-value]').first();
+    await expect(headerLocation).toHaveText(neutral);
+    await page.locator('.app-header .home-side-meta__location').click();
+    const modal = page.locator('[data-home-address-modal]');
+    await expect(modal).toBeVisible();
+    await expect(modal.locator('[name="cidade"]')).toHaveValue('');
+    await expect(modal.locator('[name="uf"]')).toHaveValue('');
+    await expect(modal.locator('h2')).toHaveText('Novo endere\u00e7o');
+    await modal.locator('[data-home-address-close]').first().click();
+    await expect(headerLocation).toHaveText(neutral);
+    await page.goto('/resultados.html?dokeDataProvider=mock');
+    await expect(page.locator('.app-header [data-topbar-location-value]')).toHaveText(neutral);
+  });
+
+  test('an explicitly saved city is shown consistently and remains after navigation', async ({ page }) => {
+    await page.goto('/index.html?dokeDataProvider=mock');
+    await page.evaluate(() => {
+      localStorage.setItem('doke.defaultServiceLocation', JSON.stringify({
+        titulo: 'Endereco sintetico QA', cidade: 'Campinas', uf: 'SP',
+        rua: 'Rua Exemplo', numero: '10', bairro: 'Centro'
+      }));
+    });
+    await page.reload();
+    await expect(page.locator('.app-header [data-topbar-location-value]')).toHaveText('Campinas, SP');
+    await page.goto('/resultados.html?dokeDataProvider=mock');
+    await expect(page.locator('.app-header [data-topbar-location-value]')).toHaveText('Campinas, SP');
+  });
+});

@@ -170,12 +170,29 @@
     if (!access || typeof access.assert !== 'function') {
       return Promise.reject(new Error('A autoridade de acesso profissional não foi carregada.'));
     }
-    return access.assert(action).then(function (result) {
+    return access.assert(action).then(async function (result) {
       var repository = assertRepository();
       var actor = result.user || currentUser() || {};
+      var subjectId = normalizeText(options.serviceId || payload && payload.id);
+      var current = subjectId ? await repository.getById(subjectId) : null;
+      if (!current && subjectId && !usesRemoteAuthority(repository, payload) && typeof repository.load === 'function') {
+        var fixtures = await repository.load();
+        if (fixtures.some(function (item) { return String(item.id) === subjectId; })) {
+          throw new Error('Você não pode alterar este serviço.');
+        }
+      }
+      if (current) {
+        assertOwned(current, actor);
+        if (current.status === STATUS.ARCHIVED) throw new Error('Serviço arquivado não pode ser editado.');
+      } else if (options.editMode) {
+        throw new Error('Serviço não encontrado para edição.');
+      }
       var professionalProfile = result.professionalProfile || {};
       var now = new Date().toISOString();
-      var service = Object.assign({}, payload || {}, {
+      var service = Object.assign({}, current || {}, payload || {}, {
+        id: current ? current.id : subjectId,
+        remoteId: current && current.remoteId || '',
+        approvedVersionId: current && current.approvedVersionId || '',
         ownerId: actor.id || '',
         professionalId: actor.id || '',
         providerId: actor.id || '',
@@ -185,9 +202,9 @@
         providerUsername: actor.handle || actor.username || payload && (payload.providerUsername || payload.providerHandle) || '',
         providerInitials: actor.initials || actor.avatarInitials || payload && payload.providerInitials || 'DK',
         verified: result.verification && result.verification.status === 'verified',
-        status: payload && payload.approvedVersionId ? payload.status || STATUS.ACTIVE : STATUS.DRAFT,
-        moderationStatus: payload && payload.approvedVersionId ? MODERATION_STATUS.CHANGES_PENDING_REVIEW : MODERATION_STATUS.PENDING_REVIEW,
-        createdAt: payload && payload.createdAt || now,
+        status: current && current.approvedVersionId ? current.status : STATUS.DRAFT,
+        moderationStatus: current && current.approvedVersionId ? MODERATION_STATUS.CHANGES_PENDING_REVIEW : MODERATION_STATUS.PENDING_REVIEW,
+        createdAt: current && current.createdAt || now,
         updatedAt: now
       });
       return submitThroughCanonicalAuthority(repository, service, options);
@@ -270,6 +287,11 @@
       var current = items[1];
       if (!current) throw new Error('Serviço não encontrado.');
       assertOwned(current, result.user || currentUser());
+      ['id', 'externalId', 'remoteId', 'ownerId', 'professionalId', 'providerId', 'professionalProfileId', 'createdAt', 'approvedVersionId', 'moderationStatus'].forEach(function (key) {
+        if (Object.prototype.hasOwnProperty.call(patch, key) && patch[key] !== current[key]) {
+          throw new Error('A identidade e a moderação do anúncio não podem ser alteradas pela edição.');
+        }
+      });
 
       if (Object.prototype.hasOwnProperty.call(patch, 'status')) {
         var contentKeys = Object.keys(patch).filter(function (key) { return key !== 'status' && key !== 'statusChangedAt'; });

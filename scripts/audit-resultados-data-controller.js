@@ -12,7 +12,11 @@ const requiredFiles = [
   'assets/js/services/mock-repository-provider.js',
   'assets/js/services/page-data-orchestrator.js',
   'assets/js/core/list-state.js',
-  'assets/js/pages/resultados-data-controller.js'
+  'assets/js/pages/resultados-data-controller.js',
+  'assets/js/pages/search/server-results-surface.js',
+  'assets/js/pages/search-results.js',
+  'assets/js/pages/search-results-presentation.js',
+  'assets/js/pages/search-results-dom-adapter.js'
 ];
 
 const requiredScriptsInOrder = [
@@ -71,7 +75,9 @@ const listState = read('assets/js/core/list-state.js');
 
 const controllerRequiredTokens = [
   'Doke.resultadosDataController',
-  'Doke.pageDataOrchestrator.getPageData',
+  'passive-canonical-event-observer',
+  "document.addEventListener('doke:search-server-page-rendered', onCanonicalPageRendered)",
+  "document.addEventListener('doke:search-server-error', onCanonicalSearchError)",
   'resultsRepositoryState',
   'doke:resultados-data-ready',
   'doke:resultados-data-error',
@@ -86,7 +92,8 @@ for (const token of controllerRequiredTokens) {
   }
 }
 
-const forbiddenControllerTokens = ['fetch(', 'localStorage', 'sessionStorage', 'supabase', 'firebase', '.innerHTML'];
+const forbiddenControllerTokens = ['fetch(', 'localStorage', 'sessionStorage', 'supabase', 'firebase', '.innerHTML',
+  'Doke.pageDataOrchestrator.getPageData', 'queryPage(', 'queryNextPage(', 'searchResultsServerSurface.render('];
 for (const token of forbiddenControllerTokens) {
   if (controller.toLowerCase().includes(token.toLowerCase())) {
     findings.push({ severity: 'error', message: `resultados-data-controller.js must not use ${token}` });
@@ -103,6 +110,36 @@ const forbiddenVisualAuthorityTokens = [
 for (const token of forbiddenVisualAuthorityTokens) {
   if (controller.includes(token)) {
     findings.push({ severity: 'error', message: `resultados-data-controller.js must not own visual state via ${token}` });
+  }
+}
+
+const canonicalScriptsInOrder = [
+  'assets/js/repositories/search-repository.js',
+  'assets/js/services/search-service.js',
+  'assets/js/pages/search-results-presentation.js',
+  'assets/js/pages/search/server-results-surface.js',
+  'assets/js/pages/search-results-dom-adapter.js',
+  'assets/js/pages/search-results.js'
+];
+let canonicalCursor = -1;
+for (const scriptPath of canonicalScriptsInOrder) {
+  const index = html.indexOf(scriptPath);
+  if (index === -1 || index < canonicalCursor) {
+    findings.push({ severity: 'error', message: `Canonical search authority missing or out of order: ${scriptPath}` });
+  }
+  canonicalCursor = index;
+}
+
+const canonicalContracts = [
+  ['assets/js/pages/search/server-results-surface.js', ['Doke.searchResultsServerSurface', 'searchApi().queryPage(', 'doke:search-server-page-rendered', 'doke:search-server-error']],
+  ['assets/js/pages/search-results.js', ['searchResultsServerSurface', 'serverResultsSurface.render(', 'searchResultsDomAdapter']],
+  ['assets/js/pages/search-results-dom-adapter.js', ['Doke.searchResultsDomAdapter', 'Doke.searchResultsPresentation']],
+  ['assets/js/pages/search-results-presentation.js', ['Doke.searchResultsPresentation']]
+];
+for (const [file, tokens] of canonicalContracts) {
+  const source = read(file);
+  for (const token of tokens) {
+    if (!source.includes(token)) findings.push({ severity: 'error', message: `${file} is missing canonical authority token: ${token}` });
   }
 }
 

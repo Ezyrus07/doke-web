@@ -12,6 +12,25 @@
   var LEGACY_STORAGE_KEY = 'doke.orders';
   var FALLBACK_URL = 'assets/data/mock-orders.json';
   var cache = null;
+  var sessionGeneration = 0;
+  var cacheIdentity = '';
+  function synchronizeCacheIdentity() {
+    var user = root.DokeAuth?.service?.getCurrentUser?.() || Doke.session?.getCurrentUser?.() || null;
+    var identity = JSON.stringify([user?.id || '', user?.role || '', user?.accountStatus || '']);
+    if (identity !== cacheIdentity) {
+      cacheIdentity = identity;
+      sessionGeneration += 1;
+      cache = null;
+    }
+    return sessionGeneration;
+  }
+  document.addEventListener('doke:auth-session-change', synchronizeCacheIdentity);
+  function assertCacheIdentity(generation) {
+    if (generation === synchronizeCacheIdentity()) return;
+    var error = new Error('Session changed while loading repository data.');
+    error.code = 'DOKE_SESSION_CHANGED';
+    throw error;
+  }
   var PROVIDER_ATTRIBUTE = 'data-doke-orders-provider';
   var REMOTE_TABLE = 'orders';
   var supabaseClient = null;
@@ -122,6 +141,7 @@
       next.attachments = normalizeAttachments(next.attachments).map(function (attachment) {
         return Object.assign({}, attachment, {
           url: '',
+          dataUrl: '',
           previewable: false,
           tooLarge: attachment.tooLarge || Boolean(attachment.url)
         });
@@ -134,11 +154,13 @@
     var normalized = Array.isArray(items) ? items : [];
     try {
       root.localStorage.setItem(key, JSON.stringify(normalized));
+      return true;
     } catch (error) {
       try {
         root.localStorage.setItem(key, JSON.stringify(stripAttachmentPreviews(normalized)));
+        return true;
       } catch (fallbackError) {
-        // localStorage can be unavailable or full; reads still work with mocks.
+        return false;
       }
     }
   }
@@ -360,13 +382,18 @@
   }
 
   function readLocal() {
-    return mergeById(safeRead(STORAGE_KEY), safeRead(LEGACY_STORAGE_KEY))
+    return mergeById(safeRead(LEGACY_STORAGE_KEY), safeRead(STORAGE_KEY))
       .sort(function (a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
   }
 
   function writeLocal(items) {
     var normalized = (Array.isArray(items) ? items : []).map(normalizeOrder);
-    safeWrite(STORAGE_KEY, normalized);
+    if (!safeWrite(STORAGE_KEY, normalized)) {
+      var error = new Error('Não foi possível salvar o pedido neste navegador. Libere espaço e tente novamente.');
+      error.code = 'DOKE_ORDER_LOCAL_PERSISTENCE_FAILED';
+      throw error;
+    }
+    // The compatibility mirror cannot undo a confirmed canonical write.
     safeWrite(LEGACY_STORAGE_KEY, normalized);
     cache = null;
     return clone(normalized);
@@ -387,11 +414,13 @@
 
   function loadLocal(options) {
     options = options || {};
+    var generation = synchronizeCacheIdentity();
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
 
     return loadBase(options)
       .catch(function () { return []; })
       .then(function (base) {
+        assertCacheIdentity(generation);
         cache = mergeById(Array.isArray(base) ? base : [], readLocal());
         return clone(cache);
       });
@@ -610,6 +639,7 @@
 
   function load(options) {
     options = options || {};
+    var generation = synchronizeCacheIdentity();
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
     var policy = getProviderPolicy();
     if (policy.mockDevelopmentActive) return loadLocal(options);
@@ -620,6 +650,7 @@
       return normalizeStatus(item && item.status) === 'draft' || item && item.syncStatus === 'local-draft';
     });
     return fetchRemoteOrders().then(function (remote) {
+      assertCacheIdentity(generation);
       lastRemoteError = null;
       cache = mergeById(localDrafts, remote);
       return clone(cache);
@@ -719,6 +750,7 @@
     return Promise.resolve(true);
   }
 
+  synchronizeCacheIdentity();
   repositories.orders = Object.freeze({
     storageKey: STORAGE_KEY,
     legacyStorageKey: LEGACY_STORAGE_KEY,

@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const cssPath = path.join(root, 'assets/css/pages/detalhe-anuncio.css');
 const foundationPath = path.join(root, 'assets/css/pages/marketplace-detail-foundation.css');
 const htmlPath = path.join(root, 'detalhe-anuncio.html');
-const css = fs.readFileSync(cssPath, 'utf8');
+const css = fs.readFileSync(cssPath, 'utf8').replace(/\r\n/g, '\n');
 const foundation = fs.readFileSync(foundationPath, 'utf8');
 const html = fs.readFileSync(htmlPath, 'utf8');
 

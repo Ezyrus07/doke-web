@@ -170,40 +170,57 @@ window.DokeSearchData = (() => {
     "Montagem"
   ];
 
+  // IBGE Localidades: geographic options never imply professional availability.
   const locationOptions = {
-    statés: ["MG", "SP", "RJ"],
-    citiesByStaté: {
-      MG: ["Belo Horizonte", "Contagem", "Nova Lima"],
-      SP: ["São Paulo", "Campinas"],
-      RJ: ["Rio de Janeiro", "Niteroi"]
-    },
-    neighborhoodsByCity: {
-      "Belo Horizonte": [
-        "Belvedere",
-        "Buritis",
-        "Centro",
-        "Funcionarios",
-        "Lourdes",
-        "Mangabeiras",
-        "Prado",
-        "Santo Agostinho",
-        "Savassi",
-        "Sion"
-      ],
-      Contagem: ["Eldorado", "Inconfidentes"],
-      "Nova Lima": ["Vila da Serra"],
-      "São Paulo": ["Pinheiros", "Moema"],
-      Campinas: ["Cambuí", "Taquaral"],
-      "Rio de Janeiro": ["Botafogo", "Barra da Tijuca"],
-      Niteroi: ["Icarai", "Charitas"]
-    },
-    cepLookup: {
-      "30130-110": { staté: "MG", city: "Belo Horizonte", neighborhood: "Centro" },
-      "30140-071": { staté: "MG", city: "Belo Horizonte", neighborhood: "Funcionarios" },
-      "30380-435": { staté: "MG", city: "Belo Horizonte", neighborhood: "Belvedere" },
-      "30350-540": { staté: "MG", city: "Belo Horizonte", neighborhood: "Mangabeiras" },
-      "30411-186": { staté: "MG", city: "Belo Horizonte", neighborhood: "Prado" },
-      "30380-000": { staté: "MG", city: "Belo Horizonte", neighborhood: "Savassi" }
+    statés: ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"],
+    citiesByStaté: {}, neighborhoodsByCity: {}, cepLookup: {}
+  };
+  locationOptions.states = locationOptions.statés;
+  locationOptions.citiesByState = locationOptions.citiesByStaté;
+  let locationsPromise = null;
+  locationOptions.loadCities = () => {
+    if (!locationsPromise) {
+      locationsPromise = fetch('assets/data/brazil-municipalities.json')
+        .then((response) => {
+          if (!response.ok) throw new Error('Não foi possível carregar os municípios.');
+          return response.json();
+        })
+        .then((data) => {
+          if (!locationOptions.states.every((uf) => Array.isArray(data.citiesByState?.[uf]) && data.citiesByState[uf].length)) {
+            throw new Error('Base de municípios incompleta.');
+          }
+          Object.assign(locationOptions.citiesByStaté, data.citiesByState);
+          return locationOptions.citiesByStaté;
+        })
+        .catch((error) => { locationsPromise = null; throw error; });
+    }
+    return locationsPromise;
+  };
+  locationOptions.getNeighborhoods = (state, city) => locationOptions.neighborhoodsByCity[state + ':' + city] || [];
+  // Reuse the ViaCEP lookup already used by the home filters.
+  locationOptions.lookupCep = async (cep) => {
+    const digits = String(cep || '').replace(/\D/g, '');
+    if (digits.length !== 8) return null;
+    if (locationOptions.cepLookup[digits]) return locationOptions.cepLookup[digits];
+    try {
+      const response = await fetch('https://viacep.com.br/ws/' + digits + '/json/');
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (data.erro || !locationOptions.states.includes(data.uf) || !data.localidade) return null;
+      const value = { staté: data.uf, city: data.localidade, neighborhood: data.bairro || '' };
+      locationOptions.cepLookup[digits] = value;
+      return value;
+    } catch (_) { return null; }
+  };
+  locationOptions.rememberLocation = ({ state = '', staté = '', city = '', neighborhood = '' } = {}) => {
+    const uf = String(state || staté).trim().toUpperCase();
+    if (!locationOptions.states.includes(uf) || !city) return;
+    const cities = locationOptions.citiesByStaté[uf] || (locationOptions.citiesByStaté[uf] = []);
+    if (!cities.includes(city)) cities.push(city);
+    if (neighborhood) {
+      const key = uf + ':' + city;
+      const neighborhoods = locationOptions.neighborhoodsByCity[key] || (locationOptions.neighborhoodsByCity[key] = []);
+      if (!neighborhoods.includes(neighborhood)) neighborhoods.push(neighborhood);
     }
   };
 
@@ -651,7 +668,10 @@ window.DokeSearchData = (() => {
       states: data.states || data.statés || [],
       citiesByState: data.citiesByState || data.citiesByStaté || {},
       neighborhoodsByCity: data.neighborhoodsByCity || {},
-      cepLookup: data.cepLookup || {}
+      cepLookup: data.cepLookup || {},
+      getNeighborhoods: data.getNeighborhoods,
+      lookupCep: data.lookupCep,
+      rememberLocation: data.rememberLocation
     };
   }
 
@@ -668,7 +688,14 @@ window.DokeSearchData = (() => {
       option.textContent = String(value);
       select.appendChild(option);
     });
-    select.value = (values || []).map(String).indexOf(String(selected || '')) >= 0 ? String(selected || '') : '';
+    // Preserve URL/draft intent without adding it to the official catalog.
+    if (selected && (values || []).map(String).indexOf(String(selected)) < 0) {
+      var intent = root.document.createElement('option');
+      intent.value = String(selected);
+      intent.textContent = String(selected);
+      select.appendChild(intent);
+    }
+    select.value = String(selected || '');
     root.DokeUiSelect && root.DokeUiSelect.refresh && root.DokeUiSelect.refresh(select);
   }
 
@@ -722,7 +749,7 @@ window.DokeSearchData = (() => {
     setSelectOptions(citySelect, data.citiesByState[snapshot.state] || [], 'Qualquer cidade', snapshot.city);
     setSelectOptions(
       neighborhoodSelect,
-      data.neighborhoodsByCity[snapshot.city] || [],
+      data.getNeighborhoods ? data.getNeighborhoods(snapshot.state, snapshot.city) : data.neighborhoodsByCity[snapshot.city] || [],
       'Qualquer bairro',
       snapshot.neighborhood
     );
@@ -830,6 +857,7 @@ window.DokeSearchData = (() => {
   }
 
   function install() {
+    var cepRequestId = 0;
     if (!root.document || typeof root.document.addEventListener !== 'function') {
       return Object.freeze({ cleanup: function () {} });
     }
@@ -872,6 +900,7 @@ window.DokeSearchData = (() => {
     }
 
     function rollback(announcement) {
+      cepRequestId += 1;
       if (!ensure()) return;
       var snapshot = controller.cancel();
       writeForm(form, snapshot.applied);
@@ -886,6 +915,7 @@ window.DokeSearchData = (() => {
     }
 
     function commitCurrent(options) {
+      cepRequestId += 1;
       options = options || {};
       if (!ensure()) return null;
       controller.replaceDraft(snapshotFromForm(form));
@@ -915,6 +945,7 @@ window.DokeSearchData = (() => {
     }
 
     function clearApplied() {
+      cepRequestId += 1;
       if (!ensure()) return;
       controller.clearDraft();
       var receipt = controller.commit();
@@ -943,7 +974,7 @@ window.DokeSearchData = (() => {
       } else if (target === citySelect) {
         setSelectOptions(
           neighborhoodSelect,
-          data.neighborhoodsByCity[citySelect.value] || [],
+          data.getNeighborhoods ? data.getNeighborhoods(stateSelect.value, citySelect.value) : data.neighborhoodsByCity[citySelect.value] || [],
           'Qualquer bairro',
           ''
         );
@@ -964,28 +995,37 @@ window.DokeSearchData = (() => {
       }
       var formatted = digits.slice(0, 5) + '-' + digits.slice(5);
       var data = locationData();
-      var match = data.cepLookup[formatted] || data.cepLookup[digits];
-      if (!match) {
-        input.setAttribute('aria-invalid', 'true');
-        return false;
+      var requestId = ++cepRequestId;
+      var targetForm = form;
+      function applyMatch(match) {
+        if (signal.aborted || requestId !== cepRequestId || form !== targetForm || root.document.querySelector(FILTER_FORM_SELECTOR) !== targetForm || cleanText(input.value).replace(/\D/g, '') !== digits) return false;
+        if (!match) {
+          input.setAttribute('aria-invalid', 'true');
+          return false;
+        }
+        data.rememberLocation && data.rememberLocation(match);
+        var draft = controller.getSnapshot().draft;
+        controller.replaceDraft(Object.assign({}, draft, {
+          state: match.state || match.staté || '',
+          city: match.city || '',
+          neighborhood: match.neighborhood || ''
+        }));
+        writeForm(form, controller.getSnapshot().draft);
+        input.value = formatted;
+        input.removeAttribute('aria-invalid');
+        var button = root.document.querySelector('[data-results-cep-fill]');
+        if (button) button.textContent = formatted;
+        announceFromSnapshot();
+        return true;
       }
-
-      var draft = controller.getSnapshot().draft;
-      controller.replaceDraft(Object.assign({}, draft, {
-        state: match.state || match.staté || '',
-        city: match.city || '',
-        neighborhood: match.neighborhood || ''
-      }));
-      writeForm(form, controller.getSnapshot().draft);
-      input.value = formatted;
-      input.removeAttribute('aria-invalid');
-      var button = root.document.querySelector('[data-results-cep-fill]');
-      if (button) button.textContent = formatted;
-      announceFromSnapshot();
-      return true;
+      var match = data.cepLookup[formatted] || data.cepLookup[digits];
+      if (match) return applyMatch(match);
+      if (!data.lookupCep) return applyMatch(null);
+      return Promise.resolve(data.lookupCep(digits)).then(applyMatch, function () { return applyMatch(null); });
     }
 
     function beginEditing() {
+      cepRequestId += 1;
       if (!ensure()) return;
       var snapshot = controller.begin();
       writeForm(form, snapshot.draft);
@@ -1045,6 +1085,7 @@ window.DokeSearchData = (() => {
       }
       if (!safeClosest(target, FILTER_FORM_SELECTOR)) return;
       event.stopImmediatePropagation();
+      cepRequestId += 1;
       rebuildLocationDraft(target);
       updateDraftFromForm();
     }
@@ -1187,6 +1228,7 @@ window.DokeSearchData = (() => {
 
     return Object.freeze({
       cleanup: function cleanup() {
+        cepRequestId += 1;
         lifecycle.abort();
         controller = null;
         form = null;

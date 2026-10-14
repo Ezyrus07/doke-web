@@ -119,6 +119,8 @@ async function validateManualActivationAndOrderMutation() {
     idempotencyKey: 'front-accept-001'
   });
   assertEqual(accepted.status, 'accepted', 'Accepted order must normalize API action response.');
+  assertDeepEqual(browser.conversationCommands, [{ orderId: 'order_api_1', commandId: 'front-accept-001:conversation' }], 'Acceptance must confirm a linked idempotent conversation.');
+  record('orders_write.accepted_conversation_confirmed');
 
   const calledPaths = browser.fetchCalls.map((entry) => entry.path);
   assertDeepEqual(calledPaths, ['/orders', '/orders/order_api_1/accept'], 'Frontend activation canary must call only expected orders endpoints.');
@@ -126,6 +128,18 @@ async function validateManualActivationAndOrderMutation() {
   assert(browser.fetchCalls.every((entry) => /^\/orders(\/|$)/.test(entry.path)), 'Every activation call must remain inside /orders.');
   record('orders_write.calls_are_order_domain_only');
   record('orders_write.idempotency_header_present');
+
+  let successEvents = 0;
+  browser.document.addEventListener('doke:order-status-changed', () => { successEvents++; });
+  for (const messages of [{}, { createConversationForOrder: async () => null }]) {
+    browser.Doke.services.messages = messages;
+    let blocked = false;
+    try { await browser.Doke.services.orders.accept('order_api_1', { idempotencyKey: 'front-accept-001' }); }
+    catch (error) { blocked = error.code === 'DOKE_ACCEPTED_CONVERSATION_AUTHORITY_UNAVAILABLE'; }
+    assert(blocked, 'Missing conversation authority or ACK must reject after server acceptance.');
+  }
+  assertEqual(successEvents, 0, 'Unconfirmed acceptance must not dispatch success.');
+  record('orders_write.unconfirmed_conversation_blocks_success');
 
   report.performsNetworkRequest = true;
   report.performsMutation = true;
@@ -203,6 +217,7 @@ function createBrowserRuntime(options = {}) {
   const storageMap = new Map(Object.entries(options.storage || {}).map(([key, value]) => [key, String(value)]));
   const eventListeners = new Map();
   const fetchCalls = [];
+  const conversationCommands = [];
 
   const documentElementAttributes = {};
   const document = {
@@ -231,6 +246,7 @@ function createBrowserRuntime(options = {}) {
   const location = new URL(options.url || 'https://staging.doke.example/pedidos.html');
   const browser = {
     fetchCalls,
+    conversationCommands,
     console,
     URL,
     URLSearchParams,
@@ -265,7 +281,15 @@ function createBrowserRuntime(options = {}) {
     dispatchEvent() { return true; },
     navigator: { userAgent: 'doke-orders-write-frontend-runtime' },
     Doke: {
-      services: {},
+      services: { messages: {
+        // Explicit synthetic Messages command authority; never browser storage.
+        async createConversationForOrder(order, command) {
+          assertEqual(order.status, 'accepted', 'Conversation command requires accepted server order.');
+          assertEqual(order.id, 'order_api_1', 'Conversation must retain order identity.');
+          conversationCommands.push({ orderId: order.id, commandId: command.commandId });
+          return { id: 'conversation_api_1', orderId: order.id };
+        }
+      } },
       session: {
         getCurrentUser() {
           return { id: 'user_client_1', role: 'client', name: 'Cliente Canary', email: 'cliente@staging.example' };

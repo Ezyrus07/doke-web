@@ -18,7 +18,8 @@
 
   var DATA_PROVIDER_VALUES = Object.freeze({
     MOCK: 'mock',
-    API: 'api'
+    API: 'api',
+    BLOCKED: 'blocked'
   });
 
   var AUTH_PROVIDER_VALUES = Object.freeze({
@@ -44,7 +45,7 @@
 
   function readEnvironment() {
     var host = window.location.hostname || '';
-    if (/localhost|127\.0\.0\.1/.test(host)) return 'local';
+    if (/^(localhost|127\.0\.0\.1|\[?::1\]?)$/.test(host)) return 'local';
     if (/staging|preview|vercel|netlify/.test(host)) return 'staging';
     return 'production';
   }
@@ -183,6 +184,7 @@
   }
 
   function resolveApiBaseUrl(windowConfig) {
+    if (environment === 'staging') return normalizeBaseUrl(windowConfig.apiBaseUrl || '');
     var params = queryParams();
     var baseUrl = windowConfig.apiBaseUrl || readStorage('doke.apiBaseUrl') || '';
     if (params.has('dokeApiBaseUrl')) baseUrl = params.get('dokeApiBaseUrl');
@@ -190,6 +192,7 @@
   }
 
   function resolveNetworkFlag(windowConfig, flags) {
+    if (environment === 'staging') return normalizeBoolean(windowConfig.enableNetworkRequests ?? windowConfig.flags?.enableNetworkRequests) === true;
     var params = queryParams();
     var value = windowConfig.enableNetworkRequests;
     if (value === undefined && windowConfig.flags) value = windowConfig.flags.enableNetworkRequests;
@@ -199,12 +202,22 @@
     return normalized === undefined ? flags.enableNetworkRequests === true : normalized;
   }
 
+  // Runtime metadata belongs to core; the data boundary remains DOM-independent.
+  function syncProviderAttributes(event) {
+    var status = event?.detail || Doke.repositoryBoundary?.getDataProviderStatus?.();
+    if (!status || !document.documentElement) return;
+    document.documentElement.setAttribute('data-doke-data-provider', status.activeProvider);
+    document.documentElement.setAttribute('data-doke-requested-data-provider', status.requestedProvider);
+  }
+  if (typeof window.addEventListener === 'function') window.addEventListener('doke:repository-provider-change', syncProviderAttributes);
+  syncProviderAttributes();
+
   var windowConfig = readWindowConfig();
   var environment = windowConfig.environment || readEnvironment();
   var flags = mergeFlags(DEFAULT_FLAGS, windowConfig.flags || {});
   flags.enableNetworkRequests = resolveNetworkFlag(windowConfig, flags);
-  var ordersWriteCanary = resolveOrdersWriteCanary(windowConfig);
-  var betaLaunchCanary = resolveBetaLaunchCanary(windowConfig);
+  var ordersWriteCanary = environment !== 'staging' && resolveOrdersWriteCanary(windowConfig);
+  var betaLaunchCanary = environment !== 'staging' && resolveBetaLaunchCanary(windowConfig);
   var betaLaunchDomains = resolveBetaLaunchDomains(windowConfig);
   var requestedDataProvider = resolveDataProvider(windowConfig);
   var ordersProvider = resolveOrdersProvider(windowConfig, ordersWriteCanary, environment);
@@ -212,12 +225,16 @@
   var ordersReadActivation = ordersReadProvider === ORDERS_PROVIDER_VALUES.SUPABASE_READ;
   var ordersMockDevelopment = environment === 'local' && ordersReadProvider === ORDERS_PROVIDER_VALUES.MOCK;
   var orderWriteActivation = resolveOrderWriteActivation(windowConfig, ordersWriteCanary);
-  var dataProvider = ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : requestedDataProvider;
+  var dataProvider = environment === 'staging'
+    ? (resolveApiBaseUrl(windowConfig) ? DATA_PROVIDER_VALUES.API : DATA_PROVIDER_VALUES.BLOCKED)
+    : (environment === 'local' && (ordersWriteCanary || betaLaunchCanary) ? DATA_PROVIDER_VALUES.MOCK : requestedDataProvider);
   var authProvider = AUTH_PROVIDER_VALUES.SUPABASE;
 
   Doke.runtimeConfig = Object.freeze({
     version: '20260729-ord-a06-visual-settlement-v1',
     environment: environment,
+    remoteAuthorityRequired: environment === 'staging',
+    mockAuthorityAllowed: environment !== 'staging',
     flags: flags,
     dataProvider: dataProvider,
     requestedDataProvider: requestedDataProvider,

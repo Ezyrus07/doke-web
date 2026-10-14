@@ -13,6 +13,9 @@
   const DEFAULT_APP_URL = 'index.html';
   let supabaseAuthSubscription = null;
   let supabaseBootstrapPromise = null;
+  let authorityVersion = 0;
+  let authIntent = 0;
+  let refreshTask = null;
 
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
   const normalizePhone = (value) => String(value || '').replace(/\D/g, '');
@@ -123,6 +126,7 @@
   const bindSupabaseAuthStateChange = (client) => {
     if (supabaseAuthSubscription || !client?.auth || typeof client.auth.onAuthStateChange !== 'function') return supabaseAuthSubscription;
     const response = client.auth.onAuthStateChange((event, session) => {
+      authorityVersion += 1;
       if (event === 'SIGNED_OUT' || !session) reconcileSupabaseSession(null);
       else reconcileSupabaseSession(session);
     });
@@ -132,23 +136,37 @@
 
   const refreshSupabaseSession = async ({ silent = false } = {}) => {
     if (!isSupabaseAuthRequired()) return getSession();
+    const version = authorityVersion;
     const client = getSupabaseClient();
-    if (!client?.auth || typeof client.auth.getSession !== 'function') return getSession();
-    try {
-      bindSupabaseAuthStateChange(client);
-      const response = await client.auth.getSession();
-      if (response?.error) throw response.error;
-      return reconcileSupabaseSession(response?.data?.session || null);
-    } catch (error) {
-      if (!silent) throw error;
-      return getSession();
+    if (!client?.auth || typeof client.auth.getSession !== 'function') return reconcileSupabaseSession(null);
+    bindSupabaseAuthStateChange(client);
+    let task = refreshTask;
+    if (!task || task.version !== version) {
+      task = { version, promise: null };
+      refreshTask = task;
+      task.promise = (async () => {
+        try {
+          const response = await client.auth.getSession();
+          if (version !== authorityVersion) return getSession();
+          if (response?.error) throw response.error;
+          return reconcileSupabaseSession(response?.data?.session || null);
+        } catch (error) {
+          if (version !== authorityVersion) return getSession();
+          reconcileSupabaseSession(null);
+          throw error;
+        } finally {
+          if (refreshTask === task) refreshTask = null;
+        }
+      })();
     }
+    try { return await task.promise; }
+    catch (error) { if (!silent) throw error; return null; }
   };
 
   const bootstrapSupabaseSessionBridge = ({ silent = true } = {}) => {
     if (!isSupabaseAuthRequired()) return Promise.resolve(getSession());
     const client = getSupabaseClient();
-    if (!client) return Promise.resolve(getSession());
+    if (!client) return Promise.resolve(reconcileSupabaseSession(null));
     bindSupabaseAuthStateChange(client);
     if (!supabaseBootstrapPromise) {
       supabaseBootstrapPromise = refreshSupabaseSession({ silent }).finally(() => {
@@ -200,7 +218,10 @@
       const client = getSupabaseClient();
       if (!client) throw new Error('O Supabase ainda não foi carregado. Recarregue a página e tente novamente.');
       if (!isEmail(access)) throw new Error('Entre usando o e-mail cadastrado.');
+      const intent = ++authIntent;
+      authorityVersion += 1;
       const { data, error } = await client.auth.signInWithPassword({ email: normalizeEmail(access), password: rawPassword });
+      if (intent !== authIntent) throw new Error('Operação de autenticação substituída.');
       if (error) {
         const message = String(error.message || '').toLowerCase();
         if (message.includes('email not confirmed')) throw new Error('Confirme seu e-mail antes de entrar.');
@@ -248,10 +269,14 @@
 
 
   const logout = async ({ redirect = false, redirectTo } = {}) => {
+    const intent = ++authIntent;
+    authorityVersion += 1;
+    getSessionStore()?.clear?.();
     const client = getSupabaseClient();
     if (client) {
       try { await client.auth.signOut(); } catch (error) { console.warn?.('[DokeAuth] Supabase logout failed.', error); }
     }
+    if (intent !== authIntent) return false;
     getSessionStore()?.clear?.();
     try {
       root.localStorage.removeItem('doke.auth.users.v1');

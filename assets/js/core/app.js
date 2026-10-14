@@ -933,7 +933,7 @@ const syncHeaderLocation = () => {
     }
   } catch {}
   document.querySelectorAll("[data-topbar-location-value]").forEach((node) => {
-    node.textContent = value || node.dataset.locationFallback || node.textContent.trim() || "Belo Horizonte, MG";
+    node.textContent = value || node.dataset.locationFallback || "Escolher localização";
   });
 };
 
@@ -2113,6 +2113,18 @@ document.addEventListener("submit", (event) => {
   closeMobileSearch();
   navigateToSearchResults(query);
 });
+
+// Capture only Escape originating inside the shared expanded header search.
+// Results and other page controllers retain their shortcuts everywhere else.
+window.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !(event.target instanceof Element)) return;
+  const disclosure = event.target.closest(".app-header .home-side-meta__search-form.is-expanded");
+  if (!disclosure) return;
+  event.preventDefault();
+  event.stopPropagation();
+  setHeaderSearchExpanded(disclosure, false);
+  disclosure.closest(".app-header")?.querySelector(".home-side-meta__search")?.focus();
+}, true);
 
 document.addEventListener("keydown", (event) => {
   if (document.body.classList.contains("search-results-body")) return;

@@ -11,6 +11,12 @@
 
   var entries = new Map();
   var activeMutations = new Map();
+  var sessionGeneration = 0;
+  function sessionIdentity() {
+    var session = Doke.session?.getSession?.() || window.DokeAuth?.service?.getSession?.() || null;
+    return JSON.stringify([session?.user?.id || '', session?.user?.role || '', session?.accountStatus || '', session?.sessionStatus || '']);
+  }
+  var cacheIdentity = sessionIdentity();
   var VALID_STATES = new Set([
     'idle',
     'loading',
@@ -200,9 +206,15 @@
       entries.set(key, entry);
     }
 
+    var generation = sessionGeneration;
     entry.promise = Promise.resolve()
       .then(fetcher)
       .then(function (data) {
+        if (generation !== sessionGeneration) {
+          var error = new Error('Session changed while loading cached data.');
+          error.code = 'DOKE_SESSION_CHANGED';
+          throw error;
+        }
         entry.data = data;
         entry.error = null;
         entry.updatedAt = now();
@@ -331,6 +343,12 @@
   }
 
   function invalidateEvent(eventName, detail) {
+    if (eventName === 'doke:auth-session-change' && cacheIdentity !== sessionIdentity()) {
+      cacheIdentity = sessionIdentity();
+      // Authentication transitions must discard previous data, not serve it stale.
+      sessionGeneration += 1;
+      entries.clear();
+    }
     var normalizedEvent = String(eventName || '');
     var domains = EVENT_DOMAIN_RULES[normalizedEvent] || [];
     return invalidateDomains(domains, {

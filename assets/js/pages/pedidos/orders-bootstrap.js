@@ -22,7 +22,7 @@
 
   const scheduleSyncOrders = () => {
     window.requestAnimationFrame(() => {
-      syncOrders();
+      init();
     });
   };
 

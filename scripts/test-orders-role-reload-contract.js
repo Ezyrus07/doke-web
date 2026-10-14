@@ -9,6 +9,7 @@ const vm = require('vm');
 
 const projectRoot = path.resolve(__dirname, '..');
 const storage = Object.create(null);
+let fixtureConversations = []; // Test executor continuity for the memory-only repository.
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -20,7 +21,7 @@ async function assertRejects(task, message) {
   assert(rejected, message);
 }
 
-function createRuntime(user) {
+function createRuntime(user, mockDevelopment = true) {
   const listeners = Object.create(null);
   const context = {
     console,
@@ -54,12 +55,14 @@ function createRuntime(user) {
     },
     location: { search: '', href: 'http://localhost:4173/pedidos.html' },
     Doke: {
+      runtimeConfig: mockDevelopment ? { environment: 'local', ordersReadProvider: 'mock', ordersMockDevelopment: true } : {},
       mockData: { load: () => Promise.resolve([]) },
       session: { getCurrentUser: () => user }
     }
   };
 
   context.window = context;
+  context.rememberFixtureConversations = items => { fixtureConversations = JSON.parse(JSON.stringify(items)); };
   const sandbox = vm.createContext(context);
   [
     'assets/js/repositories/orders-repository.js',
@@ -70,7 +73,14 @@ function createRuntime(user) {
     'assets/js/services/orders-service.js'
   ].forEach((relativePath) => {
     const filename = path.join(projectRoot, relativePath);
-    vm.runInContext(fs.readFileSync(filename, 'utf8'), sandbox, { filename: relativePath });
+    let source = fs.readFileSync(filename, 'utf8');
+    if (relativePath.endsWith('/messages-repository.js')) {
+      source = source.replace('fixtureMemoryInitialized = true;', 'fixtureMemoryInitialized = true; rememberFixtureConversations(fixtureMemory);');
+      source = source.replace('cache = clone(fixtureMemory);', 'rememberFixtureConversations(fixtureMemory); cache = clone(fixtureMemory);');
+      // Rehydrate the synthetic backend response only after account-scoped initialization.
+      source += '\nDoke.repositories.messages.writeLocal(' + JSON.stringify(fixtureConversations) + ');';
+    }
+    vm.runInContext(source, sandbox, { filename: relativePath });
   });
 
   return sandbox.Doke;
@@ -97,6 +107,13 @@ async function main() {
   const otherClient = { id: 'client_reload_2', name: 'Outro Cliente', role: 'client', initials: 'OC' };
   const professional = { id: 'user_profissional_demo', name: 'Profissional Reload', role: 'professional', initials: 'PR' };
   const otherProfessional = { id: 'professional_reload_2', name: 'Outro Profissional', role: 'professional', initials: 'OP' };
+
+  const blockedRuntime = createRuntime(client, false);
+  await assertRejects(Promise.resolve().then(() => blockedRuntime.repositories.orders.saveMock({ id: 'forged_order', status: 'pending' })),
+    'Mock writes must remain blocked without explicit local development activation.');
+  await assertRejects(blockedRuntime.services.orders.getById('forged_order'),
+    'An unavailable read authority must not fall back silently to mock data.');
+  assert(Object.keys(storage).length === 0, 'Blocked provider must not write browser storage.');
 
   const clientRuntime = createRuntime(client);
   const created = await clientRuntime.services.orders.create({
@@ -196,7 +213,9 @@ async function main() {
     reloadPersistence: true,
     roleIsolation: true,
     duplicateProposalBlocked: true,
-    declinePersistence: true
+    declinePersistence: true,
+    inactiveProviderFailClosed: true,
+    conversationContinuity: 'explicit executor fixture, not browser storage'
   }, null, 2));
 }
 

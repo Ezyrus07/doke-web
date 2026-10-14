@@ -36,7 +36,8 @@
 
   function requiresServerOwnedCommands() {
     var actor = getCurrentUser();
-    return Boolean(actor && isUuid(actor.id));
+    var config = Doke.runtimeConfig || {};
+    return Boolean(actor && isUuid(actor.id)) || config.remoteAuthorityRequired === true || shouldUseMessagesApi();
   }
 
   function createServerCommandError(message, action, cause) {
@@ -104,6 +105,25 @@
     }, {
       commandId: nextPayload.commandId || nextPayload.clientMutationId || '',
       dedupeKey: nextPayload.commandId || nextPayload.clientMutationId || ''
+    }).then(function (outcome) {
+      var data = unwrapCommandData(outcome);
+      var entity = actionName === 'sendMessage' ? data && data.message
+        : actionName === 'createForOrder' || actionName === 'updateOrder' ? data && data.conversation : null;
+      var invalid = false;
+      if (actionName === 'sendMessage') {
+        invalid = !entity || !normalizeText(entity.id)
+          || normalizeText(entity.conversationId || entity.conversation_id) !== normalizeText(nextPayload.conversationId);
+      }
+      if (actionName === 'createForOrder' || actionName === 'updateOrder') invalid = !entity || !normalizeText(entity.id);
+      if (actionName === 'markRead' || actionName === 'removeMessage') {
+        invalid = typeof data !== 'boolean' && (!data || typeof data.ok !== 'boolean');
+      }
+      if (invalid) {
+        var error = new Error('Acknowledgement sem identidade válida do recurso de mensagens.');
+        error.code = 'DOKE_MESSAGES_COMMAND_ACK_INVALID';
+        throw error;
+      }
+      return outcome;
     }).catch(function (error) {
       if (error && (error.code === 'DOKE_MESSAGES_COMMAND_ACK_INVALID' || error.code === 'DOKE_MESSAGES_SERVER_COMMAND_UNAVAILABLE')) throw error;
       throw createServerCommandError('Comando server-owned de mensagens falhou.', actionName, error);
@@ -131,7 +151,13 @@
   }
 
   function shouldUseMessagesApi() {
-    return getMessagesProviderStatus().messagesApiActive === true;
+    var boundary = getRepositoryBoundary();
+    var status = boundary && typeof boundary.getDataProviderStatus === 'function' ? boundary.getDataProviderStatus() : null;
+    var active = Boolean(status && status.activeProvider === 'api' && status.apiReady === true);
+    if ((Doke.runtimeConfig || {}).remoteAuthorityRequired === true && !active) {
+      throw createServerCommandError('Autoridade remota de mensagens indisponível; fallback local bloqueado.', 'read');
+    }
+    return active;
   }
 
   function normalizeConversationFromProvider(conversation) {
@@ -171,7 +197,9 @@
   function messagesBoundaryGetById(conversationId) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.getById !== 'function') return Promise.reject(new Error('Messages API boundary indisponível.'));
-    return boundary.getById('conversations', conversationId).then(normalizeConversationFromProvider);
+    return boundary.getById('conversations', conversationId).then(function (response) {
+      return normalizeConversationFromProvider(response && response.conversation || response);
+    });
   }
 
   function messagesBoundaryCreateForOrder(order, options) {
@@ -386,7 +414,8 @@
 
   function isConversationUnlocked(conversation) {
     var status = conversation && conversation.order && conversation.order.status || conversation && conversation.status || '';
-    return ['conversation', 'accepted', 'responded', 'quoted', 'in_progress', 'completed'].indexOf(status) !== -1;
+    if (['conversation', 'accepted', 'responded', 'quoted', 'in_progress', 'completed'].indexOf(status) !== -1) return true;
+    return requiresServerOwnedCommands() && normalizeText(conversation && conversation.backendStatus).toLowerCase() === 'active';
   }
 
   function updateConversationOrder(order, options) {

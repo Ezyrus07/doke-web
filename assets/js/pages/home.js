@@ -440,7 +440,7 @@ const syncTopbarLocationValues = () => {
   const currentLocation = readDefaultLocation();
   const value = formatLocationTriggerValue(currentLocation);
   topbarLocationValues.forEach((node) => {
-    const fallback = node.dataset.locationFallback || node.textContent.trim() || "Adicionar endereço";
+    const fallback = node.dataset.locationFallback || "Escolher localização";
     node.textContent = value || fallback;
   });
 };
@@ -560,8 +560,8 @@ const openAddressModal = () => {
   const cityField = addressForm.elements.namedItem("cidade");
   const ufField = addressForm.elements.namedItem("uf");
   const defaultCheckbox = addressForm.elements.namedItem("padrao");
-  if (cityField) cityField.value = "Belo Horizonte";
-  if (ufField) ufField.value = "MG";
+  if (cityField) cityField.value = "";
+  if (ufField) ufField.value = "";
   if (defaultCheckbox && "checked" in defaultCheckbox) defaultCheckbox.checked = !readDefaultLocation();
   lockAddressViewport();
   addressModal.showModal();
@@ -735,33 +735,7 @@ const ensureSelectValue = (select, value) => {
   uiSelectApi?.refresh(select);
 };
 
-const extendLocationOptions = ({ staté = "", city = "", neighborhood = "" } = {}) => {
-  if (staté && !locationOptions.statés.includes(staté)) {
-    locationOptions.statés = [...locationOptions.statés, staté].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }
-
-  if (staté && city) {
-    const existingCities = Array.isArray(locationOptions.citiesByStaté[staté])
-      ? locationOptions.citiesByStaté[staté]
-      : [];
-
-    if (!existingCities.includes(city)) {
-      locationOptions.citiesByStaté[staté] = [...existingCities, city]
-        .sort((a, b) => a.localeCompare(b, "pt-BR"));
-    }
-  }
-
-  if (city && neighborhood) {
-    const existingNeighborhoods = Array.isArray(locationOptions.neighborhoodsByCity[city])
-      ? locationOptions.neighborhoodsByCity[city]
-      : [];
-
-    if (!existingNeighborhoods.includes(neighborhood)) {
-      locationOptions.neighborhoodsByCity[city] = [...existingNeighborhoods, neighborhood]
-        .sort((a, b) => a.localeCompare(b, "pt-BR"));
-    }
-  }
-};
+const extendLocationOptions = (value) => locationOptions.rememberLocation?.(value);
 
 const syncHomeLocationSelects = (source = "staté") => {
   const selectedStaté = homeStatéSelect?.value || "";
@@ -774,7 +748,7 @@ const syncHomeLocationSelects = (source = "staté") => {
   }
 
   const selectedCity = homeCitySelect?.value || "";
-  const neighborhoods = selectedCity ? (locationOptions.neighborhoodsByCity[selectedCity] || []) : [];
+  const neighborhoods = locationOptions.getNeighborhoods?.(selectedStaté, selectedCity) || [];
   fillSelectOptions(homeNeighborhoodSelect, neighborhoods, "Qualquer bairro");
 
   if ((source === "staté" || source === "city") && homeNeighborhoodSelect) {
@@ -860,26 +834,7 @@ const showNotice = (title, text) => openUiModal({
   mode: "notice"
 });
 
-const fetchCepData = async (cep) => {
-  const cleanCep = String(cep || "").replace(/\D/g, "");
-  if (cleanCep.length !== 8) return null;
-
-  const formattedCep = `${cleanCep.slice(0, 5)}-${cleanCep.slice(5)}`;
-  const localCep = locationOptions.cepLookup?.[cleanCep] || locationOptions.cepLookup?.[formattedCep];
-  if (localCep) return localCep;
-
-  const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-  if (!response.ok) return null;
-
-  const data = await response.json();
-  if (data.erro) return null;
-
-  return {
-    staté: data.uf || "",
-    city: data.localidade || "",
-    neighborhood: data.bairro || ""
-  };
-};
+const fetchCepData = (cep) => locationOptions.lookupCep?.(cep) || Promise.resolve(null);
 
 const applyHomeCepPreset = async () => {
   const sampleCep = await promptCepValue();
@@ -887,6 +842,7 @@ const applyHomeCepPreset = async () => {
 
   const normalizedCep = String(sampleCep.value || "").trim();
   const cepData = await fetchCepData(normalizedCep);
+  if (signal.aborted) return;
 
   if (!cepData) {
     await showNotice("CEP não encontrado", "Não conseguimos localizar esse CEP. Confira o número digitado e tente novamente.");
@@ -898,12 +854,23 @@ const applyHomeCepPreset = async () => {
   ensureSelectValue(homeStatéSelect, cepData.staté);
   fillSelectOptions(homeCitySelect, locationOptions.citiesByStaté[cepData.staté] || [], "Qualquer cidade");
   ensureSelectValue(homeCitySelect, cepData.city);
-  fillSelectOptions(homeNeighborhoodSelect, locationOptions.neighborhoodsByCity[cepData.city] || [], "Qualquer bairro");
+  fillSelectOptions(homeNeighborhoodSelect, locationOptions.getNeighborhoods?.(cepData.staté, cepData.city) || [], "Qualquer bairro");
   ensureSelectValue(homeNeighborhoodSelect, cepData.neighborhood);
 };
 
 enhanceHomeSelects();
 bootstrapHomeLocationSelects();
+locationOptions.loadCities?.().then(() => {
+  if (signal.aborted || !homeCitySelect?.isConnected) return;
+  const current = homeCitySelect.value;
+  fillSelectOptions(homeCitySelect, locationOptions.citiesByStaté[homeStatéSelect?.value || ''] || [], "Qualquer cidade");
+  ensureSelectValue(homeCitySelect, current);
+}).catch(() => {
+  if (signal.aborted || !homeCitySelect?.isConnected) return;
+  const placeholder = homeCitySelect.querySelector('option[value=""]');
+  if (placeholder) placeholder.textContent = "Municípios indisponíveis";
+  uiSelectApi?.refresh(homeCitySelect);
+});
 
 homeStatéSelect?.addEventListener("change", () => {
   syncHomeLocationSelects("staté");

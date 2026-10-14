@@ -76,6 +76,11 @@ context.window = context;
 
 const remoteServiceId = '44444444-4444-4444-8444-444444444444';
 const remoteRows = new Map();
+const versions = new Map();
+const intents = new Map();
+let intentSequence = 0;
+let signedUploadCount = 0;
+let mediaFailure = '';
 
 function createQuery(table) {
   let mode = 'select';
@@ -90,6 +95,12 @@ function createQuery(table) {
     single() { return this.execute(true); },
     maybeSingle() { return this.execute(true, true); },
     execute(single = false, maybe = false) {
+      assert(mode === 'select', 'Direct table mutation must remain unavailable.');
+      if (table === 'service_versions') {
+        const rows = [...versions.values()];
+        const filtered = filters.reduce((items, [column, value]) => items.filter(item => String(item[column] || '') === value), rows);
+        return Promise.resolve({ data: single ? filtered[0] || null : filtered, error: null });
+      }
       if (table === 'services') {
         if (mode === 'upsert') {
           const row = { ...payload, id: remoteServiceId, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), service_media: [] };
@@ -113,9 +124,17 @@ const fakeSupabaseClient = {
     getSession: () => Promise.resolve({ data: { session: { user: currentUser } }, error: null })
   },
   storage: {
-    from: () => ({
-      upload: (objectPath) => Promise.resolve({ data: { path: objectPath }, error: null }),
-      getPublicUrl: (objectPath) => ({ data: { publicUrl: `https://storage.example.test/${objectPath}` } })
+    from: bucket => ({
+      upload() { throw new Error('Unsigned upload is forbidden.'); },
+      uploadToSignedUrl(objectPath, token, blob) {
+        if (mediaFailure === 'upload') return Promise.resolve({ error: new Error('synthetic signed upload failure') });
+        assert(bucket === 'service-media', 'Wrong signed upload bucket.');
+        const manifest = [...intents.values()].flatMap(intent => intent.uploads).find(upload => upload.path === objectPath && upload.token === token);
+        assert(manifest && blob instanceof Blob && blob.size === manifest.size, 'Upload requires its reserved signed manifest.');
+        manifest.uploaded = true;
+        signedUploadCount += 1;
+        return Promise.resolve({ data: { path: objectPath }, error: null });
+      }
     })
   },
   from: (table) => createQuery(table)
@@ -134,9 +153,24 @@ context.supabase = { createClient: () => fakeSupabaseClient };
 context.DokeSupabase = {
   getClient: () => fakeSupabaseClient,
   invokeSelfService: (operation, args = {}) => {
+    if (operation === 'prepare_service_media_uploads') {
+      if (mediaFailure === 'reserve') return Promise.reject(new Error('synthetic media authority unavailable'));
+      assert(currentUser.role === 'professional', 'Media reservation requires a professional actor.');
+      const intentId = 'fixture-intent-' + ++intentSequence;
+      const uploads = args.p_files.filter(file => file.kind === 'upload').map(file => ({
+        ...file, path: 'pending/' + currentUser.id + '/' + intentId + '/' + file.fileName,
+        bucket: 'service-media', token: 'fixture-signed-' + intentId + '-' + file.sortOrder
+      }));
+      const intent = { intentId, uploads, actorId: currentUser.id, files: args.p_files, externalId: args.p_external_id, used: false };
+      intents.set(intentId, intent);
+      return Promise.resolve(mediaFailure === 'manifest'
+        ? { ...intent, uploads: uploads.map(upload => ({ ...upload, token: '' })) }
+        : intent);
+    }
     if (operation === 'transition_owned_service_lifecycle') {
       const row = remoteRows.get(String(args.p_service_ref || ''));
       assert(row, 'Lifecycle operation requires an existing service.');
+      assert(row.professional_id === currentUser.id, 'Lifecycle requires the owner.');
       if (args.p_action === 'pause') row.status = 'paused';
       else if (args.p_action === 'reactivate') row.status = 'published';
       else if (args.p_action === 'archive') { row.status = 'archived'; row.pending_version_id = null; }
@@ -145,9 +179,17 @@ context.DokeSupabase = {
       return Promise.resolve({ serviceId: row.id, externalId: row.external_id, publicStatus: row.status, moderationStatus: row.moderation_status, action: args.p_action, changed: true });
     }
     assert(operation === 'submit_service_for_review', 'Unexpected self-service operation: ' + operation);
+    const intent = intents.get(args.p_upload_intent_id);
+    assert(intent && !intent.used && intent.actorId === currentUser.id && intent.externalId === args.p_external_id && intent.uploads.every(upload => upload.uploaded), 'Submission requires an unused, uploaded intent belonging to its actor and listing.');
+    intent.used = true;
     const snapshot = args.p_snapshot || {};
+    assert(!snapshot.image && snapshot.images.length === 0, 'Browser cannot forge media URLs into the review snapshot.');
+    const mediaUrls = intent.files.map(file => file.kind === 'retain' ? file.url : 'https://storage.example.test/' + intent.uploads.find(upload => upload.sortOrder === file.sortOrder).path);
+    snapshot.images = mediaUrls;
+    snapshot.image = mediaUrls[0];
     const existing = remoteRows.get(String(args.p_external_id || ''));
     const publicStatus = existing ? (existing.status || 'published') : 'draft';
+    if (existing) assert(existing.professional_id === currentUser.id, 'Content edits require the owner.');
     if (!existing) {
       remoteRows.set(String(args.p_external_id || snapshot.id || ''), {
         id: remoteServiceId, external_id: String(args.p_external_id || snapshot.id || ''), professional_id: currentUser.id,
@@ -156,17 +198,22 @@ context.DokeSupabase = {
         service_media: (snapshot.images || []).map((url, index) => ({ url, sort_order: index }))
       });
     }
+    const row = remoteRows.get(String(args.p_external_id || snapshot.id || ''));
+    row.moderation_status = existing ? 'changes_pending_review' : 'pending_review';
+    row.pending_version_id = '55555555-5555-4555-8555-555555555555';
+    versions.set(row.pending_version_id, { id: row.pending_version_id, snapshot, review_status: 'pending_review', version_number: existing ? 2 : 1 });
     return Promise.resolve({
       serviceId: remoteServiceId, externalId: String(args.p_external_id || snapshot.id || ''),
       versionId: '55555555-5555-4555-8555-555555555555', versionNumber: existing ? 2 : 1,
       moderationStatus: existing ? 'changes_pending_review' : 'pending_review', publicStatus,
       submittedAt: new Date().toISOString(), changeClass: args.p_change_class || 'critical',
-      visibilityAction: 'keep_public', riskFlags: [], classificationReasons: []
+      visibilityAction: 'keep_public', riskFlags: [], classificationReasons: [], mediaUrls
     });
   }
 };
 
 context.Doke.session = { getCurrentUser: () => currentUser };
+context.Doke.runtimeConfig = { environment: 'local', ordersReadProvider: 'mock', ordersMockDevelopment: true };
 context.Doke.services = {
   professionalAccess: {
     ACTIONS: Object.freeze({ PUBLISH_SERVICE: 'publish_service' }),
@@ -186,14 +233,54 @@ function runAsset(relativePath) {
 
 [
   'assets/js/repositories/services-repository.js',
+  'assets/js/services/service-media-upload-service.js',
   'assets/js/services/services-service.js',
   'assets/js/repositories/orders-repository.js',
   'assets/js/repositories/messages-repository.js',
   'assets/js/repositories/notifications-repository.js',
   'assets/js/services/notification-service.js',
+  'assets/js/services/message-command-executor.js',
   'assets/js/services/message-service.js',
   'assets/js/services/orders-service.js'
 ].forEach(runAsset);
+
+// Server-response fixture for UUID message commands. Keep the real command
+// executor/ack checks and participant validation; never enable browser DML.
+const commandReceipts = new Map();
+const conversationProvider = {
+  async action(resource, payload) {
+    assert(resource === 'conversations' && payload.actorId === currentUser.id, 'Message command actor mismatch.');
+    const order = await context.Doke.repositories.orders.getById(payload.orderId);
+    assert(order && [order.clientId, order.professionalId].includes(currentUser.id), 'Message command requires an order participant.');
+    assert(payload.commandId, 'Message command requires an idempotency key.');
+    if (commandReceipts.has(payload.commandId)) return { ...commandReceipts.get(payload.commandId), acknowledgement: { commandId: payload.commandId, action: payload.action, status: 'replayed' } };
+    const repo = context.Doke.repositories.messages;
+    const items = repo.readLocal();
+    let conversation = items.find(item => item.orderId === order.id);
+    if (payload.action === 'createForOrder') {
+      if (!conversation) {
+        conversation = { id: 'fixture_conversation_' + order.id, orderId: order.id, serviceId: order.serviceId,
+          clientId: order.clientId, professionalId: order.professionalId, participants: [order.clientId, order.professionalId],
+          order, messages: [], locked: true, status: 'pending' };
+        items.push(conversation);
+      }
+    } else {
+      assert(payload.action === 'updateOrder' && conversation, 'Unexpected message command.');
+      conversation.order = order;
+      conversation.status = order.status;
+      conversation.locked = !['accepted', 'quoted', 'in_progress', 'completed'].includes(order.status);
+    }
+    repo.writeLocal(items); // Explicit memory fixture API, not remote/browser persistence.
+    const response = { data: { conversation }, acknowledgement: { commandId: payload.commandId, action: payload.action, status: 'accepted' } };
+    commandReceipts.set(payload.commandId, response);
+    return response;
+  }
+};
+context.Doke.repositoryBoundary = {
+  getDataProviderStatus: () => ({ activeProvider: 'mock', apiReady: true }),
+  hasProvider: provider => provider === 'api',
+  getProvider: provider => { assert(provider === 'api', 'Unexpected provider.'); return conversationProvider; }
+};
 
 function setUser(user) {
   currentUser = user;
@@ -232,10 +319,22 @@ async function main() {
     images: ['data:image/png;base64,c2VydmljZQ==']
   };
 
+  for (const fault of ['reserve', 'manifest', 'upload']) {
+    mediaFailure = fault;
+    await assertRejects(Doke.services.services.create(servicePayload), 'Signed media ' + fault + ' failure must reject publication.');
+    assert(remoteRows.size === 0 && versions.size === 0, 'Failed media must not create a listing or review version.');
+  }
+  mediaFailure = '';
+
   const submittedService = await Doke.services.services.create(servicePayload);
   assert(submittedService.status === 'draft', 'Serviço novo deve permanecer fora do catálogo enquanto aguarda análise.');
   assert(submittedService.moderationStatus === 'pending_review', 'Serviço novo deve registrar revisão pendente.');
   assert(submittedService.ownerId === currentUser.id && submittedService.professionalProfileId === 'profile_profissional_demo', 'Serviço deve preservar proprietário e perfil profissional.');
+  assert(signedUploadCount === 1 && submittedService.images.every(url => url.startsWith('https://storage.example.test/pending/')), 'Successful submission must use reserved signed media URLs.');
+  const usedIntent = [...intents.values()].find(intent => intent.used);
+  await assertRejects(Promise.resolve().then(() => context.DokeSupabase.invokeSelfService('submit_service_for_review', {
+    p_external_id: submittedService.id, p_upload_intent_id: usedIntent.intentId, p_snapshot: { images: [] }
+  })), 'Consumed upload intent must not be reused.');
 
   const approvedRow = remoteRows.get(submittedService.id);
   approvedRow.status = 'published';
@@ -309,6 +408,8 @@ async function main() {
   assert(reloadedOrder && reloadedOrder.serviceSnapshot && reloadedOrder.serviceSnapshot.title === service.title, 'Snapshot deve sobreviver à leitura do repository.');
 
   setUser({ id: '33333333-3333-4333-8333-333333333333', name: 'Outro profissional', role: 'professional', initials: 'OP' });
+  await assertRejects(Doke.services.orders.getById(order.id), 'Non-participant cannot read the order.');
+  await assertRejects(Doke.services.messages.createConversationForOrder(order), 'Non-participant cannot create/access its conversation.');
   await assertRejects(
     Doke.services.services.updateOwned(service.id, { title: 'Alteração indevida' }),
     'Profissional sem propriedade não pode editar o anúncio.'
@@ -331,9 +432,9 @@ async function main() {
   assert(immutableOrder.serviceSnapshot.priceLabel === 'R$ 180', 'Edição do anúncio não pode alterar o preço histórico do pedido.');
   assert(immutableOrder.serviceAvailabilitySchedule.length === 2, 'Edição do anúncio não pode alterar a agenda histórica do pedido.');
 
-  setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD' });
+  setUser({ id: '11111111-1111-4111-8111-111111111111', name: 'Profissional Doke', role: 'professional', initials: 'PD' });
   const accepted = await Doke.services.orders.accept(order.id);
-  assert(accepted.status === 'accepted', 'Profissional operacional vinculado deve aceitar o pedido local roteado.');
+  assert(accepted.status === 'accepted', 'O proprietário exato vinculado deve aceitar o pedido, sem alias demo.');
   conversation = getConversationByOrder(order.id);
   assert(conversation && conversation.locked === false && conversation.status === 'accepted', 'Aceite deve destravar a conversa vinculada.');
 
@@ -366,6 +467,8 @@ async function main() {
     inactiveHiddenPublicly: true,
     archivedHiddenPublicly: true,
     unauthorizedEditBlocked: true
+    ,signedMediaFailuresBlocked: true
+    ,uploadIntentReplayBlocked: true
   }, null, 2));
 }
 

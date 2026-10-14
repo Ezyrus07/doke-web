@@ -194,6 +194,58 @@
     return normalizeBaseUrl(config.apiBaseUrl || '');
   }
 
+  // Public identity stamps reject obsolete work; only the SDK supplies bearer authority.
+  function identityStamp() {
+    var service = window.DokeAuth && window.DokeAuth.service;
+    var session = service && service.getSession ? service.getSession() : (Doke.session && Doke.session.getSession ? Doke.session.getSession() : null);
+    var user = session && session.user || {};
+    return JSON.stringify([user.id || '', user.role || '', session && session.sessionStatus || '', user.accountStatus || '']);
+  }
+  var identityVersion = 0;
+  var lastIdentity = identityStamp();
+  function observeIdentity() {
+    var current = identityStamp();
+    if (current !== lastIdentity) { lastIdentity = current; identityVersion += 1; }
+    return identityVersion;
+  }
+  if (window.document && window.document.addEventListener) window.document.addEventListener('doke:auth-session-change', observeIdentity);
+  function assertIdentity(version) {
+    if (observeIdentity() === version) return;
+    var error = new Error('API session changed while the request was pending.');
+    error.code = 'DOKE_API_SESSION_CHANGED';
+    error.retryable = false;
+    throw error;
+  }
+
+  function getSessionAccessToken() {
+    var client = window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
+      ? window.DokeSupabase.getClient()
+      : window.DOKE_SUPABASE_CLIENT;
+    if (!client || !client.auth || typeof client.auth.getSession !== 'function') return Promise.resolve('');
+    return Promise.resolve(client.auth.getSession()).then(function (result) {
+      if (result && result.error) return '';
+      var token = String(result && result.data && result.data.session && result.data.session.access_token || '').trim();
+      return token.split('.').length === 3 ? token : '';
+    }).catch(function () { return ''; });
+  }
+
+  function createRequestNonce() {
+    var cryptoApi = window.crypto || window.msCrypto;
+    if (cryptoApi && typeof cryptoApi.randomUUID === 'function') return 'ord-' + cryptoApi.randomUUID();
+    if (cryptoApi && typeof cryptoApi.getRandomValues === 'function') {
+      var bytes = new Uint8Array(16);
+      cryptoApi.getRandomValues(bytes);
+      return 'ord-' + Array.prototype.map.call(bytes, function (value) {
+        return value.toString(16).padStart(2, '0');
+      }).join('');
+    }
+    return 'ord-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  }
+
+  function isMutationMethod(method) {
+    return ['POST', 'PUT', 'PATCH', 'DELETE'].indexOf(String(method || '').toUpperCase()) !== -1;
+  }
+
   function createRuntimeApiClient() {
     function request(method, path, body) {
       var baseUrl = getApiBaseUrl();
@@ -201,21 +253,21 @@
       if (!isNetworkEnabled()) return Promise.reject(new Error('API provider blocked: enableNetworkRequests is disabled.'));
       if (typeof window.fetch !== 'function') return Promise.reject(new Error('API provider requires window.fetch.'));
 
+      var sessionVersion = observeIdentity();
       var options = {
         method: method,
-        credentials: 'same-origin',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        }
+        credentials: 'omit',
+        headers: { Accept: 'application/json' }
       };
+      var requestMeta = {};
 
       if (body !== undefined) {
         var requestBody = clone(body || {});
-        var requestMeta = requestBody && requestBody.__requestMeta && typeof requestBody.__requestMeta === 'object'
+        requestMeta = requestBody && requestBody.__requestMeta && typeof requestBody.__requestMeta === 'object'
           ? requestBody.__requestMeta
           : {};
         if (requestBody && typeof requestBody === 'object') delete requestBody.__requestMeta;
+        options.headers['Content-Type'] = 'application/json';
         if (requestMeta.idempotencyKey) options.headers['x-idempotency-key'] = String(requestMeta.idempotencyKey);
         if (requestMeta.requestId) options.headers['x-request-id'] = String(requestMeta.requestId);
         if (requestMeta.commandAttempt) options.headers['x-doke-command-attempt'] = String(requestMeta.commandAttempt);
@@ -223,7 +275,16 @@
         options.body = JSON.stringify(requestBody);
       }
 
-      return window.fetch(baseUrl + path, options).then(function (response) {
+      if (isMutationMethod(method)) {
+        options.headers['x-doke-request-issued-at'] = new Date().toISOString();
+        options.headers['x-doke-request-nonce'] = createRequestNonce();
+      }
+
+      return getSessionAccessToken().then(function (token) {
+        assertIdentity(sessionVersion);
+        if (token) options.headers.Authorization = 'Bearer ' + token;
+        return window.fetch(baseUrl + path, options);
+      }).then(function (response) {
         if (!response.ok) {
           var error = new Error('API request failed: ' + response.status);
           error.code = 'DOKE_API_HTTP_ERROR';
@@ -231,6 +292,9 @@
           throw error;
         }
         return response.status === 204 ? null : response.json();
+      }).then(function (result) {
+        assertIdentity(sessionVersion);
+        return result;
       }).catch(function (error) {
         if (error && error.code) throw error;
         var networkError = new Error('API network request failed.');

@@ -1,6 +1,8 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
+const demoFixture = require('../fixtures/professional-demo.cjs');
+const marketplaceFixture = require('../fixtures/marketplace-demo.cjs');
 
 const ACCESS_SERVICE_URL = '**/assets/js/services/professional-access-service.js*';
 const ANNOUNCE_HTML_URL = '**/anunciar-servico.html*';
@@ -56,6 +58,18 @@ function accessServiceStub(scenario) {
 }
 
 async function installScenario(page, scenario) {
+  // Keep the real early authentication guard. Page-guard scenarios start with
+  // a coherent synthetic session; the no-session case exercises the real redirect.
+  await marketplaceFixture.setup(page);
+  await page.addInitScript(({ missing, actor }) => {
+    if (missing) localStorage.removeItem('doke.auth.session.v1');
+    else localStorage.setItem('doke.auth.session.v1', JSON.stringify({
+      provider: 'mock', sessionStatus: 'active', accountStatus: 'active', user: actor
+    }));
+  }, {
+    missing: scenario.result?.reason === 'auth_required',
+    actor: scenario.result?.role === 'client' ? marketplaceFixture.client : demoFixture.professional
+  });
   await page.addInitScript(() => {
     document.addEventListener('doke:page-hydration-state', (event) => {
       if (event.detail?.page !== 'anunciar-servico') return;
@@ -180,9 +194,10 @@ test.describe('professional service page lifecycle', () => {
     });
 
     await page.goto('/anunciar-servico.html', { waitUntil: 'commit' });
-    await expect.poll(() => page.evaluate(() => sessionStorage.getItem('doke.test.announce.lifecycle'))).toBe('redirected');
-    await expect.poll(() => page.evaluate(() => sessionStorage.getItem('doke.test.announce.redirect')))
-      .toBe('auth/login.html?return=anunciar-servico.html');
+    await expect(page).toHaveURL(/\/auth\/login\.html\?next=%2Fanunciar-servico\.html/);
+    await expect(page.locator('.post-service-form')).toHaveCount(0);
+    expect(await page.evaluate(() => localStorage.getItem('doke.auth.session.v1'))).toBeNull();
+    expect(await page.evaluate(() => window.__professionalServiceGuardCalls || 0)).toBe(0);
     expect(await page.evaluate(() => sessionStorage.getItem('doke.test.announce.forbiddenReveal'))).not.toBe('true');
   });
 
@@ -198,6 +213,8 @@ test.describe('professional service page lifecycle', () => {
   test('a guard that never resolves times out into a recoverable error', async ({ page }) => {
     await installScenario(page, { kind: 'never' });
     await page.goto('/anunciar-servico.html', { waitUntil: 'commit' });
+    // Measure recovery after the guard starts, not during unrelated script loading.
+    await page.waitForFunction(() => window.__professionalServiceGuardCalls === 1);
     await expectErrorTerminal(page);
   });
 
@@ -227,19 +244,16 @@ test.describe('professional service page lifecycle', () => {
     await expect(page.locator('[data-post-service-guard-hydration-skeleton]')).toBeHidden();
   });
 
-  test('real professional session publishes an image service visible on the profile', async ({ page }) => {
+  test('synthetic authenticated professional submits an image service pending review visible only to its owner', async ({ page }, info) => {
     test.setTimeout(120_000);
     const title = 'Serviço P0 lifecycle';
     const pageErrors = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
 
-    await page.goto('/auth/login.html');
-    await page.locator('#email-login').fill('pro@doke.local');
-    await page.locator('#senha-login').fill('12345678');
-    await page.locator('[data-auth-login] [data-auth-submit]').click();
-    await page.waitForURL(/\/index\.html(?:[?#]|$)/, { waitUntil: 'domcontentloaded' });
+    const demo = await demoFixture.setup(page);
+    await page.goto('/index.html');
+    await demo.switchActor(demoFixture.professional, '/anunciar-servico.html');
 
-    await page.goto('/anunciar-servico.html');
     await expect(page.locator('[data-post-service-page]')).toHaveAttribute('data-page-lifecycle-state', 'ready');
     await page.locator('[name="adTitle"]').fill(title);
     await page.locator('[name="category"]').selectOption('Pintura');
@@ -252,8 +266,7 @@ test.describe('professional service page lifecycle', () => {
     await page.locator('[name="billingUnit"]').selectOption({ index: 1 });
     await page.locator('[name="serviceRegion"]').fill('Belo Horizonte e região');
     await page.locator('[name="serviceMode"]').selectOption('Presencial');
-    await page.locator('[name="availability"]').selectOption({ index: 1 });
-    await page.locator('[name="responseTime"]').selectOption({ index: 1 });
+    await page.locator('[data-availability-day][value="monday"]').check();
     await page.locator('[data-step-next]').click();
 
     await page.locator('[name="mainImage"]').setInputFiles({
@@ -267,18 +280,31 @@ test.describe('professional service page lifecycle', () => {
 
     await page.evaluate(() => {
       window.__createdService = null;
-      window.addEventListener('doke:service-created', (event) => {
+      window.addEventListener('doke:service-review-submitted', (event) => {
         window.__createdService = event.detail?.service || null;
       }, { once: true });
     });
     await page.locator('[data-step-next]').click();
+    await expect(page.locator('[data-step-panel="5"]')).toBeVisible();
+    for (const button of await page.locator('.post-service-confirm [data-post-check]').all()) {
+      if (await button.getAttribute('aria-pressed') !== 'true') await button.click();
+    }
+    await page.locator('[data-step-next]').click();
     await expect(page.locator('[data-submit-state]')).toBeVisible();
     await expect.poll(() => page.evaluate(() => window.__createdService?.title || '')).toBe(title);
+    const submitted = await page.evaluate(() => window.__createdService);
+    expect(submitted.status).toBe('draft');
+    expect(submitted.moderationStatus).toBe('pending_review');
+    expect(submitted.ownerId).toBe(demoFixture.professional.id);
 
-    await page.getByRole('link', { name: 'Ver andamento' }).click();
-    await page.waitForURL(/\/perfil\.html\?mode=owner&panel=services/, { waitUntil: 'domcontentloaded' });
+    await page.getByRole('link', { name: 'Acompanhar no perfil' }).click();
+    await page.waitForURL(/\/perfil-profissional\.html\?panel=services/, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-professional-services-list]')).toContainText(title);
-    await expect(page.locator('[data-professional-services-list] img').first()).toHaveAttribute('src', /^data:image\/png;base64,/);
+    await expect(page.locator('[data-service-id="' + submitted.id + '"] img').first()).toHaveAttribute('src', /^data:image\/png;base64,/);
+    await page.screenshot({ path: info.outputPath('pending-owner-list.png') });
+    await demo.switchActor(demoFixture.client, '/resultados.html?q=' + encodeURIComponent(title) + '&type=services');
+    expect(await page.evaluate(async id => Doke.repositories.services.getById(id), submitted.id)).toBeNull();
+    await expect(page.locator('[data-results-grid]')).not.toContainText(title);
     expect(pageErrors).toEqual([]);
   });
 });

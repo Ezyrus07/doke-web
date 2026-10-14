@@ -202,6 +202,7 @@
 
   function publishPayload(root, serviceId, payload, source) {
     var hydration = ensureHydration(root);
+    if (getRoot() !== root || getServiceId(root) !== serviceId) return null;
     var normalized = normalizePayload(payload);
     var state = normalized.service ? 'ready' : 'empty';
     var emptyMessage = serviceId
@@ -218,13 +219,23 @@
     setDataState(root, state);
     Doke.detailAdDataController.lastPayload = result;
     dispatch(root, 'doke:detail-ad-data-ready', result);
-    hydration && hydration.mark('detail');
+    if (hydration && ['ready', 'empty'].indexOf(hydration.getState()) !== -1) {
+      hydration.syncReady(state === 'ready');
+      hydration.syncEmpty({ hasItems: state === 'ready' });
+    } else {
+      hydration && hydration.mark('detail');
+    }
     return result;
   }
 
   function load(root, options) {
     options = options || {};
     var serviceId = getServiceId(root);
+    var requestId = (root.__dokeDetailRequestId || 0) + 1;
+    root.__dokeDetailRequestId = requestId;
+    function isCurrentRequest() {
+      return getRoot() === root && getServiceId(root) === serviceId && root.__dokeDetailRequestId === requestId;
+    }
     var hydration = ensureHydration(root);
     bindRetry(root);
 
@@ -240,16 +251,23 @@
       return Promise.resolve({ page: PAGE_NAME, serviceId: serviceId, error: dependencyError.message });
     }
 
-    var hasReadyContent = root && root.dataset && (root.dataset.dataState === 'ready' || root.dataset.viewState === 'ready');
+    var sameService = Doke.detailAdDataController.lastPayload && Doke.detailAdDataController.lastPayload.serviceId === serviceId;
+    var hasReadyContent = sameService && root && root.dataset && (root.dataset.dataState === 'ready' || root.dataset.viewState === 'ready');
+    if (!hasReadyContent) {
+      root.querySelectorAll('[data-detail-hydration-ready]').forEach(function (node) { node.hidden = true; });
+      dispatch(root, 'doke:detail-ad-data-loading', { page: PAGE_NAME, serviceId: serviceId });
+    }
     setDataState(root, hasReadyContent ? 'refreshing' : 'loading');
     if (hasReadyContent) dispatch(root, 'doke:detail-ad-data-refreshing', { page: PAGE_NAME, serviceId: serviceId });
 
     return Doke.pageDataOrchestrator
       .getPageData(PAGE_NAME, { serviceId: serviceId, forceRefresh: Boolean(options.forceRefresh) })
       .then(function (payload) {
+        if (!isCurrentRequest()) return null;
         return publishPayload(root, serviceId, payload, 'repository-or-cache');
       })
       .catch(function (error) {
+        if (!isCurrentRequest()) return null;
         var detail = {
           page: PAGE_NAME,
           serviceId: serviceId,
@@ -308,7 +326,7 @@
   document.addEventListener('doke:page-data-revalidated', function (event) {
     if (event.detail && event.detail.page === PAGE_NAME) {
       var root = getRoot();
-      if (!root) return;
+      if (!root || String(event.detail.context && event.detail.context.serviceId || '') !== getServiceId(root)) return;
       publishPayload(root, getServiceId(root), event.detail.data, 'stale-while-revalidate');
     }
   });

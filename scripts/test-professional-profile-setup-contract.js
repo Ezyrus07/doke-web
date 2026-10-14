@@ -13,7 +13,8 @@ function createStorage() {
 }
 
 
-function installSelfServiceHarness(targetWindow, getSessionUser) {
+function installSelfServiceHarness(targetWindow, getSessionUser, serverProfiles) {
+  const completionsInFlight = new Map(); // Mirror the gateway's atomic per-user completion.
   const toRemoteRow = (profile) => profile ? {
     id: profile.id,
     user_id: profile.userId,
@@ -40,7 +41,7 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
           return this;
         },
         maybeSingle() {
-          return getRepository().getByUserId(requestedUserId).then((profile) => ({ data: toRemoteRow(profile), error: null }));
+          return Promise.resolve({ data: toRemoteRow(serverProfiles.get(requestedUserId) || null), error: null });
         }
       };
     }
@@ -51,11 +52,23 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
     invokeSelfService: (operation, args = {}) => {
       assert.strictEqual(operation, 'save_professional_profile_setup');
       const user = getSessionUser();
+      assert(user?.id && user.role === 'client', 'Setup gateway requires an authenticated client.');
+      if (args.p_complete) {
+        const current = serverProfiles.get(user.id);
+        if (current && current.status !== 'draft') return Promise.resolve(current);
+        if (completionsInFlight.has(user.id)) return completionsInFlight.get(user.id);
+      }
       const setup = { currentStep: args.p_current_step, payload: args.p_payload };
       const request = args.p_complete
         ? getRepository().completeSetup(user.id, setup)
         : getRepository().saveDraft(user.id, setup);
-      return Promise.resolve(request);
+      const result = Promise.resolve(request).then(profile => {
+        assert.strictEqual(profile.userId, user.id, 'A resposta deve pertencer ao ator autenticado.');
+        serverProfiles.set(user.id, profile);
+        return profile;
+      }).finally(() => { if (args.p_complete) completionsInFlight.delete(user.id); });
+      if (args.p_complete) completionsInFlight.set(user.id, result);
+      return result;
     }
   };
 }
@@ -63,6 +76,7 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
 (async () => {
   const storage = createStorage();
   const events = [];
+  const serverProfiles = new Map(); // Shared server response fixture, not browser storage.
   let sessionUser = { id: 'client_profile_setup', name: 'Cliente Perfil', role: 'client', type: 'client' };
 
   const window = {
@@ -75,7 +89,7 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
     dispatchEvent: (event) => events.push(event)
   };
   window.window = window;
-  installSelfServiceHarness(window, () => sessionUser);
+  installSelfServiceHarness(window, () => sessionUser, serverProfiles);
 
   const context = {
     window,
@@ -97,7 +111,8 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
   const repository = window.Doke.repositories.professionalProfiles;
   const service = window.Doke.services.professionalProfileSetup;
 
-  storage.setItem(repository.legacyApplicationKey, JSON.stringify([{
+  const retiredApplicationKey = 'doke.professionalApplications.v1';
+  storage.setItem(retiredApplicationKey, JSON.stringify([{
     id: 'legacy_application',
     userId: 'legacy_user',
     status: 'under_review',
@@ -116,12 +131,10 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
     submittedAt: '2026-07-10T10:00:00.000Z'
   }]));
 
-  const migrated = await repository.getByUserId('legacy_user');
-  assert.strictEqual(migrated.status, 'pending_verification', 'Fluxos já enviados devem migrar para perfil criado e pendente de verificação.');
-  assert.strictEqual(migrated.payload.specialties, 'Pintura e acabamento');
-  assert.strictEqual(Object.prototype.hasOwnProperty.call(migrated.payload, 'taxId'), false);
-  assert.strictEqual(Object.prototype.hasOwnProperty.call(migrated.payload, 'identityDocument'), false);
-  assert.strictEqual(storage.getItem(repository.legacyApplicationKey), null, 'A autoridade legada deve ser removida após migração.');
+  assert.strictEqual(await repository.getByUserId('legacy_user'), null,
+    'Storage aposentado não pode criar perfil, importar documentos ou promover estado profissional.');
+  assert.strictEqual(repository.legacyApplicationKey, undefined, 'A autoridade de migração local permanece aposentada.');
+  assert.strictEqual(serverProfiles.size, 0);
 
   const payload = {
     mainCategory: 'Pintura',
@@ -164,11 +177,13 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
     dispatchEvent: () => {}
   };
   reloadWindow.window = reloadWindow;
-  installSelfServiceHarness(reloadWindow, () => sessionUser);
+  installSelfServiceHarness(reloadWindow, () => sessionUser, serverProfiles);
   const reloadContext = { window: reloadWindow, console, Date, Map, CustomEvent: context.CustomEvent };
   files.forEach((file) => vm.runInNewContext(fs.readFileSync(file, 'utf8'), reloadContext, { filename: `reload:${file}` }));
   const reloaded = await reloadWindow.Doke.services.professionalProfileSetup.getCurrentProfileSetup();
   assert.strictEqual(reloaded.id, draft.id, 'Rascunho deve sobreviver ao reload.');
+  assert.strictEqual(await reloadWindow.Doke.repositories.professionalProfiles.getByUserId(sessionUser.id), null,
+    'Reload não deve reconstruir o perfil usando storage do navegador.');
 
   await assert.rejects(async () => service.complete({ currentStep: 2, payload: { ...payload, termsAccepted: false } }), /Termos para Profissionais/);
 
@@ -180,6 +195,7 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
   assert.strictEqual(created.status, 'pending_verification');
   assert.strictEqual(created.verificationStatus, 'not_started');
   assert.strictEqual(duplicate.id, created.id, 'Chamadas concorrentes devem convergir para o mesmo perfil.');
+  assert.strictEqual(duplicate.completedAt, created.completedAt, 'Conclusão concorrente deve preservar a mesma confirmação canônica.');
   assert.strictEqual((await repository.list({ userId: sessionUser.id })).length, 1, 'Não pode existir mais de um perfil profissional por usuário.');
   assert.strictEqual(sessionUser.role, 'client', 'Criar perfil não pode ativar o papel profissional.');
   await assert.rejects(async () => service.saveDraft({ currentStep: 1, payload }), /já foi criado/);
@@ -243,7 +259,7 @@ function installSelfServiceHarness(targetWindow, getSessionUser) {
     applicationReviewRemoved: true,
     draftPersistence: true,
     reloadPersistence: true,
-    legacyApplicationMigration: true,
+    legacyApplicationImportBlocked: true,
     concurrentSingleProfile: true,
     completionIdempotency: true,
     pendingVerificationCreated: true,

@@ -38,7 +38,21 @@
 
   function shouldUseNotificationsApi() {
     var status = getNotificationsProviderStatus();
+    if ((Doke.runtimeConfig || {}).remoteAuthorityRequired === true && !(status.activeProvider === 'api' && status.apiReady === true)) {
+      var unavailable = new Error('Autoridade remota de notificações indisponível; fallback local bloqueado.');
+      unavailable.code = 'DOKE_REMOTE_AUTHORITY_UNAVAILABLE';
+      throw unavailable;
+    }
     return status.activeProvider === 'api' && status.apiReady === true;
+  }
+
+  function confirmNotificationMutation(response, id) {
+    if (!response || !response.notification || normalizeText(response.notification.id) !== id) {
+      var invalid = new Error('Servidor não confirmou a identidade da notificação alterada.');
+      invalid.code = 'DOKE_NOTIFICATION_COMMAND_ACK_INVALID';
+      throw invalid;
+    }
+    return response;
   }
 
   function getCurrentUser() {
@@ -619,7 +633,8 @@
 
     var boundary = getBoundary();
     if (shouldUseNotificationsApi() && boundary) {
-      return boundary.action('notifications', 'read', { id: notificationId, actorId: actor.id || '', actorRole: actor.role || 'guest' });
+      return boundary.action('notifications', 'read', { id: notificationId, actorId: actor.id || '', actorRole: actor.role || 'guest' })
+        .then(function (response) { return confirmNotificationMutation(response, notificationId); });
     }
 
     var repository = getRepository();
@@ -639,7 +654,8 @@
 
     var boundary = getBoundary();
     if (shouldUseNotificationsApi() && boundary) {
-      return boundary.action('notifications', 'dismiss', { id: notificationId, actorId: actor.id || '', actorRole: actor.role || 'guest' });
+      return boundary.action('notifications', 'dismiss', { id: notificationId, actorId: actor.id || '', actorRole: actor.role || 'guest' })
+        .then(function (response) { return confirmNotificationMutation(response, notificationId); });
     }
 
     var repository = getRepository();
@@ -656,7 +672,14 @@
     filters = filters || {};
     var boundary = getBoundary();
     if (shouldUseNotificationsApi() && boundary) {
-      return boundary.action('notifications', 'readAll', scopeApiFilters(filters));
+      return boundary.action('notifications', 'readAll', scopeApiFilters(filters)).then(function (response) {
+        if (!response || response.ok !== true) {
+          var invalid = new Error('Servidor não confirmou a leitura das notificações.');
+          invalid.code = 'DOKE_NOTIFICATION_COMMAND_ACK_INVALID';
+          throw invalid;
+        }
+        return response;
+      });
     }
 
     var repository = getRepository();
