@@ -69,6 +69,8 @@
     var more = scope.querySelector('[data-home-list="more-services"]');
     var moreSection = scope.querySelector('[data-home-list-region="more-services"]');
     var empty = scope.querySelector('[data-home-services-empty]');
+    if (empty) empty.textContent = 'Ainda não há anúncios publicados.';
+    delete scope.dataset.publicServicesError;
     if (featured) {
       featured.textContent = '';
       services.slice(0, 6).forEach(function (item) {
@@ -89,15 +91,45 @@
   }
 
   var refreshPromise = null;
+  var refreshScope = null;
+  var refreshId = 0;
+  function renderUnavailable(scope) {
+    scope.dataset.publicServicesError = 'unavailable';
+    var featured = scope.querySelector('[data-home-list="featured-services"]');
+    var more = scope.querySelector('[data-home-list="more-services"]');
+    if (featured) featured.textContent = '';
+    if (more) more.textContent = '';
+    var empty = scope.querySelector('[data-home-services-empty]');
+    if (empty) {
+      empty.textContent = 'Não foi possível carregar os anúncios. Tente novamente.';
+      empty.hidden = false;
+    }
+    document.dispatchEvent(new CustomEvent('doke:home-services-error', {
+      detail: { code: 'DOKE_HOME_CATALOG_UNAVAILABLE' }
+    }));
+    return { ok: false, errorCode: 'DOKE_HOME_CATALOG_UNAVAILABLE' };
+  }
   function refresh() {
-    if (refreshPromise) return refreshPromise;
+    var scope = root();
+    if (!scope) return Promise.resolve(null);
+    if (refreshPromise && refreshScope === scope) return refreshPromise;
+    refreshScope = scope;
+    var requestId = ++refreshId;
     var api = Doke.services && Doke.services.services;
-    if (!api || typeof api.list !== 'function') return Promise.resolve(render([]));
-    var repository = Doke.repositories && Doke.repositories.services;
-    if (repository && typeof repository.clearCache === 'function') repository.clearCache();
-    refreshPromise = api.list({ status: 'active', fresh: true, sort: 'updated_desc' })
-      .then(render)
-      .finally(function () { refreshPromise = null; });
+    refreshPromise = Promise.resolve().then(function () {
+      if (!api || typeof api.list !== 'function') throw new Error('Catalog unavailable');
+      var repository = Doke.repositories && Doke.repositories.services;
+      if (repository && typeof repository.clearCache === 'function') repository.clearCache();
+      return api.list({ status: 'active', fresh: true, sort: 'updated_desc' });
+    }).then(function (items) {
+      if (requestId !== refreshId || scope !== root()) return null;
+      return render(items);
+    }).catch(function () {
+      if (requestId !== refreshId || scope !== root()) return null;
+      return renderUnavailable(scope);
+    }).finally(function () {
+      if (requestId === refreshId) refreshPromise = null;
+    });
     return refreshPromise;
   }
 
@@ -108,6 +140,7 @@
     if (scope.dataset.publicServicesBound !== 'true') {
       scope.dataset.publicServicesBound = 'true';
       scope.addEventListener('doke:index-data-ready', function (event) {
+        if (scope !== root() || scope.dataset.publicServicesError) return;
         render(event.detail && event.detail.data && event.detail.data.services);
       });
       document.addEventListener('doke:supabase-sdk-ready', function () {

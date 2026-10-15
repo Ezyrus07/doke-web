@@ -400,6 +400,11 @@ function normalizeDemoItems(items) {
   }
 
   function warnRemote(error, context) {
+    if (root.DokePreviewE2E?.isActive()) {
+      lastRemoteError = new Error('Notificações remotas indisponíveis.');
+      setProviderState('remote-unavailable');
+      return;
+    }
     lastRemoteError = error || new Error('Falha desconhecida nas notificações remotas.');
     setProviderState('local-fallback');
     if (root.console && typeof root.console.warn === 'function') {
@@ -1022,9 +1027,15 @@ function normalizeDemoItems(items) {
       return getCurrentSupabaseUser(client).then(function (user) { return user ? startRealtime(user.id) : null; });
     },
     getProviderStatus: function () {
+      var client;
+      try { client = getSupabaseClient(); }
+      catch (error) {
+        if (!root.DokePreviewE2E?.isActive()) throw error;
+        warnRemote(error, 'estado');
+      }
       return Object.freeze({
-        provider: getSupabaseClient() ? 'supabase' : 'local',
-        fallbackActive: Boolean(lastRemoteError),
+        provider: root.DokePreviewE2E?.isActive() && lastRemoteError ? 'remote-unavailable' : client ? 'supabase' : root.DokePreviewE2E?.isActive() ? 'remote-unavailable' : 'local',
+        fallbackActive: !root.DokePreviewE2E?.isActive() && Boolean(lastRemoteError),
         lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : '',
         realtimeActive: Boolean(realtimeChannel)
       });
@@ -1034,12 +1045,24 @@ function normalizeDemoItems(items) {
   });
 
   function refreshRemoteNotifications(reason) {
-    if (remoteRefreshInFlight || !getSupabaseClient()) return Promise.resolve([]);
+    if (remoteRefreshInFlight) return Promise.resolve(null);
     remoteRefreshInFlight = true;
-    cache = null;
-    return load({ fresh: true }).catch(function (error) {
+    return Promise.resolve().then(function () {
+      if (!getSupabaseClient()) return null;
+      cache = null;
+      return load({ fresh: true });
+    }).then(function (items) {
+      if (items !== null) {
+        if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('notifications');
+        lastRemoteError = null;
+        setProviderState('supabase');
+      }
+      return items;
+    }).catch(function (error) {
+      stopRemoteRefreshLoop();
+      stopRealtime();
       warnRemote(error, reason || 'sincronização de notificações');
-      return [];
+      return root.DokePreviewE2E?.isActive() ? null : [];
     }).finally(function () {
       remoteRefreshInFlight = false;
     });
@@ -1052,16 +1075,22 @@ function normalizeDemoItems(items) {
     }, REMOTE_REFRESH_INTERVAL_MS);
   }
 
+  function stopRemoteRefreshLoop() {
+    if (remoteRefreshTimer) root.clearInterval(remoteRefreshTimer);
+    remoteRefreshTimer = null;
+  }
+
   function bootstrapRemoteNotifications() {
-    if (!getSupabaseClient()) return;
-    refreshRemoteNotifications('bootstrap de notificações');
-    startRemoteRefreshLoop();
+    return refreshRemoteNotifications('bootstrap de notificações').then(function (items) {
+      if (items !== null) startRemoteRefreshLoop();
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootstrapRemoteNotifications, { once: true });
   else root.setTimeout(bootstrapRemoteNotifications, 0);
 
   document.addEventListener('doke:auth-session-change', function () {
+    stopRemoteRefreshLoop();
     stopRealtime();
     cache = null;
     root.setTimeout(bootstrapRemoteNotifications, 0);

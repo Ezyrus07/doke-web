@@ -63,6 +63,11 @@
   }
 
   function warnRemote(error, context) {
+    if (root.DokePreviewE2E?.isActive()) {
+      lastRemoteError = new Error('Catálogo remoto indisponível.');
+      setProviderState('remote-unavailable');
+      return;
+    }
     lastRemoteError = error || new Error('Falha desconhecida no catálogo remoto.');
     setProviderState('remote-unavailable');
     if (root.console && typeof root.console.warn === 'function') {
@@ -951,12 +956,14 @@
       supabaseClient = null;
       lastRemoteError = null;
       cache = null;
-      getSupabaseClient();
-      if (Doke.homePublicServices && typeof Doke.homePublicServices.refresh === 'function') {
-        Doke.homePublicServices.refresh().catch(function (error) {
-          warnRemote(error, 'atualização após carregamento do SDK');
-        });
-      }
+      Promise.resolve().then(function () {
+        getSupabaseClient();
+        if (Doke.homePublicServices && typeof Doke.homePublicServices.refresh === 'function') {
+          return Doke.homePublicServices.refresh();
+        }
+      }).catch(function (error) {
+        warnRemote(error, 'atualização após carregamento do SDK');
+      });
     });
   }
 
@@ -974,8 +981,14 @@
     update: update,
     deactivate: deactivate,
     getProviderStatus: function () {
+      var client;
+      try { client = getSupabaseClient(); }
+      catch (error) {
+        if (!root.DokePreviewE2E?.isActive()) throw error;
+        warnRemote(error, 'estado');
+      }
       return Object.freeze({
-        provider: getSupabaseClient() ? 'supabase' : 'fixture-memory',
+        provider: root.DokePreviewE2E?.isActive() && lastRemoteError ? 'remote-unavailable' : client ? 'supabase' : root.DokePreviewE2E?.isActive() ? 'remote-unavailable' : 'fixture-memory',
         fallbackActive: false,
         remoteUnavailable: Boolean(lastRemoteError),
         lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : ''

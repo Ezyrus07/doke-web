@@ -237,6 +237,10 @@
       return getRoot() === root && getServiceId(root) === serviceId && root.__dokeDetailRequestId === requestId;
     }
     var hydration = ensureHydration(root);
+    if (hydration && hydration.getState() === 'error') {
+      hydration.start();
+      hydration.mark('dom');
+    }
     bindRetry(root);
 
     if (!serviceId) {
@@ -271,13 +275,16 @@
         var detail = {
           page: PAGE_NAME,
           serviceId: serviceId,
-          error: error && error.message ? error.message : 'Erro ao carregar dados do anúncio.'
+          error: 'O anúncio está indisponível no momento. Tente novamente.'
         };
 
         syncStateCopy(root, 'error', detail.error);
         setDataState(root, 'error', detail.error);
         dispatch(root, 'doke:detail-ad-data-error', detail);
-        hydration && hydration.error(error, { source: 'detail-controller' });
+        if (hydration) {
+          if (hydration.getState() === 'ready' || hydration.getState() === 'empty') hydration.start();
+          hydration.error(new Error(detail.error), { source: 'detail-controller' });
+        }
         return detail;
       });
   }
@@ -327,6 +334,7 @@
     if (event.detail && event.detail.page === PAGE_NAME) {
       var root = getRoot();
       if (!root || String(event.detail.context && event.detail.context.serviceId || '') !== getServiceId(root)) return;
+      if (root.dataset.dataState === 'error') return;
       publishPayload(root, getServiceId(root), event.detail.data, 'stale-while-revalidate');
     }
   });

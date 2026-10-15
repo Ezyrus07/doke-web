@@ -156,7 +156,9 @@
 
   function requestPageData(page, context, key, source) {
     if (pageDataRequests.has(key)) return pageDataRequests.get(key);
-    var request = Promise.resolve(Doke.repositoryBoundary.getPageData(page, context || {}))
+    var request = Promise.resolve().then(function () {
+      return Doke.repositoryBoundary.getPageData(page, context || {});
+    })
       .then(function (payload) {
         var value = clone(payload || {});
         pageDataCache.set(key, { value: value, storedAt: Date.now() });
