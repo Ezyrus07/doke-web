@@ -6,12 +6,15 @@ export function createHttpClient({ baseUrl = appConfig.apiBaseUrl, fetcher = win
       throw new Error('HTTP client sem baseUrl. Use mocks/adapters até conectar API real.');
     }
 
+    const previewBoundary = window.DokePreviewE2E?.isActive() ? window.DokePreviewE2E : null;
+    if (previewBoundary) previewBoundary.assertApiUrl(baseUrl + path, options.method || 'GET');
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetcher(`${baseUrl}${path}`, {
         ...options,
+        ...(previewBoundary ? { redirect: 'error' } : {}),
         signal: controller.signal,
         headers: {
           Accept: 'application/json',
@@ -20,6 +23,7 @@ export function createHttpClient({ baseUrl = appConfig.apiBaseUrl, fetcher = win
         }
       });
 
+      if (previewBoundary && (response.redirected || response.url && new URL(response.url).origin !== new URL(baseUrl).origin)) throw new Error('DOKE_E2E_REDIRECT_DENIED');
       if (!response.ok) {
         throw new Error(`Request failed: ${response.status}`);
       }

@@ -1,4 +1,9 @@
-window.DOKE_SUPABASE_CONFIG = {
+var dokePreviewRequired = window.DokePreviewE2E && window.DokePreviewE2E.isActive()
+  || window.DOKE_DEPLOYMENT_PROFILE === 'preview-e2e'
+  || document.documentElement?.getAttribute?.('data-doke-deployment-profile') === 'preview-e2e';
+if (dokePreviewRequired) {
+  window.DOKE_SUPABASE_CONFIG = window.DokePreviewE2E ? window.DokePreviewE2E.getSupabaseConfig() : Object.freeze({ enabled: false });
+} else window.DOKE_SUPABASE_CONFIG = {
   enabled: true,
   servicesEnabled: true,
   searchTransport: "edge-v2",
@@ -51,6 +56,16 @@ window.DOKE_SUPABASE_CONFIG = {
   }
 
   function getClient() {
+    if (dokePreviewRequired) {
+      var boundary = root.DokePreviewE2E;
+      if (!boundary || !boundary.allowed('auth')) return null;
+      var approvedClient = boundary.getClient();
+      if (approvedClient && root.DOKE_SUPABASE_CLIENT !== approvedClient) {
+        root.DOKE_SUPABASE_CLIENT = approvedClient;
+        document.dispatchEvent(new CustomEvent('doke:supabase-client-ready', { detail: { client: approvedClient } }));
+      }
+      return approvedClient;
+    }
     var config = getConfig();
     var signature = getSignature(config);
     if (sharedClient && sharedSignature === signature) return sharedClient;
@@ -100,6 +115,14 @@ window.DOKE_SUPABASE_CONFIG = {
   }
 
   root.DokeSupabase = Object.freeze({
+    isPreviewE2E: function () { return Boolean(dokePreviewRequired); },
+    requireCapability: function (name) {
+      if (!dokePreviewRequired) return;
+      var boundary = root.DokePreviewE2E;
+      if (!boundary) throw new Error('DOKE_E2E_BOUNDARY_REQUIRED');
+      boundary.assertCapability(name);
+      if (name !== 'auth' && !boundary.getClient()) throw new Error('DOKE_E2E_SDK_UNAVAILABLE');
+    },
     getClient: getClient,
     resetClient: resetClient,
     getConfig: getConfig,

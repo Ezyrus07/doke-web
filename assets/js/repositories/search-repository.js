@@ -130,6 +130,7 @@
   }
 
   function getSupabaseClient() {
+    if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('search');
     if (supabaseClient) return supabaseClient;
     var config = root.DOKE_SUPABASE_CONFIG || {};
     if (!config.enabled || config.servicesEnabled === false || !config.url || !config.anonKey) return null;
@@ -400,6 +401,9 @@
   }
 
   function queryPage(input) {
+    if (root.DokeSupabase?.isPreviewE2E()) {
+      try { root.DokeSupabase.requireCapability('search'); } catch (error) { return Promise.reject(error); }
+    }
     var request;
     try {
       request = normalizeRequest(input);

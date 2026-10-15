@@ -8,8 +8,9 @@
   const Doke = root.Doke || (root.Doke = {});
   const ns = root.DokeAuth || (root.DokeAuth = {});
 
-  const STORAGE_KEY = 'doke.auth.session.v1';
-  const LEGACY_KEYS = Object.freeze(['doke.auth.session.v2', 'doke.auth.session']);
+  const previewBoundary = root.DokePreviewE2E?.isActive() ? root.DokePreviewE2E : null;
+  const STORAGE_KEY = previewBoundary ? previewBoundary.storageKey('snapshot') : 'doke.auth.session.v1';
+  const LEGACY_KEYS = Object.freeze(previewBoundary ? [] : ['doke.auth.session.v2', 'doke.auth.session']);
   const SENSITIVE_SESSION_KEYS = Object.freeze(['token', 'accessToken', 'access_token', 'refreshToken', 'refresh_token']);
   const ACCOUNT_STORAGE_VERSION = '20260804-ux-priv-001-v1';
   const listeners = new Set();
@@ -232,6 +233,7 @@
   };
 
   const read = () => {
+    if (previewBoundary && !previewBoundary.allowed('auth')) return null;
     const primary = readSanitizedFromKey(STORAGE_KEY);
     if (primary) return primary;
 
@@ -309,6 +311,7 @@
   };
 
   const write = (session) => {
+    if (previewBoundary && session) previewBoundary.assertCapability('auth');
     const normalized = normalizeSession(session);
 
     if (!normalized) {

@@ -62,7 +62,7 @@ function createSandbox({ storage, supabaseClient } = {}) {
     },
     DokeAuth: { repositories: {} },
     DOKE_SUPABASE_CONFIG: { enabled: true, url: 'https://staging.example', anonKey: 'anon' },
-    DokeSupabase: { getClient() { return supabaseClient || null; } },
+    DokeSupabase: { isPreviewE2E() { return false; }, requireCapability() {}, getClient() { return supabaseClient || null; } },
     location: {
       pathname: '/index.html', search: '', hash: '',
       assign() {}, replace() {}

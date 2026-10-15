@@ -408,6 +408,7 @@ function normalizeDemoItems(items) {
   }
 
   function getSupabaseClient() {
+    if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('notifications');
     if (supabaseClientAttempted) return supabaseClient;
     supabaseClientAttempted = true;
 
@@ -593,7 +594,7 @@ function normalizeDemoItems(items) {
 
     return getCurrentSupabaseUser(client).then(function (user) {
       if (!user || !isUuid(user.id)) return [];
-      startRealtime(user.id);
+      if (!root.DokeSupabase?.isPreviewE2E() || root.DokePreviewE2E.allowed('realtime')) startRealtime(user.id);
       return client.from(REMOTE_TABLE).select('*').order('created_at', { ascending: false }).then(function (result) {
         if (result.error) throw result.error;
         setProviderState('supabase');
@@ -728,6 +729,11 @@ function normalizeDemoItems(items) {
   }
 
   function load(options) {
+    if (root.DokeSupabase?.isPreviewE2E()) {
+      try { root.DokeSupabase.requireCapability('notifications'); }
+      catch (error) { return Promise.reject(error); }
+      return fetchRemoteNotifications();
+    }
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
 

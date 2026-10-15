@@ -113,6 +113,7 @@
   }
 
   function getSupabaseClient() {
+    if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('finance');
     if (supabaseClientAttempted) return supabaseClient;
     supabaseClientAttempted = true;
     var config = root.DOKE_SUPABASE_CONFIG || {};

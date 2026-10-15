@@ -31,6 +31,7 @@
     ? root.DokeSupabase.getClient()
     : null;
   const isSupabaseAuthRequired = () => {
+    if (root.DokePreviewE2E?.isActive()) return root.DokePreviewE2E.allowed('auth');
     const config = root.DOKE_SUPABASE_CONFIG || {};
     return config.enabled !== false && Boolean(config.url) && Boolean(config.anonKey);
   };

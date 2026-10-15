@@ -249,6 +249,11 @@
   function createRuntimeApiClient() {
     function request(method, path, body) {
       var baseUrl = getApiBaseUrl();
+      var previewBoundary = window.DokePreviewE2E?.isActive() ? window.DokePreviewE2E : null;
+      if (previewBoundary) {
+        try { previewBoundary.assertApiUrl(baseUrl + path, method); }
+        catch (error) { return Promise.reject(error); }
+      }
       if (!baseUrl) return Promise.reject(new Error('API provider blocked: apiBaseUrl is not configured.'));
       if (!isNetworkEnabled()) return Promise.reject(new Error('API provider blocked: enableNetworkRequests is disabled.'));
       if (typeof window.fetch !== 'function') return Promise.reject(new Error('API provider requires window.fetch.'));
@@ -257,6 +262,7 @@
       var options = {
         method: method,
         credentials: 'omit',
+        ...(previewBoundary ? { redirect: 'error' } : {}),
         headers: { Accept: 'application/json' }
       };
       var requestMeta = {};
@@ -285,6 +291,9 @@
         if (token) options.headers.Authorization = 'Bearer ' + token;
         return window.fetch(baseUrl + path, options);
       }).then(function (response) {
+        if (previewBoundary && (response.redirected || response.url && new URL(response.url).origin !== new URL(baseUrl).origin)) {
+          var redirected = new Error('DOKE_E2E_REDIRECT_DENIED'); redirected.code = 'DOKE_E2E_REDIRECT_DENIED'; throw redirected;
+        }
         if (!response.ok) {
           var error = new Error('API request failed: ' + response.status);
           error.code = 'DOKE_API_HTTP_ERROR';
@@ -322,7 +331,9 @@
 
   function createApiRepositoryProvider(options) {
     options = options || {};
-    var client = options.client || Doke.apiClient || createRuntimeApiClient();
+    var client = window.DokePreviewE2E?.isActive()
+      ? createRuntimeApiClient()
+      : options.client || Doke.apiClient || createRuntimeApiClient();
 
     function list(resourceName, query) {
       assertClient(client);

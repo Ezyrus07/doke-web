@@ -183,7 +183,7 @@
     'responsive-experience-style'
   ]);
 
-  var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
+  var CORE_SCRIPT_RE = /assets\/js\/core\/(?:preview-e2e-boundary|runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
   var routeCache = new Map();
   var routeWarmCache = new Map();
   var loadedScripts = new Set(Array.prototype.map.call(document.querySelectorAll('script[src]'), function (script) {

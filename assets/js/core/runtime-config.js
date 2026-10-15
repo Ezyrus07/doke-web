@@ -213,9 +213,13 @@
   syncProviderAttributes();
 
   var windowConfig = readWindowConfig();
+  if (window.DokePreviewE2E && window.DokePreviewE2E.isActive()) {
+    windowConfig = Object.assign({}, windowConfig, window.DokePreviewE2E.runtime());
+  }
   var environment = windowConfig.environment || readEnvironment();
   var flags = mergeFlags(DEFAULT_FLAGS, windowConfig.flags || {});
   flags.enableNetworkRequests = resolveNetworkFlag(windowConfig, flags);
+  if (window.DokePreviewE2E && window.DokePreviewE2E.isActive()) Object.freeze(flags);
   var ordersWriteCanary = environment !== 'staging' && resolveOrdersWriteCanary(windowConfig);
   var betaLaunchCanary = environment !== 'staging' && resolveBetaLaunchCanary(windowConfig);
   var betaLaunchDomains = resolveBetaLaunchDomains(windowConfig);

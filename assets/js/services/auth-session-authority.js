@@ -8,7 +8,7 @@
   const ns = root.DokeAuth || (root.DokeAuth = {});
   const VERSION = 'AUTH-A06';
   const LEGACY_RECOVERY_KEY = 'doke.auth.recovery.v1';
-  const LEGACY_SESSION_KEY = 'doke.auth.session';
+  const LEGACY_SESSION_KEY = root.DokePreviewE2E?.isActive() ? root.DokePreviewE2E.storageKey('snapshot') : 'doke.auth.session';
   const LOGOUT_SCOPES = Object.freeze({ local: 'local', others: 'others', global: 'global' });
 
   if (ns.sessionAuthority?.version === VERSION) return;

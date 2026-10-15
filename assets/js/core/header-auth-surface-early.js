@@ -6,7 +6,8 @@
 
   var root = window;
   var doc = document;
-  var SESSION_KEYS = ['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session'];
+  var previewBoundary = root.DokePreviewE2E && root.DokePreviewE2E.isActive() ? root.DokePreviewE2E : null;
+  var SESSION_KEYS = previewBoundary ? [previewBoundary.storageKey('snapshot')] : ['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session'];
   var ROLE_LABELS = {
     client: 'Cliente',
     professional: 'Profissional'
@@ -64,9 +65,10 @@
     return truncateText(parts[0] || 'Entrar', 12);
   }
 
-  purgeLegacyDemoAuth();
+  if (!previewBoundary) purgeLegacyDemoAuth();
 
   function readSessionUser() {
+    if (previewBoundary && !previewBoundary.allowed('auth')) return null;
     for (var index = 0; index < SESSION_KEYS.length; index += 1) {
       try {
         var raw = root.localStorage.getItem(SESSION_KEYS[index]);
@@ -79,6 +81,7 @@
   }
 
   function hasPersistedSupabaseSession() {
+    if (previewBoundary) return previewBoundary.allowed('auth') && Boolean(root.localStorage.getItem(previewBoundary.storageKey('supabase.auth')));
     try {
       for (var index = 0; index < root.localStorage.length; index += 1) {
         var key = root.localStorage.key(index) || '';

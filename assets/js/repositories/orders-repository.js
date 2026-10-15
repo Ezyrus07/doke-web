@@ -186,6 +186,10 @@
   }
 
   function getProviderPolicy() {
+    if (root.DokeSupabase?.isPreviewE2E()) {
+      root.DokeSupabase.requireCapability('orders');
+      return Object.freeze({ provider: 'supabase-read', environment: 'staging', remoteReadActive: true, mockDevelopmentActive: false, fallbackAllowed: false });
+    }
     var config = getRuntimeConfig();
     var environment = String(config.environment || '').toLowerCase();
     var provider = String(config.ordersReadProvider || config.ordersProvider || 'mock').trim().toLowerCase();
@@ -461,6 +465,7 @@
   }
 
   function getSupabaseClient() {
+    if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('orders');
     var policy = getProviderPolicy();
     if (!policy.remoteReadActive) {
       setProviderState(policy.mockDevelopmentActive ? 'mock-development' : 'blocked');

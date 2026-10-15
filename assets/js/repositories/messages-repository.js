@@ -301,6 +301,7 @@
   }
 
   function getAuthorityMode() {
+    if (root.DokeSupabase?.isPreviewE2E()) { root.DokeSupabase.requireCapability('messages'); return 'remote-only'; }
     var user = getSessionUser();
     return user && isUuid(user.id) ? 'remote-only' : 'fixture-memory';
   }
@@ -338,6 +339,7 @@
   }
 
   function getSupabaseClient() {
+    if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('messages');
     if (supabaseClientAttempted) return supabaseClient;
     supabaseClientAttempted = true;
     var config = root.DOKE_SUPABASE_CONFIG || {};

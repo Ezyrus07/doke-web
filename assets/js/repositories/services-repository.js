@@ -71,6 +71,7 @@
   }
 
   function getSupabaseClient() {
+    if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('catalog');
     if (supabaseClient) return supabaseClient;
 
     var config = root.DOKE_SUPABASE_CONFIG || {};
@@ -657,6 +658,7 @@
   }
 
   function load(options) {
+    if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('catalog');
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
 

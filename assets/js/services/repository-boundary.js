@@ -144,6 +144,9 @@
 
   function configureProvider(options) {
     options = options || {};
+    if (window.DokePreviewE2E?.isActive() && options.apiBaseUrl !== undefined) {
+      if (String(options.apiBaseUrl).replace(/\/$/, '') !== window.DokePreviewE2E.runtime().apiBaseUrl) throw new Error('DOKE_E2E_API_ORIGIN');
+    }
     if (options.apiBaseUrl !== undefined) {
       var runtimeConfig = getRuntimeConfig();
       Doke.runtimeConfig = Object.freeze(Object.assign({}, runtimeConfig, { apiBaseUrl: String(options.apiBaseUrl || '').trim().replace(/\/$/, '') }));

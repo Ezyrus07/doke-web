@@ -86,6 +86,7 @@
   }
 
   function getSupabaseClient() {
+    if (root.DokeSupabase?.requireCapability) root.DokeSupabase.requireCapability('upload');
     if (supabaseClientAttempted) return supabaseClient;
     supabaseClientAttempted = true;
     var config = root.DOKE_SUPABASE_CONFIG || {};

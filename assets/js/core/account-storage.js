@@ -10,9 +10,11 @@
 
   if (Doke.accountStorage && Doke.accountStorage.version === VERSION) return;
 
-  var GUEST_SESSION_KEY = 'doke.guest-session.v1';
-  var ACTIVE_SCOPE_KEY = 'doke.account-storage.active-scope.v1';
-  var KEY_PATTERN = /^doke:([A-Za-z0-9_-]{6,128}):([a-z0-9][a-z0-9_-]{1,63}):([a-z0-9][a-z0-9_.-]{0,95}):v([1-9][0-9]{0,3})$/;
+  var previewBoundary = window.DokePreviewE2E && window.DokePreviewE2E.isActive() ? window.DokePreviewE2E : null;
+  var GUEST_SESSION_KEY = previewBoundary ? previewBoundary.storageKey('guest') : 'doke.guest-session.v1';
+  var ACTIVE_SCOPE_KEY = previewBoundary ? previewBoundary.storageKey('active-scope') : 'doke.account-storage.active-scope.v1';
+  var storagePrefix = previewBoundary ? previewBoundary.storageKey('account') + ':' : 'doke:';
+  var KEY_PATTERN = new RegExp('^' + storagePrefix.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&') + '([A-Za-z0-9_-]{6,128}):([a-z0-9][a-z0-9_-]{1,63}):([a-z0-9][a-z0-9_.-]{0,95}):v([1-9][0-9]{0,3})$');
   var SAFE_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9_.-]{0,95}$/;
   var SAFE_DOMAIN_PATTERN = /^[a-z0-9][a-z0-9_-]{1,63}$/;
   var SAFE_ACCOUNT_PATTERN = /^[A-Za-z0-9_-]{6,128}$/;
@@ -210,7 +212,7 @@
       error.code = 'DOKE_ACCOUNT_STORAGE_GUEST_NOT_ALLOWED';
       throw error;
     }
-    return 'doke:' + scope.scopeId + ':' + domain + ':' + key + ':v' + version;
+    return storagePrefix + scope.scopeId + ':' + domain + ':' + key + ':v' + version;
   }
 
   function parseKey(storageKey) {
@@ -310,7 +312,7 @@
 
   function listScopeKeys(scopeId) {
     var normalizedScope = sanitizeAccountId(scopeId);
-    var prefix = 'doke:' + normalizedScope + ':';
+    var prefix = storagePrefix + normalizedScope + ':';
     var keys = [];
     for (var index = 0; index < root.localStorage.length; index += 1) {
       var key = root.localStorage.key(index);
@@ -345,6 +347,7 @@
   }
 
   function migrateLegacy(options) {
+    if (previewBoundary) return Object.freeze({ migrated: false, reason: 'e2e-isolated' });
     options = options || {};
     var scope = resolveScope(options);
     if (scope.kind === 'guest') return Object.freeze({ migrated: false, reason: 'guest-scope' });
