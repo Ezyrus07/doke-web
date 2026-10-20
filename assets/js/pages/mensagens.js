@@ -1289,7 +1289,7 @@
     const firstListedConversationId = items.find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId || "";
     let activeId = requestedConversationId && conversations[requestedConversationId]
       ? requestedConversationId
-      : conversationFromOrder || firstListedConversationId || "";
+      : conversationFromOrder || (!hasDirectThreadRequest ? firstListedConversationId : "") || "";
 
     if (activeId && conversations[activeId]) {
       ensureLocalConversationCard(root, activeId, conversations[activeId]);
@@ -2603,6 +2603,30 @@
       return { hasConversation, hasOrderContext };
     };
 
+    const clearRequestedThreadFeedback = () => {
+      root.querySelector('[data-messages-route-feedback]')?.remove();
+    };
+
+    const showRequestedThreadUnavailable = () => {
+      let notice = root.querySelector('[data-messages-route-feedback]');
+      if (!notice) {
+        notice = document.createElement('p');
+        notice.dataset.messagesRouteFeedback = '';
+        notice.className = 'messages-route-feedback doke-card';
+        notice.setAttribute('role', 'status');
+        const { ordersList } = getConversationLists(root);
+        if (ordersList?.parentElement) ordersList.before(notice);
+        else root.prepend(notice);
+      }
+      notice.textContent = 'A conversa solicitada não está disponível nesta conta. Confira suas conversas abaixo.';
+      if (threadEmpty) {
+        const title = threadEmpty.querySelector('h3');
+        const text = threadEmpty.querySelector('p');
+        if (title) title.textContent = 'Conversa indisponível.';
+        if (text) text.textContent = 'Confira suas conversas ou volte ao pedido.';
+      }
+    };
+
     const renderEmptyThread = () => {
       activeId = "";
       clearSelection();
@@ -2790,6 +2814,7 @@
         renderEmptyThread();
         return;
       }
+      clearRequestedThreadFeedback();
       const isSameThread = activeId === id;
       const previousScrollTop = threadBody.scrollTop;
       const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
@@ -3642,14 +3667,19 @@
       if (shouldSelectConversation) {
         const nextId = (requestedConversationId && conversations[requestedConversationId] ? requestedConversationId : "")
           || nextConversationFromOrder
-          || refreshConversationItems().find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId
+          || (!hasDirectThreadRequest
+            ? refreshConversationItems().find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId
+            : "")
           || "";
         if (nextId) {
           ensureLocalConversationCard(root, nextId, conversations[nextId]);
           prepareConversationItems();
           refreshConversationCards();
           syncVisibility();
-          renderThread(nextId, { scrollTo: "start", openOnMobile: Boolean(requestedOrderId || requestedConversationId) });
+          renderThread(nextId, { scrollTo: "start", openOnMobile: hasDirectThreadRequest });
+        } else if (hasDirectThreadRequest) {
+          renderEmptyThread();
+          showRequestedThreadUnavailable();
         }
         return;
       }
