@@ -1289,7 +1289,7 @@
     const firstListedConversationId = items.find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId || "";
     let activeId = requestedConversationId && conversations[requestedConversationId]
       ? requestedConversationId
-      : conversationFromOrder || firstListedConversationId || "";
+      : conversationFromOrder || (!hasDirectThreadRequest ? firstListedConversationId : "") || "";
 
     if (activeId && conversations[activeId]) {
       ensureLocalConversationCard(root, activeId, conversations[activeId]);
@@ -1406,10 +1406,10 @@
               </div>
             </section>
 
-            <section class="orders-detail-section orders-detail-ai" aria-label="Análise IA do pedido">
-              <span class="orders-detail-section__eyebrow">Análise IA</span>
+            <section class="orders-detail-section orders-detail-ai" aria-label="Orientação sobre a etapa do pedido">
+              <span class="orders-detail-section__eyebrow">Orientação da etapa</span>
               <div class="orders-detail-ai__box">
-                <span class="orders-detail-ai__icon" aria-hidden="true">${orderDetailIcons.spark}</span>
+                <span class="orders-detail-ai__icon" aria-hidden="true">${orderDetailIcons.action}</span>
                 <div>
                   <strong class="orders-detail-ai__title" data-detail-ai-title></strong>
                   <p class="orders-detail-ai__text" data-detail-ai-text></p>
@@ -1787,7 +1787,7 @@
             ? "Feche o ciclo pedindo avaliação e registrando a conclusão do atendimento."
             : "Registre sua avaliação para concluir a experiência após o serviço.",
           aiTitle: "Fluxo concluído",
-          aiText: "O pedido já foi executado. O próximo ganho de produto está em conclusão formal e avaliação."
+          aiText: "O serviço foi concluído. Confira o registro de conclusão e avalie o profissional quando essa opção estiver disponível."
         },
         cancelled: {
           statusLabel: order.statusLabel || "Pedido recusado",
@@ -1922,7 +1922,6 @@
         statusbar.innerHTML = `
           <span class="orders-detail-pill">${escapeHtml(details.statusLabel)}</span>
           <span class="orders-detail-pill" data-tone="${escapeHtml(details.riskTone || "info")}">${escapeHtml(secondaryBadge)}</span>
-          <span class="orders-detail-pill" data-tone="${escapeHtml(details.riskTone || "info")}">Risco ${escapeHtml(details.riskLabel || "Baixo")}</span>
         `;
       }
 
@@ -2196,6 +2195,117 @@
         return null;
       });
     };
+
+    // UX-JOURNEY-004: a quote must be reviewed before its canonical transition.
+    // This is a presentation gate; authorization remains in ordersService.
+    const proposalReviewModal = document.querySelector('[data-messages-proposal-review]');
+    let pendingProposalReview = null;
+    let proposalApprovalSubmitting = false;
+
+    const readProposalForReview = (conversation) => {
+      const messages = Array.isArray(conversation?.messages) ? conversation.messages : [];
+      const latest = [...messages].reverse().find((message) => isProposalMessage(conversation, message));
+      return {
+        amount: String(conversation?.order?.proposalAmount || latest?.amount || '').trim(),
+        installments: String(latest?.installments || '').trim() || 'Condição não informada'
+      };
+    };
+
+    const closeProposalReview = ({ restoreFocus = true } = {}) => {
+      const trigger = pendingProposalReview?.trigger;
+      pendingProposalReview = null;
+      if (!proposalReviewModal) return;
+      proposalReviewModal.hidden = true;
+      proposalReviewModal.setAttribute('aria-hidden', 'true');
+      if (restoreFocus && trigger?.isConnected && !trigger.disabled) {
+        trigger.focus({ preventScroll: true });
+      }
+    };
+
+    const openProposalReview = (trigger) => {
+      const conversation = conversations[activeId];
+      const orderId = conversation?.order?.id || conversation?.orderId;
+      if (!proposalReviewModal || !conversation || !orderId ||
+          !canTransitionConversationOrder(conversation, 'in_progress')) {
+        showCopyToast('Esta proposta não está disponível para aprovação.');
+        return;
+      }
+      if (proposalApprovalSubmitting) return;
+      const proposal = readProposalForReview(conversation);
+      if (!proposal.amount) {
+        showCopyToast('O valor desta proposta não está disponível. Confira o pedido antes de decidir.');
+        return;
+      }
+      pendingProposalReview = { conversationId: activeId, orderId, amount: proposal.amount, installments: proposal.installments, trigger };
+      const title = proposalReviewModal.querySelector('[data-proposal-review-title]');
+      const amount = proposalReviewModal.querySelector('[data-proposal-review-amount]');
+      const installments = proposalReviewModal.querySelector('[data-proposal-review-installments]');
+      if (title) title.textContent = conversation.order?.title || conversation.order?.serviceTitle || 'Pedido de serviço';
+      if (amount) amount.textContent = proposal.amount;
+      if (installments) installments.textContent = proposal.installments;
+      proposalReviewModal.hidden = false;
+      proposalReviewModal.setAttribute('aria-hidden', 'false');
+      window.requestAnimationFrame(() => {
+        if (!proposalReviewModal.hidden) proposalReviewModal.querySelector('[data-proposal-review-confirm]')?.focus({ preventScroll: true });
+      });
+    };
+
+    const confirmProposalReview = () => {
+      const pending = pendingProposalReview;
+      if (!pending || proposalApprovalSubmitting) return;
+      const conversation = conversations[pending.conversationId];
+      const orderId = conversation?.order?.id || conversation?.orderId;
+      if (activeId !== pending.conversationId || orderId !== pending.orderId ||
+          !canTransitionConversationOrder(conversation, 'in_progress') ||
+          readProposalForReview(conversation).amount !== pending.amount ||
+          readProposalForReview(conversation).installments !== pending.installments) {
+        closeProposalReview({ restoreFocus: false });
+        showCopyToast('A proposta mudou de estado ou valor. Confira os dados novamente.');
+        return;
+      }
+      proposalApprovalSubmitting = true;
+      closeProposalReview({ restoreFocus: false });
+      Promise.resolve(approveActiveProposal(pending.trigger)).finally(() => {
+        proposalApprovalSubmitting = false;
+      });
+    };
+
+    const handleProposalReviewKeydown = (event) => {
+      if (!proposalReviewModal || proposalReviewModal.hidden) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeProposalReview();
+      } else if (event.key === 'Tab') {
+        const controls = [...proposalReviewModal.querySelectorAll('button:not([disabled])')]
+          .filter((button) => button.getClientRects().length > 0);
+        if (!controls.length) return;
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    proposalReviewModal?.addEventListener('click', (event) => {
+      if (event.target.closest('[data-proposal-review-cancel]')) {
+        event.preventDefault();
+        closeProposalReview();
+      } else if (event.target.closest('[data-proposal-review-confirm]')) {
+        event.preventDefault();
+        confirmProposalReview();
+      }
+    });
+    document.addEventListener('keydown', handleProposalReviewKeydown);
+    addRouteCleanup(() => {
+      document.removeEventListener('keydown', handleProposalReviewKeydown);
+      closeProposalReview({ restoreFocus: false });
+    });
 
     const rejectActiveProposal = (trigger) => {
       const conversation = conversations[activeId];
@@ -2603,6 +2713,30 @@
       return { hasConversation, hasOrderContext };
     };
 
+    const clearRequestedThreadFeedback = () => {
+      root.querySelector('[data-messages-route-feedback]')?.remove();
+    };
+
+    const showRequestedThreadUnavailable = () => {
+      let notice = root.querySelector('[data-messages-route-feedback]');
+      if (!notice) {
+        notice = document.createElement('p');
+        notice.dataset.messagesRouteFeedback = '';
+        notice.className = 'messages-route-feedback doke-card';
+        notice.setAttribute('role', 'status');
+        const { ordersList } = getConversationLists(root);
+        if (ordersList?.parentElement) ordersList.before(notice);
+        else root.prepend(notice);
+      }
+      notice.textContent = 'A conversa solicitada não está disponível nesta conta. Confira suas conversas abaixo.';
+      if (threadEmpty) {
+        const title = threadEmpty.querySelector('h3');
+        const text = threadEmpty.querySelector('p');
+        if (title) title.textContent = 'Conversa indisponível.';
+        if (text) text.textContent = 'Confira suas conversas ou volte ao pedido.';
+      }
+    };
+
     const renderEmptyThread = () => {
       activeId = "";
       clearSelection();
@@ -2790,6 +2924,7 @@
         renderEmptyThread();
         return;
       }
+      clearRequestedThreadFeedback();
       const isSameThread = activeId === id;
       const previousScrollTop = threadBody.scrollTop;
       const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
@@ -3484,7 +3619,7 @@
       if (approveProposalButton && root.contains(approveProposalButton)) {
         event.preventDefault();
         event.stopPropagation();
-        approveActiveProposal(approveProposalButton);
+        openProposalReview(approveProposalButton);
         return;
       }
 
@@ -3642,14 +3777,19 @@
       if (shouldSelectConversation) {
         const nextId = (requestedConversationId && conversations[requestedConversationId] ? requestedConversationId : "")
           || nextConversationFromOrder
-          || refreshConversationItems().find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId
+          || (!hasDirectThreadRequest
+            ? refreshConversationItems().find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId
+            : "")
           || "";
         if (nextId) {
           ensureLocalConversationCard(root, nextId, conversations[nextId]);
           prepareConversationItems();
           refreshConversationCards();
           syncVisibility();
-          renderThread(nextId, { scrollTo: "start", openOnMobile: Boolean(requestedOrderId || requestedConversationId) });
+          renderThread(nextId, { scrollTo: "start", openOnMobile: hasDirectThreadRequest });
+        } else if (hasDirectThreadRequest) {
+          renderEmptyThread();
+          showRequestedThreadUnavailable();
         }
         return;
       }
@@ -3897,7 +4037,7 @@
       const approveProposalButton = event.target.closest("[data-message-approve-proposal]");
       if (approveProposalButton) {
         event.preventDefault();
-        approveActiveProposal(approveProposalButton);
+        openProposalReview(approveProposalButton);
         return;
       }
 
