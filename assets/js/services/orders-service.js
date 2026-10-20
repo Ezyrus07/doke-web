@@ -1138,6 +1138,9 @@ function extractIdempotencyKey(payload, options) {
         throw new Error('Você não tem permissão para alterar este pedido.');
       }
       assertCanonicalTransition(order, normalizedStatus, actor);
+      if (normalizedStatus === 'in_progress' && options.expectedProposal) {
+        assertExpectedProposal(order, options.expectedProposal);
+      }
       if (normalizedStatus === 'cancelled' && options.disputeResolutionConfirmed !== true) {
         var financialStatus = normalizeText(order.paymentStatus || order.escrowStatus || '').toLowerCase();
         if (normalizeText(order.paymentId || '') || ['held', 'paid', 'confirmed', 'released', 'refunded'].indexOf(financialStatus) !== -1) {
@@ -1680,6 +1683,26 @@ function extractIdempotencyKey(payload, options) {
 
   var proposalDecisionTasks = Object.create(null);
 
+  // Local consistency guard for quote decisions. Hosted writes must obtain
+  // an equivalent atomic compare-and-transition guarantee from the server.
+  function assertExpectedProposal(order, expected) {
+    if (!expected || typeof expected !== 'object') return;
+    var canonical = {
+      amount: normalizeText(order.proposalAmount || order.budget || ''),
+      installments: normalizeText(order.proposalInstallments || ''),
+      proposalMessageId: normalizeText(order.proposalMessageId || ''),
+      proposalCreatedAt: normalizeText(order.proposalCreatedAt || '')
+    };
+    if (canonical.amount !== normalizeText(expected.amount || '') ||
+        canonical.installments !== normalizeText(expected.installments || '') ||
+        canonical.proposalMessageId !== normalizeText(expected.proposalMessageId || '') ||
+        canonical.proposalCreatedAt !== normalizeText(expected.proposalCreatedAt || '')) {
+      var conflict = new Error('A proposta foi alterada. Revise o valor e as condições antes de aprovar.');
+      conflict.code = 'DOKE_PROPOSAL_REVIEW_STALE';
+      throw conflict;
+    }
+  }
+
   function runProposalDecision(orderId, executor) {
     if (proposalDecisionTasks[orderId]) return proposalDecisionTasks[orderId];
     var task = Promise.resolve().then(executor);
@@ -1700,6 +1723,14 @@ function extractIdempotencyKey(payload, options) {
 
     if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para aprovação da proposta.'));
 
+    // No hosted approval until the backend supports atomic proposal expectations.
+    // A browser-only check cannot prevent a concurrent change on the server.
+    if (options.expectedProposal && (shouldUseOrdersApi() || shouldUseOrdersWriteCanary())) {
+      var unsupported = new Error('Aprovação hospedada indisponível até validar a proposta no servidor.');
+      unsupported.code = 'DOKE_PROPOSAL_SERVER_EXPECTATION_REQUIRED';
+      return Promise.reject(unsupported);
+    }
+
     return runProposalDecision(normalizedOrderId, function () {
       return getById(normalizedOrderId).then(function (order) {
         if (!order) throw new Error('Pedido não encontrado.');
@@ -1719,6 +1750,7 @@ function extractIdempotencyKey(payload, options) {
         if (parseCurrencyValue(order.proposalAmount || order.budget || '') <= 0) {
           throw new Error('A proposta não possui um valor válido para aprovação.');
         }
+        assertExpectedProposal(order, options.expectedProposal);
 
         return saveStatus(normalizedOrderId, 'in_progress', 'Em andamento', Object.assign({}, options, {
           proposalApprovedAt: order.proposalApprovedAt || nowIso(),

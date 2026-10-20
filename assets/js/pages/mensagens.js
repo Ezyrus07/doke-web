@@ -2162,7 +2162,7 @@
       });
     };
 
-    const approveActiveProposal = (trigger) => {
+    const approveActiveProposal = (trigger, approvalOptions = {}) => {
       const conversation = conversations[activeId];
       const ordersService = window.Doke?.services?.orders;
       if (!conversation || typeof ordersService?.approveProposal !== 'function') {
@@ -2179,7 +2179,7 @@
         trigger.disabled = true;
         trigger.setAttribute('aria-busy', 'true');
       }
-      return updateOrderFromConversation('in_progress', { approvalSource: 'messages-proposal' }).then((order) => {
+      return updateOrderFromConversation('in_progress', { approvalSource: 'messages-proposal', ...approvalOptions }).then((order) => {
         if (conversation) {
           conversation.lastSeen = order?.statusLabel || 'Proposta aprovada';
           conversation.lastMessage = 'Proposta aprovada pelo cliente';
@@ -2202,13 +2202,33 @@
     let pendingProposalReview = null;
     let proposalApprovalSubmitting = false;
 
-    const readProposalForReview = (conversation) => {
-      const messages = Array.isArray(conversation?.messages) ? conversation.messages : [];
-      const latest = [...messages].reverse().find((message) => isProposalMessage(conversation, message));
-      return {
-        amount: String(conversation?.order?.proposalAmount || latest?.amount || '').trim(),
-        installments: String(latest?.installments || '').trim() || 'Condição não informada'
-      };
+    const readCanonicalProposal = (order) => ({
+      amount: String(order?.proposalAmount || order?.budget || '').trim(),
+      installments: String(order?.proposalInstallments || '').trim(),
+      proposalMessageId: String(order?.proposalMessageId || '').trim(),
+      proposalCreatedAt: String(order?.proposalCreatedAt || '').trim()
+    });
+    const sameCanonicalProposal = (first, second) =>
+      Boolean(first && second && first.amount === second.amount &&
+        first.installments === second.installments &&
+        first.proposalMessageId === second.proposalMessageId &&
+        first.proposalCreatedAt === second.proposalCreatedAt);
+    const readProposalOrder = (orderId) => {
+      const service = window.Doke?.services?.orders;
+      if (typeof service?.getById !== 'function') {
+        return Promise.reject(new Error('Não foi possível consultar a proposta atual do pedido.'));
+      }
+      return Promise.resolve(service.getById(orderId)).then((order) => {
+        const currentUser = getCurrentUser();
+        if (!order || String(order.id) !== String(orderId) ||
+            String(order.clientId || '') !== String(currentUser?.id || '') ||
+            normalizeStatusToken(order.status) !== 'quoted') {
+          throw new Error('A proposta não está mais disponível para aprovação. Reabra o pedido.');
+        }
+        const proposal = readCanonicalProposal(order);
+        if (!proposal.amount) throw new Error('A proposta atual não possui valor válido.');
+        return { order, proposal };
+      });
     };
 
     const closeProposalReview = ({ restoreFocus = true } = {}) => {
@@ -2222,31 +2242,37 @@
       }
     };
 
+    let proposalReviewOpening = false;
     const openProposalReview = (trigger) => {
       const conversation = conversations[activeId];
+      const conversationId = activeId;
       const orderId = conversation?.order?.id || conversation?.orderId;
       if (!proposalReviewModal || !conversation || !orderId ||
           !canTransitionConversationOrder(conversation, 'in_progress')) {
         showCopyToast('Esta proposta não está disponível para aprovação.');
         return;
       }
-      if (proposalApprovalSubmitting) return;
-      const proposal = readProposalForReview(conversation);
-      if (!proposal.amount) {
-        showCopyToast('O valor desta proposta não está disponível. Confira o pedido antes de decidir.');
-        return;
-      }
-      pendingProposalReview = { conversationId: activeId, orderId, amount: proposal.amount, installments: proposal.installments, trigger };
-      const title = proposalReviewModal.querySelector('[data-proposal-review-title]');
-      const amount = proposalReviewModal.querySelector('[data-proposal-review-amount]');
-      const installments = proposalReviewModal.querySelector('[data-proposal-review-installments]');
-      if (title) title.textContent = conversation.order?.title || conversation.order?.serviceTitle || 'Pedido de serviço';
-      if (amount) amount.textContent = proposal.amount;
-      if (installments) installments.textContent = proposal.installments;
-      proposalReviewModal.hidden = false;
-      proposalReviewModal.setAttribute('aria-hidden', 'false');
-      window.requestAnimationFrame(() => {
-        if (!proposalReviewModal.hidden) proposalReviewModal.querySelector('[data-proposal-review-confirm]')?.focus({ preventScroll: true });
+      if (proposalApprovalSubmitting || proposalReviewOpening || !proposalReviewModal.hidden) return;
+      proposalReviewOpening = true;
+      readProposalOrder(orderId).then(({ order, proposal }) => {
+        if (conversationId !== activeId || conversations[conversationId] !== conversation ||
+            !canTransitionConversationOrder(conversation, 'in_progress')) return;
+        pendingProposalReview = { conversationId, orderId, proposal, trigger };
+        const title = proposalReviewModal.querySelector('[data-proposal-review-title]');
+        const amount = proposalReviewModal.querySelector('[data-proposal-review-amount]');
+        const installments = proposalReviewModal.querySelector('[data-proposal-review-installments]');
+        if (title) title.textContent = order.title || order.serviceTitle || 'Pedido de serviço';
+        if (amount) amount.textContent = proposal.amount;
+        if (installments) installments.textContent = proposal.installments || 'Condição não informada';
+        proposalReviewModal.hidden = false;
+        proposalReviewModal.setAttribute('aria-hidden', 'false');
+        window.requestAnimationFrame(() => {
+          if (!proposalReviewModal.hidden) proposalReviewModal.querySelector('[data-proposal-review-confirm]')?.focus({ preventScroll: true });
+        });
+      }).catch((error) => {
+        showCopyToast(error?.message || 'Não foi possível carregar a proposta atual.');
+      }).finally(() => {
+        proposalReviewOpening = false;
       });
     };
 
@@ -2256,17 +2282,28 @@
       const conversation = conversations[pending.conversationId];
       const orderId = conversation?.order?.id || conversation?.orderId;
       if (activeId !== pending.conversationId || orderId !== pending.orderId ||
-          !canTransitionConversationOrder(conversation, 'in_progress') ||
-          readProposalForReview(conversation).amount !== pending.amount ||
-          readProposalForReview(conversation).installments !== pending.installments) {
+          !canTransitionConversationOrder(conversation, 'in_progress')) {
         closeProposalReview({ restoreFocus: false });
-        showCopyToast('A proposta mudou de estado ou valor. Confira os dados novamente.');
+        showCopyToast('O pedido mudou. Confira a proposta novamente.');
         return;
       }
       proposalApprovalSubmitting = true;
-      closeProposalReview({ restoreFocus: false });
-      Promise.resolve(approveActiveProposal(pending.trigger)).finally(() => {
+      const confirm = proposalReviewModal.querySelector('[data-proposal-review-confirm]');
+      if (confirm) confirm.disabled = true;
+      readProposalOrder(orderId).then(({ proposal }) => {
+        if (!sameCanonicalProposal(pending.proposal, proposal) ||
+            activeId !== pending.conversationId ||
+            !canTransitionConversationOrder(conversations[pending.conversationId], 'in_progress')) {
+          throw new Error('A proposta foi alterada. Revise o valor e as condições novamente.');
+        }
+        closeProposalReview({ restoreFocus: false });
+        return approveActiveProposal(pending.trigger, { expectedProposal: pending.proposal });
+      }).catch((error) => {
+        closeProposalReview({ restoreFocus: false });
+        showCopyToast(error?.message || 'Não foi possível conferir a proposta.');
+      }).finally(() => {
         proposalApprovalSubmitting = false;
+        if (confirm) confirm.disabled = false;
       });
     };
 
