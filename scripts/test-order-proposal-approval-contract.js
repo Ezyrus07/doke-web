@@ -10,6 +10,10 @@ const vm = require('vm');
 
 const projectRoot = path.resolve(__dirname, '..');
 const storage = Object.create(null);
+// Each VM has an in-memory conversation repository. Preserve only synthetic
+// fixture snapshots when simulating navigation/reload into another VM.
+let previousRuntime = null;
+let conversationFixtures = [];
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -22,6 +26,9 @@ async function assertRejects(task, message) {
 }
 
 function createRuntime(user) {
+  if (previousRuntime) {
+    conversationFixtures = previousRuntime.repositories.messages.readLocal();
+  }
   const listeners = Object.create(null);
   const context = {
     console, Date, Intl, Math, JSON, Promise, setTimeout, clearTimeout,
@@ -47,6 +54,8 @@ function createRuntime(user) {
     },
     location: { search: '', href: 'http://localhost:4173/mensagens.html' },
     Doke: {
+      // Explicit synthetic local authority; production/staging must remain fail-closed.
+      runtimeConfig: { environment: 'local', ordersReadProvider: 'mock', ordersMockDevelopment: true },
       mockData: { load: () => Promise.resolve([]) },
       session: { getCurrentUser: () => user }
     }
@@ -65,6 +74,11 @@ function createRuntime(user) {
     const filename = path.join(projectRoot, relativePath);
     vm.runInContext(fs.readFileSync(filename, 'utf8'), sandbox, { filename: relativePath });
   });
+  // Rehydrate the synthetic fixture-memory repository for a new VM instance.
+  conversationFixtures.forEach((conversation) => {
+    sandbox.Doke.repositories.messages.save(conversation);
+  });
+  previousRuntime = sandbox.Doke;
   return sandbox.Doke;
 }
 

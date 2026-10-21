@@ -69,6 +69,8 @@ const context = {
   },
   location: { search: '', href: 'http://localhost:4173/index.html' },
   Doke: {
+    // Synthetic local orders only; remote service-media calls use mocked signed intents.
+    runtimeConfig: { environment: 'local', ordersReadProvider: 'mock', ordersMockDevelopment: true },
     mockData: { load: () => Promise.resolve([]) }
   }
 };
@@ -76,6 +78,10 @@ context.window = context;
 
 const remoteServiceId = '44444444-4444-4444-8444-444444444444';
 const remoteRows = new Map();
+const remoteVersions = new Map();
+// Synthetic signed-upload intents and bytes never leave this test process.
+const signedMediaUrls = [];
+const signedUploadPaths = [];
 
 function createQuery(table) {
   let mode = 'select';
@@ -100,6 +106,10 @@ function createQuery(table) {
         const filtered = filters.reduce((items, [column, value]) => items.filter((item) => String(item[column] || '') === value), rows);
         return Promise.resolve({ data: single ? (filtered[0] || null) : filtered, error: null });
       }
+      if (table === 'service_versions') {
+        const matches = Array.from(remoteVersions.values()).filter((row) => filters.every(([column, value]) => String(row[column] || '') === value));
+        return Promise.resolve({ data: single ? (matches[0] || null) : matches, error: null });
+      }
       if (table === 'service_media') return Promise.resolve({ data: mode === 'insert' ? (payload || []) : [], error: null });
       return Promise.resolve({ data: single || maybe ? null : [], error: null });
     },
@@ -115,6 +125,12 @@ const fakeSupabaseClient = {
   storage: {
     from: () => ({
       upload: (objectPath) => Promise.resolve({ data: { path: objectPath }, error: null }),
+      uploadToSignedUrl: (objectPath, token, file) => {
+        assert(typeof token === 'string' && token.startsWith('synthetic-token-'), 'Signed upload requires a synthetic token.');
+        assert(file instanceof Blob, 'Signed upload must receive a Blob.');
+        signedUploadPaths.push(objectPath);
+        return Promise.resolve({ data: { path: objectPath }, error: null });
+      },
       getPublicUrl: (objectPath) => ({ data: { publicUrl: `https://storage.example.test/${objectPath}` } })
     })
   },
@@ -134,6 +150,17 @@ context.supabase = { createClient: () => fakeSupabaseClient };
 context.DokeSupabase = {
   getClient: () => fakeSupabaseClient,
   invokeSelfService: (operation, args = {}) => {
+    if (operation === 'prepare_service_media_uploads') {
+      assert(String(args.p_external_id || '').startsWith('service_'), 'Upload intent must reference the service.');
+      const files = args.p_files || [];
+      assert(files.length >= 1 && files.length <= 3, 'Signed upload must enforce the image count.');
+      const uploads = files.filter((item) => item.kind === 'upload').map((item) => {
+        const objectPath = 'synthetic/' + args.p_external_id + '/' + item.fileName;
+        signedMediaUrls.push('https://storage.example.test/' + objectPath);
+        return { bucket: 'service-media', path: objectPath, token: 'synthetic-token-' + item.sortOrder, sortOrder: item.sortOrder, type: item.type };
+      });
+      return Promise.resolve({ intentId: 'synthetic-media-intent', uploads });
+    }
     if (operation === 'transition_owned_service_lifecycle') {
       const row = remoteRows.get(String(args.p_service_ref || ''));
       assert(row, 'Lifecycle operation requires an existing service.');
@@ -148,18 +175,30 @@ context.DokeSupabase = {
     const snapshot = args.p_snapshot || {};
     const existing = remoteRows.get(String(args.p_external_id || ''));
     const publicStatus = existing ? (existing.status || 'published') : 'draft';
+    const versionId = existing ? '77777777-7777-4777-8777-777777777777' : '55555555-5555-4555-8555-555555555555';
+    remoteVersions.set(versionId, {
+      id: versionId, service_id: remoteServiceId, professional_id: currentUser.id,
+      version_number: existing ? 2 : 1, review_status: 'pending_review',
+      snapshot: { ...snapshot, images: signedMediaUrls.slice() },
+      change_class: args.p_change_class || 'critical', submitted_at: new Date().toISOString()
+    });
+    if (existing) {
+      existing.pending_version_id = versionId;
+      existing.moderation_status = 'changes_pending_review';
+    }
     if (!existing) {
       remoteRows.set(String(args.p_external_id || snapshot.id || ''), {
         id: remoteServiceId, external_id: String(args.p_external_id || snapshot.id || ''), professional_id: currentUser.id,
         title: snapshot.title, status: 'draft', moderation_status: 'pending_review', approved_version_id: null,
         pending_version_id: '55555555-5555-4555-8555-555555555555', metadata: snapshot,
-        service_media: (snapshot.images || []).map((url, index) => ({ url, sort_order: index }))
+        service_media: signedMediaUrls.map((url, index) => ({ url, sort_order: index }))
       });
     }
     return Promise.resolve({
       serviceId: remoteServiceId, externalId: String(args.p_external_id || snapshot.id || ''),
-      versionId: '55555555-5555-4555-8555-555555555555', versionNumber: existing ? 2 : 1,
+      versionId, versionNumber: existing ? 2 : 1,
       moderationStatus: existing ? 'changes_pending_review' : 'pending_review', publicStatus,
+      mediaUrls: signedMediaUrls.slice(),
       submittedAt: new Date().toISOString(), changeClass: args.p_change_class || 'critical',
       visibilityAction: 'keep_public', riskFlags: [], classificationReasons: []
     });
@@ -186,6 +225,7 @@ function runAsset(relativePath) {
 
 [
   'assets/js/repositories/services-repository.js',
+  'assets/js/services/service-media-upload-service.js',
   'assets/js/services/services-service.js',
   'assets/js/repositories/orders-repository.js',
   'assets/js/repositories/messages-repository.js',
@@ -254,7 +294,7 @@ async function main() {
   assert(budgetUrl.includes('serviceId=' + encodeURIComponent(service.id)), 'URL de orçamento deve preservar serviceId.');
   assert(budgetUrl.includes('professionalId=' + encodeURIComponent(service.professionalId)), 'URL de orçamento deve preservar professionalId.');
 
-  setUser({ id: '22222222-2222-4222-8222-222222222222', name: 'Cliente Doke', role: 'client', initials: 'CD' });
+  setUser({ id: 'client_doke_fixture', name: 'Cliente Doke', role: 'client', initials: 'CD' });
   const order = await Doke.services.orders.create({
     serviceId: service.id,
     professionalId: service.professionalId,
@@ -282,14 +322,14 @@ async function main() {
       availabilitySchedule: service.availabilitySchedule,
       includedItems: service.includedItems,
       excludedItems: service.excludedItems,
-      image: service.image,
+      image: service.images[0] || service.image,
       images: service.images
     },
     requestType: 'Orçamento para execução',
     scope: 'Quarto completo',
     location: 'Rua de teste, Salvador - BA',
     details: 'Montar guarda-roupa e instalar portas.',
-    attachments: [{ name: 'medidas.png', type: 'image/png', size: 1200, url: service.image, previewable: true }]
+    attachments: [{ name: 'medidas.png', type: 'image/png', size: 1200, url: service.images[0] || service.image, previewable: true }]
   });
 
   assert(order.status === 'pending', 'Pedido deve nascer pending.');
@@ -299,7 +339,8 @@ async function main() {
   assert(order.serviceAvailabilitySchedule.length === 2, 'Pedido deve recuperar agenda pelo snapshot.');
   assert(order.serviceIncludedItems === service.includedItems, 'Pedido deve recuperar itens incluídos pelo snapshot.');
   assert(order.serviceExcludedItems === service.excludedItems, 'Pedido deve recuperar itens excluídos pelo snapshot.');
-  assert(order.serviceImages.length === 1 && order.serviceImage === service.image, 'Pedido deve recuperar mídia pelo snapshot.');
+  assert(signedUploadPaths.length === 1 && signedMediaUrls.length === 1, 'Upload assinado sintético deve registrar uma única mídia.');
+  assert(order.serviceImages.length === 1 && order.serviceImage === service.images[0] && service.images[0] === signedMediaUrls[0], 'Pedido deve preservar a mídia canônica assinada no snapshot.');
   assert(order.attachments.length === 1, 'Pedido deve preservar anexos da solicitação.');
 
   let conversation = getConversationByOrder(order.id);
@@ -325,7 +366,7 @@ async function main() {
   const editedService = await Doke.services.services.getById(service.id);
   assert(editedService.title === service.title, 'Versão pública aprovada deve permanecer imutável durante a análise.');
 
-  setUser({ id: '22222222-2222-4222-8222-222222222222', name: 'Cliente Doke', role: 'client', initials: 'CD' });
+  setUser({ id: 'client_doke_fixture', name: 'Cliente Doke', role: 'client', initials: 'CD' });
   const immutableOrder = await Doke.services.orders.getById(order.id);
   assert(immutableOrder.serviceTitle === service.title, 'Edição do anúncio não pode alterar o título histórico do pedido.');
   assert(immutableOrder.serviceSnapshot.priceLabel === 'R$ 180', 'Edição do anúncio não pode alterar o preço histórico do pedido.');
@@ -353,7 +394,7 @@ async function main() {
     'Serviço arquivado não pode ser reativado pela transição atual.'
   );
 
-  setUser({ id: '22222222-2222-4222-8222-222222222222', name: 'Cliente Doke', role: 'client', initials: 'CD' });
+  setUser({ id: 'client_doke_fixture', name: 'Cliente Doke', role: 'client', initials: 'CD' });
   const orderAfterArchive = await Doke.services.orders.getById(order.id);
   assert(orderAfterArchive && orderAfterArchive.status === 'accepted', 'Arquivamento do anúncio não pode apagar ou invalidar pedido existente.');
 
