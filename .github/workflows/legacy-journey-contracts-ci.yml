@@ -1,0 +1,39 @@
+name: Doke Legacy Journey Contract Fixtures
+
+on:
+  pull_request:
+    branches:
+      - 'codex/ux-orders-p2-minimal-integration-001-local'
+    paths:
+      - '.github/workflows/legacy-journey-contracts-ci.yml'
+      - 'scripts/test-order-proposal-approval-contract.js'
+      - 'scripts/test-service-order-integration-contract.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  legacy-journey-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check legacy harness syntax
+        run: |
+          node --check scripts/test-order-proposal-approval-contract.js
+          node --check scripts/test-service-order-integration-contract.js
+      - name: Verify proposal approvals, rejections and isolation
+        run: node scripts/test-order-proposal-approval-contract.js
+      - name: Verify service-to-order and signed media fixture
+        run: node scripts/test-service-order-integration-contract.js
+      - name: Verify fail-closed order command boundary
+        run: node scripts/test-order-command-boundary-runtime.js
+      - name: Verify domain evidence remains consistent
+        run: node scripts/audit-domain-completion-matrix.js
