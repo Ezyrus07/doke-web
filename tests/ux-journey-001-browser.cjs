@@ -111,6 +111,9 @@ const main = async () => {
             return document.body.dataset.ordersAudience === 'client' && !!list?.querySelectorAll('.order-card[data-id]').length && !list.hidden;
           }, { timeout: 13500 });
           await page.waitForFunction(() => document.querySelector('.order-card.is-route-highlighted')?.dataset.id === 'route-check-b');
+          // Highlight is synchronous, focus is intentionally deferred to a browser frame.
+          // Await focus settlement instead of asserting against the hydration race.
+          await page.waitForFunction(() => document.activeElement?.dataset.id === 'route-check-b', null, { timeout: 4000 });
           const details = await page.evaluate(() => ({
             highlighted: [...document.querySelectorAll('.order-card.is-route-highlighted')].map(x => x.dataset.id),
             targetFocus: document.activeElement?.dataset.id || null,
