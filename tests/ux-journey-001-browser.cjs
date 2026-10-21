@@ -56,8 +56,10 @@ const main = async () => {
       windowsHide: true
     });
     await waitForServer(server);
+    // Edge locally; CI uses the Playwright-managed Chromium installation.
+    const channel = process.env.UX_JOURNEY_BROWSER_CHANNEL || 'msedge';
     browser = await chromium.launch({
-      channel: 'msedge',
+      ...(channel === 'chromium' ? {} : { channel }),
       headless: true,
       timeout: 20000,
       args: ['--disable-background-networking', '--disable-extensions']
