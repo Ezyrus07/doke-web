@@ -570,9 +570,11 @@ function extractIdempotencyKey(payload, options) {
   function normalizeOrdersFromProvider(payload) {
     var items = Array.isArray(payload)
       ? payload
-      : payload && Array.isArray(payload.items)
-        ? payload.items
-        : [];
+      : payload && Array.isArray(payload.orders)
+        ? payload.orders
+        : payload && Array.isArray(payload.items)
+          ? payload.items
+          : [];
     return items.map(normalizeOrderFromProvider);
   }
 
@@ -585,13 +587,23 @@ function extractIdempotencyKey(payload, options) {
   function ordersBoundaryGetById(orderId) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.getById !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
-    return boundary.getById('orders', orderId).then(normalizeOrderFromProvider);
+    return boundary.getById('orders', orderId).then(function (response) {
+      return normalizeOrderFromProvider(response && response.order || response);
+    });
+  }
+
+  function getApiCommandPayload(payload) {
+    var command = stripCanaryPayloadMetadata(payload || {});
+    command.__requestMeta = Object.assign({}, payload && payload.__requestMeta || {});
+    var idempotencyKey = extractIdempotencyKey(payload || {});
+    if (idempotencyKey) command.__requestMeta.idempotencyKey = idempotencyKey;
+    return command;
   }
 
   function ordersBoundaryCreate(payload) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.create !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
-    return boundary.create('orders', payload || {}).then(function (response) {
+    return boundary.create('orders', getApiCommandPayload(payload)).then(function (response) {
       return normalizeOrderFromProvider(response && response.order || response);
     });
   }
@@ -599,7 +611,7 @@ function extractIdempotencyKey(payload, options) {
   function ordersBoundaryAction(actionName, payload) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.action !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
-    return boundary.action('orders', actionName, payload || {}).then(function (response) {
+    return boundary.action('orders', actionName, getApiCommandPayload(payload)).then(function (response) {
       return normalizeOrderFromProvider(response && response.order || response);
     });
   }
@@ -833,29 +845,6 @@ function extractIdempotencyKey(payload, options) {
     });
   }
 
-  var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
-
-  function routeProfessionalForMock(payload) {
-    payload = payload || {};
-    var originalProfessionalId = normalizeText(payload.professionalId || payload.providerId || '');
-    if (!originalProfessionalId) return payload;
-
-    // Static mock environment rule:
-    // service cards may use provider IDs (pro_001, pro-renato, etc.), while the login
-    // account used for professional testing is user_profissional_demo. Route operational
-    // ownership to that mock account and preserve the provider identity as display data.
-    if (originalProfessionalId !== DEMO_PROFESSIONAL_ID) {
-      return Object.assign({}, payload, {
-        displayProfessionalId: originalProfessionalId,
-        sourceProfessionalId: originalProfessionalId,
-        professionalId: DEMO_PROFESSIONAL_ID,
-        providerId: DEMO_PROFESSIONAL_ID
-      });
-    }
-
-    return payload;
-  }
-
   function buildTitle(payload) {
     var service = normalizeText(payload.serviceTitle || payload.service || payload.title || 'Serviço solicitado');
     var address = normalizeText(payload.locationTitle || payload.location || '');
@@ -908,16 +897,15 @@ function extractIdempotencyKey(payload, options) {
     assertOrderCommandProviderAvailable('create');
     var repository = assertRepository();
     var createdAt = nowIso();
-    var routedPayload = routeProfessionalForMock(payload);
-    var order = repository.normalize(Object.assign({}, routedPayload, {
-      id: routedPayload.id || createOrderId(),
+    var order = repository.normalize(Object.assign({}, payload, {
+      id: payload.id || createOrderId(),
       clientId: user.id,
       clientName: user.name || 'Cliente Doke',
       clientInitials: user.initials || user.avatarInitials || getInitials(user.name || 'Cliente Doke'),
       status: 'pending',
       statusLabel: 'Aguardando resposta',
       nextAction: 'Acompanhar pedido',
-      title: routedPayload.title || buildTitle(routedPayload),
+      title: payload.title || buildTitle(payload),
       source: 'budget',
       createdAt: createdAt,
       creatédAt: createdAt,
@@ -1041,6 +1029,19 @@ function extractIdempotencyKey(payload, options) {
     });
   }
 
+  function ensureAcceptedConversation(order, options) {
+    var messagesService = services.messages;
+    if (!messagesService || typeof messagesService.createConversationForOrder !== 'function') {
+      var unavailable = new Error('O servidor aceitou o pedido, mas a autoridade de conversa não está disponível. Tente novamente.');
+      unavailable.code = 'DOKE_ACCEPTED_CONVERSATION_AUTHORITY_UNAVAILABLE';
+      return Promise.reject(unavailable);
+    }
+    var idempotencyKey = extractIdempotencyKey(options || {});
+    return messagesService.createConversationForOrder(order, {
+      commandId: idempotencyKey ? idempotencyKey + ':conversation' : ''
+    });
+  }
+
   function isDemoProfessionalActor(actor) {
     return Boolean(actor && actor.role === 'professional' && String(actor.id) === 'user_profissional_demo');
   }
@@ -1091,14 +1092,20 @@ function extractIdempotencyKey(payload, options) {
         actorRole: actor.role || 'guest'
       });
       return ordersWriteCanaryAction(getApiActionForStatus(canaryStatus), orderId, canaryPayload, options).then(function (saved) {
-        document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
-          detail: {
-            order: saved,
-            status: canaryStatus,
-            provider: ORDERS_WRITE_CANARY_PROVIDER
-          }
-        }));
-        return saved;
+        var conversationTask = canaryStatus === 'accepted'
+          ? ensureAcceptedConversation(saved, options)
+          : Promise.resolve(null);
+        return conversationTask.then(function (conversation) {
+          document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
+            detail: {
+              order: saved,
+              status: canaryStatus,
+              conversation: conversation,
+              provider: ORDERS_WRITE_CANARY_PROVIDER
+            }
+          }));
+          return saved;
+        });
       });
     }
 
@@ -1118,14 +1125,20 @@ function extractIdempotencyKey(payload, options) {
       // The browser must not deny a valid command based only on the account's primary role.
 
       return ordersBoundaryAction(getApiActionForStatus(normalizedStatus), apiPayload).then(function (saved) {
-        document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
-          detail: {
-            order: saved,
-            status: normalizedStatus,
-            provider: 'api'
-          }
-        }));
-        return saved;
+        var conversationTask = normalizedStatus === 'accepted'
+          ? ensureAcceptedConversation(saved, options)
+          : Promise.resolve(null);
+        return conversationTask.then(function (conversation) {
+          document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
+            detail: {
+              order: saved,
+              status: normalizedStatus,
+              conversation: conversation,
+              provider: 'api'
+            }
+          }));
+          return saved;
+        });
       });
     }
 

@@ -88,6 +88,7 @@ function createFetchStub() {
 function createBrowserRuntime({ actor, token, fetch = createFetchStub() }) {
   const storage = new Map();
   const fetchCalls = [];
+  const conversationCalls = [];
   const events = [];
   const document = {
     readyState: 'complete',
@@ -138,7 +139,14 @@ function createBrowserRuntime({ actor, token, fetch = createFetchStub() }) {
     removeEventListener() {},
     dispatchEvent() { return true; },
     Doke: {
-      services: {},
+      services: {
+        messages: {
+          createConversationForOrder(order, options) {
+            conversationCalls.push({ order, options });
+            return Promise.resolve({ id: 'conversation_api_1', orderId: order.id, backendStatus: 'active' });
+          }
+        }
+      },
       session: {
         getCurrentUser() { return actor; },
         getSession() {
@@ -149,6 +157,7 @@ function createBrowserRuntime({ actor, token, fetch = createFetchStub() }) {
   };
   browser.window = browser;
   browser.globalThis = browser;
+  browser.conversationCalls = conversationCalls;
   browser.fetch = fetch ? fetch.bind(browser) : undefined;
   const context = vm.createContext(browser);
   runtimeFiles.forEach((file) => {
@@ -193,6 +202,9 @@ async function validateProfessionalDevice() {
     idempotencyKey: 'ord-a05-accept-001'
   });
   assert.strictEqual(accepted.status, 'accepted');
+  assert.strictEqual(browser.conversationCalls.length, 1);
+  assert.strictEqual(browser.conversationCalls[0].order.id, accepted.id);
+  assert.strictEqual(browser.conversationCalls[0].options.commandId, 'ord-a05-accept-001:conversation');
   const quoted = await browser.Doke.services.orders.quote('order_api_1', {
     amount: 'R$ 123,45',
     installments: 'À vista',

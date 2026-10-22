@@ -1,0 +1,79 @@
+name: Doke Combined Journey Contract Certification
+
+on:
+  pull_request:
+    branches:
+      - 'codex/legacy-journey-harness-alignment-001-local'
+    paths:
+      - '.github/workflows/kontrat-journey-integration-ci.yml'
+      - 'assets/js/services/**'
+      - 'assets/js/repositories/**'
+      - 'assets/js/pages/**'
+      - 'assets/js/core/**'
+      - 'backend/modules/messaging/**'
+      - 'scripts/test-order-*.js'
+      - 'scripts/test-service-order-integration-contract.js'
+      - 'scripts/test-api-repository-authenticated-transport.js'
+      - 'scripts/test-auth-route-guard-refresh-loop.js'
+      - 'scripts/test-staging-frontend-authority-policy.js'
+      - 'scripts/test-msg-001-*.js'
+      - 'scripts/audit-domain-completion-matrix.js'
+      - 'tests/ux-journey-001-*.cjs'
+      - 'tests/e2e/quote-submission-journey.spec.js'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  combined-journey:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DOKE_E2E_DISABLE_REMOTE_SERVICES: '1'
+      DOKE_PLAYWRIGHT_LIVE_SEARCH: '0'
+      UX_JOURNEY_BROWSER_CHANNEL: chromium
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Install isolated browser
+        run: npx playwright install --with-deps chromium
+      - name: Check integration harness syntax
+        run: |
+          node --check scripts/test-order-proposal-approval-contract.js
+          node --check scripts/test-service-order-integration-contract.js
+          node --check tests/ux-journey-001-browser.cjs
+          node --check assets/js/services/orders-service.js
+          node --check assets/js/services/message-service.js
+      - name: Verify proposal and service-to-order contracts
+        run: |
+          node scripts/test-order-proposal-approval-contract.js
+          node scripts/test-service-order-integration-contract.js
+      - name: Verify order, messaging and authority boundaries
+        run: |
+          node scripts/test-order-command-boundary-runtime.js
+          node scripts/test-api-repository-authenticated-transport.js
+          node scripts/test-auth-route-guard-refresh-loop.js
+          node scripts/test-staging-frontend-authority-policy.js
+          node scripts/test-msg-001-a03-server-command-boundary.js
+          node scripts/test-msg-001-a07-command-reliability-runtime.js
+          node scripts/test-order-visual-settlement-runtime.js
+      - name: Verify route context unit regression
+        run: node --test tests/ux-journey-001-route-context.test.cjs
+      - name: Verify route context in Chromium at 390, 820 and 1366
+        run: node tests/ux-journey-001-browser.cjs
+      - name: Verify quote to message with mock API at 390, 820 and 1366
+        run: npx playwright test tests/e2e/quote-submission-journey.spec.js --workers=1 --reporter=line
+      - name: Audit domain completion matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Audit agent governance
+        run: npm run audit:agent-governance

@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const migration = fs.readFileSync('supabase/migrations/122_service_moderation_operator_authority.sql', 'utf8');
+const contextMigration = fs.readFileSync('supabase/migrations/20260923003844_cat_b06_moderation_operator_context.sql', 'utf8');
 const repository = fs.readFileSync('assets/js/repositories/service-moderation-repository.js', 'utf8');
 const edge = fs.readFileSync('supabase/functions/service-moderation-operations/index.ts', 'utf8');
 const operations = fs.readFileSync('supabase/functions/service-moderation-operations/operations.mjs', 'utf8');
@@ -68,5 +69,25 @@ for (const snippet of [
 assert(operations.includes('normalizeModerationError'), 'Edge operation error normalization is missing.');
 assert(operations.includes('statusForModerationError'), 'Edge operation status mapping is missing.');
 assert(edge.includes('jsr:@supabase/supabase-js@2.49.8') || runtimeConfig.includes('@supabase/supabase-js'), 'Pinned Supabase runtime dependency is missing.');
+
+for (const wrapper of [
+  'list_service_review_queue_internal',
+  'get_service_review_detail_internal',
+  'list_service_moderation_audit_internal',
+  'approve_service_version_internal',
+  'request_service_version_changes_internal',
+  'reject_service_version_internal'
+]) {
+  const start = contextMigration.indexOf(`create or replace function public.${wrapper}`);
+  assert(start >= 0, `CAT-B06 wrapper missing: ${wrapper}`);
+  const body = contextMigration.slice(start, contextMigration.indexOf('$$;', start) + 3);
+  assert(body.includes("set_config('request.jwt.claim.sub'"), `${wrapper} must materialize the JWT subject.`);
+  assert(body.includes("set_config('request.jwt.claim.role'"), `${wrapper} must materialize the JWT role.`);
+  assert(/set_config\(\s*'request\.jwt\.claims'/.test(body), `${wrapper} must preserve the combined JWT claims.`);
+  assert(body.includes('private.assert_service_moderation_operator(p_actor_id)'), `${wrapper} must revalidate the canonical operator.`);
+}
+assert(!contextMigration.includes('to anon'), 'CAT-B06 must not grant wrapper execution to anon.');
+assert(!contextMigration.includes('to authenticated'), 'CAT-B06 must not grant wrapper execution to authenticated clients.');
+assert(contextMigration.includes('to service_role'), 'CAT-B06 wrappers must remain service-role only.');
 
 console.log('Service moderation operator authority contract: PASS');

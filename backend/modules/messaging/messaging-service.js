@@ -7,6 +7,7 @@ const ORDER_SELECT = 'id,client_id,professional_id,status,title,description,crea
 
 const PUBLIC_CONVERSATION_STATUSES = Object.freeze(['active', 'archived', 'blocked']);
 const PUBLIC_MESSAGE_STATUSES = Object.freeze(['sent', 'delivered', 'read', 'removed']);
+const CONVERSATION_ELIGIBLE_ORDER_STATUSES = Object.freeze(['accepted', 'quoted', 'in_progress', 'completed']);
 
 function isInternal(actor) {
   const role = String(actor && actor.role || '').toLowerCase();
@@ -118,6 +119,11 @@ async function createConversationForOrder(context, actor, orderId) {
   assertOrderAccess(order, safeActor);
 
   if (!order.professional_id) throw badRequest('Order must have an assigned professional before creating a conversation.');
+  if (!CONVERSATION_ELIGIBLE_ORDER_STATUSES.includes(String(order.status || '').trim().toLowerCase())) {
+    const error = conflict('Conversation becomes available after the professional accepts the order.');
+    error.code = 'DOKE_CONVERSATION_ORDER_NOT_ACCEPTED';
+    throw error;
+  }
 
   const existing = await readConversationByOrderId(supabase, order.id).catch(() => null);
   if (existing) return { conversation: normalizeConversation(existing), status: 'existing' };
@@ -369,6 +375,13 @@ function notFound(message) {
   const error = new Error(message || 'Not found.');
   error.code = 'DOKE_NOT_FOUND';
   error.status = 404;
+  return error;
+}
+
+function conflict(message) {
+  const error = new Error(message || 'Conflict.');
+  error.code = 'DOKE_CONFLICT';
+  error.status = 409;
   return error;
 }
 

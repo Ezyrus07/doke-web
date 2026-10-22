@@ -2,6 +2,7 @@
 const assert = require('node:assert/strict');
 const reliability = require('../assets/js/services/message-command-executor.js');
 const registry = require('../backend/shared/http/route-registry.js');
+const { serializeRuntimeResult } = require('../backend/runtime/staging/staging-api-runtime.js');
 
 (async () => {
   let calls = [];
@@ -34,6 +35,18 @@ const registry = require('../backend/shared/http/route-registry.js');
   assert.equal(values[0].commandId, values[1].commandId);
 
   await assert.rejects(() => executor.execute('sendMessage', {}, async () => ({ acknowledgement: { commandId: 'wrong', action: 'sendMessage', status: 'accepted' } }), { commandId: 'cmd-ack' }), /Acknowledgement/);
+
+  const runtimeCommandBody = serializeRuntimeResult({
+    ok: true,
+    data: { conversation: { id: 'conversation-1', status: 'active' } },
+    acknowledgement: { commandId: 'cmd-runtime-1', action: 'createForOrder', status: 'accepted' }
+  });
+  assert.equal(runtimeCommandBody.conversation.id, 'conversation-1');
+  assert.equal(runtimeCommandBody.acknowledgement.commandId, 'cmd-runtime-1');
+  assert.equal(runtimeCommandBody.data, undefined, 'Runtime must preserve the existing flattened data shape.');
+
+  const ordinaryRuntimeBody = serializeRuntimeResult({ ok: true, data: { order: { id: 'order-1' } } });
+  assert.deepEqual(ordinaryRuntimeBody, { order: { id: 'order-1' } });
 
   for (const name of ['conversations.createForOrder', 'conversations.updateOrder', 'messages.send', 'messages.remove', 'messages.markRead']) {
     const route = registry.findRouteByName(name);

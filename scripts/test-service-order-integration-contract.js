@@ -231,6 +231,7 @@ function runAsset(relativePath) {
   'assets/js/repositories/messages-repository.js',
   'assets/js/repositories/notifications-repository.js',
   'assets/js/services/notification-service.js',
+  'assets/js/services/message-command-executor.js',
   'assets/js/services/message-service.js',
   'assets/js/services/orders-service.js'
 ].forEach(runAsset);
@@ -243,6 +244,42 @@ function getConversationByOrder(orderId) {
   return context.Doke.repositories.messages.readLocal().find((conversation) => (
     String(conversation.orderId || conversation.order && conversation.order.id || '') === String(orderId)
   ));
+}
+
+// Contract-only mock of an acknowledged server-owned conversation update.
+function createSyntheticMessagingBoundary(Doke, orderId, professionalId) {
+  const calls = [];
+  Doke.repositoryBoundary = {
+    getDataProviderStatus: () => ({ activeProvider: 'mock', apiReady: true }),
+    hasProvider: (name) => name === 'api',
+    getProvider: (name) => {
+      assert(name === 'api', 'Only the declared synthetic API provider is allowed.');
+      return {
+        action(resource, payload) {
+          assert(resource === 'conversations' && payload.action === 'updateOrder',
+            'Only the expected server-owned conversation update is permitted.');
+          assert(payload.actorId === professionalId, 'Message command must originate from the canonical professional.');
+          assert(payload.commandId && payload.orderId === orderId, 'Message command must carry a command ID and target order.');
+          const repository = Doke.repositories.messages;
+          const current = repository.readLocal();
+          const existing = current.find((item) => String(item.orderId) === String(orderId));
+          assert(existing, 'The synthetic server must reference the already-linked conversation.');
+          const accepted = {
+            ...existing, locked: false, status: 'accepted',
+            order: { ...existing.order, status: 'accepted' }
+          };
+          // Only the synthetic server double writes the fixture in this test.
+          repository.writeLocal(current.map((item) => item.id === existing.id ? accepted : item));
+          calls.push({ resource, action: payload.action, orderId: payload.orderId, actorId: payload.actorId });
+          return Promise.resolve({
+            data: { conversation: accepted },
+            acknowledgement: { commandId: payload.commandId, action: payload.action, status: 'accepted' }
+          });
+        }
+      };
+    }
+  };
+  return calls;
 }
 
 async function main() {
@@ -372,8 +409,16 @@ async function main() {
   assert(immutableOrder.serviceSnapshot.priceLabel === 'R$ 180', 'Edição do anúncio não pode alterar o preço histórico do pedido.');
   assert(immutableOrder.serviceAvailabilitySchedule.length === 2, 'Edição do anúncio não pode alterar a agenda histórica do pedido.');
 
+  // Verify a demo alias cannot take over a canonical professional's order.
   setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD' });
+  await assertRejects(Doke.services.orders.accept(order.id), 'Demo alias must not accept a different professional owner order.');
+  setUser({ id: 'client_doke_fixture', name: 'Cliente Doke', role: 'client', initials: 'CD' });
+  assert((await Doke.services.orders.getById(order.id)).status === 'pending', 'Unauthorized accept must preserve pending status.');
+  const canonicalProfessionalId = '11111111-1111-4111-8111-111111111111';
+  const acknowledgedCommands = createSyntheticMessagingBoundary(Doke, order.id, canonicalProfessionalId);
+  setUser({ id: canonicalProfessionalId, name: 'Profissional Doke', role: 'professional', initials: 'PD' });
   const accepted = await Doke.services.orders.accept(order.id);
+  assert(acknowledgedCommands.length === 1 && acknowledgedCommands[0].action === 'updateOrder', 'Server-owned message update must be acknowledged once.');
   assert(accepted.status === 'accepted', 'Profissional operacional vinculado deve aceitar o pedido local roteado.');
   conversation = getConversationByOrder(order.id);
   assert(conversation && conversation.locked === false && conversation.status === 'accepted', 'Aceite deve destravar a conversa vinculada.');

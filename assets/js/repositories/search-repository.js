@@ -266,7 +266,11 @@
     var options = { body: request };
     if (requestId) options.headers = { 'x-doke-request-id': requestId };
 
-    return Promise.resolve(client.functions.invoke(EDGE_FUNCTION_NAME, options)).then(function (result) {
+    var invokeEdge = root.DokeSupabase && typeof root.DokeSupabase.invokeEdgeFunction === 'function'
+      ? root.DokeSupabase.invokeEdgeFunction
+      : function (name, invokeOptions) { return client.functions.invoke(name, invokeOptions); };
+
+    return Promise.resolve(invokeEdge(EDGE_FUNCTION_NAME, options)).then(function (result) {
       if (result && result.error) {
         return readEdgeError(result.error).then(function (normalizedError) { throw normalizedError; });
       }
