@@ -194,6 +194,34 @@
     return normalizeBaseUrl(config.apiBaseUrl || '');
   }
 
+  function getSessionAccessToken() {
+    var client = window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
+      ? window.DokeSupabase.getClient()
+      : window.DOKE_SUPABASE_CLIENT;
+    if (!client || !client.auth || typeof client.auth.getSession !== 'function') return Promise.resolve('');
+    return Promise.resolve(client.auth.getSession()).then(function (result) {
+      var token = String(result && result.data && result.data.session && result.data.session.access_token || '').trim();
+      return token.split('.').length === 3 ? token : '';
+    }).catch(function () { return ''; });
+  }
+
+  function createRequestNonce() {
+    var cryptoApi = window.crypto || window.msCrypto;
+    if (cryptoApi && typeof cryptoApi.randomUUID === 'function') return 'ord-' + cryptoApi.randomUUID();
+    if (cryptoApi && typeof cryptoApi.getRandomValues === 'function') {
+      var bytes = new Uint8Array(16);
+      cryptoApi.getRandomValues(bytes);
+      return 'ord-' + Array.prototype.map.call(bytes, function (value) {
+        return value.toString(16).padStart(2, '0');
+      }).join('');
+    }
+    return 'ord-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  }
+
+  function isMutationMethod(method) {
+    return ['POST', 'PUT', 'PATCH', 'DELETE'].indexOf(String(method || '').toUpperCase()) !== -1;
+  }
+
   function createRuntimeApiClient() {
     function request(method, path, body) {
       var baseUrl = getApiBaseUrl();
@@ -203,19 +231,18 @@
 
       var options = {
         method: method,
-        credentials: 'same-origin',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        }
+        credentials: 'omit',
+        headers: { Accept: 'application/json' }
       };
+      var requestMeta = {};
 
       if (body !== undefined) {
         var requestBody = clone(body || {});
-        var requestMeta = requestBody && requestBody.__requestMeta && typeof requestBody.__requestMeta === 'object'
+        requestMeta = requestBody && requestBody.__requestMeta && typeof requestBody.__requestMeta === 'object'
           ? requestBody.__requestMeta
           : {};
         if (requestBody && typeof requestBody === 'object') delete requestBody.__requestMeta;
+        options.headers['Content-Type'] = 'application/json';
         if (requestMeta.idempotencyKey) options.headers['x-idempotency-key'] = String(requestMeta.idempotencyKey);
         if (requestMeta.requestId) options.headers['x-request-id'] = String(requestMeta.requestId);
         if (requestMeta.commandAttempt) options.headers['x-doke-command-attempt'] = String(requestMeta.commandAttempt);
@@ -223,7 +250,15 @@
         options.body = JSON.stringify(requestBody);
       }
 
-      return window.fetch(baseUrl + path, options).then(function (response) {
+      if (isMutationMethod(method)) {
+        options.headers['x-doke-request-issued-at'] = new Date().toISOString();
+        options.headers['x-doke-request-nonce'] = createRequestNonce();
+      }
+
+      return getSessionAccessToken().then(function (token) {
+        if (token) options.headers.Authorization = 'Bearer ' + token;
+        return window.fetch(baseUrl + path, options);
+      }).then(function (response) {
         if (!response.ok) {
           var error = new Error('API request failed: ' + response.status);
           error.code = 'DOKE_API_HTTP_ERROR';

@@ -153,6 +153,8 @@ const main = async () => {
         await check(page, prefix + ' reload retains exact order', async () => {
           await page.reload({ waitUntil: 'domcontentloaded' });
           await page.waitForFunction(() => document.querySelector('.order-card.is-route-highlighted')?.dataset.id === 'route-check-b');
+          // A reload can highlight before its deferred requestAnimationFrame applies focus.
+          await page.waitForFunction(() => document.activeElement?.dataset.id === 'route-check-b', null, { timeout: 4000 });
           assert.equal(await page.evaluate(() => document.activeElement?.dataset.id), 'route-check-b');
         });
         await check(page, prefix + ' invalid ID never falls back to other order', async () => {

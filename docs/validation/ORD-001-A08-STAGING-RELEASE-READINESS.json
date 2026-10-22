@@ -1,44 +1,127 @@
 {
   "domain": "ORD-001",
   "sublot": "ORD-A08",
-  "status": "release_preflight_contract_complete_not_deployed",
+  "status": "staging_runtime_deployed_preflight_passed_browser_canary_proven",
   "environment": "staging",
-  "recordedAt": "2026-07-30T08:36:00-03:00",
-  "objective": "Establish platform-neutral release identity, read-only deployment preflight and mandatory rollback binding before any staging promotion.",
-  "canonicalExternalProviderBound": false,
+  "recordedAt": "2026-10-05T02:25:00-03:00",
+  "objective": "Deploy the existing server-owned HTTP runtime to isolated staging, activate the authorized Preview browser path and preserve production blocking.",
+  "canonicalExternalProviderBound": true,
+  "provider": {
+    "name": "vercel",
+    "project": "kontrat-staging-api-runtime",
+    "scope": "preview_branch_only",
+    "productionProjectReused": false,
+    "customProductionDomainAttached": false
+  },
   "runtime": {
-    "entrypoint": "npm run serve:staging-api-runtime",
+    "entrypoint": "backend/runtime/staging/node-http-server.js",
     "contractVersion": "ord-a08-staging-release-v1",
     "healthEndpoint": "GET /health",
     "productionAllowed": false,
     "releaseIdentityRequired": true,
-    "rollbackIdentityRequired": true
+    "rollbackIdentityRequired": true,
+    "corsAllowlistRequired": true
   },
   "preflight": {
-    "allowedMethods": ["GET", "OPTIONS"],
+    "allowedMethods": [
+      "GET",
+      "OPTIONS"
+    ],
     "loginPerformed": false,
     "credentialsRequired": false,
     "serviceRoleRequired": false,
     "mutationEndpointsAllowed": false,
-    "targetSafetyRequired": true
+    "targetSafetyRequired": true,
+    "healthPassed": true,
+    "allowedOriginPassed": true,
+    "rejectedOriginPassed": true,
+    "mutationsPerformed": false,
+    "accountsUsed": 0,
+    "ordersCreated": 0
   },
   "rollback": {
     "contractRequired": true,
     "candidateMustDifferFromRollback": true,
-    "providerCommandBound": false
+    "providerCommandBound": true,
+    "dataRollbackAutomatic": false
   },
-  "deployedToStaging": false,
-  "networkRequestsPerformed": false,
-  "mutationsPerformed": false,
-  "accountsUsed": 0,
-  "ordersCreated": 0,
+  "deployedToStaging": true,
+  "networkRequestsPerformed": true,
+  "mutationsPerformed": true,
+  "accountsUsed": 2,
+  "ordersCreated": 1,
   "productionChanged": false,
   "remainingBlockers": [
-    "select_and_bind_external_staging_release_provider",
-    "define_provider_specific_release_and_rollback_commands",
-    "deploy_release_identity_contract_to_staging",
-    "execute_read_only_preflight_against_deployed_runtime",
-    "explicit_authorization_for_real_visual_canary"
+    "stacked_draft_pr_chain_requires_separate_review_and_merge_authorization",
+    "control_center_source_freshness_requires_reconciliation",
+    "staging_api_sso_protection_disabled_security_review_required",
+    "source_sha_release_identity_preflight_requires_recheck_before_future_replay",
+    "full_production_readiness_not_certified",
+    "raw_browser_terminal_log_not_archived_in_repository"
   ],
-  "nextAction": "Bind an explicit external staging provider and deterministic rollback command before any deployment attempt."
+  "nextAction": "Reuse preserved credentials or separately authorize a server-side password rotation for exactly the existing synthetic client and professional accounts, then run the browser write canary.",
+  "historicalPreflight": {
+    "recordedAt": "2026-10-05T02:25:00-03:00",
+    "status": "staging_runtime_deployed_preflight_passed_browser_canary_blocked",
+    "initialRemainingBlockers": [
+      "existing_synthetic_credentials_unavailable_in_browser_session",
+      "supported_dashboard_recovery_would_send_external_email",
+      "browser_canary_not_executed"
+    ],
+    "note": "Historical point-in-time ORD-A08 preflight report; retained to distinguish the original blocked browser state from the later authenticated canary."
+  },
+  "lastCertifiedAt": "2026-10-06T14:06:35.260406Z",
+  "browserCanary": {
+    "status": "passed",
+    "scope": "isolated-staging-preview-only",
+    "evidenceHeadSha": "280787d0b6130d89c2963c7b197118f9021b9daa",
+    "runDate": "2026-10-06",
+    "execution": "Real headless Chromium/Playwright browser at exact frontend and API Preview commit; no injected production source",
+    "dataProvider": "api",
+    "activeProvider": "api",
+    "authGuard": "allowed",
+    "syntheticRoles": [
+      "client",
+      "professional"
+    ],
+    "completedSteps": [
+      "client_login",
+      "listing_to_quote_hydration",
+      "order_http_create",
+      "professional_login",
+      "professional_order_visibility",
+      "order_http_accept",
+      "conversation_http_create",
+      "professional_message_http_send",
+      "message_reload_persistence",
+      "client_relogin",
+      "client_accepted_order_visibility",
+      "client_conversation_message_persistence"
+    ],
+    "records": {
+      "orderId": "353709cf-f345-4fa8-8a2d-98461d40d342",
+      "conversationId": "27be6ccd-b3a1-4922-915a-df156d5bb3f1",
+      "messageId": "dbc9c458-e53c-4f0f-8ee3-d897e188dcad"
+    },
+    "acceptedOrderReadback": true,
+    "activeConversationReadback": true,
+    "persistedMessageReadback": true,
+    "messagePostAwaitedBeforeReload": true,
+    "githubActionsAtEvidenceHead": {
+      "passed": 64,
+      "failed": 0
+    },
+    "vercelAtEvidenceHead": {
+      "web": "READY",
+      "apiRuntime": "READY",
+      "additionalWebProject": "READY"
+    },
+    "browserRequestFailuresObserved": 387,
+    "browserRequestFailuresNote": "Mainly net::ERR_ABORTED while navigating pages; not fully triaged as a zero-console-error certification.",
+    "evidenceProvenance": "Previous assistant-managed browser canary output plus read-only staging table verification. Raw terminal transcript was not checked into this repository.",
+    "localTemporaryCredentialsDeleted": true,
+    "productionTested": false,
+    "paymentFlowTested": false,
+    "mergeAuthorized": false
+  }
 }

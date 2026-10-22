@@ -26,12 +26,14 @@ const report = {
   dryRun,
   performsNetworkRequest: false,
   performsMutation: false,
-  objective: 'Validate rollback and safe degradation for manual orders write frontend activation.',
+  objective: 'Validate staging fail-closed authority and local/dev rollback and safe degradation for manual orders write frontend activation.',
   rollbackContract: {
+    environment: 'local',
     ordersProvider: 'mock',
     dataProvider: 'mock',
     orderWriteActivation: false,
     canaryEnabled: false,
+    stagingDataProvider: 'blocked',
     noOrdersFetchAfterRollback: true
   },
   rollbackStatus: 'not_evaluated',
@@ -50,12 +52,13 @@ async function main() {
 
   if (dryRun) {
     report.rollbackStatus = DRY_STATUS;
-    record('plan.printed', 'Rollback gate validates localStorage restore, fetch degradation and mock fallback without external network.');
+    record('plan.printed', 'Rollback gate validates staging fail-closed authority plus local/dev localStorage restore, fetch degradation and mock rollback without external network.');
     finish();
     return;
   }
 
   await runCommand('validate:orders-write-frontend-activation:runtime', 'npm run validate:orders-write-frontend-activation:runtime');
+  validateStagingRejectsMockFallback();
   validateRollbackRestoresPreviousState();
   validateFetchUnavailableDegradesToBlockedCanary();
   report.rollbackStatus = report.failures.length ? 'failed' : READY_STATUS;
@@ -86,10 +89,31 @@ function assertRequiredPackageScripts() {
   if (!report.failures.length) record('package_scripts.present');
 }
 
-function validateRollbackRestoresPreviousState() {
+function validateStagingRejectsMockFallback() {
   const browser = createBrowserRuntime({
     storage: {
-      'doke.dataProvider': 'api',
+      'doke.dataProvider': 'mock',
+      'doke.ordersProvider': 'mock',
+      'doke.canary.ordersWrite.enabled': 'true',
+      'doke.orderWriteActivation': 'true',
+      'doke.canary.ordersWrite.apiBaseUrl': 'https://staging-api.doke.example'
+    }
+  });
+  loadRuntime(browser);
+  const config = browser.window.Doke.runtimeConfig;
+  assertEqual(config.dataProvider, 'blocked', 'Staging must ignore stored mock authority and remain blocked.');
+  assertEqual(config.ordersProvider, 'supabase-read', 'Staging must preserve the real read authority.');
+  assertEqual(config.ordersWriteCanary, false, 'Staging must ignore stored canary activation without remote command authority.');
+  assertEqual(config.orderWriteActivation, false, 'Staging write activation must remain disabled without remote command authority.');
+  assertEqual(config.mockAuthorityAllowed, false, 'Staging must never allow mock authority.');
+  record('staging.mock_fallback_rejected');
+}
+
+function validateRollbackRestoresPreviousState() {
+  const browser = createBrowserRuntime({
+    url: 'http://127.0.0.1/pedidos.html',
+    storage: {
+      'doke.dataProvider': 'mock',
       'doke.ordersProvider': 'mock',
       'doke.orderWriteActivation': 'false',
       'doke.flag.enableNetworkRequests': 'false'
@@ -105,7 +129,7 @@ function validateRollbackRestoresPreviousState() {
 
   const rollback = browser.window.Doke.services.orders.rollbackOrdersWriteCanary();
   assertEqual(rollback.active, false, 'Rollback must deactivate orders write canary.');
-  assertEqual(browser.window.localStorage.getItem('doke.dataProvider'), 'api', 'Rollback must restore previous dataProvider value.');
+  assertEqual(browser.window.localStorage.getItem('doke.dataProvider'), 'mock', 'Local/dev rollback must restore previous mock dataProvider value.');
   assertEqual(browser.window.localStorage.getItem('doke.ordersProvider'), 'mock', 'Rollback must restore previous ordersProvider value.');
   assertEqual(browser.window.localStorage.getItem('doke.orderWriteActivation'), 'false', 'Rollback must restore previous orderWriteActivation value.');
   assertEqual(browser.window.localStorage.getItem('doke.canary.ordersWrite.enabled'), null, 'Rollback must clear canary enabled key when it did not previously exist.');
@@ -114,6 +138,7 @@ function validateRollbackRestoresPreviousState() {
 
 function validateFetchUnavailableDegradesToBlockedCanary() {
   const browser = createBrowserRuntime({
+    url: 'http://127.0.0.1/pedidos.html',
     storage: {
       'doke.canary.ordersWrite.enabled': 'true',
       'doke.ordersProvider': 'api-write-canary-frontend-activation',
@@ -190,7 +215,7 @@ function createBrowserRuntime(options = {}) {
       clear() { storageMap.clear(); }
     },
     sessionStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
-    location: new URL('https://staging.doke.example/pedidos.html'),
+    location: new URL(options.url || 'https://staging.doke.example/pedidos.html'),
     document,
     addEventListener() {},
     removeEventListener() {},

@@ -171,7 +171,9 @@
   function messagesBoundaryGetById(conversationId) {
     var boundary = getRepositoryBoundary();
     if (!boundary || typeof boundary.getById !== 'function') return Promise.reject(new Error('Messages API boundary indisponível.'));
-    return boundary.getById('conversations', conversationId).then(normalizeConversationFromProvider);
+    return boundary.getById('conversations', conversationId).then(function (response) {
+      return normalizeConversationFromProvider(response && response.conversation || response);
+    });
   }
 
   function messagesBoundaryCreateForOrder(order, options) {
@@ -386,7 +388,8 @@
 
   function isConversationUnlocked(conversation) {
     var status = conversation && conversation.order && conversation.order.status || conversation && conversation.status || '';
-    return ['conversation', 'accepted', 'responded', 'quoted', 'in_progress', 'completed'].indexOf(status) !== -1;
+    if (['conversation', 'accepted', 'responded', 'quoted', 'in_progress', 'completed'].indexOf(status) !== -1) return true;
+    return requiresServerOwnedCommands() && normalizeText(conversation && conversation.backendStatus).toLowerCase() === 'active';
   }
 
   function updateConversationOrder(order, options) {

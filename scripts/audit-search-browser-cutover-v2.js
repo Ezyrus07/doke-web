@@ -50,7 +50,7 @@ const repository = read(files.repository);
   'function resolveRollbackTransport(config)',
   'function queryEdgeV2(request)',
   'function queryRpcV1(request)',
-  'client.functions.invoke(EDGE_FUNCTION_NAME, options)',
+  'invokeEdge(EDGE_FUNCTION_NAME, options)',
   'client.rpc(RPC_NAME, { p_request: request })',
   "rankingVersion: 'search-rank-v0'",
   "throw createError('DOKE_SEARCH_TRANSPORT_INVALID'",

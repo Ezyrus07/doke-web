@@ -112,6 +112,6 @@ required.slice(0, 7).forEach((file) => assert(ord.requiredPaths.includes(file), 
   'test:ord-001-a09b0-provider-adapter-contract',
   'plan:ord-001-a09b0-provider-adapter:dry-run'
 ].forEach((entry) => assert(ord.tests.includes(entry), `ORD tests missing ${entry}`));
-assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B05' && blocker.description.includes('explicit provider selection')));
+assert(!ord.blockers.some((blocker) => blocker.id === 'ORD-B05'), 'ORD-B05 must stay closed after the separately authorized isolated staging deployment.');
 
 console.log('ORD-A09B0 provider adapter boundary audit passed.');
