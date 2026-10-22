@@ -18,7 +18,7 @@ const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
 const evidence = JSON.parse(fs.readFileSync(EVIDENCE_PATH, 'utf8'));
 const matrix = JSON.parse(fs.readFileSync(MATRIX_PATH, 'utf8'));
 const docs = fs.readFileSync(DOC_PATH, 'utf8');
-const workflow = fs.readFileSync(WORKFLOW_PATH, 'utf8');
+const workflow = fs.readFileSync(WORKFLOW_PATH, 'utf8').replace(/\r\n?/g, '\n');
 
 const compareVersions = (left, right) => {
   const a = String(left).split('.').map(Number);

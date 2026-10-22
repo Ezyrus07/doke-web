@@ -4,7 +4,7 @@
 const assert = require('assert');
 const fs = require('fs');
 
-const read = (file) => fs.readFileSync(file, 'utf8');
+const read = (file) => fs.readFileSync(file, 'utf8').replace(/\r\n?/g, '\n');
 const required = [
   'backend/runtime/staging/runtime-release-contract.js',
   'backend/runtime/staging/node-http-server.js',
@@ -158,5 +158,11 @@ required.slice(0, 8).forEach((file) => assert(ord.requiredPaths.includes(file), 
   'execute:ord-001-a08-staging-release-preflight:dry-run'
 ].forEach((entry) => assert(ord.tests.includes(entry), `ORD-001 tests missing ${entry}`));
 assert(!ord.blockers.some((blocker) => blocker.id === 'ORD-B05'), 'ORD-B05 must be closed after the isolated staging deployment.');
-assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B02' && blocker.description.includes('synthetic credentials')));
+assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B02'
+  && blocker.description.includes('authorization envelope')
+  && blocker.description.includes('runId-scoped cleanup')
+  && blocker.description.includes('2026-10-06')
+  && blocker.description.includes(evidence.browserCanary.evidenceHeadSha)));
+assert.strictEqual(evidence.browserCanary.evidenceHeadSha, '280787d0b6130d89c2963c7b197118f9021b9daa');
+assert.strictEqual(evidence.historicalPreflight.initialRemainingBlockers[0], 'existing_synthetic_credentials_unavailable_in_browser_session');
 console.log('ORD-A08 staging release readiness audit passed.');

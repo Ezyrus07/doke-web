@@ -27,7 +27,7 @@ const required = [
 ];
 required.forEach((file) => assert(fs.existsSync(file), `Missing ORD-A09B0 asset: ${file}`));
 
-const read = (file) => fs.readFileSync(file, 'utf8');
+const read = (file) => fs.readFileSync(file, 'utf8').replace(/\r\n?/g, '\n');
 const config = JSON.parse(read(CONFIG_PATH));
 const evidence = JSON.parse(read(EVIDENCE_PATH));
 const contract = read(CONTRACT_PATH);
