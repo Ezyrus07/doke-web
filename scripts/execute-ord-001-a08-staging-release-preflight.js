@@ -146,6 +146,12 @@ async function executePreflight(config, options) {
   assertEqual(release.environment, 'staging', 'health environment');
   assertEqual(release.releaseId, config.releaseId, 'health release id');
   assertEqual(release.revision, config.releaseSha, 'health release revision');
+  // Detect metadata mismatches; the independent deploy/build provenance remains a separate gate.
+  const expectedFingerprint = crypto.createHash('sha256').update([
+    RELEASE_CONTRACT_VERSION, 'staging', config.releaseId, config.releaseSha
+  ].join(':')).digest('hex');
+  assertEqual(responseFingerprint, expectedFingerprint, 'runtime release fingerprint header');
+  assertEqual(release.fingerprint, expectedFingerprint, 'health release fingerprint');
   assertEqual(release.readyForTraffic, true, 'health readyForTraffic');
   assertEqual(release.productionAllowed, false, 'health productionAllowed');
   assertEqual(release.rollbackReady, true, 'health rollbackReady');
