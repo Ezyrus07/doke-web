@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - 'codex/legacy-journey-harness-alignment-001-local'
+      - 'codex/pr550-pr546-integration-001-local'
     paths:
       - '.github/workflows/kontrat-journey-integration-ci.yml'
       - 'assets/js/services/**'
@@ -18,6 +19,12 @@ on:
       - 'scripts/test-staging-frontend-authority-policy.js'
       - 'scripts/test-msg-001-*.js'
       - 'scripts/audit-domain-completion-matrix.js'
+      - 'scripts/audit-ord-001-*.js'
+      - 'scripts/audit-sched-001-*.js'
+      - 'config/domain-completion-matrix.json'
+      - 'config/ord-001-a09b0-provider-adapter-boundary.json'
+      - 'config/ord-001-a10-blocker-reconciliation.json'
+      - 'docs/validation/ORD-001-CURRENT-BLOCKER-AUTHORITY-20261022.md'
       - 'tests/ux-journey-001-*.cjs'
       - 'tests/e2e/quote-submission-journey.spec.js'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
@@ -67,6 +74,18 @@ jobs:
           node scripts/test-msg-001-a03-server-command-boundary.js
           node scripts/test-msg-001-a07-command-reliability-runtime.js
           node scripts/test-order-visual-settlement-runtime.js
+      - name: Verify current ORD blockers and historical authority contracts
+        run: |
+          node scripts/audit-ord-001-current-blocker-authority.js
+          node scripts/audit-ord-001-a05-command-activation.js
+          node scripts/audit-ord-001-a06-authorization-envelope.js
+          node scripts/audit-ord-001-a06-cleanup-boundary.js
+          node scripts/audit-ord-001-a08-staging-release-readiness.js
+          node scripts/audit-ord-001-a09b0-provider-adapter-boundary.js
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js
+          node scripts/audit-sched-001-c01a-frontend-canonical-authority-readiness.js
+          node scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js
       - name: Verify route context unit regression
         run: node --test tests/ux-journey-001-route-context.test.cjs
       - name: Verify route context in Chromium at 390, 820 and 1366
