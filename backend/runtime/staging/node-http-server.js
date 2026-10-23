@@ -175,14 +175,14 @@ function sendJson(response, status, payload) {
 function createCorsPolicy(env) {
   const source = env && typeof env === 'object' ? env : {};
   const environment = String(source.DOKE_ENVIRONMENT || 'local').trim().toLowerCase();
-  const configuredOrigins = parseAllowedOrigins(source.DOKE_ALLOWED_ORIGINS || '');
+  const configuredOrigins = parseAllowedOrigins(source.DOKE_ALLOWED_ORIGINS || '', environment);
   return Object.freeze({
     environment,
     configuredOrigins
   });
 }
 
-function parseAllowedOrigins(value) {
+function parseAllowedOrigins(value, environment = 'local') {
   const origins = String(value || '')
     .split(',')
     .map((item) => item.trim())
@@ -198,6 +198,11 @@ function parseAllowedOrigins(value) {
     }
     if (!/^https?:$/.test(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password) {
       throw corsConfigError(`Allowed origin must be an exact HTTP(S) origin: ${origin}`);
+    }
+    // Credentialed staging origins must use TLS except for isolated loopback testing.
+    if (environment === 'staging' && parsed.protocol !== 'https:' &&
+        !['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname)) {
+      throw corsConfigError(`Staging CORS origin must use HTTPS outside loopback: ${origin}`);
     }
     return parsed.origin;
   });

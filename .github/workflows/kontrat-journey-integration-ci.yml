@@ -6,6 +6,7 @@ on:
       - 'codex/legacy-journey-harness-alignment-001-local'
       - 'codex/pr550-pr546-integration-001-local'
       - 'codex/ord-source-contract-reconcile-a-001-local'
+      - 'codex/ord-a08-preflight-fingerprint-001-local'
     paths:
       - '.github/workflows/kontrat-journey-integration-ci.yml'
       - 'assets/js/services/**'
@@ -24,6 +25,8 @@ on:
       - 'scripts/audit-sched-001-*.js'
       - 'scripts/execute-ord-001-a08-staging-release-preflight.js'
       - 'scripts/test-ord-001-a08-preflight-fingerprint.js'
+      - 'scripts/test-ord-001-a08-staging-cors-https.js'
+      - 'backend/runtime/staging/node-http-server.js'
       - 'config/domain-completion-matrix.json'
       - 'config/ord-001-a09b0-provider-adapter-boundary.json'
       - 'config/ord-001-a10-blocker-reconciliation.json'
@@ -80,6 +83,7 @@ jobs:
       - name: Verify current ORD blockers and historical authority contracts
         run: |
           node scripts/test-ord-001-a08-preflight-fingerprint.js
+          node scripts/test-ord-001-a08-staging-cors-https.js
           node scripts/audit-ord-001-current-blocker-authority.js
           node scripts/audit-ord-001-a05-command-activation.js
           node scripts/audit-ord-001-a06-authorization-envelope.js
