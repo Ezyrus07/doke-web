@@ -80,6 +80,30 @@ export const verifyAnalyticsEnvelope = async (
     encoder.encode(stable({ type: envelope.type, version: envelope.version, payload: envelope.payload })),
   );
   if (!ok) throw new Error("DOKE_ANALYTICS_TOKEN_SIGNATURE_INVALID");
+
+  // A valid HMAC alone does not authorize replay after the signed exposure window.
+  // Apply the exposure-specific contract while preserving generic envelope types.
+  if (expectedType === "ana_exposure_v1") {
+    const payload = envelope.payload as Record<string, unknown>;
+    const requiredText = ["searchRequestId", "serviceId", "rankingVersion", "asOf"];
+    if (
+      requiredText.some((key) => typeof payload[key] !== "string" || !(payload[key] as string).trim()) ||
+      payload.surface !== "search" ||
+      !Number.isSafeInteger(payload.resultPosition) ||
+      (payload.resultPosition as number) < 0 ||
+      typeof payload.expiresAt !== "string"
+    ) {
+      throw new Error("DOKE_ANALYTICS_TOKEN_INVALID");
+    }
+
+    const expiresAtMs = Date.parse(payload.expiresAt as string);
+    if (!Number.isFinite(expiresAtMs) || new Date(expiresAtMs).toISOString() !== payload.expiresAt) {
+      throw new Error("DOKE_ANALYTICS_TOKEN_INVALID");
+    }
+    const nowMs = Date.now();
+    if (expiresAtMs <= nowMs) throw new Error("DOKE_ANALYTICS_TOKEN_EXPIRED");
+    if (expiresAtMs - nowMs > 3_600_000) throw new Error("DOKE_ANALYTICS_TOKEN_INVALID");
+  }
   return Object.freeze(envelope.payload as Record<string, unknown>);
 };
 
