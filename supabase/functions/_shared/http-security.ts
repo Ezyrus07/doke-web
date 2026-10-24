@@ -2,38 +2,74 @@ const DEFAULT_ALLOWED_ORIGINS = new Set([
   "https://ezyrus07.github.io",
 ]);
 
-const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const ALLOWED_HEADERS = "authorization, x-client-info, apikey, content-type, x-doke-request-id";
 const ALLOWED_METHODS = "POST, OPTIONS";
 
+// CORS is a browser origin boundary, not an authentication or network access control.
+const localOriginsExplicitlyEnabled = () => Deno.env.get("DOKE_ALLOW_LOCAL_ORIGINS") === "true";
+
+const parseExactOrigin = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    if (
+      !["https:", "http:"].includes(parsed.protocol) ||
+      parsed.origin !== value ||
+      parsed.username ||
+      parsed.password
+    ) return null;
+    return {
+      value: parsed.origin,
+      secure: parsed.protocol === "https:",
+      loopback: LOOPBACK_HOSTS.has(parsed.hostname),
+    };
+  } catch {
+    return null;
+  }
+};
+
 const normalizedConfiguredOrigins = () => {
-  const configured = Deno.env.get("DOKE_ALLOWED_ORIGINS") || "";
-  return new Set(
-    configured
-      .split(",")
-      .map((origin) => origin.trim())
-      .filter(Boolean),
-  );
+  const raw = (Deno.env.get("DOKE_ALLOWED_ORIGINS") || "").trim();
+  if (!raw) return new Set<string>();
+
+  const origins = raw.split(",").map((origin) => origin.trim());
+  const allowed = new Set<string>();
+  for (const value of origins) {
+    const parsed = parseExactOrigin(value);
+    if (
+      !parsed ||
+      (!parsed.secure && !parsed.loopback) ||
+      (parsed.loopback && !localOriginsExplicitlyEnabled()) ||
+      allowed.has(parsed.value)
+    ) {
+      // Reject the entire configured allowlist if any entry is ambiguous or insecure.
+      return null;
+    }
+    allowed.add(parsed.value);
+  }
+  return allowed;
 };
 
 const requestOrigin = (req: Request) => (req.headers.get("origin") || "").trim();
 
-const isLoopbackOrigin = (origin: string) => {
-  try {
-    const url = new URL(origin);
-    return ["http:", "https:"].includes(url.protocol) && LOOPBACK_HOSTS.has(url.hostname);
-  } catch {
-    return false;
-  }
-};
-
 export const resolveAllowedOrigin = (req: Request) => {
   const origin = requestOrigin(req);
-  if (!origin) return "";
+  if (!origin) return ""; // Non-browser calls still require endpoint authorization.
   if (origin === "null") return null;
+
+  const parsed = parseExactOrigin(origin);
+  if (!parsed) return null;
+
+  const configuredOrigins = normalizedConfiguredOrigins();
+  if (!configuredOrigins) return null; // Invalid allowlist fails closed for all browser origins.
+
+  if (parsed.loopback) {
+    return localOriginsExplicitlyEnabled() ? origin : null;
+  }
+  if (!parsed.secure) return null;
+
   if (DEFAULT_ALLOWED_ORIGINS.has(origin)) return origin;
-  if (normalizedConfiguredOrigins().has(origin)) return origin;
-  if (isLoopbackOrigin(origin) && Deno.env.get("DOKE_ALLOW_LOCAL_ORIGINS") !== "false") return origin;
+  if (configuredOrigins.has(origin)) return origin;
   return null;
 };
 
@@ -56,6 +92,14 @@ export const responseHeaders = (
     ...securityHeaders(),
     ...extra,
   });
+  // Callers may add ordinary response headers, but cannot bypass the CORS decision.
+  for (const name of [
+    "Access-Control-Allow-Origin",
+    "Access-Control-Allow-Credentials",
+    "Access-Control-Allow-Headers",
+    "Access-Control-Allow-Methods",
+    "Access-Control-Expose-Headers",
+  ]) headers.delete(name);
   headers.set("Vary", "Origin");
 
   const allowedOrigin = resolveAllowedOrigin(req);
