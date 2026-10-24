@@ -196,7 +196,7 @@ security definer
 set search_path = pg_catalog
 as $$
 declare
-  normalized_kind text := pg_catalog.lower(pg_catalog.trim(pg_catalog.coalesce(p_resource_kind, '')));
+  normalized_kind text := pg_catalog.lower(trim(coalesce(p_resource_kind, '')));
   resource_id uuid;
   file_value jsonb;
   file_name text;
@@ -249,8 +249,8 @@ begin
 
   for file_value in select value from pg_catalog.jsonb_array_elements(p_files)
   loop
-    file_name := pg_catalog.left(pg_catalog.trim(pg_catalog.coalesce(file_value->>'name', 'anexo')), 180);
-    mime_type := pg_catalog.lower(pg_catalog.trim(pg_catalog.coalesce(file_value->>'type', '')));
+    file_name := pg_catalog.left(trim(coalesce(file_value->>'name', 'anexo')), 180);
+    mime_type := pg_catalog.lower(trim(coalesce(file_value->>'type', '')));
     begin
       size_bytes := (file_value->>'size')::bigint;
     exception when invalid_text_representation then
@@ -482,7 +482,7 @@ begin
   ) then
     raise exception 'DOKE_ATTACHMENT_RESOURCE_FORBIDDEN' using errcode = '42501';
   end if;
-  if lifecycle.status = 'attached' and pg_catalog.coalesce(p_reason, '') <> 'message_removed' then
+  if lifecycle.status = 'attached' and coalesce(p_reason, '') <> 'message_removed' then
     raise exception 'DOKE_ATTACHMENT_ATTACHED_REMOVAL_FORBIDDEN' using errcode = '42501';
   end if;
 
@@ -537,8 +537,8 @@ as $$
       and lifecycle.retain_until is not null
       and lifecycle.retain_until <= pg_catalog.now()
    )
-   order by pg_catalog.coalesce(lifecycle.retain_until, lifecycle.intent_expires_at)
-   limit pg_catalog.greatest(1, pg_catalog.least(pg_catalog.coalesce(p_limit, 100), 500))
+   order by coalesce(lifecycle.retain_until, lifecycle.intent_expires_at)
+   limit greatest(1, least(coalesce(p_limit, 100), 500))
 $$;
 
 create or replace function public.mark_transaction_attachment_cleanup_result_internal(
