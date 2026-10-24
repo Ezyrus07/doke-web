@@ -1,0 +1,48 @@
+name: Doke MSG-A05 Isolated PostgreSQL Compatibility
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/doke-msg-a05-isolated-postgres.yml'
+      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
+      - 'scripts/fixtures/msg-a05-postgres-isolated-*.sql'
+      - 'scripts/test-msg-a05-isolated-postgres-ci.sh'
+      - 'scripts/test-msg-a05-isolated-postgres.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  msg-a05-isolated-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: kontrat_msg_a05_ci
+          POSTGRES_USER: kontrat_sandbox
+          POSTGRES_PASSWORD: synthetic-ci-only-not-a-real-secret
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U kontrat_sandbox -d kontrat_msg_a05_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: kontrat_sandbox
+      PGDATABASE: kontrat_msg_a05_ci
+      PGPASSWORD: synthetic-ci-only-not-a-real-secret
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Verify original migration, RLS, lifecycle, backup and restore on synthetic DB
+        run: bash scripts/test-msg-a05-isolated-postgres-ci.sh
