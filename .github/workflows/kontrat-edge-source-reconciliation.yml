@@ -1,0 +1,38 @@
+name: Kontrat Edge Function Source Reconciliation
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kontrat-edge-source-reconciliation.yml'
+      - 'supabase/functions/search-public-services-v2/**'
+      - 'supabase/functions/self-service-operations/**'
+      - 'supabase/functions/_shared/analytics-proof.ts'
+      - 'supabase/functions/_shared/http-security.ts'
+      - 'scripts/test-search-analytics-source-reconciliation.mjs'
+      - 'scripts/test-self-service-operations-edge-runtime.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  edge-source-reconciliation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check offline source and analytics tests
+        run: |
+          node --check scripts/test-search-analytics-source-reconciliation.mjs
+          node --check scripts/test-self-service-operations-edge-runtime.mjs
+      - name: Verify signed analytics and preserved attachment contracts
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-search-analytics-source-reconciliation.mjs
+          node scripts/test-self-service-operations-edge-runtime.mjs
+      - name: Verify existing CORS security and dependency closure
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-supabase-edge-cors-boundary.mjs
+          node scripts/audit-edge-function-source-closure.js
