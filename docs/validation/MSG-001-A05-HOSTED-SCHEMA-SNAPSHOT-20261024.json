@@ -1,0 +1,92 @@
+{
+  "type": "READ_ONLY_HOSTED_SCHEMA_SNAPSHOT",
+  "observedOn": "2026-10-24",
+  "freshness": "HISTORICAL_NOT_A_LIVE_CERTIFICATION",
+  "approvedHostedWrites": false,
+  "migration": {
+    "file": "supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql",
+    "version": "20260802220000",
+    "sha256": "585bc5f4e568e4e4c6cf9c17134eca7e98cbe4bde451d1fd1703d2a2e96172cc",
+    "sourcePublicRpcNames": [
+      "prepare_transaction_attachment_uploads_internal",
+      "confirm_transaction_attachment_uploads_internal",
+      "attach_transaction_attachments_to_message_internal",
+      "authorize_transaction_attachment_removal_internal",
+      "mark_transaction_attachment_removed_internal",
+      "list_transaction_attachment_cleanup_candidates_internal",
+      "mark_transaction_attachment_cleanup_result_internal"
+    ],
+    "expectedNewPolicies": [
+      "transaction_attachments_lifecycle_select",
+      "transaction_attachments_lifecycle_insert"
+    ],
+    "legacyPoliciesReplaced": [
+      "transaction_attachments_participant_select",
+      "transaction_attachments_participant_insert",
+      "transaction_attachments_owner_update",
+      "transaction_attachments_owner_delete"
+    ]
+  },
+  "projects": [
+    {
+      "label": "doke-web-staging",
+      "ref": "zwkczgewzbsorbrjuzpb",
+      "migrationRegistered": false,
+      "installedLaterMigrationCount": 49,
+      "installedOldAttachmentMigrations": [
+        "transaction_attachment_storage_authority",
+        "transaction_attachment_helper_runtime_fix",
+        "transaction_attachment_folder_depth_fix"
+      ],
+      "lifecycleTableExists": false,
+      "presentRpcNames": [],
+      "relations": {
+        "users": true,
+        "orders": true,
+        "conversations": true,
+        "messages": true
+      },
+      "storageBucket": {
+        "present": true,
+        "private": true,
+        "fileSizeLimitBytes": 10485760,
+        "mimeAllowlistPresent": true
+      },
+      "storagePolicies": [
+        "transaction_attachments_owner_delete",
+        "transaction_attachments_owner_update",
+        "transaction_attachments_participant_insert",
+        "transaction_attachments_participant_select"
+      ]
+    },
+    {
+      "label": "doke-prof-b05-g4-e2e",
+      "ref": "bqmmbopwfgwffkbtheab",
+      "migrationRegistered": false,
+      "installedLaterMigrationCount": 30,
+      "installedOldAttachmentMigrations": [],
+      "lifecycleTableExists": false,
+      "presentRpcNames": [],
+      "relations": {
+        "users": true,
+        "orders": false,
+        "conversations": false,
+        "messages": false
+      },
+      "storageBucket": {
+        "present": false,
+        "private": null,
+        "fileSizeLimitBytes": null,
+        "mimeAllowlistPresent": null
+      },
+      "storagePolicies": []
+    }
+  ],
+  "operatorDecision": "NO_GO",
+  "mandatoryLiveRecheck": true,
+  "sources": [
+    "Supabase read-only list_migrations, execute_sql pg_catalog, information_schema, pg_policies and Storage bucket metadata",
+    "Versioned Git source at 11bd28ef75edfe41daaec8cdb20bcd72c3add721"
+  ],
+  "noSecretValuesCollected": true
+}
