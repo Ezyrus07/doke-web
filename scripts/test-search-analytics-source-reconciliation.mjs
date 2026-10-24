@@ -19,7 +19,11 @@ const hashB = await sha256Hex({ a: 1, b: [2, { a: 'hello', z: true }] });
 equal(hashA, hashB, 'Canonical analytics payload hashes are stable across key order');
 ok(/^[a-f0-9]{64}$/.test(hashA), 'SHA-256 hex format');
 
-const payload = { searchRequestId: 'synthetic-id', resultPosition: 0, serviceId: 'svc-01' };
+const payload = {
+  searchRequestId: 'synthetic-id', resultPosition: 0, serviceId: 'svc-01',
+  rankingVersion: 'search-rank-v0', asOf: '2026-10-23T00:00:00.000Z',
+  surface: 'search', expiresAt: new Date(Date.now() + 120000).toISOString()
+};
 const token = await signAnalyticsEnvelope('ana_exposure_v1', payload, secret);
 ok(typeof token === 'string' && token.length > 40, 'Signed proof is opaque nonempty URL-safe string');
 ok(/^[A-Za-z0-9_-]+$/.test(token), 'Signed proof is base64url');
