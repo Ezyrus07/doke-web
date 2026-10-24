@@ -18,7 +18,7 @@ A fresh synthetic database included minimal \`public\`, \`private\`, \`storage\`
 - A \`pg_dump\` of the pre-migration synthetic state was restored to a second isolated DB. It contained four old policies, zero lifecycle RPCs and no lifecycle table.
 - Both new databases were deleted after testing.
 
-Artifacts: three SQL fixtures under \`scripts/fixtures/msg-a05-postgres-isolated-*.sql\`; guarded local runner \`scripts/test-msg-a05-isolated-postgres.ps1\`; Linux CI runner \`scripts/test-msg-a05-isolated-postgres-ci.sh\`; draft read-only GitHub workflow \`doke-msg-a05-isolated-postgres.yml\`. The remote CI has not run.
+Artifacts: three SQL fixtures under \`scripts/fixtures/msg-a05-postgres-isolated-*.sql\`; guarded local runner \`scripts/test-msg-a05-isolated-postgres.ps1\`; Linux CI runner \`scripts/test-msg-a05-isolated-postgres-ci.sh\`; draft read-only GitHub workflow \`doke-msg-a05-isolated-postgres.yml\`. The first remote CI run (PR #558) failed in its **synthetic-target guard** before reaching migration execution: Docker's internal server address is a bridge IP, while GitHub exposes the service on host 127.0.0.1. The CI runner now verifies loopback PGHOST, exact synthetic role/database, server major version 17, and absence of pre-existing domain tables rather than assuming the server's interface IP. Ubuntu 24.04 also installs pg_dump 16 by default; backup/restore is instead delegated to the same PostgreSQL 17 Docker image used by the test service. Both changes affect only the test harness. The revised remote CI has not yet completed.
 
 ## Limitations and release hold
 
