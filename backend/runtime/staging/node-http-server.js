@@ -39,6 +39,19 @@ function createNodeRequestHandler(options) {
 
     try {
       Object.entries(releaseHeaders).forEach(([key, value]) => response.setHeader(key, value));
+      // The release descriptor must enforce operational readiness before routing.
+      if (!releaseDescriptor.readyForTraffic) {
+        response.setHeader('vary', 'Origin');
+        sendJson(response, 503, {
+          ok: false,
+          error: {
+            code: 'DOKE_STAGING_RELEASE_NOT_READY',
+            message: 'The staging release is not ready to accept traffic.',
+            requestId
+          }
+        });
+        return;
+      }
       const origin = readHeader(request.headers, 'origin');
       const originAllowed = applyCorsHeaders(response, origin, corsPolicy);
 

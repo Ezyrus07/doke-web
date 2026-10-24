@@ -7,7 +7,8 @@ const {
   createCorsPolicy,
   parseAllowedOrigins,
   isAllowedOrigin,
-  createNodeHttpServer
+  createNodeHttpServer,
+  createNodeRequestHandler
 } = require('../backend/runtime/staging/node-http-server');
 
 let checks = 0;
@@ -81,4 +82,60 @@ assert.throws(
 );
 checks++;
 
-console.log('ORD-A08 staging CORS HTTPS boundary PASS: '+checks+' offline assertions, 0 external network requests.');
+// No sockets: exercise the deployed HTTP request handler with synthetic response objects.
+function mockResponse() {
+  const headers = new Map();
+  return {
+    statusCode: 200,
+    body: null,
+    setHeader(name, value) { headers.set(String(name).toLowerCase(), value); },
+    getHeader(name) { return headers.get(String(name).toLowerCase()); },
+    hasHeader(name) { return headers.has(String(name).toLowerCase()); },
+    end(value) { this.body = value || ''; }
+  };
+}
+
+async function verifyReleaseGate() {
+  const full = {
+    DOKE_ENABLE_STAGING_API: '1',
+    DOKE_STAGING_RELEASE_ID: 'ord-a08-test-release-01',
+    DOKE_STAGING_RELEASE_SHA: 'abcdef1234567890',
+    DOKE_STAGING_ROLLBACK_RELEASE_ID: 'ord-a08-test-rollback-01',
+    DOKE_ALLOWED_ORIGINS: 'http://unsecured.example.invalid'
+  };
+  let calls = 0;
+  const fakeRuntime = { async handle() { calls++; return { status: 200, body: {} }; } };
+  const scenarios = [
+    ['environment missing', { ...full }, 'OPTIONS', '/orders', 'http://unsecured.example.invalid'],
+    ['environment preview', { ...full, DOKE_ENVIRONMENT: 'preview' }, 'OPTIONS', '/orders', 'http://unsecured.example.invalid'],
+    ['environment local', { ...full, DOKE_ENVIRONMENT: 'local' }, 'POST', '/orders', 'http://unsecured.example.invalid'],
+    ['release identity missing', { DOKE_ENVIRONMENT: 'staging', DOKE_ENABLE_STAGING_API: '1' }, 'GET', '/health', null],
+    ['staging disabled', { ...full, DOKE_ENVIRONMENT: 'staging', DOKE_ENABLE_STAGING_API: '0', DOKE_ALLOWED_ORIGINS: 'https://staging.example.invalid' }, 'OPTIONS', '/orders', 'https://staging.example.invalid']
+  ];
+  for (const [description, env, method, path, origin] of scenarios) {
+    const handler = createNodeRequestHandler({ env, runtime: fakeRuntime });
+    const response = mockResponse();
+    await handler({ method, url: path, headers: origin ? { origin } : {} }, response);
+    assert.equal(response.statusCode, 503, description);
+    assert.equal(JSON.parse(response.body).error.code, 'DOKE_STAGING_RELEASE_NOT_READY', description);
+    assert.equal(response.getHeader('access-control-allow-origin'), undefined, description);
+    assert.equal(response.getHeader('access-control-allow-credentials'), undefined, description);
+    checks++;
+  }
+  assert.equal(calls, 0, 'Denied requests never enter the domain runtime');
+  checks++;
+
+  const ready = { ...full, DOKE_ENVIRONMENT: 'staging', DOKE_ALLOWED_ORIGINS: 'https://staging.example.invalid' };
+  const handler = createNodeRequestHandler({ env: ready, runtime: fakeRuntime });
+  const response = mockResponse();
+  await handler({ method: 'OPTIONS', url: '/orders', headers: { origin: 'https://staging.example.invalid' } }, response);
+  assert.equal(response.statusCode, 204);
+  assert.equal(response.getHeader('access-control-allow-origin'), 'https://staging.example.invalid');
+  assert.equal(calls, 0);
+  checks++;
+  console.log('ORD-A08 staging CORS HTTPS boundary PASS: '+checks+' offline assertions, 0 external network requests.');
+}
+verifyReleaseGate().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

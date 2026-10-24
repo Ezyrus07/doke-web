@@ -1,6 +1,6 @@
 # ORD-A08 — Staging CORS HTTPS boundary (local-only)
 
-**Date:** 2026-10-22. **State:** locally tested candidate, not deployed, not merged, not approved for hosted writes.
+**Original patch:** 2026-10-22, published as Draft PR #554 with CI-passing Vercel Previews; not merged or promoted. **Follow-up release-gate patch:** local-only, not published or deployed, no hosted-write authority.
 
 ## Verified configuration issue
 
@@ -9,10 +9,12 @@ The Node staging runtime previously accepted exact-origin CORS configuration for
 ## Scoped fix
 
 - In backend/runtime/staging/node-http-server.js, parseAllowedOrigins now receives the environment marker.
-- When DOKE_ENVIRONMENT=staging, an explicitly configured HTTP origin outside localhost/127.0.0.1/[::1] causes DOKE_CORS_CONFIG_INVALID (HTTP 503 on runtime configuration failure).
+- When DOKE_ENVIRONMENT=staging, an explicitly configured HTTP origin outside localhost/127.0.0.1/[::1] throws DOKE_CORS_CONFIG_INVALID (status=503 on the Error). It is raised during handler/server construction before an HTTP response exists; the hosting provider determines the response for an uncaught startup error.
 - HTTPS external origins continue to be accepted subject to exact-origin matching. Local environment compatibility, explicitly configured loopback development origins and existing wildcard/path rejection remain intact.
-- scripts/test-ord-001-a08-staging-cors-https.js provides 12 offline assertions including HTTPS allowlist, external HTTP rejection, localhost/IPv4/IPv6 loopback, wildcard, path, local compatibility, and server fail-closed on invalid staging origin.
-- A dedicated gate is added to the combined-journey CI workflow, targeting the prior fingerprint PR as its base if published.
+- scripts/test-ord-001-a08-staging-cors-https.js provides 19 offline assertions (12 original CORS checks and 7 release-gate checks), covering HTTPS allowlist, external HTTP rejection, loopback, invalid origins, missing/incorrect environment markers, missing release identity, disabled staging activation and a permitted valid staging preflight.
+- The Node HTTP handler now rejects requests (including OPTIONS and /health) with HTTP 503 DOKE_STAGING_RELEASE_NOT_READY when the release descriptor has readyForTraffic=false. It does not reflect a CORS origin or enable credentialed CORS in that state. Local CORS configuration remains available for development policy tests, but cannot bypass runtime readiness.
+- The offline suite now covers missing/preview/local environment markers, incomplete release identity, disabled activation, and permitted HTTPS staging preflight. It performs no external network requests.
+- The combined-journey CI already runs the CORS test for PR #554; the additional release-readiness gate is local only until separately published and verified by CI.
 
 ## Limitations and follow-up
 
