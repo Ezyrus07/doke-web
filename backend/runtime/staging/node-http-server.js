@@ -4,6 +4,7 @@
 const http = require('http');
 const { createStagingApiRuntime } = require('./staging-api-runtime');
 const { assertRuntimeReleaseEnvironment, createRuntimeReleaseHeaders } = require('./runtime-release-contract');
+const { createStagingRuntimeConfig } = require('./staging-runtime-config');
 
 const DEFAULT_PORT = 8787;
 const DEFAULT_HOST = '127.0.0.1';
@@ -19,7 +20,17 @@ function createNodeHttpServer(options) {
 function createNodeRequestHandler(options) {
   const safeOptions = options && typeof options === 'object' ? options : {};
   const runtimeEnv = safeOptions.env || process.env;
-  const releaseDescriptor = assertRuntimeReleaseEnvironment(runtimeEnv);
+  let releaseDescriptor = assertRuntimeReleaseEnvironment(runtimeEnv);
+  // Readiness requires the same non-secret, normalized client configuration as the domain runtime.
+  // A fingerprint and release identifiers alone cannot make /health operationally ready.
+  const runtimeConfig = createStagingRuntimeConfig({ env: runtimeEnv });
+  if (!runtimeConfig.supabaseUrl || !runtimeConfig.anonKey) {
+    releaseDescriptor = Object.freeze({
+      ...releaseDescriptor,
+      readyForTraffic: false,
+      blockers: Object.freeze([...releaseDescriptor.blockers, 'supabase_user_client_config_missing'])
+    });
+  }
   const releaseHeaders = createRuntimeReleaseHeaders(releaseDescriptor);
   const corsPolicy = createCorsPolicy(runtimeEnv);
   let runtime = safeOptions.runtime || null;

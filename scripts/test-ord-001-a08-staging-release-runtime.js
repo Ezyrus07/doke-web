@@ -39,6 +39,8 @@ const server = createNodeHttpServer({
     DOKE_STAGING_RELEASE_ID: releaseId,
     DOKE_STAGING_RELEASE_SHA: releaseSha,
     DOKE_STAGING_ROLLBACK_RELEASE_ID: rollbackReleaseId,
+    SUPABASE_URL: 'https://synthetic.example.invalid',
+    SUPABASE_ANON_KEY: 'synthetic-anon-key',
     DOKE_ALLOWED_ORIGINS: allowedOrigin
   },
   runtime: {

@@ -101,6 +101,8 @@ async function verifyReleaseGate() {
     DOKE_STAGING_RELEASE_ID: 'ord-a08-test-release-01',
     DOKE_STAGING_RELEASE_SHA: 'abcdef1234567890',
     DOKE_STAGING_ROLLBACK_RELEASE_ID: 'ord-a08-test-rollback-01',
+    SUPABASE_URL: 'https://synthetic.example.invalid',
+    SUPABASE_ANON_KEY: 'synthetic-anon-key',
     DOKE_ALLOWED_ORIGINS: 'http://unsecured.example.invalid'
   };
   let calls = 0;
@@ -110,7 +112,10 @@ async function verifyReleaseGate() {
     ['environment preview', { ...full, DOKE_ENVIRONMENT: 'preview' }, 'OPTIONS', '/orders', 'http://unsecured.example.invalid'],
     ['environment local', { ...full, DOKE_ENVIRONMENT: 'local' }, 'POST', '/orders', 'http://unsecured.example.invalid'],
     ['release identity missing', { DOKE_ENVIRONMENT: 'staging', DOKE_ENABLE_STAGING_API: '1' }, 'GET', '/health', null],
-    ['staging disabled', { ...full, DOKE_ENVIRONMENT: 'staging', DOKE_ENABLE_STAGING_API: '0', DOKE_ALLOWED_ORIGINS: 'https://staging.example.invalid' }, 'OPTIONS', '/orders', 'https://staging.example.invalid']
+    ['staging disabled', { ...full, DOKE_ENVIRONMENT: 'staging', DOKE_ENABLE_STAGING_API: '0', DOKE_ALLOWED_ORIGINS: 'https://staging.example.invalid' }, 'OPTIONS', '/orders', 'https://staging.example.invalid'],
+    ['staging missing Supabase client configuration', { ...full, DOKE_ENVIRONMENT: 'staging', SUPABASE_URL: '', SUPABASE_ANON_KEY: '', DOKE_ALLOWED_ORIGINS: 'https://staging.example.invalid' }, 'GET', '/health', null],
+    ['staging missing Supabase anon key', { ...full, DOKE_ENVIRONMENT: 'staging', SUPABASE_ANON_KEY: '', DOKE_ALLOWED_ORIGINS: 'https://staging.example.invalid' }, 'OPTIONS', '/orders', 'https://staging.example.invalid'],
+    ['staging whitespace-only Supabase URL', { ...full, DOKE_ENVIRONMENT: 'staging', SUPABASE_URL: '   ', DOKE_ALLOWED_ORIGINS: 'https://staging.example.invalid' }, 'GET', '/health', null]
   ];
   for (const [description, env, method, path, origin] of scenarios) {
     const handler = createNodeRequestHandler({ env, runtime: fakeRuntime });
