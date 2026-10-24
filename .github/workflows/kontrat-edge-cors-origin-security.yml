@@ -1,0 +1,27 @@
+name: Kontrat Edge CORS Origin Security
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kontrat-edge-cors-origin-security.yml'
+      - 'supabase/functions/_shared/http-security.ts'
+      - 'supabase/functions/*/index.ts'
+      - 'scripts/test-supabase-edge-cors-boundary.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  edge-cors:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify offline Edge CORS test syntax
+        run: node --check scripts/test-supabase-edge-cors-boundary.mjs
+      - name: Verify TypeScript shared CORS policy and eight consumers
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-supabase-edge-cors-boundary.mjs
