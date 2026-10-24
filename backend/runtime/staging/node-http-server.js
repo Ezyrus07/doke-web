@@ -4,6 +4,7 @@
 const http = require('http');
 const { createStagingApiRuntime } = require('./staging-api-runtime');
 const { assertRuntimeReleaseEnvironment, createRuntimeReleaseHeaders } = require('./runtime-release-contract');
+const { createStagingRuntimeConfig } = require('./staging-runtime-config');
 
 const DEFAULT_PORT = 8787;
 const DEFAULT_HOST = '127.0.0.1';
@@ -19,7 +20,17 @@ function createNodeHttpServer(options) {
 function createNodeRequestHandler(options) {
   const safeOptions = options && typeof options === 'object' ? options : {};
   const runtimeEnv = safeOptions.env || process.env;
-  const releaseDescriptor = assertRuntimeReleaseEnvironment(runtimeEnv);
+  let releaseDescriptor = assertRuntimeReleaseEnvironment(runtimeEnv);
+  // Readiness requires the same non-secret, normalized client configuration as the domain runtime.
+  // A fingerprint and release identifiers alone cannot make /health operationally ready.
+  const runtimeConfig = createStagingRuntimeConfig({ env: runtimeEnv });
+  if (!runtimeConfig.supabaseUrl || !runtimeConfig.anonKey) {
+    releaseDescriptor = Object.freeze({
+      ...releaseDescriptor,
+      readyForTraffic: false,
+      blockers: Object.freeze([...releaseDescriptor.blockers, 'supabase_user_client_config_missing'])
+    });
+  }
   const releaseHeaders = createRuntimeReleaseHeaders(releaseDescriptor);
   const corsPolicy = createCorsPolicy(runtimeEnv);
   let runtime = safeOptions.runtime || null;
@@ -39,6 +50,19 @@ function createNodeRequestHandler(options) {
 
     try {
       Object.entries(releaseHeaders).forEach(([key, value]) => response.setHeader(key, value));
+      // The release descriptor must enforce operational readiness before routing.
+      if (!releaseDescriptor.readyForTraffic) {
+        response.setHeader('vary', 'Origin');
+        sendJson(response, 503, {
+          ok: false,
+          error: {
+            code: 'DOKE_STAGING_RELEASE_NOT_READY',
+            message: 'The staging release is not ready to accept traffic.',
+            requestId
+          }
+        });
+        return;
+      }
       const origin = readHeader(request.headers, 'origin');
       const originAllowed = applyCorsHeaders(response, origin, corsPolicy);
 
@@ -175,14 +199,14 @@ function sendJson(response, status, payload) {
 function createCorsPolicy(env) {
   const source = env && typeof env === 'object' ? env : {};
   const environment = String(source.DOKE_ENVIRONMENT || 'local').trim().toLowerCase();
-  const configuredOrigins = parseAllowedOrigins(source.DOKE_ALLOWED_ORIGINS || '');
+  const configuredOrigins = parseAllowedOrigins(source.DOKE_ALLOWED_ORIGINS || '', environment);
   return Object.freeze({
     environment,
     configuredOrigins
   });
 }
 
-function parseAllowedOrigins(value) {
+function parseAllowedOrigins(value, environment = 'local') {
   const origins = String(value || '')
     .split(',')
     .map((item) => item.trim())
@@ -198,6 +222,11 @@ function parseAllowedOrigins(value) {
     }
     if (!/^https?:$/.test(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password) {
       throw corsConfigError(`Allowed origin must be an exact HTTP(S) origin: ${origin}`);
+    }
+    // Credentialed staging origins must use TLS except for isolated loopback testing.
+    if (environment === 'staging' && parsed.protocol !== 'https:' &&
+        !['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname)) {
+      throw corsConfigError(`Staging CORS origin must use HTTPS outside loopback: ${origin}`);
     }
     return parsed.origin;
   });
