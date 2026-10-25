@@ -1,0 +1,31 @@
+name: Kontrat MSG Staging Migration History Hold
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kontrat-msg-staging-history-hold.yml'
+      - 'docs/validation/MSG-A05-STAGING-MIGRATION-HISTORY-SNAPSHOT-20261025.json'
+      - 'docs/validation/MSG-A05-STAGING-HISTORY-RECONCILIATION-20261025.md'
+      - 'scripts/audit-msg-staging-history-no-go.js'
+      - 'scripts/test-msg-staging-history-no-go.js'
+      - 'supabase/migrations/*.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-migration-history-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate read-only migration snapshot and explicit HOLD
+        run: |
+          node --check scripts/audit-msg-staging-history-no-go.js
+          node --check scripts/test-msg-staging-history-no-go.js
+          node scripts/test-msg-staging-history-no-go.js
+      - name: Print fail-closed staging status
+        run: node scripts/audit-msg-staging-history-no-go.js --json
