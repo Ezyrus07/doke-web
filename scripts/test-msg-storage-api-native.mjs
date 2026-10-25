@@ -129,7 +129,8 @@ async function main(){
  console.log('STORAGE_SERVICE_ROLE_API_DELETE_SUCCEEDED');
 
  const missing=await request(downloadUrl(path),{as:'a'});
- assert.equal(missing.status,404,'removed object should not be retrievable');
+ assert.ok(missing.status===400||missing.status===404,'removed object unavailable must return 400 or 404; got '+missing.status);
+ assert.equal(sql("SELECT count(*) FROM storage.objects WHERE bucket_id='"+bucket+"' AND name='"+path+"';"),'0','Storage database still contains object metadata after API deletion');
  console.log('STORAGE_OBJECT_NO_LONGER_AVAILABLE');
 
  console.log('MSG_A05_REAL_LOCAL_STORAGE_API_SYNTHETIC_PASS_NO_HOSTED_DEPLOY');
