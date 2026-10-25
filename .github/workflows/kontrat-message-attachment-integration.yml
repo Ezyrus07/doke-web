@@ -1,0 +1,48 @@
+name: Kontrat Message and MSG-A05 Synthetic Integration
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kontrat-message-attachment-integration.yml'
+      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
+      - 'supabase/migrations/*message_update_authority_guard.sql'
+      - 'scripts/fixtures/msg-update-a05-integration-*.sql'
+      - 'scripts/test-msg-update-a05-integration-postgres.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-message-attachment-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: msg_composite_ci
+          POSTGRES_USER: kontrat_sandbox
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U kontrat_sandbox -d msg_composite_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: kontrat_sandbox
+      PGDATABASE: msg_composite_ci
+      PGPASSWORD: synthetic-ci-only
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install isolated PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Validate both migration orders, RLS and attachment retention
+        run: bash scripts/test-msg-update-a05-integration-postgres.sh
