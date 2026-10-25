@@ -42,7 +42,8 @@ function assertStaticContracts() {
   assert.equal(evidence.noSecretValuesCollected, true);
   assert.equal(evidence.mandatoryLiveRecheck, true);
   assert.equal(evidence.operatorDecision, 'NO_GO');
-  assert.equal(sha256(migration), evidence.migration.sha256, 'Migration changed; inventory must be reviewed again.');
+  // Hash the canonical Git LF content even when Windows checks it out as CRLF.
+  assert.equal(sha256(migration.replace(/\r\n/g, '\n')), evidence.migration.sha256, 'Migration changed; inventory must be reviewed again.');
   assert.equal(evidence.migration.version, '20260802220000');
   assert.deepEqual(evidence.migration.sourcePublicRpcNames, PUBLIC_RPCS);
   assert.deepEqual([...evidence.migration.legacyPoliciesReplaced].sort(), [...LEGACY_POLICIES].sort());
@@ -53,6 +54,13 @@ function assertStaticContracts() {
   assert.match(migration, /revoke all on table private\.transaction_attachment_lifecycle/i);
   assert.match(migration, /grant select, insert, update, delete on table private\.transaction_attachment_lifecycle\s+to service_role/i);
   assert.match(migration, /security definer\s+set search_path = pg_catalog/i);
+  // This row-returning function is unused by RLS; prohibit direct calls from authenticated.
+  assert.match(migration, /grant execute on function private\.transaction_attachment_from_path\(text\)\s+to service_role\s*;/i);
+  assert.doesNotMatch(migration, /grant execute on function private\.transaction_attachment_from_path\(text\)\s+to authenticated/i);
+  const readHelper = migration.split('create or replace function private.can_read_transaction_attachment(')[1].split('create or replace function private.can_upload_transaction_attachment(')[0];
+  const uploadHelper = migration.split('create or replace function private.can_upload_transaction_attachment(')[1].split('create or replace function public.prepare_transaction_attachment_uploads_internal(')[0];
+  assert.match(readHelper, /p_actor_id is distinct from auth\.uid\(\)/i);
+  assert.match(uploadHelper, /p_actor_id = auth\.uid\(\)/i);
   assert.match(migration, /revoke all privileges on function %s from public, anon, authenticated/i);
   assert.match(migration, /grant execute on function %s to service_role/i);
   assert.match(migration, /create trigger messages_attachment_retention_after_removed/i);

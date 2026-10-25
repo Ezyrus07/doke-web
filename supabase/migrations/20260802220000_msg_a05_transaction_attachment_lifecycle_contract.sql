@@ -108,8 +108,9 @@ $$;
 
 revoke all privileges on function private.transaction_attachment_from_path(text)
   from public, anon, authenticated, service_role;
+-- The lifecycle row is internal; do not grant direct access to authenticated.
 grant execute on function private.transaction_attachment_from_path(text)
-  to authenticated, service_role;
+  to service_role;
 
 create or replace function private.can_read_transaction_attachment(
   p_object_path text,
@@ -124,7 +125,8 @@ as $$
 declare
   lifecycle private.transaction_attachment_lifecycle;
 begin
-  if p_actor_id is null then
+  -- Match the caller to the JWT identity even for direct function calls.
+  if p_actor_id is null or p_actor_id is distinct from auth.uid() then
     return false;
   end if;
 
@@ -169,6 +171,7 @@ as $$
      where lifecycle.bucket_id = 'transaction-attachments'
        and lifecycle.object_path = p_object_path
        and lifecycle.actor_id = p_actor_id
+        and p_actor_id = auth.uid()
        and lifecycle.status = 'pending'
        and lifecycle.intent_expires_at > pg_catalog.now()
        and private.transaction_attachment_actor_can_access(

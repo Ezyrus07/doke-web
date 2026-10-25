@@ -111,4 +111,81 @@ BEGIN
 END $$;
 SELECT 'AUTHENTICATED_UPDATE_DELETE_DENIED';
 RESET ROLE;
+
+-- Regression: staging's private schema grants USAGE to authenticated.
+-- The row-returning SECURITY DEFINER helper must still refuse EXECUTE.
+DO $$
+BEGIN
+  IF has_function_privilege('authenticated','private.transaction_attachment_from_path(text)','EXECUTE') THEN
+    RAISE EXCEPTION 'LIFECYCLE_ROW_FUNCTION_EXPOSED';
+  END IF;
+  IF NOT has_function_privilege('service_role','private.transaction_attachment_from_path(text)','EXECUTE') THEN
+    RAISE EXCEPTION 'LIFECYCLE_SERVER_ACCESS_MISSING';
+  END IF;
+END $$;
+SELECT 'PRIVATE_LIFECYCLE_ROW_ACCESS_RESTRICTED';
+
+-- Create a separate pending order upload for signed-in actor tests.
+SET ROLE service_role;
+WITH prepared AS (
+  SELECT public.prepare_transaction_attachment_uploads_internal(
+    '11111111-1111-4111-8111-111111111111',
+    'order', 'synthetic-order',
+    '[{"name":"pending-private.pdf","type":"application/pdf","size":777}]'::jsonb
+  ) AS data
+)
+SELECT data->'items'->0->>'path' AS pending_path FROM prepared \gset
+RESET ROLE;
+SELECT set_config('kontrat.pending_path', :'pending_path',false);
+SELECT set_config('kontrat.uploaded_path',
+  (SELECT object_path FROM private.transaction_attachment_lifecycle
+   WHERE actor_id='11111111-1111-4111-8111-111111111111'
+     AND status='uploaded' ORDER BY created_at LIMIT 1),false);
+
+-- Legitimate caller must continue to pass the existing Storage RLS helpers.
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+SET ROLE authenticated;
+DO $$
+BEGIN
+  IF NOT private.can_upload_transaction_attachment(
+       current_setting('kontrat.pending_path'),
+       '11111111-1111-4111-8111-111111111111') THEN
+    RAISE EXCEPTION 'VALID_ACTOR_UPLOAD_REGRESSION';
+  END IF;
+  IF NOT private.can_read_transaction_attachment(
+       current_setting('kontrat.uploaded_path'),
+       '11111111-1111-4111-8111-111111111111') THEN
+    RAISE EXCEPTION 'VALID_ACTOR_READ_REGRESSION';
+  END IF;
+END $$;
+SELECT 'JWT_OWNER_STORAGE_HELPERS_PASS';
+RESET ROLE;
+
+-- A caller must not be able to pass somebody else's actor ID to a
+-- SECURITY DEFINER helper, even when the other actor is a real participant.
+SELECT set_config('request.jwt.claim.sub','99999999-9999-4999-8999-999999999999',false);
+SET ROLE authenticated;
+DO $$
+DECLARE blocked boolean := false;
+BEGIN
+  IF private.can_upload_transaction_attachment(
+       current_setting('kontrat.pending_path'),
+       '11111111-1111-4111-8111-111111111111') THEN
+    RAISE EXCEPTION 'FAKE_ACTOR_UPLOAD_ORACLE';
+  END IF;
+  IF private.can_read_transaction_attachment(
+       current_setting('kontrat.uploaded_path'),
+       '11111111-1111-4111-8111-111111111111') THEN
+    RAISE EXCEPTION 'FAKE_ACTOR_READ_ORACLE';
+  END IF;
+  BEGIN
+    PERFORM private.transaction_attachment_from_path(current_setting('kontrat.uploaded_path'));
+  EXCEPTION WHEN insufficient_privilege THEN
+    blocked := true;
+  END;
+  IF NOT blocked THEN RAISE EXCEPTION 'PRIVATE_ROW_LEAK_AUTHENTICATED'; END IF;
+END $$;
+SELECT 'JWT_SPOOF_AND_PRIVATE_ROW_ACCESS_DENIED';
+RESET ROLE;
+
 SELECT 'MSG_A05_ISOLATED_NEGATIVE_AND_LIFECYCLE_PASS';
