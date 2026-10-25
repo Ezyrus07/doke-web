@@ -1,0 +1,56 @@
+name: Kontrat Staging Catalog Synthetic Fidelity
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kontrat-staging-catalog-fidelity.yml'
+      - 'docs/validation/MSG-CATALOG-STAGING-METADATA-20261025.json'
+      - 'scripts/generate-msg-staging-catalog-fixture.js'
+      - 'scripts/fixtures/msg-staging-catalog-*.sql'
+      - 'scripts/test-msg-staging-catalog-integration-*'
+      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
+      - 'supabase/migrations/*message_update_authority_guard.sql'
+      - 'scripts/fixtures/msg-update-a05-integration-regressions.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-derived-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: msg_catalog_ci
+          POSTGRES_USER: kontrat_sandbox
+          POSTGRES_PASSWORD: synthetic-only-ci
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U kontrat_sandbox -d msg_catalog_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: kontrat_sandbox
+      PGDATABASE: msg_catalog_ci
+      PGPASSWORD: synthetic-only-ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Verify schema metadata fixture and runner
+        run: |
+          node --check scripts/generate-msg-staging-catalog-fixture.js
+          node scripts/generate-msg-staging-catalog-fixture.js --check
+          bash -n scripts/test-msg-staging-catalog-integration-ci.sh
+      - name: Exercise synthetic RLS, migrations and restoration
+        run: bash scripts/test-msg-staging-catalog-integration-ci.sh
