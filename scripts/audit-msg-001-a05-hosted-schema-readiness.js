@@ -42,7 +42,8 @@ function assertStaticContracts() {
   assert.equal(evidence.noSecretValuesCollected, true);
   assert.equal(evidence.mandatoryLiveRecheck, true);
   assert.equal(evidence.operatorDecision, 'NO_GO');
-  assert.equal(sha256(migration), evidence.migration.sha256, 'Migration changed; inventory must be reviewed again.');
+  // Hash the canonical Git LF content even when Windows checks it out as CRLF.
+  assert.equal(sha256(migration.replace(/\r\n/g, '\n')), evidence.migration.sha256, 'Migration changed; inventory must be reviewed again.');
   assert.equal(evidence.migration.version, '20260802220000');
   assert.deepEqual(evidence.migration.sourcePublicRpcNames, PUBLIC_RPCS);
   assert.deepEqual([...evidence.migration.legacyPoliciesReplaced].sort(), [...LEGACY_POLICIES].sort());

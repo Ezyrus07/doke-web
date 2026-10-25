@@ -33,4 +33,4 @@ for order in a05-first message-first; do
   run_sql "$db" scripts/fixtures/msg-update-a05-integration-regressions.sql
   echo "MSG_A05_COMPOSITE_SYNTHETIC_PASS_ORDER_$order"
 done
-echo MSG_A05_COMPOSITE_CI_PASS_WITH_EXPECTED_SECURITY_NO_GO
+echo MSG_A05_COMPOSITE_CI_SYNTHETIC_HARDENED_PASS_HOSTED_NO_GO

@@ -96,30 +96,81 @@ DO $test$ BEGIN
  THEN RAISE EXCEPTION 'SENDER_REMOVAL_FAILED_TO_ORPHAN'; END IF;
 END $test$;
 SELECT 'SENDER_REMOVAL_ORPHANS_WITH_RETENTION';
--- A deliberate BLOCKER assertion for the source at PR #559:
--- row-returning helper still exposes EXECUTE to authenticated.
-DO $test$ BEGIN
- IF NOT has_function_privilege('authenticated',
-     'private.transaction_attachment_from_path(text)','EXECUTE') THEN
-  RAISE EXCEPTION 'EXPECTED_SOURCE_GRANT_DRIFT_CHECK';
- END IF;
+-- Hardened contract: a private row-returning SECURITY DEFINER function
+-- is exclusively callable by the service role; public users cannot fetch it.
+DO $test$
+BEGIN
+ IF has_function_privilege('authenticated',
+      'private.transaction_attachment_from_path(text)','EXECUTE')
+ THEN RAISE EXCEPTION 'AUTHENTICATED_PRIVATE_ROW_EXECUTE_EXPOSED'; END IF;
+ IF has_function_privilege('anon',
+      'private.transaction_attachment_from_path(text)','EXECUTE')
+ THEN RAISE EXCEPTION 'ANON_PRIVATE_ROW_EXECUTE_EXPOSED'; END IF;
+ IF NOT has_function_privilege('service_role',
+      'private.transaction_attachment_from_path(text)','EXECUTE')
+ THEN RAISE EXCEPTION 'SERVICE_PRIVATE_ROW_EXECUTE_MISSING'; END IF;
 END $test$;
-SELECT 'MSG_A05_KNOWN_UNSAFE_ROW_HELPER_GRANT_REQUIRES_SEPARATE_PATCH';
--- Positive demonstration of an undesired source permission: a synthetic
--- unrelated actor can receive the full private lifecycle record via the
--- function granted to authenticated. DO NOT run on hosted projects.
+SELECT 'PRIVATE_ROW_HELPER_SERVICE_ROLE_ONLY';
+
 SELECT set_config('request.jwt.claim.sub','99999999-9999-4999-8999-999999999999',false);
 SET ROLE authenticated;
 DO $test$
-DECLARE extracted uuid;
+DECLARE denied boolean:=false;
 BEGIN
- SELECT (private.transaction_attachment_from_path(
-   current_setting('kontrat.integration_object_path'))).id INTO extracted;
- IF extracted IS DISTINCT FROM current_setting('kontrat.integration_attachment_id')::uuid
- THEN
-  RAISE EXCEPTION 'EXPECTED_SYNTHETIC_EXPOSURE_NOT_REPRODUCED';
- END IF;
+ BEGIN
+  PERFORM private.transaction_attachment_from_path(
+    current_setting('kontrat.integration_object_path'));
+ EXCEPTION WHEN insufficient_privilege THEN
+  denied:=true;
+ END;
+ IF NOT denied THEN RAISE EXCEPTION 'PRIVATE_LIFECYCLE_ROW_ACCESS_NOT_DENIED'; END IF;
+ IF private.can_read_transaction_attachment(
+     current_setting('kontrat.integration_object_path'),
+     '11111111-1111-4111-8111-111111111111')
+ THEN RAISE EXCEPTION 'SPOOFED_READ_ACTOR_ACCEPTED'; END IF;
 END $test$;
 RESET ROLE;
-SELECT 'PR559_SYNTHETIC_PRIVATE_ROW_EXPOSURE_CONFIRMED_NO_GO';
-SELECT 'MSG_UPDATE_A05_TRIGGER_INTEGRATION_PASS_WITH_RECORDED_NO_GO';
+SELECT 'UNRELATED_USER_CANNOT_READ_PRIVATE_LIFECYCLE_ROW';
+
+-- Separate pending intent tests a valid upload and actor-id spoofing.
+SET ROLE service_role;
+WITH prepared AS (
+ SELECT public.prepare_transaction_attachment_uploads_internal(
+  '11111111-1111-4111-8111-111111111111',
+  'conversation',
+  'synthetic-conversation',
+  '[{"name":"pending-integration.pdf","type":"application/pdf","size":1024}]'::jsonb
+ ) AS payload
+)
+SELECT payload->'items'->0->>'path' AS pending_object_path FROM prepared \gset
+RESET ROLE;
+SELECT set_config('kontrat.integration_pending_path', :'pending_object_path',false);
+SELECT set_config('request.jwt.claim.sub','99999999-9999-4999-8999-999999999999',false);
+SET ROLE authenticated;
+DO $test$
+BEGIN
+ IF private.can_upload_transaction_attachment(
+     current_setting('kontrat.integration_pending_path'),
+     '11111111-1111-4111-8111-111111111111')
+ THEN RAISE EXCEPTION 'SPOOFED_UPLOAD_ACTOR_ACCEPTED'; END IF;
+END $test$;
+RESET ROLE;
+SELECT 'UNRELATED_USER_CANNOT_SPOOF_UPLOAD';
+
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+SET ROLE authenticated;
+DO $test$
+BEGIN
+ IF NOT private.can_upload_transaction_attachment(
+     current_setting('kontrat.integration_pending_path'),
+     '11111111-1111-4111-8111-111111111111')
+ THEN RAISE EXCEPTION 'LEGITIMATE_UPLOAD_REGRESSION'; END IF;
+ IF NOT private.can_read_transaction_attachment(
+     current_setting('kontrat.integration_object_path'),
+     '11111111-1111-4111-8111-111111111111')
+ THEN RAISE EXCEPTION 'LEGITIMATE_READ_REGRESSION'; END IF;
+END $test$;
+RESET ROLE;
+SELECT 'OWNER_CAN_READ_AND_UPLOAD_VALID_ATTACHMENTS';
+
+SELECT 'MSG_UPDATE_A05_COMPOSITE_HARDENED_PASS';

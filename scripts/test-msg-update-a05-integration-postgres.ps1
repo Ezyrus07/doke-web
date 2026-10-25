@@ -56,7 +56,7 @@ try {
     & $binPsql -X -w -h 127.0.0.1 -p $Port -U kontrat_sandbox -d postgres -v ON_ERROR_STOP=1 -f $src
     if($LASTEXITCODE -ne 0){throw ('ISOLATED_SQL_FAILURE_'+$relative)}
   }
-  Write-Output ('MSG_A05_MESSAGE_UPDATE_SYNTHETIC_INTERACTION_PASS_WITH_KNOWN_NO_GO_REVERSE='+[bool]$ReverseOrder)
+  Write-Output ('MSG_A05_MESSAGE_UPDATE_SYNTHETIC_HARDENED_PASS_REVERSE='+[bool]$ReverseOrder)
 } finally {
   if($started){
     & $binCtl -D $data -w -m fast stop
