@@ -1,0 +1,39 @@
+name: Kontrat MSG-A05 Real Storage API Isolation
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kontrat-msg-storage-api-isolation.yml'
+      - 'scripts/test-msg-storage-api-isolated-ci.sh'
+      - 'scripts/test-msg-storage-api-native.mjs'
+      - 'scripts/fixtures/msg-storage-api-native-local-baseline.sql'
+      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
+      - 'supabase/migrations/*message_update_authority_guard.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-storage-gateway:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      KONTRAT_ISOLATED_STORAGE_TEST: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.0
+      - name: Install local PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Validate unlinked Storage test sources
+        run: |
+          bash -n scripts/test-msg-storage-api-isolated-ci.sh
+          node --check scripts/test-msg-storage-api-native.mjs
+      - name: Real Storage upload, read, signed URL, upsert and deletion tests
+        run: bash scripts/test-msg-storage-api-isolated-ci.sh
