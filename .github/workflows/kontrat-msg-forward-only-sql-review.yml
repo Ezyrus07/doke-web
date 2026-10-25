@@ -1,0 +1,35 @@
+name: Kontrat MSG Forward-Only SQL Reconciliation Hold
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kontrat-msg-forward-only-sql-review.yml'
+      - 'docs/validation/MSG-A05-STAGING-LATER-SQL-FINGERPRINTS-20261025.json'
+      - 'docs/validation/MSG-A05-FORWARD-ONLY-RECONCILIATION-20261025.md'
+      - 'docs/validation/MSG-A05-STAGING-MIGRATION-HISTORY-SNAPSHOT-20261025.json'
+      - 'scripts/audit-msg-forward-only-sql-reconciliation.js'
+      - 'scripts/test-msg-forward-only-sql-reconciliation.js'
+      - 'supabase/migrations/20260802183100_msg_a04_realtime_publication_contract.sql'
+      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
+      - 'supabase/migrations/20260802234000_msg_a06_presence_typing_realtime_authorization_contract.sql'
+      - 'supabase/migrations/20261025022849_message_update_authority_guard.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forward-only-review-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: SQL fingerprint and historical source review
+        run: |
+          node --check scripts/audit-msg-forward-only-sql-reconciliation.js
+          node --check scripts/test-msg-forward-only-sql-reconciliation.js
+          node scripts/test-msg-forward-only-sql-reconciliation.js
+      - name: Confirm the forward-only plan remains NO-GO for hosted DDL
+        run: node scripts/audit-msg-forward-only-sql-reconciliation.js --json
