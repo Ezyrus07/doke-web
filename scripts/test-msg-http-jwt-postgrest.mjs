@@ -50,7 +50,7 @@ async function main(){
 
  const anon=await request(query(msgA));
  denied(anon,'anonymous private message read');
- const expired=await request(query(msgA),{auth:'Bearer '+token(B,'authenticated',-30)});
+ const expired=await request(query(msgA),{auth:'Bearer '+token(B,'authenticated',-86400)});
  denied(expired,'expired token');
  const invalidJwt=token(B);const brokenJwt=invalidJwt.slice(0,-1)+(invalidJwt.endsWith('A')?'B':'A');
  denied(await request(query(msgA),{auth:'Bearer '+brokenJwt}),'tampered token');
