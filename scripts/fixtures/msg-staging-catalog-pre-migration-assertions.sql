@@ -19,7 +19,7 @@ BEGIN
     WHERE n.nspname='public' AND c.relname IN ('users','orders','conversations','messages');
   SELECT count(*) INTO legacy_policy_count FROM pg_policies
     WHERE schemaname='storage' AND policyname LIKE 'transaction_attachments%';
-  IF column_count<>48 OR policy_count<>12 OR constraint_count<>21 OR legacy_policy_count<>4 THEN
+  IF column_count<>48 OR policy_count<>12 OR constraint_count<>25 OR legacy_policy_count<>4 THEN
     RAISE EXCEPTION 'CATALOG_MIRROR_COUNTS_MISMATCH: cols=%, policies=%, constraints=%, oldStorage=%',
       column_count,policy_count,constraint_count,legacy_policy_count;
   END IF;

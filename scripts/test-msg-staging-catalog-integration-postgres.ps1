@@ -55,8 +55,8 @@ try {
   )
   if($ReverseOrder){[array]::Reverse($migrationOrder)}
   $beforeMigrationTest='scripts/fixtures/msg-staging-catalog-pre-migration-assertions.sql'
-  $sequence=@('scripts/fixtures/msg-staging-catalog-derived-baseline.sql',$beforeMigrationTest) +
-    $migrationOrder + @('scripts/fixtures/msg-update-a05-integration-regressions.sql')
+  $sequence=@('scripts/fixtures/msg-staging-catalog-derived-baseline.sql',$beforeMigrationTest,'scripts/fixtures/msg-staging-external-fk-contracts.sql') +
+    $migrationOrder + @('scripts/fixtures/msg-update-a05-integration-regressions.sql','scripts/fixtures/msg-staging-storage-policy-contracts.sql')
   foreach($relative in $sequence){
     $src=Join-Path $repo $relative
     if(!(Test-Path $src)){throw ('MISSING_SQL_FILE_'+$relative)}
@@ -76,7 +76,7 @@ try {
   if($LASTEXITCODE -ne 0){throw 'SYNTHETIC_RESTORE_FAILED'}
   $sql="SELECT (to_regclass('private.transaction_attachment_lifecycle') IS NULL)::text||'|'||(SELECT count(*) FROM pg_policies WHERE schemaname='storage' AND policyname LIKE 'transaction_attachments%')::text||'|'||(SELECT count(*) FROM pg_policies WHERE (schemaname='public' AND tablename IN ('users','orders','conversations','messages')) OR (schemaname='storage' AND tablename='objects' AND policyname LIKE 'transaction_attachments%'))::text||'|'||(SELECT count(*) FROM pg_constraint con JOIN pg_class c ON c.oid=con.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('users','orders','conversations','messages'))::text||'|'||(SELECT count(*) FROM pg_trigger WHERE tgrelid='public.messages'::regclass AND NOT tgisinternal)::text;"
   $restoredState=& $binPsql -X -w -h 127.0.0.1 -p $Port -U kontrat_sandbox -d $restoreDb -At -v ON_ERROR_STOP=1 -c $sql
-  if($LASTEXITCODE -ne 0 -or ([string]$restoredState).Trim() -ne 'true|4|12|21|0'){
+  if($LASTEXITCODE -ne 0 -or ([string]$restoredState).Trim() -ne 'true|4|12|25|0'){
     throw ('PRE_MIGRATION_SYNTHETIC_RESTORE_ASSERTION_FAILED_'+$restoredState)
   }
   Write-Output 'STAGING_CATALOG_PRE_MIGRATION_RESTORE_PASS'

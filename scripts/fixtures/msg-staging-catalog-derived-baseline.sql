@@ -1,6 +1,6 @@
 \set ON_ERROR_STOP on
 -- Staging CATALOG-DERIVED metadata (2026-10-25), populated with SYNTHETIC records only.
--- All omitted external FKs and Storage helper logic must be checked separately.
+-- All four external FKs use ID-only target stubs; Storage helper logic is only partly reproduced.
 DO $role$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
@@ -10,6 +10,10 @@ CREATE SCHEMA auth; CREATE SCHEMA private;
 GRANT USAGE ON SCHEMA auth, private TO authenticated,service_role;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+CREATE TABLE auth.users(id uuid PRIMARY KEY);
+CREATE TABLE public.services(id uuid PRIMARY KEY);
+CREATE TABLE public.service_versions(id uuid PRIMARY KEY);
+CREATE TABLE public.schedule_reservations(id uuid PRIMARY KEY);
 CREATE TABLE public."users" (
  "id" uuid NOT NULL,
  "email" text,
@@ -87,6 +91,10 @@ ALTER TABLE public."messages" ADD CONSTRAINT "messages_conversation_id_fkey" FOR
 ALTER TABLE public."messages" ADD CONSTRAINT "messages_sender_id_fkey" FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public."orders" ADD CONSTRAINT "orders_client_id_fkey" FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public."orders" ADD CONSTRAINT "orders_professional_id_fkey" FOREIGN KEY (professional_id) REFERENCES users(id);
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_schedule_reservation_id_fkey" FOREIGN KEY (schedule_reservation_id) REFERENCES schedule_reservations(id) ON DELETE SET NULL;
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_service_id_fkey" FOREIGN KEY (service_id) REFERENCES services(id);
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_service_version_id_fkey" FOREIGN KEY (service_version_id) REFERENCES service_versions(id) ON DELETE RESTRICT;
+ALTER TABLE public."users" ADD CONSTRAINT "users_id_fkey" FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
@@ -123,8 +131,12 @@ CREATE POLICY "transaction_attachments_owner_delete" ON "storage"."objects" AS P
 CREATE POLICY "transaction_attachments_owner_update" ON "storage"."objects" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (((bucket_id = 'transaction-attachments'::text) AND (owner_id = (( SELECT auth.uid() AS uid))::text) AND private.can_access_transaction_attachment(name) AND ((storage.foldername(name))[3] = (( SELECT auth.uid() AS uid))::text))) WITH CHECK (((bucket_id = 'transaction-attachments'::text) AND (owner_id = (( SELECT auth.uid() AS uid))::text) AND private.can_access_transaction_attachment(name) AND ((storage.foldername(name))[3] = (( SELECT auth.uid() AS uid))::text)));
 CREATE POLICY "transaction_attachments_participant_insert" ON "storage"."objects" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (((bucket_id = 'transaction-attachments'::text) AND private.can_access_transaction_attachment(name) AND ((storage.foldername(name))[3] = (( SELECT auth.uid() AS uid))::text)));
 CREATE POLICY "transaction_attachments_participant_select" ON "storage"."objects" AS PERMISSIVE FOR SELECT TO "authenticated" USING (((bucket_id = 'transaction-attachments'::text) AND private.can_access_transaction_attachment(name)));
+INSERT INTO auth.users(id) VALUES ('11111111-1111-4111-8111-111111111111'),('22222222-2222-4222-8222-222222222222'),('99999999-9999-4999-8999-999999999999');
+INSERT INTO public.services(id) VALUES ('66666666-6666-4666-8666-666666666666');
+INSERT INTO public.service_versions(id) VALUES ('77777777-7777-4777-8777-777777777777');
+INSERT INTO public.schedule_reservations(id) VALUES ('88888888-8888-4888-8888-888888888888');
 INSERT INTO public.users(id,role,status) VALUES ('11111111-1111-4111-8111-111111111111','client','active'),('22222222-2222-4222-8222-222222222222','professional','active'),('99999999-9999-4999-8999-999999999999','client','active');
-INSERT INTO public.orders(id,client_id,professional_id,title,status,external_id) VALUES ('33333333-3333-4333-8333-333333333333','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','Synthetic order','draft','synthetic-order');
+INSERT INTO public.orders(id,client_id,professional_id,title,status,external_id,service_id,service_version_id,schedule_reservation_id) VALUES ('33333333-3333-4333-8333-333333333333','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','Synthetic order','draft','synthetic-order','66666666-6666-4666-8666-666666666666','77777777-7777-4777-8777-777777777777','88888888-8888-4888-8888-888888888888');
 INSERT INTO public.conversations(id,client_id,professional_id,status,external_id) VALUES ('44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','active','synthetic-conversation'),('55555555-5555-4555-8555-555555555555','99999999-9999-4999-8999-999999999999','22222222-2222-4222-8222-222222222222','active','synthetic-other-conversation');
 INSERT INTO public.messages(id,conversation_id,sender_id,body,status) VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','synthetic-a','sent'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','44444444-4444-4444-8444-444444444444','22222222-2222-4222-8222-222222222222','synthetic-b','sent'),('cccccccc-cccc-4ccc-8ccc-cccccccccccc','55555555-5555-4555-8555-555555555555','99999999-9999-4999-8999-999999999999','synthetic-c','delivered'),('dddddddd-dddd-4ddd-8ddd-dddddddddddd','44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','','removed');
 SELECT 'STAGING_CATALOG_DERIVED_BASELINE_READY';
