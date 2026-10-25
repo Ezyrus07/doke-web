@@ -52,7 +52,11 @@ async function main(){
  denied(anon,'anonymous private message read');
  const expired=await request(query(msgA),{auth:'Bearer '+token(B,'authenticated',-86400)});
  denied(expired,'expired token');
- const invalidJwt=token(B);const brokenJwt=invalidJwt.slice(0,-1)+(invalidJwt.endsWith('A')?'B':'A');
+ const invalidJwt=token(B);
+ const jwtParts=invalidJwt.split('.');
+ assert.equal(jwtParts.length,3);
+ jwtParts[2]=(jwtParts[2][0]==='A'?'B':'A')+jwtParts[2].slice(1);
+ const brokenJwt=jwtParts.join('.');
  denied(await request(query(msgA),{auth:'Bearer '+brokenJwt}),'tampered token');
  const serviceSpoof=await request(query(msgA),{auth:'Bearer '+token(B,'service_role')});
  denied(serviceSpoof,'service role not granted to HTTP authenticator');
