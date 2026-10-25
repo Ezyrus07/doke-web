@@ -240,7 +240,8 @@ async function markConversationRead(context, actor, conversationId) {
     .from('messages')
     .update({ status: 'read' })
     .eq('conversation_id', conversation.id);
-  if (typeof query.neq === 'function') query = query.neq('sender_id', safeActor.id);
+  if (typeof query.neq !== 'function') throw unavailable('Messaging read filter is not available.');
+  query = query.neq('sender_id', safeActor.id).neq('status', 'removed');
   const response = await query;
   if (response && response.error) throw response.error;
 

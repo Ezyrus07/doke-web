@@ -1,0 +1,53 @@
+name: Kontrat Messaging Update Authority Isolation
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kontrat-message-update-authority.yml'
+      - 'supabase/migrations/*message_update_authority_guard.sql'
+      - 'backend/modules/messaging/messaging-service.js'
+      - 'scripts/fixtures/msg-update-authority-*.sql'
+      - 'scripts/test-message-update-authority-ci.sh'
+      - 'scripts/test-message-update-read-filter.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-message-update-authorization:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: msg_update_authority_ci
+          POSTGRES_USER: kontrat_sandbox
+          POSTGRES_PASSWORD: synthetic-postgres-ci-only
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U kontrat_sandbox -d msg_update_authority_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: kontrat_sandbox
+      PGDATABASE: msg_update_authority_ci
+      PGPASSWORD: synthetic-postgres-ci-only
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install isolated PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Node source syntax
+        run: |
+          node --check backend/modules/messaging/messaging-service.js
+          node --check scripts/test-message-update-read-filter.js
+      - name: PostgreSQL 17 authorization and messaging regressions
+        run: bash scripts/test-message-update-authority-ci.sh
