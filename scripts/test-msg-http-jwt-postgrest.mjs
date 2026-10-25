@@ -2,8 +2,8 @@
 'use strict';
 // Actual isolated PostgREST HTTP calls with freshly HMAC-signed synthetic JWTs.
 // This does not exercise GoTrue, Supabase Storage or any hosted project.
-const assert=require('node:assert/strict');
-const crypto=require('node:crypto');
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 
 assert.equal(process.env.RUN_SYNTHETIC_HTTP_TEST,'true','refuse non-synthetic execution');
 const BASE='http://127.0.0.1:30571';
