@@ -1,72 +1,141 @@
 \set ON_ERROR_STOP on
--- This SQL is applied ONLY to a newly-created, unlinked, disposable Supabase
--- local stack; never to a hosted database or the user's actual local project.
-DO $gate$
-BEGIN
- IF current_database()<>'postgres'
-   OR current_user<>'postgres'
-   OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname='public' AND c.relname IN ('orders','users','conversations','messages')) THEN
-   RAISE EXCEPTION 'REFUSE_UNEXPECTED_LOCAL_FIXTURE_DATABASE';
- END IF;
+-- P31 fe74f69d1790ba44981c790f2939c29b18bce537; synthetic repository-contract fixture.
+-- Catalog columns/constraints are observed; helper/runtime equivalence with staging is NOT proved.
+-- Auth and Storage are native. External FK targets below are ID-only scaffolding, not full domains.
+DO $gate$ BEGIN
+ IF current_database()<>'postgres' OR current_user<>'postgres'
+ OR current_setting('kontrat.isolated_storage_fixture',true) IS DISTINCT FROM 'true'
+ OR current_setting('server_version_num')::int NOT BETWEEN 170000 AND 179999
+ OR to_regprocedure('auth.uid()') IS NULL OR to_regprocedure('storage.allow_any_operation(text[])') IS NULL
+ OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('users','orders','conversations','messages')) THEN
+ RAISE EXCEPTION 'REFUSE_UNEXPECTED_LOCAL_FIXTURE_DATABASE'; END IF;
 END $gate$;
 CREATE SCHEMA IF NOT EXISTS private;
 GRANT USAGE ON SCHEMA private TO authenticated,service_role;
-CREATE TABLE public.users(
- id uuid PRIMARY KEY,
- status text NOT NULL DEFAULT 'active',
- role text NOT NULL DEFAULT 'client'
+CREATE TABLE public.services(id uuid PRIMARY KEY);
+CREATE TABLE public.service_versions(id uuid PRIMARY KEY);
+CREATE TABLE public.schedule_reservations(id uuid PRIMARY KEY);
+ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.schedule_reservations ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.services,public.service_versions,public.schedule_reservations FROM PUBLIC,anon,authenticated;
+GRANT SELECT ON public.services,public.service_versions,public.schedule_reservations TO service_role;
+CREATE TABLE public."users" (
+ "id" uuid NOT NULL,
+ "email" text,
+ "phone" text,
+ "role" text NOT NULL DEFAULT 'client'::text,
+ "status" text NOT NULL DEFAULT 'active'::text,
+ "created_at" timestamp with time zone NOT NULL DEFAULT now(),
+ "updated_at" timestamp with time zone NOT NULL DEFAULT now(),
+ "onboarding_status" text NOT NULL DEFAULT 'not_started'::text,
+ "onboarding_completed_at" timestamp with time zone,
+ "settings" jsonb NOT NULL DEFAULT '{}'::jsonb
 );
-CREATE TABLE public.orders(
- id uuid PRIMARY KEY,
- external_id text UNIQUE,
- client_id uuid NOT NULL REFERENCES public.users(id),
- professional_id uuid NOT NULL REFERENCES public.users(id)
+CREATE TABLE public."orders" (
+ "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+ "client_id" uuid NOT NULL,
+ "professional_id" uuid,
+ "service_id" uuid,
+ "title" text NOT NULL,
+ "description" text,
+ "status" text NOT NULL DEFAULT 'requested'::text,
+ "city" text,
+ "state" text,
+ "scheduled_at" timestamp with time zone,
+ "created_at" timestamp with time zone NOT NULL DEFAULT now(),
+ "updated_at" timestamp with time zone NOT NULL DEFAULT now(),
+ "external_id" text,
+ "metadata" jsonb NOT NULL DEFAULT '{}'::jsonb,
+ "service_version_id" uuid,
+ "service_snapshot" jsonb,
+ "schedule_reservation_id" uuid
 );
-CREATE TABLE public.conversations(
- id uuid PRIMARY KEY,
- external_id text UNIQUE,
- client_id uuid NOT NULL REFERENCES public.users(id),
- professional_id uuid NOT NULL REFERENCES public.users(id)
+CREATE TABLE public."conversations" (
+ "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+ "order_id" uuid,
+ "client_id" uuid NOT NULL,
+ "professional_id" uuid NOT NULL,
+ "status" text NOT NULL DEFAULT 'active'::text,
+ "last_message_at" timestamp with time zone,
+ "created_at" timestamp with time zone NOT NULL DEFAULT now(),
+ "external_id" text,
+ "metadata" jsonb NOT NULL DEFAULT '{}'::jsonb,
+ "updated_at" timestamp with time zone NOT NULL DEFAULT now()
 );
-CREATE TABLE public.messages(
- id uuid PRIMARY KEY,
- conversation_id uuid NOT NULL REFERENCES public.conversations(id),
- sender_id uuid NOT NULL REFERENCES public.users(id),
- body text NOT NULL DEFAULT '',
- status text NOT NULL DEFAULT 'sent' CHECK(status IN ('sent','delivered','read','removed')),
- created_at timestamptz NOT NULL DEFAULT now(),
- external_id text,
- message_type text NOT NULL DEFAULT 'text',
- attachments jsonb NOT NULL DEFAULT '[]'::jsonb,
- metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
- read_at timestamptz
+CREATE TABLE public."messages" (
+ "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+ "conversation_id" uuid NOT NULL,
+ "sender_id" uuid NOT NULL,
+ "body" text,
+ "status" text NOT NULL DEFAULT 'sent'::text,
+ "created_at" timestamp with time zone NOT NULL DEFAULT now(),
+ "external_id" text,
+ "message_type" text NOT NULL DEFAULT 'text'::text,
+ "attachments" jsonb NOT NULL DEFAULT '[]'::jsonb,
+ "metadata" jsonb NOT NULL DEFAULT '{}'::jsonb,
+ "read_at" timestamp with time zone
 );
+ALTER TABLE public."conversations" ADD CONSTRAINT "conversations_pkey" PRIMARY KEY (id);
+ALTER TABLE public."conversations" ADD CONSTRAINT "conversations_status_check" CHECK (status = ANY (ARRAY['active'::text, 'archived'::text, 'blocked'::text]));
+ALTER TABLE public."messages" ADD CONSTRAINT "messages_pkey" PRIMARY KEY (id);
+ALTER TABLE public."messages" ADD CONSTRAINT "messages_status_check" CHECK (status = ANY (ARRAY['sent'::text, 'delivered'::text, 'read'::text, 'removed'::text]));
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_pkey" PRIMARY KEY (id);
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_service_snapshot_projection_check" CHECK (status = 'draft'::text OR (metadata -> 'serviceSnapshot'::text) = service_snapshot AND (metadata ->> 'serviceVersionId'::text) = service_version_id::text AND (metadata ->> 'serviceSnapshotAuthority'::text) = 'approved_service_version'::text);
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_service_snapshot_required_check" CHECK (status = 'draft'::text OR service_id IS NOT NULL AND service_version_id IS NOT NULL AND jsonb_typeof(service_snapshot) = 'object'::text);
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_service_snapshot_shape_check" CHECK (service_snapshot IS NULL OR jsonb_typeof(service_snapshot) = 'object'::text);
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_status_check" CHECK (status = ANY (ARRAY['draft'::text, 'requested'::text, 'quoted'::text, 'accepted'::text, 'scheduled'::text, 'in_progress'::text, 'completed'::text, 'cancelled'::text, 'disputed'::text]));
+ALTER TABLE public."users" ADD CONSTRAINT "users_email_key" UNIQUE (email);
+ALTER TABLE public."users" ADD CONSTRAINT "users_onboarding_status_check" CHECK (onboarding_status = ANY (ARRAY['not_started'::text, 'in_progress'::text, 'completed'::text]));
+ALTER TABLE public."users" ADD CONSTRAINT "users_pkey" PRIMARY KEY (id);
+ALTER TABLE public."users" ADD CONSTRAINT "users_role_check" CHECK (role = ANY (ARRAY['client'::text, 'professional'::text, 'moderator'::text, 'support'::text, 'admin'::text]));
+ALTER TABLE public."users" ADD CONSTRAINT "users_status_check" CHECK (status = ANY (ARRAY['active'::text, 'pending'::text, 'suspended'::text, 'banned'::text, 'deleted'::text]));
+ALTER TABLE public."conversations" ADD CONSTRAINT "conversations_client_id_fkey" FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public."conversations" ADD CONSTRAINT "conversations_order_id_fkey" FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL;
+ALTER TABLE public."conversations" ADD CONSTRAINT "conversations_professional_id_fkey" FOREIGN KEY (professional_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public."messages" ADD CONSTRAINT "messages_conversation_id_fkey" FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE;
+ALTER TABLE public."messages" ADD CONSTRAINT "messages_sender_id_fkey" FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_client_id_fkey" FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_professional_id_fkey" FOREIGN KEY (professional_id) REFERENCES users(id);
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_schedule_reservation_id_fkey" FOREIGN KEY (schedule_reservation_id) REFERENCES schedule_reservations(id) ON DELETE SET NULL;
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_service_id_fkey" FOREIGN KEY (service_id) REFERENCES services(id);
+ALTER TABLE public."orders" ADD CONSTRAINT "orders_service_version_id_fkey" FOREIGN KEY (service_version_id) REFERENCES service_versions(id) ON DELETE RESTRICT;
+ALTER TABLE public."users" ADD CONSTRAINT "users_id_fkey" FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
+REVOKE ALL ON public.users,public.orders,public.conversations,public.messages FROM PUBLIC,anon,authenticated;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
-GRANT SELECT ON public.users,public.orders,public.conversations,public.messages TO authenticated,service_role;
-GRANT INSERT,UPDATE ON public.messages TO authenticated,service_role;
-CREATE POLICY transaction_conversation_participant_read ON public.conversations FOR SELECT TO authenticated
- USING ((SELECT auth.uid()) IN (client_id,professional_id));
-CREATE POLICY transaction_message_participant_read ON public.messages FOR SELECT TO authenticated
- USING(EXISTS(SELECT 1 FROM public.conversations c WHERE c.id=conversation_id
- AND (SELECT auth.uid()) IN (c.client_id,c.professional_id)));
-CREATE POLICY transaction_message_participant_update ON public.messages FOR UPDATE TO authenticated
- USING(EXISTS(SELECT 1 FROM public.conversations c WHERE c.id=conversation_id
- AND (SELECT auth.uid()) IN (c.client_id,c.professional_id)))
- WITH CHECK(EXISTS(SELECT 1 FROM public.conversations c WHERE c.id=conversation_id
- AND (SELECT auth.uid()) IN (c.client_id,c.professional_id)));
-INSERT INTO public.users(id,status,role) VALUES
- ('11111111-1111-4111-8111-111111111111','active','client'),
- ('22222222-2222-4222-8222-222222222222','active','professional'),
- ('99999999-9999-4999-8999-999999999999','active','client');
-INSERT INTO public.conversations(id,external_id,client_id,professional_id)
-VALUES('44444444-4444-4444-8444-444444444444','synthetic-storage-conversation',
-'11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222');
-INSERT INTO public.messages(id,conversation_id,sender_id,body,status)
-VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-'44444444-4444-4444-8444-444444444444',
-'11111111-1111-4111-8111-111111111111','synthetic attachment','sent');
+GRANT SELECT ON public.users,public.orders,public.conversations,public.messages TO authenticated;
+GRANT INSERT,UPDATE ON public.conversations,public.messages TO authenticated;
+GRANT ALL ON public.users,public.orders,public.conversations,public.messages TO service_role;
+CREATE POLICY "conversation_participants_insert" ON "public"."conversations" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (((( SELECT auth.uid() AS uid) = client_id) OR (( SELECT auth.uid() AS uid) = professional_id)));
+CREATE POLICY "conversation_participants_select" ON "public"."conversations" AS PERMISSIVE FOR SELECT TO "authenticated" USING (((( SELECT auth.uid() AS uid) = client_id) OR (( SELECT auth.uid() AS uid) = professional_id)));
+CREATE POLICY "conversation_participants_update" ON "public"."conversations" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (((( SELECT auth.uid() AS uid) = client_id) OR (( SELECT auth.uid() AS uid) = professional_id))) WITH CHECK (((( SELECT auth.uid() AS uid) = client_id) OR (( SELECT auth.uid() AS uid) = professional_id)));
+CREATE POLICY "message_participants_select" ON "public"."messages" AS PERMISSIVE FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM conversations conversation
+  WHERE ((conversation.id = messages.conversation_id) AND ((( SELECT auth.uid() AS uid) = conversation.client_id) OR (( SELECT auth.uid() AS uid) = conversation.professional_id))))));
+CREATE POLICY "message_participants_update" ON "public"."messages" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM conversations conversation
+  WHERE ((conversation.id = messages.conversation_id) AND ((( SELECT auth.uid() AS uid) = conversation.client_id) OR (( SELECT auth.uid() AS uid) = conversation.professional_id)))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM conversations conversation
+  WHERE ((conversation.id = messages.conversation_id) AND ((( SELECT auth.uid() AS uid) = conversation.client_id) OR (( SELECT auth.uid() AS uid) = conversation.professional_id))))));
+CREATE POLICY "message_sender_insert" ON "public"."messages" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (((( SELECT auth.uid() AS uid) = sender_id) AND (EXISTS ( SELECT 1
+   FROM conversations conversation
+  WHERE ((conversation.id = messages.conversation_id) AND ((( SELECT auth.uid() AS uid) = conversation.client_id) OR (( SELECT auth.uid() AS uid) = conversation.professional_id)))))));
+CREATE POLICY "orders_participants_select" ON "public"."orders" AS PERMISSIVE FOR SELECT TO "authenticated" USING (((( SELECT auth.uid() AS uid) = client_id) OR (( SELECT auth.uid() AS uid) = professional_id)));
+CREATE POLICY "users_select_own_account" ON "public"."users" AS PERMISSIVE FOR SELECT TO "authenticated" USING ((( SELECT auth.uid() AS uid) = id));
+\ir msg-storage-dependency-baseline.sql
+CREATE POLICY "transaction_attachments_owner_delete" ON "storage"."objects" AS PERMISSIVE FOR DELETE TO "authenticated" USING (((bucket_id = 'transaction-attachments'::text) AND (owner_id = (( SELECT auth.uid() AS uid))::text) AND private.can_access_transaction_attachment(name) AND ((storage.foldername(name))[3] = (( SELECT auth.uid() AS uid))::text)));
+CREATE POLICY "transaction_attachments_owner_update" ON "storage"."objects" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (((bucket_id = 'transaction-attachments'::text) AND (owner_id = (( SELECT auth.uid() AS uid))::text) AND private.can_access_transaction_attachment(name) AND ((storage.foldername(name))[3] = (( SELECT auth.uid() AS uid))::text))) WITH CHECK (((bucket_id = 'transaction-attachments'::text) AND (owner_id = (( SELECT auth.uid() AS uid))::text) AND private.can_access_transaction_attachment(name) AND ((storage.foldername(name))[3] = (( SELECT auth.uid() AS uid))::text)));
+CREATE POLICY "transaction_attachments_participant_insert" ON "storage"."objects" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (((bucket_id = 'transaction-attachments'::text) AND private.can_access_transaction_attachment(name) AND ((storage.foldername(name))[3] = (( SELECT auth.uid() AS uid))::text)));
+CREATE POLICY "transaction_attachments_participant_select" ON "storage"."objects" AS PERMISSIVE FOR SELECT TO "authenticated" USING (((bucket_id = 'transaction-attachments'::text) AND private.can_access_transaction_attachment(name)));
+INSERT INTO auth.users(id) VALUES ('11111111-1111-4111-8111-111111111111'),('22222222-2222-4222-8222-222222222222'),('99999999-9999-4999-8999-999999999999');
+INSERT INTO public.services(id) VALUES ('66666666-6666-4666-8666-666666666666');
+INSERT INTO public.service_versions(id) VALUES ('77777777-7777-4777-8777-777777777777');
+INSERT INTO public.schedule_reservations(id) VALUES ('88888888-8888-4888-8888-888888888888');
+INSERT INTO public.users(id,role,status) VALUES ('11111111-1111-4111-8111-111111111111','client','active'),('22222222-2222-4222-8222-222222222222','professional','active'),('99999999-9999-4999-8999-999999999999','client','active');
+INSERT INTO public.orders(id,client_id,professional_id,title,status,external_id,service_id,service_version_id,schedule_reservation_id) VALUES ('33333333-3333-4333-8333-333333333333','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','Synthetic order','draft','synthetic-order','66666666-6666-4666-8666-666666666666','77777777-7777-4777-8777-777777777777','88888888-8888-4888-8888-888888888888');
+INSERT INTO public.conversations(id,client_id,professional_id,status,external_id) VALUES ('44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','active','synthetic-storage-conversation'),('55555555-5555-4555-8555-555555555555','99999999-9999-4999-8999-999999999999','22222222-2222-4222-8222-222222222222','active','synthetic-other-conversation');
+INSERT INTO public.messages(id,conversation_id,sender_id,body,status) VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','synthetic-a','sent'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','44444444-4444-4444-8444-444444444444','22222222-2222-4222-8222-222222222222','synthetic-b','sent'),('cccccccc-cccc-4ccc-8ccc-cccccccccccc','55555555-5555-4555-8555-555555555555','99999999-9999-4999-8999-999999999999','synthetic-c','delivered'),('dddddddd-dddd-4ddd-8ddd-dddddddddddd','44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','','removed');
 SELECT 'SYNTHETIC_SUPABASE_STORAGE_FIXTURE_READY';

@@ -538,6 +538,43 @@
     };
   };
 
+  const deliveryLabels = {
+    pending: 'Enviando… Se a conexão falhar, tentaremos novamente.',
+    recoverable: 'Ainda não recebemos a confirmação. A mensagem pode ter sido entregue.',
+    confirmed: 'Enviada',
+    conflict: 'Não foi possível confirmar esta mensagem. Confira a conversa antes de enviar outra.',
+    cancelled: 'Tentativas interrompidas. A mensagem ainda pode ter sido entregue.'
+  };
+
+  const reconcileMessageDeliveries = (conversationId, conversation) => {
+    const deliveries = window.Doke?.services?.messageDelivery?.list(conversationId) || [];
+    deliveries.forEach((entry) => {
+      const index = conversation.messages.findIndex((message) => message.deliveryCommandId === entry.commandId
+        || (entry.state === 'confirmed' && message.id && message.id === entry.message.id));
+      const canonical = index >= 0 && entry.state === 'confirmed' && conversation.messages[index].id === entry.message.id;
+      const message = Object.assign({}, index >= 0 ? conversation.messages[index] : {},
+        canonical ? {} : normalizeLocalMessage(entry.message, conversation), { deliveryCommandId: entry.commandId, deliveryState: entry.state });
+      if (index >= 0) conversation.messages[index] = message;
+      else conversation.messages.push(message);
+      if (entry.state === 'confirmed' && message.id) {
+        conversation.messages = conversation.messages.filter((item) => item === message || item.id !== message.id);
+      }
+    });
+  };
+
+  const renderMessageDelivery = (message) => {
+    if (!message.deliveryState) return '';
+    const key = escapeHtml(message.deliveryCommandId);
+    const canCancel = ['pending', 'recoverable'].includes(message.deliveryState);
+    return `<div class="message-delivery" data-message-delivery="${escapeHtml(message.deliveryState)}">
+      <span class="message-delivery__status">${deliveryLabels[message.deliveryState] || ''}</span>
+      ${canCancel ? `<div class="message-delivery__actions">
+        ${message.deliveryState === 'recoverable' ? `<button type="button" class="doke-btn doke-btn--ghost doke-btn--sm" data-message-delivery-retry="${key}" aria-label="Tentar confirmar novamente esta mensagem">Tentar novamente</button>` : ''}
+        <button type="button" class="doke-btn doke-btn--ghost doke-btn--sm" data-message-delivery-cancel="${key}">Interromper tentativas</button>
+      </div>` : ''}
+    </div>`;
+  };
+
   const mapLocalConversation = (conversation) => {
     const order = conversation?.order || {};
     const hasOrderContext = Boolean(conversation?.orderId || order.id);
@@ -764,6 +801,23 @@
         repository?.save?.(sourceConversation)?.catch?.((error) => console.warn("[DokeMessages:saveReconciledConversation]", error));
       }
       const mapped = mapLocalConversation(sourceConversation);
+      const delivery = window.Doke?.services?.messageDelivery;
+      const entries = delivery?.list(conversationId) || [];
+      const unresolved = entries.some((entry) => entry.state !== 'confirmed');
+      const previous = conversations[conversationId];
+      if (unresolved) {
+        // The read surface has no command correlation. Hold unknown outgoing rows until ACK, never match by text.
+        const knownIds = new Set(entries.flatMap((entry) => entry.knownMessageIds.concat(entry.state === 'confirmed' ? [entry.message.id] : [])));
+        previous?.messages.forEach((message) => { if (message.id) knownIds.add(message.id); });
+        mapped.messages = mapped.messages.filter((message) => !message.mine || knownIds.has(message.id));
+      }
+      mapped.messages.forEach((message) => {
+        const prior = previous?.messages.find((item) => item.id && item.id === message.id && item.deliveryState === 'confirmed');
+        if (prior) Object.assign(message, { deliveryState: 'confirmed', deliveryCommandId: prior.deliveryCommandId });
+      });
+      const canonicalMessages = mapped.messages.slice();
+      reconcileMessageDeliveries(conversationId, mapped);
+      delivery?.reconcileRead(conversationId, canonicalMessages);
       const isOrderConversation = Boolean(mapped.orderId || mapped.order?.id || mapped.group === "orders");
       mapped.group = isOrderConversation ? "orders" : "contacts";
       conversations[conversationId] = Object.assign({}, conversations[conversationId] || {}, mapped);
@@ -785,7 +839,9 @@
   };
 
   const persistConversationMessage = (conversationId, message) => {
-    return window.Doke?.services?.messages?.sendMessage?.(conversationId, {
+    const delivery = window.Doke?.services?.messageDelivery;
+    if (!delivery) throw new Error('O envio está indisponível. Seu texto foi preservado.');
+    const operation = delivery.send(conversationId, {
       body: message.text || message.body || "",
       text: message.text || message.body || "",
       type: message.type || "text",
@@ -800,7 +856,12 @@
       mine: message.mine !== false,
       author: message.author || "Você",
       replyTo: message.replyTo || null
-    }).catch((error) => console.warn("[DokeMessages:sendMessage]", error));
+    }, { knownMessageIds: (conversations[conversationId]?.messages || []).map((item) => item.id).filter(Boolean) });
+    message.deliveryCommandId = operation.commandId;
+    return operation.completion.then((persisted) => {
+      Object.assign(message, normalizeLocalMessage(persisted, conversations[conversationId]));
+      return persisted;
+    });
   };
 
   const publishConversationNotification = (conversationId, message, kind = 'message') => {
@@ -2793,6 +2854,7 @@
         return;
       }
       const isSameThread = activeId === id;
+      reconcileMessageDeliveries(id, conversation);
       const previousScrollTop = threadBody.scrollTop;
       const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
       activeId = id;
@@ -2802,7 +2864,7 @@
       }
       syncThreadActionAvailability(conversation);
       if (!isSameThread) clearSelection();
-      clearReplyPreview();
+      if (!isSameThread) clearReplyPreview();
       refreshConversationItems().forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
       if (threadAvatar) threadAvatar.textContent = getConversationInitials(conversation.name);
       if (threadName) threadName.textContent = conversation.name;
@@ -2853,7 +2915,7 @@
       ` : "") + renderedMessages.map((message) => `
         <article class="message-row has-author-avatar${message.mine ? " message-row--me" : ""}${isFinancialMessage(conversation, message) ? " message-row--charge" : ""}${message.groupStart ? " is-message-group-start" : " is-message-group-continuation"}" data-message-index="${message.originalIndex}">
           ${renderMessageAuthorAvatar(message.resolvedAuthor)}
-          <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${isFinancialMessage(conversation, message) ? " message-bubble--charge" : ""}${message.pinned ? " is-message-pinned" : ""}${selectedMessageIndexes.has(message.originalIndex) ? " is-selected" : ""}" data-message-bubble data-message-index="${message.originalIndex}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(message.originalIndex) ? "true" : "false"}">
+          <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${isFinancialMessage(conversation, message) ? " message-bubble--charge" : ""}${message.pinned ? " is-message-pinned" : ""}${selectedMessageIndexes.has(message.originalIndex) ? " is-selected" : ""}" data-message-bubble data-message-index="${message.originalIndex}" role="${message.deliveryState ? 'group' : 'option'}" tabindex="0" ${message.deliveryState ? 'aria-label="Mensagem enviada por você"' : `aria-selected="${selectedMessageIndexes.has(message.originalIndex) ? "true" : "false"}"`}>
             <div class="message-bubble__meta">
               <span>${escapeHtml(message.mine ? "Você" : message.resolvedAuthor.name)}</span>
               <span>${message.time}</span>
@@ -2861,8 +2923,8 @@
             ${message.pinned ? `<span class="message-bubble__pinned-badge">⌖ Fixada</span>` : ""}
             ${message.replyTo ? `
             <div class="message-bubble__reply${message.mine ? " message-bubble__reply--me" : ""}">
-              <strong>${message.replyTo.author}</strong>
-              <span>${String(message.replyTo.text || "").slice(0, 72)}</span>
+              <strong>${escapeHtml(message.replyTo.author)}</strong>
+              <span>${escapeHtml(String(message.replyTo.text || "").slice(0, 72))}</span>
             </div>` : ""}
             ${message.forwardedFrom ? `<div class="message-bubble__forwarded">Encaminhada de ${escapeHtml(message.forwardedFrom)}</div>` : ""}
             ${message.type === "audio" ? `
@@ -2873,7 +2935,8 @@
                 <span>${message.duration || "00:00"}</span>
               </span>
               <button class="message-bubble__audio-speed doke-btn doke-btn--ghost doke-btn--sm" type="button" data-audio-speed>${message.speed || "1x"}</button>
-            </div>` : message.type === "image" ? renderMessageImageAttachment(message) : message.type === "attachment" ? renderMessageFileAttachment(message) : `<p>${message.text}</p>`}
+            </div>` : message.type === "image" ? renderMessageImageAttachment(message) : message.type === "attachment" ? renderMessageFileAttachment(message) : `<p>${escapeHtml(message.text)}</p>`}
+            ${renderMessageDelivery(message)}
             ${message.editedAt ? `<span class="message-bubble__edited">editada</span>` : ""}
             ${renderMessageReactions(message, message.originalIndex)}
             ${renderMessageThreadLink(message, message.originalIndex)}
@@ -3742,6 +3805,22 @@
     bindDocumentLifecycle("doke:auth-session-change", () => {
       accessTask = hydrateAuthorizedMessages();
     });
+    bindDocumentLifecycle('doke:message-delivery', (event) => {
+      const { conversationId, commandId, state } = event.detail;
+      const conversation = conversations[conversationId];
+      if (!conversation) return;
+      reconcileMessageDeliveries(conversationId, conversation);
+      if (state === 'confirmed') {
+        const message = conversation.messages.find((item) => item.deliveryCommandId === commandId);
+        if (message) publishConversationNotification(conversationId, message, /(^|\s)@[\w.-]+/.test(message.text || '') ? 'mention' : 'message');
+      }
+      if (activeId === conversationId) {
+        const live = root.querySelector('[data-messages-delivery-live]');
+        if (live) live.textContent = deliveryLabels[state] || '';
+        const atEnd = threadBody.scrollHeight - threadBody.clientHeight - threadBody.scrollTop <= 32;
+        renderThread(conversationId, { scrollTo: atEnd ? 'end' : 'preserve' });
+      }
+    });
     ["doke:order-created", "doke:order-status-changed", "doke:order-reviewed", "doke:message-sent", "doke:message-removed"].forEach((eventName) => {
       bindDocumentLifecycle(eventName, () => refreshAuthorizedConversationSurface({ preferRequested: true }));
     });
@@ -3903,6 +3982,15 @@
     }));
 
     threadBody?.addEventListener("click", (event) => {
+      const deliveryAction = event.target.closest('[data-message-delivery-retry], [data-message-delivery-cancel]');
+      if (deliveryAction) {
+        event.preventDefault();
+        const delivery = window.Doke?.services?.messageDelivery;
+        if (deliveryAction.hasAttribute('data-message-delivery-cancel')) delivery?.cancel(deliveryAction.dataset.messageDeliveryCancel);
+        else delivery?.retry(deliveryAction.dataset.messageDeliveryRetry).catch(() => {});
+        composerInput?.focus({ preventScroll: true });
+        return;
+      }
       const bubble = event.target.closest("[data-message-bubble]");
       const speedButton = event.target.closest("[data-audio-speed]");
       if (speedButton) {
@@ -4018,6 +4106,7 @@
 
 
     threadBody?.addEventListener("keydown", (event) => {
+      if (event.target.closest('button, a')) return;
       const bubble = event.target.closest("[data-message-bubble]");
       if (!bubble || (event.key !== " " && event.key !== "Enter")) return;
       if (!selectedMessageIndexes.size) return;
@@ -4088,9 +4177,8 @@
       const value = String(composerInput?.value || "").trim();
       if (audioDraft && !audioDraft.hidden) {
         const audioMessage = { author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(Math.max(audioDraftSeconds, 1)), speed: "1x", replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
-        conversations[activeId].messages.push(audioMessage);
-        persistConversationMessage(activeId, audioMessage);
-        publishConversationNotification(activeId, audioMessage, /(^|\s)@[\w.-]+/.test(String(audioMessage.text || '')) ? 'mention' : 'message');
+        try { persistConversationMessage(activeId, audioMessage).catch(() => {}); }
+        catch (error) { showCopyToast(error.message); return; }
         renderThread(activeId, { scrollTo: "end" });
         composer.reset();
         clearReplyPreview();
@@ -4099,6 +4187,7 @@
         return;
       }
       if (imageDraftFile) {
+        const conversationId = activeId;
         const attachmentRepository = window.Doke?.repositories?.attachments;
         const messagesService = window.Doke?.services?.messages;
         if (!attachmentRepository?.uploadConversationFiles || !messagesService?.sendMessage) {
@@ -4111,7 +4200,7 @@
           sendButton.dataset.actionState = "loading";
         }
         try {
-          const uploadedAttachments = await attachmentRepository.uploadConversationFiles(activeId, [imageDraftFile], { maxFiles: 1 });
+          const uploadedAttachments = await attachmentRepository.uploadConversationFiles(conversationId, [imageDraftFile], { maxFiles: 1 });
           const attachment = uploadedAttachments[0];
           if (!attachment) throw new Error("Não foi possível preparar o anexo.");
           const messageType = /^image\//i.test(attachment.type || "") ? "image" : "attachment";
@@ -4129,11 +4218,9 @@
             deferSideEffects: true,
             replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null
           };
-          const persistedMessage = await messagesService.sendMessage(activeId, messagePayload);
-          const imageMessage = normalizeLocalMessage(persistedMessage || messagePayload, activeConversation);
-          conversations[activeId].messages.push(imageMessage);
-          publishConversationNotification(activeId, imageMessage, 'message');
-          renderThread(activeId, { scrollTo: "end" });
+          persistConversationMessage(conversationId, messagePayload).catch(() => {});
+          if (activeId !== conversationId) return;
+          renderThread(conversationId, { scrollTo: "end" });
           composer.reset();
           clearReplyPreview();
           resetImageDraft();
@@ -4151,9 +4238,8 @@
       }
       if (!value) return;
       const textMessage = { author: "Você", time: "agora", text: value, mine: true, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
-      conversations[activeId].messages.push(textMessage);
-      persistConversationMessage(activeId, textMessage);
-      publishConversationNotification(activeId, textMessage, /(^|\s)@[\w.-]+/.test(String(textMessage.text || '')) ? 'mention' : 'message');
+      try { persistConversationMessage(activeId, textMessage).catch(() => {}); }
+      catch (error) { showCopyToast(error.message); return; }
       renderThread(activeId, { scrollTo: "end" });
       composer.reset();
       clearReplyPreview();
@@ -4181,16 +4267,13 @@
           return;
         }
         const message = { id: `quick-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, author: 'Você', time: 'agora', text, mine: true, quickReply: true };
-        conversations[conversationId].messages.push(message);
-        Promise.resolve(persistConversationMessage(conversationId, message)).then(() => {
-          publishConversationNotification(conversationId, message, /(^|\s)@[\w.-]+/.test(text) ? 'mention' : 'message');
+        Promise.resolve().then(() => persistConversationMessage(conversationId, message)).then(() => {
           if (activeId === conversationId) renderThread(conversationId, { scrollTo: 'end' });
           window.DokeInAppNotifications?.recordActionResult(action.notificationId, 'completed', 'Resposta enviada.', { kind: 'delete-last-message', conversationId, messageId: message.id });
           showCopyToast('Resposta enviada pela notificação.');
         }).catch((error) => {
-          conversations[conversationId].messages = conversations[conversationId].messages.filter((item) => item !== message);
           document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
-            detail: { notificationId: action.notificationId, message: error?.message || 'Não foi possível enviar a resposta.', retryPayload: action }
+            detail: { notificationId: action.notificationId, message: 'Confirmação pendente. Abra a conversa para recuperar a mesma mensagem.' }
           }));
         }).finally(releaseNotificationAction);
         return;

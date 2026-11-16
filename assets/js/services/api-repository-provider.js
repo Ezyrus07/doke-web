@@ -257,22 +257,26 @@
 
       return getSessionAccessToken().then(function (token) {
         if (token) options.headers.Authorization = 'Bearer ' + token;
-        return window.fetch(baseUrl + path, options);
+        return Promise.resolve().then(function () { return window.fetch(baseUrl + path, options); }).catch(function (error) {
+          if (error && (error.name === 'AbortError' || error.code && error.name !== 'TimeoutError')) throw error;
+          var networkError = new Error('API network request failed.');
+          networkError.code = 'DOKE_API_NETWORK_ERROR';
+          networkError.retryable = true;
+          networkError.cause = error;
+          throw networkError;
+        });
       }).then(function (response) {
         if (!response.ok) {
-          var error = new Error('API request failed: ' + response.status);
-          error.code = 'DOKE_API_HTTP_ERROR';
-          error.status = response.status;
-          throw error;
+          return Promise.resolve().then(function () { return response.json(); }).catch(function () { return null; }).then(function (body) {
+            var error = new Error('API request failed: ' + response.status);
+            error.code = 'DOKE_API_HTTP_ERROR';
+            error.status = response.status;
+            error.serverCode = body && body.error && typeof body.error.code === 'string' ? body.error.code : '';
+            error.retryable = response.status === 409 && error.serverCode === 'DOKE_IDEMPOTENCY_IN_PROGRESS';
+            throw error;
+          });
         }
         return response.status === 204 ? null : response.json();
-      }).catch(function (error) {
-        if (error && error.code) throw error;
-        var networkError = new Error('API network request failed.');
-        networkError.code = 'DOKE_API_NETWORK_ERROR';
-        networkError.retryable = true;
-        networkError.cause = error;
-        throw networkError;
       });
     }
 
@@ -343,7 +347,16 @@
       if (template.indexOf(':id') >= 0 && !id) return Promise.reject(new Error('API action requires an id.'));
 
       var path = template.replace(':id', id);
-      return Promise.resolve(client.post(path, clone(payload || {}))).then(clone);
+      var requestPayload = clone(payload || {});
+      var command = requestPayload.command;
+      var requestMeta = requestPayload.__requestMeta;
+      if (resourceInfo.resource === 'conversations' && command && command.id && requestMeta &&
+        command.id === requestMeta.idempotencyKey && command.action === actionName && requestMeta.commandAction === actionName) {
+        // Attempt telemetry belongs in headers, not in the server's idempotent business payload.
+        requestPayload = Object.assign({}, requestPayload);
+        delete requestPayload.command;
+      }
+      return Promise.resolve(client.post(path, requestPayload)).then(clone);
     }
 
     function getPageData(pageName, context) {

@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1302 arquivos no escopo; 337 referências a localStorage; 84 a sessionStorage; 607 referências mock; 271 referências de rede/Supabase; 39 marcadores de implementação pendente.
+**Evidência estática observada:** 1308 arquivos no escopo; 337 referências a localStorage; 84 a sessionStorage; 608 referências mock; 287 referências de rede/Supabase; 39 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -199,6 +199,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SEC-B09 is closed: one shared HTTP security boundary is deployed across all seven authenticated browser-facing Edge Functions with explicit origin allowlisting, controlled loopback support, payload/content-type validation, no-store/security headers, correlation IDs and durable actor/action rate limiting.
 - Migration 145 and SQL validation 014 proved the private rate-limit authority, restricted grants, safe search_path and threshold enforcement; the real staging HTTP canary passed 49 of 49 boundary cases across the seven hardened functions.
 - SEC-B05 remains the only SEC-001 blocker: leaked-password protection is unavailable on the current Supabase plan and remains tracked as a paid-plan launch dependency rather than a falsely completed control.
+- The message UPDATE guard proposed at PR #566 restricts authenticated column updates to status/body and validates effective role plus auth.uid(); it remains an unapplied repository proposal according to docs/validation/MSG-A05-FORWARD-ONLY-RECONCILIATION-20261025.md. Existing security certifications do not certify this proposal on hosted staging.
 
 **Bloqueadores:**
 - **SEC-B05 · HIGH · auth:** Leaked password protection is disabled in Supabase Auth. _(Fase 1)_
@@ -207,6 +208,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Keep SEC-B05 tracked under the paid-plan launch dependency and enable leaked-password protection only after an authorized Supabase plan upgrade.
 - Keep the shared HTTP security boundary, migration 145, validation 014, source-closure audit and seven-function staging HTTP canary cumulative in security regression gates.
 - Run supabase/tests/013_platform_default_acl_validation.sql after any migration or platform feature creates a public object.
+- Keep message column grants, participant RLS, effective database role, JWT actor binding and service-role-only attachment operations in the P31 isolated regression gate; do not convert supplied Storage metadata or green HOLD CI into hosted security certification.
 
 **Gate de saída:**
 - No public table requiring protection remains without RLS and policies.
@@ -278,6 +280,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Reviewer operations require an independently authenticated admin/moderator Edge Function context.
 - Role promotion is atomic, idempotent and synchronized through public.users to app_metadata.
 - Client operational metrics and public reputation remain separated into private and aggregate-only authorities.
+- The three KYC Storage references recorded by PR #566 concern professional-verification-media; textual bucket separation does not prove signed-URL or behavioral noninterference. The supplied 2026-10-25 Storage observations concern zwkczgewzbsorbrjuzpb, whereas P31-020 hardening concerns bqmmbopwfgwffkbtheab; their certifications are not interchangeable.
 
 **Bloqueadores:**
 - **PROF-B04 · HIGH · external_policy:** Final KYC rules, document retention and legal verification provider are not approved. _(Fase 2)_
@@ -287,6 +290,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.
 - Define final KYC policy, document retention, rejection, appeal and legal verification provider rules.
 - Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving external blockers.
+- Reconcile the historical PROF-B05 entry with the separate PR #489 checkpoint de8d7fea5dc56d309b94b90f0c67ed5fc366a10c and environment-specific evidence before changing its status. Preserve PROF-B04 and all KYC authorities while testing legitimate/outsider signed URLs and cross-bucket isolation in an authorized synthetic replica.
 
 **Gate de saída:**
 - A professional can complete, submit, be reviewed and receive a decision across devices.
@@ -541,7 +545,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1212 arquivos no escopo; 264 referências a localStorage; 74 a sessionStorage; 346 referências mock; 271 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1218 arquivos no escopo; 264 referências a localStorage; 74 a sessionStorage; 347 referências mock; 287 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -645,17 +649,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - MSG-A08 freezes a repository-only, fail-closed staging activation order for command reliability, attachments, message Realtime and private Presence without executing remote effects.
 - Every remote phase requires fresh explicit authorization, exact-head preflight, synthetic personas, run-scoped evidence and stop-on-first-failure behavior.
 - Browser feature flags remain false during resource application and canaries; destructive rollback and routine migration-history rewriting are prohibited.
+- PR #566 at fe74f69d1790ba44981c790f2939c29b18bce537 records 49 later staging migration SQL fingerprints in docs/validation/MSG-A05-STAGING-LATER-SQL-FINGERPRINTS-20261025.json: three KYC Storage references and 46 versions without version-identical local source files. Its passing HOLD check proves FORWARD_ONLY_PLAN_ONLY_STAGING_NO_GO, not hosted readiness.
+- The supplied kontrat-p31-storage-dependency-update-20261025.md (SHA256 e2ac92b7bfa277ac87bfabd100e20373bf1a17008b38024bb085f25128b2a356) reports 12 Storage policies, four legacy transaction policies and 11 authenticated message UPDATE columns in zwkczgewzbsorbrjuzpb. The companion metadata-only SQL (SHA256 3967e23b3343396c8dd6fc9c104de8fc4d040a1da7b8745582274768de4c18a6) was not reexecuted in P31-GOV-RECERT-001; these are supplied observations, not fresh hosted certification or release authority.
 
 **Bloqueadores:**
 - **MSG-B02 · CRITICAL · realtime:** messages and conversations are not in the realtime publication. _(Fase 7)_
 - **MSG-B03 · HIGH · authority_split:** Persistent messaging authority is remote/server-owned. Presence and typing now have a repository-only private Realtime Authorization boundary; operational closure still requires policy application and authenticated participant-isolation canaries. _(Fase 7)_
-- **MSG-B04 · HIGH · storage:** Transaction attachment bucket policies are not mapped in the current staging snapshot. _(Fase 1)_
+- **MSG-B04 · HIGH · storage:** Read-only metadata supplied on 2026-10-25 maps legacy transaction-attachments policies in zwkczgewzbsorbrjuzpb. Source/environment linkage, current-schema MSG-A05 compatibility and KYC/Analytics noninterference remain uncertified; hosted activation remains blocked. _(Fase 1)_
 
 **Próximas ações:**
 - MSG-A07B remains the first activation phase under the mandatory MSG-A08 gate; a generic continuation command does not authorize staging reads, migrations, deployments, Realtime settings or authenticated canaries.
 - Execute MSG-A07B first only after fresh explicit staging authorization and record lost-response, replay, conflict and cross-actor evidence.
 - Execute MSG-A05B, then MSG-A04B, then MSG-A06B only after the preceding phase passes and each phase receives its own explicit staging authorization.
 - Keep attachmentLifecycleEnabled, messagesRealtimeEnabled and messagesPresenceEnabled false until their remote resources and isolation canaries pass.
+- Before any later MSG-A05B approval, close the P31 fixture/helper fidelity gap, replace generic 4xx denial assertions with operation-specific HTTP contracts, and prove KYC signed-URL/bucket isolation, Analytics A03/A05 invariants and BEFORE/AFTER UPDATE cooperation in one authorized isolated candidate. Preserve the MSG-A08 activation sequence and all disabled flags.
 
 **Gate de saída:**
 - Two devices exchange messages without refresh.
@@ -1027,16 +1034,18 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Evidências:**
 - Service and quote-template metric events exist.
 - No complete canonical funnel from acquisition through repeat transaction exists.
+- ANA-A03/A05 contracts on PR #488 at 6eb8e55317a20f88f8ecb0f083c00c101b2afc59 belong to another source tree than P31 PR #566. Their earlier staging claims remain scoped to that lineage and do not upgrade this candidate; the ANA baseline 2026-09-26T23:59:00.000Z is not fresh governance authority for P31.
 
 **Bloqueadores:**
 - **ANA-B01 · HIGH · event_model:** Product event taxonomy, identity stitching and consent rules are incomplete. _(Fase 15)_
 - **ANA-B02 · HIGH · business_metrics:** GMV, take rate, liquidity, retention, CAC and LTV are not consolidated. _(Fase 15)_
-- **ANA-B03 · MEDIUM · data_quality:** No metric reconciliation or late-event policy is defined. _(Fase 15)_
+- **ANA-B03 · MEDIUM · data_quality:** Reconciliation and late-event contracts exist on ana/ana-001-foundation at 6eb8e55317a20f88f8ecb0f083c00c101b2afc59. Their exact-source integration, source/projection fingerprints and noninterference with this P31 candidate remain unrecertified; no source-domain mutation or maturity promotion is authorized. _(Fase 15)_
 
 **Próximas ações:**
 - Define canonical marketplace event taxonomy.
 - Build server-side funnel and marketplace health projections.
 - Add data quality checks and privacy controls.
+- Reconcile only the required ANA-A03 identity, signed-proof and deduplication contracts and ANA-A05 fingerprint, unchanged-recomputation no-op and append-only revision contracts with the P31 isolated candidate. Keep browser activation and canonical source writes disabled; do not import the ANA branch wholesale.
 
 **Gate de saída:**
 - Core funnel metrics reconcile with transactional tables.
@@ -1079,7 +1088,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 906 arquivos no escopo; 246 referências a localStorage; 84 a sessionStorage; 250 referências mock; 285 referências de rede/Supabase; 11 marcadores de implementação pendente.
+**Evidência estática observada:** 908 arquivos no escopo; 247 referências a localStorage; 84 a sessionStorage; 251 referências mock; 287 referências de rede/Supabase; 11 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -1110,7 +1119,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2773 arquivos no escopo; 623 referências a localStorage; 170 a sessionStorage; 943 referências mock; 713 referências de rede/Supabase; 95 marcadores de implementação pendente.
+**Evidência estática observada:** 2781 arquivos no escopo; 624 referências a localStorage; 170 a sessionStorage; 945 referências mock; 731 referências de rede/Supabase; 95 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.

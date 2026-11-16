@@ -6,6 +6,9 @@ const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
+const native=process.argv.includes('--native-storage');
+const knownArgs=new Set(['--native-storage','--check','--stdout']);
+for(const arg of process.argv.slice(2))assert.ok(knownArgs.has(arg),'UNKNOWN_GENERATOR_ARGUMENT');
 const snapshot=JSON.parse(fs.readFileSync(path.join(root,'docs/validation/MSG-CATALOG-STAGING-METADATA-20261025.json'),'utf8'));
 assert.equal(snapshot.releaseApproved,false);
 assert.equal(snapshot.evidence,'SELECT_ONLY_METADATA_NO_CUSTOMER_ROWS');
@@ -16,7 +19,30 @@ const publicTables=['users','orders','conversations','messages'];
 const quote=x=>{assert.match(x,/^[a-z][a-z0-9_]*$/);return '"'+x+'"';};
 const col={};
 for(const entry of snapshot.columns){assert.equal(entry.schema_name,'public');assert.ok(publicTables.includes(entry.table_name));(col[entry.table_name]??=[]).push(entry);}
-const sql=[
+const sql=native?[
+  '\\set ON_ERROR_STOP on',
+  '-- P31 fe74f69d1790ba44981c790f2939c29b18bce537; synthetic repository-contract fixture.',
+  '-- Catalog columns/constraints are observed; helper/runtime equivalence with staging is NOT proved.',
+  '-- Auth and Storage are native. External FK targets below are ID-only scaffolding, not full domains.',
+  'DO $gate$ BEGIN',
+  " IF current_database()<>'postgres' OR current_user<>'postgres'",
+  " OR current_setting('kontrat.isolated_storage_fixture',true) IS DISTINCT FROM 'true'",
+  " OR current_setting('server_version_num')::int NOT BETWEEN 170000 AND 179999",
+  " OR to_regprocedure('auth.uid()') IS NULL OR to_regprocedure('storage.allow_any_operation(text[])') IS NULL",
+  " OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('users','orders','conversations','messages')) THEN",
+  " RAISE EXCEPTION 'REFUSE_UNEXPECTED_LOCAL_FIXTURE_DATABASE'; END IF;",
+  'END $gate$;',
+  'CREATE SCHEMA IF NOT EXISTS private;',
+  'GRANT USAGE ON SCHEMA private TO authenticated,service_role;',
+  'CREATE TABLE public.services(id uuid PRIMARY KEY);',
+  'CREATE TABLE public.service_versions(id uuid PRIMARY KEY);',
+  'CREATE TABLE public.schedule_reservations(id uuid PRIMARY KEY);',
+  'ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;',
+  'ALTER TABLE public.service_versions ENABLE ROW LEVEL SECURITY;',
+  'ALTER TABLE public.schedule_reservations ENABLE ROW LEVEL SECURITY;',
+  'REVOKE ALL ON public.services,public.service_versions,public.schedule_reservations FROM PUBLIC,anon,authenticated;',
+  'GRANT SELECT ON public.services,public.service_versions,public.schedule_reservations TO service_role;'
+]:[
   '\\set ON_ERROR_STOP on',
   '-- Staging CATALOG-DERIVED metadata (2026-10-25), populated with SYNTHETIC records only.',
   '-- All four external FKs use ID-only target stubs; Storage helper logic is only partly reproduced.',
@@ -53,6 +79,9 @@ for(const c of [...snapshot.constraints].sort((a,b)=>(a.type==='f')-(b.type==='f
 }
 assert.equal(appliedConstraints+omittedConstraints.length,25);
 assert.equal(omittedConstraints.length,0);
+// Native Supabase default ACLs must not add browser TRUNCATE/DDL-like table authority.
+// Snapshot does not attest all table ACLs: this is an explicit minimal test boundary.
+if(native)sql.push('REVOKE ALL ON public.users,public.orders,public.conversations,public.messages FROM PUBLIC,anon,authenticated;');
 sql.push(
  'ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;',
  'ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;',
@@ -71,7 +100,8 @@ function mkPolicy(p){
   (p.with_check?' WITH CHECK ('+p.with_check+')':'')+';';
 }
 for(const p of snapshot.policies.filter(x=>x.schema_name==='public'))sql.push(mkPolicy(p));
-sql.push(
+if(native)sql.push('\\ir msg-storage-dependency-baseline.sql');
+else sql.push(
  'CREATE SCHEMA storage;',
  'GRANT USAGE ON SCHEMA storage TO authenticated,service_role;',
  'CREATE TABLE storage.objects(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), bucket_id text NOT NULL, name text NOT NULL, owner_id text, UNIQUE(bucket_id,name));',
@@ -92,11 +122,13 @@ sql.push(
  "INSERT INTO public.orders(id,client_id,professional_id,title,status,external_id,service_id,service_version_id,schedule_reservation_id) VALUES ('33333333-3333-4333-8333-333333333333','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','Synthetic order','draft','synthetic-order','66666666-6666-4666-8666-666666666666','77777777-7777-4777-8777-777777777777','88888888-8888-4888-8888-888888888888');",
  "INSERT INTO public.conversations(id,client_id,professional_id,status,external_id) VALUES ('44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','active','synthetic-conversation'),('55555555-5555-4555-8555-555555555555','99999999-9999-4999-8999-999999999999','22222222-2222-4222-8222-222222222222','active','synthetic-other-conversation');",
  "INSERT INTO public.messages(id,conversation_id,sender_id,body,status) VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','synthetic-a','sent'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','44444444-4444-4444-8444-444444444444','22222222-2222-4222-8222-222222222222','synthetic-b','sent'),('cccccccc-cccc-4ccc-8ccc-cccccccccccc','55555555-5555-4555-8555-555555555555','99999999-9999-4999-8999-999999999999','synthetic-c','delivered'),('dddddddd-dddd-4ddd-8ddd-dddddddddddd','44444444-4444-4444-8444-444444444444','11111111-1111-4111-8111-111111111111','','removed');",
- "SELECT 'STAGING_CATALOG_DERIVED_BASELINE_READY';"
+ native?"SELECT 'SYNTHETIC_SUPABASE_STORAGE_FIXTURE_READY';":"SELECT 'STAGING_CATALOG_DERIVED_BASELINE_READY';"
 );
-const destination=path.join(root,'scripts/fixtures/msg-staging-catalog-derived-baseline.sql');
-const text=sql.join('\n')+'\n';
-if(process.argv.includes('--check')){
+const destination=path.join(root,'scripts/fixtures',native?'msg-storage-api-native-local-baseline.sql':'msg-staging-catalog-derived-baseline.sql');
+// Keep the external_id consumed by the existing native API test.
+const text=(sql.join('\n')+'\n').replace(native?/'synthetic-conversation'/g:/$^/g,"'synthetic-storage-conversation'");
+if(process.argv.includes('--stdout'))process.stdout.write(text);
+else if(process.argv.includes('--check')){
  assert.equal(fs.readFileSync(destination,'utf8').replace(/\r\n/g,'\n'),text);
  console.log('CATALOG_FIXTURE_REGEN_CHECK_PASS',{columns:snapshot.columns.length,policies:snapshot.policies.length,constraints:appliedConstraints,externalFksOmitted:omittedConstraints});
 }else{

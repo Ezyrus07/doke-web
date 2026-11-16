@@ -76,7 +76,15 @@
     return outcome && Object.prototype.hasOwnProperty.call(outcome, 'data') ? outcome.data : outcome;
   }
 
-  function executeMessagesServerCommand(actionName, payload) {
+  function assertMessageNotCancelled(options) {
+    if (options && options.isCancelled && options.isCancelled()) {
+      var cancelled = new Error('Tentativas interrompidas.');
+      cancelled.name = 'AbortError';
+      throw cancelled;
+    }
+  }
+
+  function executeMessagesServerCommand(actionName, payload, executionOptions) {
     var boundary = getRepositoryBoundary();
     var status = getServerCommandBoundaryStatus();
     if (!status.ready || !boundary || typeof boundary.getProvider !== 'function') {
@@ -100,6 +108,7 @@
     var executor = getCommandExecutor();
     if (!executor) return Promise.reject(createServerCommandError('Executor idempotente de mensagens não está carregado.', actionName));
     return executor.execute(actionName, nextPayload, function (requestPayload) {
+      assertMessageNotCancelled(executionOptions);
       return provider.action('conversations', requestPayload);
     }, {
       commandId: nextPayload.commandId || nextPayload.clientMutationId || '',
@@ -448,8 +457,9 @@
     });
   }
 
-  function sendMessage(conversationId, payload) {
+  function sendMessage(conversationId, payload, executionOptions) {
     payload = payload || {};
+    executionOptions = executionOptions || {};
     var repository = getRepository();
     var user = getCurrentUser();
     var body = normalizeText(payload.body || payload.text || '');
@@ -460,6 +470,7 @@
     if (type === 'text' && !body) return Promise.reject(new Error('Escreva uma mensagem para enviar.'));
 
     return getConversationById(conversationId).then(function (conversationBeforeSend) {
+      assertMessageNotCancelled(executionOptions);
       if (!conversationBeforeSend) throw new Error('Conversa não encontrada.');
       assertConversationAccess(conversationBeforeSend, 'send_message', user || {});
       if (!isConversationUnlocked(conversationBeforeSend)) {
@@ -481,7 +492,7 @@
         return executeMessagesServerCommand('sendMessage', Object.assign({}, messagePayload, {
           id: conversationId,
           conversationId: conversationId
-        })).then(function (outcome) {
+        }), executionOptions).then(function (outcome) {
           return {
             message: normalizeMessageFromProvider(unwrapCommandData(outcome) && unwrapCommandData(outcome).message || unwrapCommandData(outcome), { id: conversationId }),
             commandId: outcome && outcome.commandId || '',
@@ -495,6 +506,7 @@
     }).then(function (result) {
       var message = result && result.message || result;
       var commandId = result && result.commandId || '';
+      if (message && typeof executionOptions.onAcknowledged === 'function') executionOptions.onAcknowledged(message);
       if (deferSideEffects) return message;
       var executor = getCommandExecutor();
       if (commandId && executor && typeof executor.claimSideEffects === 'function' && !executor.claimSideEffects(commandId)) return message;

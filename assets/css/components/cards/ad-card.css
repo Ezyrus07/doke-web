@@ -1,85 +1,630 @@
-/* Doke canonical advertisement card.
-   Owns only the visual anatomy of service announcement cards.
-   Page CSS owns grid/rail placement. This component intentionally does not target
-   service-card, video-card, worker-card, shell, header or global wrappers. */
-.doke-ad-card:not([hidden]) {
-  display: flex;
-  flex-direction: column;
+/* Service advertisement anatomy. Containers own collection width and scrolling.
+   The shared marketplace contract consumes these component-scoped dimensions. */
+.doke-ad-card {
+  --doke-card-bg: #fff;
+  --doke-card-radius: var(--doke-radius-card-lg);
+  --doke-card-radius-sm: var(--doke-radius-card-lg);
+  --doke-marketplace-card-border: 1px solid #dce8f0;
+  --doke-card-shadow: 0 7px 20px rgba(32,91,137,.065);
+  --doke-ad-card-display: grid;
+  --doke-ad-card-grid-template-columns: minmax(0,1fr);
+  --doke-ad-card-grid-template-rows: auto 1fr;
+  --doke-ad-card-height: auto;
+  --doke-ad-card-min-height: 0px;
+  --doke-ad-card-max-height: none;
+  --doke-ad-media-height: 160px;
+  --doke-ad-media-height-mobile: 160px;
+  --doke-ad-media-width: calc(100% - 18px);
+  --doke-ad-media-margin: 9px 9px 0;
+  --doke-ad-media-radius: var(--doke-radius-card);
+  --doke-ad-body-display: grid;
+  --doke-ad-body-flex: 1 1 auto;
+  --doke-ad-context-height: 44px;
+  --doke-ad-body-align-content: start;
+  --doke-ad-body-height: auto;
+  --doke-ad-body-min-height: 0px;
+  --doke-ad-body-max-height: none;
+  --doke-ad-body-padding-bottom: 14px;
+  --doke-ad-padding: 12px 13px 14px;
+  --doke-ad-padding-mobile: 12px 13px 14px;
+  --doke-ad-title-font-size: 19px;
+  --doke-ad-title-line-height: 1.26;
+  --doke-ad-title-white-space: normal;
+  --doke-ad-title-lines: 3;
+  --doke-ad-footer-display: grid;
+  --doke-ad-footer-margin-top: 0px;
+  --doke-ad-cta-display: flex;
+  --doke-ad-cta-min-height: 44px;
+  --doke-ad-cta-height: auto;
+  --doke-ad-cta-min-width: 0px;
+  --doke-ad-cta-padding-inline: 9px;
+  --doke-ad-cta-font-size: 12px;
+  container: service-card / inline-size;
+  position: relative;
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  overflow: hidden;
-  border: var(--doke-card-border-line, var(--card-border-transparent));
-  border-radius: var(--card-radius-lg);
-  background: var(--card-bg);
-  box-shadow: var(--card-shadow);
-  color: #082747;
-  font-family: var(--doke-font-family, Poppins, Inter, system-ui, sans-serif);
-  transition: var(--doke-interaction-transition);
+  margin: 0;
+  font-family: var(--doke-font-family,Poppins,system-ui,sans-serif);
+  color: #0d3262;
+  scroll-snap-align: start;
+  transition: box-shadow .16s,border-color .16s;
 }
 
-.doke-ad-card:hover,
-.doke-ad-card:focus-within {
-  border-color: transparent;
-  box-shadow: var(--doke-interaction-shadow-card);
-  transform: var(--doke-interaction-lift-control);
+.doke-ad-card:hover {
+  --doke-card-shadow: 0 10px 24px rgba(32,91,137,.1);
 }
 
 .doke-ad-card__media {
   position: relative;
-  height: clamp(148px, 12vw, 178px);
-  min-height: 148px;
+  box-sizing: border-box;
   overflow: hidden;
-  background-color: #dfeaf2;
-  background-position: center;
-  background-size: cover;
+  background: #e8f3f7;
   isolation: isolate;
 }
 
+.doke-ad-card__media > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
 
-/* Media loading parity for advertisement cards.
-   CSS-background cards must not receive a JS-driven skeleton overlay after the
-   first paint. The media box itself owns the final dimensions, so the initial
-   state and the loaded state keep the same geometry without hiding the image.
-   Future data-rendered skeletons must opt in explicitly with is-media-skeleton. */
-.doke-ad-card__media::before {
+.doke-ad-card__media.is-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f5fbfc;
+}
+
+.doke-ad-card__illustration {
+  display: block;
+  width: 148px;
+  height: 105px;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.doke-ad-card__media-note {
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  color: #526b83;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.doke-ad-card__illustration .illustration-cloud {
+  fill: #e0f5f0;
+}
+
+.doke-ad-card__illustration .illustration-light {
+  fill: #fff;
+  stroke: #b4dbe1;
+  stroke-width: 2;
+}
+
+.doke-ad-card__illustration .illustration-fill {
+  fill: #2a5f90;
+}
+
+.doke-ad-card__illustration .illustration-mint {
+  fill: #18b99f;
+}
+
+.doke-ad-card__illustration .illustration-ink {
+  fill: #1d5582;
+}
+
+.doke-ad-card__illustration .illustration-wire {
+  fill: none;
+  stroke: #238e80;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doke-ad-card__body {
+  --doke-ad-body-grid-template-rows: calc(3 * var(--doke-ad-title-font-size) * 1.26) 44px var(--doke-ad-context-height) auto;
+  box-sizing: border-box;
+  min-width: 0;
+  gap: 10px;
+  grid-template-columns: minmax(0,1fr);
+}
+
+.doke-ad-card__badge.doke-ad-card__category {
+  position: absolute;
+  top: 19px;
+  left: 19px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  max-width: calc(100% - 92px);
+  min-height: 25px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: var(--doke-radius-pill);
+  background: #193448;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.doke-ad-card__badge::before {
+  content: "";
+  display: block;
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #19c3a7;
+  box-shadow: none;
+}
+
+.doke-ad-card__title {
+  grid-row: 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--doke-ad-title-lines);
+  block-size: calc(3 * 1lh);
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #0b3063;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+.doke-ad-card__identity {
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 35px minmax(0,1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  color: #0f3765;
+  cursor: pointer;
+}
+
+.doke-ad-card__avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 35px;
+  height: 35px;
+  min-width: 35px;
+  min-height: 35px;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--doke-radius-avatar);
+  background: #e5f3fa;
+  color: #175991;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.doke-ad-card__avatar::before,.doke-ad-card__avatar::after {
+  content: none;
+}
+
+.doke-ad-card__avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doke-ad-card__seller {
+  min-width: 0;
+  cursor: pointer;
+}
+
+.doke-ad-card__seller-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.doke-ad-card__seller-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  color: #0f3765;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__seller-meta,.doke-ad-card__rating {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  color: #4f6887;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__context {
+  grid-row: 3;
+  display: grid;
+  grid-template-rows: 17px 22px;
+  gap: 5px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.doke-ad-card__location {
+  align-self: start;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  color: #4f6887;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.doke-ad-card__location-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.doke-ad-card__location-text svg {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  fill: currentColor;
+}
+
+.doke-ad-card__location-text span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__tags {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  min-height: 22px;
+  margin: 0;
+  overflow: hidden;
+}
+
+.doke-ad-card__tags span {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 22px;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 2px 7px;
+  border-radius: var(--doke-radius-pill);
+  background: #edf8f6;
+  color: #21695b;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.doke-ad-card__footer {
+  grid-row: 4;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.doke-ad-card__price {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 34px;
+  margin: 0;
+  padding: 7px 6px;
+  overflow: hidden;
+  border-radius: var(--doke-radius-pill);
+  background: #e7f7f3;
+  color: #123d63;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.doke-ad-card__price span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__price svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: #078270;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doke-ad-card .doke-ad-card__cta {
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-sizing: border-box;
+  margin: 0;
+  padding-block: 11px;
+  border: 0;
+  border-radius: var(--doke-radius-pill);
+  background: #087f6e;
+  color: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  line-height: 1.3;
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.doke-ad-card .doke-ad-card__cta:hover {
+  background: #066b5c;
+}
+
+.doke-ad-card__cta svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doke-ad-card__favorite {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #e7f0f4;
+  border-radius: var(--doke-radius-pill);
+  background: #fff;
+  color: #078772;
+  box-shadow: 0 3px 11px #1a608212;
+  cursor: pointer;
+}
+
+.doke-ad-card__favorite svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doke-ad-card__favorite[aria-pressed="true"] {
+  background: #e3f5ed;
+  color: #087663;
+}
+
+.doke-ad-card__favorite[aria-pressed="true"] svg {
+  fill: currentColor;
+}
+
+.doke-ad-card :is(a,button,[tabindex]):focus-visible {
+  outline: 3px solid #2a5f90;
+  outline-offset: 3px;
+  border-radius: var(--doke-radius-control-sm);
+}
+
+.doke-ad-card__results-facts {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 5px;
+  min-width: 0;
+  min-height: 22px;
+  overflow: hidden;
+  font-size: 10px;
+  color: #21695b;
+}
+
+.doke-ad-card__result-fact {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card--results {
+  --doke-ad-context-height: 71px;
+}
+
+.doke-ad-card--results .doke-ad-card__context {
+  grid-template-rows: 17px 22px 22px;
+}
+
+.doke-ad-card--results .doke-ad-card__media {
+  --doke-ad-media-height: var(--doke-ad-results-media-height,160px);
+  --doke-ad-media-height-mobile: var(--doke-ad-results-media-height,160px);
+  --doke-ad-media-min-height: max(var(--doke-ad-results-media-min-height,0px),var(--doke-ad-media-height));
+}
+
+.doke-ad-card--results .doke-ad-card__body {
+  --doke-ad-padding: var(--doke-ad-results-body-padding,12px 13px 14px);
+  --doke-ad-padding-mobile: var(--doke-ad-results-body-padding,12px 13px 14px);
+}
+
+.doke-ad-card--results .doke-ad-card__footer {
+  gap: var(--doke-ad-results-footer-gap,8px);
+}
+
+.doke-ad-card--results .doke-ad-card__cta {
+  --doke-ad-cta-min-width: var(--doke-ad-results-cta-min-width,0px);
+}
+
+@container service-card (max-width:270px) {
+  .doke-ad-card__footer {
+    grid-template-columns: minmax(0,1fr);
+    gap: 8px;
+  }
+  .doke-ad-card__price {
+    min-height: 32px;
+  }
+}
+
+@container service-card (min-width:300px) {
+  .doke-ad-card__media {
+    --doke-ad-media-height: 179px;
+    --doke-ad-media-height-mobile: 179px;
+  }
+  .doke-ad-card__body {
+    --doke-ad-title-font-size: 21px;
+  }
+  .doke-ad-card__location {
+    font-size: 12px;
+  }
+}
+
+.doke-ad-card--expanded {
+  --doke-ad-card-grid-template-columns: repeat(auto-fit,minmax(min(100%,320px),1fr));
+  --doke-ad-card-grid-template-rows: auto;
+  --doke-ad-title-lines: unset;
+  --doke-ad-body-grid-template-rows: auto auto auto auto;
+  --doke-ad-media-height: auto;
+  --doke-ad-media-height-mobile: auto;
+  --doke-ad-media-min-height: 220px;
+  --doke-ad-media-max-height: none;
+  --doke-ad-media-margin: 9px;
+  --doke-ad-padding: 20px;
+  --doke-ad-padding-mobile: 16px;
+  --doke-ad-title-font-size: 23px;
+}
+
+.doke-ad-card--expanded .doke-ad-card__media {
+  align-self: stretch;
+  --doke-ad-media-height: auto;
+  --doke-ad-media-height-mobile: auto;
+}
+
+.doke-ad-card--expanded .doke-ad-card__media > img {
+  position: absolute;
+  inset: 0;
+}
+
+.doke-ad-card--expanded .doke-ad-card__body {
+  --doke-ad-body-grid-template-rows: auto auto auto auto;
+}
+
+.doke-ad-card--expanded .doke-ad-card__title {
+  block-size: auto;
+  min-height: 0;
+}
+
+.doke-ad-card--expanded .doke-ad-card__context {
+  grid-template-rows: auto;
+  align-content: start;
+  min-height: 44px;
+}
+
+.doke-ad-card--expanded .doke-ad-card__footer {
+  align-self: end;
+}
+
+@container service-card (min-width:640px) {
+  .doke-ad-card--expanded .doke-ad-card__body {
+    --doke-ad-padding: 58px 24px 24px;
+    --doke-ad-title-font-size: 29px;
+  }
+  .doke-ad-card--expanded .doke-ad-card__badge {
+    left: calc(50% + 24px);
+    top: 24px;
+  }
+  .doke-ad-card--expanded .doke-ad-card__favorite {
+    right: 20px;
+    top: 19px;
+  }
+}
+
+.doke-ad-card.is-media-skeleton .doke-ad-card__media::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
-  background:
-    linear-gradient(90deg, rgba(223, 234, 242, 0.92) 0%, rgba(240, 246, 251, 0.98) 44%, rgba(223, 234, 242, 0.92) 88%),
-    var(--doke-card-media-bg, #eef4f8);
-  background-size: 220% 100%;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateZ(0);
-}
-
-.doke-ad-card.is-media-skeleton .doke-ad-card__media::before {
-  opacity: 1;
+  background: #e8f3f7;
   animation: doke-ad-card-media-skeleton 1.25s ease-in-out infinite;
+  pointer-events: none;
 }
 
 @keyframes doke-ad-card-media-skeleton {
-  0% { background-position: 120% 0; }
-  100% { background-position: -120% 0; }
+  50% {
+    opacity: .45;
+  }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media(prefers-reduced-motion:reduce) {
+  .doke-ad-card {
+    transition: none;
+  }
   .doke-ad-card.is-media-skeleton .doke-ad-card__media::before {
     animation: none;
   }
 }
 
-.doke-ad-card__media::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: linear-gradient(180deg, rgba(7, 18, 31, 0.03), rgba(7, 18, 31, 0.05));
-  pointer-events: none;
-}
-
+/* Existing static related-service media; data-rendered images keep their supplied URL. */
 .doke-ad-card__media--painter {
   background-image: linear-gradient(90deg, rgba(8, 23, 38, 0.02), rgba(8, 23, 38, 0.04)), url("https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=1100&q=82");
   background-position: center 44%;
@@ -108,7 +653,6 @@
 .doke-ad-card__media--beauty {
   background-image: linear-gradient(145deg, rgba(8, 23, 38, 0.12), rgba(8, 23, 38, 0.03)), url("https://images.pexels.com/photos/4155019/pexels-photo-4155019.jpeg?cs=srgb&dl=pexels-cottonbro-4155019.jpg&fm=jpg&w=900&fit=crop&auto=compress");
 }
-
 
 .doke-ad-card__media--gardening {
   background-image: linear-gradient(145deg, rgba(8, 23, 38, 0.12), rgba(8, 23, 38, 0.03)), url("https://images.pexels.com/photos/4505166/pexels-photo-4505166.jpeg?auto=compress&cs=tinysrgb&w=900");
@@ -142,8 +686,6 @@
   background-image: linear-gradient(145deg, rgba(8, 23, 38, 0.12), rgba(8, 23, 38, 0.03)), url("https://images.pexels.com/photos/7464230/pexels-photo-7464230.jpeg?auto=compress&cs=tinysrgb&w=900");
 }
 
-/* Static related-service media variants used by detail and marketplace rails.
-   Page CSS owns rail/grid placement; card media modifiers belong to this component. */
 .doke-ad-card__media--similar-bathroom-complete {
   background-image: url("https://images.pexels.com/photos/6585750/pexels-photo-6585750.jpeg?auto=compress&cs=tinysrgb&w=1200");
 }
@@ -160,1483 +702,4 @@
   background-image: url("https://images.pexels.com/photos/6474343/pexels-photo-6474343.jpeg?auto=compress&cs=tinysrgb&w=1200");
   background-position: center;
   background-size: cover;
-}
-
-.doke-ad-card__badge,
-.doke-ad-card__favorite {
-  position: absolute;
-  z-index: 2;
-}
-
-.doke-ad-card__badge {
-  top: 16px;
-  left: 18px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  max-width: calc(100% - 108px);
-  padding: 0 13px;
-  overflow: hidden;
-  border-radius: var(--radius-pill);
-  background: rgba(38, 41, 47, 0.88);
-  color: #fff;
-  box-shadow: 0 9px 20px rgba(6, 18, 31, 0.18);
-  font-size: 0.78rem;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.025em;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  backdrop-filter: blur(10px);
-}
-
-.doke-ad-card__badge::before {
-  content: "";
-  width: 9px;
-  height: 9px;
-  flex: 0 0 9px;
-  border-radius: var(--radius-pill);
-  background: #19c8b8;
-  box-shadow: 0 0 0 3px rgba(25, 200, 184, 0.12);
-}
-
-.doke-ad-card__favorite {
-  top: 12px;
-  right: 16px;
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: #fff;
-  color: #129f92;
-  box-shadow: var(--doke-interaction-shadow-control);
-}
-
-.doke-ad-card__favorite svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.25;
-}
-
-.doke-ad-card__body {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-  padding: 18px 20px 20px;
-}
-
-.doke-ad-card__category {
-  display: block;
-  margin: 0 0 8px;
-  overflow: hidden;
-  color: #7a8ca4;
-  font-size: clamp(0.78rem, 0.9vw, 0.9rem);
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  line-height: 1.1;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.doke-ad-card__title {
-  margin: 0 0 10px;
-  overflow: hidden;
-  color: #082747;
-  font-size: clamp(1.35rem, 1.55vw, 1.62rem);
-  font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 1.02;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.doke-ad-card__rating {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  margin: 0 0 12px;
-  color: #082747;
-  font-size: clamp(0.98rem, 1.08vw, 1.08rem);
-  font-weight: 900;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.doke-ad-card__rating-star {
-  color: #129f92;
-  font-size: 1.08em;
-}
-
-.doke-ad-card__rating span:last-child {
-  min-width: 0;
-  overflow: hidden;
-  color: #72839b;
-  font-weight: 700;
-  text-overflow: ellipsis;
-}
-
-.doke-ad-card__tags {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 6px;
-  margin: 0 0 12px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.doke-ad-card__tags span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: var(--radius-pill);
-  background: #edf8f6;
-  color: #129f92;
-  font-size: clamp(0.72rem, 0.82vw, 0.8rem);
-  font-weight: 800;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.doke-ad-card__location {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-  margin: 0 0 14px;
-  color: #72839b;
-  font-size: clamp(0.82rem, 0.96vw, 0.92rem);
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.doke-ad-card__avatar {
-  position: relative;
-  width: 38px;
-  height: 38px;
-  overflow: hidden;
-  border: 2px solid #fff;
-  border-radius: var(--radius-pill);
-  background: radial-gradient(circle at 70% 32%, #8be1c8 0 7px, transparent 8px), linear-gradient(135deg, #eff6ff, #d9edf8);
-  box-shadow: var(--doke-interaction-shadow-control);
-}
-
-.doke-ad-card__avatar::before {
-  content: "";
-  position: absolute;
-  top: 8px;
-  left: 13px;
-  width: 11px;
-  height: 11px;
-  border-radius: var(--doke-radius-avatar);
-  background: #082747;
-}
-
-.doke-ad-card__avatar::after {
-  content: "";
-  position: absolute;
-  bottom: 5px;
-  left: 10px;
-  width: 17px;
-  height: 20px;
-  border-radius: var(--radius-exact-9) var(--radius-exact-9) var(--radius-exact-5) var(--radius-exact-5);
-  background: #f5a53f;
-  box-shadow: 7px -2px 0 -2px #239785;
-}
-
-.doke-ad-card__location-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.doke-ad-card__location-text svg {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  fill: currentColor;
-}
-
-.doke-ad-card__location-text span {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.doke-ad-card__footer {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 14px;
-  margin-top: auto;
-  padding-top: 14px;
-  border-top: 0;
-}
-
-.doke-ad-card__price {
-  color: #082747;
-  font-size: clamp(1.16rem, 1.28vw, 1.3rem);
-  font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.doke-ad-card__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  min-height: 46px;
-  min-width: 0;
-  padding: 0 18px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(135deg, #16a998, #078b7f);
-  color: #fff;
-  box-shadow: var(--doke-shadow-action-success-card);
-  font-size: clamp(0.9rem, 1vw, 1rem);
-  font-weight: 900;
-  letter-spacing: -0.035em;
-  line-height: 1;
-  text-align: center;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-@media (min-width: 761px) {
-  .doke-ad-card {
-    --doke-ad-cta-min-width: 128px;
-  }
-}
-
-
-
-/* Search results density modifier.
-   The result page may set the custom properties below from its grid/composition
-   layer, but card media/body/footer/CTA anatomy stays in this component. */
-.doke-ad-card--results .doke-ad-card__media {
-  height: var(--doke-ad-results-media-height, clamp(148px, 12vw, 178px));
-  min-height: var(--doke-ad-results-media-min-height, 148px);
-}
-
-.doke-ad-card--results .doke-ad-card__body {
-  padding: var(--doke-ad-results-body-padding, 18px 20px 20px);
-}
-
-.doke-ad-card--results .doke-ad-card__footer {
-  gap: var(--doke-ad-results-footer-gap, 14px);
-}
-
-.doke-ad-card--results .doke-ad-card__cta {
-  min-width: var(--doke-ad-results-cta-min-width, 0);
-}
-
-/* Interactive polish for canonical announcement cards. */
-@media (hover: hover) and (pointer: fine) {
-  .doke-ad-card:not([hidden]) {
-    transition: var(--doke-interaction-transition);
-  }
-
-  .doke-ad-card:hover,
-  .doke-ad-card:focus-within {
-    transform: var(--doke-interaction-lift-card);
-    border-color: var(--doke-interaction-border);
-    box-shadow: var(--doke-interaction-shadow-surface);
-  }
-
-  .doke-ad-card__media {
-    transition: var(--doke-interaction-transition);
-  }
-
-  .doke-ad-card:hover .doke-ad-card__media,
-  .doke-ad-card:focus-within .doke-ad-card__media {
-    filter: var(--doke-interaction-media-filter);
-  }
-
-  .doke-ad-card__favorite,
-  .doke-ad-card__cta {
-    transition: var(--doke-interaction-transition);
-  }
-
-  .doke-ad-card__favorite:hover,
-  .doke-ad-card__favorite:focus-visible {
-    transform: scale(1.018);
-    box-shadow: var(--doke-interaction-shadow-surface);
-  }
-
-  .doke-ad-card__cta:hover,
-  .doke-ad-card__cta:focus-visible {
-    transform: var(--doke-interaction-lift-control);
-    box-shadow: var(--shadow-action-secondary-strong);
-  }
-}
-
-
-
-/* Ad card interaction affordances.
-   Component-level only: no page/grid/shell changes. */
-.doke-ad-card {
-  cursor: pointer;
-}
-
-.doke-ad-card__title,
-.doke-ad-card__avatar,
-.doke-ad-card__rating,
-.doke-ad-card__location,
-.doke-ad-card__location-text,
-.doke-ad-card__tags span {
-  cursor: pointer;
-}
-
-.doke-ad-card__title:hover,
-.doke-ad-card__rating:hover strong,
-.doke-ad-card__location:hover,
-.doke-ad-card__tags span:hover {
-  color: var(--doke-interaction-text-secondary);
-}
-
-.doke-ad-card__tags span:hover {
-  transform: var(--doke-interaction-lift-control);
-  box-shadow: var(--doke-interaction-shadow-control);
-}
-
-.doke-ad-card__favorite {
-  cursor: pointer;
-}
-
-.doke-ad-card__favorite svg path {
-  transition: fill 160ms ease, stroke 160ms ease;
-}
-
-.doke-ad-card__favorite.is-active {
-  color: #ef5a7b;
-  background: #ffffff;
-  border-color: rgba(239, 90, 123, 0.18);
-  box-shadow: 0 16px 34px rgba(18, 34, 58, 0.16), 0 0 0 1px rgba(239, 90, 123, 0.10);
-}
-
-.doke-ad-card__favorite.is-active svg path {
-  fill: #ef5a7b;
-  stroke: #ef5a7b;
-}
-
-.doke-ad-card :is(.doke-ad-card__title, .doke-ad-card__avatar, .doke-ad-card__rating, .doke-ad-card__location, .doke-ad-card__tags span):focus-visible {
-  outline: 3px solid rgba(15, 170, 149, 0.28);
-  outline-offset: 3px;
-  border-radius: var(--radius-sm);
-}
-
-
-/* Component fallback: dense mobile card anatomy.
-   Page-specific home.css may further scope this, but this prevents the default
-   mobile component from returning to the tall version after image/layout load. */
-
-
-/* Canonical mobile anatomy for announcement cards.
-   This is the only mobile owner for .doke-ad-card internals.
-   Page CSS may control only rails, gaps and external section spacing. */
-@media (max-width: 760px) {
-  .doke-ad-card:not([hidden]) {
-    --doke-ad-card-height: auto;
-    --doke-ad-card-min-height: 0;
-    --doke-ad-card-max-height: none;
-    --doke-ad-card-mobile-width: 256px;
-    --doke-ad-card-mobile-min-width: var(--doke-ad-card-mobile-width);
-    --doke-ad-card-mobile-max-width: var(--doke-ad-card-mobile-width);
-    --doke-ad-card-mobile-flex: 0 0 var(--doke-ad-card-mobile-width);
-    --doke-ad-media-height: 96px;
-    --doke-ad-media-height-mobile: 96px;
-    --doke-ad-padding: 8px 10px 10px;
-    --doke-ad-padding-mobile: 8px 10px 10px;
-    --doke-ad-body-min-height: 0;
-    --doke-ad-body-padding-bottom: 10px;
-    --doke-ad-footer-min-height: 0;
-    --doke-ad-footer-margin-top: 2px;
-    --doke-ad-body-gap-mobile: 4px;
-    --doke-ad-category-font-size-mobile: 0.58rem;
-    --doke-ad-category-line-height-mobile: 1;
-    --doke-ad-title-font-size-mobile: 0.96rem;
-    --doke-ad-title-line-height-mobile: 1;
-    --doke-ad-rating-font-size-mobile: 0.74rem;
-    --doke-ad-rating-gap-mobile: 4px;
-    --doke-ad-tags-gap-mobile: 4px;
-    --doke-ad-tag-min-height-mobile: 20px;
-    --doke-ad-tag-padding-inline-mobile: 7px;
-    --doke-ad-tag-font-size-mobile: 0.64rem;
-    --doke-ad-location-grid-mobile: 24px minmax(0, 1fr);
-    --doke-ad-location-gap-mobile: 5px;
-    --doke-ad-location-font-size-mobile: 0.62rem;
-    --doke-ad-location-line-height-mobile: 1.05;
-    --doke-ad-avatar-size-mobile: 24px;
-    --doke-ad-footer-gap-mobile: 7px;
-    --doke-ad-footer-padding-top-mobile: 7px;
-    --doke-ad-price-font-size-mobile: 0.88rem;
-    --doke-ad-cta-min-height: 32px;
-    --doke-ad-cta-height: 32px;
-    --doke-ad-cta-padding-inline: 10px;
-    --doke-ad-cta-font-size: 0.72rem;
-    display: flex;
-    flex: var(--doke-ad-card-mobile-flex);
-    flex-direction: column;
-    align-self: flex-start;
-    width: var(--doke-ad-card-mobile-width);
-    min-width: var(--doke-ad-card-mobile-min-width);
-    max-width: var(--doke-ad-card-mobile-max-width);
-    min-height: 0;
-    overflow: hidden;
-    border-radius: var(--radius-exact-17);
-    box-shadow: none;
-  }
-
-  .doke-ad-card__media {
-    flex: 0 0 var(--doke-ad-media-height-mobile, 96px);
-    height: var(--doke-ad-media-height-mobile, 96px);
-    min-height: var(--doke-ad-media-height-mobile, 96px);
-    max-height: var(--doke-ad-media-height-mobile, 96px);
-    background-position: center;
-    background-size: cover;
-  }
-
-  .doke-ad-card__badge {
-    top: 10px;
-    left: 10px;
-    gap: 6px;
-    min-height: 24px;
-    max-width: calc(100% - 58px);
-    padding: 0 9px;
-    font-size: 0.67rem;
-    line-height: 1;
-  }
-
-  .doke-ad-card__badge::before {
-    width: 8px;
-    height: 8px;
-    flex-basis: 8px;
-  }
-
-  .doke-ad-card__favorite {
-    top: 8px;
-    right: 8px;
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    min-height: 34px;
-    max-width: 34px;
-    max-height: 34px;
-    padding: 0;
-    border-radius: var(--radius-pill);
-  }
-
-  .doke-ad-card__favorite svg {
-    width: 17px;
-    height: 17px;
-  }
-
-  .doke-ad-card__body {
-    display: grid;
-    grid-template-rows: auto auto auto auto;
-    align-content: start;
-    row-gap: var(--doke-ad-body-gap-mobile, 4px);
-    flex: 0 0 auto;
-    min-height: 0;
-    padding: var(--doke-ad-padding-mobile, 8px 10px 10px);
-    overflow: visible;
-  }
-
-  .doke-ad-card__category,
-  .doke-ad-card__title,
-  .doke-ad-card__rating,
-  .doke-ad-card__location,
-  .doke-ad-card__footer {
-    margin-top: 0;
-    margin-bottom: 0;
-  }
-
-  .doke-ad-card__category {
-    font-size: var(--doke-ad-category-font-size-mobile, 0.58rem);
-    line-height: var(--doke-ad-category-line-height-mobile, 1);
-    letter-spacing: 0.12em;
-  }
-
-  .doke-ad-card__title {
-    display: block;
-    min-height: 0;
-    overflow: hidden;
-    font-size: var(--doke-ad-title-font-size-mobile, 0.96rem);
-    line-height: var(--doke-ad-title-line-height-mobile, 1);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .doke-ad-card__rating {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--doke-ad-rating-gap-mobile, 4px);
-    min-height: 0;
-    font-size: var(--doke-ad-rating-font-size-mobile, 0.74rem);
-    line-height: 1;
-  }
-
-  .doke-ad-card__tags {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: var(--doke-ad-tags-gap-mobile, 4px);
-    min-height: 0;
-  }
-
-  .doke-ad-card__tags span {
-    min-height: var(--doke-ad-tag-min-height-mobile, 20px);
-    padding-inline: var(--doke-ad-tag-padding-inline-mobile, 7px);
-    font-size: var(--doke-ad-tag-font-size-mobile, 0.64rem);
-    line-height: 1;
-  }
-
-  .doke-ad-card__location {
-    display: flex;
-    align-items: center;
-    gap: var(--doke-ad-location-gap-mobile, 5px);
-    min-height: var(--doke-ad-avatar-size-mobile, 24px);
-    overflow: hidden;
-    font-size: var(--doke-ad-location-font-size-mobile, 0.62rem);
-    line-height: var(--doke-ad-location-line-height-mobile, 1.05);
-  }
-
-  .doke-ad-card__avatar {
-    width: var(--doke-ad-avatar-size-mobile, 24px);
-    height: var(--doke-ad-avatar-size-mobile, 24px);
-    min-width: var(--doke-ad-avatar-size-mobile, 24px);
-    min-height: var(--doke-ad-avatar-size-mobile, 24px);
-    max-width: var(--doke-ad-avatar-size-mobile, 24px);
-    max-height: var(--doke-ad-avatar-size-mobile, 24px);
-    flex: 0 0 var(--doke-ad-avatar-size-mobile, 24px);
-    border-width: 1px;
-    border-radius: var(--radius-pill);
-  }
-
-  .doke-ad-card__avatar::before {
-    top: 5px;
-    left: 8px;
-    width: 8px;
-    height: 8px;
-  }
-
-  .doke-ad-card__avatar::after {
-    bottom: 3px;
-    left: 6px;
-    width: 13px;
-    height: 15px;
-    border-radius: var(--radius-exact-7) var(--radius-exact-7) var(--radius-exact-4) var(--radius-exact-4);
-    box-shadow: 5px -2px 0 -2px #239785;
-  }
-
-  .doke-ad-card__location-text {
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .doke-ad-card__location-text svg {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 14px;
-  }
-
-  .doke-ad-card__location-text span {
-    display: block;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .doke-ad-card__footer {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: var(--doke-ad-footer-gap-mobile, 7px);
-    min-height: 0;
-    padding-top: var(--doke-ad-footer-padding-top-mobile, 7px);
-  }
-
-  .doke-ad-card__price {
-    font-size: var(--doke-ad-price-font-size-mobile, 0.88rem);
-    line-height: 1;
-  }
-
-  .doke-ad-card__cta {
-    min-height: var(--doke-ad-cta-min-height, 34px);
-    height: var(--doke-ad-cta-height, 34px);
-    padding-inline: var(--doke-ad-cta-padding-inline, 10px);
-    font-size: var(--doke-ad-cta-font-size, 0.72rem);
-    line-height: 1;
-  }
-}
-
-@media (max-width: 560px) {
-  .doke-ad-card.doke-ad-card--mobile-feed {
-    --doke-ad-media-height-mobile: clamp(122px, 31vw, 138px);
-    --doke-ad-padding-mobile: 9px 12px 10px;
-    --doke-ad-body-display: grid;
-    --doke-ad-body-grid-template-rows: auto auto auto auto auto;
-    --doke-ad-body-align-content: start;
-    --doke-ad-body-height: auto;
-    --doke-ad-body-min-height: 0;
-    --doke-ad-body-max-height: none;
-    --doke-ad-body-overflow: visible;
-    --doke-ad-body-padding-bottom: 10px;
-    --doke-ad-body-gap-mobile: 4px;
-    --doke-ad-category-font-size-mobile: 0.6rem;
-    --doke-ad-title-font-size-mobile: 0.95rem;
-    --doke-ad-title-line-height-mobile: 1.05;
-    --doke-ad-rating-font-size-mobile: 0.72rem;
-    --doke-ad-tag-min-height-mobile: 18px;
-    --doke-ad-tag-padding-inline-mobile: 7px;
-    --doke-ad-tag-font-size-mobile: 0.61rem;
-    --doke-ad-location-grid-mobile: 22px minmax(0, 1fr);
-    --doke-ad-location-gap-mobile: 5px;
-    --doke-ad-location-font-size-mobile: 0.6rem;
-    --doke-ad-avatar-size-mobile: 22px;
-    --doke-ad-footer-display: grid;
-    --doke-ad-footer-gap-mobile: 7px;
-    --doke-ad-footer-padding-top-mobile: 6px;
-    --doke-ad-footer-min-height: 0;
-    --doke-ad-footer-margin-top: 0;
-    --doke-ad-price-font-size-mobile: 0.86rem;
-    --doke-ad-cta-min-height: 30px;
-    --doke-ad-cta-height: 30px;
-    --doke-ad-cta-padding-inline: 10px;
-    --doke-ad-cta-font-size: 0.7rem;
-  }
-
-  .doke-ad-card.doke-ad-card--mobile-grid {
-    --doke-ad-card-mobile-width: 100%;
-    --doke-ad-card-mobile-min-width: 0;
-    --doke-ad-card-mobile-max-width: 100%;
-    --doke-ad-card-mobile-flex: 0 1 auto;
-    --doke-ad-media-height-mobile: clamp(82px, 23vw, 100px);
-    --doke-ad-padding-mobile: 8px 9px 9px;
-    --doke-ad-body-gap-mobile: 3px;
-    --doke-ad-category-font-size-mobile: 0.52rem;
-    --doke-ad-title-font-size-mobile: 0.74rem;
-    --doke-ad-title-line-height-mobile: 1.02;
-    --doke-ad-rating-font-size-mobile: 0.58rem;
-    --doke-ad-tag-min-height-mobile: 16px;
-    --doke-ad-tag-padding-inline-mobile: 5px;
-    --doke-ad-tag-font-size-mobile: 0.52rem;
-    --doke-ad-location-grid-mobile: 18px minmax(0, 1fr);
-    --doke-ad-location-gap-mobile: 4px;
-    --doke-ad-location-font-size-mobile: 0.52rem;
-    --doke-ad-avatar-size-mobile: 18px;
-    --doke-ad-footer-gap-mobile: 5px;
-    --doke-ad-footer-padding-top-mobile: 5px;
-    --doke-ad-price-font-size-mobile: 0.74rem;
-    --doke-ad-cta-min-height: 27px;
-    --doke-ad-cta-height: 27px;
-    --doke-ad-cta-padding-inline: 8px;
-    --doke-ad-cta-font-size: 0.56rem;
-    border-radius: var(--radius-exact-15);
-  }
-
-  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__badge {
-    top: 7px;
-    left: 7px;
-    min-height: 19px;
-    max-width: calc(100% - 44px);
-    padding-inline: 7px;
-    gap: 4px;
-    font-size: 0.52rem;
-  }
-
-  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__badge::before {
-    width: 6px;
-    height: 6px;
-    flex-basis: 6px;
-  }
-
-  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__favorite {
-    top: 6px;
-    right: 6px;
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    max-width: 28px;
-    max-height: 28px;
-  }
-
-  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__favorite svg {
-    width: 15px;
-    height: 15px;
-  }
-
-  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__tags span:nth-child(n+2) {
-    display: none;
-  }
-}
-
-/* Tablet first-paint parity for advertisement cards.
-   The index/home tablet range previously relied on later page/pattern CSS to
-   compact the card after the initial render, so the first tablet paint showed a
-   different card anatomy. The component now owns the tablet card anatomy early
-   in the cascade; pages may still own only rail width, gap and overflow. */
-@media (min-width: 761px) and (max-width: 900px) {
-  .doke-ad-card {
-    height: var(--doke-index-ad-card-tablet-height, 266px);
-    min-height: var(--doke-index-ad-card-tablet-height, 266px);
-    max-height: var(--doke-index-ad-card-tablet-height, 266px);
-    border-radius: var(--doke-index-ad-card-tablet-radius, var(--radius-lg));
-  }
-
-  .doke-ad-card > .doke-ad-card__media {
-    height: var(--doke-index-ad-media-tablet-height, 96px);
-    min-height: var(--doke-index-ad-media-tablet-height, 96px);
-    max-height: var(--doke-index-ad-media-tablet-height, 96px);
-  }
-
-  .doke-ad-card > .doke-ad-card__body {
-    display: grid;
-    grid-template-rows: 10px 17px 16px 29px 44px;
-    align-content: start;
-    row-gap: 2px;
-    height: var(--doke-index-ad-body-tablet-height, 170px);
-    min-height: var(--doke-index-ad-body-tablet-height, 170px);
-    max-height: var(--doke-index-ad-body-tablet-height, 170px);
-    padding: 8px 10px 10px;
-    overflow: hidden;
-  }
-
-  .doke-ad-card .doke-ad-card__category {
-    margin: 0;
-    font-size: 0.58rem;
-    line-height: 1;
-    letter-spacing: 0.12em;
-  }
-
-  .doke-ad-card .doke-ad-card__title {
-    font-size: var(--doke-index-ad-title-size, 0.96rem);
-    line-height: var(--doke-index-ad-title-line, 1);
-    letter-spacing: -0.035em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .doke-ad-card .doke-ad-card__rating {
-    gap: 4px;
-    margin: -1px 0 0;
-    font-size: 0.74rem;
-    line-height: 1;
-  }
-
-  .doke-ad-card .doke-ad-card__tags {
-  }
-
-  .doke-ad-card .doke-ad-card__location {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin: 0;
-    font-size: 0.62rem;
-    line-height: 1.05;
-  }
-
-  .doke-ad-card .doke-ad-card__avatar {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    min-height: 24px;
-  }
-
-  .doke-ad-card .doke-ad-card__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 7px;
-    margin-top: 0;
-    padding-top: 7px;
-  }
-
-  .doke-ad-card .doke-ad-card__price {
-    font-size: 0.9rem;
-    line-height: 1;
-  }
-
-  .doke-ad-card .doke-ad-card__cta {
-    min-height: 30px;
-    padding: 0 12px;
-    border-radius: var(--radius-pill);
-    font-size: 0.72rem;
-  }
-
-  .doke-ad-card .doke-ad-card__badge {
-    top: 10px;
-    left: 10px;
-    min-height: 24px;
-    padding-inline: 9px;
-    font-size: 0.67rem;
-  }
-
-  .doke-ad-card .doke-ad-card__favorite {
-    top: 8px;
-    right: 8px;
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    min-height: 34px;
-  }
-}
-
-/* 2026-06-07 - Stage 03B ad/service card global contract.
-   Owner: assets/css/components/cards/ad-card.css
-   Pages may control only grid/gap/rail/overflow around cards. They must not redefine
-   card anatomy such as media ratio, padding, border, radius, typography or footer layout. */
-
-:where(.doke-ad-card, .service-card):not([hidden]) {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-  border: var(--doke-card-border-line, var(--card-border-transparent));
-  border-radius: var(--doke-card-radius, var(--radius-surface));
-  background: var(--doke-card-surface, #fff);
-  box-shadow: var(--doke-card-shadow, 0 14px 34px rgba(20, 48, 78, 0.08));
-  color: var(--doke-card-ink, #102849);
-}
-
-:where(.doke-ad-card, .service-card) :where(img, video) {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  object-fit: cover;
-}
-
-:where(.doke-ad-card__media, .service-card__media, .service-card__image, .doke-ad-card__image) {
-  position: relative;
-  display: block;
-  width: 100%;
-  aspect-ratio: var(--doke-ad-card-media-ratio, 4 / 3);
-  overflow: hidden;
-  background: var(--doke-card-media-bg, #eef4f8);
-}
-
-:where(.doke-ad-card__media, .service-card__media, .service-card__image, .doke-ad-card__image) > :where(img, video) {
-  height: 100%;
-}
-
-:where(.doke-ad-card__body, .service-card__body, .doke-ad-card__content, .service-card__content) {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-  gap: var(--doke-ad-card-body-gap, 8px);
-  padding: var(--doke-ad-card-body-padding, 14px);
-}
-
-:where(.doke-ad-card__title, .service-card__title) {
-  margin: 0;
-  color: var(--doke-card-ink, #102849);
-  font-size: var(--doke-ad-card-title-size, 0.98rem);
-  font-weight: 760;
-  line-height: 1.18;
-}
-
-:where(.doke-ad-card__meta, .service-card__meta, .doke-ad-card__location, .service-card__location) {
-  color: var(--doke-card-muted, #667892);
-  font-size: var(--doke-ad-card-meta-size, 0.84rem);
-  line-height: 1.35;
-}
-
-:where(.doke-ad-card__price, .service-card__price) {
-  color: var(--doke-card-primary, var(--doke-color-primary, #2a5f90));
-  font-size: var(--doke-ad-card-price-size, 0.96rem);
-  font-weight: 800;
-  line-height: 1.2;
-}
-
-:where(.doke-ad-card__rating, .service-card__rating) {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--doke-card-muted, #667892);
-  font-size: 0.82rem;
-  line-height: 1;
-}
-
-:where(.doke-ad-card__footer, .service-card__footer, .doke-ad-card__actions, .service-card__actions) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--doke-ad-card-footer-gap, 10px);
-  margin-top: auto;
-}
-
-:where(.doke-ad-card__badge, .service-card__badge) {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  width: max-content;
-  max-width: 100%;
-  padding: 5px 9px;
-  border-radius: var(--radius-pill);
-  background: rgba(42, 95, 144, 0.09);
-  color: var(--doke-card-primary, var(--doke-color-primary, #2a5f90));
-  font-size: 0.76rem;
-  font-weight: 760;
-  line-height: 1;
-}
-
-@media (max-width: 760px) {
-  :where(.doke-ad-card, .service-card) {
-    border-radius: var(--doke-card-radius-mobile, var(--radius-md));
-  }
-
-  :where(.doke-ad-card__body, .service-card__body, .doke-ad-card__content, .service-card__content) {
-    padding: var(--doke-ad-card-body-padding-mobile, 12px);
-  }
-}
-
-
-/* 2026-06-08 - Narrow tablet mandatory ad-card information contract.
-   Causa: no iPad mini/DevTools 561px-760px, CSS tardio da home mantinha o
-   card visualmente compacto demais e escondia conteúdo essencial após o
-   primeiro paint. O componente volta a ser a autoridade da anatomia: páginas
-   podem controlar apenas rail, gap e overflow do carrossel. */
-@media (min-width: 561px) and (max-width: 760px) {
-  .doke-ad-card {
-    --doke-ad-card-height: auto;
-    --doke-ad-card-min-height: 336px;
-    --doke-ad-card-max-height: none;
-    --doke-ad-media-height: 124px;
-    --doke-ad-media-height-mobile: 124px;
-    --doke-ad-padding: 10px 12px 12px;
-    --doke-ad-padding-mobile: 10px 12px 12px;
-    --doke-ad-body-display: flex;
-    --doke-ad-body-grid-template-rows: none;
-    --doke-ad-body-align-content: stretch;
-    --doke-ad-body-height: auto;
-    --doke-ad-body-min-height: 212px;
-    --doke-ad-body-max-height: none;
-    --doke-ad-body-overflow: visible;
-    --doke-ad-body-padding-bottom: 12px;
-    height: auto;
-    min-height: 336px;
-    max-height: none;
-  }
-
-  .doke-ad-card > .doke-ad-card__media {
-    flex: 0 0 124px;
-    height: 124px;
-    min-height: 124px;
-    max-height: 124px;
-  }
-
-  .doke-ad-card > .doke-ad-card__body {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    gap: 6px;
-    min-height: 212px;
-    height: auto;
-    max-height: none;
-    padding: 10px 12px 12px;
-    overflow: visible;
-  }
-
-  .doke-ad-card .doke-ad-card__category {
-    display: block;
-    margin: 0;
-    overflow: hidden;
-    font-size: 0.66rem;
-    line-height: 1.08;
-    letter-spacing: 0.13em;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .doke-ad-card .doke-ad-card__title {
-    display: block;
-    margin: 0;
-    overflow: hidden;
-    font-size: 1rem;
-    line-height: 1.08;
-    letter-spacing: -0.04em;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .doke-ad-card .doke-ad-card__rating {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    min-height: 15px;
-    margin: 0;
-    overflow: hidden;
-    font-size: 0.76rem;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .doke-ad-card .doke-ad-card__tags {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 5px;
-    min-height: 22px;
-    margin: 0;
-    overflow: hidden;
-  }
-
-  .doke-ad-card .doke-ad-card__tags span {
-    min-height: 22px;
-    padding-inline: 8px;
-    font-size: 0.68rem;
-    line-height: 1;
-  }
-
-  .doke-ad-card .doke-ad-card__location {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 26px;
-    margin: 0;
-    overflow: hidden;
-    font-size: 0.66rem;
-    line-height: 1.08;
-  }
-
-  .doke-ad-card .doke-ad-card__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 34px;
-    margin-top: auto;
-    padding-top: 7px;
-  }
-
-  .doke-ad-card .doke-ad-card__cta {
-    min-height: 32px;
-    padding-inline: 12px;
-    font-size: 0.72rem;
-  }
-}
-
-@media (min-width: 761px) and (max-width: 900px) {
-  .doke-ad-card .doke-ad-card__tags {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 5px;
-    min-height: 20px;
-    margin: 0;
-    overflow: hidden;
-  }
-}
-
-/* Home mobile "Mais anúncios" doke-ad-card anatomy.
-   Page CSS owns the one-column feed placement; the card component owns the
-   horizontal mobile anatomy so the list uses the wider card footprint well. */
-@media (max-width: 760px) {
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card {
-    --doke-ad-card-mobile-width: 100%;
-    --doke-ad-card-mobile-min-width: 0;
-    --doke-ad-card-mobile-max-width: 100%;
-    --doke-ad-card-mobile-flex: 0 1 auto;
-    display: grid;
-    grid-template-columns: clamp(118px, 33vw, 132px) minmax(0, 1fr);
-    align-items: stretch;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    min-height: 0;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__media,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__media {
-    width: 100%;
-    height: auto;
-    min-height: 100%;
-    max-height: none;
-    align-self: stretch;
-    background-position: center;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__body,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__body {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    min-height: 0;
-    height: auto;
-    padding: 14px 16px 16px;
-    overflow: visible;
-    box-sizing: border-box;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__category,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__category {
-    margin: 0;
-    font-size: 0.58rem;
-    line-height: 1.08;
-    letter-spacing: 0.14em;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__title,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__title {
-    display: -webkit-box;
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: normal;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    min-height: calc(1.08em * 2);
-    font-size: 1rem;
-    line-height: 1.08;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__rating,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__rating {
-    gap: 6px;
-    margin: 0;
-    font-size: 0.72rem;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__tags,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__tags {
-    margin: 0;
-    min-height: 18px;
-    gap: 6px;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__tags span,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__tags span {
-    min-height: 18px;
-    padding-inline: 7px;
-    font-size: 0.6rem;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__tags span:nth-child(n + 3),
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__tags span:nth-child(n + 3) {
-    display: none;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__location {
-    display: block;
-    margin: 0;
-    min-width: 0;
-    overflow: hidden;
-    font-size: 0.66rem;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location .doke-ad-card__avatar,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__location .doke-ad-card__avatar {
-    display: none;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location-text,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__location-text {
-    gap: 6px;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location-text svg,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__location-text svg {
-    width: 14px;
-    height: 14px;
-    flex-basis: 14px;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__footer,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__footer {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    justify-content: normal;
-    gap: 16px;
-    margin-top: 0;
-    padding-top: 10px;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__price,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__price {
-    flex: 0 1 auto;
-    font-size: 0.98rem;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__cta,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__cta {
-    min-width: 116px;
-    max-width: none;
-    min-height: 34px;
-    padding-inline: 14px;
-    font-size: 0.72rem;
-    box-shadow: none;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__badge,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__badge {
-    top: 8px;
-    left: 8px;
-    min-height: 20px;
-    max-width: calc(100% - 44px);
-    padding-inline: 7px;
-    gap: 4px;
-    font-size: 0.55rem;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__badge::before,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__badge::before {
-    width: 6px;
-    height: 6px;
-    flex-basis: 6px;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__favorite,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__favorite {
-    top: 8px;
-    right: 8px;
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-    min-height: 30px;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__favorite svg,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__favorite svg {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-@media (max-width: 390px) {
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card {
-    grid-template-columns: 112px minmax(0, 1fr);
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__body,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__body {
-    padding: 11px 12px 11px 12px;
-    gap: 5px;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__title,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__title {
-    font-size: 0.95rem;
-  }
-
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__cta,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__cta {
-    min-width: 108px;
-    padding-inline: 12px;
-    font-size: 0.7rem;
-  }
-}
-
-body[data-profile-mode="owner-edit"] .doke-ad-card__cta {
-  background: #184a76;
-}
-
-
-/* Canonical advertiser identity.
-   The avatar belongs to the professional identity, never to the location row. */
-.doke-ad-card__seller {
-  display: grid;
-  grid-template-columns: var(--doke-ad-seller-avatar-size, 38px) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--doke-ad-seller-gap, 10px);
-  min-width: 0;
-  margin: var(--doke-ad-seller-margin, 0 0 11px);
-  color: #082747;
-  cursor: pointer;
-}
-
-.doke-ad-card__seller-copy {
-  display: grid;
-  align-content: center;
-  gap: 3px;
-  min-width: 0;
-}
-
-.doke-ad-card__seller-name {
-  min-width: 0;
-  color: #082747;
-  font-size: var(--doke-ad-seller-name-size, 0.9rem);
-  font-weight: 850;
-  line-height: 1.18;
-  letter-spacing: -0.025em;
-}
-
-.doke-ad-card__seller-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  min-width: 0;
-  color: #72839b;
-  font-size: var(--doke-ad-seller-meta-size, 0.72rem);
-  font-weight: 700;
-  line-height: 1.15;
-}
-
-.doke-ad-card__seller .doke-ad-card__rating {
-  min-height: 0;
-  margin: 0;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-.doke-ad-card__seller--primary {
-  margin-bottom: 10px;
-}
-
-.doke-ad-card__seller--primary .doke-ad-card__title {
-  margin: 0;
-  font-size: clamp(0.96rem, 1.05vw, 1.08rem);
-  line-height: 1.14;
-  letter-spacing: -0.035em;
-}
-
-.doke-ad-card__avatar {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  color: #184a76;
-  font-size: 0.66rem;
-  font-weight: 850;
-  line-height: 1;
-}
-
-.doke-ad-card__avatar.has-image,
-.doke-ad-card__avatar.has-initials {
-  background: #e7f0f6;
-}
-
-.doke-ad-card__avatar.has-image::before,
-.doke-ad-card__avatar.has-image::after,
-.doke-ad-card__avatar.has-initials::before,
-.doke-ad-card__avatar.has-initials::after {
-  content: none;
-}
-
-.doke-ad-card__seller .doke-ad-card__avatar {
-  width: var(--doke-ad-seller-avatar-size, 38px);
-  height: var(--doke-ad-seller-avatar-size, 38px);
-  min-width: var(--doke-ad-seller-avatar-size, 38px);
-  min-height: var(--doke-ad-seller-avatar-size, 38px);
-  max-width: var(--doke-ad-seller-avatar-size, 38px);
-  max-height: var(--doke-ad-seller-avatar-size, 38px);
-}
-
-.doke-ad-card__avatar-image {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  border-radius: inherit;
-}
-
-.doke-ad-card .doke-ad-card__location {
-  display: flex;
-  grid-template-columns: none;
-  min-height: 0;
-}
-
-.doke-ad-card__seller:is(:hover, :focus-visible) .doke-ad-card__seller-name {
-  color: var(--doke-interaction-text-secondary, #1769a6);
-}
-
-.doke-ad-card__seller:focus-visible {
-  outline: 3px solid rgba(15, 170, 149, 0.28);
-  outline-offset: 3px;
-  border-radius: var(--radius-sm);
-}
-
-@media (min-width: 761px) and (max-width: 900px) {
-  .doke-ad-card__seller {
-    --doke-ad-seller-avatar-size: var(--doke-ad-seller-avatar-size-tablet, 24px);
-    --doke-ad-seller-gap: var(--doke-ad-seller-gap-tablet, 6px);
-    --doke-ad-seller-margin: var(--doke-ad-seller-margin-tablet, 0);
-  }
-
-  .doke-ad-card__seller-name,
-  .doke-ad-card__seller--primary .doke-ad-card__title {
-    font-size: var(--doke-ad-seller-name-size-tablet, 0.76rem);
-  }
-
-  .doke-ad-card__seller-meta {
-    font-size: var(--doke-ad-seller-meta-size-tablet, 0.64rem);
-  }
-
-  .doke-ad-card > .doke-ad-card__body:has(.doke-ad-card__seller--primary) {
-    grid-template-rows: 10px minmax(34px, auto) 22px 26px 34px;
-  }
-
-  .doke-ad-card > .doke-ad-card__body:has(.doke-ad-card__seller:not(.doke-ad-card__seller--primary)) {
-    grid-template-rows: 10px 17px minmax(28px, auto) 22px 26px 34px;
-  }
-}
-
-@media (max-width: 760px) {
-  .doke-ad-card__seller {
-    --doke-ad-seller-avatar-size: var(--doke-ad-seller-avatar-size-mobile, var(--doke-ad-seller-avatar-size, 28px));
-    --doke-ad-seller-gap: var(--doke-ad-seller-gap-mobile, 7px);
-    --doke-ad-seller-margin: var(--doke-ad-seller-margin-mobile, 0);
-  }
-
-  .doke-ad-card__seller-name,
-  .doke-ad-card__seller--primary .doke-ad-card__title {
-    font-size: var(--doke-ad-seller-name-size-mobile, 0.78rem);
-    line-height: 1.08;
-  }
-
-  .doke-ad-card__seller-meta {
-    gap: 4px;
-    font-size: var(--doke-ad-seller-meta-size-mobile, 0.64rem);
-  }
-
-  .doke-ad-card__seller .doke-ad-card__avatar {
-    display: grid;
-  }
-
-  .doke-ad-card .doke-ad-card__location {
-    display: flex;
-    min-height: 0;
-  }
-}
-
-@media (max-width: 560px) {
-  body.home-index-shell .doke-ad-card__seller .doke-ad-card__avatar,
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__seller .doke-ad-card__avatar,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__seller .doke-ad-card__avatar {
-    display: grid;
-  }
-}
-
-
-/* Public service card identity and footer spacing contract. */
-.doke-ad-card__seller-copy,
-.doke-ad-card__seller-name {
-  min-width: 0;
-}
-
-.doke-ad-card__seller-name {
-  display: block;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
