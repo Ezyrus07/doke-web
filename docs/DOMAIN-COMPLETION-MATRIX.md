@@ -1077,7 +1077,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 904 arquivos no escopo; 244 referências a localStorage; 79 a sessionStorage; 248 referências mock; 282 referências de rede/Supabase; 11 marcadores de implementação pendente.
+**Evidência estática observada:**  905 arquivos no escopo; 246 referências a localStorage; 79 a sessionStorage; 253 referências mock; 282 referências de rede/Supabase; 11 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -1108,7 +1108,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2730 arquivos no escopo; 604 referências a localStorage; 165 a sessionStorage; 914 referências mock; 685 referências de rede/Supabase; 95 marcadores de implementação pendente.
+**Evidência estática observada:**  2731 arquivos no escopo; 606 referências a localStorage; 165 a sessionStorage; 919 referências mock; 685 referências de rede/Supabase; 95 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
