@@ -58,6 +58,31 @@ const installCanonicalSearchHarness = async (page) => {
     __qaResultsLifecycleHarness: true,
     queryPage: function (request) {
       request = request || {};
+      // Opt-in deterministic UX-RESULTS-002 fixture. Previous lifecycle
+      // scenarios retain their original READY/EMPTY responses.
+      var cacheQa = window.__qaResultsCacheState;
+      if (cacheQa && request.query === '') {
+        cacheQa.calls.push({
+          query: request.query,
+          cursor: request.cursor || '',
+          availableToday: Boolean(request.availableToday)
+        });
+        var isNextPage = Boolean(request.cursor);
+        var nextPageItem = Object.assign({}, item, {
+          id: 'qa-service-002',
+          remoteId: 'qa-service-002',
+          serviceId: 'qa-service-002',
+          title: 'QA deterministic second page'
+        });
+        var response = responseFor(request, isNextPage ? [nextPageItem] : [item]);
+        if (cacheQa.paginated && !isNextPage) {
+          response.page.hasNext = true;
+          response.page.nextCursor = 'qa-next-page';
+        }
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(response); }, cacheQa.delayMs || 0);
+        });
+      }
       if (request.query === '${READY_QUERY}') {
         emptyFallbackPending = false;
         return Promise.resolve(responseFor(request, [item]));
@@ -308,5 +333,144 @@ test.describe('results failure states', () => {
     expect(state.gridVisible).toBe(true);
     expect(state.gridItemCount).toBe(before.gridItemCount);
     expect(state.gridItemCount).toBeGreaterThan(0);
+  });
+});
+
+
+// UX-RESULTS-002: extend the canonical repository harness, rather than
+// duplicating repository implementation or altering production fixtures.
+const enableResultsCacheFixture = async (page, { paginated = false } = {}) => {
+  await page.addInitScript(({ paginated: enablePagination }) => {
+    window.__qaResultsCacheState = {
+      calls: [],
+      delayMs: 0,
+      paginated: enablePagination,
+    };
+  }, { paginated });
+};
+
+const selectResultsMode = async (page, mode) => {
+  await page.evaluate((value) => {
+    const input = document.querySelector('input[name="searchType"][value="' + value + '"]');
+    if (!input) throw new Error('Missing search mode radio: ' + value);
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, mode);
+};
+
+const readCacheCalls = (page) => page.evaluate(() => window.__qaResultsCacheState?.calls || []);
+
+for (const viewport of [viewports[0], viewports[2]]) {
+  test.describe('UX-RESULTS-002 cache and tab ownership ' + viewport.name, () => {
+    test.use({
+      viewport: { width: viewport.width, height: viewport.height },
+      isMobile: viewport.isMobile,
+      hasTouch: viewport.hasTouch,
+    });
+
+    test('reuses recent An?ncios and never shows Workers cards during a delayed refetch', async ({ page }) => {
+      await enableResultsCacheFixture(page);
+      await page.goto('/resultados.html?type=services');
+      await waitForResultsState(page, 'ready');
+      expect((await readCacheCalls(page))).toHaveLength(1);
+
+      await selectResultsMode(page, 'workers');
+      await expect.poll(() => page.evaluate(() => (
+        document.querySelector('[data-results-layout]')?.dataset.resultsMode === 'workers'
+        && document.querySelector('[data-results-grid]')?.children.length === 4
+      ))).toBe(true);
+
+      await selectResultsMode(page, 'services');
+      await expect.poll(() => page.evaluate(() => (
+        document.querySelector('[data-results-layout]')?.dataset.resultsMode === 'services'
+        && document.querySelector('[data-results-layout]')?.dataset.resultsState === 'ready'
+      ))).toBe(true);
+      expect((await readCacheCalls(page))).toHaveLength(1);
+      await expect(page.locator('[data-results-grid] .doke-ad-card')).toHaveCount(1);
+
+      await selectResultsMode(page, 'workers');
+      await page.evaluate(() => {
+        window.__qaResultsCacheState.delayMs = 800;
+        document.dispatchEvent(new Event('doke:service-updated'));
+      });
+      await selectResultsMode(page, 'services');
+      await waitForResultsState(page, 'loading');
+      expect(await page.evaluate(() => document.querySelector('[data-results-grid]').hidden)).toBe(true);
+      expect(await page.locator('[data-results-count]').textContent()).toBe('0');
+      await waitForResultsState(page, 'ready');
+      expect((await readCacheCalls(page))).toHaveLength(2);
+      await expect(page.locator('[data-results-grid] .doke-ad-card')).toHaveCount(1);
+    });
+
+    test('applied filters never reuse an unfiltered response', async ({ page }) => {
+      await enableResultsCacheFixture(page);
+      await page.goto('/resultados.html?type=services');
+      await waitForResultsState(page, 'ready');
+      await selectResultsMode(page, 'workers');
+      await page.evaluate(() => {
+        const form = document.querySelector('[data-results-filters-form]');
+        const checkbox = form.querySelector('[name="availableToday"]');
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        form.requestSubmit(form.querySelector('button[type="submit"]'));
+      });
+      await expect.poll(() => page.evaluate(() => (
+        document.querySelector('[data-results-filters-form] [name="availableToday"]')?.checked
+        && location.search.includes('availableToday=1')
+      ))).toBe(true);
+
+      await selectResultsMode(page, 'services');
+      await expect.poll(async () => (await readCacheCalls(page)).length).toBe(2);
+      const calls = await readCacheCalls(page);
+      expect(calls[0].availableToday).toBe(false);
+      expect(calls[1].availableToday).toBe(true);
+      await waitForResultsState(page, 'ready');
+
+      await selectResultsMode(page, 'workers');
+      await selectResultsMode(page, 'services');
+      await waitForResultsState(page, 'ready');
+      expect((await readCacheCalls(page))).toHaveLength(2);
+    });
+  });
+}
+
+test.describe('UX-RESULTS-002 cache lifetime and pagination', () => {
+  test.use({ viewport: { width: 1366, height: 768 }, isMobile: false, hasTouch: false });
+
+  test('expires 15-second cache based on fetch time, not the last tab visit', async ({ page }) => {
+    await enableResultsCacheFixture(page);
+    await page.goto('/resultados.html?type=services');
+    await waitForResultsState(page, 'ready');
+    await page.evaluate(() => {
+      window.__qaNow = Date.now() + 10_000;
+      Date.now = () => window.__qaNow;
+    });
+    await selectResultsMode(page, 'workers');
+    await selectResultsMode(page, 'services');
+    await waitForResultsState(page, 'ready');
+    expect((await readCacheCalls(page))).toHaveLength(1);
+
+    await page.evaluate(() => { window.__qaNow += 8_000; });
+    await selectResultsMode(page, 'workers');
+    await selectResultsMode(page, 'services');
+    await expect.poll(async () => (await readCacheCalls(page)).length).toBe(2);
+    await waitForResultsState(page, 'ready');
+  });
+
+  test('restores paginated An?ncios without refetching either page', async ({ page }) => {
+    await enableResultsCacheFixture(page, { paginated: true });
+    await page.goto('/resultados.html?type=services');
+    await waitForResultsState(page, 'ready');
+    expect((await readCacheCalls(page))).toHaveLength(1);
+    await expect(page.locator('[data-results-load-more]')).toBeVisible();
+    await page.locator('[data-results-load-more]').click();
+    await expect.poll(() => page.locator('[data-results-grid]').locator(':scope > *').count()).toBe(2);
+    expect((await readCacheCalls(page))).toHaveLength(2);
+
+    await selectResultsMode(page, 'workers');
+    await selectResultsMode(page, 'services');
+    await expect.poll(() => page.locator('[data-results-grid]').locator(':scope > *').count()).toBe(2);
+    await waitForResultsState(page, 'ready');
+    expect((await readCacheCalls(page))).toHaveLength(2);
   });
 });

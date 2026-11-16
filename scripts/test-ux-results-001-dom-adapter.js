@@ -84,8 +84,8 @@ const ticket = installation.begin({
   coverage: 'catalog'
 });
 assert.equal(nodes.layout.dataset.resultsState, 'loading');
-assert.equal(nodes.loading.hidden, true, 'Existing accepted content must remain visible during a new search.');
-assert.equal(nodes.grid.hidden, false);
+assert.equal(nodes.loading.hidden, false, 'Switching result modes must display loading rather than unrelated cards.');
+assert.equal(nodes.grid.hidden, true, 'Cards from Users must be hidden when switching to Services.');
 
 const accepted = installation.commit(ticket, {
   applied: true,
