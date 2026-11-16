@@ -350,3 +350,118 @@ body.orders-page-shell .orders-detail-actions__button--primary {
     font-size: 1.45rem;
   }
 }
+
+
+/* PD-ORDERS-001 — role-aware transaction decision hierarchy.
+ * Preserve runtime authority; only hierarchy and composition change.
+ * Order of attention: summary -> orders/next action -> planner -> insights.
+ */
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-command-summary {
+  align-items: stretch;
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-command-summary__card {
+  min-width: 0;
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"][data-orders-audience="professional"]
+  .orders-command-summary__card--attention {
+  order: 1;
+  background: linear-gradient(135deg, rgba(42, 95, 144, 0.10), #fff 72%);
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"][data-orders-audience="professional"]
+  .orders-command-summary__card--risk {
+  order: 2;
+  background: linear-gradient(135deg, rgba(192, 102, 19, 0.08), #fff 74%);
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"][data-orders-audience="professional"]
+  .orders-command-summary__card--today {
+  order: 3;
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"][data-orders-audience="professional"]
+  .orders-command-summary__card--budget {
+  order: 4;
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"][data-orders-audience="client"]
+  .orders-command-summary__card--attention,
+body.orders-page-shell[data-pd-orders-contract="decision-v1"][data-orders-audience="client"]
+  .orders-command-summary__card--today {
+  background: linear-gradient(135deg, rgba(42, 95, 144, 0.07), #fff 76%);
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-list {
+  position: relative;
+  z-index: 1;
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-list .order-card[data-requires-action="true"] {
+  box-shadow: 0 16px 34px rgba(23, 83, 139, 0.10);
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"]
+  .orders-list
+  .order-card[data-requires-action="true"]
+  .order-card__next-action {
+  background: rgba(239, 247, 255, 0.96);
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"]
+  .orders-list
+  .order-card[data-smart-risk="high"]
+  .order-card__next-action {
+  background: rgba(255, 248, 239, 0.98);
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] [data-orders-agenda-toggle] {
+  background: var(--doke-surface-subtle, #f7fafd);
+  color: var(--color-text-muted, #50647c);
+  box-shadow: none;
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-planner {
+  margin-top: var(--doke-space-2, 8px);
+  padding-top: var(--doke-space-5, 20px);
+  border-top: 1px solid var(--surface-divider, rgba(15, 45, 75, 0.08));
+  background: transparent;
+  box-shadow: none;
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-command-insights {
+  margin-top: var(--doke-space-1, 4px);
+  padding-top: var(--doke-space-4, 16px);
+  border-top: 1px solid var(--surface-divider, rgba(15, 45, 75, 0.08));
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-command-insight {
+  background: var(--doke-surface-subtle, #f7fafd);
+  box-shadow: none;
+}
+
+body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-command-insight__link {
+  color: var(--color-text-muted, #50647c);
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-command-summary__card {
+    flex: 0 0 min(78vw, 300px);
+  }
+
+  body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-planner,
+  body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-command-insights {
+    padding-top: var(--doke-space-4, 16px);
+  }
+
+  body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-list .order-card[data-requires-action="true"] {
+    box-shadow: var(--doke-surface-shadow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.orders-page-shell[data-pd-orders-contract="decision-v1"] .orders-list .order-card[data-requires-action="true"] {
+    transform: none;
+  }
+}

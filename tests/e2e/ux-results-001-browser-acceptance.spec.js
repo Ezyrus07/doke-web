@@ -2,6 +2,8 @@ const { test, expect } = require('@playwright/test');
 
 const viewports = [
   { name: 'desktop', width: 1366, height: 768, isMobile: false, hasTouch: false },
+  { name: 'tablet-820', width: 820, height: 1180, isMobile: false, hasTouch: true },
+  { name: 'tablet-608', width: 608, height: 926, isMobile: false, hasTouch: true },
   { name: 'mobile', width: 390, height: 844, isMobile: true, hasTouch: true },
 ];
 
@@ -124,6 +126,97 @@ for (const viewport of viewports) {
       hasTouch: viewport.hasTouch,
     });
 
+    test('PD-RESULTS-001 keeps results-only decision hierarchy without inferred trust', async ({ page }) => {
+      test.setTimeout(90_000);
+      await boot(page);
+      await expect.poll(() => page.evaluate(() => Boolean(window.Doke?.publicServiceCard?.create))).toBe(true);
+
+      const evidence = await page.evaluate(() => {
+        const layout = document.querySelector('[data-results-layout]');
+        const grid = document.querySelector('[data-results-grid]');
+        if (layout) {
+          layout.hidden = false;
+          layout.dataset.resultsMode = 'services';
+        }
+        grid.hidden = false;
+        grid.textContent = '';
+
+        const primary = window.Doke.publicServiceCard.create({
+          id: 'pd-results-service',
+          title: 'Fotografia profissional para marcas e eventos',
+          category: 'Fotografia',
+          providerName: 'André Foto',
+          providerHandle: 'andrefoto',
+          rating: 4.9,
+          reviewsCount: 42,
+          responseTime: 'em 35 min',
+          availableToday: true,
+          verified: true,
+          location: 'Salvador, BA',
+          priceValue: 600,
+          tags: ['eventos', 'marcas'],
+        }, { results: true });
+
+        const bare = window.Doke.publicServiceCard.create({
+          id: 'pd-results-bare',
+          title: 'Serviço sem sinais adicionais',
+          category: 'Serviço',
+          providerName: 'Profissional Doke',
+          location: 'Salvador, BA',
+          priceValue: 300,
+        }, { results: true });
+
+        grid.append(primary, bare);
+
+        const body = primary.querySelector('.doke-ad-card__body');
+        const children = [...body.children];
+        const sellerIndex = children.findIndex((node) => node.classList.contains('doke-ad-card__seller'));
+        const titleIndex = children.findIndex((node) => node.classList.contains('doke-ad-card__title'));
+        const facts = [...primary.querySelectorAll('[data-results-decision-fact]')];
+        const visibleFacts = facts.filter((node) => getComputedStyle(node).display !== 'none');
+        const cardStyle = getComputedStyle(primary);
+        const titleStyle = getComputedStyle(primary.querySelector('.doke-ad-card__title'));
+        const gridStyle = getComputedStyle(grid);
+        const cardBox = primary.getBoundingClientRect();
+        const gridBox = grid.getBoundingClientRect();
+
+        return {
+          sellerIndex,
+          titleIndex,
+          facts: facts.map((node) => node.textContent.trim()),
+          visibleFactCount: visibleFacts.length,
+          bareHasFacts: Boolean(bare.querySelector('.doke-ad-card__results-facts')),
+          cardDisplay: cardStyle.display,
+          titleClamp: titleStyle.webkitLineClamp,
+          gridColumns: gridStyle.gridTemplateColumns.split(' ').filter(Boolean).length,
+          cardWidth: cardBox.width,
+          gridWidth: gridBox.width,
+          overflow: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) - innerWidth,
+          emptyCopy: document.querySelector('[data-results-empty-text]')?.textContent.replace(/\s+/g, ' ').trim() || '',
+        };
+      });
+
+      expect(evidence.sellerIndex).toBeGreaterThanOrEqual(0);
+      expect(evidence.titleIndex).toBeGreaterThan(evidence.sellerIndex);
+      expect(evidence.facts).toEqual(['Responde 35 min', 'Disponível hoje']);
+      expect(evidence.bareHasFacts).toBe(false);
+      expect(evidence.emptyCopy).toBe('Tente ampliar a categoria ou remover alguns filtros.');
+      expect(evidence.overflow).toBeLessThanOrEqual(1);
+
+      if (viewport.width <= 960) {
+        expect(evidence.gridColumns).toBe(1);
+      }
+      if (viewport.name === 'mobile') {
+        expect(evidence.cardDisplay).toBe('grid');
+        expect(Math.abs(evidence.cardWidth - evidence.gridWidth)).toBeLessThanOrEqual(1);
+        expect(evidence.titleClamp).toBe('2');
+        expect(evidence.visibleFactCount).toBe(1);
+      }
+      if (viewport.name === 'desktop') {
+        expect(evidence.gridColumns).toBeGreaterThanOrEqual(2);
+      }
+    });
+
     test('latest-wins has no blocking flicker and empty/fallback remain distinct', async ({ page }) => {
       test.setTimeout(90_000);
       await boot(page);
@@ -238,6 +331,74 @@ for (const viewport of viewports) {
     });
   });
 }
+
+
+test.describe('PD-RESULTS-001 canonical mobile shell integration', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('Search opens below the topbar and delegates submit to the existing Results search controller', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto('/resultados.html?q=fotografia&type=services');
+
+    const shell = page.locator('.doke-mobile-shell');
+    const topbar = shell.locator('.doke-mobile-shell__topbar');
+    const trigger = shell.locator('[data-shell-search-trigger]');
+    const inlineSearch = shell.locator('[data-shell-inline-search][data-shell-inline-search-mode="results"]');
+    const inlineInput = inlineSearch.locator('input');
+    const pageSearch = page.locator('[data-results-search-input]').first();
+
+    await expect(shell).toBeVisible();
+    await expect(page.locator('.results-searchbar .doke-results-search__form')).toBeHidden();
+    await expect(inlineSearch).toBeHidden();
+
+    await trigger.click();
+    await expect(inlineSearch).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(inlineInput).toBeFocused();
+    await expect(inlineInput).toHaveValue('fotografia');
+
+    const topbarBox = await topbar.boundingBox();
+    const searchBox = await inlineSearch.boundingBox();
+    expect(topbarBox).not.toBeNull();
+    expect(searchBox).not.toBeNull();
+    expect(searchBox.y).toBeGreaterThanOrEqual(topbarBox.y + topbarBox.height);
+    expect(Math.abs(searchBox.width - topbarBox.width)).toBeLessThanOrEqual(1);
+
+    await inlineInput.fill('pintura residencial');
+    await inlineInput.press('Enter');
+    await expect(pageSearch).toHaveValue('pintura residencial');
+    await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('pintura residencial');
+    await expect.poll(() => new URL(page.url()).searchParams.get('type')).toBe('services');
+
+    await inlineInput.press('Escape');
+    await expect(inlineSearch).toBeHidden();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toBeFocused();
+
+    const overflow = await page.evaluate(() => (
+      Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) - window.innerWidth
+    ));
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
+  test('Filters delegates to the existing Resultados filter presentation', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto('/resultados.html?q=fotografia&type=services');
+
+    const shellFilter = page.locator('.doke-mobile-shell [data-shell-filter]');
+    const pageFilterTrigger = page.locator('[data-results-filters-open]').first();
+    const backdrop = page.locator('[data-results-filters-backdrop]');
+
+    await expect(shellFilter).toBeVisible();
+    await expect(pageFilterTrigger).toHaveAttribute('aria-expanded', 'false');
+    await shellFilter.click();
+    await expect(pageFilterTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(backdrop).toBeVisible();
+    await expect(page.locator('body')).toHaveClass(/results-filters-open/);
+    await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('fotografia');
+    await expect.poll(() => new URL(page.url()).searchParams.get('type')).toBe('services');
+  });
+});
 
 test('pagination preserves focus, rollback and retry', async ({ page }) => {
   test.setTimeout(90_000);

@@ -736,6 +736,9 @@
     mode: 'direct',
     loading: false
   };
+  // A bounded, route-local cache; never reuse a result across filters.
+  var CACHE_TTL_MS = 15000;
+  var lastSuccessfulPage = null;
 
   function normalizeText(value) {
     return String(value || '').trim();
@@ -803,6 +806,47 @@
     var stable = Object.assign({}, request || {});
     delete stable.cursor;
     return JSON.stringify(stable);
+  }
+
+  function cacheKeyFor(context) {
+    var contract = searchContract();
+    return requestFingerprint(buildRequest(context.query, context.filters, '')) + '|' + [
+      contract.transport || '',
+      contract.version || '',
+      contract.expectedAuthority || '',
+      contract.edgeFunction || ''
+    ].join('|');
+  }
+
+  function readCachedPage(context) {
+    if (!lastSuccessfulPage) return null;
+    if (Date.now() - lastSuccessfulPage.savedAt > CACHE_TTL_MS) {
+      lastSuccessfulPage = null;
+      return null;
+    }
+    return lastSuccessfulPage.key === cacheKeyFor(context) ? lastSuccessfulPage : null;
+  }
+
+  function storeCachedPage(context, response, reusedSavedAt) {
+    lastSuccessfulPage = {
+      key: cacheKeyFor(context),
+      // Cache hits retain the original fetch time; otherwise frequent tab
+      // switching could extend stale data beyond the stated TTL.
+      savedAt: Number.isFinite(reusedSavedAt) ? reusedSavedAt : Date.now(),
+      response: Object.assign({}, response || {}, {
+        items: state.items.slice(),
+        page: Object.assign({}, response && response.page || {}, {
+          hasNext: state.hasNext,
+          nextCursor: state.nextCursor
+        })
+      }),
+      request: Object.assign({}, state.request || {}),
+      fallback: state.mode === 'fallback'
+    };
+  }
+
+  function invalidateCache() {
+    lastSuccessfulPage = null;
   }
 
   function intentFor(context, request, append, retry) {
@@ -932,6 +976,7 @@
     }
     context.settleHydration();
     context.refreshPreviews();
+    storeCachedPage(context, response, options.cacheSavedAt);
     Doke.serviceFavoritesController && Doke.serviceFavoritesController.hydrate
       && Doke.serviceFavoritesController.hydrate(context.grid);
 
@@ -1022,6 +1067,7 @@
     var query = append && state.mode === 'fallback' ? '' : context.query;
     var request = buildRequest(query, context.filters, append ? state.nextCursor : '');
     var fingerprint = requestFingerprint(request);
+    var cached = !append && !retry ? readCachedPage(context) : null;
     if (append && state.request && requestFingerprint(state.request) !== fingerprint) {
       var changed = new Error('O contexto da busca mudou antes da próxima página.');
       changed.code = 'DOKE_SEARCH_CONTEXT_CHANGED';
@@ -1055,7 +1101,14 @@
       : null;
 
     return controller.run(intent, function (execution) {
-      return queryWithEditorialFallback(context, request, append, execution.signal);
+      return cached
+        ? Promise.resolve({
+            response: cached.response,
+            request: cached.request,
+            fallback: cached.fallback,
+            cacheSavedAt: cached.savedAt
+          })
+        : queryWithEditorialFallback(context, request, append, execution.signal);
     }).then(function (receipt) {
       if (!receipt || receipt.applied !== true) {
         if (presentationTicket) context.presentation.cancel(presentationTicket, 'search-receipt-not-applied');
@@ -1095,7 +1148,7 @@
     return execute(state.context, false, true);
   }
 
-  function cancel() {
+  function cancel(options) {
     controller && controller.cancel('surface-cancelled');
     state.context = null;
     state.request = null;
@@ -1104,11 +1157,19 @@
     state.hasNext = false;
     state.mode = 'direct';
     state.loading = false;
+    // Switching tabs retains a recent result; route cleanup must clear it.
+    if (!options || options.preserveCache !== true) invalidateCache();
   }
 
   function deactivate(context) {
-    cancel();
+    cancel({ preserveCache: true });
     resetButton(context || {});
+  }
+
+  // Service updates invalidate the cache before the page refresh listener runs.
+  if (root.document && typeof root.document.addEventListener === 'function') {
+    root.document.addEventListener('doke:service-created', invalidateCache);
+    root.document.addEventListener('doke:service-updated', invalidateCache);
   }
 
   Doke.searchResultsServerSurface = Object.freeze({
@@ -1117,6 +1178,7 @@
     retry: retry,
     cancel: cancel,
     deactivate: deactivate,
+    invalidateCache: invalidateCache,
     buildRequest: buildRequest,
     ensureDependencies: ensureDependencies,
     getSnapshot: function () {

@@ -1,0 +1,832 @@
+/* UX-VISUAL-020 — Configurações product hierarchy.
+ * Narrow late owner for the account-settings experience: navigation, section
+ * hierarchy, preference rows, action hierarchy and destructive-risk treatment.
+ * Runtime remains the source of selected tabs, toggle state and persistence.
+ */
+body[data-page="configuracoes"].doke-settings-redesign {
+  --settings-product-ink: #173f69;
+  --settings-product-muted: #6f8499;
+  --settings-product-subtle: #f7fafc;
+  --settings-product-subtle-strong: #f1f6fa;
+  --settings-product-divider: rgba(24, 75, 118, 0.10);
+  --settings-product-active: #eaf4fb;
+  --settings-product-active-ink: #174f7d;
+  --settings-product-danger: #a9362b;
+  --settings-product-danger-soft: #fff7f6;
+  --settings-product-success-soft: #edf9f5;
+  --settings-product-radius: var(--radius-base, 14px);
+  --settings-product-control: var(--doke-control-height-md, 46px);
+  --doke-settings-content-max: 980px;
+}
+
+/* The desktop settings workspace is one application plane. */
+@media (min-width: 1181px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    padding: 24px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    width: min(100%, 1280px);
+    max-width: 1280px;
+    height: clamp(640px, calc(100dvh - 48px), 800px);
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 20px 60px rgba(16, 60, 97, 0.10);
+    overflow: hidden;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    width: 100%;
+    padding: 30px 24px 28px;
+    background: #f8fbfd;
+    box-shadow: inset -1px 0 0 var(--settings-product-divider);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-content,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    background: #fff;
+  }
+}
+
+/* Sidebar identity: calm, compact and clearly separate from page controls. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-brand {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 0 4px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__title {
+  margin: 0;
+  color: var(--settings-product-ink);
+  font-size: clamp(1.24rem, 1.5vw, 1.48rem);
+  line-height: 1.08;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__subtitle {
+  grid-column: 1;
+  margin: 2px 0 0;
+  color: var(--settings-product-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-return {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 38px;
+  padding-inline: 10px;
+  border-radius: 11px;
+  background: transparent;
+  color: #567590;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-return:is(:hover, :focus-visible) {
+  background: #eef4f8;
+  color: var(--settings-product-ink);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Search is a utility control, not a floating card. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+  min-height: var(--settings-product-control);
+  margin-bottom: 18px;
+  padding: 3px 6px;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search:focus-within {
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.11), inset 0 0 0 1px rgba(42, 95, 144, 0.32);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input {
+  color: var(--settings-product-ink);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input::placeholder {
+  color: #8798aa;
+  font-weight: 600;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-search-icon {
+  color: #6e86a0;
+}
+
+/* Navigation behaves like a settings index: current location first, then groups. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section + .settings-sidebar__section {
+  margin-top: 18px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__label {
+  margin-bottom: 7px;
+  padding-inline: 8px;
+  color: #8798aa;
+  font-size: 0.66rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item {
+  position: relative;
+  min-height: 44px;
+  gap: 11px;
+  padding: 0 12px 0 14px;
+  border-radius: 12px;
+  color: #607a94;
+  font-size: 0.87rem;
+  font-weight: 700;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item::before {
+  content: "";
+  position: absolute;
+  inset-block: 9px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0 var(--radius-pill, 999px) var(--radius-pill, 999px) 0;
+  background: transparent;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.9;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:is(:hover, :focus-visible) {
+  background: #eef4f8;
+  color: #2e5e88;
+  transform: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:is(.is-active, [aria-selected="true"]) {
+  background: var(--settings-product-active);
+  color: var(--settings-product-active-ink);
+  font-weight: 800;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:is(.is-active, [aria-selected="true"])::before {
+  background: var(--color-primary, #2a5f90);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:focus-visible,
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-return:focus-visible,
+body[data-page="configuracoes"].doke-settings-redesign .settings-panel-back:focus-visible {
+  outline: 2px solid var(--color-primary, #2a5f90);
+  outline-offset: 2px;
+}
+
+/* Panel header: current pane name is the primary anchor. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__header {
+  min-height: 100px;
+  padding-block: 24px;
+  background: #fff;
+  box-shadow: inset 0 -1px 0 var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__header h1 {
+  color: var(--settings-product-ink);
+  font-size: clamp(1.34rem, 1.7vw, 1.62rem);
+  line-height: 1.1;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__header p {
+  max-width: 70ch;
+  margin-top: 6px;
+  color: var(--settings-product-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+/* Navigation links in a pane header are contextual, never a competing save CTA. */
+body[data-page="configuracoes"].doke-settings-redesign [data-settings-panel="payments"] .settings-card__header .settings-action,
+body[data-page="configuracoes"].doke-settings-redesign [data-settings-panel="support"] .settings-card__header .settings-action {
+  min-height: 42px;
+  border: 0;
+  background: #fff;
+  color: var(--settings-product-active-ink);
+  box-shadow: inset 0 0 0 1px rgba(42, 95, 144, 0.16);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign [data-settings-panel="payments"] .settings-card__header .settings-action:is(:hover, :focus-visible),
+body[data-page="configuracoes"].doke-settings-redesign [data-settings-panel="support"] .settings-card__header .settings-action:is(:hover, :focus-visible) {
+  background: #f5f9fc;
+  box-shadow: inset 0 0 0 1px rgba(42, 95, 144, 0.22);
+  transform: none;
+}
+
+/* Content uses section rhythm and separators before decorative containers. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__body {
+  padding-block: 28px 34px;
+  scrollbar-color: rgba(42, 95, 144, 0.18) transparent;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-content-section,
+body[data-page="configuracoes"].doke-settings-redesign .settings-profile-section,
+body[data-page="configuracoes"].doke-settings-redesign .settings-pro-cta,
+body[data-page="configuracoes"].doke-settings-redesign .settings-inline-note,
+body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone {
+  width: min(100%, var(--doke-settings-content-max, 980px));
+  max-width: var(--doke-settings-content-max, 980px);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-content-section + .settings-content-section {
+  margin-top: 28px;
+  padding-top: 28px;
+  box-shadow: inset 0 1px 0 var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-content-section__header,
+body[data-page="configuracoes"].doke-settings-redesign .settings-profile-section__header,
+body[data-page="configuracoes"].doke-settings-redesign .settings-section-heading {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-content-section__eyebrow,
+  .settings-profile-section__kicker,
+  .settings-pro-cta__eyebrow
+) {
+  color: #7188a0;
+  font-size: 0.65rem;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-content-section__header h2,
+  .settings-profile-section__header h2,
+  .settings-section-heading h2
+) {
+  margin: 0;
+  color: var(--settings-product-ink);
+  font-size: clamp(1rem, 1.18vw, 1.12rem);
+  line-height: 1.25;
+  font-weight: 850;
+  letter-spacing: -0.018em;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-content-section__header p,
+  .settings-profile-section__header p,
+  .settings-section-heading p
+) {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--settings-product-muted);
+  font-size: 0.8rem;
+  line-height: 1.48;
+  font-weight: 600;
+}
+
+/* Preference rows are one grouped region, like mature system settings. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-rows {
+  width: 100%;
+  max-width: var(--doke-settings-content-max, 980px);
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border-radius: var(--settings-product-radius);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item {
+  min-height: 70px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transition: background-color 140ms ease;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-rows > .settings-list-item + .settings-list-item {
+  box-shadow: inset 0 1px 0 var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item--clickable:is(:hover, :focus-within) {
+  background: #f7fafc;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item > div {
+  min-width: 0;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item h2 {
+  color: var(--settings-product-ink);
+  font-size: 0.9rem;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item p {
+  max-width: 64ch;
+  margin-top: 3px;
+  color: var(--settings-product-muted);
+  font-size: 0.77rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item .doke-switch {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item:focus-within {
+  outline: 0;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item:has(.doke-switch__input:focus-visible) {
+  box-shadow: inset 0 0 0 2px rgba(42, 95, 144, 0.34);
+}
+
+/* Single preference rows outside a group still read as one grouped setting. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-content-section > .settings-list-item {
+  border-radius: var(--settings-product-radius);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-content-section > .settings-list-item:is(:hover, :focus-within) {
+  background: #f7fafc;
+}
+
+/* Emphasis means important context, not a competing promotion. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item--emphasis {
+  background: var(--settings-product-subtle);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-rows > .settings-list-item--emphasis {
+  background: transparent;
+}
+
+/* Method icon is identity support; copy and action remain dominant. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-method-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: #eef5fb;
+  color: #2f648e;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-method-icon--pix {
+  background: #edf9f5;
+  color: #167963;
+}
+
+/* Forms: labels, fields and focus follow one consistent rhythm. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-form {
+  width: min(100%, var(--doke-settings-content-max, 980px));
+  max-width: var(--doke-settings-content-max, 980px);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-form-grid {
+  gap: 16px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-field {
+  gap: 7px;
+  color: #385c7d;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card :is(.doke-input, .doke-select, .ui-select__trigger) {
+  min-height: var(--settings-product-control);
+  border-radius: 12px;
+  background: #f9fbfd;
+  box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card .doke-textarea {
+  border-radius: 12px;
+  background: #f9fbfd;
+  box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card :is(
+  .doke-input,
+  .doke-select,
+  .doke-textarea,
+  .ui-select__trigger
+):is(:hover, :focus, :focus-visible),
+body[data-page="configuracoes"].doke-settings-redesign .settings-card .ui-select.is-open .ui-select__trigger {
+  background: #fff;
+}
+
+/* Profile media is one editor region, avoiding nested card proliferation. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-profile-section--identity {
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: clamp(24px, 3vw, 48px);
+  align-items: start;
+  padding-bottom: 26px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-media-editor {
+  gap: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--settings-product-subtle);
+  box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(.settings-avatar-upload, .settings-cover-upload) {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-cover-preview {
+  background: #eef4f8;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-avatar {
+  box-shadow: 0 8px 22px rgba(16, 89, 126, 0.12);
+}
+
+/* Contextual notes and onboarding CTAs stay supportive. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-inline-note {
+  padding: 14px 16px;
+  border-radius: var(--settings-product-radius);
+  background: var(--settings-product-subtle);
+  box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-inline-note h2 {
+  color: var(--settings-product-ink);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-inline-note p {
+  color: var(--settings-product-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-pro-cta {
+  margin-top: 24px;
+  padding: 17px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f3faf8, #f4f8fc);
+  box-shadow: inset 0 0 0 1px rgba(41, 143, 127, 0.12);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-pro-cta h2 {
+  color: var(--settings-product-ink);
+  font-size: 0.94rem;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-pro-cta p {
+  color: var(--settings-product-muted);
+  font-size: 0.78rem;
+}
+
+/* Destructive action is isolated and explicit, but the initial request is not
+ * styled like an irreversible final confirmation. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone {
+  margin-top: 28px;
+  padding: 16px;
+  border-radius: var(--settings-product-radius);
+  background: var(--settings-product-danger-soft);
+  box-shadow: inset 0 0 0 1px rgba(169, 54, 43, 0.16);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone h2 {
+  color: #7f2d26;
+  font-size: 0.9rem;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone p {
+  max-width: 68ch;
+  color: #7f5b58;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone .doke-btn--danger {
+  min-height: 42px;
+  border: 0;
+  background: #fff;
+  color: var(--settings-product-danger);
+  box-shadow: inset 0 0 0 1px rgba(169, 54, 43, 0.22);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone .doke-btn--danger:is(:hover, :focus-visible) {
+  background: #fff1ef;
+  box-shadow: inset 0 0 0 1px rgba(169, 54, 43, 0.30);
+  transform: none;
+}
+
+/* Footer: save is the single dominant decision in each pane. */
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
+  min-height: 74px;
+  padding-block: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 1px 0 var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer .settings-action {
+  min-height: var(--settings-product-control);
+  border-radius: 12px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer .settings-action--primary {
+  min-width: 148px;
+  padding-inline: 18px;
+  font-weight: 800;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer .settings-action--secondary {
+  background: transparent;
+  color: #617a93;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer .settings-action--secondary:is(:hover, :focus-visible) {
+  background: #f4f7fa;
+  color: var(--settings-product-ink);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Professional verification cards remain evidence tasks, not promotional cards. */
+body[data-page="configuracoes"].doke-settings-redesign .verification-grid {
+  gap: 10px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .verification-card {
+  border: 0;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .verification-card:is(:hover, :focus-within) {
+  transform: none;
+  box-shadow: inset 0 0 0 1px rgba(42, 95, 144, 0.18);
+}
+
+/* Tablet keeps the same hierarchy while reducing density. */
+@media (min-width: 761px) and (max-width: 1180px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    background: #fff;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    background: #f8fbfd;
+    box-shadow: inset -1px 0 0 var(--settings-product-divider);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__header h1 {
+    font-size: 1.38rem;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__body {
+    padding-block: 24px 30px;
+  }
+}
+
+/* Mobile becomes a native-feeling settings list, then a focused pane. */
+@media (max-width: 760px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --doke-settings-content-max: 100%;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    padding: 10px 12px 92px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    padding: 8px 0 0;
+    background: transparent;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-brand {
+    margin-bottom: 14px;
+    padding-inline: 4px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__title {
+    font-size: 1.45rem;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+    margin-bottom: 16px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section {
+    overflow: hidden;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px var(--settings-product-divider);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section + .settings-sidebar__section {
+    margin-top: 14px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__label {
+    margin: 0;
+    padding: 11px 14px 7px;
+    background: #fff;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item {
+    min-height: 52px;
+    padding-inline: 14px;
+    border-radius: 0;
+    background: #fff;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item + .settings-sidebar__item {
+    margin-top: 0;
+    box-shadow: inset 0 1px 0 var(--settings-product-divider);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item::before {
+    inset-block: 12px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:is(:hover, :focus-visible) {
+    background: #f7fafc;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:is(.is-active, [aria-selected="true"]) {
+    background: var(--settings-product-active);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    border-radius: 18px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__header {
+    gap: 12px;
+    padding: 20px 18px 18px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__header h1 {
+    font-size: 1.32rem;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__header p {
+    font-size: 0.8rem;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign [data-settings-panel="payments"] .settings-card__header .settings-action,
+  body[data-page="configuracoes"].doke-settings-redesign [data-settings-panel="support"] .settings-card__header .settings-action {
+    width: 100%;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__body,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__body--compact {
+    padding: 20px 16px 24px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-content-section + .settings-content-section {
+    margin-top: 24px;
+    padding-top: 24px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-rows {
+    border-radius: 14px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-item,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-item--method {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    min-height: 72px;
+    padding: 13px 14px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-item--method {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-item--method .settings-action {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-content-section > .settings-list-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-profile-section--identity {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-media-editor {
+    padding: 14px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-avatar-upload {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-avatar-upload__actions {
+    width: 100%;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-cover-upload {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-pro-cta,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-inline-note,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-pro-cta .settings-action,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-inline-note .settings-action,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone .settings-action {
+    width: 100%;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 16px 16px;
+    backdrop-filter: blur(14px);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer .settings-action {
+    width: 100%;
+    min-height: var(--doke-control-height-lg, 54px);
+  }
+}
+
+@media (max-width: 420px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    padding-inline: 10px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__body,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__body--compact {
+    padding-inline: 14px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-item p {
+    font-size: 0.74rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="configuracoes"].doke-settings-redesign :is(
+    .settings-sidebar__item,
+    .settings-list-item,
+    .settings-sidebar-return,
+    .settings-card__footer .settings-action,
+    .settings-danger-zone .doke-btn--danger
+  ) {
+    transition: none;
+    transform: none;
+  }
+}

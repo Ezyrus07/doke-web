@@ -11,6 +11,8 @@ Keep visual changes fast and predictable by assigning each concern to one owner.
 - Dropdowns: `assets/css/components/dropdowns/dropdown.css`
 - Search fields: `assets/css/components/search/search-field.css`
 - Modal surfaces and controls: `assets/css/components/overlays/`
+- Empty/unfound state anatomy: `assets/css/components/states/empty-state-system.css`
+- Loading/skeleton anatomy: `assets/css/components/states/component-loading-contract.css` and `assets/css/components/states/loading-indicator-contract.css`
 - Shared visual tokens: `assets/css/core/tokens.css`
 
 ## Page composition owners
@@ -31,6 +33,15 @@ Keep visual changes fast and predictable by assigning each concern to one owner.
 3. Never add an HTML-loaded `final`, `fix`, `patch`, `override`, or `cleanup` stylesheet.
 4. Do not reproduce a shared component's background, border, radius, typography, or interaction states in a page file.
 5. Cache versions are updated only at the manifest or HTML entrypoint that changed.
+
+## Canonical state surfaces
+
+- `assets/css/components/states/empty-state-system.css` is the single shared visual owner for `.doke-empty-state` anatomy and its reusable modifiers, including `--compact`.
+- Page CSS may place a state in local layout, but must not recreate shared empty-state surface, border, radius, typography or action anatomy.
+- `assets/css/components/feedback/empty-state.css` is a legacy non-authority and must not be imported by an active page manifest. Physical deletion is intentionally deferred until a separate zero-consumer cleanup is authorized.
+- Semantic announcers (`data-state-region`, loading/empty/error messages and `aria-live`) remain behavior contracts; this visual authority does not add new runtime states.
+- `offline`, `stale`, `degraded`, `read_only` and `maintenance` remain runtime-capable states but are not materialized into new visible surfaces by this contract.
+- Validation: `npm run audit:page-state-surfaces` must cover both `comunidade.html` and `comunidade-interna.html` and fail if the legacy empty-state owner is active.
 
 ## Retired authority
 `assets/css/components/visual/borderless-final-authority.css` was removed in Lote 5. Its residual rules were migrated to their real owners.

@@ -1026,6 +1026,8 @@
     const composer = root.querySelector("[data-messages-composer]");
     const composerInput = root.querySelector("[data-messages-composer-input]");
     const backButton = root.querySelector("[data-messages-back]");
+    const threadActions = root.querySelector(".messages-thread__actions");
+    const threadOrderAction = root.querySelector(".messages-thread__action--order");
     const chargeButton = root.querySelector("[data-messages-charge]");
     const threadCallToggle = root.querySelector("[data-thread-call-toggle]");
     const threadVideoCallButton = root.querySelector("[data-thread-video-call]");
@@ -2574,6 +2576,33 @@
       });
     };
 
+    const syncThreadActionAvailability = (conversation) => {
+      const hasConversation = Boolean(conversation);
+      const hasOrderContext = hasConversation && (
+        conversation.group === "orders"
+        || Boolean(conversation.orderId || conversation.order?.id)
+      );
+
+      if (threadActions) {
+        threadActions.hidden = !hasConversation;
+        threadActions.setAttribute("aria-hidden", hasConversation ? "false" : "true");
+      }
+
+      if (threadOrderAction) {
+        threadOrderAction.hidden = !hasOrderContext;
+        threadOrderAction.disabled = !hasOrderContext;
+        threadOrderAction.setAttribute("aria-hidden", hasOrderContext ? "false" : "true");
+      }
+
+      [threadCallToggle, threadMoreToggle].forEach((button) => {
+        if (!button) return;
+        button.disabled = !hasConversation;
+        button.setAttribute("aria-disabled", hasConversation ? "false" : "true");
+      });
+
+      return { hasConversation, hasOrderContext };
+    };
+
     const renderEmptyThread = () => {
       activeId = "";
       clearSelection();
@@ -2581,8 +2610,7 @@
       if (threadAvatar) threadAvatar.textContent = "DK";
       if (threadName) threadName.textContent = "Selecione uma conversa";
       if (threadLastSeen) threadLastSeen.textContent = "Pedidos e mensagens aparecem aqui";
-      const orderAction = root.querySelector(".messages-thread__action--order[data-messages-open-order-detail]");
-      if (orderAction) orderAction.disabled = true;
+      syncThreadActionAvailability(null);
       if (chargeButton) syncChargeActionVisibility(null);
       syncDisputeComposerNotice(null);
       if (threadBody) {
@@ -2770,8 +2798,7 @@
         conversation.unread = 0;
         window.Doke?.services?.messages?.markAsRead?.(id)?.catch?.((error) => console.warn("[DokeMessages:markAsRead]", error));
       }
-      const orderAction = root.querySelector(".messages-thread__action--order[data-messages-open-order-detail]");
-      if (orderAction) orderAction.disabled = false;
+      syncThreadActionAvailability(conversation);
       if (!isSameThread) clearSelection();
       clearReplyPreview();
       refreshConversationItems().forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
@@ -4197,6 +4224,7 @@
     threadCallToggle?.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
+      if (!activeId || !conversations[activeId]) return;
       toggleThreadCallMenu();
     });
 
@@ -4208,6 +4236,7 @@
     threadMoreToggle?.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
+      if (!activeId || !conversations[activeId]) return;
       toggleThreadMoreMenu();
     });
 

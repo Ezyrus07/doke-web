@@ -59,7 +59,8 @@ Responsabilidades:
 - remover um chip através de `Doke.searchFilterStateInstallation.commit()`;
 - sincronizar contagem em todos os botões `[data-results-filters-open]`;
 - recuperar a apresentação quando o renderer legado reescrever o container;
-- publicar somente metadata sanitizada.
+- publicar somente metadata sanitizada;
+- entregar o CSS de apresentação pelo manifesto canônico `assets/css/pages/search-results.css`, sem ampliar o fan-out de `<link>` em `resultados.html`.
 
 ## Grupos
 
@@ -211,6 +212,7 @@ Não são publicados:
 ```text
 assets/js/pages/search-filter-presentation.js
 assets/css/pages/search-filter-presentation.css
+assets/css/pages/search-results.css
 resultados.html
 scripts/test-ux-filters-002-filter-presentation.js
 .github/workflows/ux-filters-002-removable-chips.yml
@@ -234,7 +236,7 @@ Cobertura determinística:
 - um único `state.commit()`;
 - cancelamento de draft antes da remoção;
 - recuperação após overwrite legado;
-- entrega estática de CSS e JS;
+- entrega estática do CSS via manifesto canônico e do JS via `resultados.html`;
 - ordem de scripts;
 - foco visível, forced colors e reduced motion;
 - ausência de `eval`, `new Function`, script injection e `!important`;
@@ -242,7 +244,7 @@ Cobertura determinística:
 
 ## Rollback
 
-1. remover a referência ao CSS em `resultados.html`;
+1. remover o `@import` de `search-filter-presentation.css` do manifesto `assets/css/pages/search-results.css`;
 2. remover a referência ao JavaScript em `resultados.html`;
 3. remover módulo, stylesheet, teste, workflow e documento;
 4. manter UX-FILTERS-001 intacto.

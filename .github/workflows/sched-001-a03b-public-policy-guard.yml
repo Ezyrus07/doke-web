@@ -1,0 +1,43 @@
+name: Doke SCHED-A03B Public Policy Guard
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260922001808_sched_a03b_public_policy_guard.sql'
+      - 'supabase/tests/030_sched_a03b_public_policy_guard_validation.sql'
+      - 'scripts/test-sched-001-a03b-public-policy-guard.js'
+      - 'docs/SCHED-001-A03B-PUBLIC-POLICY-GUARD.md'
+      - '.github/workflows/sched-001-a03b-public-policy-guard.yml'
+      - 'supabase/migrations/20260731123000_sched_a03_reservation_authority.sql'
+      - 'supabase/tests/013_platform_default_acl_validation.sql'
+      - 'scripts/test-platform-default-acl-contract.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sched-a03b-public-policy-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate SCHED-A03B fail-closed policy guard
+        run: node scripts/test-sched-001-a03b-public-policy-guard.js
+      - name: Preserve original SCHED-A03 authority
+        run: node scripts/test-sched-001-a03-reservation-migration-static.js
+      - name: Preserve platform ACL validation contract
+        run: node scripts/test-platform-default-acl-contract.js
+      - name: Validate patch whitespace
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check "${{ github.sha }}^...${{ github.sha }}"
+          fi
+
+# Repository-only gate. No Supabase mutation, deploy, merge or production action.

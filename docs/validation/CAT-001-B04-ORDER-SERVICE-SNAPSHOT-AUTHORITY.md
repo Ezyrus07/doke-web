@@ -48,6 +48,21 @@ A migration 156 foi aplicada inicialmente com `pg_catalog.coalesce(...)` na fun�
 
 A migration 157 substituiu a função pela definição correta e o audit permanente agora falha se `pg_catalog.coalesce` reaparecer.
 
+## Reconciliation with ORD-A03 command authority
+
+A later ORD increment retired direct browser/backend insertion into `public.orders`. The canonical creation path is now `public.create_order_command`.
+
+CAT-B04 therefore treats a caller-provided service identifier only as **lookup intent** (`p_service_ref`), never as the canonical `orders.service_id`. Inside the security-definer command, PostgreSQL resolves `v_service` and writes:
+
+- `professional_id` from `v_service.professional_id`;
+- `service_id` from `v_service.id`.
+
+The command does not accept `p_professional_id`, `p_service_id` or `p_service_snapshot`. The existing CAT-B04 trigger then resolves the approved version and freezes the immutable snapshot.
+
+The backend also strips authority-shaped metadata in both camelCase and snake_case before invoking the command: service IDs, professional/provider IDs, snapshot, version and snapshot-authority fields. These keys may describe client intent elsewhere, but they are never accepted as canonical order authority.
+
+The permanent CAT-B04 runtime test now mocks the canonical RPC boundary and explicitly fails if direct `orders.insert(...)` returns.
+
 ## Backend canônico
 
 `backend/modules/orders/orders-service.js` agora:
@@ -57,7 +72,7 @@ A migration 157 substituiu a função pela definição correta e o audit permane
 - exige `approved_version_id`;
 - ignora `professionalId` e `providerId` enviados pelo cliente;
 - remove `serviceSnapshot`, `serviceVersionId` e `serviceSnapshotAuthority` da metadata recebida;
-- insere o profissional e o serviço resolvidos no servidor;
+- envia somente a referência de intenção do serviço para `create_order_command`; o RPC resolve e grava `professional_id` e `service_id` canônicos no servidor;
 - devolve `serviceVersionId` e `serviceSnapshot` canônicos no DTO do pedido.
 
 ## SQL 021

@@ -1,0 +1,832 @@
+/* UX-VISUAL-025 — checkout and payment trust hierarchy.
+ * Narrow late owner for the professional-payment decision surface.
+ * Runtime/HTML remain the source of payment method, total, discount, status,
+ * validation, processing, receipt and completion truth.
+ */
+body[data-page="pagamento-profissional"] {
+  --pay-ink: #123b62;
+  --pay-ink-strong: #0c3154;
+  --pay-muted: #6b8095;
+  --pay-subtle: #f7fafc;
+  --pay-soft: #eef6fb;
+  --pay-accent: #236392;
+  --pay-accent-soft: #eaf4fb;
+  --pay-success: #16745f;
+  --pay-success-soft: #edf9f5;
+  --pay-warning: #8a641f;
+  --pay-warning-soft: #fff8e8;
+  --pay-danger: #a73535;
+  --pay-danger-soft: #fff4f4;
+  --pay-divider: rgba(24, 75, 118, 0.11);
+  --pay-border: rgba(24, 75, 118, 0.15);
+  --pay-border-strong: rgba(35, 99, 146, 0.32);
+}
+
+/* Keep checkout focused on the transaction. */
+body[data-page="pagamento-profissional"] .payment-screen__rail {
+  width: min(100%, 1160px);
+}
+
+body[data-page="pagamento-profissional"] .payment-hero {
+  max-width: 760px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+body[data-page="pagamento-profissional"] .payment-hero .doke-form-page-title {
+  margin: 0;
+  color: var(--pay-ink-strong);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.04;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+body[data-page="pagamento-profissional"] .payment-hero .doke-form-page-description {
+  max-width: 62ch;
+  margin: 10px auto 0;
+  color: var(--pay-muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  font-weight: 560;
+}
+
+body[data-page="pagamento-profissional"] .payment-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 390px);
+  gap: 24px;
+}
+
+body[data-page="pagamento-profissional"] .payment-main-column {
+  gap: 16px;
+}
+
+/* One restrained workspace instead of a collection of promotional cards. */
+body[data-page="pagamento-profissional"] .payment-main-column > .payment-card,
+body[data-page="pagamento-profissional"] .payment-summary__card {
+  border: 1px solid var(--pay-border);
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(19, 63, 99, 0.07);
+}
+
+body[data-page="pagamento-profissional"] .payment-main-column > .payment-card {
+  padding: clamp(22px, 3vw, 30px);
+  border-radius: 22px;
+}
+
+body[data-page="pagamento-profissional"] .payment-card__header {
+  margin-bottom: 20px;
+}
+
+body[data-page="pagamento-profissional"] .payment-card__header > div {
+  gap: 13px;
+}
+
+body[data-page="pagamento-profissional"] .payment-section-number {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(35, 99, 146, 0.14);
+  border-radius: 10px;
+  background: var(--pay-accent-soft);
+  color: var(--pay-accent);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+body[data-page="pagamento-profissional"] .payment-card__header h2,
+body[data-page="pagamento-profissional"] .payment-summary h2 {
+  color: var(--pay-ink-strong);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+body[data-page="pagamento-profissional"] .payment-card__header p {
+  max-width: 64ch;
+  margin-top: 5px;
+  color: var(--pay-muted);
+  font-size: 0.84rem;
+  line-height: 1.52;
+  font-weight: 560;
+}
+
+/* Payment method selection: choice first, detail second. */
+body[data-page="pagamento-profissional"] .payment-methods {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body[data-page="pagamento-profissional"] .payment-method {
+  position: relative;
+  min-height: 80px;
+  padding: 13px 14px;
+  border: 1px solid var(--pay-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+body[data-page="pagamento-profissional"] .payment-method::before {
+  content: "";
+  position: absolute;
+  inset-block: 12px;
+  inset-inline-start: -1px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: transparent;
+}
+
+body[data-page="pagamento-profissional"] .payment-method:hover {
+  border-color: rgba(35, 99, 146, 0.28);
+  background: var(--pay-subtle);
+  transform: none;
+}
+
+body[data-page="pagamento-profissional"] .payment-method.is-selected {
+  border-color: var(--pay-border-strong);
+  background: var(--pay-accent-soft);
+  box-shadow: inset 0 0 0 1px rgba(35, 99, 146, 0.035);
+}
+
+body[data-page="pagamento-profissional"] .payment-method.is-selected::before {
+  background: var(--pay-accent);
+}
+
+body[data-page="pagamento-profissional"] .payment-method:focus-within {
+  outline: 2px solid var(--pay-accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+body[data-page="pagamento-profissional"] .payment-method__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--pay-soft);
+  color: var(--pay-accent);
+}
+
+body[data-page="pagamento-profissional"] .payment-method.is-selected .payment-method__icon {
+  background: #fff;
+}
+
+body[data-page="pagamento-profissional"] .payment-method strong {
+  color: var(--pay-ink);
+  font-size: 0.86rem;
+  font-weight: 820;
+}
+
+body[data-page="pagamento-profissional"] .payment-method small {
+  color: var(--pay-muted);
+  font-size: 0.74rem;
+  font-weight: 570;
+}
+
+body[data-page="pagamento-profissional"] .payment-method em {
+  min-height: 18px;
+  padding-inline: 6px;
+  border: 1px solid rgba(22, 116, 95, 0.16);
+  background: var(--pay-success-soft);
+  color: var(--pay-success);
+  font-size: 0.55rem;
+  font-weight: 850;
+}
+
+body[data-page="pagamento-profissional"] .payment-method-detail {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pay-subtle);
+  box-shadow: none;
+}
+
+body[data-page="pagamento-profissional"] .payment-method-detail strong {
+  color: var(--pay-ink);
+  font-weight: 780;
+}
+
+body[data-page="pagamento-profissional"] .payment-method-detail span:not(.payment-method-detail__icon) {
+  color: var(--pay-muted);
+}
+
+/* Card entry is an embedded form region, not another card. */
+body[data-page="pagamento-profissional"] .payment-card-empty,
+body[data-page="pagamento-profissional"] .payment-card-fields,
+body[data-page="pagamento-profissional"] .payment-points {
+  margin-top: 12px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--pay-subtle);
+  box-shadow: none;
+}
+
+body[data-page="pagamento-profissional"] .payment-card-empty {
+  padding: 13px 14px;
+}
+
+body[data-page="pagamento-profissional"] .payment-card-empty strong,
+body[data-page="pagamento-profissional"] .payment-points strong {
+  color: var(--pay-ink);
+  font-weight: 800;
+}
+
+body[data-page="pagamento-profissional"] .payment-card-empty small,
+body[data-page="pagamento-profissional"] .payment-points small {
+  color: var(--pay-muted);
+  font-weight: 560;
+}
+
+body[data-page="pagamento-profissional"] .payment-card-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 16px;
+}
+
+body[data-page="pagamento-profissional"] .payment-field {
+  gap: 7px;
+}
+
+body[data-page="pagamento-profissional"] .payment-field label {
+  color: var(--pay-ink);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+body[data-page="pagamento-profissional"] .payment-field .doke-input {
+  min-height: 48px;
+  border: 1px solid var(--pay-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 1px 2px rgba(15, 55, 90, 0.025);
+  color: var(--pay-ink);
+}
+
+body[data-page="pagamento-profissional"] .payment-field .doke-input:not(:disabled):hover {
+  border-color: rgba(35, 99, 146, 0.28);
+  background: #fff;
+  box-shadow: inset 0 1px 2px rgba(15, 55, 90, 0.025);
+}
+
+body[data-page="pagamento-profissional"] .payment-field .doke-input:is(:focus, :focus-visible) {
+  border-color: rgba(35, 99, 146, 0.52);
+  outline: 0;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(35, 99, 146, 0.10);
+}
+
+body[data-page="pagamento-profissional"] .payment-field .doke-input::placeholder {
+  color: #9aabba;
+  opacity: 1;
+}
+
+/* Points are a discount utility; they must not compete with payment selection. */
+body[data-page="pagamento-profissional"] .payment-points {
+  min-height: 62px;
+  padding: 12px 14px;
+}
+
+body[data-page="pagamento-profissional"] .payment-points__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--pay-success-soft);
+  color: var(--pay-success);
+}
+
+/* Confirmation is a consequence acknowledgement, not a promotional surface. */
+body[data-page="pagamento-profissional"] .payment-review {
+  box-shadow: 0 16px 40px rgba(19, 63, 99, 0.07);
+}
+
+body[data-page="pagamento-profissional"] .payment-confirm-check {
+  min-height: 72px;
+  padding: 15px 16px;
+  border: 1px solid var(--pay-border);
+  border-radius: 13px;
+  background: #fff;
+}
+
+body[data-page="pagamento-profissional"] .payment-confirm-check:has(input:checked) {
+  border-color: rgba(35, 99, 146, 0.26);
+  background: var(--pay-accent-soft);
+}
+
+body[data-page="pagamento-profissional"] .payment-confirm-check:focus-within {
+  outline: 2px solid var(--pay-accent);
+  outline-offset: 2px;
+}
+
+body[data-page="pagamento-profissional"] .payment-confirm-check strong {
+  color: var(--pay-ink);
+  font-size: 0.85rem;
+  font-weight: 820;
+}
+
+body[data-page="pagamento-profissional"] .payment-confirm-check small {
+  color: var(--pay-muted);
+  font-size: 0.74rem;
+  line-height: 1.48;
+}
+
+body[data-page="pagamento-profissional"] .payment-security-note {
+  margin-top: 13px;
+  padding: 0 2px;
+  color: var(--pay-muted);
+  font-size: 0.74rem;
+  line-height: 1.48;
+}
+
+body[data-page="pagamento-profissional"] .payment-security-note svg {
+  color: var(--pay-success);
+}
+
+body[data-page="pagamento-profissional"] .payment-error {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(167, 53, 53, 0.18);
+  border-radius: 12px;
+  background: var(--pay-danger-soft);
+  color: var(--pay-danger);
+  font-size: 0.78rem;
+  line-height: 1.48;
+  font-weight: 700;
+}
+
+/* Summary: the amount and counterpart are the highest-confidence facts. */
+body[data-page="pagamento-profissional"] .payment-summary {
+  top: 92px;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__card {
+  gap: 0;
+  padding: 22px;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__card::before {
+  content: "";
+  height: 3px;
+  margin: -22px -22px 20px;
+  background: linear-gradient(90deg, #236392 0%, #239b84 100%);
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__heading {
+  gap: 7px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--pay-divider);
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__eyebrow-row {
+  align-items: center;
+}
+
+body[data-page="pagamento-profissional"] .payment-eyebrow {
+  color: var(--pay-muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.09em;
+  font-weight: 850;
+}
+
+body[data-page="pagamento-profissional"] .payment-badge {
+  min-height: 24px;
+  padding-inline: 8px;
+  font-size: 0.59rem;
+  font-weight: 850;
+}
+
+body[data-page="pagamento-profissional"] .payment-badge--warning {
+  border: 1px solid rgba(138, 100, 31, 0.18);
+  background: var(--pay-warning-soft);
+  color: var(--pay-warning);
+}
+
+body[data-page="pagamento-profissional"] .payment-badge--success {
+  border: 1px solid rgba(22, 116, 95, 0.18);
+  background: var(--pay-success-soft);
+  color: var(--pay-success);
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__provider {
+  gap: 12px;
+  padding: 16px 0;
+  border-block: 0 1px solid var(--pay-divider);
+}
+
+body[data-page="pagamento-profissional"] .payment-avatar {
+  width: 44px;
+  height: 44px;
+  background: var(--pay-accent);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__provider strong {
+  color: var(--pay-ink);
+  font-size: 0.88rem;
+  font-weight: 820;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__provider span:not(.payment-avatar) {
+  color: var(--pay-muted);
+  font-size: 0.75rem;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary-list {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--pay-divider);
+}
+
+body[data-page="pagamento-profissional"] .payment-summary-list div {
+  min-height: 32px;
+  padding: 5px 0;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary-list dt {
+  color: var(--pay-muted);
+  font-size: 0.74rem;
+  font-weight: 620;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary-list dd {
+  color: var(--pay-ink);
+  font-size: 0.77rem;
+  font-weight: 780;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary-list__discount :is(dt, dd) {
+  color: var(--pay-success);
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__amount {
+  gap: 8px;
+  margin: 16px 0 14px;
+  padding: 17px 18px;
+  border: 1px solid rgba(35, 99, 146, 0.10);
+  border-radius: 15px;
+  background: var(--pay-accent-soft);
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__amount small {
+  color: var(--pay-ink);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__amount span {
+  color: var(--pay-muted);
+  font-size: 0.70rem;
+  font-weight: 680;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__amount strong {
+  color: var(--pay-ink-strong);
+  font-size: clamp(2rem, 3.2vw, 2.55rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__actions {
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__submit {
+  min-height: 52px;
+  margin: 0;
+  border-radius: 13px;
+  font-weight: 850;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__submit[disabled] {
+  opacity: 0.54;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__microcopy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 10px 0 0;
+  color: var(--pay-muted);
+  font-size: 0.70rem;
+  line-height: 1.4;
+  text-align: center;
+  font-weight: 620;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__microcopy svg {
+  width: 15px;
+  height: 15px;
+  color: var(--pay-success);
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pay-divider);
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__links .doke-btn {
+  min-width: 0;
+  min-height: 38px;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__links .doke-btn--ghost {
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__links .doke-btn--ghost:focus-visible {
+  outline: 2px solid var(--pay-accent);
+  outline-offset: 2px;
+}
+
+/* Runtime operation states: provide feedback without inventing transaction truth. */
+body[data-page="pagamento-profissional"][data-payment-operation-state="submitting"] .payment-summary__card {
+  border-color: rgba(35, 99, 146, 0.24);
+}
+
+body[data-page="pagamento-profissional"][data-payment-operation-state="error"] .payment-summary__card,
+body[data-page="pagamento-profissional"][data-payment-operation-state="offline"] .payment-summary__card {
+  border-color: rgba(167, 53, 53, 0.20);
+}
+
+/* Payment modal domain content. Shared overlay contracts keep root/scrim/surface authority. */
+body[data-page="pagamento-profissional"] .payment-submit-state__panel {
+  text-align: center;
+}
+
+body[data-page="pagamento-profissional"] .payment-submit-state__panel .doke-modal-title {
+  color: var(--pay-ink-strong);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+body[data-page="pagamento-profissional"] .payment-submit-state__panel .doke-modal-description {
+  color: var(--pay-muted);
+  line-height: 1.55;
+}
+
+body[data-page="pagamento-profissional"] .payment-pix-box {
+  margin: 18px auto;
+  border: 10px solid #fff;
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px var(--pay-border), 0 10px 24px rgba(19, 63, 99, 0.08);
+}
+
+body[data-page="pagamento-profissional"] .payment-pix-code {
+  margin: 0;
+  padding: 12px 13px;
+  border: 1px solid var(--pay-border);
+  border-radius: 12px;
+  background: var(--pay-subtle);
+  text-align: left;
+}
+
+body[data-page="pagamento-profissional"] .payment-pix-code code {
+  color: var(--pay-ink);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+body[data-page="pagamento-profissional"] .payment-submit-state__icon {
+  background: var(--pay-success-soft);
+  color: var(--pay-success);
+}
+
+body[data-page="pagamento-profissional"] .payment-submit-state__icon--pix {
+  background: var(--pay-accent-soft);
+  color: var(--pay-accent);
+}
+
+body[data-page="pagamento-profissional"] .payment-receipt {
+  display: grid;
+  gap: 5px;
+  margin-top: 14px;
+  padding: 14px 15px;
+  border: 1px solid var(--pay-border);
+  border-radius: 12px;
+  background: var(--pay-subtle);
+  text-align: left;
+}
+
+body[data-page="pagamento-profissional"] .payment-receipt strong {
+  color: var(--pay-ink);
+  font-size: 0.78rem;
+  font-weight: 820;
+}
+
+body[data-page="pagamento-profissional"] .payment-receipt span {
+  color: var(--pay-ink);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="pagamento-profissional"] .payment-receipt small {
+  color: var(--pay-muted);
+  font-size: 0.68rem;
+  line-height: 1.42;
+}
+
+/* Completion confirmation remains separate from the payment decision. */
+body[data-page="pagamento-profissional"] .payment-finish-summary {
+  display: grid;
+  gap: 0;
+  margin: 16px 0;
+  padding: 0;
+  border: 1px solid var(--pay-border);
+  border-radius: 13px;
+  background: #fff;
+  overflow: hidden;
+}
+
+body[data-page="pagamento-profissional"] .payment-finish-summary > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.42fr) minmax(0, 1fr);
+  gap: 14px;
+  padding: 11px 13px;
+}
+
+body[data-page="pagamento-profissional"] .payment-finish-summary > div + div {
+  border-top: 1px solid var(--pay-divider);
+}
+
+body[data-page="pagamento-profissional"] .payment-finish-summary dt {
+  color: var(--pay-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+body[data-page="pagamento-profissional"] .payment-finish-summary dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--pay-ink);
+  font-size: 0.75rem;
+  text-align: right;
+  overflow-wrap: anywhere;
+  font-weight: 780;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="pagamento-profissional"] .payment-finish-check {
+  border: 1px solid var(--pay-border);
+  background: var(--pay-subtle);
+}
+
+body[data-page="pagamento-profissional"] .payment-finish-check:has(input:checked) {
+  border-color: rgba(35, 99, 146, 0.24);
+  background: var(--pay-accent-soft);
+}
+
+body[data-page="pagamento-profissional"] .payment-finish-check:focus-within {
+  outline: 2px solid var(--pay-accent);
+  outline-offset: 2px;
+}
+
+body[data-page="pagamento-profissional"] .payment-finish-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Context states remain operational, not decorative. */
+body[data-page="pagamento-profissional"] .payment-context-state {
+  border: 1px solid var(--pay-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(19, 63, 99, 0.06);
+}
+
+body[data-page="pagamento-profissional"] .payment-context-state--error {
+  border-color: rgba(167, 53, 53, 0.18);
+}
+
+@media (max-width: 1020px) {
+  body[data-page="pagamento-profissional"] .payment-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 360px);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 860px) {
+  body[data-page="pagamento-profissional"] .payment-layout {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary {
+    position: static;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary__card {
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="pagamento-profissional"] .payment-hero {
+    padding-inline: 18px;
+    text-align: left;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-hero .doke-form-page-description {
+    margin-inline: 0;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-main-column > .payment-card,
+  body[data-page="pagamento-profissional"] .payment-summary__card {
+    border-inline: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-main-column > .payment-card {
+    padding: 22px 18px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary__card {
+    padding: 22px 18px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary__card::before {
+    margin: -22px -18px 20px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-methods {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-method {
+    min-height: 72px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-card-fields {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-field--full {
+    grid-column: auto;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-card-empty,
+  body[data-page="pagamento-profissional"] .payment-points {
+    align-items: flex-start;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary__submit {
+    min-height: 54px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary__links {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary__links .doke-btn {
+    min-height: 42px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-finish-summary > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-finish-summary dd {
+    text-align: left;
+  }
+}
+
+@media (max-width: 430px) {
+  body[data-page="pagamento-profissional"] .payment-main-column > .payment-card,
+  body[data-page="pagamento-profissional"] .payment-summary__card {
+    padding-inline: 16px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary__card::before {
+    margin-inline: -16px;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-summary__amount strong {
+    font-size: 2rem;
+  }
+
+  body[data-page="pagamento-profissional"] .payment-points {
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="pagamento-profissional"] .payment-method {
+    transition: none;
+  }
+}

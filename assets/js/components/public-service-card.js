@@ -47,6 +47,17 @@
     var value = Number(service && (service.priceValue != null ? service.priceValue : service.price));
     return Number.isFinite(value) && value > 0 ? 'R$ ' + value.toLocaleString('pt-BR') : 'Sob orçamento';
   }
+  function resultsDecisionSignals(service) {
+    var signals = [];
+    var responseTime = clean(service && service.responseTime);
+    if (responseTime) signals.push('Responde ' + responseTime.replace(/^em\s+/i, ''));
+    if (service && service.availableToday === true) signals.push('Disponível hoje');
+    if (service && service.verified === true) signals.push('Perfil verificado');
+    if (service && service.guaranteed === true) signals.push('Garantia');
+    if (service && service.emergency === true) signals.push('Atendimento urgente');
+    if (service && service.online === true) signals.push('Atendimento online');
+    return signals.slice(0, 2);
+  }
   function svg(path) {
     var node = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     node.setAttribute('viewBox', '0 0 24 24'); node.setAttribute('aria-hidden', 'true');
@@ -100,8 +111,8 @@
     media.appendChild(favorite);
 
     var body=document.createElement('div'); body.className='doke-ad-card__body';
-    var category=document.createElement('span'); category.className='doke-ad-card__category'; category.textContent=clean(service.category || 'Serviço'); body.appendChild(category);
-    var title=document.createElement('h3'); title.className='doke-ad-card__title'; title.textContent=clean(service.title || 'Serviço profissional'); body.appendChild(title);
+    var category=document.createElement('span'); category.className='doke-ad-card__category'; category.textContent=clean(service.category || 'Serviço');
+    var title=document.createElement('h3'); title.className='doke-ad-card__title'; title.textContent=clean(service.title || 'Serviço profissional');
 
     var seller=document.createElement('div'); seller.className='doke-ad-card__seller';
     var avatar=document.createElement('span'); avatar.className='doke-ad-card__avatar'; avatar.setAttribute('aria-hidden','true');
@@ -112,7 +123,26 @@
     var sellerName=document.createElement('strong'); sellerName.className='doke-ad-card__seller-name'; sellerName.textContent=providerHandle(service); sellerName.title=sellerName.textContent; sellerCopy.appendChild(sellerName);
     var reviews=Number(service.reviewsCount || 0), rating=Number(service.rating || 0);
     if (reviews>0 && rating>0) { var meta=document.createElement('span'); meta.className='doke-ad-card__seller-meta'; var rat=document.createElement('span'); rat.className='doke-ad-card__rating'; rat.textContent='★ '+rating.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' ('+reviews+' avaliações)'; meta.appendChild(rat); sellerCopy.appendChild(meta); }
-    seller.append(avatar,sellerCopy); body.appendChild(seller);
+    seller.append(avatar,sellerCopy);
+    if (options.results) body.append(seller, category, title);
+    else body.append(category, title, seller);
+
+    if (options.results) {
+      var resultSignals = resultsDecisionSignals(service);
+      if (resultSignals.length) {
+        var resultsFacts = document.createElement('div');
+        resultsFacts.className = 'doke-ad-card__results-facts';
+        resultsFacts.setAttribute('aria-label', 'Informações para decisão');
+        resultSignals.forEach(function (label) {
+          var fact = document.createElement('span');
+          fact.className = 'doke-ad-card__result-fact';
+          fact.dataset.resultsDecisionFact = '';
+          fact.textContent = label;
+          resultsFacts.appendChild(fact);
+        });
+        body.appendChild(resultsFacts);
+      }
+    }
 
     var tags=(Array.isArray(service.tags)?service.tags:[]).filter(Boolean).slice(0,2);
     if(tags.length){var tagWrap=document.createElement('div');tagWrap.className='doke-ad-card__tags';tagWrap.setAttribute('aria-label','Tags do anúncio');tags.forEach(function(t){var n=document.createElement('span');n.textContent=clean(t).startsWith('#')?clean(t):'#'+clean(t);tagWrap.appendChild(n);});body.appendChild(tagWrap);}

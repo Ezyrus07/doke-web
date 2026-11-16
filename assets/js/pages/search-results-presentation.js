@@ -313,6 +313,10 @@
         operation: operation
       });
       var acceptedSnapshot = accepted;
+      // Keep the accepted cards/count during same-tab refreshes, as required
+      // by the presentation contract; never carry cards across result modes.
+      var sameMode = mode === acceptedSnapshot.mode
+        && acceptedSnapshot.state !== STATES.ERROR;
       current = createViewModel({
         applied: true,
         generation: generation,
@@ -321,11 +325,11 @@
         operation: operation,
         state: operation === OPERATIONS.PAGINATION ? STATES.PAGINATING : STATES.LOADING,
         query: input.query,
-        count: operation === OPERATIONS.PAGINATION ? acceptedSnapshot.count : 0,
-        previousCount: acceptedSnapshot.count,
+        count: operation === OPERATIONS.PAGINATION || sameMode ? acceptedSnapshot.count : 0,
+        previousCount: sameMode ? acceptedSnapshot.count : 0,
         authority: input.authority || acceptedSnapshot.authority,
         coverage: input.coverage || acceptedSnapshot.coverage,
-        sections: input.sections || acceptedSnapshot.sections
+        sections: input.sections || (sameMode ? acceptedSnapshot.sections : {})
       });
       return current;
     }

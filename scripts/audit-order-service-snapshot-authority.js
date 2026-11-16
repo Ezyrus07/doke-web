@@ -13,6 +13,7 @@ const assert = (condition, message) => { if (!condition) fail(message); };
 const files = {
   migration: 'supabase/migrations/156_order_service_snapshot_authority.sql',
   coalesceFix: 'supabase/migrations/157_order_service_snapshot_coalesce_fix.sql',
+  commandBoundary: 'supabase/migrations/20260729201000_ord_a03_order_command_boundary.sql',
   sql: 'supabase/tests/021_order_service_snapshot_authority_validation.sql',
   backend: 'backend/modules/orders/orders-service.js',
   runtime: 'scripts/test-order-service-snapshot-authority-runtime.js'
@@ -62,6 +63,26 @@ assert(!/new\.service_snapshot\s*:=\s*(new\.metadata|coalesce\(new\.metadata)/i.
 assert(!/delete\s+from\s+public\.service_versions/i.test(migration + '\n' + coalesceFix),
   'snapshot authority cannot delete service versions');
 
+const commandBoundary = read(files.commandBoundary);
+[
+  'create or replace function public.create_order_command(',
+  'p_service_ref text',
+  'select * into v_service from public.services where id = v_ref::uuid',
+  'select * into v_service from public.services where external_id = v_ref',
+  'v_service.professional_id',
+  'v_service.id',
+  "'requested'",
+  "grant execute on function public.create_order_command",
+  "revoke all on function public.create_order_command"
+].forEach((marker) => assert(commandBoundary.includes(marker), 'ORD-A03 command marker missing: ' + marker));
+
+assert(!/\bp_professional_id\b/i.test(commandBoundary),
+  'create_order_command must not accept caller-selected professional identity');
+assert(!/\bp_service_id\b/i.test(commandBoundary),
+  'create_order_command must accept a service reference, not a caller-selected canonical service_id');
+assert(!/\bp_service_snapshot\b/i.test(commandBoundary),
+  'create_order_command must not accept caller-selected service snapshots');
+
 const backend = read(files.backend);
 [
   "'service_version_id'",
@@ -71,18 +92,39 @@ const backend = read(files.backend);
   "query.eq('external_id', reference)",
   'function isOrderEligibleService',
   'function sanitizeOrderMetadata',
+  'delete metadata.serviceId',
+  'delete metadata.service_id',
+  'delete metadata.professionalId',
+  'delete metadata.professional_id',
+  'delete metadata.providerId',
+  'delete metadata.provider_id',
   'delete metadata.serviceSnapshot',
+  'delete metadata.service_snapshot',
   'delete metadata.serviceVersionId',
+  'delete metadata.service_version_id',
   'delete metadata.serviceSnapshotAuthority',
-  'professional_id: service.professional_id',
-  'service_id: service.id',
+  'delete metadata.service_snapshot_authority',
+  "supabase.rpc('create_order_command'",
+  'p_service_ref: serviceRef',
   'serviceVersionId:',
   'serviceSnapshot:'
 ].forEach((marker) => assert(backend.includes(marker), 'backend marker missing: ' + marker));
 
-assert(!/professional_id:\s*(professionalId|body\.|metadata\.)/.test(backend),
-  'backend order creation cannot trust caller-selected professional identity');
-assert(!/(localStorage|sessionStorage|indexedDB)/.test(backend),
+const createStart = backend.indexOf('async function createOrder');
+const createEnd = backend.indexOf('async function acceptOrder', createStart);
+const createOrderSource = backend.slice(createStart, createEnd);
+assert(createStart >= 0 && createEnd > createStart, 'createOrder source range is required');
+assert(!/\.from\(['"]orders['"]\)/.test(createOrderSource),
+  'canonical order creation must not write directly to public.orders');
+assert(!/\.insert\s*\(/.test(createOrderSource),
+  'canonical order creation must not use a direct insert');
+assert(!/p_professional_id\s*:/.test(createOrderSource),
+  'backend must not send professional identity as an RPC authority parameter');
+assert(!/p_service_id\s*:/.test(createOrderSource),
+  'backend must not send canonical service_id as an RPC authority parameter');
+assert(!/p_service_snapshot\s*:/.test(createOrderSource),
+  'backend must not send a service snapshot as an RPC authority parameter');
+assert(!/(localStorage|sessionStorage|indexedDB)/.test(createOrderSource),
   'backend snapshot authority cannot use browser persistence');
 
 const validation = read(files.sql);
@@ -98,10 +140,22 @@ const validation = read(files.sql);
   'rollback;'
 ].forEach((marker) => assert(validation.includes(marker), 'SQL validation marker missing: ' + marker));
 
+const runtime = read(files.runtime);
+[
+  "rpc.name, 'create_order_command'",
+  "rpc.payload.p_service_ref, externalServiceId",
+  "'p_professional_id'",
+  "'p_service_id'",
+  "'p_service_snapshot'",
+  'authority-shaped metadata must be stripped before RPC',
+  "call.type === 'from' && call.table === 'orders'",
+  'Order approved-version snapshot RPC authority runtime: PASS'
+].forEach((marker) => assert(runtime.includes(marker), 'runtime marker missing: ' + marker));
+
 if (!process.exitCode) {
   console.log('[CAT-B04-SNAPSHOT] PostgreSQL approved-version snapshot authority is structurally present.');
-  console.log('[CAT-B04-SNAPSHOT] Applied trigger repair prohibits schema-qualified COALESCE regression.');
-  console.log('[CAT-B04-SNAPSHOT] Backend resolves canonical service and professional identity.');
-  console.log('[CAT-B04-SNAPSHOT] Browser snapshot and professional fields are stripped before remote insertion.');
-  console.log('[CAT-B04-SNAPSHOT] Immutable dedicated and compatibility projections are gated.');
+  console.log('[CAT-B04-SNAPSHOT] ORD-A03 create_order_command resolves canonical service/professional identity server-side.');
+  console.log('[CAT-B04-SNAPSHOT] Backend sends only service intent reference and sanitized metadata to the canonical command.');
+  console.log('[CAT-B04-SNAPSHOT] Browser-selected authority fields are stripped or rejected as command parameters.');
+  console.log('[CAT-B04-SNAPSHOT] Immutable dedicated and compatibility projections remain gated.');
 }

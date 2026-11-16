@@ -574,6 +574,18 @@
 
   function provisionalMobileShellConfig(nextBody) {
     var page = nextBody && nextBody.getAttribute('data-page') || '';
+    var registry = window.DokeNavigationRegistry;
+    if (registry && typeof registry.getPageConfig === 'function') {
+      var pageName = page === 'home' ? 'index.html' : page + '.html';
+      var pageConfig = registry.getPageConfig(pageName);
+      if (pageConfig && pageConfig.key === page) {
+        return {
+          search: pageConfig.search === true,
+          bottomNav: pageConfig.bottomNav !== false
+        };
+      }
+    }
+
     var searchPages = ['home', 'resultados'];
     var bottomNavDisabledPages = ['notificacoes'];
     return {

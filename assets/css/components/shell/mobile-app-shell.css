@@ -33,6 +33,10 @@
   --doke-mobile-shell-without-search-height: calc(
     var(--doke-mobile-shell-top) + var(--doke-mobile-shell-topbar-height) + 18px
   );
+  --doke-mobile-shell-with-inline-search-height: calc(
+    var(--doke-mobile-shell-top) + var(--doke-mobile-shell-topbar-height) +
+      var(--doke-mobile-shell-gap) + var(--doke-mobile-shell-topbar-height) + 18px
+  );
 }
 
 @media (max-width: 560px) {
@@ -153,6 +157,10 @@
     padding-top: var(--doke-mobile-shell-without-search-height);
   }
 
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open)[data-shell-search="false"][data-shell-inline-search-expanded="true"] {
+    padding-top: var(--doke-mobile-shell-with-inline-search-height);
+  }
+
   body.doke-mobile-shell-mounted:not(.chat-room-mobile-open) .doke-mobile-shell {
     position: absolute;
     top: 0;
@@ -179,7 +187,7 @@
 
   body.doke-mobile-shell-mounted .doke-mobile-shell__topbar {
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-columns: var(--doke-mobile-shell-topbar-height) minmax(0, 1fr) max-content;
     align-items: center;
     gap: 8px;
     width: 100%;
@@ -189,24 +197,39 @@
     padding: 0;
   }
 
+  body.doke-mobile-shell-mounted .doke-mobile-shell__leading {
+    box-sizing: border-box;
+    width: var(--doke-mobile-shell-topbar-height);
+    height: var(--doke-mobile-shell-topbar-height);
+    min-width: var(--doke-mobile-shell-topbar-height);
+    min-height: var(--doke-mobile-shell-topbar-height);
+    justify-self: start;
+    flex: 0 0 var(--doke-mobile-shell-topbar-height);
+  }
+
   body.doke-mobile-shell-mounted .doke-mobile-shell__profile {
     appearance: none;
     -webkit-appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
-    height: var(--doke-mobile-shell-topbar-height);
-    width: max-content;
-    max-width: 100%;
-    min-width: 0;
-    justify-self: start;
+    display: inline-grid;
+    place-items: center;
     padding: 0;
     border: 0;
     background: transparent;
     color: var(--doke-mobile-shell-ink);
     text-decoration: none;
     overflow: hidden;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__back {
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: var(--border-soft);
+    border-radius: var(--doke-mobile-shell-action-radius, 14px);
+    background: var(--doke-mobile-chrome-surface);
+    color: var(--doke-mobile-shell-primary);
+    text-decoration: none;
+    box-shadow: none;
   }
 
   body.doke-mobile-shell-mounted .doke-mobile-shell__avatar {
@@ -234,7 +257,9 @@
 
   body.doke-mobile-shell-mounted .doke-mobile-shell__hello {
     display: block;
+    width: 100%;
     min-width: 0;
+    justify-self: stretch;
     overflow: hidden;
     color: var(--doke-mobile-shell-ink);
     font-family:
@@ -257,10 +282,16 @@
     display: inline-flex;
     align-items: center;
     justify-content: flex-end;
+    flex-wrap: nowrap;
     gap: 8px;
     height: var(--doke-mobile-shell-topbar-height);
     min-width: 0;
+    max-width: 100%;
     justify-self: end;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__actions--empty {
+    display: none;
   }
 
   body.doke-mobile-shell-mounted .doke-mobile-shell__location {
@@ -809,7 +840,7 @@
     .doke-mobile-shell__actions:has(.doke-mobile-shell__quick-action) {
     display: grid;
     grid-template-columns: repeat(
-      var(--doke-mobile-shell-action-count, 4),
+      var(--doke-mobile-shell-action-count, 2),
       var(--doke-mobile-shell-action-size)
     );
     align-items: center;
@@ -820,12 +851,16 @@
     max-height: var(--doke-mobile-shell-action-size);
   }
 
+  body.doke-mobile-shell-mounted .doke-mobile-shell__actions--single {
+    --doke-mobile-shell-action-count: 1;
+  }
+
   body.doke-mobile-shell-mounted .doke-mobile-shell__actions--compact {
     --doke-mobile-shell-action-count: 2;
   }
 
   body.doke-mobile-shell-mounted
-    :is(.doke-mobile-shell__quick-action, .doke-mobile-shell__notification) {
+    :is(.doke-mobile-shell__quick-action, .doke-mobile-shell__notification, .doke-mobile-shell__back) {
     box-sizing: border-box;
     width: var(--doke-mobile-shell-action-size);
     height: var(--doke-mobile-shell-action-size);
@@ -846,7 +881,7 @@
   }
 
   body.doke-mobile-shell-mounted
-    :is(.doke-mobile-shell__quick-action, .doke-mobile-shell__notification)
+    :is(.doke-mobile-shell__quick-action, .doke-mobile-shell__notification, .doke-mobile-shell__back)
     svg {
     box-sizing: border-box;
     display: block;
@@ -863,32 +898,6 @@
     stroke-width: var(--doke-mobile-shell-action-stroke);
     stroke-linecap: round;
     stroke-linejoin: round;
-  }
-}
-
-/* 2026-05-15 — Detail mobile header action alignment
-   Scope: detalhe-anuncio only. The announcement page does not use the location pill;
-   its compact actions must align to the right edge using the same square action contract. */
-@media (max-width: 760px) {
-  body.doke-mobile-shell-mounted[data-shell-page="detalhe-anuncio"]
-    .doke-mobile-shell__actions {
-    margin-left: auto;
-    justify-self: end;
-  }
-
-  body.doke-mobile-shell-mounted[data-shell-page="detalhe-anuncio"]
-    .doke-mobile-shell__actions:has(.doke-mobile-shell__quick-action) {
-    display: grid;
-    grid-template-columns: repeat(
-      2,
-      var(--doke-mobile-shell-action-size, 40px)
-    );
-    justify-content: end;
-    justify-items: end;
-    align-items: center;
-    gap: 8px;
-    width: max-content;
-    min-width: max-content;
   }
 }
 
@@ -1021,51 +1030,30 @@
   }
 }
 
-/* Mobile shell inline search disclosure. */
+/* Mobile shell compact search occupies a dedicated full-width region below the topbar. */
 @media (max-width: 760px),
   (hover: none) and (pointer: coarse) and (max-device-width: 560px) {
   body.doke-mobile-shell-mounted .doke-mobile-shell__inline-search {
-    position: absolute;
     display: block;
-    width: 0;
-    max-width: 0;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
     height: var(--doke-mobile-shell-topbar-height);
-    margin: 0;
+    margin: var(--doke-mobile-shell-gap) 0 0;
     padding: 0;
     overflow: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-6px);
-    transition:
-      width 180ms ease,
-      max-width 180ms ease,
-      opacity 140ms ease,
-      transform 180ms ease !important;
+    opacity: 1;
+    pointer-events: auto;
   }
 
-  body.doke-mobile-shell-mounted .doke-mobile-shell.is-search-expanded .doke-mobile-shell__actions {
-    flex: 1 1 auto;
-    width: 100%;
-    justify-self: stretch;
-  }
-
-  body.doke-mobile-shell-mounted .doke-mobile-shell.is-search-expanded .doke-mobile-shell__hello {
-    max-width: clamp(64px, 18vw, 112px);
-  }
-
-  body.doke-mobile-shell-mounted .doke-mobile-shell.is-search-expanded .doke-mobile-shell__actions > :not([data-shell-search-trigger]):not([data-shell-inline-search]) {
+  body.doke-mobile-shell-mounted .doke-mobile-shell__inline-search[hidden] {
     display: none;
   }
 
   body.doke-mobile-shell-mounted .doke-mobile-shell__inline-search.is-expanded {
-    position: static;
-    width: clamp(118px, 44vw, 178px);
-    max-width: clamp(118px, 44vw, 178px);
-    min-width: 118px;
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   body.doke-mobile-shell-mounted .doke-mobile-shell__inline-field {

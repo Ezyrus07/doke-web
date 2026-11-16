@@ -19,6 +19,18 @@
 
   const formatCount = (value) => firstCount(value).toLocaleString('pt-BR');
 
+  const getReviewLabel = (service) => {
+    const explicit = typeof service?.reviews === 'string' ? service.reviews.trim() : '';
+    if (explicit) return explicit;
+
+    const count = firstCount(
+      service?.reviewCount,
+      service?.reviewsCount,
+      Array.isArray(service?.reviews) ? service.reviews.length : 0
+    );
+    return `${formatCount(count)} ${count === 1 ? 'avaliação' : 'avaliações'}`;
+  };
+
   const formatUpdatedLabel = (value) => {
     const date = value ? new Date(value) : null;
     if (!date || Number.isNaN(date.getTime())) return 'Agora';
@@ -327,34 +339,51 @@
     const owner = root.dataset.viewerRelation === 'owner';
     const quoteEnabled = String(service.quoteMode || 'default').toLowerCase() !== 'disabled';
     const statusNode = root.querySelector('[data-detail-status-message]');
+    const compactStatusNode = root.querySelector('[data-detail-decision-status]');
     const visitorActions = root.querySelector('[data-detail-visitor-actions]');
+    const compactVisitorActions = root.querySelector('[data-detail-decision-visitor-actions]');
     const budget = root.querySelector('[data-budget-cta]');
+    const compactBudget = root.querySelector('[data-detail-decision-budget-cta]');
     const message = root.querySelector('[data-detail-message-cta]');
-    if (statusNode) {
-      const hasMessage = !active || (owner && ['pending_review', 'changes_pending_review', 'changes_required', 'rejected'].includes(moderation));
-      statusNode.hidden = !hasMessage;
-      statusNode.textContent = moderation === 'pending_review'
-        ? 'Este anúncio está em análise e ainda não aparece para os clientes.'
-        : moderation === 'changes_pending_review'
-          ? 'As alterações estão em análise. A última versão aprovada continua pública.'
-          : moderation === 'changes_required'
-            ? `A Doke solicitou ajustes${service.reviewReason ? `: ${service.reviewReason}` : '.'}`
-            : moderation === 'rejected'
-              ? `Este anúncio não foi aprovado${service.reviewReason ? `: ${service.reviewReason}` : '.'}`
-              : status === 'archived'
-                ? 'Este anúncio foi arquivado e está disponível apenas para consulta.'
-                : 'Este anúncio está temporariamente inativo e não aceita novos pedidos.';
-    }
+    const compactMessage = root.querySelector('[data-detail-decision-message-cta]');
+    const hasMessage = !active || (owner && ['pending_review', 'changes_pending_review', 'changes_required', 'rejected'].includes(moderation));
+    const statusMessage = moderation === 'pending_review'
+      ? 'Este anúncio está em análise e ainda não aparece para os clientes.'
+      : moderation === 'changes_pending_review'
+        ? 'As alterações estão em análise. A última versão aprovada continua pública.'
+        : moderation === 'changes_required'
+          ? `A Doke solicitou ajustes${service.reviewReason ? `: ${service.reviewReason}` : '.'}`
+          : moderation === 'rejected'
+            ? `Este anúncio não foi aprovado${service.reviewReason ? `: ${service.reviewReason}` : '.'}`
+            : status === 'archived'
+              ? 'Este anúncio foi arquivado e está disponível apenas para consulta.'
+              : 'Este anúncio está temporariamente inativo e não aceita novos pedidos.';
+
+    [statusNode, compactStatusNode].filter(Boolean).forEach((node) => {
+      node.hidden = !hasMessage;
+      node.textContent = statusMessage;
+    });
     if (visitorActions) visitorActions.hidden = owner || !active;
+    if (compactVisitorActions) compactVisitorActions.hidden = owner || !active;
     if (budget) {
       const unavailable = owner || !active || !quoteEnabled;
       budget.hidden = unavailable;
       budget.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
     }
+    if (compactBudget) {
+      const unavailable = owner || !active || !quoteEnabled;
+      compactBudget.hidden = unavailable;
+      compactBudget.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
+    }
     if (message) {
       const unavailable = owner || !active;
       message.hidden = unavailable;
       message.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
+    }
+    if (compactMessage) {
+      const unavailable = owner || !active;
+      compactMessage.hidden = unavailable;
+      compactMessage.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
     }
     root.dataset.listingStatus = status;
     root.dataset.quoteMode = quoteEnabled ? String(service.quoteMode || 'default').toLowerCase() : 'disabled';
@@ -444,27 +473,46 @@
     return owner;
   };
 
+  const syncBudgetCta = (cta, service) => {
+    if (!cta) return;
+    cta.href = getBudgetHref(service);
+    const svg = cta.querySelector('svg');
+    cta.textContent = '';
+    if (svg) cta.appendChild(svg);
+    cta.appendChild(document.createTextNode(service.budgetLabel || 'Solicitar orçamento'));
+    cta.setAttribute('aria-label', `Solicitar orçamento para ${service.title || 'serviço'}`);
+  };
+
   const updateActionCard = (root, service) => {
-    setText(root, '.ad-action-card__price', getPriceLabel(service));
+    const priceLabel = getPriceLabel(service);
+    const priceNote = service.paymentLabel || (priceLabel === 'Sob orçamento'
+      ? 'Valor definido após o pedido'
+      : 'Valor informado no anúncio');
+    const responseLabel = service.responseTime || 'Não informado';
+    const guaranteeLabel = service.guarantee || service.specs?.Garantia || 'Não informada';
+
+    setText(root, '.ad-action-card__price', priceLabel);
     setText(root, '.ad-action-card__subtext', service.paymentLabel || 'Valor final após orçamento');
+    setText(root, '[data-detail-decision-price]', priceLabel);
+    setText(root, '[data-detail-decision-price-note]', priceNote);
+    setText(root, '[data-detail-decision-rating]', formatRating(service.rating));
+    setText(root, '[data-detail-decision-reviews]', getReviewLabel(service));
+    setText(root, '[data-detail-decision-response]', responseLabel);
+    setText(root, '[data-detail-decision-guarantee]', guaranteeLabel);
 
     const primary = root.querySelector('[data-budget-cta]');
-    if (primary) {
-      primary.href = getBudgetHref(service);
-      primary.dataset.budgetCta = '';
-      const svg = primary.querySelector('svg');
-      primary.textContent = '';
-      if (svg) primary.appendChild(svg);
-      primary.appendChild(document.createTextNode(service.budgetLabel || 'Solicitar orçamento'));
-      primary.setAttribute('aria-label', `Solicitar orçamento para ${service.title || 'serviço'}`);
-    }
+    if (primary) primary.dataset.budgetCta = '';
+    syncBudgetCta(primary, service);
+    syncBudgetCta(root.querySelector('[data-detail-decision-budget-cta]'), service);
 
     const messageCta = root.querySelector('[data-detail-message-cta]');
     if (messageCta) messageCta.href = getMessageHref(service);
+    const compactMessageCta = root.querySelector('[data-detail-decision-message-cta]');
+    if (compactMessageCta) compactMessageCta.href = getMessageHref(service);
 
     const meta = root.querySelectorAll('.ad-action-card__meta dd');
-    if (meta[0]) meta[0].textContent = service.responseTime || 'calculada pela Doke';
-    if (meta[1]) meta[1].textContent = service.guarantee || service.specs?.Garantia || 'sob orçamento';
+    if (meta[0]) meta[0].textContent = responseLabel;
+    if (meta[1]) meta[1].textContent = guaranteeLabel;
     updateOwnerDashboard(root, service);
   };
 

@@ -603,7 +603,7 @@
 
   function getRepasseState(transaction, payoutDate, dispute) {
     transaction = transaction || {};
-    var disputeStatus = normalizeDisputeStatus(dispute && dispute.status);
+    var disputeStatus = dispute ? normalizeDisputeStatus(dispute.status) : '';
     if (disputeStatus === 'contestacao_aberta') return 'contestacao';
     if (disputeStatus === 'em_analise') return 'em_analise';
     if (disputeStatus === 'resolvida_profissional') return 'liberado';

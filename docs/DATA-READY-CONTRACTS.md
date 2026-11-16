@@ -920,6 +920,7 @@ The optional external webhook is disabled by default. When unconfigured, deliver
 - `public.users` is the canonical account authority for role, status and onboarding state.
 - An authenticated user may select only their own `public.users` row; `anon` cannot read the table and neither browser role has direct DML grants.
 - `public.user_profiles` is intentionally public-readable, while all browser writes pass through validated self-service RPCs.
+- `public.public_profile_role_projection` is a browser-read-only projection of the canonical `public.users.role` for active `client`/`professional` accounts; public profile reads combine it with `user_profiles` and never infer role from editable profile data.
 - New Auth accounts are materialized by `private.materialize_auth_account(uuid)` and always start as `client`.
 - Authorization keys in `raw_user_meta_data` are ignored and removed. `raw_app_meta_data.role/account_status` is a server-controlled projection of `public.users`.
 - Identity and KYC RPCs are no longer executable by `anon`; administrative verification RPCs retain server-side role checks and deny ordinary clients.

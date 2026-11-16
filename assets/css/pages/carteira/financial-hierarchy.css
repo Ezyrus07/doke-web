@@ -1,0 +1,417 @@
+/* UX-VISUAL-016 — wallet financial hierarchy.
+ * Narrow late visual layer for balance state, transaction scanning, receivables
+ * and payout action priority. Runtime remains the source of financial truth.
+ */
+body[data-page="carteira"] {
+  --wallet-available-strong: #174f7d;
+  --wallet-available-soft: #eef6fb;
+  --wallet-pending-strong: #8a641a;
+  --wallet-pending-soft: #fff8e8;
+  --wallet-success-strong: #177663;
+  --wallet-success-soft: #edf9f5;
+  --wallet-neutral-strong: #4f6984;
+  --wallet-neutral-soft: #f5f8fb;
+  --wallet-divider: rgba(24, 75, 118, 0.10);
+}
+
+/* Available balance is the primary financial fact. Held funds and payout timing
+ * remain secondary states inside one common region rather than competing cards.
+ */
+body[data-page="carteira"] .wallet-hero {
+  border: 1px solid rgba(24, 75, 118, 0.09);
+  background: #fff;
+  color: #123b68;
+  box-shadow: var(--doke-surface-shadow);
+}
+
+body[data-page="carteira"] .wallet-hero__balance {
+  gap: var(--doke-space-2, 8px);
+}
+
+body[data-page="carteira"] .wallet-hero__eyebrow {
+  color: #657d96;
+  opacity: 1;
+}
+
+body[data-page="carteira"] .wallet-hero__amount {
+  color: var(--wallet-available-strong);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+body[data-page="carteira"] .wallet-hero__copy {
+  max-width: 58ch;
+  margin: 0;
+  color: #6c8299;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  font-weight: 650;
+}
+
+body[data-page="carteira"] .wallet-hero__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--doke-space-3, 12px);
+  color: inherit;
+}
+
+body[data-page="carteira"] .wallet-hero-stat {
+  min-width: 0;
+  padding: var(--doke-space-3, 12px) var(--doke-space-4, 16px);
+  border: 1px solid var(--wallet-divider);
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-neutral-soft);
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-hero-stat--escrow {
+  border-color: rgba(138, 100, 26, 0.14);
+  background: var(--wallet-pending-soft);
+}
+
+body[data-page="carteira"] .wallet-hero-stat--payout {
+  border-color: rgba(23, 79, 125, 0.12);
+  background: var(--wallet-available-soft);
+}
+
+body[data-page="carteira"] .wallet-hero-stat__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm, 12px);
+  background: rgba(23, 79, 125, 0.08);
+  color: var(--wallet-available-strong);
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-hero-stat--escrow .wallet-hero-stat__icon {
+  background: rgba(138, 100, 26, 0.08);
+  color: var(--wallet-pending-strong);
+}
+
+body[data-page="carteira"] .wallet-hero-stat__content {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+body[data-page="carteira"] .wallet-hero-stat__content > span {
+  color: #6f849a;
+  font-size: 0.73rem;
+  line-height: 1.25;
+  font-weight: 750;
+}
+
+body[data-page="carteira"] .wallet-hero-stat__content > strong {
+  color: #183e65;
+  font-size: 1rem;
+  line-height: 1.2;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="carteira"] .wallet-hero-stat--escrow .wallet-hero-stat__content > strong {
+  color: var(--wallet-pending-strong);
+}
+
+body[data-page="carteira"] .wallet-hero-stat__content > small {
+  color: #8395a8;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+/* Withdrawal is the primary wallet command. View toggles remain contextual. */
+body[data-page="carteira"] .app-header--wallet [data-wallet-open-withdraw]:not(:disabled) {
+  border-color: transparent;
+  background: var(--doke-primary, #2a5f90);
+  color: #fff;
+  box-shadow: var(--doke-clean-control-shadow, 0 8px 20px rgba(15, 55, 90, 0.10));
+}
+
+body[data-page="carteira"] .app-header--wallet [data-wallet-open-withdraw]:not(:disabled):is(:hover, :focus-visible) {
+  background: var(--doke-primary-strong, #174f7d);
+}
+
+body[data-page="carteira"] .app-header--wallet [data-wallet-open-withdraw]:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+/* Statement is a financial ledger: rows scan better as a calm list than as a
+ * stack of independently floating cards. */
+body[data-page="carteira"] .wallet-panel--statement {
+  gap: var(--doke-space-3, 12px);
+}
+
+body[data-page="carteira"] .wallet-panel--statement .wallet-panel__header h2,
+body[data-page="carteira"] .wallet-receivables-panel .wallet-panel__header h2,
+body[data-page="carteira"] .wallet-bank-panel__header h2 {
+  color: #123b68;
+  font-weight: 850;
+  letter-spacing: -0.025em;
+}
+
+body[data-page="carteira"] .wallet-tabs {
+  gap: var(--doke-space-2, 8px);
+}
+
+body[data-page="carteira"] .wallet-tab {
+  min-height: 38px;
+  padding-inline: 12px;
+  background: transparent;
+  color: #667e98;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+body[data-page="carteira"] .wallet-tab:is(.is-active, [aria-pressed="true"], [aria-selected="true"]) {
+  background: var(--wallet-available-soft);
+  color: var(--wallet-available-strong);
+  font-weight: 850;
+}
+
+body[data-page="carteira"] .wallet-tab:focus-visible,
+body[data-page="carteira"] .wallet-filter-more__summary:focus-visible,
+body[data-page="carteira"] .wallet-transaction:focus-visible,
+body[data-page="carteira"] .wallet-transaction__complete:focus-visible,
+body[data-page="carteira"] .wallet-receivable-row:focus-visible {
+  outline: 2px solid var(--doke-primary, #2a5f90);
+  outline-offset: 2px;
+}
+
+body[data-page="carteira"] .wallet-panel--statement .wallet-list,
+body[data-page="carteira"] .wallet-panel--statement .doke-list {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--wallet-divider);
+  border-radius: var(--radius-base, 14px);
+  background: #fff;
+}
+
+body[data-page="carteira"] .wallet-panel--statement .wallet-transaction {
+  margin: 0;
+  padding: 14px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--wallet-divider);
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+  transition: background-color 160ms ease;
+}
+
+body[data-page="carteira"] .wallet-panel--statement .wallet-transaction:last-child {
+  border-bottom: 0;
+}
+
+body[data-page="carteira"] .wallet-panel--statement .wallet-transaction:is(:hover, :focus-within) {
+  background: #f8fbfd;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="carteira"] .wallet-transaction__content {
+  min-width: 0;
+}
+
+body[data-page="carteira"] .wallet-transaction__amount {
+  color: #173e64;
+  font-size: 0.96rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="carteira"] .wallet-transaction[data-wallet-type="income"] .wallet-transaction__amount,
+body[data-page="carteira"] .wallet-transaction[data-wallet-type="available"] .wallet-transaction__amount {
+  color: var(--wallet-success-strong);
+}
+
+body[data-page="carteira"] .wallet-transaction__amount-caption,
+body[data-page="carteira"] .wallet-transaction__context,
+body[data-page="carteira"] .wallet-transaction__date {
+  color: #7b8fa4;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+body[data-page="carteira"] .wallet-transaction__status {
+  min-height: 25px;
+  padding-inline: 8px;
+  border: 1px solid rgba(79, 105, 132, 0.12);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--wallet-neutral-soft);
+  color: var(--wallet-neutral-strong);
+  font-size: 0.7rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+body[data-page="carteira"] .wallet-transaction[data-wallet-type="income"] .wallet-transaction__status,
+body[data-page="carteira"] .wallet-transaction[data-wallet-type="available"] .wallet-transaction__status {
+  border-color: rgba(23, 118, 99, 0.14);
+  background: var(--wallet-success-soft);
+  color: var(--wallet-success-strong);
+}
+
+body[data-page="carteira"] .wallet-transaction[data-wallet-type="held"] .wallet-transaction__status,
+body[data-page="carteira"] .wallet-transaction[data-wallet-type="processing"] .wallet-transaction__status {
+  border-color: rgba(138, 100, 26, 0.16);
+  background: var(--wallet-pending-soft);
+  color: var(--wallet-pending-strong);
+}
+
+body[data-page="carteira"] .wallet-transaction[data-wallet-type="withdraw"] .wallet-transaction__status,
+body[data-page="carteira"] .wallet-transaction[data-wallet-type="fee"] .wallet-transaction__status {
+  border-color: rgba(79, 105, 132, 0.12);
+  background: var(--wallet-neutral-soft);
+  color: var(--wallet-neutral-strong);
+}
+
+body[data-page="carteira"] .wallet-transaction__complete {
+  min-height: 38px;
+  border-color: rgba(23, 79, 125, 0.16);
+  background: #fff;
+  color: var(--wallet-available-strong);
+  box-shadow: none;
+}
+
+body[data-page="carteira"] .wallet-transaction__chevron {
+  color: #9aabbb;
+  opacity: 0.72;
+}
+
+/* Receivables expose "what becomes available next" before the schedule list. */
+body[data-page="carteira"] .wallet-receivables-status,
+body[data-page="carteira"] .wallet-receivable-status {
+  min-height: 26px;
+  padding-inline: 9px;
+  border: 1px solid rgba(138, 100, 26, 0.14);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--wallet-pending-soft);
+  color: var(--wallet-pending-strong);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+body[data-page="carteira"] .wallet-receivable-next {
+  padding: var(--doke-space-4, 16px);
+  border: 1px solid rgba(138, 100, 26, 0.14);
+  border-radius: var(--radius-base, 14px);
+  background: var(--wallet-pending-soft);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="carteira"] .wallet-receivable-next > span {
+  color: #7c6a48;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+body[data-page="carteira"] .wallet-receivable-next > strong {
+  color: var(--wallet-pending-strong);
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  line-height: 1.05;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="carteira"] .wallet-receivable-next > p {
+  margin: 0;
+  color: #7c715e;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+body[data-page="carteira"] .wallet-receivable-row {
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="carteira"] .wallet-receivable-row:is(:hover, :focus-within) {
+  background: #f8fbfd;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="carteira"] .wallet-receivable-row__amount strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tablet/phone: the alternate balance surface must preserve the same semantic
+ * order as desktop instead of returning to a landing-style gradient hero. */
+@media (max-width: 900px) {
+  body[data-page="carteira"] .wallet-mobile-balance {
+    border: 1px solid rgba(24, 75, 118, 0.09);
+    background: #fff;
+    color: #123b68;
+    box-shadow: var(--doke-surface-shadow);
+  }
+
+  body[data-page="carteira"] .wallet-mobile-balance__eyebrow {
+    color: #657d96;
+    opacity: 1;
+  }
+
+  body[data-page="carteira"] .wallet-mobile-balance__amount {
+    color: var(--wallet-available-strong);
+    font-variant-numeric: tabular-nums;
+    font-weight: 900;
+  }
+
+  body[data-page="carteira"] :is(.wallet-mobile-info, .wallet-mobile-status, .wallet-mobile-metrics article) {
+    border-color: var(--wallet-divider);
+    background: var(--wallet-neutral-soft);
+    box-shadow: none;
+  }
+
+  body[data-page="carteira"] .wallet-panel--statement .wallet-transaction {
+    border-radius: 0;
+  }
+
+  body[data-page="carteira"] .wallet-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  body[data-page="carteira"] .wallet-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="carteira"] .wallet-tab {
+    flex: 0 0 auto;
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-page="carteira"] .wallet-hero__meta {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="carteira"] .wallet-panel--statement {
+    padding-inline: 14px;
+  }
+
+  body[data-page="carteira"] .wallet-panel--statement .wallet-transaction {
+    padding: 13px 10px;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__amount {
+    font-size: 0.92rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="carteira"] :is(
+    .wallet-transaction,
+    .wallet-receivable-row,
+    .wallet-tab,
+    [data-wallet-open-withdraw]
+  ) {
+    transition: none;
+    transform: none;
+  }
+}
