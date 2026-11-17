@@ -281,7 +281,7 @@
   }
 
   function openResultsFiltersDirect() {
-    var panel = document.querySelector('[data-results-filters]');
+    var panel = document.querySelector('[data-results-pane="filters"]');
     var backdrop = document.querySelector('[data-results-filters-backdrop]');
     if (!panel) return false;
 
@@ -468,7 +468,7 @@
         '<form class="doke-mobile-shell__search" action="resultados.html" role="search" data-shell-search autocomplete="off">',
         '  <button class="doke-mobile-shell__search-button" type="submit" aria-label="Buscar serviço">' + ICONS.search + '</button>',
         '  <label class="doke-mobile-shell__field" for="doke-shell-search-input">',
-        '    <input id="doke-shell-search-input" class="doke-mobile-shell__input" type="search" name="q" placeholder="Ex: Pintor, Encanador..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
+        '    <input id="doke-shell-search-input" class="doke-mobile-shell__input" type="search" name="q" aria-label="Buscar serviços" placeholder="Ex: Pintor, Encanador..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
         '  </label>',
         '  <button class="doke-mobile-shell__voice" type="button" aria-label="Buscar por voz">' + ICONS.mic + '</button>',
         '  <button class="doke-mobile-shell__filter" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',

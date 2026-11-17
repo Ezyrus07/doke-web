@@ -155,9 +155,19 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   let activeSearchIndex = -1;
   let activeSearchMode = 'services';
   let previewController = null;
+  let filtersHandle = null;
+  let filtersPortal = null;
+  let filtersObserver = null;
 
   window.DokeSearchResultsCleanup = () => {
     routeController.abort();
+    filtersObserver?.disconnect();
+    filtersHandle?.close({ reason: 'route-change', restoreFocus: false });
+    restoreFiltersAvailability();
+    shellFilterAttributes.forEach((values, node) => values.forEach(([name, value]) => {
+      if (value == null) node.removeAttribute(name);
+      else node.setAttribute(name, value);
+    }));
     document.body.classList.remove('results-filters-open', 'results-filters-open-from-home');
     document.documentElement.classList.remove('results-filters-open', 'results-filters-open-from-home');
     previewController?.abort();
@@ -487,6 +497,84 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     ? window.matchMedia(RESULTS_FILTERS_DESKTOP_MEDIA)
     : null;
   const isDesktopFilters = () => filtersDesktopMedia ? filtersDesktopMedia.matches : window.innerWidth > 960;
+  const filtersPanel = queryAny('[data-results-pane="filters"]');
+  let shellFilterButton = null;
+  const shellFilterAttributes = new Map();
+  const filtersAvailability = ['inert', 'aria-hidden'].map((name) => [name, filtersPanel?.getAttribute(name)]);
+  const restoreFiltersAvailability = () => {
+    if (!filtersPanel) return;
+    filtersAvailability.forEach(([name, value]) => {
+      if (value == null) filtersPanel.removeAttribute(name);
+      else filtersPanel.setAttribute(name, value);
+    });
+  };
+
+  const syncFiltersOverlay = () => {
+    const touchOpen = !signal.aborted && !isDesktopFilters() && document.body.classList.contains('results-filters-open');
+    shellFilterButton = queryAny('[data-shell-filter]');
+    if (!signal.aborted && shellFilterButton) {
+      if (!shellFilterAttributes.has(shellFilterButton)) {
+        shellFilterAttributes.set(shellFilterButton, ['aria-expanded', 'aria-controls'].map((name) => [name, shellFilterButton.getAttribute(name)]));
+      }
+      shellFilterButton.setAttribute('aria-expanded', String(touchOpen));
+      if (filtersPanel?.id) shellFilterButton.setAttribute('aria-controls', filtersPanel.id);
+    }
+    if (isDesktopFilters() || signal.aborted) restoreFiltersAvailability();
+    else if (filtersPanel) {
+      filtersPanel.inert = !touchOpen;
+      filtersPanel.setAttribute('aria-hidden', String(!touchOpen));
+    }
+    if (!touchOpen) {
+      filtersHandle?.close({ restoreFocus: !signal.aborted && !isDesktopFilters() });
+      return;
+    }
+    if (filtersHandle || filtersPortal) return;
+    const api = window.Doke?.overlayExperience;
+    const panel = queryAny('[data-results-pane="filters"]');
+    const surface = panel?.querySelector('.results-panel');
+    if (!api || !surface) return;
+    const trigger = [document.activeElement, shellFilterButton, ...els.resultsFiltersOpenButtons].find((node) => {
+      if (!node?.matches?.('[data-shell-filter], [data-results-filters-open]') || !node.isConnected) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden';
+    });
+    // Keep dialog semantics off the surface: global dialog sizing would change its geometry.
+    const root = document.createElement('div');
+    root.dataset.resultsFiltersOverlay = '';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', panel.getAttribute('aria-label') || 'Filtros da busca');
+    const positions = [panel, els.resultsFiltersBackdrop].filter(Boolean).map((node) => {
+      const marker = document.createComment('results-filters-position');
+      node.before(marker);
+      root.appendChild(node);
+      return { node, marker };
+    });
+    filtersPortal = root;
+    document.body.appendChild(root);
+    const restore = () => {
+      filtersHandle = null;
+      positions.forEach(({ node, marker }) => marker.replaceWith(node));
+      root.remove();
+      filtersPortal = null;
+    };
+    try {
+      filtersHandle = api.open({
+        id: 'results-touch-filters', kind: 'sheet', root, surface, trigger,
+        initialFocus: els.resultsFiltersCloseButton,
+        onRequestClose: () => syncFilterUi(false),
+        onAfterClose: restore,
+      });
+    } catch (error) {
+      restore();
+      syncFilterUi(false);
+      console.error('[resultados] Falha ao registrar filtros acessíveis.', error);
+    }
+  };
+  // search-data owns Escape and can close the UI before the overlay key handler runs.
+  filtersObserver = new MutationObserver(syncFiltersOverlay);
+  filtersObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
   const syncFilterUi = (isOpen) => {
     els.resultsFiltersOpenButtons.forEach((button) => button.setAttribute('aria-expanded', String(isOpen)));
@@ -509,7 +597,9 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const toggleFilters = () => {
-    const currentlyOpen = els.resultsFiltersOpenButtons.some((button) => button.getAttribute('aria-expanded') === 'true');
+    const currentlyOpen = isDesktopFilters()
+      ? els.resultsFiltersOpenButtons.some((button) => button.getAttribute('aria-expanded') === 'true')
+      : document.body.classList.contains('results-filters-open');
     syncFilterUi(!currentlyOpen);
   };
 
@@ -1062,6 +1152,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   closeResultsSearchDropdown();
   loadResults();
   syncFilterUi(isDesktopFilters());
+  syncFiltersOverlay();
 
   els.resultsSearchForm.addEventListener('submit', (event) => handleSearchSubmit(event, els.resultsSearchInput), { signal });
   els.topbarSearchForm?.addEventListener('submit', (event) => handleSearchSubmit(event, els.topbarSearchInput), { signal });

@@ -2,9 +2,11 @@
   const initNotifications = () => {
     const root = document.querySelector('[data-notifications-page]');
     if (!root || root.dataset.ready === 'true') return;
+    window.DokeCleanupNotifications?.();
     root.dataset.ready = 'true';
 
     const drawerController = new AbortController();
+    const { signal } = drawerController;
     window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
 
     const buttons = [...root.querySelectorAll('[data-filter]')];
@@ -45,6 +47,7 @@
     const mobileSearchToggle = root.querySelector('[data-notifications-mobile-search-toggle]');
     const filtersToggles = [...document.querySelectorAll('[data-notifications-filters-toggle]')];
     const filtersPanel = root.querySelector('[data-notifications-filters-panel]');
+    let filtersReturnFocus = null;
     const headerControls = root.querySelector('.notifications-page-header__controls');
     const selectToggles = [...document.querySelectorAll('[data-notifications-select-toggle]')];
     const selectPanel = root.querySelector('[data-notifications-select-panel]');
@@ -191,6 +194,7 @@
     };
 
     const refreshBanNotificationCountdowns = () => {
+      if (signal.aborted) return;
       const nodes = [...root.querySelectorAll('[data-notification-ban-countdown]')];
       if (!nodes.length) {
         if (banCountdownTimer) window.clearInterval(banCountdownTimer);
@@ -475,6 +479,7 @@
     };
 
     const renderNotificationItems = (items) => {
+      if (signal.aborted) return false;
       const group = getCanonicalTodayGroup();
       if (!group) return false;
 
@@ -506,6 +511,7 @@
     };
 
     const commitNotificationItems = (items, fence = null) => {
+      if (signal.aborted) return false;
       const center = getNotificationCenter();
       if (!center) return renderNotificationItems(items);
       const snapshot = center.replace(Array.isArray(items) ? items : [], fence ? { fence } : {});
@@ -518,6 +524,7 @@
     };
 
     const refreshLocalNotifications = ({ force = false } = {}) => {
+      if (signal.aborted) return Promise.resolve(false);
       const service = getNotificationsService();
       const center = getNotificationCenter();
       const centerFence = center?.createFence?.() || null;
@@ -550,15 +557,17 @@
         keepPreviousData: true,
         force
       }).then((result) => {
+        if (signal.aborted) return false;
         commitNotificationItems(result.data, centerFence);
         window.Doke?.experience?.states?.set?.(root, 'ready');
         if (result.revalidate) {
           result.revalidate
             .then((freshItems) => commitNotificationItems(freshItems, centerFence))
-            .catch(() => window.Doke?.experience?.states?.set?.(root, 'ready'));
+            .catch(() => { if (!signal.aborted) window.Doke?.experience?.states?.set?.(root, 'ready'); });
         }
         return true;
       }).catch((error) => {
+        if (signal.aborted) return false;
         window.Doke?.experience?.states?.set?.(root, hasRenderedItems ? 'ready' : 'error', { error: error.message });
         if (!hasRenderedItems) hydration?.error(error, { source: 'notifications-service' });
         return false;
@@ -578,22 +587,24 @@
         name: 'notifications-account-access',
         source: 'notificacoes.html'
       }).then((access) => {
+        if (signal.aborted) return false;
         if (!access?.allowed) return false;
         notificationsAccessAllowed = true;
         hydration?.mark('auth');
         window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
         return refreshLocalNotifications({ force: true });
       }).catch((error) => {
+        if (signal.aborted) return false;
         notificationsAccessAllowed = false;
         hydration?.error(error, { source: 'notifications-account-access' });
         return false;
       });
     };
-    document.addEventListener('doke:auth-session-change', () => authorizeNotifications({ force: true }));
+    document.addEventListener('doke:auth-session-change', () => authorizeNotifications({ force: true }), { signal });
     document.addEventListener('doke:page-hydration-ready', (event) => {
       if (event.detail?.page !== 'notificacoes') return;
       applyFilter(currentFilter, currentTimeFilter);
-    });
+    }, { signal });
 
     const syncContextPanelHost = () => {
       if (!headerControls) return;
@@ -661,9 +672,13 @@
 
     const closeFiltersPanel = () => {
       if (!filtersPanel) return;
+      const restoreFocus = !filtersPanel.hidden && filtersPanel.contains(document.activeElement);
       filtersPanel.hidden = true;
       setToggleExpanded(filtersToggles, false);
       syncHeaderControls();
+      if (restoreFocus && filtersReturnFocus?.isConnected && filtersReturnFocus.getClientRects().length) {
+        filtersReturnFocus.focus({ preventScroll: true });
+      }
     };
 
     const closeSelectPanel = () => {
@@ -725,6 +740,10 @@
 
     const openFiltersPanel = () => {
       if (!filtersPanel) return;
+      filtersReturnFocus = [document.activeElement, ...filtersToggles, document.querySelector('[data-shell-filter]')].find((node) => (
+        node?.matches?.('[data-notifications-filters-toggle], [data-shell-filter]')
+        && node.isConnected && node.getClientRects().length && getComputedStyle(node).visibility !== 'hidden'
+      )) || null;
       syncContextPanelHost();
       filtersPanel.hidden = false;
       setToggleExpanded(filtersToggles, true);
@@ -993,7 +1012,7 @@
     document.addEventListener('doke:notification-center-changed', () => {
       const center = getNotificationCenter();
       if (center) renderNotificationItems(center.getSnapshot().items);
-    });
+    }, { signal });
 
     root.querySelectorAll('[data-notifications-clear-filter]').forEach((button) => button.addEventListener('click', () => {
       const allButton = root.querySelector('[data-filter="all"]');
@@ -1211,7 +1230,7 @@
       }
 
       if (!target.closest('.notification-card')) closeContextMenu();
-    });
+    }, { signal });
 
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
@@ -1221,7 +1240,7 @@
       closeSelectPanel();
       setSelectionEnabled(false);
       closeContextMenu();
-    });
+    }, { signal });
 
     syncContextPanelHost();
     refreshCards().forEach(bindNotificationCard);
@@ -1230,9 +1249,20 @@
       window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
       refreshLocalNotifications({ force: true });
     };
-    document.addEventListener('doke:notification-created', refreshAfterDomainEvent);
-    document.addEventListener('doke:order-created', refreshAfterDomainEvent);
-    document.addEventListener('doke:message-sent', refreshAfterDomainEvent);
+    document.addEventListener('doke:notification-created', refreshAfterDomainEvent, { signal });
+    document.addEventListener('doke:order-created', refreshAfterDomainEvent, { signal });
+    document.addEventListener('doke:message-sent', refreshAfterDomainEvent, { signal });
+    const panelsApi = window.DokeNotificationsPanels;
+    window.DokeCleanupNotifications = () => {
+      drawerController.abort();
+      if (banCountdownTimer) window.clearInterval(banCountdownTimer);
+      banCountdownTimer = 0;
+      closeContextMenu();
+      document.body.classList.remove('has-notifications-action-panel-open');
+      if (window.DokeNotificationsPanels === panelsApi) delete window.DokeNotificationsPanels;
+    };
+    document.addEventListener('doke:route-leaving', window.DokeCleanupNotifications, { once: true, signal });
+    window.addEventListener('pagehide', window.DokeCleanupNotifications, { once: true, signal });
     updatéUnread();
     updatéStats();
     applyFilter('all', 'all');

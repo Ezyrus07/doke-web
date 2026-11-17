@@ -108,6 +108,10 @@ const installCanonicalSearchHarness = async (page) => {
 };
 
 test.beforeEach(async ({ page }) => {
+  await page.route('**/*', (route) => {
+    const host = new URL(route.request().url()).hostname;
+    return host === '127.0.0.1' || host === 'localhost' ? route.continue() : route.abort();
+  });
   await page.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({
     contentType: 'application/javascript',
     body: '',
@@ -243,6 +247,47 @@ for (const viewport of viewports) {
         body: await page.screenshot({ fullPage: true }),
         contentType: 'image/png',
       });
+    });
+  });
+}
+
+for (const width of [390, 820, 960]) {
+  test.describe(`touch filters keyboard lifecycle ${width}`, () => {
+    test.use({ viewport: { width, height: width === 390 ? 844 : 1180 }, hasTouch: true });
+
+    test('excludes the closed sheet and restores the actual opener on every close path', async ({ page }) => {
+      await page.goto(`/resultados.html?q=${READY_QUERY}&type=services`);
+      await waitForResultsState(page, 'ready');
+      const opener = page.locator(width === 390 ? '[data-shell-filter]:visible' : '[data-results-filters-open]:visible').first();
+      const panel = page.locator('[data-results-pane="filters"]');
+      await expect(panel).toHaveAttribute('inert', '');
+      await expect(opener).toHaveAttribute('aria-expanded', 'false');
+      await expect(opener).toHaveAttribute('aria-controls', 'results-filters-panel');
+      await opener.focus();
+      for (let step = 0; step < 30; step += 1) {
+        await page.keyboard.press('Tab');
+        expect(await panel.evaluate((node) => node.contains(document.activeElement))).toBe(false);
+      }
+      for (const method of ['button', 'backdrop', 'escape']) {
+        await opener.click();
+        await expect(page.locator('[data-results-filters-close]')).toBeFocused();
+        await expect(opener).toHaveAttribute('aria-expanded', 'true');
+        expect(await page.evaluate(() => window.Doke.overlayExperience.getSnapshot().depth)).toBe(1);
+        await expect(page.locator('.app-shell')).toHaveAttribute('inert', '');
+        if (method === 'button') await page.locator('[data-results-filters-close]').click();
+        else if (method === 'backdrop') await page.locator('[data-results-filters-backdrop]').click({ position: { x: 5, y: 80 } });
+        else await page.keyboard.press('Escape');
+        await expect(opener).toBeFocused();
+        await expect(opener).toHaveAttribute('aria-expanded', 'false');
+        await expect(panel).toHaveAttribute('inert', '');
+        await expect(page.locator('[data-results-filters-overlay]')).toHaveCount(0);
+      }
+      if (width === 390) {
+        await opener.evaluate((node) => { document.activeElement.blur(); node.click(); });
+        await expect(page.locator('[data-results-filters-close]')).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(opener).toBeFocused();
+      }
     });
   });
 }
