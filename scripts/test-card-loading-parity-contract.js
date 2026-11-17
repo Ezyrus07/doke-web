@@ -1,105 +1,105 @@
 #!/usr/bin/env node
+'use strict';
 /*
- * Doke card loading parity contract.
- * CSS-background advertisement cards must keep identical geometry and visible
- * anatomy between first paint and loaded state. A JS overlay must not cover the
- * media after the card has already rendered; explicit renderer skeletons are
- * allowed only through the opt-in is-media-skeleton state.
+ * Shared advertisement-card loading and anatomy contract.
+ * Static guards protect ownership and media states; browser regression tests
+ * separately verify pixel geometry and interactions at responsive widths.
  */
 const fs = require('fs');
 const path = require('path');
-
 const ROOT = process.cwd();
 const failures = [];
-
 const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
-const assert = (condition, message) => {
-  if (!condition) failures.push(message);
-};
+const assert = (condition, message) => { if (!condition) failures.push(message); };
 
 const adCardCss = read('assets/css/components/cards/ad-card.css');
+const cardContractCss = read('assets/css/components/cards/marketplace-card-contract.css');
 const adCardJs = read('assets/js/components/ad-card-interactions.js');
+const renderer = read('assets/js/components/public-service-card.js');
 const indexHtml = read('index.html');
 const homeRuntime = read('assets/css/pages/home-runtime.css');
+const homeRuntimeComponents = read('assets/css/pages/home-runtime-components.css');
 const coreComponents = read('assets/css/core/components.css');
 
 assert(
-  adCardCss.includes('Media loading parity for advertisement cards'),
-  'ad-card.css must document and own the media loading parity contract.'
+  /\.doke-ad-card--results\s*\{[^}]*--doke-ad-context-height:\s*71px;/.test(adCardCss),
+  'results card must retain its shared identity/context anatomy'
 );
 assert(
-  adCardCss.includes('Tablet first-paint parity for advertisement cards'),
-  'ad-card.css must document and own the tablet first-paint anatomy contract so late page CSS does not change the card after initial render.'
+  /@media\s*\(max-width:\s*760px\)\s*\{\s*\.doke-ad-card--results\s*\{[^}]*--doke-ad-media-margin:\s*0\s+9px\s+0\s*;/.test(adCardCss),
+  'results media must stay within the compact card through the narrow-tablet breakpoint'
 );
 assert(
-  adCardCss.includes('Narrow tablet mandatory ad-card information contract') &&
-    /@media \(min-width:\s*561px\) and \(max-width:\s*760px\)\s*{[\s\S]*?--doke-ad-body-min-height:\s*212px;[\s\S]*?\.doke-ad-card \.doke-ad-card__tags\s*{[\s\S]*?display:\s*flex;/.test(adCardCss),
-  'ad-card.css must keep mandatory category/rating/tags/location/footer visible in the narrow tablet first-paint and loaded state.'
+  /\.doke-ad-card__media\s*\{[^}]*overflow:\s*hidden;/.test(adCardCss) &&
+  /\.doke-ad-card__media-note\s*\{[^}]*position:\s*absolute;[^}]*bottom:\s*7px;/.test(adCardCss),
+  'media and empty-image note must retain their shared containment and positioning contracts'
 );
 assert(
-  /\.doke-ad-card__media::before\s*{[\s\S]*position:\s*absolute;[\s\S]*inset:\s*0;[\s\S]*opacity:\s*0;/.test(adCardCss),
-  'ad-card.css may keep an internal media placeholder layer, but it must be hidden by default inside the existing media box.'
+  /--doke-ad-media-min-height:\s*max\(var\(--doke-ad-results-media-min-height/.test(adCardCss) &&
+  /margin:\s*var\(--doke-ad-media-margin,\s*0\);/.test(cardContractCss) &&
+  /min-height:\s*var\(--doke-ad-media-min-height/.test(cardContractCss),
+  'the marketplace card contract must consume the media dimensions owned by the shared component'
+);
+const skeletonRule = adCardCss.match(/\.doke-ad-card\.is-media-skeleton\s+\.doke-ad-card__media::before\s*\{([^}]*)\}/);
+assert(
+  Boolean(skeletonRule) &&
+  /content:\s*["']{2}\s*;/.test(skeletonRule[1]) &&
+  /position:\s*absolute;/.test(skeletonRule[1]) &&
+  /inset:\s*0;/.test(skeletonRule[1]) &&
+  /pointer-events:\s*none;/.test(skeletonRule[1]),
+  'media skeleton must be explicit, overlay-only, and must not intercept interactions'
 );
 assert(
-  /\.doke-ad-card\.is-media-skeleton \.doke-ad-card__media::before\s*{[\s\S]*opacity:\s*1;/.test(adCardCss),
-  'ad-card.css must expose skeleton media only through the explicit is-media-skeleton opt-in state.'
+  Boolean(skeletonRule) && !/(?:width|height|min-height|padding|margin|grid-template|flex-basis)\s*:/.test(skeletonRule[1]),
+  'opt-in media skeleton must not change the media/card geometry'
 );
 assert(
-  !/\.doke-ad-card:not\(\.is-media-ready\) \.doke-ad-card__media::before/.test(adCardCss),
-  'ad-card media must not show a skeleton merely because is-media-ready is absent; that causes the first tablet paint to differ from the loaded card.'
+  !/\.doke-ad-card:not\(\.is-media-ready\)\s+\.doke-ad-card__media::before/.test(adCardCss) &&
+  !/\.doke-ad-card\.is-media-loading\s+\.doke-ad-card__media::before/.test(adCardCss),
+  'background media must not receive an implicit loading overlay'
 );
 assert(
-  !/\.doke-ad-card\.is-media-loading \.doke-ad-card__media::before/.test(adCardCss),
-  'ad-card media must not use JS-driven is-media-loading as a visual overlay for CSS-background cards.'
-);
-assert(
-  !/\.doke-ad-card(?:\.is-media-loading|:not\(\.is-media-ready\)|\.is-media-skeleton)\s*{[\s\S]*?(?:width|height|min-height|padding|margin|grid-template|flex-basis)\s*:/.test(adCardCss),
-  'loading/skeleton classes must not change the outer ad-card geometry.'
-);
-assert(
-  adCardJs.includes('const hydrateAdCardMedia') && adCardJs.includes("static-background"),
-  'ad-card-interactions.js must mark CSS-background media as static without creating a visual loading overlay.'
-);
-assert(
-  !adCardJs.includes('new Image()') && !/classList\.(?:add|toggle)\(\s*['\"]is-media-loading/.test(adCardJs) && !/classList\.(?:add|toggle)\(\s*['\"]is-media-ready/.test(adCardJs),
-  'ad-card interactions must not preload CSS background images and toggle visual loading classes after first paint.'
-);
-assert(
+  adCardJs.includes('const hydrateAdCardMedia') && adCardJs.includes('static-background') &&
   adCardJs.includes('hydrateAdCardMedia(card);'),
-  'ad-card hydration must keep a media-state hook for future data-rendered cards.'
+  'ad-card hydration must retain its static media hook'
 );
 assert(
-  /ad-card-interactions\.js\?v=[^\"']+/.test(indexHtml),
-  'index.html must reference a cache-busted ad-card interactions controller.'
+  !adCardJs.includes('new Image()') &&
+  !/classList\.(?:add|toggle)\(\s*['"]is-media-loading/.test(adCardJs) &&
+  !/classList\.(?:add|toggle)\(\s*['"]is-media-ready/.test(adCardJs),
+  'card hydration must not preload static media or flip visual loading state after first paint'
 );
 assert(
-  /components\/cards\/ad-card\.css\?v=[^\"')]+/.test(homeRuntime),
-  'home-runtime.css must import the cache-busted canonical ad-card component.'
+  ['doke-ad-card__media', 'doke-ad-card__body', 'doke-ad-card__location',
+    'doke-ad-card__footer', 'doke-ad-card__price', 'doke-ad-card__cta',
+    'doke-ad-card__media-note'].every((cls) => renderer.includes(cls)) &&
+  renderer.includes('doke-btn--success'),
+  'canonical renderer must retain media, identity, location, footer, CTA and empty-media note'
 );
 assert(
-  /components\/cards\/ad-card\.css\?v=[^\"')]+/.test(coreComponents),
-  'core/components.css must import the cache-busted canonical ad-card component.'
+  /ad-card-interactions\.js\?v=[^"']+/.test(indexHtml),
+  'index.html must reference the cache-busted card interaction controller'
 );
-
-const scannedCss = [
+assert(
+  /home-runtime-components\.css\?v=[^"')]+/.test(homeRuntime) &&
+  /components\/cards\/ad-card\.css\?v=[^"')]+/.test(homeRuntimeComponents) &&
+  /components\/cards\/ad-card\.css\?v=[^"')]+/.test(coreComponents),
+  'home and core must load the cache-busted shared card through their current import chain'
+);
+for (const file of [
   'assets/css/pages/home.css',
-  'assets/css/pages/home/tablet-responsive-layout.css',
   'assets/css/pages/home/mobile-hero-feed.css',
   'assets/css/patterns/marketplace-responsive-stack.css'
-];
-
-for (const file of scannedCss) {
+]) {
   const css = read(file);
   assert(
     !css.includes('is-media-loading') && !css.includes('is-media-ready') && !css.includes('is-media-skeleton'),
-    `${file} must not own ad-card loading state anatomy; keep it in components/cards/ad-card.css.`
+    file + ' must not own shared ad-card loading anatomy'
   );
 }
-
 if (failures.length) {
-  console.error('Card loading parity contract failed:\n');
-  failures.forEach((failure) => console.error(`- ${failure}`));
+  console.error('Card loading parity contract failed:');
+  failures.forEach((failure) => console.error('- ' + failure));
   process.exit(1);
 }
-
 console.log('Card loading parity contract passed.');

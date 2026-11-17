@@ -13,8 +13,23 @@ const renderer = read('assets/js/pages/search-results.js');
 const dataController = read('assets/js/pages/resultados-data-controller.js');
 const hydrationCss = read('assets/css/pages/results/page-hydration-states.css');
 
-expect(html.includes('search-results.js?v=20260714-results-state-authority-v1'), 'resultados.html must invalidate the visual renderer cache');
-expect(html.includes('resultados-data-controller.js?v=20260714-results-state-authority-v1'), 'resultados.html must invalidate the passive data controller cache');
+const cacheBustedScript = (file) => [...html.matchAll(
+  new RegExp(`<script\\b[^>]*\\bsrc=["']assets/js/pages/${file}\\.js\\?v=([^"'&\\s]+)["']`, 'g')
+)];
+const visualRendererScripts = cacheBustedScript('search-results');
+const dataControllerScripts = cacheBustedScript('resultados-data-controller');
+expect(
+  visualRendererScripts.length === 1,
+  'resultados.html must load exactly one cache-busted visual renderer script'
+);
+expect(
+  dataControllerScripts.length === 1,
+  'resultados.html must load exactly one cache-busted passive data controller script'
+);
+expect(
+  visualRendererScripts.length === 1 && visualRendererScripts[0][1] !== '20260714-results-state-authority-v1',
+  'visual renderer must not reuse the superseded results-state-authority cache version'
+);
 expect(renderer.includes('window.DokePageHydration.create'), 'search-results.js must own page hydration');
 expect(renderer.includes("waitFor: ['dom', 'render']"), 'results hydration must wait for the actual renderer');
 expect(renderer.includes('hasItems: () => true'), 'page hydration must keep the search shell ready when the inline result set is empty');
@@ -33,7 +48,7 @@ expect(hydrationCss.includes('display: none;'), 'hidden hydration surfaces must 
 
 if (failures.length) {
   console.error('[results-hydration-state-authority] failed');
-  failures.forEach((failure) => console.error(`- ${failure}`));
+  failures.forEach((failure) => console.error('- ' + failure));
   process.exit(1);
 }
 console.log('[results-hydration-state-authority] passed');
