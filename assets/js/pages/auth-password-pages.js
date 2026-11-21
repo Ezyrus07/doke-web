@@ -39,6 +39,8 @@
   else showRequestView();
 
   document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+    if (button.dataset.passwordToggleBound === 'true') return;
+    button.dataset.passwordToggleBound = 'true';
     button.addEventListener('click', () => {
       const input = document.getElementById(button.dataset.togglePassword || '');
       if (!input) return;
@@ -49,7 +51,8 @@
   });
 
   const requestForm = document.querySelector('[data-auth-password-recovery]');
-  if (requestForm) {
+  if (requestForm && requestForm.dataset.passwordRequestBound !== 'true') {
+    requestForm.dataset.passwordRequestBound = 'true';
     const emailInput = document.getElementById('recovery-email');
     const feedback = requestForm.querySelector('[data-auth-feedback]');
     const submit = requestForm.querySelector('[data-auth-submit]');
@@ -78,42 +81,66 @@
   }
 
   const resetForm = document.querySelector('[data-auth-password-reset]');
-  if (resetForm && resetIntent) {
+  if (resetForm && resetIntent && resetForm.dataset.passwordResetBound !== 'true') {
+    resetForm.dataset.passwordResetBound = 'true';
     const feedback = resetForm.querySelector('[data-auth-feedback]');
     const submit = resetForm.querySelector('[data-auth-submit]');
     const passwordInput = document.getElementById('reset-password');
     const confirmationInput = document.getElementById('reset-password-confirmation');
     const fields = resetForm.querySelector('[data-auth-reset-fields]');
     const invalidPanel = resetForm.querySelector('[data-auth-reset-invalid]');
+    let renderedState = '';
+    let submitting = false;
 
     const renderInvalid = (message) => {
       fields?.setAttribute('hidden', '');
       submit?.setAttribute('hidden', '');
+      if (submit) submit.disabled = true;
       invalidPanel?.removeAttribute('hidden');
       setFeedback(feedback, 'error', message || 'Este link é inválido ou expirou. Solicite uma nova recuperação de senha.');
     };
 
-    const renderContext = async () => {
-      if (boot.requested !== true) {
-        renderInvalid();
-        return;
-      }
-
-      setFeedback(feedback, 'success', 'Validando seu link de recuperação...');
-      const context = await auth.initializePasswordRecovery();
-      fields?.toggleAttribute('hidden', !context.active);
-      submit?.toggleAttribute('hidden', !context.active);
-      invalidPanel?.toggleAttribute('hidden', context.active);
-      if (context.active) {
+    const readState = () => auth.passwordAuthority?.getRecoveryState?.() || { status: 'invalid', active: false };
+    const renderState = () => {
+      const context = readState();
+      const key = `${context.status}:${context.message || ''}`;
+      if (key === renderedState) return;
+      renderedState = key;
+      if (context.status === 'checking') {
+        fields?.setAttribute('hidden', '');
+        submit?.setAttribute('hidden', '');
+        if (submit) submit.disabled = true;
+        invalidPanel?.setAttribute('hidden', '');
+        setFeedback(feedback, 'success', 'Validando seu link de recuperação...');
+      } else if (context.status === 'ready' && context.active) {
+        fields?.removeAttribute('hidden');
+        submit?.removeAttribute('hidden');
+        if (submit) submit.disabled = submitting;
+        invalidPanel?.setAttribute('hidden', '');
         setFeedback(feedback, '', '');
         passwordInput?.focus();
+      } else if (context.status === 'completed') {
+        fields?.setAttribute('hidden', '');
+        submit?.setAttribute('hidden', '');
+        invalidPanel?.setAttribute('hidden', '');
       } else {
-        renderInvalid();
+        renderInvalid(context.message);
       }
     };
+    const onRecoveryState = () => {
+      if (resetForm.isConnected === false) {
+        document.removeEventListener('doke:auth-password-state', onRecoveryState);
+        return;
+      }
+      // DOM events trigger rendering; only the authority can grant readiness.
+      renderState();
+    };
+    document.addEventListener('doke:auth-password-state', onRecoveryState);
+    window.addEventListener('pagehide', () => document.removeEventListener('doke:auth-password-state', onRecoveryState), { once: true });
 
     resetForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (submitting || !readState().active) return;
       const password = String(passwordInput?.value || '');
       const confirmation = String(confirmationInput?.value || '');
       if (!password || !confirmation) {
@@ -131,6 +158,7 @@
       }
 
       try {
+        submitting = true;
         setLoading(submit, true, 'Redefinindo senha...');
         await auth.completePasswordRecovery({ newPassword: password });
         setFeedback(feedback, 'success', 'Senha redefinida. Entre novamente com a nova senha.');
@@ -140,12 +168,15 @@
       } catch (error) {
         setFeedback(feedback, 'error', error?.message || 'Não foi possível redefinir a senha.');
       } finally {
+        submitting = false;
         setLoading(submit, false, 'Salvar nova senha');
       }
     });
 
-    Promise.resolve(renderContext()).catch((error) => {
-      renderInvalid(error?.message || 'Não foi possível validar o link de recuperação.');
+    const verification = auth.initializePasswordRecovery();
+    renderState();
+    Promise.resolve(verification).then(renderState).catch(() => {
+      renderInvalid('Não foi possível validar o link de recuperação.');
     });
   }
 })();

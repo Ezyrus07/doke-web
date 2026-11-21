@@ -31,6 +31,13 @@ window.DOKE_SUPABASE_CONFIG = {
   var root = window;
   var sharedClient = null;
   var sharedSignature = "";
+  var recoverySubscriber = null;
+  var earlyRecoveryEvents = [];
+  var recoveryStartupOpen = document.readyState !== "complete";
+  document.addEventListener("DOMContentLoaded", function () {
+    recoveryStartupOpen = false;
+    earlyRecoveryEvents.length = 0;
+  }, { once: true });
   var SELF_SERVICE_FUNCTION = "self-service-operations";
 
   function getConfig() {
@@ -93,6 +100,15 @@ window.DOKE_SUPABASE_CONFIG = {
       },
     });
     sharedSignature = signature;
+    var observedClient = sharedClient;
+    sharedClient.auth.onAuthStateChange(function (event, session) {
+      if (sharedClient !== observedClient) return;
+      if (recoverySubscriber) recoverySubscriber(event, session);
+      else if (recoveryStartupOpen && root.DOKE_AUTH_RECOVERY_BOOT && root.DOKE_AUTH_RECOVERY_BOOT.requested === true) {
+        // Transient SDK references only; drained on binding, never logged or persisted.
+        earlyRecoveryEvents.push({ event: event, session: session });
+      }
+    });
     root.DOKE_SUPABASE_CLIENT = sharedClient;
     document.dispatchEvent(
       new CustomEvent("doke:supabase-client-ready", {
@@ -103,9 +119,19 @@ window.DOKE_SUPABASE_CONFIG = {
   }
 
   function resetClient() {
+    earlyRecoveryEvents.length = 0;
     sharedClient = null;
     sharedSignature = "";
     root.DOKE_SUPABASE_CLIENT = null;
+  }
+
+  function subscribeRecoveryEvents(listener) {
+    recoverySubscriber = listener;
+    var pending = earlyRecoveryEvents.splice(0);
+    pending.forEach(function (entry) { listener(entry.event, entry.session); });
+    return { data: { subscription: { unsubscribe: function () {
+      if (recoverySubscriber === listener) recoverySubscriber = null;
+    } } } };
   }
 
   function edgeAuthToken(client) {
@@ -197,6 +223,7 @@ window.DOKE_SUPABASE_CONFIG = {
   root.DokeSupabase = Object.freeze({
     getClient: getClient,
     resetClient: resetClient,
+    subscribeRecoveryEvents: subscribeRecoveryEvents,
     getConfig: getConfig,
     invokeSelfService: invokeSelfService,
     invokeEdgeFunction: invokeEdgeFunction,

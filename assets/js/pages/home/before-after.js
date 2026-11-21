@@ -15,8 +15,6 @@ window.DokeHomeBeforeAfter = (() => {
       likes: '4,2k',
       commentsCount: '128',
       saves: '860',
-      serviceHref: 'detalhe-anuncio.html',
-      profileHref: 'perfil.html',
       highlights: [
         'Marcenaria planejada para aumentar armazenamento sem sobrecarregar o volume visual.',
         'Bancada contínua para simplificar o uso e melhorar a sensação de amplitude.',
@@ -41,8 +39,6 @@ window.DokeHomeBeforeAfter = (() => {
       likes: '4,9k',
       commentsCount: '184',
       saves: '1,3k',
-      serviceHref: 'detalhe-anuncio.html',
-      profileHref: 'perfil.html',
       highlights: [
         'Vídeo curto para apresentar o resultado real da reforma com mais contexto.',
         'Acabamentos claros e escada em destaque para valorizar profundidade e circulação.',
@@ -67,8 +63,6 @@ window.DokeHomeBeforeAfter = (() => {
       likes: '3,1k',
       commentsCount: '86',
       saves: '640',
-      serviceHref: 'detalhe-anuncio.html',
-      profileHref: 'perfil.html',
       highlights: [
         'Paleta leve para ampliar a percepção de espaço.',
         'Integração visual entre estar, jantar e circulação.',
@@ -92,8 +86,6 @@ window.DokeHomeBeforeAfter = (() => {
       likes: '3,7k',
       commentsCount: '97',
       saves: '980',
-      serviceHref: 'detalhe-anuncio.html',
-      profileHref: 'perfil.html',
       highlights: [
         'Novo revestimento sobre base existente para evitar quebra excessiva.',
         'Metais e bancada renovados para elevar a percepção de cuidado.',
@@ -269,7 +261,7 @@ window.DokeHomeBeforeAfter = (() => {
 
         <aside class="before-after-post__sidebar" aria-label="Comentários do antes e depois">
           <header class="before-after-post__header">
-            <a class="before-after-post__author" data-before-after-preview-profile href="perfil.html">
+            <a class="before-after-post__author" data-before-after-preview-profile aria-disabled="true" tabindex="-1" title="Perfil indisponível">
               <span class="before-after-post__avatar" data-before-after-preview-avatar>DK</span>
               <span class="before-after-post__author-copy">
                 <strong data-before-after-preview-provider>—</strong>
@@ -333,7 +325,7 @@ window.DokeHomeBeforeAfter = (() => {
 
             <div class="before-after-post__timestamp">
               <span>há 18 horas</span>
-              <a data-before-after-preview-service href="detalhe-anuncio.html">Ver serviço</a>
+              <a data-before-after-preview-service aria-disabled="true" tabindex="-1">Serviço indisponível</a>
             </div>
 
             <form class="before-after-post__comment-input" data-before-after-comment-form autocomplete="off">
@@ -443,8 +435,6 @@ window.DokeHomeBeforeAfter = (() => {
       const rating = root.querySelector('[data-before-after-preview-rating]');
       const description = root.querySelector('[data-before-after-preview-description]');
       const highlights = root.querySelector('[data-before-after-preview-highlights]');
-      const serviceLinks = [...root.querySelectorAll('[data-before-after-preview-service]')];
-      const profileLinks = [...root.querySelectorAll('[data-before-after-preview-profile]')];
       const likeButton = root.querySelector('[data-before-after-like-button]');
       const likeCountNodes = [...root.querySelectorAll('[data-before-after-like-count]')];
       const saveButton = root.querySelector('[data-before-after-save-button]');
@@ -458,6 +448,8 @@ window.DokeHomeBeforeAfter = (() => {
       const followButton = root.querySelector('[data-before-after-follow]');
       const shareButton = root.querySelector('[data-before-after-share]');
       const commentForm = root.querySelector('[data-before-after-comment-form]');
+      const commentFormParent = commentForm?.parentNode;
+      const commentFormNextSibling = commentForm?.nextSibling;
       const commentInput = root.querySelector('[data-before-after-comment-input]');
       const commentSubmit = root.querySelector('[data-before-after-comment-submit]');
       const replyingHint = root.querySelector('[data-before-after-replying]');
@@ -471,21 +463,43 @@ window.DokeHomeBeforeAfter = (() => {
       let lockedAnchor = null;
       let viewportLocked = false;
       let lastTrigger = null;
+      let lastCommentsTrigger = null;
 
-      const isMobileCommentsSheet = () => window.matchMedia('(max-width: 760px)').matches;
+      const commentsMedia = window.matchMedia('(max-width: 760px)');
+      const isMobileCommentsSheet = () => commentsMedia.matches;
 
-      const setCommentsVisible = (visible, { focusInput = false } = {}) => {
+      const setCommentsVisible = (visible, { focusInput = false, restoreFocus = false } = {}) => {
         const shouldShow = Boolean(visible && isMobileCommentsSheet());
+        if (commentForm && commentsSheet && commentFormParent) {
+          if (shouldShow && commentForm.parentNode !== commentsSheet) {
+            commentsSheet.appendChild(commentForm);
+          } else if (!shouldShow && commentForm.parentNode !== commentFormParent) {
+            const next = commentFormNextSibling?.parentNode === commentFormParent ? commentFormNextSibling : null;
+            commentFormParent.insertBefore(commentForm, next);
+          }
+        }
         root.classList.toggle('comments-visible', shouldShow);
         commentsCloseButtons.forEach((button) => {
           button.setAttribute('aria-expanded', String(shouldShow));
           button.setAttribute('aria-label', shouldShow ? 'Ocultar comentários' : 'Mostrar comentários');
         });
         if (!shouldShow && commentsRegion) commentsRegion.scrollTop = 0;
+        if (!shouldShow && restoreFocus && !root.hidden && !signal?.aborted && lastCommentsTrigger?.isConnected) {
+          lastCommentsTrigger.focus({ preventScroll: true });
+        }
         if (shouldShow && focusInput && commentsSheet?.querySelector('.before-after-post__comment-input:not([hidden])')) {
           window.requestAnimationFrame(() => commentInput?.focus({ preventScroll: true }));
         }
       };
+
+      const syncCommentsLayout = () => {
+        const formHadFocus = commentForm?.contains(document.activeElement);
+        setCommentsVisible(false);
+        if (formHadFocus && !root.hidden && !signal?.aborted) {
+          commentInput?.focus({ preventScroll: true });
+        }
+      };
+      commentsMedia.addEventListener('change', syncCommentsLayout, { signal });
 
       const lockViewport = (anchor = null) => {
         viewportLocked = true;
@@ -652,8 +666,6 @@ window.DokeHomeBeforeAfter = (() => {
         if (rating) rating.textContent = item.rating;
         if (description) description.textContent = item.description;
         if (highlights) highlights.innerHTML = item.highlights.map((point) => `<li>${escapeHtml(point)}</li>`).join('');
-        serviceLinks.forEach((link) => { link.href = item.serviceHref; });
-        profileLinks.forEach((link) => { link.href = item.profileHref; });
 
         clearReplyTarget();
         if (commentInput) commentInput.value = '';
@@ -699,12 +711,19 @@ window.DokeHomeBeforeAfter = (() => {
       };
 
       triggers.forEach((trigger) => {
-        const handleOpen = () => open(trigger.dataset.beforeAfterId, trigger);
+        const handleOpen = (event) => {
+          if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+          const control = event.target.closest('a, button, input, select, textarea, summary, label, [contenteditable]:not([contenteditable="false"]), [role="button"], [role="link"], [aria-disabled="true"]');
+          if (control && control !== trigger) return;
+          open(trigger.dataset.beforeAfterId, trigger);
+        };
         trigger.addEventListener('click', handleOpen, { signal });
         trigger.addEventListener('keydown', (event) => {
+          if (event.defaultPrevented || event.target !== trigger || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            handleOpen();
+            if (event.key === ' ' && event.repeat) return;
+            trigger.click();
           }
         }, { signal });
       });
@@ -750,6 +769,7 @@ window.DokeHomeBeforeAfter = (() => {
 
       commentsFocusButtons.forEach((button) => button.addEventListener('click', () => {
         if (isMobileCommentsSheet()) {
+          lastCommentsTrigger = button;
           setCommentsVisible(true);
           commentsRegion?.scrollTo({ top: 0, behavior: 'smooth' });
           return;
@@ -758,7 +778,7 @@ window.DokeHomeBeforeAfter = (() => {
       }, { signal }));
 
       commentsCloseButtons.forEach((button) => button.addEventListener('click', () => {
-        setCommentsVisible(false);
+        setCommentsVisible(false, { restoreFocus: true });
       }, { signal }));
 
       commentsList?.addEventListener('click', (event) => {
@@ -846,22 +866,30 @@ window.DokeHomeBeforeAfter = (() => {
         if (root.hidden) return;
         if (event.key === 'Escape') {
           if (root.classList.contains('comments-visible')) {
-            setCommentsVisible(false);
+            setCommentsVisible(false, { restoreFocus: true });
             return;
           }
           close();
         }
       }, { signal });
 
-      signal?.addEventListener('abort', () => {
+      const cleanupCommentsLayout = () => {
+        commentsMedia.removeEventListener('change', syncCommentsLayout);
         root.hidden = true;
         root.setAttribute('aria-hidden', 'true');
-        root.classList.remove('comments-visible');
+        setCommentsVisible(false);
         document.body.classList.remove('before-after-preview-open');
         document.body.style.top = '';
-      });
+      };
+      document.addEventListener('doke:route-leaving', cleanupCommentsLayout, { once: true, signal });
+      signal?.addEventListener('abort', cleanupCommentsLayout);
 
-      return close;
+      return () => {
+        document.removeEventListener('doke:route-leaving', cleanupCommentsLayout);
+        commentsMedia.removeEventListener('change', syncCommentsLayout);
+        close();
+        setCommentsVisible(false);
+      };
     }
   };
 })();

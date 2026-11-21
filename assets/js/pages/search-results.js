@@ -749,7 +749,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
         <p class="professional-showcase-card__role">${item.role || item.profession || 'Profissional Doke'}</p>
       </div>
       <div class="professional-showcase-card__actions">
-        <a class="professional-showcase-card__cta doke-btn doke-btn--primary" href="perfil.html">Ver perfil</a>
+        <a class="professional-showcase-card__cta doke-btn doke-btn--primary" aria-disabled="true" tabindex="-1" title="Perfil sem vínculo de identidade">Perfil indisponível</a>
       </div>
     `;
     return article;
@@ -840,7 +840,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       ${mediaMarkup}
       <div class="publication-card__content">
         <h3 class="publication-card__title">${title}</h3>
-        <p class="publication-card__author">Por <a href="perfil.html">${author}</a></p>
+        <p class="publication-card__author">Por <a aria-disabled="true" tabindex="-1" title="Perfil indisponível">${author}</a></p>
         <div class="publication-card__actions" aria-label="Interações da publicação">
           <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>${likes}</span>
           <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>${comments}</span>
@@ -1196,45 +1196,10 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     applySearchSuggestion(action.dataset.value || action.textContent || '');
   }, { signal });
 
-  const isResultsPreviewTrigger = (trigger) => Boolean(
-    trigger?.closest?.('[data-results-grid], [data-results-videos-grid], [data-results-before-after-grid]')
-  );
-
-  const openResultsPreviewTrigger = (trigger, event) => {
-    if (!trigger || !isResultsPreviewTrigger(trigger)) return false;
-
-    const workerTrigger = trigger.closest('[data-worker-trigger]');
-    if (workerTrigger) {
-      event?.preventDefault?.();
-      if (!window.DokeOpenWorkerPreview) refreshResultPreviews();
-      window.DokeOpenWorkerPreview?.(workerTrigger.dataset.workerId || '', workerTrigger);
-      return true;
-    }
-
-    const beforeAfterTrigger = trigger.closest('[data-before-after-trigger]');
-    if (beforeAfterTrigger) {
-      event?.preventDefault?.();
-      if (!window.DokeOpenBeforeAfterPreview) refreshResultPreviews();
-      window.DokeOpenBeforeAfterPreview?.(beforeAfterTrigger.dataset.beforeAfterId || '', beforeAfterTrigger);
-      return true;
-    }
-
-    return false;
-  };
-
   document.addEventListener('click', (event) => {
-    const previewTrigger = event.target.closest('[data-worker-trigger], [data-before-after-trigger]');
-    if (openResultsPreviewTrigger(previewTrigger, event)) return;
-
     if (!event.target.closest('[data-results-searchbox]')) {
       closeResultsSearchDropdown();
     }
-  }, { signal });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    const previewTrigger = event.target.closest('[data-worker-trigger], [data-before-after-trigger]');
-    openResultsPreviewTrigger(previewTrigger, event);
   }, { signal });
 
   els.resultsSearchClear?.addEventListener('click', () => {

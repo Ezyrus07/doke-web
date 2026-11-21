@@ -191,6 +191,18 @@
   });
   const onAuthChange = (listener) => getSessionStore()?.subscribe?.(listener) || (() => {});
 
+  const mapLoginError = (error) => {
+    const code = /^[a-z0-9_]{1,80}$/i.test(error?.code || '') ? String(error.code).toLowerCase() : 'auth_login_failed';
+    const status = Number.isInteger(error?.status) ? error.status : 0;
+    const message = String(error?.message || '').toLowerCase();
+    let text = 'Não foi possível entrar agora. Tente novamente mais tarde.';
+    if (status >= 500 || code === 'request_timeout') text = 'O serviço de autenticação está temporariamente indisponível. Tente novamente mais tarde.';
+    else if (status === 429 || code === 'over_request_rate_limit') text = 'Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.';
+    else if (code === 'email_not_confirmed' || message.includes('email not confirmed')) text = 'Confirme seu e-mail antes de entrar.';
+    else if (code === 'invalid_credentials' || message.includes('invalid login') || message.includes('invalid credentials')) text = 'Credenciais inválidas. Revise seu e-mail e senha.';
+    return Object.assign(new Error(text), { code, status });
+  };
+
   const login = async ({ email, login: loginValue, password, remember = true } = {}) => {
     const access = normalizeText(email || loginValue);
     const rawPassword = String(password || '');
@@ -200,12 +212,11 @@
       const client = getSupabaseClient();
       if (!client) throw new Error('O Supabase ainda não foi carregado. Recarregue a página e tente novamente.');
       if (!isEmail(access)) throw new Error('Entre usando o e-mail cadastrado.');
-      const { data, error } = await client.auth.signInWithPassword({ email: normalizeEmail(access), password: rawPassword });
-      if (error) {
-        const message = String(error.message || '').toLowerCase();
-        if (message.includes('email not confirmed')) throw new Error('Confirme seu e-mail antes de entrar.');
-        throw new Error('Credenciais inválidas. Revise seu e-mail e senha.');
-      }
+      let response;
+      try { response = await client.auth.signInWithPassword({ email: normalizeEmail(access), password: rawPassword }); }
+      catch (error) { throw mapLoginError(error); }
+      const { data, error } = response;
+      if (error) throw mapLoginError(error);
       const stored = setSupabaseSession(data.session, remember);
       updateAccountSurfaces();
       return stored.user;

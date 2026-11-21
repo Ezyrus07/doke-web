@@ -16,8 +16,6 @@ window.DokeHomeWorkers = (() => {
       saves: "3,8k",
       commentsCount: "255",
       commentsLabel: "255 comentários",
-      primaryHref: "detalhe-anuncio.html",
-      secondaryHref: "perfil.html",
       comments: [
         { avatar: "MP", name: "Marina Prado", text: "Essa proteção no piso faz muita diferença. Já salvei.", time: "2 min" },
         { avatar: "RO", name: "Rafael Oliveira", text: "Tem indicação desse material para parede com textura?", time: "8 min" },
@@ -38,8 +36,6 @@ window.DokeHomeWorkers = (() => {
       saves: "2,2k",
       commentsCount: "184",
       commentsLabel: "184 comentários",
-      primaryHref: "detalhe-anuncio.html",
-      secondaryHref: "perfil.html",
       comments: [
         { avatar: "LT", name: "Lucas Torres", text: "A divisão dos armários ficou muito melhor.", time: "4 min" },
         { avatar: "AM", name: "Amanda Rocha", text: "Queria ver uma solução parecida para cozinha pequena.", time: "16 min" },
@@ -60,8 +56,6 @@ window.DokeHomeWorkers = (() => {
       saves: "4,6k",
       commentsCount: "312",
       commentsLabel: "312 comentários",
-      primaryHref: "detalhe-anuncio.html",
-      secondaryHref: "perfil.html",
       comments: [
         { avatar: "JV", name: "João Vitor", text: "Esse erro da tomada eu vejo direto em apartamento antigo.", time: "1 min" },
         { avatar: "BE", name: "Bruna Esteves", text: "Dá para revisar antes de trocar disjuntor?", time: "7 min" },
@@ -82,8 +76,6 @@ window.DokeHomeWorkers = (() => {
       saves: "2,9k",
       commentsCount: "97",
       commentsLabel: "97 comentários",
-      primaryHref: "detalhe-anuncio.html",
-      secondaryHref: "perfil.html",
       comments: [
         { avatar: "CR", name: "Clara Reis", text: "O pó fino depois da obra é o pior. Boa dica.", time: "5 min" },
         { avatar: "PH", name: "Pedro Henrique", text: "Esse processo serve para porcelanato fosco?", time: "22 min" },
@@ -104,8 +96,6 @@ window.DokeHomeWorkers = (() => {
       saves: "1,9k",
       commentsCount: "83",
       commentsLabel: "83 comentários",
-      primaryHref: "detalhe-anuncio.html",
-      secondaryHref: "perfil.html",
       comments: [
         { avatar: "TN", name: "Thiago Nunes", text: "Essa revisão antes da entrega evita muita dor de cabeça.", time: "3 min" },
         { avatar: "LA", name: "Lia Alves", text: "Você também confere vazamento pequeno em sifão?", time: "11 min" },
@@ -126,8 +116,6 @@ window.DokeHomeWorkers = (() => {
       saves: "1,6k",
       commentsCount: "71",
       commentsLabel: "71 comentários",
-      primaryHref: "detalhe-anuncio.html",
-      secondaryHref: "perfil.html",
       comments: [
         { avatar: "VM", name: "Victor Martins", text: "Esse tipo de vazamento costuma aparecer só quando usa a pia.", time: "6 min" },
         { avatar: "BI", name: "Bianca Lima", text: "Dá para fazer esse ajuste sem trocar a bancada?", time: "18 min" },
@@ -169,14 +157,14 @@ window.DokeHomeWorkers = (() => {
             <div class="worker-preview__creator-copy">
               <div class="worker-preview__name-line">
                 <strong>${item.author}</strong>
-                <a href="${item.secondaryHref}">Ver perfil</a>
+                <a aria-disabled="true" tabindex="-1" title="Perfil sem vínculo de identidade">Perfil indisponível</a>
               </div>
               <span>${item.duration}</span>
               <span>${item.title}</span>
             </div>
           </div>
 
-          <a class="worker-preview__service" href="${item.primaryHref}">Ver serviço</a>
+          <span class="worker-preview__service">Serviço indisponível</span>
         </div>
       </div>
 
@@ -512,12 +500,19 @@ window.DokeHomeWorkers = (() => {
       items.forEach((item) => observer.observe(item));
 
       triggers.forEach((trigger) => {
-        const openFromTrigger = () => open(trigger.dataset.workerId, trigger);
+        const openFromTrigger = (event) => {
+          if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+          const control = event.target.closest('a, button, input, select, textarea, summary, label, [contenteditable]:not([contenteditable="false"]), [role="button"], [role="link"], [aria-disabled="true"]');
+          if (control && control !== trigger) return;
+          open(trigger.dataset.workerId, trigger);
+        };
         trigger.addEventListener('click', openFromTrigger, { signal });
         trigger.addEventListener('keydown', (event) => {
+          if (event.defaultPrevented || event.target !== trigger || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            openFromTrigger();
+            if (event.key === ' ' && event.repeat) return;
+            trigger.click();
           }
         }, { signal });
       });

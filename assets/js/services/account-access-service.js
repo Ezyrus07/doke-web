@@ -30,23 +30,10 @@
     if (document.body) document.body.dataset.authGuard = state;
   }
 
-  function readCachedUser() {
-    var keys = ['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session'];
-    for (var index = 0; index < keys.length; index += 1) {
-      try {
-        var raw = window.localStorage.getItem(keys[index]);
-        var parsed = raw ? JSON.parse(raw) : null;
-        var user = parsed && (parsed.user || parsed.currentUser);
-        if (user && user.id) return user;
-      } catch (error) {}
-    }
-    return null;
-  }
-
   function getCurrentUser() {
     var session = sessionStore();
-    if (!session || typeof session.getCurrentUser !== 'function') return readCachedUser() || null;
-    return session.getCurrentUser() || readCachedUser() || null;
+    if (!session || typeof session.getCurrentUser !== 'function') return null;
+    return session.getCurrentUser() || null;
   }
 
   function refreshCanonicalSession() {

@@ -191,7 +191,7 @@ body.search-results-body .results-filters__actions {
  * - the dimensions below mirror home-search-chrome.css instead of recreating
  *   an independent results search component.
  */
-body.search-results-body .results-searchbar.home-search-hero {
+body.search-results-body .results-searchbar[data-results-searchbox] {
   --home-search-hero-card-bg: rgba(255, 255, 255, 0.96);
   --home-search-hero-card-border: var(--doke-card-border, rgba(24, 75, 118, 0.1));
   --home-search-hero-card-radius: 26px;
@@ -212,7 +212,7 @@ body.search-results-body .results-searchbar.home-search-hero {
   overflow: visible;
 }
 
-body.search-results-body .results-searchbar .home-search-hero__panel {
+body.search-results-body .results-searchbar .results-searchbar__panel {
   display: block;
   width: 100%;
   max-width: 100%;
@@ -225,7 +225,7 @@ body.search-results-body .results-searchbar .home-search-hero__panel {
   overflow: visible;
 }
 
-body.search-results-body .results-searchbar .home-search-hero__card {
+body.search-results-body .results-searchbar .results-searchbar__card {
   display: grid;
   grid-template-rows: auto auto;
   align-content: start;
@@ -252,7 +252,7 @@ body.search-results-body
   .doke-results-search__form.doke-search-panel__form.doke-search-pill {
   position: relative;
   z-index: 30;
-  display: block;
+  display: var(--results-search-form-display, block);
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -298,7 +298,7 @@ body.search-results-body .results-searchbar .doke-results-search__dropdown {
  * 18 top + 52 search + 12 gap + 40 actions/scope + 24 bottom = 146px.
  */
 @media (min-width: 1180px) {
-  body.search-results-body .results-searchbar .home-search-hero__card {
+  body.search-results-body .results-searchbar .results-searchbar__card {
     padding-block: 18px 24px;
   }
 }
@@ -326,7 +326,7 @@ body.search-results-body .results-searchbar .doke-results-search__dropdown {
     padding-top: 0;
   }
 
-  body.search-results-body .results-searchbar.home-search-hero {
+  body.search-results-body .results-searchbar[data-results-searchbox] {
     padding-block-start: clamp(8px, 1.6vw, 16px);
   }
 }
@@ -352,14 +352,14 @@ body.search-results-body .results-searchbar .doke-results-search__dropdown {
 }
 
 @media (max-width: 560px) {
-  body.search-results-body .results-searchbar.home-search-hero {
+  body.search-results-body .results-searchbar[data-results-searchbox] {
     position: relative;
     z-index: 2;
     margin: 0 0 14px;
     padding-block-start: 0;
   }
 
-  body.search-results-body .results-searchbar .home-search-hero__card {
+  body.search-results-body .results-searchbar .results-searchbar__card {
     gap: 10px;
     padding: 10px 14px 12px;
     border: 0;
@@ -458,6 +458,31 @@ body.search-results-body .results-searchbar .doke-results-search__dropdown {
     .doke-results-search__scope.search-scope
     :is(.doke-tab-pill, .search-scope__filter-toggle) {
     min-height: 36px;
+  }
+}
+
+/* The shell supplies phone search; result modes remain page-owned. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar {
+    --results-search-form-display: none;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted
+    .results-searchbar .results-searchbar__card {
+    display: contents;
+  }
+}
+
+/* Preserve the mounted shell composition when the viewport expands. */
+@media (min-width: 761px) {
+  body.search-results-body.doke-mobile-shell-mounted
+    .results-searchbar[data-results-searchbox] {
+    padding-inline: var(--doke-mobile-shell-edge);
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted
+    .results-searchbar .results-searchbar__card {
+    padding-top: 0;
   }
 }
 

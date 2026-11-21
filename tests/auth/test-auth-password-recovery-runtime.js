@@ -14,6 +14,9 @@ const vm = require('vm');
   let logoutCalls = 0;
   let refreshCalls = 0;
   let sessionClears = 0;
+  let recoveryError = null;
+  let updateConfirmed = true;
+  let revokeError = null;
 
   const session = {
     user: { id: 'auth-a05-user', email: 'gabriel@example.com' },
@@ -28,7 +31,7 @@ const vm = require('vm');
       },
       async resetPasswordForEmail(email, options) {
         recoveryRequests.push({ email, options });
-        return { data: {}, error: null };
+        return { data: recoveryError ? null : {}, error: recoveryError };
       },
       async getSession() {
         return { data: { session }, error: null };
@@ -38,7 +41,8 @@ const vm = require('vm');
       },
       async updateUser(payload) {
         updateCalls.push(payload);
-        return { data: { user: session.user }, error: null };
+        if ('currentPassword' in payload) return { data: null, error: new Error('Unsupported current-password field') };
+        return { data: { user: updateConfirmed ? session.user : null }, error: null };
       },
       async signInWithPassword(payload) {
         if (payload.password !== 'Current@123') {
@@ -48,13 +52,14 @@ const vm = require('vm');
       },
       async signOut(options) {
         signOutCalls.push(options || {});
-        return { error: null };
+        return { error: revokeError };
       }
     }
   };
 
   const historyCalls = [];
   const window = {
+    crypto: require('crypto').webcrypto,
     location: {
       href: 'https://doke.example/auth/esqueci-senha.html?mode=reset#type=recovery&access_token=secret',
       search: '?mode=reset',
@@ -71,7 +76,7 @@ const vm = require('vm');
     DokeAuth: {
       session: { clear: () => { sessionClears += 1; } },
       logout: async () => { logoutCalls += 1; },
-      refreshSession: async () => { refreshCalls += 1; }
+      refreshSession: async () => { refreshCalls += 1; return session; }
     }
   };
   window.window = window;
@@ -91,6 +96,9 @@ const vm = require('vm');
     console,
     URL,
     URLSearchParams,
+    TextEncoder,
+    setTimeout: (fn, ms) => setTimeout(fn, ms === 10000 ? 250 : ms),
+    clearTimeout,
     CustomEvent: function CustomEvent(type, init = {}) {
       this.type = type;
       this.detail = init.detail;
@@ -120,6 +128,9 @@ const vm = require('vm');
   assert.strictEqual(forged.active, false, 'A normal session without a credential-bearing recovery URL must not authorize reset.');
 
   window.DOKE_AUTH_RECOVERY_BOOT = Object.freeze({ version: 'AUTH-A05', requested: true });
+  const forgedWithMarker = await authority.initializePasswordRecovery();
+  assert.strictEqual(forgedWithMarker.active, false, 'An unverified URL marker must never replace the SDK recovery event.');
+  authStateListener('PASSWORD_RECOVERY', session);
   const recoveryContext = await authority.initializePasswordRecovery();
   assert.strictEqual(recoveryContext.active, true);
   assert.strictEqual(historyCalls.length, 1, 'Recovery credentials must be scrubbed from browser history.');
@@ -143,9 +154,35 @@ const vm = require('vm');
   });
   assert.strictEqual(changeResult.changed, true);
   assert.strictEqual(updateCalls[1]?.password, 'Another@123');
-  assert.strictEqual(updateCalls[1]?.currentPassword, 'Current@123');
+  assert.strictEqual(updateCalls[1]?.current_password, 'Current@123');
+  assert(!('currentPassword' in updateCalls[1]), 'The SDK forwards attributes verbatim: camelCase must not reach the provider.');
+  assert.strictEqual(changeResult.otherSessionsRevoked, true);
+  assert.strictEqual(changeResult.sessionRefreshConfirmed, true);
   assert(signOutCalls.some((call) => call.scope === 'others'), 'Other sessions must be revoked after an authenticated password change.');
   assert.strictEqual(refreshCalls, 1);
+
+  recoveryError = { code: 'request_timeout', status: 504, message: 'private provider detail' };
+  await assert.rejects(authority.requestPasswordRecovery({ email: 'fixture@example.invalid' }), (error) =>
+    error.code === 'request_timeout' && error.status === 504 && !error.message.includes('private provider detail'));
+  recoveryError = null;
+  updateConfirmed = false;
+  await assert.rejects(authority.changePassword({ currentPassword: 'Current@123', newPassword: 'Unconfirmed@123' }), /não foi confirmada/);
+  updateConfirmed = true;
+  revokeError = { code: 'request_timeout', status: 504 };
+  const partialChange = await authority.changePassword({ currentPassword: 'Current@123', newPassword: 'RevocationPending@123' });
+  assert.strictEqual(partialChange.changed, true);
+  assert.strictEqual(partialChange.otherSessionsRevoked, false, 'A failed signOut cannot be represented as confirmed revocation.');
+  authStateListener('SIGNED_IN', session);
+  assert.strictEqual((await authority.initializePasswordRecovery()).active, false);
+
+  const pendingRecovery = authority.initializePasswordRecovery();
+  assert.strictEqual(authority.getRecoveryState().status, 'checking');
+  assert.strictEqual(authority.getRecoveryState().active, false, 'Checking must not authorize password replacement.');
+  authStateListener('PASSWORD_RECOVERY', session);
+  assert.strictEqual((await pendingRecovery).active, true, 'A delayed SDK recovery event must resolve checking, not be rejected prematurely.');
+  authStateListener('SIGNED_IN', session);
+  await new Promise(setImmediate);
+  assert.strictEqual(authority.getRecoveryState().active, true, 'A duplicate SDK notification for the same session must preserve legitimate recovery.');
 
   for (const forbidden of ['localStorage.setItem', 'sessionStorage.setItem', "'doke.auth.recovery.v1'", 'debugCode', 'generateRecoveryCode']) {
     assert(!source.includes(forbidden), `Password authority must not contain ${forbidden}.`);

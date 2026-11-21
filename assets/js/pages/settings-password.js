@@ -137,12 +137,16 @@
       setFeedback('success', 'Confirmando sua identidade...');
 
       try {
-        await window.DokeAuth.changePassword({ currentPassword: current, newPassword: next });
-        setFeedback('success', 'Senha alterada. As outras sessões foram encerradas.');
+        const result = await window.DokeAuth.changePassword({ currentPassword: current, newPassword: next });
+        if (!result?.changed) throw new Error('A alteração de senha não foi confirmada.');
+        const complete = result.otherSessionsRevoked && result.sessionRefreshConfirmed;
+        setFeedback(complete ? 'success' : 'error', complete
+          ? 'Senha alterada. As outras sessões foram encerradas.'
+          : 'Senha alterada, mas não foi possível confirmar todas as etapas de segurança da sessão. Entre novamente com a nova senha e confira as outras sessões.');
         currentPassword.value = '';
         newPassword.value = '';
         confirmation.value = '';
-        window.setTimeout(() => dialog.close('success'), 1100);
+        if (complete) window.setTimeout(() => dialog.close('success'), 1100);
       } catch (error) {
         setFeedback('error', error?.message || 'Não foi possível alterar a senha.');
         submit.disabled = false;

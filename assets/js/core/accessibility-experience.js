@@ -204,7 +204,11 @@
       setModality(MODALITY.KEYBOARD, 'keydown');
     }
 
-    if (key !== 'Enter' && key !== ' ') return;
+    if (event.defaultPrevented || (key !== 'Enter' && key !== ' ')) return;
+    var nativeOrigin = event.target && event.target.closest
+      ? event.target.closest('a, button, input, select, textarea, summary, label, [contenteditable]:not([contenteditable="false"])')
+      : null;
+    if (nativeOrigin) return;
     var target = event.target && event.target.closest ? event.target.closest(EXPLICIT_ACTION_SELECTOR) : null;
     if (!target || isNativeInteractive(target) || isDisabled(target)) return;
     if (key === ' ' && event.repeat) return;

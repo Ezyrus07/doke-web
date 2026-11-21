@@ -34,6 +34,7 @@
     if (!href) return '';
     try {
       const url = new URL(href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname.split('/').pop() !== DETAIL_PAGE) return '';
       return String(url.searchParams.get('id') || url.searchParams.get('serviceId') || url.searchParams.get('servico') || '').trim();
     } catch (error) {
       return '';
@@ -68,7 +69,7 @@
       firstTag,
       ad,
       serviceId: getCardServiceId(card),
-      providerSlug: slugify(provider || 'anunciante')
+      providerUserId: isUuid(card.dataset.providerUserId) ? card.dataset.providerUserId.trim() : ''
     };
   };
 
@@ -91,26 +92,16 @@
 
   const resolveDetailHref = (card, context, hash) => {
     const serviceId = String(context?.serviceId || getCardServiceId(card) || '').trim();
-    let href = '';
-
-    if (serviceId) {
-      const serviceApi = window.Doke?.services?.services;
-      href = typeof serviceApi?.getDetailUrl === 'function'
-        ? serviceApi.getDetailUrl(serviceId)
-        : withParams(DETAIL_PAGE, { id: serviceId });
-    } else {
-      const existing = card?.querySelector?.('.doke-ad-card__cta[href]')?.getAttribute('href') || '';
-      const existingId = serviceIdFromHref(existing);
-      if (existingId) href = withParams(DETAIL_PAGE, { id: existingId });
-      else if (existing && /detalhe-anuncio\.html/i.test(existing)) href = existing;
-      else href = withParams(DETAIL_PAGE, { anuncio: context?.ad || 'anuncio' });
-    }
-
-    return hash ? withHash(href, hash) : href;
+    if (!serviceId) return '';
+    const serviceApi = window.Doke?.services?.services;
+    const href = typeof serviceApi?.getDetailUrl === 'function'
+      ? serviceApi.getDetailUrl(serviceId)
+      : withParams(DETAIL_PAGE, { id: serviceId });
+    return href && hash ? withHash(href, hash) : href;
   };
 
   const go = (href) => {
-    window.location.assign(href);
+    if (href) window.location.assign(href);
   };
 
   const dispatchFavoriteResolutionError = (button, error) => {
@@ -272,8 +263,8 @@
 
     if (event.target.closest('.doke-ad-card__seller, .doke-ad-card__seller-name, .doke-ad-card__avatar')) {
       event.preventDefault();
-      go(withParams(PROFILE_PAGE, {
-        provider: context.providerSlug,
+      if (context.providerUserId) go(withParams(PROFILE_PAGE, {
+        id: context.providerUserId,
         from: 'ad-card'
       }));
       return;
@@ -313,12 +304,11 @@
   };
 
   const handleAdCardKeydown = (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
+    if (event.defaultPrevented || (event.key !== 'Enter' && event.key !== ' ')) return;
     const target = event.target.closest('.doke-ad-card__seller, .doke-ad-card__seller-name, .doke-ad-card__avatar, .doke-ad-card__rating, .doke-ad-card__location, .doke-ad-card__tags span');
     if (!target) return;
     event.preventDefault();
     target.click?.();
-    handleAdCardClick({ target, preventDefault(){}, stopPropagation(){} });
   };
 
   const hydrateAdCards = () => {
@@ -340,12 +330,18 @@
       const favorite = card.querySelector('.doke-ad-card__favorite');
 
       [
-        [seller, `Abrir perfil de ${context.provider || 'anunciante'}`],
-        [avatar, `Abrir perfil de ${context.provider || 'anunciante'}`],
-        [rating, 'Ver avaliações do anúncio'],
+        [seller, context.providerUserId ? `Abrir perfil de ${context.provider || 'anunciante'}` : ''],
+        [avatar, context.providerUserId ? `Abrir perfil de ${context.provider || 'anunciante'}` : ''],
+        [rating, context.serviceId ? 'Ver avaliações do anúncio' : ''],
         [location, 'Buscar anúncios nesta localização']
       ].forEach(([node, label]) => {
         if (!node) return;
+        if (!label) {
+          node.removeAttribute('role');
+          node.removeAttribute('tabindex');
+          node.removeAttribute('aria-label');
+          return;
+        }
         node.setAttribute('role', 'button');
         node.setAttribute('tabindex', '0');
         node.setAttribute('aria-label', label);
@@ -368,14 +364,25 @@
       hydrateAdCardMedia(card);
 
       const cta = card.querySelector('.doke-ad-card__cta');
-      if (cta && cta.tagName === 'A' && context.serviceId) {
-        cta.href = resolveDetailHref(card, context);
+      if (cta && cta.tagName === 'A') {
+        const href = resolveDetailHref(card, context);
+        if (href) {
+          cta.href = href;
+          cta.removeAttribute('aria-disabled');
+          cta.removeAttribute('tabindex');
+        } else {
+          cta.removeAttribute('href');
+          cta.setAttribute('aria-disabled', 'true');
+          cta.setAttribute('tabindex', '-1');
+          cta.textContent = 'Serviço indisponível';
+          cta.setAttribute('aria-label', 'Serviço indisponível');
+        }
       }
     });
   };
 
   document.addEventListener('click', handleAdCardClick, true);
-  document.addEventListener('keydown', handleAdCardKeydown, true);
+  document.addEventListener('keydown', handleAdCardKeydown);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', hydrateAdCards, { once: true });

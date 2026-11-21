@@ -7,6 +7,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { createHash } = require('crypto');
 
 const ROOT = process.cwd();
 const CSS_ROOTS = ['assets/css'];
@@ -34,6 +35,44 @@ const CSS_ALLOWLIST = new Set([
   'assets/css/components/states/component-loading-contract.css',
   'assets/css/components/states/list-states.css'
 ]);
+
+// R2 proved only these declarations harmless in the pinned card contexts.
+const CONTEXT_GEOMETRY = [
+  {
+    file: 'assets/css/components/cards/ad-card.css',
+    selector: '.doke-ad-card.is-media-skeleton .doke-ad-card__media::before',
+    values: { position: 'absolute', inset: '0' }
+  },
+  {
+    file: 'assets/css/components/cards/profile-service-owner-card.css',
+    selector: 'body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner.is-moderation-pending-review',
+    values: { position: 'relative', overflow: 'hidden' }
+  }
+];
+let contextProofCurrent;
+function hasCurrentContextProof() {
+  if (contextProofCurrent !== undefined) return contextProofCurrent;
+  try {
+    const proofText = fs.readFileSync(path.join(__dirname, 'fixtures/first-paint-context-proof.json'));
+    if (createHash('sha256').update(proofText).digest('hex') !== 'b8dad2eddbeb759e248c41cc6280ac6119544fcbd98162ac2a56109cfa4292a4') {
+      return (contextProofCurrent = false);
+    }
+    const proof = JSON.parse(proofText.toString('utf8'));
+    const inputs = Object.entries(proof.inputs);
+    contextProofCurrent = inputs.length > 0 && inputs.every(([file, hash]) =>
+      createHash('sha256').update(fs.readFileSync(path.join(ROOT, file))).digest('hex') === hash);
+  } catch {
+    contextProofCurrent = false;
+  }
+  return contextProofCurrent;
+}
+
+function isProvenContextDeclaration(file, selector, body, prop) {
+  const context = CONTEXT_GEOMETRY.find((entry) => entry.file === file && entry.selector === selector);
+  if (!context || !context.values[prop] || !hasCurrentContextProof()) return false;
+  const values = [...body.matchAll(new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, 'gi'))];
+  return values.length > 0 && values.every((match) => match[1].trim() === context.values[prop]);
+}
 
 function walk(dir, predicate, out = []) {
   const full = path.join(ROOT, dir);
@@ -71,7 +110,7 @@ function findCssViolations() {
 
       const props = GEOMETRY_PROPS.filter((prop) => {
         const re = new RegExp(`(?:^|;)\\s*${prop.replace(/-/g, '\\-')}\\s*:`, 'i');
-        return re.test(body);
+        return re.test(body) && !isProvenContextDeclaration(file, selector, body, prop);
       });
 
       if (props.length) {

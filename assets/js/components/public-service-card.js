@@ -4,7 +4,20 @@
 
   function clean(value) { return String(value == null ? '' : value).trim(); }
   function canonicalServiceId(service) {
-    return clean(service && (service.serviceId || service.remoteId || service.remote_id || service.id));
+    var direct = clean(service && (service.serviceId || service.remoteId || service.remote_id || service.id));
+    if (direct) return direct;
+    try {
+      var url = new URL(clean(service && service.href), window.location.href);
+      if (url.origin !== window.location.origin || url.pathname.split('/').pop() !== 'detalhe-anuncio.html') return '';
+      return clean(url.searchParams.get('id') || url.searchParams.get('serviceId') || url.searchParams.get('servico'));
+    } catch (_) { return ''; }
+  }
+  function ownerUserId(service) {
+    // These normalized catalog fields represent services.professional_id (user_id), not professional_profiles.id.
+    var ids = [service.professionalId, service.providerId, service.ownerId].map(clean).filter(Boolean);
+    return ids.length && ids.every(function (id) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) && id.toLowerCase() === ids[0].toLowerCase();
+    }) ? ids[0] : '';
   }
   function publicServiceId(service) {
     return clean(service && (service.id || service.externalId || service.external_id));
@@ -104,6 +117,8 @@
       article.dataset.serviceId = canonicalId;
     if (publicId && publicId !== canonicalId)
       article.dataset.publicServiceId = publicId;
+    var providerUserId = ownerUserId(service);
+    if (providerUserId) article.dataset.providerUserId = providerUserId;
     article.dataset.adProvider = name;
     article.dataset.adCategory = category;
     article.dataset.adLocation = location;
@@ -150,7 +165,7 @@
     identity.className = 'doke-ad-card__identity';
     var seller = document.createElement('div');
     seller.className = 'doke-ad-card__seller';
-    seller.setAttribute('aria-label', 'Ver perfil de ' + name + ' (' + providerHandle(service) + ')');
+    seller.setAttribute('aria-label', providerUserId ? 'Ver perfil de ' + name + ' (' + providerHandle(service) + ')' : name);
     var avatar = document.createElement('span');
     avatar.className = 'doke-ad-card__avatar';
     var avatarUrl = clean(service.providerAvatar || service.providerAvatarUrl || service.avatarUrl);
@@ -243,9 +258,13 @@
     price.append(svg('M3 4h8l10 10-7 7L3 10V4ZM7 8h.01'), value);
     var cta = document.createElement('a');
     cta.className = 'doke-ad-card__cta doke-btn doke-btn--success';
-    cta.href = service.href || (canonicalId ? 'detalhe-anuncio.html?id=' + encodeURIComponent(canonicalId) : 'resultados.html');
-    cta.textContent = 'Ver serviço';
-    cta.setAttribute('aria-label', 'Ver serviço: ' + title.textContent);
+    if (canonicalId) cta.href = 'detalhe-anuncio.html?id=' + encodeURIComponent(canonicalId);
+    else {
+      cta.setAttribute('aria-disabled', 'true');
+      cta.setAttribute('tabindex', '-1');
+    }
+    cta.textContent = canonicalId ? 'Ver serviço' : 'Serviço indisponível';
+    cta.setAttribute('aria-label', canonicalId ? 'Ver serviço: ' + title.textContent : 'Serviço indisponível');
     cta.appendChild(svg('M5 12h14m-6-6 6 6-6 6'));
     footer.append(price, cta);
     body.append(title, identity, context, footer);

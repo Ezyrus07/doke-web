@@ -8,6 +8,7 @@
   var railStateRoot = null;
   var railStateController = null;
   var serviceRefreshFlight = null;
+  var loadFlight = null;
   var HOME_DATA_TIMEOUT_MS = 6500;
   var HOME_CATALOG_BOOT_TIMEOUT_MS = 5200;
 
@@ -461,7 +462,23 @@
     }
   }
 
+  function canLoadRoot(root) {
+    if (!isCurrentRoot(root)) return false;
+    var route = Doke.navigationLifecycle?.route?.getState();
+    return !route || (route.state !== 'pending' && (route.to !== '/index.html' || route.state !== 'error' || hydrationRoot === root));
+  }
+
   function load(root) {
+    if (!canLoadRoot(root)) return Promise.resolve(null);
+    if (loadFlight?.root === root) return loadFlight.promise;
+    var promise = loadRoot(root).finally(function () {
+      if (loadFlight?.promise === promise) loadFlight = null;
+    });
+    loadFlight = { root: root, promise: promise };
+    return promise;
+  }
+
+  function loadRoot(root) {
     var context = getHomeContext();
     var pageHydration = getHydration(root);
     var controller = getRailStateController(root);
@@ -569,7 +586,7 @@
 
   function retryServices() {
     var root = getRoot();
-    if (!root) return Promise.resolve(null);
+    if (!canLoadRoot(root)) return Promise.resolve(null);
     return refreshServiceRails(root, getHomeContext(), { retry: true }).then(function (result) {
       if (!result || !isCurrentRoot(root)) return result;
       var counts = commitEditorialRails(root, getRailStateController(root));
@@ -593,7 +610,7 @@
   document.addEventListener('doke:page-data-revalidated', function (event) {
     if (!event.detail || event.detail.page !== PAGE_NAME) return;
     var root = getRoot();
-    if (!root) return;
+    if (!canLoadRoot(root)) return;
     commitEditorialRails(root, getRailStateController(root));
     refreshServiceRails(root, getHomeContext(), { retry: false }).then(function (result) {
       if (!result || !isCurrentRoot(root)) return;

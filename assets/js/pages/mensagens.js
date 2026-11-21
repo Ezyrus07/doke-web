@@ -1345,14 +1345,20 @@
     const pageParams = new URLSearchParams(window.location.search);
     const requestedConversationId = pageParams.get("conversation");
     const requestedOrderId = pageParams.get("order") || pageParams.get("orderId") || pageParams.get("pedido");
-    const hasDirectThreadRequest = Boolean(requestedConversationId || requestedOrderId);
-    const conversationFromOrder = requestedOrderId
-      ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
-      : "";
+    const hasDirectThreadRequest = ["conversation", "order", "orderId", "pedido"].some((key) => pageParams.has(key));
+    const resolveRequestedConversationId = () => {
+      if (requestedConversationId) {
+        if (!Object.prototype.hasOwnProperty.call(conversations, requestedConversationId)) return "";
+        const conversation = conversations[requestedConversationId];
+        return !requestedOrderId || String(conversation?.orderId || conversation?.order?.id || "") === String(requestedOrderId)
+          ? requestedConversationId : "";
+      }
+      const matches = requestedOrderId ? Object.keys(conversations).filter((id) =>
+        String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId)) : [];
+      return matches.length === 1 ? matches[0] : "";
+    };
     const firstListedConversationId = items.find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId || "";
-    let activeId = requestedConversationId && conversations[requestedConversationId]
-      ? requestedConversationId
-      : conversationFromOrder || firstListedConversationId || "";
+    let activeId = hasDirectThreadRequest ? resolveRequestedConversationId() : firstListedConversationId;
 
     if (activeId && conversations[activeId]) {
       ensureLocalConversationCard(root, activeId, conversations[activeId]);
@@ -2666,13 +2672,14 @@
       return { hasConversation, hasOrderContext };
     };
 
-    const renderEmptyThread = () => {
+    const renderEmptyThread = ({ requested = false } = {}) => {
       activeId = "";
       clearSelection();
       refreshConversationItems().forEach((item) => item.classList.remove("is-active"));
       if (threadAvatar) threadAvatar.textContent = "DK";
-      if (threadName) threadName.textContent = "Selecione uma conversa";
-      if (threadLastSeen) threadLastSeen.textContent = "Pedidos e mensagens aparecem aqui";
+      if (threadName) threadName.textContent = requested ? "Conversa não disponível" : "Selecione uma conversa";
+      if (threadLastSeen) threadLastSeen.textContent = requested ? "Destino não encontrado nesta conta" : "Pedidos e mensagens aparecem aqui";
+      if (requested && root.dataset.messagesReady !== "true") setCompactThreadOpen(true);
       syncThreadActionAvailability(null);
       if (chargeButton) syncChargeActionVisibility(null);
       syncDisputeComposerNotice(null);
@@ -2684,8 +2691,10 @@
         threadEmpty.hidden = false;
         const title = threadEmpty.querySelector("h3");
         const text = threadEmpty.querySelector("p");
-        if (title) title.textContent = "Selecione uma conversa.";
-        if (text) text.textContent = "Pedidos aceitos e mensagens reais aparecerão aqui.";
+        if (title) title.textContent = requested ? "Conversa não disponível." : "Selecione uma conversa.";
+        if (text) text.textContent = requested
+          ? "Não foi encontrada uma conversa disponível para este pedido ou link nesta conta."
+          : "Pedidos aceitos e mensagens reais aparecerão aqui.";
       }
       if (composer) composer.classList.add("is-locked");
       if (composerInput) {
@@ -3698,23 +3707,20 @@
       syncVisibility();
       hydration?.mark('local-conversations');
 
-      const nextConversationFromOrder = requestedOrderId
-        ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
-        : "";
       const hasActiveConversation = Boolean(activeId && conversations[activeId]);
       const shouldSelectConversation = preferRequested && !hasActiveConversation;
 
       if (shouldSelectConversation) {
-        const nextId = (requestedConversationId && conversations[requestedConversationId] ? requestedConversationId : "")
-          || nextConversationFromOrder
-          || refreshConversationItems().find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId
-          || "";
+        const nextId = hasDirectThreadRequest ? resolveRequestedConversationId()
+          : refreshConversationItems().find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId || "";
         if (nextId) {
           ensureLocalConversationCard(root, nextId, conversations[nextId]);
           prepareConversationItems();
           refreshConversationCards();
           syncVisibility();
           renderThread(nextId, { scrollTo: "start", openOnMobile: Boolean(requestedOrderId || requestedConversationId) });
+        } else if (hasDirectThreadRequest) {
+          renderEmptyThread({ requested: true });
         }
         return;
       }

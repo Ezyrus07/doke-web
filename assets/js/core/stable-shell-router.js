@@ -186,9 +186,9 @@
   var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
   var routeCache = new Map();
   var routeWarmCache = new Map();
-  var loadedScripts = new Set(Array.prototype.map.call(document.querySelectorAll('script[src]'), function (script) {
+  var scriptLoads = new Map(Array.prototype.map.call(document.querySelectorAll('script[src]'), function (script) {
     return canonicalAssetUrl(script.getAttribute('src'));
-  }).filter(Boolean));
+  }).filter(Boolean).map(function (key) { return [key, Promise.resolve()]; }));
   var navigating = false;
   var navigationId = 0;
   var transitionLog = window.__dokeRouteTransitions || (window.__dokeRouteTransitions = []);
@@ -296,7 +296,7 @@
       existingStyles.add(key);
     });
 
-    var existingScripts = new Set(loadedScripts);
+    var existingScripts = new Set(scriptLoads.keys());
     Array.prototype.forEach.call(document.querySelectorAll('link[rel="preload"][as="script"][data-doke-route-preload]'), function (link) {
       var key = canonicalAssetUrl(link.getAttribute('href'));
       if (key) existingScripts.add(key);
@@ -457,33 +457,50 @@
     return Promise.all(pending);
   }
 
+  function refreshRouteIcons() {
+    try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
+  }
+
   function ensureScripts(nextDoc) {
     var scripts = Array.prototype.slice.call(nextDoc.querySelectorAll('script[src]'))
-      .map(function (script) { return script.getAttribute('src'); })
-      .filter(Boolean)
-      .filter(function (src) { return !CORE_SCRIPT_RE.test(src); });
+      .filter(function (script) { return script.getAttribute('src'); })
+      .filter(function (script) { return !CORE_SCRIPT_RE.test(script.getAttribute('src')); });
     var pending = [];
 
-    scripts.forEach(function (src) {
+    scripts.forEach(function (source) {
+      var src = source.getAttribute('src');
+      var optional = source.getAttribute('data-doke-script') === 'optional';
       var key = canonicalAssetUrl(src);
-      if (!key || loadedScripts.has(key)) return;
+      if (!key) return;
+      if (scriptLoads.has(key)) {
+        if (!optional) pending.push(scriptLoads.get(key));
+        return;
+      }
 
-      pending.push(new Promise(function (resolve, reject) {
+      var loading = new Promise(function (resolve, reject) {
         var script = document.createElement('script');
         script.src = src;
-        script.async = false;
+        script.async = optional;
         script.defer = false;
         script.setAttribute('data-doke-stable-route-script', 'true');
         script.setAttribute('data-doke-route-script-src', src);
-        script.addEventListener('load', resolve, { once: true });
+        script.addEventListener('load', function () {
+          if (optional) refreshRouteIcons();
+          resolve();
+        }, { once: true });
         script.addEventListener('error', function () {
-          loadedScripts.delete(key);
+          scriptLoads.delete(key);
           script.remove();
-          reject(new Error('Falha ao carregar script essencial: ' + src));
+          reject(new Error('Falha ao carregar script ' + (optional ? 'opcional: ' : 'essencial: ') + src));
         }, { once: true });
         document.body.appendChild(script);
-        loadedScripts.add(key);
-      }));
+      });
+      scriptLoads.set(key, loading);
+      if (optional) {
+        loading.catch(function (error) { console.warn('[DokeStableShell:optional-script]', error); });
+      } else {
+        pending.push(loading);
+      }
     });
 
     return Promise.all(pending);
@@ -877,7 +894,7 @@ function replaceShell(nextDoc, path) {
       console.error('[DokeStableShell:init:ui-select]', error);
     }
     try { window.DokeMobileAppShell && window.DokeMobileAppShell.refresh && window.DokeMobileAppShell.refresh(); } catch (error) {}
-    try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
+    refreshRouteIcons();
     document.dispatchEvent(new CustomEvent('doke:stable-route-ready', { detail: { path: path, router: ROUTER_VERSION } }));
     document.dispatchEvent(new CustomEvent('doke:route-ready', { detail: { path: path, router: ROUTER_VERSION } }));
   }
@@ -1110,7 +1127,7 @@ function replaceShell(nextDoc, path) {
         await resetScroll();
       }
       updateSidebar(path);
-      try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
+      refreshRouteIcons();
       setBusy(false);
 
       await assetsPromise;
@@ -1182,6 +1199,11 @@ function replaceShell(nextDoc, path) {
         }
       } else if (window.DokePageHydration && typeof window.DokePageHydration.showRouteError === 'function') {
         window.DokePageHydration.showRouteError(path, error);
+      }
+      if (path === '/index.html') {
+        document.querySelectorAll('[data-state-boundary="index"] > .home-search-hero, [data-state-boundary="index"] > .home-catégories').forEach(function (node) {
+          node.hidden = true;
+        });
       }
     } finally {
       // An older settlement may finish after the user has already started a

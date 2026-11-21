@@ -1262,7 +1262,9 @@
       if (window.DokeNotificationsPanels === panelsApi) delete window.DokeNotificationsPanels;
     };
     document.addEventListener('doke:route-leaving', window.DokeCleanupNotifications, { once: true, signal });
-    window.addEventListener('pagehide', window.DokeCleanupNotifications, { once: true, signal });
+    window.addEventListener('pagehide', (event) => {
+      if (!event.persisted) window.DokeCleanupNotifications();
+    }, { signal });
     updatéUnread();
     updatéStats();
     applyFilter('all', 'all');
